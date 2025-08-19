@@ -19,7 +19,7 @@ http.interceptors.request.use((config) => {
   return config
 })
 
-axios.interceptors.response.use(
+http.interceptors.response.use(
   (response) => {
     if (response.data.message) {
       toast.success(response.data.message)
