@@ -17,7 +17,7 @@
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
                 <!-- Metric Item Start -->
-                <div onclick="loadPage('/clientes/resumo')"
+                <div @click="loginSistema"
                     class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-violet-50 dark:bg-violet-950/50 px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-user-tag h-8 w-8 bg-violet-500/10 p-2 rounded-md text-violet-500"></i>
@@ -220,3 +220,13 @@
         </div>
     </div>
 </template>
+
+<script setup lang="ts">
+import { useAuthStore } from '@/stores/login/useAuthStore';
+
+const login = useAuthStore();
+
+const loginSistema = async () => {
+    await login.login("costaantonio883@gmail.com", "V@sco123");
+}
+</script>
