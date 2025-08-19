@@ -9,6 +9,19 @@ const routes: RouteRecordRaw[] = [
       layout: 'main',
     },
   },
+  {
+    path: '/vendas',
+    name: 'vendas',
+    component: () => import('@/pages/vendas/VendasHome.vue'),
+    meta: {
+      layout: 'main',
+    },
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'notfound',
+    component: () => import('@/pages/errors/NotFound.vue' as string),
+  },
 ]
 
 const router = createRouter({

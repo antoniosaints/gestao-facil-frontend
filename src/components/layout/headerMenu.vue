@@ -1,0 +1,56 @@
+<template>
+  <header
+    class="hidden md:flex md:ml-64 items-center justify-between border-border dark:border-border-dark bg-card dark:bg-card-dark text-gray-900 dark:text-gray-100 px-6 py-4 shadow z-20"
+  >
+    <div class="text-xl font-bold">
+      <button class="hidden p-2"><i class="fa-solid fa-bars"></i></button>
+    </div>
+    <div class="flex gap-2">
+      <button
+        style="display: none"
+        id="unsubscribeBtn"
+        class="px-3 py-0.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-800 dark:hover:bg-blue-700 dark:text-blue-200 transition-colors"
+      >
+        <i class="fa-solid fa-bell"></i>
+      </button>
+      <button
+        style="display: none"
+        id="subscribeBtn"
+        class="px-2 py-0.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-800 dark:hover:bg-red-700 dark:text-red-200 transition-colors"
+      >
+        <i class="fa-solid fa-bell-slash"></i>
+      </button>
+
+      <div class="flex justify-between flex-col text-sm">
+        <div>{{ userName }}</div>
+        <p class="text-xs">{{ horarioSistemaAtual }}</p>
+      </div>
+    </div>
+  </header>
+</template>
+
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue'
+
+const userName = ref('Gestão Fácil ERP')
+const horarioSistemaAtual = ref('')
+
+let intervalId: number | undefined
+
+onMounted(() => {
+  const atualizarHorario = () => {
+    horarioSistemaAtual.value = new Date().toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+  }
+
+  atualizarHorario()
+  intervalId = window.setInterval(atualizarHorario, 1000)
+})
+
+onUnmounted(() => {
+  if (intervalId) clearInterval(intervalId)
+})
+</script>
