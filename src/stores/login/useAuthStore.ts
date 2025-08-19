@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { defineStore } from 'pinia'
 import http from '@/utils/axios'
 
@@ -25,6 +25,12 @@ export const useAuthStore = defineStore('authStore', () => {
   const refreshToken = ref('')
   const user = ref('')
   const timer = ref()
+
+  onMounted(() => {
+    token.value = localStorage.getItem('gestao_facil:token') || ''
+    refreshToken.value = localStorage.getItem('gestao_facil:refreshToken') || ''
+    user.value = localStorage.getItem('gestao_facil:usuario') || ''
+  })
 
   const login = async (email: string, senha: string) => {
     try {
