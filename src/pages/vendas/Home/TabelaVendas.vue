@@ -1,0 +1,74 @@
+<template>
+    <div id="tabela_vendas_listagem_principal_container">
+        <table id="tabela_vendas_listagem_principal" class="display nowrap">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Vendedor</th>
+                    <th>Cliente</th>
+                    <th>Valor</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                    <th class="flex justify-end">Ações</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</template>
+
+<script setup lang="ts">
+function reloadTabelaVendas() {
+    const tabela = $("#tabela_vendas_listagem_principal").DataTable();
+    tabela.ajax.reload(null, false);
+}
+new DataTable("#tabela_vendas_listagem_principal", {
+    language: {
+        url: "/lang/pt-Br.json",
+    },
+    columnControl: ['order'],
+    ordering: {
+        indicators: false,
+        handler: false
+    },
+    columnDefs: [{
+        target: -1,
+        columnControl: []
+    }],
+    fixedColumns: {
+        start: 0,
+        end: 1
+    },
+    scrollCollapse: true,
+    scrollX: true,
+    processing: true,
+    serverSide: true,
+    stateSave: true,
+    ajax: {
+        type: "GET",
+        url: `/api/vendas`,
+        headers: {
+            "Authorization": "Bearer " + localStorage.getItem("gestao_facil:token"),
+        },
+        data: function (d) {
+            d.status = $("#status_vendas_tabela").val() || "";
+        },
+        error: function (xhr, status, error) {
+            console.log("tabela_vendas:" + error);
+        },
+    },
+    columns: [
+        { data: "Uid", className: "bg-gray-50 dark:bg-gray-900" },
+        { data: "vendedorId" },
+        { data: "clienteId" },
+        { data: "valor" },
+        { data: "data" },
+        { data: "status" },
+        {
+            data: "acoes",
+            orderable: false,
+            searchable: false,
+            className: "flex justify-end bg-gray-50 dark:bg-gray-900",
+        },
+    ],
+});
+</script>

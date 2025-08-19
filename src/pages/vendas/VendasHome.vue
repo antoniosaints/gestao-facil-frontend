@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import MobileVendas from './Home/MobileVendas.vue';
-
+import MobileVendas from '@/pages/vendas/Home/MobileVendas.vue';
+import TabelaVendas from '@/pages/vendas/Home/TabelaVendas.vue';
 </script>
 
 <template>
@@ -26,7 +26,7 @@ import MobileVendas from './Home/MobileVendas.vue';
         </div>
         <div
             class="overflow-x-auto hidden md:block shadow rounded-lg border bg-background dark:bg-background-dark border-gray-200 px-2 dark:border-gray-700">
-
+            <TabelaVendas />
         </div>
         <div class="overflow-x-auto block md:hidden rounded-lg">
             <MobileVendas />
