@@ -1,5 +1,8 @@
 import { useAuthStore } from '@/stores/login/useAuthStore'
 import axios from 'axios'
+import { useToast } from 'vue-toastification'
+
+const toast = useToast()
 
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -17,9 +20,16 @@ http.interceptors.request.use((config) => {
 })
 
 axios.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data.message) {
+      toast.success(response.data.message)
+    }
+    return response
+  },
   async (error) => {
     const auth = useAuthStore()
+    const msg = error.response?.data?.message || 'Erro inesperado na requisição'
+    toast.error(msg)
     if (error.response?.status === 401 && auth.refreshToken) {
       try {
         await auth.refresh()
