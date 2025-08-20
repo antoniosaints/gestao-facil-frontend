@@ -22,16 +22,13 @@ http.interceptors.request.use((config) => {
 
 http.interceptors.response.use(
   (response) => {
-    if (response.data.message) {
-      toast.success(response.data.message)
-    }
     return response
   },
   async (error) => {
     const auth = useAuthStore()
     const refreshToken = localStorage.getItem('gestao_facil:refreshToken')
     const msg = error.response?.data?.message || 'Erro inesperado na requisição'
-    toast.error(msg)
+    console.error(msg)
     if (error.response?.status === 401 && refreshToken) {
       try {
         await auth.refresh()

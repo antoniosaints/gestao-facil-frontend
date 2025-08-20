@@ -33,18 +33,17 @@ const emit = defineEmits<{
 const items = ref<Item[]>([])
 const selected = ref<Item | null>(null)
 const search = ref("")
+const isOpen = ref(false) // controle do estado do combobox
 
 // Atualiza quando modelValue é alterado externamente
 watch(
     () => props.modelValue,
     async (id) => {
         if (id) {
-            // Se tiver função fetchById, usa ela
             if (props.fetchById) {
                 const item = await props.fetchById(id)
                 if (item) selected.value = item
             } else {
-                // fallback usando fetchItems
                 const result = await props.fetchItems()
                 const found = result.find((i) => i.id == id)
                 if (found) {
@@ -69,6 +68,14 @@ watch(selected, (val) => {
     emit("update:modelValue", val ? val.id : null)
 })
 
+// Limpa busca sempre que abrir o combobox
+watch(isOpen, async (val) => {
+    if (val) {
+        search.value = ""
+        items.value = await props.fetchItems()
+    }
+})
+
 onMounted(async () => {
     if (!items.value.length) {
         items.value = await props.fetchItems()
@@ -77,7 +84,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <Combobox v-model="selected" by="id">
+    <Combobox v-model="selected" v-model:open="isOpen" by="id">
         <ComboboxAnchor as-child>
             <ComboboxTrigger as-child>
                 <Button variant="outline" class="justify-between w-auto overflow-hidden">
@@ -90,9 +97,9 @@ onMounted(async () => {
         </ComboboxAnchor>
 
         <ComboboxList>
-            <div class="relative w-full max-w-sm items-center">
+            <div class="relative w-full max-w-md items-center">
                 <ComboboxInput v-model="search" class="pl-9 focus-visible:ring-0 border-0 border-b rounded-none h-10"
-                    :display-value="(val: Item) => val?.label ?? ''" placeholder="Buscar..." />
+                    placeholder="Buscar..." />
                 <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
                     <Search class="size-4 text-muted-foreground" />
                 </span>
