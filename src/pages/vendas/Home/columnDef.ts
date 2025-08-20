@@ -1,65 +1,106 @@
+import BadgeInfo from '@/components/tabela/BadgeInfo.vue'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { render } from '@/lib/utils'
+import { useProdutoStore } from '@/stores/produtos/useProduto'
+import type { Vendas } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { ArrowUpDown } from 'lucide-vue-next'
-import { h } from 'vue'
+import TabelaActions from './TabelaActions.vue'
 
-type Produto = {
-  id: number
-  nome: string
-  preco: number
-  estoque: number
-  minimo: number
-}
+const useProduto = useProdutoStore()
 
-export const columnsProdutos: ColumnDef<Produto>[] = [
+export const columnsProdutos: ColumnDef<Vendas>[] = [
   {
-    id: 'select',
-    header: ({ table }) =>
-      h(Checkbox, {
-        modelValue:
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate'),
-        'onUpdate:modelValue': (value) => table.toggleAllPageRowsSelected(!!value),
-        ariaLabel: 'Select all',
-      }),
+    accessorKey: 'Uid',
+    header: ({ column }) =>
+      render(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
     cell: ({ row }) =>
-      h(Checkbox, {
-        modelValue: row.getIsSelected(),
-        'onUpdate:modelValue': (value) => row.toggleSelected(!!value),
-        ariaLabel: 'Select row',
+      render(BadgeInfo, {
+        conteudo: row.getValue('Uid') as string,
+        onClick: async () => {
+          const data = await useProduto.get(row.original.id as number)
+          console.log(data)
+        },
       }),
-    enableSorting: false,
-    enableHiding: false,
   },
   {
-    accessorKey: 'nome',
+    accessorKey: 'valor',
     header: ({ column }) =>
-      h(
+      render(
         Button,
         {
           variant: 'ghost',
           onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
         },
-        () => ['Nome', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+        () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
   },
   {
-    accessorKey: 'estoque',
+    accessorKey: 'status',
     header: ({ column }) =>
-      h(
+      render(
         Button,
         {
           variant: 'ghost',
           onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
         },
-        () => ['Estoque', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
-    cell: ({ row }) => h('div', { class: 'text-center' }, row.getValue('estoque')),
   },
   {
-    accessorKey: 'minimo',
-    header: 'Mínimo',
-    cell: ({ row }) => h('div', { class: 'capitalize' }, row.getValue('minimo')),
+    accessorKey: 'vendedor',
+    header: ({ column }) =>
+      render(
+        'div',
+        { class: 'text-right' },
+        render(
+          Button,
+          {
+            variant: 'ghost',
+            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+            class: 'text-right',
+          },
+          () => ['Vendedor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+        ),
+      ),
+    cell: ({ row }) => render('div', { class: 'text-right' }, row.original.vendedor?.nome),
+  },
+  {
+    accessorKey: 'data',
+    header: ({ column }) =>
+      render(
+        'div',
+        { class: 'text-right' },
+        render(
+          Button,
+          {
+            variant: 'ghost',
+            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+          },
+          () => ['Data', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+        ),
+      ),
+    cell: ({ row }) => {
+      const date = new Date(row.getValue('data'))
+      const formattedDate = date.toLocaleString('pt-BR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      })
+      return render('div', { class: 'text-right' }, formattedDate)
+    },
+  },
+  {
+    accessorKey: 'acoes',
+    header: () => render('div', { class: 'text-right' }, 'Ações'),
+    cell: ({ row }) =>
+      render('div', { class: 'text-right' }, render(TabelaActions, { data: row.original })),
   },
 ]

@@ -1,19 +1,13 @@
 <script setup lang="ts">
-import type {
-  ColumnDef
-} from "@tanstack/vue-table"
-
 import {
   FlexRender,
   getCoreRowModel,
   useVueTable,
 } from "@tanstack/vue-table"
 
-import { ArrowUpDown, ChevronDown } from "lucide-vue-next"
-import { h } from "vue"
+import { ChevronDown } from "lucide-vue-next"
 
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -45,7 +39,7 @@ const {
   columnVisibility,
   rowSelection,
   search
-} = useServerTable("/produtos", colunas);
+} = useServerTable("/vendas", colunas);
 // ---- Tabela ----
 const table = useVueTable({
   data: data,
@@ -81,7 +75,7 @@ const table = useVueTable({
   <div class="w-full">
     <!-- Busca e menu -->
     <div class="flex items-center py-4">
-      <Input class="max-w-sm" placeholder="Buscar por nome..." v-model="search" />
+      <Input class="max-w-sm" placeholder="Buscar registro..." v-model="search" />
       <div class="ml-auto flex items-center space-x-2">
         <Select v-model="pageSize">
           <SelectTrigger>

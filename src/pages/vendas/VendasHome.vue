@@ -15,7 +15,7 @@ import TabelaVendas from './Home/TabelaVendas.vue';
                     <i class="fa-solid fa-filter"></i>
                 </button>
                 <button onclick="loadPage('vendas/formulario')"
-                    class="bg-secondary text-white px-3 py-1.5 text-sm rounded-md">
+                    class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-solid fa-circle-plus"></i> <span class="hidden md:inline">Nova Venda</span>
                 </button>
                 <button onclick="loadPage('vendas/pdv')"

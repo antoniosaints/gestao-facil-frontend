@@ -1,6 +1,6 @@
 <template>
   <header
-    class="hidden md:flex md:ml-64 items-center justify-between border border-border bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-6 py-4 shadow z-20">
+    class="hidden md:flex md:ml-64 items-center justify-between border border-border bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-6 py-3 shadow z-20">
     <div class="text-xl font-bold">
       <button class="hidden p-2"><i class="fa-solid fa-bars"></i></button>
     </div>
@@ -14,8 +14,8 @@
         <i class="fa-solid fa-bell-slash"></i>
       </button>
 
-      <div class="flex justify-between flex-col text-sm">
-        <div>{{ userName }}</div>
+      <div class="flex justify-between flex-col text-sm text-right">
+        <div>{{ useStore.user }}</div>
         <p class="text-xs">{{ horarioSistemaAtual }}</p>
       </div>
     </div>
@@ -23,9 +23,9 @@
 </template>
 
 <script setup lang="ts">
+import { useAuthStore } from '@/stores/login/useAuthStore'
 import { onMounted, onUnmounted, ref } from 'vue'
-
-const userName = ref('Gestão Fácil ERP')
+const useStore = useAuthStore();
 const horarioSistemaAtual = ref('')
 
 let intervalId: number | undefined
