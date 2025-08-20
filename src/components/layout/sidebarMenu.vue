@@ -16,7 +16,7 @@
                 <button @click="toggleDropdown(item.nome)"
                     class="dropdown-toggle w-full flex items-center hover:bg-gray-200 dark:hover:bg-gray-800 justify-between border-b dark:border-border-dark border-border px-4 py-2 text-left cursor-pointer dark:bg-background-dark rounded-lg transition-colors group">
                     <div class="flex items-center space-x-3">
-                        <i :class="[item.icone, `text-${item.color}-500`]"></i>
+                        <i :class="[item.icone, item.color ? colorClasses[item.color] : 'text-gray-500']"></i>
                         <span class="font-medium">{{ item.nome }}</span>
                     </div>
                     <svg class="dropdown-arrow w-4 h-4 transition-transform duration-200"
@@ -31,7 +31,9 @@
                     <a v-for="(child, i) in item.children" :key="i" href="javascript:void(0)"
                         @click="child.link && loadPage(child.link)"
                         class="block p-2 hover:bg-gray-200 pl-4 dark:hover:bg-gray-800 cursor-pointer dark:bg-background-dark rounded-md transition-colors">
-                        <i :class="[child.icone, 'mr-1']"></i> {{ child.nome }}
+                        <i
+                            :class="[child.icone, 'mr-1', child.color ? colorClasses[child.color] : 'text-gray-500']"></i>
+                        {{ child.nome }}
                     </a>
                 </div>
             </div>

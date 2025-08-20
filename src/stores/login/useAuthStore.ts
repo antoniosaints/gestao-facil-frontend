@@ -61,7 +61,12 @@ export const useAuthStore = defineStore('authStore', () => {
     refreshToken.value = ''
     user.value = ''
     localStorage.clear()
-    window.location.href = '/login'
+
+    clearTimeout(timer.value)
+
+    timer.value = setTimeout(() => {
+      window.location.href = '/'
+    }, 2000)
   }
 
   const refresh = async () => {

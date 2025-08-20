@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import MobileVendas from '@/pages/vendas/Home/MobileVendas.vue';
-import TabelaVendas from '@/pages/vendas/Home/TabelaVendas.vue';
+import TabelaVendas from './Home/TabelaVendas.vue';
 </script>
 
 <template>

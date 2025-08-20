@@ -142,7 +142,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Gráfico de Barras -->
                 <div
-                    class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+                    class="border-border bg-card shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
                     <div class="flex items-center justify-between mb-2">
                         <h2 class="text-lg font-semibold px-0 py-1">
                             <i class="fa-solid fa-chart-simple text-green-600"></i> Vendas Mensais

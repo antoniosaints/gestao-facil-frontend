@@ -13,10 +13,9 @@ const http = axios.create({
 })
 
 http.interceptors.request.use((config) => {
-  const auth = useAuthStore()
-  console.log(auth.token)
-  if (auth.token) {
-    config.headers.Authorization = `Bearer ${auth.token}`
+  const token = localStorage.getItem('gestao_facil:token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
@@ -30,12 +29,14 @@ http.interceptors.response.use(
   },
   async (error) => {
     const auth = useAuthStore()
+    const refreshToken = localStorage.getItem('gestao_facil:refreshToken')
     const msg = error.response?.data?.message || 'Erro inesperado na requisição'
     toast.error(msg)
-    if (error.response?.status === 401 && auth.refreshToken) {
+    if (error.response?.status === 401 && refreshToken) {
       try {
         await auth.refresh()
         error.config.headers.Authorization = `Bearer ${auth.token}`
+        toast.success('Token de sessão renovado!')
         return axios(error.config) // repete a request
       } catch (err) {
         auth.logout()

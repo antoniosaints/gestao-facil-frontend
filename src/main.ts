@@ -11,9 +11,11 @@ const app = createApp(App)
 
 app.use(Toast, {
   positon: 'top-right',
+  transition: 'Vue-Toastification__fade',
   timeout: 3000,
   closeOnClick: true,
   pauseOnHover: true,
+  newestOnTop: true,
 })
 
 app.use(createPinia())
