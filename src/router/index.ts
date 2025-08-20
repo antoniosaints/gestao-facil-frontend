@@ -12,10 +12,24 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/vendas',
     name: 'vendas',
-    component: () => import('@/pages/vendas/VendasHome.vue'),
-    meta: {
-      layout: 'main',
-    },
+    children: [
+      {
+        path: '',
+        name: 'vendas-home',
+        component: () => import('@/pages/vendas/VendasHome.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+      {
+        path: 'pdv',
+        name: 'vendas-pdv',
+        component: () => import('@/pages/vendas/formulario/PDV.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+    ],
   },
   {
     path: '/:pathMatch(.*)*',
