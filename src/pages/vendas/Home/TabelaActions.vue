@@ -36,7 +36,7 @@ function deletar(id: string) {
             </DropdownMenuItem>
             <DropdownMenuItem>
                 <i class="fa-regular fa-file-pdf mr-2"></i>
-                Relatório
+                Cupom PDF
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem class="text-red-500">

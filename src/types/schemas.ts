@@ -22,9 +22,14 @@ export type Vendas = {
   id: number
   Uid: string
   data: string
+  valor: number
   status: string
   observacoes: string
   vendedor?: {
+    id: number
+    nome: string
+  }
+  cliente?: {
     id: number
     nome: string
   }

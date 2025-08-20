@@ -6,10 +6,12 @@ import type { Vendas } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { ArrowUpDown } from 'lucide-vue-next'
 import TabelaActions from './TabelaActions.vue'
+import BadgeCell from '@/components/tabela/BadgeCell.vue'
+import { formatCurrencyBR } from '@/utils/formatters'
 
 const useProduto = useProdutoStore()
 
-export const columnsProdutos: ColumnDef<Vendas>[] = [
+export const columnsVendas: ColumnDef<Vendas>[] = [
   {
     accessorKey: 'Uid',
     header: ({ column }) =>
@@ -41,6 +43,14 @@ export const columnsProdutos: ColumnDef<Vendas>[] = [
         },
         () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
+    cell: ({ row }) => {
+      const valor = formatCurrencyBR(row.original.valor)
+      return render(BadgeCell, {
+        label: valor,
+        color: 'green',
+        icon: 'fa-solid fa-coins',
+      })
+    },
   },
   {
     accessorKey: 'status',
@@ -56,21 +66,41 @@ export const columnsProdutos: ColumnDef<Vendas>[] = [
   },
   {
     accessorKey: 'vendedor',
+    enableSorting: false,
+    enableColumnFilter: false,
     header: ({ column }) =>
       render(
         'div',
-        { class: 'text-right' },
+        { class: 'text-left' },
         render(
           Button,
           {
             variant: 'ghost',
-            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-            class: 'text-right',
+            class: 'text-left',
           },
-          () => ['Vendedor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+          'Vendedor',
         ),
       ),
-    cell: ({ row }) => render('div', { class: 'text-right' }, row.original.vendedor?.nome),
+    cell: ({ row }) => render('div', { class: 'text-left' }, row.original.vendedor?.nome),
+  },
+  {
+    accessorKey: 'cliente',
+    enableSorting: false,
+    enableColumnFilter: false,
+    header: ({ column }) =>
+      render(
+        'div',
+        { class: 'text-left' },
+        render(
+          Button,
+          {
+            variant: 'ghost',
+            class: 'text-left',
+          },
+          'Cliente',
+        ),
+      ),
+    cell: ({ row }) => render('div', { class: 'text-left' }, row.original.cliente?.nome || '-'),
   },
   {
     accessorKey: 'data',
@@ -94,11 +124,22 @@ export const columnsProdutos: ColumnDef<Vendas>[] = [
         month: '2-digit',
         day: '2-digit',
       })
-      return render('div', { class: 'text-right' }, formattedDate)
+      return render(
+        'div',
+        { class: 'text-right' },
+        render(BadgeCell, {
+          label: formattedDate,
+          color: 'gray',
+          icon: 'fa-solid fa-calendar',
+        }),
+      )
     },
   },
   {
     accessorKey: 'acoes',
+    enableSorting: false,
+    enableColumnFilter: false,
+    enableHiding: false,
     header: () => render('div', { class: 'text-right' }, 'Ações'),
     cell: ({ row }) =>
       render('div', { class: 'text-right' }, render(TabelaActions, { data: row.original })),
