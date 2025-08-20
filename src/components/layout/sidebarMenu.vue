@@ -28,13 +28,12 @@
 
                 <div v-show="openDropdown === item.nome"
                     class="dropdown-content flex flex-col p-1 gap-1 transition-all">
-                    <a v-for="(child, i) in item.children" :key="i" href="javascript:void(0)"
-                        @click="child.link && loadPage(child.link)"
+                    <router-link v-for="(child, i) in item.children" :key="i" :to="child.link || 'javascript:void(0)'"
                         class="block p-2 hover:bg-gray-200 pl-4 dark:hover:bg-gray-800 cursor-pointer dark:bg-background-dark rounded-md transition-colors">
                         <i
                             :class="[child.icone, 'mr-1', child.color ? colorClasses[child.color] : 'text-gray-500']"></i>
                         {{ child.nome }}
-                    </a>
+                    </router-link>
                 </div>
             </div>
 

@@ -32,6 +32,20 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/produtos',
+    name: 'produtos',
+    children: [
+      {
+        path: '',
+        name: 'produtos-home',
+        component: () => import('@/pages/produtos/Home.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+    ],
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'notfound',
     component: () => import('@/pages/errors/NotFound.vue' as string),
