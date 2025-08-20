@@ -7,19 +7,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   const id = ref(0)
   const data = ref<Produto>()
 
-  const dataDefault = ref<Produto>({
-    unidade: '',
-    descricao: '',
-    entradas: false,
-    estoque: 0,
-    minimo: 0,
-    nome: '',
-    preco: 0,
-    precoCompra: 0,
-    saidas: false,
-    status: '',
-    Uid: '',
-  })
+  const dataDefault = ref<Partial<Produto>>({})
 
   const get = async (id: number) => {
     const data = await http.get(`/produtos/${id}`)
@@ -37,6 +25,23 @@ export const useProdutoStore = defineStore('produtoStore', () => {
 
   const save = async (produto: Omit<Produto, 'id'>) => {
     await http.post(`/produtos`, produto)
+  }
+
+  const gerarRelatorio = async (id: number, orderBy: "asc" | "desc") => {
+    const data = await http.get(`/produtos/relatorio/reposicao/${id}?orderBy=${orderBy}`, {
+      responseType: 'blob',
+      headers: {
+        'Content-Type': 'application/pdf',
+      },
+    })
+
+    const url = window.URL.createObjectURL(data.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'relatorio-reposicao.pdf'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
   }
 
   const getAllSelect2 = async (q: string | undefined) => {
@@ -66,5 +71,6 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     update,
     getAllSelect2,
     getOneSelect2,
+    gerarRelatorio
   }
 })

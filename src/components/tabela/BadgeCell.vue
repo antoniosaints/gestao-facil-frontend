@@ -3,8 +3,8 @@ import { computed } from "vue"
 
 interface Props {
   label: string
-  color: "cyan" | "yellow" | "gray" | "violet" | "purple" | "green" | "emerald" | "orange"
-  icon: string
+  color: "cyan" | "yellow" | "gray" | "violet" | "purple" | "green" | "emerald" | "orange" | "red" | "blue"
+  icon?: string
   capitalize?: boolean
 }
 
@@ -33,12 +33,14 @@ const colors = {
   green: "text-green-800 border-green-400 dark:border-green-700 dark:text-green-300",
   emerald: "text-emerald-800 border-emerald-400 dark:border-emerald-700 dark:text-emerald-300",
   orange: "text-orange-800 border-orange-400 dark:border-orange-700 dark:text-orange-300",
+  blue: "text-blue-800 border-blue-400 dark:border-blue-700 dark:text-blue-300",
+  red: "text-red-800 border-red-400 dark:border-red-700 dark:text-red-300",
 }
 </script>
 
 <template>
   <span :class="[baseClasses, colors[props.color] || colors.cyan]">
-    <i :class="props.icon"></i>
+    <i v-if="props.icon" :class="props.icon"></i>
     <span>{{ formattedLabel }}</span>
   </span>
 </template>

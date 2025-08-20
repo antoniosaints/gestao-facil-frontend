@@ -2,6 +2,7 @@ export type Produto = {
   id?: number
   Uid: string
   nome: string
+  codigo: string
   descricao: string
   entradas: boolean
   saidas: boolean
