@@ -1,6 +1,6 @@
 <template>
   <header
-    class="hidden md:flex md:ml-64 items-center justify-between border-border dark:border-border-dark bg-card dark:bg-card-dark text-gray-900 dark:text-gray-100 px-6 py-4 shadow z-20"
+    class="hidden md:flex md:ml-64 items-center justify-between border-border dark:border-border-dark bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-6 py-4 shadow z-20"
   >
     <div class="text-xl font-bold">
       <button class="hidden p-2"><i class="fa-solid fa-bars"></i></button>

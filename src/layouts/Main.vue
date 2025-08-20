@@ -1,6 +1,6 @@
 <template>
     <div
-        class="bg-background dark:bg-background-dark text-text dark:text-text-dark min-h-screen overflow-hidden flex flex-col">
+        class="bg-background text-text dark:text-text-dark min-h-screen overflow-hidden flex flex-col">
         <HeaderMenu />
         <!-- Botão de abrir menu (mobile) -->
         <button type="button" id="openSidebarButton"
@@ -9,7 +9,7 @@
         </button>
         <!-- Sidebar -->
         <aside id="sidebar-content-sistema"
-            class="fixed shadow-md overflow-auto top-0 left-0 h-full w-full md:w-64 border border-border dark:border-border-dark bg-card dark:bg-card-dark p-4 space-y-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40">
+            class="fixed shadow-md overflow-auto top-0 left-0 h-full w-full md:w-64 border border-border dark:border-border-dark bg-white dark:bg-gray-900 p-4 space-y-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40">
             <TopMenu />
             <SidebarMenu :menu="menuItens" />
             <ColorToggle />
