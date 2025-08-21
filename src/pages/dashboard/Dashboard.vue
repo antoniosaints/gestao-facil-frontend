@@ -17,7 +17,7 @@
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
                 <!-- Metric Item Start -->
-                <div @click="loginSistema"
+                <div
                     class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-violet-50 dark:bg-violet-950/50 px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-user-tag h-8 w-8 bg-violet-500/10 p-2 rounded-md text-violet-500"></i>
@@ -32,27 +32,14 @@
 
                     <div class="flex items-end justify-between">
                         <div>
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
-                                id="total_clientes_dashboard">
-                                0
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+                                {{ data.totalClientes }}
                             </h4>
                         </div>
-
-                        <span
-                            class="flex items-center gap-1 rounded-full bg-green-50 py-0.5 pl-2 pr-2.5 text-sm font-medium text-green-600 dark:bg-green-500/15 dark:text-green-500">
-                            <svg class="fill-current" width="13" height="12" viewBox="0 0 13 12" fill="none"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" clip-rule="evenodd"
-                                    d="M6.06462 1.62393C6.20193 1.47072 6.40135 1.37432 6.62329 1.37432C6.6236 1.37432 6.62391 1.37432 6.62422 1.37432C6.81631 1.37415 7.00845 1.44731 7.15505 1.5938L10.1551 4.5918C10.4481 4.88459 10.4483 5.35946 10.1555 5.65246C9.86273 5.94546 9.38785 5.94562 9.09486 5.65283L7.37329 3.93247L7.37329 10.125C7.37329 10.5392 7.03751 10.875 6.62329 10.875C6.20908 10.875 5.87329 10.5392 5.87329 10.125L5.87329 3.93578L4.15516 5.65281C3.86218 5.94561 3.3873 5.94546 3.0945 5.65248C2.8017 5.35949 2.80185 4.88462 3.09484 4.59182L6.06462 1.62393Z"
-                                    fill=""></path>
-                            </svg>
-
-                            0%
-                        </span>
                     </div>
                 </div>
 
-                <div onclick="loadPage('/produtos/resumo')"
+                <div
                     class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-blue-50 dark:bg-blue-950/50 px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-boxes-packing w-8 h-8 bg-blue-500/10 p-2 rounded-md text-blue-500"></i>
@@ -67,9 +54,8 @@
 
                     <div class="flex items-end justify-between">
                         <div>
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
-                                id="total_produtos_dashboard">
-                                0
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+                                {{ data.totalProdutos }}
                             </h4>
                         </div>
 
@@ -96,7 +82,7 @@
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
                                 id="produtos_em_baixa_dashboard">
-                                0
+                                {{ data.produtosEmBaixa }}
                             </h4>
                         </div>
 
@@ -123,9 +109,8 @@
 
                     <div class="flex items-end justify-between">
                         <div>
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
-                                id="total_vendas_dashboard">
-                                R$ 0,00
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+                                {{ data.totalVendas }}
                             </h4>
                         </div>
 
@@ -222,11 +207,29 @@
 </template>
 
 <script setup lang="ts">
+import { useDashboardStore } from '@/stores/dashboard/useDashboardStore';
 import { useAuthStore } from '@/stores/login/useAuthStore';
+import { onMounted, ref } from 'vue';
 
 const login = useAuthStore();
+const store = useDashboardStore();
 
-const loginSistema = async () => {
-    await login.login("costaantonio883@gmail.com", "V@sco123");
+const data = ref({
+    totalClientes: 0,
+    totalProdutos: 0,
+    produtosEmBaixa: 0,
+    totalVendas: 'R$ 0,00',
+})
+
+const getDataDashboard = async () => {
+    const resultado = await store.getResumo();
+    data.value.totalClientes = resultado.data.clientes;
+    data.value.totalProdutos = resultado.data.produtos.length;
+    data.value.produtosEmBaixa = resultado.data.estoquesBaixos.length;
+    data.value.totalVendas = resultado.data.vendasCount;
 }
+
+onMounted(() => {
+    getDataDashboard();
+})
 </script>
