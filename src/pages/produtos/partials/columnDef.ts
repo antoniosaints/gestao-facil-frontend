@@ -52,12 +52,17 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
           () => ['Código', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
         ),
       ),
-    cell: ({ row }) => render(BadgeCell, { label: `${row.original.codigo || '-'}`, color: 'blue', icon: 'fa-solid fa-barcode' }),
+    cell: ({ row }) =>
+      render(BadgeCell, {
+        label: `${row.original.codigo || '-'}`,
+        color: 'blue',
+        icon: 'fa-solid fa-qrcode',
+      }),
   },
   {
     accessorKey: 'estoque',
-    header: ({ column }) =>
-      render(
+    header: ({ column }) => {
+      return render(
         'div',
         { class: 'text-left' },
         render(
@@ -68,8 +73,13 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
           },
           () => ['Estoque', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
         ),
-      ),
-    cell: ({ row }) => render(BadgeCell, { label: `${row.getValue('estoque')} ${row.original.unidade}`, color: 'gray', icon: 'fa-solid fa-box' }),
+      )
+    },
+    cell: ({ row }) =>
+      render(BadgeCell, {
+        label: `${row.getValue('estoque')} ${row.original.unidade}`,
+        color: 'gray'
+      }),
   },
   {
     accessorKey: 'preco',
