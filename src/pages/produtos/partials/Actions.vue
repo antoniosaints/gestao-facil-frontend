@@ -82,24 +82,22 @@ function deletar(id: number) {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuItem as-child>
-                <Button variant="ghost" class="w-full px-3" @click=" copiar(data.Uid)">
-                    <i class="fa-regular fa-copy mr-1"></i>
-                    Copiar ID
-                </Button>
+            <DropdownMenuItem @click=" copiar(data.Uid)">
+                <i class="fa-regular fa-pen-to-square mr-1"></i>
+                Editar
             </DropdownMenuItem>
-            <DropdownMenuItem as-child>
-                <Button variant="ghost" class="w-full px-3" @click="gerarRelatorio(data.id!, 'asc')">
-                    <i class="fa-regular fa-file-pdf mr-1"></i>
-                    Cupom PDF
-                </Button>
+            <DropdownMenuItem @click=" copiar(data.Uid)">
+                <i class="fa-regular fa-copy mr-1"></i>
+                Copiar ID
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="gerarRelatorio(data.id!, 'asc')">
+                <i class="fa-regular fa-file-pdf mr-1"></i>
+                Relatório
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem as-child>
-                <Button variant="ghost" class="w-full px-3 text-danger" @click="openDeleteModal(data.id!)">
-                    <i class="fa-regular fa-trash-can mr-1"></i>
-                    Excluir
-                </Button>
+            <DropdownMenuItem class="text-danger" @click="openDeleteModal(data.id!)">
+                <i class="fa-regular fa-trash-can mr-1"></i>
+                Excluir
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>

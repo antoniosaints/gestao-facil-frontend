@@ -66,24 +66,30 @@ async function deletar(id: number) {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuItem as-child>
-                <Button variant="ghost" class="w-full px-3" @click=" copiar(data.Uid)">
-                    <i class="fa-regular fa-copy mr-1"></i>
-                    Copiar ID
-                </Button>
+            <DropdownMenuItem @click=" copiar(data.Uid)" class="cursor-pointer">
+                <i class="fa-regular fa-copy mr-1"></i>
+                Copiar ID
             </DropdownMenuItem>
-            <DropdownMenuItem as-child>
-                <Button variant="ghost" class="w-full px-3">
-                    <i class="fa-regular fa-file-pdf mr-1"></i>
-                    Cupom PDF
-                </Button>
+            <DropdownMenuItem v-if="data.status !== 'FATURADO'" class="cursor-pointer">
+                <i class="fa-regular fa-pen-to-square mr-1"></i>
+                Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem class="cursor-pointer">
+                <i class="fa-regular fa-file-pdf mr-1"></i>
+                Cupom PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem class="text-success cursor-pointer" v-if="data.status !== 'FATURADO'">
+                <i class="fa-regular fa-square-plus mr-1"></i>
+                Faturar
+            </DropdownMenuItem>
+            <DropdownMenuItem class="text-warning cursor-pointer" v-if="data.status === 'FATURADO'">
+                <i class="fa-regular fa-square-minus mr-1"></i>
+                Estornar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem as-child>
-                <Button variant="ghost" class="w-full px-3 text-danger" @click="openModalDelete(data.id!)">
-                    <i class="fa-regular fa-trash-can mr-1"></i>
-                    Excluir
-                </Button>
+            <DropdownMenuItem class="text-danger cursor-pointer" @click="openModalDelete(data.id!)">
+                <i class="fa-regular fa-trash-can mr-1"></i>
+                Excluir
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
