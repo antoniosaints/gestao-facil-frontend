@@ -59,11 +59,12 @@
                 <TableBody>
                     <template v-if="data.length">
                         <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
-                            <TableCell v-for="(cell, i) in row.getVisibleCells()" :key="cell.id" :class="[
-                                i === row.getVisibleCells().length - 1
-                                    ? 'sticky right-0 bg-gray-50 dark:bg-gray-900 z-10'
-                                    : ''
-                            ]">
+                            <TableCell class="text-nowrap px-2 py-1" v-for="(cell, i) in row.getVisibleCells()"
+                                :key="cell.id" :class="[
+                                    i === row.getVisibleCells().length - 1
+                                        ? 'sticky right-0 bg-gray-50 dark:bg-gray-900 z-10'
+                                        : ''
+                                ]">
                                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
                             </TableCell>
                         </TableRow>
