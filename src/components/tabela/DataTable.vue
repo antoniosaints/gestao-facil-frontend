@@ -81,8 +81,8 @@
 
 
         <!-- Paginação -->
-        <div class="flex items-center justify-end space-x-2 py-4">
-            <div class="flex-1 text-sm text-muted-foreground">
+        <div class="flex items-center justify-end space-x-2 py-2">
+            <div class="flex-1 text-sm text-muted-foreground ml-1">
                 Página {{ pageIndex + 1 }} de {{ totalPages }}
             </div>
             <div class="space-x-2">
