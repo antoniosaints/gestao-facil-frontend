@@ -20,8 +20,9 @@ const { data, table } = defineProps<{
 
 const toast = useToast()
 
-function copiar(id: string) {
-    navigator.clipboard.writeText(id)
+function copiar(data: Produto) {
+    const produtoString = `ID: ${data.Uid}\nProduto: ${data.nome}\nCodigo: ${data.codigo}\nPreco: ${data.preco}\nEstoque: ${data.estoque}`;
+    navigator.clipboard.writeText(produtoString);
     toast.success('Copiado para a área de transferência')
 }
 
@@ -53,6 +54,11 @@ function deletar(id: number) {
         openDelete.value = false
     }
 }
+
+function editar(id: number) {
+    const produto = store.data as Produto
+    store.save(produto)
+}
 </script>
 
 <template>
@@ -82,13 +88,13 @@ function deletar(id: number) {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuItem @click=" copiar(data.Uid)">
+            <DropdownMenuItem @click=" editar(data.id!)">
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
             </DropdownMenuItem>
-            <DropdownMenuItem @click=" copiar(data.Uid)">
+            <DropdownMenuItem @click=" copiar(data)">
                 <i class="fa-regular fa-copy mr-1"></i>
-                Copiar ID
+                Copiar
             </DropdownMenuItem>
             <DropdownMenuItem @click="gerarRelatorio(data.id!, 'asc')">
                 <i class="fa-regular fa-file-pdf mr-1"></i>

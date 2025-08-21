@@ -24,6 +24,16 @@ function copiar(id: string) {
     toast.success('Copiado para a área de transferência')
 }
 
+async function gerarCupom(id: number) {
+    try {
+        store.getCupomPDF(id)
+        toast.success('Cupom gerado com sucesso')
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao gerar o cupom')
+    }
+}
+
 function openModalDelete(number: number) {
     id.value = number
     openDelete.value = true
@@ -74,7 +84,7 @@ async function deletar(id: number) {
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
             </DropdownMenuItem>
-            <DropdownMenuItem class="cursor-pointer">
+            <DropdownMenuItem @click="gerarCupom(data.id!)" class="cursor-pointer">
                 <i class="fa-regular fa-file-pdf mr-1"></i>
                 Cupom PDF
             </DropdownMenuItem>
@@ -86,8 +96,8 @@ async function deletar(id: number) {
                 <i class="fa-regular fa-square-minus mr-1"></i>
                 Estornar
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem class="text-danger cursor-pointer" @click="openModalDelete(data.id!)">
+            <DropdownMenuSeparator v-if="data.status !== 'FATURADO'" />
+            <DropdownMenuItem v-if="data.status !== 'FATURADO'" class="text-danger cursor-pointer" @click="openModalDelete(data.id!)">
                 <i class="fa-regular fa-trash-can mr-1"></i>
                 Excluir
             </DropdownMenuItem>

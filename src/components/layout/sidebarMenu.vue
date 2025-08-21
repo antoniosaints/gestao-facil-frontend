@@ -73,8 +73,4 @@ const openDropdown = ref<string | null>(null)
 const toggleDropdown = (id: string) => {
     openDropdown.value = openDropdown.value === id ? null : id
 }
-
-function loadPage(url: string) {
-    window.location.href = url
-}
 </script>

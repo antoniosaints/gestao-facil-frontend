@@ -89,7 +89,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     const url = window.URL.createObjectURL(data.data)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'etiquetas.pdf'
+    a.download = `etiquetas_produto_${id}.pdf`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -121,7 +121,10 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     const url = window.URL.createObjectURL(data.data)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'relatorio-reposicao.pdf'
+    const dataHoje = new Date()
+      .toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      .replace(/\//g, '-')
+    a.download = `relatorio-reposicao-${dataHoje}.pdf`
     document.body.appendChild(a)
     a.click()
     a.remove()

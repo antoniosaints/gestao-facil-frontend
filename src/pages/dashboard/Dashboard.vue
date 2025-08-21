@@ -138,7 +138,9 @@
                             Ver mais
                         </button>
                     </div>
-                    <canvas class="max-h-64" id="chartVendasMensais"></canvas>
+                    <div>
+                        <BarChart :data="dataVendas" :options="options" />
+                    </div>
                 </div>
 
                 <!-- Gráfico de Linhas -->
@@ -154,7 +156,9 @@
                             Ver mais
                         </button>
                     </div>
-                    <canvas class="max-h-64" id="grafico_saldo_mensal"></canvas>
+                    <div>
+                        <LineChart :data="dataSaldo" :options="optionsSaldo" />
+                    </div>
                 </div>
 
                 <!-- Últimas Vendas -->
@@ -207,12 +211,130 @@
 </template>
 
 <script setup lang="ts">
+import BarChart from '@/components/graficos/BarChart.vue';
+import LineChart from '@/components/graficos/LineChart.vue';
 import { useDashboardStore } from '@/stores/dashboard/useDashboardStore';
-import { useAuthStore } from '@/stores/login/useAuthStore';
+import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
+import { useVendaStore } from '@/stores/vendas/useVenda';
+import { useColorMode } from '@vueuse/core';
 import { onMounted, ref } from 'vue';
 
-const login = useAuthStore();
 const store = useDashboardStore();
+const storeVenda = useVendaStore();
+const storeLancamento = useLancamentosStore();
+
+const options = ref({
+    responsive: true,
+    interaction: {
+        mode: 'index',
+        intersect: false,
+    },
+    plugins: {
+        legend: {
+            display: false,
+        },
+    },
+    scales: {
+        x: {
+            ticks: {
+                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+            },
+        },
+        y1: {
+            ticks: {
+                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+            },
+            type: 'linear',
+            position: 'left',
+            title: {
+                display: true,
+                text: 'Valor Total (R$)',
+                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+            },
+            stacked: false,
+        },
+        y2: {
+            ticks: {
+                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+            },
+            type: 'linear',
+            position: 'right',
+            title: {
+                display: true,
+                text: 'Quantidade de Vendas',
+                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+            },
+            grid: {
+                drawOnChartArea: false,
+            },
+            stacked: false,
+        },
+    },
+    elements: {
+        bar: {
+            borderRadius: 6
+        }
+    }
+});
+
+const optionsSaldo = ref({
+    interaction: {
+        mode: 'index',
+        intersect: false,
+    },
+    plugins: {
+        title: {
+            display: false
+        },
+        legend: {
+            display: false
+        }
+    },
+    scales: {
+        y: {
+            ticks: {
+                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+            }
+        },
+        x: {
+            ticks: {
+                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+            }
+        },
+    }
+});
+
+const dataVendas: any = ref({
+    labels: [],
+    datasets: []
+});
+const dataSaldo: any = ref({
+    labels: [],
+    datasets: []
+});
+
+async function getResumoVendas() {
+    try {
+        const data = await storeVenda.getResumoMensal();
+        dataVendas.value = {
+            labels: [...data.data.labels],
+            datasets: [...data.data.datasets]
+        };
+    } catch (error) {
+        console.log(error);
+    }
+}
+async function getSaldoMensal() {
+    try {
+        const data = await storeLancamento.getSaldoMensal();
+        dataSaldo.value = {
+            labels: [...data.labels],
+            datasets: [...data.datasets]
+        };
+    } catch (error) {
+        console.log(error);
+    }
+}
 
 const data = ref({
     totalClientes: 0,
@@ -231,5 +353,7 @@ const getDataDashboard = async () => {
 
 onMounted(() => {
     getDataDashboard();
+    getResumoVendas();
+    getSaldoMensal();
 })
 </script>
