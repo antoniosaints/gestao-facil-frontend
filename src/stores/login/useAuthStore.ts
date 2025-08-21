@@ -1,6 +1,7 @@
 import { onMounted, ref } from 'vue'
 import { defineStore } from 'pinia'
 import http from '@/utils/axios'
+import axios from 'axios'
 
 type loginResponse = {
   data: {
@@ -71,7 +72,20 @@ export const useAuthStore = defineStore('authStore', () => {
 
   const refresh = async () => {
     try {
-      const { data } = (await http.post('/refresh')) as defaultResponse & { data: loginResponse }
+      const rfToken = localStorage.getItem('gestao_facil:refreshToken')
+      if (!rfToken) {
+        return false
+      }
+      const api = axios.create({
+        baseURL: import.meta.env.VITE_API_URL,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          Authorization: `Bearer ${rfToken}`,
+        },
+      })
+      const { data } = (await api.get('/auth/renew')) as defaultResponse & { data: loginResponse }
+      console.log(data)
       token.value = data.data.token
       refreshToken.value = data.data.refreshToken
       user.value = data.data.nome

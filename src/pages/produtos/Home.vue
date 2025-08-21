@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import ModalVendas from './formulario/ModalVendas.vue';
-import Tabela from './partials/tabela.vue';
-import Mobile from './partials/Mobile.vue';
+import Tabela from '@/pages/produtos/partials/Tabela.vue';
+import Mobile from '@/pages/produtos/partials/Mobile.vue';
 
 const modalOpen = ref(false)
 </script>
@@ -10,8 +9,8 @@ const modalOpen = ref(false)
 <template>
     <div>
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
-            <h2 class="text-2xl font-bold text-black dark:text-white"><i class="fa-solid fa-tags text-green-600"></i>
-                Vendas
+            <h2 class="text-2xl font-bold text-black dark:text-white"><i class="fa-solid fa-box text-blue-600"></i>
+                Produtos
             </h2>
             <div class="justify-between gap-2 items-center hidden md:flex">
                 <button onclick="openModalFiltroVendas()"

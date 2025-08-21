@@ -26,7 +26,7 @@
 
         <!-- Carrinho Lateral -->
         <div
-            class="overflow-auto border-border dark:border-border-dark bg-background dark:bg-background-dark shadow-md rounded-lg p-4 border flex flex-col">
+            class="overflow-auto max-w-md border-border dark:border-border-dark bg-background dark:bg-background-dark shadow-md rounded-lg p-4 border flex flex-col">
             <!-- Header do Carrinho -->
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between mb-4">
@@ -48,10 +48,7 @@
                         <a onclick="openModalClientes()" class="text-blue-500 px-2 cursor-pointer">Novo
                             cliente</a>
                     </label>
-                    <select id="clientPdvVenda"
-                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-
-                    </select>
+                    <Select2_example />
                 </div>
             </div>
 
@@ -101,12 +98,25 @@
                 <!-- Forma de Pagamento -->
                 <div class="mb-4 flex flex-col gap-2">
                     <label class="block text-sm font-medium text-gray-700 dark:text-white mb-2">Pagamento</label>
-                    <select id="paymentMethod"
-                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-                        <option value="money">Dinheiro</option>
-                        <option value="card">Cartão</option>
-                        <option value="pix">PIX</option>
-                    </select>
+                    <Select>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Pagamento" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="DINHEIRO">
+                                Dinheiro
+                            </SelectItem>
+                            <SelectItem value="CARTAO">
+                                Cartão
+                            </SelectItem>
+                            <SelectItem value="PIX">
+                                PIX
+                            </SelectItem>
+                            <SelectItem value="BOLETO">
+                                Boleto
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
 
                     <!-- Campo de Troco (apenas para dinheiro) -->
                     <div id="changeSection" class="space-y-2">
@@ -158,3 +168,9 @@
 
 
 </template>
+
+<script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Select2_example from '../Home/select2_example.vue';
+
+</script>

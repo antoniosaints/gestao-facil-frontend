@@ -1,13 +1,43 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import http from '@/utils/axios'
 import type { Produto } from '@/types/schemas'
 
 export const useProdutoStore = defineStore('produtoStore', () => {
-  const id = ref(0)
+  const id = ref<number | null>(null)
   const data = ref<Produto>()
 
-  const dataDefault = ref<Partial<Produto>>({})
+  const base = ref<Partial<Produto>>({
+    codigo: '',
+    descricao: '',
+    entradas: true,
+    estoque: 0,
+    minimo: 0,
+    nome: '',
+    preco: 0,
+    precoCompra: 0,
+    saidas: true,
+    unidade: 'UND',
+    status: 'ATIVO',
+  })
+
+  const reset = () => {
+    id.value = null
+    base.value = {
+      codigo: '',
+      descricao: '',
+      entradas: true,
+      estoque: 0,
+      minimo: 0,
+      nome: '',
+      preco: 0,
+      precoCompra: 0,
+      saidas: true,
+      unidade: 'UND',
+      status: 'ATIVO',
+    }
+    data.value = undefined
+  }
 
   const get = async (id: number) => {
     const data = await http.get(`/produtos/${id}`)
@@ -27,7 +57,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     await http.post(`/produtos`, produto)
   }
 
-  const gerarRelatorio = async (id: number, orderBy: "asc" | "desc") => {
+  const gerarRelatorio = async (id: number, orderBy: 'asc' | 'desc') => {
     const data = await http.get(`/produtos/relatorio/reposicao/${id}?orderBy=${orderBy}`, {
       responseType: 'blob',
       headers: {
@@ -71,6 +101,6 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     update,
     getAllSelect2,
     getOneSelect2,
-    gerarRelatorio
+    gerarRelatorio,
   }
 })

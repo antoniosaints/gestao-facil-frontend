@@ -23,14 +23,14 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
         },
         () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
-    cell: ({ row }) =>
-      render(BadgeInfo, {
-        conteudo: row.getValue('Uid') as string,
-        onClick: async () => {
-          const data = await useProduto.get(row.original.id as number)
-          console.log(data)
-        },
-      }),
+    cell: ({ row }) => {
+      return render(BadgeCell, {
+        label: row.getValue('Uid') as string,
+        color: 'gray',
+        icon: 'fa-solid fa-tag',
+        capitalize: false,
+      })
+    },
   },
   {
     accessorKey: 'valor',
@@ -65,7 +65,7 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
       ),
   },
   {
-    accessorKey: 'vendedor',
+    accessorKey: 'vendedorId',
     enableSorting: false,
     enableColumnFilter: false,
     header: ({ column }) =>
@@ -78,10 +78,10 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
             variant: 'ghost',
             class: 'text-left',
           },
-          'Vendedor',
+          () => 'Vendedor',
         ),
       ),
-    cell: ({ row }) => render('div', { class: 'text-left' }, row.original.vendedor?.nome),
+    cell: ({ row }) => render('div', { class: 'text-left' }, row.original.vendedor?.nome || '-'),
   },
   {
     accessorKey: 'cliente',
@@ -97,7 +97,7 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
             variant: 'ghost',
             class: 'text-left',
           },
-          'Cliente',
+          () => 'Cliente',
         ),
       ),
     cell: ({ row }) => render('div', { class: 'text-left' }, row.original.cliente?.nome || '-'),
@@ -141,7 +141,7 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
     enableColumnFilter: false,
     enableHiding: false,
     header: () => render('div', { class: 'text-right' }, 'Ações'),
-    cell: ({ row }) =>
-      render('div', { class: 'text-right' }, render(TabelaActions, { data: row.original })),
+    cell: ({ row, table }) =>
+      render('div', { class: 'text-right' }, render(TabelaActions, { data: row.original, table })),
   },
 ]

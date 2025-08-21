@@ -3,6 +3,7 @@ import MobileVendas from '@/pages/vendas/Home/MobileVendas.vue';
 import TabelaVendas from './Home/TabelaVendas.vue';
 import { ref } from 'vue';
 import ModalVendas from './formulario/ModalVendas.vue';
+import Select2_example from './Home/select2_example.vue';
 
 const modalOpen = ref(false)
 </script>
@@ -34,7 +35,6 @@ const modalOpen = ref(false)
         <div class="overflow-x-auto block md:hidden rounded-lg">
             <MobileVendas />
         </div>
-
         <ModalVendas v-model:model-value="modalOpen" />
     </div>
 </template>

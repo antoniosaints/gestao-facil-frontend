@@ -20,11 +20,14 @@ interface Item {
     label: string
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     modelValue: string | number | null
     fetchItems: (search?: string) => Promise<Item[]>
     fetchById?: (id: string | number) => Promise<Item | null>
-}>()
+    allowClear?: boolean
+}>(), {
+    allowClear: false
+})
 
 const emit = defineEmits<{
     (e: "update:modelValue", value: string | number | null): void
@@ -87,11 +90,14 @@ onMounted(async () => {
     <Combobox v-model="selected" v-model:open="isOpen" by="id">
         <ComboboxAnchor as-child>
             <ComboboxTrigger as-child>
-                <Button variant="outline" class="justify-between w-auto overflow-hidden">
+                <Button variant="outline" class="justify-between w-full overflow-hidden">
                     <span class="truncate whitespace-nowrap">
                         {{ selected?.label ?? 'Selecione...' }}
                     </span>
                     <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    <Button v-if="allowClear && selected" variant="ghost" size="sm"
+                        class="h-8 w-8 text-danger mr-[-10px]" @click="selected = null"> <i
+                            class="fa-solid fa-square-xmark"></i> </Button>
                 </Button>
             </ComboboxTrigger>
         </ComboboxAnchor>
@@ -107,7 +113,7 @@ onMounted(async () => {
 
             <ComboboxEmpty>Nenhum item encontrado.</ComboboxEmpty>
 
-            <ComboboxGroup>
+            <ComboboxGroup class="max-h-80 overflow-y-auto">
                 <ComboboxItem v-for="item in items" :key="item.id" :value="item">
                     {{ item.label }}
                     <ComboboxItemIndicator>

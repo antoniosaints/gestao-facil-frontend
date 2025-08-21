@@ -20,10 +20,15 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
         },
         () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
-    cell: ({ row }) =>
-      render(BadgeInfo, {
-        conteudo: row.getValue('Uid') as string,
-      }),
+    cell: ({ row }) => {
+      const isLowStock = row.original.estoque <= row.original.minimo
+      return render(BadgeCell, {
+        label: row.getValue('Uid') as string,
+        color: isLowStock ? 'orange' : 'gray',
+        icon: 'fa-solid fa-box',
+        capitalize: false,
+      })
+    },
   },
   {
     accessorKey: 'nome',
@@ -78,7 +83,7 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
     cell: ({ row }) =>
       render(BadgeCell, {
         label: `${row.getValue('estoque')} ${row.original.unidade}`,
-        color: 'gray'
+        color: 'gray',
       }),
   },
   {
@@ -107,7 +112,7 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
     enableColumnFilter: false,
     enableHiding: false,
     header: () => render('div', { class: 'text-right' }, 'Ações'),
-    cell: ({ row }) =>
-      render('div', { class: 'text-right' }, render(Actions, { data: row.original })),
+    cell: ({ row, table }) =>
+      render('div', { class: 'text-right' }, render(Actions, { data: row.original, table })),
   },
 ]

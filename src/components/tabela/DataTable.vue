@@ -41,24 +41,34 @@
         </div>
 
         <!-- Tabela -->
-        <div class="rounded-md border">
-            <Table>
+        <div class="rounded-md border overflow-x-auto">
+            <Table class="min-w-full">
                 <TableHeader class="bg-gray-100 dark:bg-gray-800">
                     <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-                        <TableHead v-for="header in headerGroup.headers" :key="header.id">
+                        <TableHead v-for="(header, i) in headerGroup.headers" :key="header.id" :class="[
+                            i === headerGroup.headers.length - 1
+                                ? 'sticky right-0 bg-gray-100 dark:bg-gray-800 z-10'
+                                : ''
+                        ]">
                             <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                                 :props="header.getContext()" />
                         </TableHead>
                     </TableRow>
                 </TableHeader>
+
                 <TableBody>
                     <template v-if="data.length">
                         <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
-                            <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
+                            <TableCell v-for="(cell, i) in row.getVisibleCells()" :key="cell.id" :class="[
+                                i === row.getVisibleCells().length - 1
+                                    ? 'sticky right-0 bg-gray-50 dark:bg-gray-900 z-10'
+                                    : ''
+                            ]">
                                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
                             </TableCell>
                         </TableRow>
                     </template>
+
                     <TableRow v-else>
                         <TableCell :colspan="columns.length" class="h-24 text-center">
                             Nenhum resultado encontrado.
@@ -67,6 +77,7 @@
                 </TableBody>
             </Table>
         </div>
+
 
         <!-- Paginação -->
         <div class="flex items-center justify-end space-x-2 py-4">
@@ -89,8 +100,7 @@
 
 <script setup lang="ts">
 import { useServerTable } from '@/composables/useServerTable';
-import { valueUpdater } from '@/lib/utils';
-import { FlexRender, getCoreRowModel, useVueTable, type ColumnDef } from '@tanstack/vue-table';
+import { FlexRender, type ColumnDef } from '@tanstack/vue-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
@@ -105,38 +115,7 @@ const {
     pageIndex,
     pageSize,
     totalPages,
-    sorting,
-    columnVisibility,
-    rowSelection,
-    search
+    search,
+    table
 } = useServerTable(api, columns);
-// ---- Tabela ----
-const table = useVueTable({
-    data: data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-    pageCount: totalPages.value,
-    onSortingChange: (updaterOrValue) =>
-        valueUpdater(updaterOrValue, sorting),
-    onColumnVisibilityChange: (updaterOrValue) =>
-        valueUpdater(updaterOrValue, columnVisibility),
-    onRowSelectionChange: (updaterOrValue) =>
-        valueUpdater(updaterOrValue, rowSelection),
-    state: {
-        get sorting() {
-            return sorting.value
-        },
-        get columnVisibility() {
-            return columnVisibility.value
-        },
-        get rowSelection() {
-            return rowSelection.value
-        },
-        get pagination() {
-            return { pageIndex: pageIndex.value, pageSize: pageSize.value }
-        },
-    },
-})
 </script>

@@ -43,6 +43,7 @@ export function useServerTable<T>(url: string, columns: ColumnDef<T>[]) {
     onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
     onColumnVisibilityChange: (updaterOrValue) => valueUpdater(updaterOrValue, columnVisibility),
     onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
+    onPaginationChange: (updaterOrValue) => valueUpdater(updaterOrValue, pageIndex),
     state: {
       get sorting() {
         return sorting.value

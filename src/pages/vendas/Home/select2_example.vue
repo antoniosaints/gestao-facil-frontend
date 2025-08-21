@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Select2 from '@/components/formulario/Select2.vue';
 import { useProdutoStore } from '@/stores/produtos/useProduto';
 import { ref } from 'vue';
 const produtoStore = useProdutoStore()
