@@ -3,7 +3,6 @@ import type { ColumnDef, SortingState, VisibilityState } from '@tanstack/vue-tab
 import { getCoreRowModel, useVueTable } from '@tanstack/vue-table'
 import { valueUpdater } from '@/lib/utils'
 import http from '@/utils/axios'
-
 export function useServerTable<T>(url: string, columns: ColumnDef<T>[]) {
   const data = ref<T[] | any>([])
   const pageIndex = ref(0)
@@ -16,7 +15,8 @@ export function useServerTable<T>(url: string, columns: ColumnDef<T>[]) {
 
   async function fetchData() {
     const sort = sorting.value[0]
-    const pageIdx = search.value ? 0 : pageIndex.value + 1
+    const pageIdx = pageIndex.value + 1
+
     const res = await http.get(url, {
       params: {
         page: pageIdx,
@@ -26,15 +26,23 @@ export function useServerTable<T>(url: string, columns: ColumnDef<T>[]) {
         order: sort?.desc ? 'desc' : 'asc',
       },
     })
+
     data.value = res.data.data
     totalPages.value = res.data.totalPages
+
+    // se a página atual for maior que o total de páginas, volta para a última
+    if (pageIndex.value >= totalPages.value) {
+      pageIndex.value = Math.max(totalPages.value - 1, 0)
+      return fetchData() // 🔄 recarrega na última página válida
+    }
+
     pageIndex.value = res.data.page - 1
   }
 
   watchEffect(fetchData)
 
   const table = useVueTable({
-    data: data, // ✅ precisa ser função reativa
+    data, // ✅ precisa ser função reativa
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
