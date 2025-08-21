@@ -4,5 +4,5 @@ import { columnsVendas } from './columnDef';
 </script>
 
 <template>
-  <DataTable :columns="columnsVendas" api="/vendas" />
+  <DataTable :columns="columnsVendas" :filters="{ status: 'FATURADO' }" api="/vendas" />
 </template>

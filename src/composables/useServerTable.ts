@@ -1,9 +1,15 @@
+// composables/useServerTable.ts
 import { ref, watchEffect } from 'vue'
 import type { ColumnDef, SortingState, VisibilityState } from '@tanstack/vue-table'
 import { getCoreRowModel, useVueTable } from '@tanstack/vue-table'
 import { valueUpdater } from '@/lib/utils'
 import http from '@/utils/axios'
-export function useServerTable<T>(url: string, columns: ColumnDef<T>[]) {
+
+export function useServerTable<T>(
+  url: string,
+  columns: ColumnDef<T>[],
+  externalFilters: Record<string, any> = {}, // 🔑 filtros vindos do componente pai
+) {
   const data = ref<T[] | any>([])
   const pageIndex = ref(0)
   const pageSize = ref(10)
@@ -24,16 +30,16 @@ export function useServerTable<T>(url: string, columns: ColumnDef<T>[]) {
         search: search.value,
         sortBy: sort?.id || 'id',
         order: sort?.desc ? 'desc' : 'asc',
+        ...externalFilters, // ✅ injeta filtros extras
       },
     })
 
     data.value = res.data.data
     totalPages.value = res.data.totalPages
 
-    // se a página atual for maior que o total de páginas, volta para a última
     if (pageIndex.value >= totalPages.value) {
       pageIndex.value = Math.max(totalPages.value - 1, 0)
-      return fetchData() // 🔄 recarrega na última página válida
+      return fetchData()
     }
 
     pageIndex.value = res.data.page - 1
@@ -42,7 +48,7 @@ export function useServerTable<T>(url: string, columns: ColumnDef<T>[]) {
   watchEffect(fetchData)
 
   const table = useVueTable({
-    data, // ✅ precisa ser função reativa
+    data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,

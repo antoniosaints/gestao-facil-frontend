@@ -109,7 +109,11 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { Button } from '../ui/button';
 import { ChevronDown } from 'lucide-vue-next';
 
-const { columns, api } = defineProps<{ columns: ColumnDef<any>[], api: string }>()
+const { columns, api, filters } = defineProps<{
+    columns: ColumnDef<any>[],
+    api: string,
+    filters?: Record<string, any> // 🔑 filtros externos opcionais
+}>()
 
 const {
     data,
@@ -118,5 +122,5 @@ const {
     totalPages,
     search,
     table
-} = useServerTable(api, columns);
+} = useServerTable(api, columns, filters ?? {});
 </script>
