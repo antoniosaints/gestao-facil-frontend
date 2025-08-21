@@ -139,7 +139,7 @@
                         </button>
                     </div>
                     <div>
-                        <BarChart :data="dataVendas" :options="options" />
+                        <BarChart class="max-h-64" :data="dataVendas" :options="options" />
                     </div>
                 </div>
 
@@ -157,7 +157,7 @@
                         </button>
                     </div>
                     <div>
-                        <LineChart :data="dataSaldo" :options="optionsSaldo" />
+                        <LineChart class="max-h-64" :data="dataSaldo" :options="optionsSaldo" />
                     </div>
                 </div>
 
