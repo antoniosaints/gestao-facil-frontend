@@ -76,7 +76,7 @@ async function loginUsuario() {
                             <h2 class="text-5xl font-bold text-gray-800 dark:text-white mb-6 leading-tight">
                                 Bem-vindo de volta ao seu
                                 <span
-                                    class="text-primary-500 bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+                                    class="text-primary-500 bg-gradient-to-r dark:from-cyan-400 dark:to-cyan-200 from-cyan-600 to-cyan-400 bg-clip-text text-transparent">
                                     negócio
                                 </span>
                             </h2>
@@ -188,7 +188,7 @@ async function loginUsuario() {
                                 <!-- Form Header -->
                                 <div class="text-center mb-8">
                                     <div
-                                        class="w-16 h-16 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                        class="w-16 h-16 bg-gradient-to-br from-primary to-info rounded-2xl flex items-center justify-center mx-auto mb-4">
                                         <i class="fas fa-user text-white text-2xl"></i>
                                     </div>
                                     <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Entrar na sua
@@ -238,7 +238,8 @@ async function loginUsuario() {
                                                 class="w-4 h-4 text-primary-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-500">
                                             <span class="text-sm text-gray-600 dark:text-gray-300">Lembrar de mim</span>
                                         </label>
-                                        <a href="javascript:void(0)" id="forgotPassword"
+                                        <a href="javascript:void(0)"
+                                            @click="showForgotPasswordModal = true"
                                             class="text-sm text-primary-500 hover:text-primary-600 transition-colors duration-200">
                                             Esqueceu a senha?
                                         </a>
@@ -246,7 +247,7 @@ async function loginUsuario() {
 
                                     <!-- Login Button -->
                                     <button type="submit"
-                                        class="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white py-3 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                                        class="w-full bg-gradient-to-r from-primary to-info hover:from-info hover:to-primary text-white py-3 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
                                         <i class="fas fa-sign-in-alt mr-2"></i>
                                         Entrar
                                     </button>
@@ -277,9 +278,9 @@ async function loginUsuario() {
 
         <!-- Forgot Password Modal -->
         <div v-if="showForgotPasswordModal"
-            class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all duration-300 scale-95 opacity-0"
-                id="modalContent">
+            class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all duration-300"
+                :class="showForgotPasswordModal ? 'scale-100 opacity-100' : 'scale-95 opacity-0'">
                 <div class="text-center mb-6">
                     <div
                         class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -300,7 +301,8 @@ async function loginUsuario() {
                     </div>
 
                     <div class="flex space-x-4">
-                        <button type="button" id="closeForgotModal"
+                        <button type="button"
+                            @click="showForgotPasswordModal = false"
                             class="flex-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white py-3 rounded-lg font-semibold transition-colors duration-200">
                             Cancelar
                         </button>
