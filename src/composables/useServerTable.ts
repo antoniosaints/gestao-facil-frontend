@@ -18,31 +18,37 @@ export function useServerTable<T>(
   const sorting = ref<SortingState>([])
   const columnVisibility = ref<VisibilityState>({})
   const rowSelection = ref({})
+  const loading = ref(false)
 
   async function fetchData() {
-    const sort = sorting.value[0]
-    const pageIdx = pageIndex.value + 1
+    loading.value = true
+    try {
+      const sort = sorting.value[0]
+      const pageIdx = pageIndex.value + 1
+      const res = await http.get(url, {
+        params: {
+          page: pageIdx,
+          pageSize: pageSize.value,
+          search: search.value,
+          sortBy: sort?.id || 'id',
+          order: sort?.desc ? 'desc' : 'asc',
+          ...externalFilters,
+        },
+      })
 
-    const res = await http.get(url, {
-      params: {
-        page: pageIdx,
-        pageSize: pageSize.value,
-        search: search.value,
-        sortBy: sort?.id || 'id',
-        order: sort?.desc ? 'desc' : 'asc',
-        ...externalFilters, // ✅ injeta filtros extras
-      },
-    })
+      data.value = res.data.data
+      totalPages.value = res.data.totalPages || 1
 
-    data.value = res.data.data
-    totalPages.value = res.data.totalPages
-
-    if (pageIndex.value >= totalPages.value) {
-      pageIndex.value = Math.max(totalPages.value - 1, 0)
-      return fetchData()
+      // Ajusta pageIndex se estiver fora do total de páginas
+      if (pageIndex.value >= totalPages.value) {
+        pageIndex.value = Math.max(totalPages.value - 1, 0)
+        // Não chamamos fetchData recursivamente
+      } else {
+        pageIndex.value = res.data.page - 1
+      }
+    } finally {
+      loading.value = false
     }
-
-    pageIndex.value = res.data.page - 1
   }
 
   watchEffect(fetchData)
@@ -85,5 +91,6 @@ export function useServerTable<T>(
     rowSelection,
     fetchData,
     table,
+    loading,
   }
 }

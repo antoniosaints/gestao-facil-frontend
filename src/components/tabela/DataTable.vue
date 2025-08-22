@@ -71,7 +71,13 @@
                     </template>
 
                     <TableRow v-else>
-                        <TableCell :colspan="columns.length" class="h-24 text-center">
+                        <TableCell v-if="loading" :colspan="columns.length">
+                            <div class="flex items-center justify-center h-24">
+                                <Loader class="h-6 w-6 text-info animate-spin mr-1" />
+                                Carregando...
+                            </div>
+                        </TableCell>
+                        <TableCell v-else :colspan="columns.length" class="h-24 text-center">
                             Nenhum resultado encontrado.
                         </TableCell>
                     </TableRow>
@@ -107,7 +113,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from '../ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
-import { ChevronDown } from 'lucide-vue-next';
+import { ChevronDown, Loader } from 'lucide-vue-next';
 
 const { columns, api, filters } = defineProps<{
     columns: ColumnDef<any>[],
@@ -121,6 +127,7 @@ const {
     pageSize,
     totalPages,
     search,
-    table
+    table,
+    loading
 } = useServerTable(api, columns, filters ?? {});
 </script>
