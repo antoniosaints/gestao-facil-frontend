@@ -1,15 +1,15 @@
 export type Produto = {
   id?: number
-  Uid: string
+  Uid?: string
   nome: string
   codigo: string
   descricao: string
   entradas: boolean
   saidas: boolean
-  preco: number
-  precoCompra: number
+  preco: number | string
+  precoCompra?: number | string
   unidade: string
-  status: string
+  status?: string
   estoque: number
   minimo: number
 }

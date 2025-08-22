@@ -79,31 +79,31 @@
         </div>
     </div>
 
-    <!-- Drawer Financeiro -->
-    <div v-show="showDrawerFinanceiro"
-        class="fixed bottom-20 left-0 right-0 z-10 w-full p-4 overflow-y-auto transition-transform bg-white dark:bg-gray-800">
-        <h5 id="drawer-bottom-label"
-            class="inline-flex items-center mb-4 text-base font-semibold text-gray-500 dark:text-gray-400">
-            <i class="fa-solid fa-circle-chevron-down mr-2"></i> Menu rápido
-        </h5>
-        <button type="button" @click="showDrawerFinanceiro = false"
-            class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 absolute top-2.5 end-2.5 inline-flex items-center justify-center dark:hover:bg-gray-600 dark:hover:text-white">
-            <i class="fa-regular fa-circle-xmark"></i>
-            <span class="sr-only">Close menu</span>
-        </button>
-        <!-- Conteúdo do Drawer -->
-        <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
-            <div
-                class="p-4 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:hover:bg-gray-600 dark:bg-gray-700">
-                <div
-                    class="flex justify-center items-center p-2 mx-auto mb-2 bg-gray-200 dark:bg-gray-600 rounded-full w-[48px] h-[48px] max-w-[48px] max-h-[48px]">
-                    <i class="fa-solid fa-cart-plus text-2xl text-gray-500 dark:text-gray-400"></i>
+    <Drawer v-model:open="showDrawerFinanceiro">
+        <DrawerContent>
+            <DrawerHeader class="text-left">
+                <DrawerTitle>Produtos</DrawerTitle>
+            </DrawerHeader>
+            <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
+                <div @click="emit('openModalProduto', true)"
+                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                    <div
+                        class="flex justify-center items-center p-2 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                        <i class="fa-solid fa-circle-plus text-2xl text-gray-500 dark:text-gray-400"></i>
+                    </div>
+                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Cadastrar</div>
                 </div>
-                <div class="font-medium text-center text-gray-500 dark:text-gray-400">PDV</div>
+                <!-- Outros itens iguais -->
             </div>
-            <!-- Outros itens iguais -->
-        </div>
-    </div>
+            <DrawerFooter class="pt-2">
+                <DrawerClose as-child>
+                    <Button variant="outline">
+                        Fechar
+                    </Button>
+                </DrawerClose>
+            </DrawerFooter>
+        </DrawerContent>
+    </Drawer>
 
     <!-- Navegação Mobile -->
     <nav
@@ -134,6 +134,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
 
 const vendas = ref<any[]>([]);
 const currentPage = ref(1);
@@ -142,6 +144,8 @@ const loading = ref(false);
 const searchQuery = ref("");
 const showModalBuscarVendas = ref(false);
 const showDrawerFinanceiro = ref(false);
+
+const emit = defineEmits(["openModalProduto"]);
 
 function renderListaVendas(page: number = 1) {
     loading.value = true;

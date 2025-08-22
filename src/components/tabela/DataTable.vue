@@ -2,7 +2,11 @@
     <div class="w-full">
         <!-- Busca e menu -->
         <div class="flex items-center py-4">
-            <Input class="max-w-sm bg-card" placeholder="Buscar registro..." v-model="search" />
+            <div class="flex items-center space-x-1 bg-card rounded-md border pl-4">
+                <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                <Input placeholder="Buscar registro..." v-model="search"
+                    class="border-none outline-none focus-visible:ring-0 shadow-none" />
+            </div>
             <div class="ml-auto flex items-center space-x-2">
                 <Select v-model="pageSize">
                     <SelectTrigger>

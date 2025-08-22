@@ -102,7 +102,7 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
         ),
       ),
     cell: ({ row }) => {
-      const valor = formatCurrencyBR(row.original.preco)
+      const valor = formatCurrencyBR(row.original.preco as number)
       return render(BadgeCell, { label: valor, color: 'green' })
     },
   },
@@ -112,7 +112,10 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
     enableColumnFilter: false,
     enableHiding: false,
     header: () => render('div', { class: 'text-right' }, 'Ações'),
-    cell: ({ row, table }) =>
-      render('div', { class: 'text-right' }, render(Actions, { data: row.original, table })),
+    cell: ({ row, table }) => {
+      return render('div', { class: 'text-right' }, [
+        render(Actions, { data: { ...row.original }, table }),
+      ])
+    },
   },
 ]

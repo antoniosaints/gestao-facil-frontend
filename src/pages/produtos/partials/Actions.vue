@@ -21,7 +21,7 @@ const { data, table } = defineProps<{
 const toast = useToast()
 
 function copiar(data: Produto) {
-    const produtoString = `ID: ${data.Uid}\nProduto: ${data.nome}\nCodigo: ${data.codigo}\nPreco: ${data.preco}\nEstoque: ${data.estoque}`;
+    const produtoString = `ID: ${data?.Uid}\nProduto: ${data?.nome}\nCodigo: ${data?.codigo}\nPreco: ${data?.preco}\nEstoque: ${data?.estoque}`;
     navigator.clipboard.writeText(produtoString);
     toast.success('Copiado para a área de transferência')
 }
@@ -55,9 +55,27 @@ function deletar(id: number) {
     }
 }
 
-function editar(id: number) {
-    const produto = store.data as Produto
-    store.save(produto)
+async function editar(id: number) {
+    try {
+        const { data } = await store.get(id);
+        store.form = {
+            id: id,
+            nome: data?.nome,
+            codigo: data?.codigo,
+            preco: data?.preco,
+            precoCompra: data?.precoCompra,
+            estoque: data?.estoque,
+            minimo: data?.minimo,
+            descricao: data?.descricao,
+            entradas: data?.entradas,
+            saidas: data?.saidas,
+            unidade: data?.unidade
+        }
+        store.openModal = true
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao editar o produto')
+    }
 }
 </script>
 
@@ -95,6 +113,10 @@ function editar(id: number) {
             <DropdownMenuItem @click=" copiar(data)">
                 <i class="fa-regular fa-copy mr-1"></i>
                 Copiar
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+                <i class="fa-solid fa-dolly text-success"></i>
+                Reposição
             </DropdownMenuItem>
             <DropdownMenuItem @click="gerarRelatorio(data.id!, 'asc')">
                 <i class="fa-regular fa-file-pdf mr-1"></i>

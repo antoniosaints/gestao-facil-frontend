@@ -19,43 +19,46 @@ type ReposicaoEstoque = {
 
 export const useProdutoStore = defineStore('produtoStore', () => {
   const id = ref<number | null>(null)
+  const openModal = ref(false)
   const data = ref<Produto>()
 
-  const base = ref<Partial<Produto>>({
+  const form = ref<Produto>({
+    id: undefined,
     codigo: '',
     descricao: '',
     entradas: true,
     estoque: 0,
     minimo: 0,
     nome: '',
-    preco: 0,
-    precoCompra: 0,
+    preco: '',
+    precoCompra: '',
     saidas: true,
-    unidade: 'UND',
+    unidade: '',
     status: 'ATIVO',
   })
 
   const reset = () => {
     id.value = null
-    base.value = {
+    form.value = {
+      id: undefined,
       codigo: '',
       descricao: '',
       entradas: true,
       estoque: 0,
       minimo: 0,
       nome: '',
-      preco: 0,
-      precoCompra: 0,
+      preco: '',
+      precoCompra: '',
       saidas: true,
-      unidade: 'UND',
+      unidade: 'un',
       status: 'ATIVO',
     }
     data.value = undefined
   }
 
   const get = async (id: number) => {
-    const data = await http.get(`/produtos/${id}`)
-    return data.data
+    const res = await http.get(`/produtos/${id}`)
+    return res.data
   }
 
   const remove = async (id: number) => {
@@ -170,6 +173,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   }
 
   return {
+    openModal,
     id,
     get,
     remove,
@@ -185,6 +189,6 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     repor,
     reset,
     data,
-    base,
+    form,
   }
 })
