@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/login/useAuthStore';
-import { useColorMode } from '@vueuse/core';
 import { ref } from 'vue';
 import { useToast } from 'vue-toastification';
 const backgroundURL = ref('data:image/svg+xml,<svg width=" 60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23f97316" fill-opacity="0.1"> <circle cx="7" cy="7" r="7" /> <circle cx="53" cy="7" r="7" /><circle cx="7" cy="53" r="7" /><circle cx="53" cy="53" r="7" /></g></g></svg>');
@@ -10,8 +9,6 @@ const login = ref({
     email: '',
     password: ''
 });
-
-const color = useColorMode();
 
 const showForgotPasswordModal = ref(false);
 
@@ -161,11 +158,11 @@ async function loginUsuario() {
                                         "{{ getOnTestemonials().text }}"
                                     </p>
                                     <div class="flex items-center space-x-2">
-                                        <span
-                                            class="font-semibold text-gray-800 dark:text-white">{{ getOnTestemonials().name }}</span>
+                                        <span class="font-semibold text-gray-800 dark:text-white">{{
+                                            getOnTestemonials().name }}</span>
                                         <span class="text-gray-500 dark:text-gray-400">•</span>
-                                        <span
-                                            class="text-sm text-gray-600 dark:text-gray-400">{{ getOnTestemonials().store }}</span>
+                                        <span class="text-sm text-gray-600 dark:text-gray-400">{{
+                                            getOnTestemonials().store }}</span>
                                         <div class="flex text-yellow-400 ml-2">
                                             <i class="fas fa-star text-xs"></i>
                                             <i class="fas fa-star text-xs"></i>
@@ -238,8 +235,7 @@ async function loginUsuario() {
                                                 class="w-4 h-4 text-primary-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-500">
                                             <span class="text-sm text-gray-600 dark:text-gray-300">Lembrar de mim</span>
                                         </label>
-                                        <a href="javascript:void(0)"
-                                            @click="showForgotPasswordModal = true"
+                                        <a href="javascript:void(0)" @click="showForgotPasswordModal = true"
                                             class="text-sm text-primary-500 hover:text-primary-600 transition-colors duration-200">
                                             Esqueceu a senha?
                                         </a>
@@ -301,8 +297,7 @@ async function loginUsuario() {
                     </div>
 
                     <div class="flex space-x-4">
-                        <button type="button"
-                            @click="showForgotPasswordModal = false"
+                        <button type="button" @click="showForgotPasswordModal = false"
                             class="flex-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white py-3 rounded-lg font-semibold transition-colors duration-200">
                             Cancelar
                         </button>

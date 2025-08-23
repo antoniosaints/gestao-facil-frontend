@@ -45,7 +45,7 @@ function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     try {
         store.remove(id)
-        table.setPageIndex(0)
+        store.updateTable()
         toast.success('Produto deletado com sucesso')
         openDelete.value = false
     } catch (error) {

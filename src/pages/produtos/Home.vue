@@ -5,19 +5,11 @@ import Mobile from '@/pages/produtos/partials/Mobile.vue';
 import { useProdutoStore } from '@/stores/produtos/useProduto';
 import { useToast } from 'vue-toastification';
 import ModalProdutos from './formulario/ModalProdutos.vue';
+import ModalCriarLote from './others/ModalCriarLote.vue';
 
 const toast = useToast();
 const store = useProdutoStore();
-
-const downloadCSV = async () => {
-    try {
-        await store.csvDownload()
-        toast.success('CSV gerado com sucesso')
-    } catch (error) {
-        toast.error('Erro ao gerar o CSV')
-        console.log(error)
-    }
-}
+const modalCsv = ref(false);
 
 const relatorioGeral = async () => {
     try {
@@ -38,15 +30,16 @@ const relatorioGeral = async () => {
             </h2>
             <div class="justify-between gap-2 items-center hidden md:flex">
                 <button @click="relatorioGeral()" class="bg-orange-600 text-white px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-file-pdf"></i>
+                    <i class="fa-regular fa-file-pdf"></i>
                 </button>
-                <button @click="downloadCSV()" class="bg-green-600 text-white px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-file-csv"></i>
+                <button @click="modalCsv = true" class="bg-green-600 text-white px-3 py-1.5 text-sm rounded-md">
+                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
                 </button>
                 <button @click="store.openSave" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-solid fa-circle-plus"></i> <span class="hidden md:inline">Novo Produto</span>
                 </button>
-                <button @click="store.updateTable" class="bg-background border border-border px-3 py-1.5 text-sm rounded-md">
+                <button @click="store.updateTable"
+                    class="bg-background border border-border px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-solid fa-arrow-rotate-right"></i>
                 </button>
             </div>
@@ -59,5 +52,6 @@ const relatorioGeral = async () => {
             <Mobile @openModalProduto="store.openSave" />
         </div>
         <ModalProdutos v-model="store.openModal" />
+        <ModalCriarLote v-model="modalCsv" />
     </div>
 </template>

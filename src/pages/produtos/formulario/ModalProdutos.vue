@@ -39,7 +39,7 @@ async function submit() {
             toast.success('Produto salvo com sucesso')
         }
         store.reset()
-        store.filters.update = !store.filters.update
+        store.updateTable()
         store.openModal = false
     } catch (error: any) {
         console.log(error)
@@ -53,7 +53,7 @@ async function submit() {
 <template>
     <div>
         <UseTemplate>
-            <form @submit.prevent="submit" class="grid items-start gap-4 px-4 ">
+            <form @submit.prevent="submit" class="grid items-start gap-4 px-4">
                 <div class="bg-background dark:bg-background-dark rounded-md w-full h-full space-y-2">
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                         <!-- Nome -->
@@ -213,7 +213,7 @@ async function submit() {
                         Faça o cadastro e alterações dos dados do produto
                     </DrawerDescription>
                 </DrawerHeader>
-                <div class="overflow-y-auto max-h-[calc(100vh-8rem)] mb-6">
+                <div class="overflow-y-auto max-h-[calc(100vh-6rem)] pb-6">
                     <GridForm />
                 </div>
             </DrawerContent>
