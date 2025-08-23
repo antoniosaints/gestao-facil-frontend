@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from "vue"
+import { ref, watch, onMounted } from "vue"
 import { Check, ChevronsUpDown, Search } from "lucide-vue-next"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -15,19 +15,17 @@ import {
     ComboboxTrigger,
 } from "@/components/ui/combobox"
 import http from "@/utils/axios"
-import { se } from "date-fns/locale"
-
 interface Item {
     id: string | number
     label: string
 }
 
 const props = withDefaults(defineProps<{
-  modelValue?: string | number | null
-  url: string
-  allowClear?: boolean
+    modelValue?: string | number | null
+    url: string
+    allowClear?: boolean
 }>(), {
-  allowClear: false,
+    allowClear: false,
 })
 
 
@@ -55,29 +53,29 @@ const fetchById = async (id: number | string) => {
 
 // Atualiza quando modelValue é alterado externamente
 watch(
-  () => props.modelValue,
-  (id) => {
-    if (timeout) clearTimeout(timeout)
+    () => props.modelValue,
+    (id) => {
+        if (timeout) clearTimeout(timeout)
 
-    timeout = setTimeout(async () => {
-      if (id != null && id !== "") {
-        if (fetchById) {
-          const item = await fetchById(id)
-          if (item) selected.value = item
-        } else {
-          const result = await fetchItems()
-          const found = result.find((i: Item) => i.id == id)
-          if (found) {
-            selected.value = found
-            if (!items.value.length) items.value = result
-          }
-        }
-      } else {
-        selected.value = null
-      }
-    }, 150) // espera 300ms após última digitação
-  },
-  { immediate: true }
+        timeout = setTimeout(async () => {
+            if (id != null && id !== "") {
+                if (fetchById) {
+                    const item = await fetchById(id)
+                    if (item) selected.value = item
+                } else {
+                    const result = await fetchItems()
+                    const found = result.find((i: Item) => i.id == id)
+                    if (found) {
+                        selected.value = found
+                        if (!items.value.length) items.value = result
+                    }
+                }
+            } else {
+                selected.value = null
+            }
+        }, 150) // espera 300ms após última digitação
+    },
+    { immediate: true }
 )
 
 // Atualiza lista quando digita

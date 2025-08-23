@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { inject, provide, ref } from 'vue';
 import Tabela from '@/pages/produtos/partials/Tabela.vue';
 import Mobile from '@/pages/produtos/partials/Mobile.vue';
 import { useProdutoStore } from '@/stores/produtos/useProduto';
@@ -9,7 +9,9 @@ import ModalCriarLote from './others/ModalCriarLote.vue';
 
 const toast = useToast();
 const store = useProdutoStore();
+
 const modalCsv = ref(false);
+provide('modalCsv', modalCsv)
 
 const relatorioGeral = async () => {
     try {
@@ -20,6 +22,7 @@ const relatorioGeral = async () => {
         console.log(error)
     }
 }
+
 </script>
 
 <template>
@@ -51,7 +54,7 @@ const relatorioGeral = async () => {
         <div class="overflow-x-auto block md:hidden rounded-lg">
             <Mobile @openModalProduto="store.openSave" />
         </div>
-        <ModalProdutos v-model="store.openModal" />
-        <ModalCriarLote v-model="modalCsv" />
+        <ModalProdutos />
+        <ModalCriarLote />
     </div>
 </template>
