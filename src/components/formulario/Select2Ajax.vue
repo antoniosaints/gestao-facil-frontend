@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from "vue"
+import { ref, watch, onMounted, computed } from "vue"
 import { Check, ChevronsUpDown, Search } from "lucide-vue-next"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import {
     ComboboxTrigger,
 } from "@/components/ui/combobox"
 import http from "@/utils/axios"
+import { se } from "date-fns/locale"
 
 interface Item {
     id: string | number
@@ -40,8 +41,8 @@ const search = ref("")
 const isOpen = ref(false) // controle do estado do combobox
 let timeout: ReturnType<typeof setTimeout> | null = null
 
-const fetchItems = async (q: string | undefined) => {
-    const url = `${props.url}/select2?search=${q || ''}`
+const fetchItems = async () => {
+    const url = `${props.url}/select2?search=${search.value || ''}`
     const { data } = await http.get(url)
     console.log(data)
     return data.results
@@ -65,7 +66,7 @@ watch(
           const item = await fetchById(id)
           if (item) selected.value = item
         } else {
-          const result = await fetchItems(search.value)
+          const result = await fetchItems()
           const found = result.find((i: Item) => i.id == id)
           if (found) {
             selected.value = found
@@ -82,7 +83,7 @@ watch(
 
 // Atualiza lista quando digita
 watch(search, async (val) => {
-    items.value = await fetchItems(val)
+    items.value = await fetchItems()
 })
 
 // Emite o id quando muda
@@ -94,19 +95,26 @@ watch(selected, (val) => {
 watch(isOpen, async (val) => {
     if (val) {
         search.value = ""
-        items.value = await fetchItems(search.value)
+        items.value = await fetchItems()
     }
 })
 
 onMounted(async () => {
     if (!items.value.length) {
-        items.value = await fetchItems(search.value)
+        items.value = await fetchItems()
     }
 })
+
+// no script
+const filteredItems = computed(() => {
+  if (!search.value) return items.value
+  return items.value.filter((item) => item.label.toLowerCase().includes(search.value.toLowerCase()))
+})
+
 </script>
 
 <template>
-    <Combobox v-model="selected" v-model:open="isOpen" by="id">
+    <Combobox :ignore-filter="true" v-model="selected" v-model:open="isOpen" by="id">
         <ComboboxAnchor as-child>
             <ComboboxTrigger as-child>
                 <Button variant="outline" class="justify-between w-full overflow-hidden">
