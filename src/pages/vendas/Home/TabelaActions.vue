@@ -5,9 +5,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import type { Vendas } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import type { Table } from '@tanstack/vue-table';
-import { useVendaStore } from '@/stores/vendas/useVenda';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ref } from 'vue';
+import { useVendasStore } from '@/stores/vendas/useVenda';
+import { VendaRepository } from '@/repositories/venda-repository';
 
 const { data, table } = defineProps<{
     data: Vendas,
@@ -15,7 +16,7 @@ const { data, table } = defineProps<{
 }>()
 
 const toast = useToast()
-const store = useVendaStore()
+const store = useVendasStore()
 const openDelete = ref(false)
 const id = ref<number | null>(null)
 
@@ -26,7 +27,7 @@ function copiar(id: string) {
 
 async function gerarCupom(id: number) {
     try {
-        store.getCupomPDF(id)
+        VendaRepository.getCupomPDF(id)
         toast.success('Cupom gerado com sucesso')
     } catch (error) {
         console.log(error)
@@ -41,7 +42,7 @@ function openModalDelete(number: number) {
 async function deletar(id: number) {
     if (!id) return toast.error('ID nao informado!')
     try {
-        await store.remove(id)
+        await VendaRepository.remove(id)
         toast.success('Registro deletado com sucesso')
         table.setPageIndex(table.getState().pagination.pageIndex - 1)
     } catch (error) {
@@ -76,7 +77,7 @@ async function deletar(id: number) {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuItem @click=" copiar(data.Uid)" class="cursor-pointer">
+            <DropdownMenuItem @click=" copiar(data.Uid!)" class="cursor-pointer">
                 <i class="fa-regular fa-copy mr-1"></i>
                 Copiar ID
             </DropdownMenuItem>

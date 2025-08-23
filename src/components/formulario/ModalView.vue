@@ -26,10 +26,18 @@ const { size } = defineProps<{
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
 }>()
 
-const sizeModal = computed(() => {
-    if (size) return `sm:max-w-${size}`
-    return 'sm:max-w-4xl'
-})
+const sizeClasses: Record<string, string> = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
+    '5xl': 'max-w-5xl',
+}
+
+const sizeModal = computed(() => size ? sizeClasses[size] : 'max-w-4xl')
 
 const isDesktop = useMediaQuery("(min-width: 768px)")
 </script>
@@ -38,8 +46,8 @@ const isDesktop = useMediaQuery("(min-width: 768px)")
     <div>
         <!-- Desktop: Modal -->
         <Dialog v-if="isDesktop" v-model:open="isOpen">
-            <DialogContent class="sm:max-w-[425px] p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
-                :class="[sizeModal]">
+            <DialogContent class="p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
+                :class="[sizeModal, 'mx-auto']">
                 <DialogHeader class="p-6 pb-0">
                     <DialogTitle>{{ title }}</DialogTitle>
                     <DialogDescription v-if="description">{{ description }}</DialogDescription>

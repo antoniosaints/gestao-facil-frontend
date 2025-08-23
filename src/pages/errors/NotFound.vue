@@ -13,7 +13,3 @@
     </router-link>
   </div>
 </template>
-
-<script setup>
-// Não precisa de lógica especial, apenas exibe a página
-</script>

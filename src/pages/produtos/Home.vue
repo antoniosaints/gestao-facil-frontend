@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { inject, provide, ref } from 'vue';
+import { provide, ref } from 'vue';
 import Tabela from '@/pages/produtos/partials/Tabela.vue';
 import Mobile from '@/pages/produtos/partials/Mobile.vue';
 import { useProdutoStore } from '@/stores/produtos/useProduto';
 import { useToast } from 'vue-toastification';
 import ModalProdutos from './formulario/ModalProdutos.vue';
 import ModalCriarLote from './others/ModalCriarLote.vue';
+import { ProdutoRepository } from '@/repositories/produto-repository';
 
 const toast = useToast();
 const store = useProdutoStore();
@@ -15,7 +16,7 @@ provide('modalCsv', modalCsv)
 
 const relatorioGeral = async () => {
     try {
-        await store.gerarRelatorioGeral()
+        await ProdutoRepository.gerarRelatorioGeral()
         toast.success('Relatório gerado com sucesso')
     } catch (error) {
         toast.error('Erro ao gerar o relatório')

@@ -278,7 +278,9 @@ export interface Vendas {
   garantia?: number
   faturado: boolean
   observacoes?: string
-  desconto: number
+  desconto: number,
+  cliente?: ClientesFornecedores,
+  vendedor?: Usuarios
 }
 
 export interface ItensVendas {
