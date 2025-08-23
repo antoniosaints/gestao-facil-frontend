@@ -215,12 +215,11 @@ import BarChart from '@/components/graficos/BarChart.vue';
 import LineChart from '@/components/graficos/LineChart.vue';
 import { useDashboardStore } from '@/stores/dashboard/useDashboardStore';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
-import { useVendaStore } from '@/stores/vendas/useVenda';
-import { useColorMode } from '@vueuse/core';
 import { onMounted, ref } from 'vue';
+import { colorMode } from '@/utils/color';
+import { VendaRepository } from '@/repositories/venda-repository';
 
 const store = useDashboardStore();
-const storeVenda = useVendaStore();
 const storeLancamento = useLancamentosStore();
 
 const options = ref({
@@ -237,32 +236,32 @@ const options = ref({
     scales: {
         x: {
             ticks: {
-                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
             },
         },
         y1: {
             ticks: {
-                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
             },
             type: 'linear',
             position: 'left',
             title: {
                 display: true,
                 text: 'Valor Total (R$)',
-                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
             },
             stacked: false,
         },
         y2: {
             ticks: {
-                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
             },
             type: 'linear',
             position: 'right',
             title: {
                 display: true,
                 text: 'Quantidade de Vendas',
-                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
             },
             grid: {
                 drawOnChartArea: false,
@@ -293,12 +292,12 @@ const optionsSaldo = ref({
     scales: {
         y: {
             ticks: {
-                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
             }
         },
         x: {
             ticks: {
-                color: useColorMode().value === 'dark' ? '#ffffff' : '#000000'
+                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
             }
         },
     }
@@ -315,7 +314,7 @@ const dataSaldo: any = ref({
 
 async function getResumoVendas() {
     try {
-        const data = await storeVenda.getResumoMensal();
+        const data = await VendaRepository.getResumoMensal();
         dataVendas.value = {
             labels: [...data.data.labels],
             datasets: [...data.data.datasets]

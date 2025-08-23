@@ -40,14 +40,4 @@ import HeaderMenu from '@/components/layout/headerMenu.vue'
 import SidebarMenu from '@/components/layout/sidebarMenu.vue'
 import TopMenu from '@/components/layout/topMenu.vue'
 import { sidebarMenuOptions } from './options'
-import { useColorMode } from '@vueuse/core'
-
-useColorMode({
-    emitAuto: true,
-    storageKey: 'tema_sistema_gestao_facil',
-    modes: {
-        light: 'light',
-        dark: 'dark',
-    },
-})
 </script>

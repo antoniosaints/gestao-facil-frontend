@@ -7,16 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { useColorMode } from '@vueuse/core'
-
-const colorMode = useColorMode({
-  emitAuto: true,
-  storageKey: 'tema_sistema_gestao_facil',
-  modes: {
-    light: 'light',
-    dark: 'dark',
-  },
-})
+import { colorMode } from '@/utils/color';
 
 function toggleColorMode() {
   colorMode.value = colorMode.value === 'light' ? 'dark' : 'light'

@@ -37,6 +37,7 @@ import { inject, ref } from "vue"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import ModalView from "@/components/formulario/ModalView.vue"
+import { ProdutoRepository } from "@/repositories/produto-repository"
 
 const title = ref('Cadastro em lote')
 const description = ref('Faça o Upload do arquivo CSV baixado e preenchido')
@@ -48,7 +49,7 @@ const openModal = inject('modalCsv', ref(false))
 
 const downloadCSV = async () => {
     try {
-        await store.csvDownload()
+        await ProdutoRepository.csvDownload()
         toast.success('CSV gerado com sucesso')
     } catch (error) {
         toast.error('Erro ao gerar o CSV')
@@ -73,7 +74,7 @@ async function submit() {
     }
 
     try {
-        await store.sendCsvUpload(file.value)
+        await ProdutoRepository.sendCsvUpload(file.value)
         toast.success('Remessa de produtos criada com sucesso')
         store.updateTable()
         openModal.value = false

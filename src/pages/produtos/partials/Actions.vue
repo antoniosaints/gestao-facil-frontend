@@ -6,8 +6,9 @@ import type { Produto } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import { useProdutoStore } from '@/stores/produtos/useProduto';
 import type { Table } from '@tanstack/vue-table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ref } from 'vue';
+import { ProdutoRepository } from '@/repositories/produto-repository';
 
 const store = useProdutoStore()
 const openDelete = ref(false)
@@ -28,7 +29,7 @@ function copiar(data: Produto) {
 
 async function gerarRelatorio(id: number, ordem: "asc" | "desc") {
     try {
-        await store.gerarRelatorio(id, ordem)
+        await ProdutoRepository.gerarRelatorio(id, ordem)
         toast.success('Relatorio gerado com sucesso')
     } catch (error) {
         console.log(error)
@@ -44,7 +45,7 @@ function openDeleteModal(number: number) {
 function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     try {
-        store.remove(id)
+        ProdutoRepository.remove(id)
         store.updateTable()
         toast.success('Produto deletado com sucesso')
         openDelete.value = false

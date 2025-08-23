@@ -29,6 +29,7 @@ import { inject, ref } from "vue"
 import ModalView from "@/components/formulario/ModalView.vue"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { ProdutoRepository } from "@/repositories/produto-repository"
 
 const title = ref('Reposição de estoque')
 const description = ref('Realize a reposição do estoque')
@@ -40,7 +41,7 @@ const openModal = inject('modalReposicao', ref(false))
 
 async function submit() {
     try {
-        await store.repor({
+        await ProdutoRepository.repor({
             produtoId: 1,
             quantidade: 1
         })

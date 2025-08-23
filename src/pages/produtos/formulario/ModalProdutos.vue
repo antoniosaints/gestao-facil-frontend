@@ -7,6 +7,7 @@ import { moneyMaskOptions } from "@/lib/imaska"
 import { Switch } from "@/components/ui/switch"
 import ModalView from "@/components/formulario/ModalView.vue"
 import { computed } from "vue"
+import { ProdutoRepository } from "@/repositories/produto-repository"
 
 const store = useProdutoStore()
 const toast = useToast()
@@ -14,10 +15,10 @@ const toast = useToast()
 async function submit() {
     try {
         if (store.form.id) {
-            await store.update(store.form, store.form.id)
+            await ProdutoRepository.update(store.form, store.form.id)
             toast.success('Produto atualizado com sucesso')
         } else {
-            await store.save(store.form)
+            await ProdutoRepository.save(store.form)
             toast.success('Produto salvo com sucesso')
         }
         store.reset()
