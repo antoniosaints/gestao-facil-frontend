@@ -48,7 +48,7 @@
                         <a onclick="openModalClientes()" class="text-blue-500 px-2 cursor-pointer">Novo
                             cliente</a>
                     </label>
-                    <Select2_example />
+                    <Select2Ajax :url="'/produtos'" v-model:model-value="cliente" :allowClear="true" />
                 </div>
             </div>
 
@@ -169,10 +169,10 @@
 
 <script setup lang="ts">
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Select2_example from '../Home/select2_example.vue';
 import { ref, computed, onMounted } from "vue"
 import http from "@/utils/axios"
 import { Input } from '@/components/ui/input';
+import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
 
 interface Product {
     id: number
@@ -193,6 +193,7 @@ const discountType = ref<"percentage" | "value">("percentage")
 const discountValue = ref<number>(0)
 const paymentMethod = ref("money")
 const receivedAmount = ref<number | null>(null)
+const cliente = ref(null)
 
 const subtotal = computed(() =>
     cart.value.reduce((t, item) => t + item.price * item.quantity, 0)
