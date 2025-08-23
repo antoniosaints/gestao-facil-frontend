@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import http from '@/utils/axios'
 import type { Produto } from '@/types/schemas'
+import { POSITION, useToast } from 'vue-toastification'
 
 type ReposicaoEstoque = {
   produtoId: number
@@ -17,10 +18,10 @@ type ReposicaoEstoque = {
   vendaId?: number
 }
 
+const toast = useToast()
+
 export const useProdutoStore = defineStore('produtoStore', () => {
-  const id = ref<number | null>(null)
   const openModal = ref(false)
-  const data = ref<Produto>()
 
   const form = ref<Produto>({
     id: undefined,
@@ -38,7 +39,6 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   })
 
   const reset = () => {
-    id.value = null
     form.value = {
       id: undefined,
       codigo: '',
@@ -53,7 +53,48 @@ export const useProdutoStore = defineStore('produtoStore', () => {
       unidade: 'un',
       status: 'ATIVO',
     }
-    data.value = undefined
+  }
+
+  const openSave = () => {
+    if (form.value.id) reset()
+    openModal.value = true
+  }
+
+  const filters = ref<Partial<Produto> & { update: boolean }>({
+    update: false,
+  })
+
+  const updateTable = () => {
+    filters.value.update = !filters.value.update
+    toast.info('Tabela atualizada!', {
+      timeout: 1000,
+      hideProgressBar: true,
+      position: POSITION.BOTTOM_RIGHT,
+      toastClassName: 'bg-background dark:bg-background border border-border dark:border-border',
+    })
+  }
+
+  const openUpdate = async (id: number) => {
+    try {
+      const { data } = await get(id)
+      form.value = {
+        id: id,
+        nome: data?.nome,
+        codigo: data?.codigo,
+        preco: data?.preco,
+        precoCompra: data?.precoCompra,
+        estoque: data?.estoque,
+        minimo: data?.minimo,
+        descricao: data?.descricao,
+        entradas: data?.entradas,
+        saidas: data?.saidas,
+        unidade: data?.unidade,
+      }
+      openModal.value = true
+    } catch (error) {
+      console.log(error)
+      toast.error('Erro ao editar o produto')
+    }
   }
 
   const get = async (id: number) => {
@@ -174,8 +215,11 @@ export const useProdutoStore = defineStore('produtoStore', () => {
 
   return {
     openModal,
-    id,
+    openSave,
+    openUpdate,
+    updateTable,
     get,
+    filters,
     remove,
     save,
     update,
@@ -188,7 +232,6 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     resumo,
     repor,
     reset,
-    data,
     form,
   }
 })

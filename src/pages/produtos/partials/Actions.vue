@@ -54,29 +54,6 @@ function deletar(id: number) {
         openDelete.value = false
     }
 }
-
-async function editar(id: number) {
-    try {
-        const { data } = await store.get(id);
-        store.form = {
-            id: id,
-            nome: data?.nome,
-            codigo: data?.codigo,
-            preco: data?.preco,
-            precoCompra: data?.precoCompra,
-            estoque: data?.estoque,
-            minimo: data?.minimo,
-            descricao: data?.descricao,
-            entradas: data?.entradas,
-            saidas: data?.saidas,
-            unidade: data?.unidade
-        }
-        store.openModal = true
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao editar o produto')
-    }
-}
 </script>
 
 <template>
@@ -106,7 +83,7 @@ async function editar(id: number) {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuItem @click=" editar(data.id!)">
+            <DropdownMenuItem @click=" store.openUpdate(data.id!)">
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
             </DropdownMenuItem>

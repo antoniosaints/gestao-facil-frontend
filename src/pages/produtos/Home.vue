@@ -19,10 +19,6 @@ const downloadCSV = async () => {
     }
 }
 
-const openModalProdutos = () => {
-    store.openModal = true
-
-}
 const relatorioGeral = async () => {
     try {
         await store.gerarRelatorioGeral()
@@ -47,8 +43,11 @@ const relatorioGeral = async () => {
                 <button @click="downloadCSV()" class="bg-green-600 text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-solid fa-file-csv"></i>
                 </button>
-                <button @click="store.openModal = true" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
+                <button @click="store.openSave" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-solid fa-circle-plus"></i> <span class="hidden md:inline">Novo Produto</span>
+                </button>
+                <button @click="store.updateTable" class="bg-background border border-border px-3 py-1.5 text-sm rounded-md">
+                    <i class="fa-solid fa-arrow-rotate-right"></i>
                 </button>
             </div>
         </div>
@@ -57,7 +56,7 @@ const relatorioGeral = async () => {
             <Tabela />
         </div>
         <div class="overflow-x-auto block md:hidden rounded-lg">
-            <Mobile @openModalProduto="openModalProdutos" />
+            <Mobile @openModalProduto="store.openSave" />
         </div>
         <ModalProdutos v-model="store.openModal" />
     </div>

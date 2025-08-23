@@ -11,10 +11,8 @@ import {
 } from "@/components/ui/dialog"
 import {
     Drawer,
-    DrawerClose,
     DrawerContent,
     DrawerDescription,
-    DrawerFooter,
     DrawerHeader,
     DrawerTitle,
 } from "@/components/ui/drawer"
@@ -33,14 +31,15 @@ const toast = useToast()
 
 async function submit() {
     try {
-        if (store.id) {
-            await store.update(store.form, store.id)
+        if (store.form.id) {
+            await store.update(store.form, store.form.id)
             toast.success('Produto atualizado com sucesso')
         } else {
             await store.save(store.form)
             toast.success('Produto salvo com sucesso')
         }
         store.reset()
+        store.filters.update = !store.filters.update
         store.openModal = false
     } catch (error: any) {
         console.log(error)

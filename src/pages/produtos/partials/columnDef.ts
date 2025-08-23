@@ -62,6 +62,7 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
         label: `${row.original.codigo || '-'}`,
         color: 'blue',
         icon: 'fa-solid fa-qrcode',
+        capitalize: false,
       }),
   },
   {

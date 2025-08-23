@@ -118,6 +118,7 @@ import { Input } from '../ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { ChevronDown, Loader } from 'lucide-vue-next';
+import { watch } from 'vue';
 
 const { columns, api, filters } = defineProps<{
     columns: ColumnDef<any>[],
@@ -132,6 +133,12 @@ const {
     totalPages,
     search,
     table,
-    loading
+    loading,
+    fetchData
 } = useServerTable(api, columns, filters ?? {});
+
+watch(() => filters, () => {
+  fetchData()
+}, { deep: true })
+
 </script>
