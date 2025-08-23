@@ -14,17 +14,21 @@ import {
     DrawerHeader,
     DrawerTitle,
 } from "@/components/ui/drawer"
+import { computed } from "vue";
 
 // Reativo vindo de fora (pode ter vários na mesma página)
 const isOpen = defineModel<boolean>("open", { default: false })
 
 // Propriedades fixas do componente
-withDefaults(defineProps<{
+const { size } = defineProps<{
     title: string
     description?: string,
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
-}>(), {
-    size: '4xl'
+}>()
+
+const sizeModal = computed(() => {
+    if (size) return `sm:max-w-${size}`
+    return 'sm:max-w-4xl'
 })
 
 const isDesktop = useMediaQuery("(min-width: 768px)")
@@ -35,7 +39,7 @@ const isDesktop = useMediaQuery("(min-width: 768px)")
         <!-- Desktop: Modal -->
         <Dialog v-if="isDesktop" v-model:open="isOpen">
             <DialogContent class="sm:max-w-[425px] p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
-                :class="[`md:max-w-${size}`]">
+                :class="[sizeModal]">
                 <DialogHeader class="p-6 pb-0">
                     <DialogTitle>{{ title }}</DialogTitle>
                     <DialogDescription v-if="description">{{ description }}</DialogDescription>

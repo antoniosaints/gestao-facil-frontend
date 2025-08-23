@@ -7,7 +7,7 @@
                     <div class="md:col-span-12">
                         <Label for="arquivo_Csv"> Arquivo CSV<span class="text-danger">*</span>
                         </Label>
-                        <Input id="arquivo_Csv" accept="text/csv" type="file"
+                        <Input ref="file" id="arquivo_Csv" @change="onFileChange" required accept="text/csv" type="file"
                             class="w-full dark:file:text-white bg-card py-2 h-auto" />
                     </div>
                     <div class="md:col-span-12 border-t">
@@ -56,23 +56,30 @@ const downloadCSV = async () => {
     }
 }
 
-async function submit() {
-    try {
-        if (store.form.id) {
-            await store.update(store.form, store.form.id)
-            toast.success('Produto atualizado com sucesso')
-        } else {
-            await store.save(store.form)
-            toast.success('Produto salvo com sucesso')
-        }
-        store.reset()
-        store.filters.update = !store.filters.update
-        openModal.value = false
-    } catch (error: any) {
-        console.log(error)
-        const errors = error?.response?.data?.data ? error?.response?.data?.data.map((item: any) => item.message).join('\n') : "Ocorreu um erro ao salvar o produto"
-        toast.error(errors)
+const file = ref<File | null>(null)
+
+const onFileChange = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    if (target.files && target.files.length > 0) {
+        file.value = target.files[0]
     }
 }
 
+
+async function submit() {
+    if (!file.value) {
+        toast.error('Selecione um arquivo CSV')
+        return
+    }
+
+    try {
+        await store.sendCsvUpload(file.value)
+        toast.success('Remessa de produtos criada com sucesso')
+        store.updateTable()
+        openModal.value = false
+    } catch (error: any) {
+        console.log(error)
+        toast.error('Erro ao criar a remessa de produtos')
+    }
+}
 </script>

@@ -80,15 +80,14 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                                 </div>
                             </div>
                         </div>
-
+                        
                     </div>
-
                     <!-- Código -->
                     <div class="md:col-span-4">
                         <label for="codigo" class="block text-sm font-medium mb-1">Código</label>
                         <input v-model="store.form.codigo" type="text" id="codigo" name="codigo"
-                            placeholder="Código do produto"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                        placeholder="Código do produto"
+                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
                     </div>
 
                     <!-- Preço -->

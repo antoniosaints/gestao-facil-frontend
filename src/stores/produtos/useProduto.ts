@@ -66,12 +66,6 @@ export const useProdutoStore = defineStore('produtoStore', () => {
 
   const updateTable = () => {
     filters.value.update = !filters.value.update
-    toast.info('Tabela atualizada!', {
-      timeout: 1000,
-      hideProgressBar: true,
-      position: POSITION.BOTTOM_RIGHT,
-      toastClassName: 'bg-background dark:bg-background border border-border dark:border-border',
-    })
   }
 
   const openUpdate = async (id: number) => {
@@ -154,6 +148,16 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     a.remove()
   }
 
+  const sendCsvUpload = async (file: File) => {
+    const data = new FormData()
+    data.append('arquivo', file)
+    await http.post('/produtos/importar/csv', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  }
+
   const gerarRelatorio = async (id: number, orderBy: 'asc' | 'desc') => {
     const data = await http.get(`/produtos/relatorio/reposicao/${id}?orderBy=${orderBy}`, {
       responseType: 'blob',
@@ -226,6 +230,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     getAllSelect2,
     getOneSelect2,
     gerarRelatorio,
+    sendCsvUpload,
     csvDownload,
     gerarEtiquetas,
     gerarRelatorioGeral,
