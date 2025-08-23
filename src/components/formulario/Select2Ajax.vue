@@ -42,13 +42,12 @@ const isOpen = ref(false) // controle do estado do combobox
 let timeout: ReturnType<typeof setTimeout> | null = null
 
 const fetchItems = async () => {
-    const url = `${props.url}/select2?search=${search.value || ''}`
+    const url = `${props.url}?search=${search.value || ''}`
     const { data } = await http.get(url)
-    console.log(data)
     return data.results
 }
 const fetchById = async (id: number | string) => {
-    const url = `${props.url}/select2?id=${id}`
+    const url = `${props.url}?id=${id}`
     const { data } = await http.get(url)
 
     return data.results
@@ -103,12 +102,6 @@ onMounted(async () => {
     if (!items.value.length) {
         items.value = await fetchItems()
     }
-})
-
-// no script
-const filteredItems = computed(() => {
-  if (!search.value) return items.value
-  return items.value.filter((item) => item.label.toLowerCase().includes(search.value.toLowerCase()))
 })
 
 </script>

@@ -48,7 +48,7 @@
                         <a onclick="openModalClientes()" class="text-blue-500 px-2 cursor-pointer">Novo
                             cliente</a>
                     </label>
-                    <Select2Ajax :url="'/produtos'" v-model:model-value="cliente" :allowClear="true" />
+                    <Select2Ajax :url="'/produtos/select2'" v-model:model-value="cliente" :allowClear="true" />
                 </div>
             </div>
 
