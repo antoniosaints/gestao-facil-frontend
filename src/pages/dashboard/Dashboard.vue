@@ -215,121 +215,66 @@ import BarChart from '@/components/graficos/BarChart.vue';
 import LineChart from '@/components/graficos/LineChart.vue';
 import { useDashboardStore } from '@/stores/dashboard/useDashboardStore';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
-import { onMounted, ref } from 'vue';
-import { colorMode } from '@/utils/color';
+import { onMounted, ref, computed } from 'vue';
 import { VendaRepository } from '@/repositories/venda-repository';
 
 const store = useDashboardStore();
 const storeLancamento = useLancamentosStore();
 
-const options = ref({
+// Cor reativa baseada no tema
+const currentColor = computed(() => (document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000'));
+
+// Options dos gráficos com cores reativas
+const options = computed(() => ({
     responsive: true,
-    interaction: {
-        mode: 'index',
-        intersect: false,
-    },
-    plugins: {
-        legend: {
-            display: false,
-        },
-    },
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { display: false } },
     scales: {
-        x: {
-            ticks: {
-                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
-            },
-        },
+        x: { ticks: { color: currentColor.value } },
         y1: {
-            ticks: {
-                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
-            },
+            ticks: { color: currentColor.value },
             type: 'linear',
             position: 'left',
-            title: {
-                display: true,
-                text: 'Valor Total (R$)',
-                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
-            },
+            title: { display: true, text: 'Valor Total (R$)', color: currentColor.value },
             stacked: false,
         },
         y2: {
-            ticks: {
-                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
-            },
+            ticks: { color: currentColor.value },
             type: 'linear',
             position: 'right',
-            title: {
-                display: true,
-                text: 'Quantidade de Vendas',
-                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
-            },
-            grid: {
-                drawOnChartArea: false,
-            },
+            title: { display: true, text: 'Quantidade de Vendas', color: currentColor.value },
+            grid: { drawOnChartArea: false },
             stacked: false,
         },
     },
-    elements: {
-        bar: {
-            borderRadius: 6
-        }
-    }
-});
+    elements: { bar: { borderRadius: 6 } }
+}));
 
-const optionsSaldo = ref({
-    interaction: {
-        mode: 'index',
-        intersect: false,
-    },
-    plugins: {
-        title: {
-            display: false
-        },
-        legend: {
-            display: false
-        }
-    },
+const optionsSaldo = computed(() => ({
+    interaction: { mode: 'index', intersect: false },
+    plugins: { title: { display: false }, legend: { display: false } },
     scales: {
-        y: {
-            ticks: {
-                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
-            }
-        },
-        x: {
-            ticks: {
-                color: colorMode.value === 'dark' ? '#ffffff' : '#000000'
-            }
-        },
+        y: { ticks: { color: currentColor.value } },
+        x: { ticks: { color: currentColor.value } },
     }
-});
+}));
 
-const dataVendas: any = ref({
-    labels: [],
-    datasets: []
-});
-const dataSaldo: any = ref({
-    labels: [],
-    datasets: []
-});
+const dataVendas: any = ref({ labels: [], datasets: [] });
+const dataSaldo: any = ref({ labels: [], datasets: [] });
 
 async function getResumoVendas() {
     try {
         const data = await VendaRepository.getResumoMensal();
-        dataVendas.value = {
-            labels: [...data.data.labels],
-            datasets: [...data.data.datasets]
-        };
+        dataVendas.value = { labels: [...data.data.labels], datasets: [...data.data.datasets] };
     } catch (error) {
         console.log(error);
     }
 }
+
 async function getSaldoMensal() {
     try {
         const data = await storeLancamento.getSaldoMensal();
-        dataSaldo.value = {
-            labels: [...data.labels],
-            datasets: [...data.datasets]
-        };
+        dataSaldo.value = { labels: [...data.labels], datasets: [...data.datasets] };
     } catch (error) {
         console.log(error);
     }
@@ -340,7 +285,7 @@ const data = ref({
     totalProdutos: 0,
     produtosEmBaixa: 0,
     totalVendas: 'R$ 0,00',
-})
+});
 
 const getDataDashboard = async () => {
     const resultado = await store.getResumo();
@@ -354,5 +299,5 @@ onMounted(() => {
     getDataDashboard();
     getResumoVendas();
     getSaldoMensal();
-})
+});
 </script>

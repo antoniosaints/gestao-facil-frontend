@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    --chart-text-color: #000000; /* light mode default */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
@@ -35,6 +36,7 @@
   }
 
   .dark {
+    --chart-text-color: #ffffff; /* dark mode */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 

@@ -99,11 +99,5 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     color: 'blue',
     icone: 'fa-solid fa-user',
     link: '/perfil',
-  },
-  {
-    nome: 'Sair',
-    color: 'red',
-    icone: 'fa-solid fa-right-from-bracket',
-    link: '/sair',
-  },
+  }
 ]

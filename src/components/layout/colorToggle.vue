@@ -7,9 +7,10 @@
 </template>
 
 <script setup lang="ts">
-import { colorMode } from '@/utils/color';
+import { colorTheme } from '@/main';
+
 
 function toggleColorMode() {
-  colorMode.value = colorMode.value === 'light' ? 'dark' : 'light'
+  colorTheme.value = colorTheme.value === 'light' ? 'dark' : 'light';
 }
 </script>

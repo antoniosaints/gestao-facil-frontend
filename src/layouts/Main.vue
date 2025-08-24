@@ -12,18 +12,12 @@
             <TopMenu />
             <SidebarMenu :menu="sidebarMenuOptions" />
             <ColorToggle />
+            <LogoutButton />
 
             <button id="closeSidebarButton"
                 class="md:hidden mt-4 flex items-center border border-border gap-2 px-4 py-3 rounded transition text-white bg-orange-500 dark:bg-orange-800 dark:border-border-dark w-full justify-center">
                 <i class="fa-solid fa-circle-xmark mr-1"></i> Fechar
             </button>
-            <div class="flex flex-col gap-2 hidden">
-                <button style="display: none" id="sendNotificationBtn"
-                    class="px-4 py-2 bg-green-600 text-white rounded hidden hover:bg-green-700 transition">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    Enviar Notificação
-                </button>
-            </div>
         </aside>
         <main id="container-main-app-sistema"
             class="overflow-y-auto h-[calc(100vh-5rem)] md:h-[calc(100vh-4.3rem)] p-6 md:ml-64 mt-0">
@@ -40,4 +34,5 @@ import HeaderMenu from '@/components/layout/headerMenu.vue'
 import SidebarMenu from '@/components/layout/sidebarMenu.vue'
 import TopMenu from '@/components/layout/topMenu.vue'
 import { sidebarMenuOptions } from './options'
+import LogoutButton from '@/components/layout/logoutButton.vue'
 </script>

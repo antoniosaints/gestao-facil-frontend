@@ -2,6 +2,7 @@ import { onMounted, ref } from 'vue'
 import { defineStore } from 'pinia'
 import http from '@/utils/axios'
 import axios from 'axios'
+import { useToast } from 'vue-toastification'
 
 type loginResponse = {
   data: {
@@ -20,6 +21,8 @@ type defaultResponse = {
   headers: string
   status: number
 }
+
+const toast = useToast()
 
 export const useAuthStore = defineStore('authStore', () => {
   const token = ref('')
@@ -61,13 +64,11 @@ export const useAuthStore = defineStore('authStore', () => {
     token.value = ''
     refreshToken.value = ''
     user.value = ''
-    localStorage.clear()
-
-    clearTimeout(timer.value)
-
-    timer.value = setTimeout(() => {
-      window.location.href = '/'
-    }, 2000)
+    localStorage.removeItem('gestao_facil:token')
+    localStorage.removeItem('gestao_facil:refreshToken')
+    localStorage.removeItem('gestao_facil:usuario')
+    toast.info('Logout efetuado com sucesso!')
+    window.location.href = '/login'
   }
 
   const refresh = async () => {

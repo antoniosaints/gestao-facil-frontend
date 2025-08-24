@@ -2,14 +2,12 @@
 import { useAuthStore } from '@/stores/login/useAuthStore';
 import { ref } from 'vue';
 import { useToast } from 'vue-toastification';
-const backgroundURL = ref('data:image/svg+xml,<svg width=" 60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23f97316" fill-opacity="0.1"> <circle cx="7" cy="7" r="7" /> <circle cx="53" cy="7" r="7" /><circle cx="7" cy="53" r="7" /><circle cx="53" cy="53" r="7" /></g></g></svg>');
-const store = useAuthStore();
 const toast = useToast();
+const store = useAuthStore();
 const login = ref({
     email: '',
     password: ''
 });
-
 const showForgotPasswordModal = ref(false);
 
 const testemonials = [
@@ -44,13 +42,8 @@ const getOnTestemonials = () => {
 }
 
 async function loginUsuario() {
-    try {
-        await store.login(login.value.email, login.value.password);
-        toast.success('Login efetuado com sucesso!');
-    } catch (error) {
-        console.log(error);
-        toast.error('Erro ao efetuar login!');
-    }
+    await store.login(login.value.email, login.value.password);
+    toast.success('Login efetuado com sucesso!');
 }
 
 </script>
@@ -59,7 +52,7 @@ async function loginUsuario() {
         class="bg-gradient-to-br from-primary-50 to-orange-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300 min-h-screen">
         <!-- Background Pattern -->
         <div class="absolute inset-0 opacity-5 dark:opacity-10">
-            <div class="absolute inset-0" :style="{ backgroundImage: `url(${backgroundURL})` }">
+            <div class="absolute inset-0">
             </div>
         </div>
 
