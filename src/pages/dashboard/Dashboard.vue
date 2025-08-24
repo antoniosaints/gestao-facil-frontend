@@ -217,12 +217,13 @@ import { useDashboardStore } from '@/stores/dashboard/useDashboardStore';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
 import { onMounted, ref, computed } from 'vue';
 import { VendaRepository } from '@/repositories/venda-repository';
+import { colorTheme } from '@/main';
 
 const store = useDashboardStore();
 const storeLancamento = useLancamentosStore();
 
 // Cor reativa baseada no tema
-const currentColor = computed(() => (document.documentElement.classList.contains('dark') ? '#ffffff' : '#000000'));
+const currentColor = computed(() => (colorTheme.value === 'dark' ? '#ffffff' : '#000000'));
 
 // Options dos gráficos com cores reativas
 const options = computed(() => ({
