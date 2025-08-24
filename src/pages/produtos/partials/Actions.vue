@@ -42,10 +42,10 @@ function openDeleteModal(number: number) {
     openDelete.value = true
 }
 
-function deletar(id: number) {
+async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     try {
-        ProdutoRepository.remove(id)
+        await ProdutoRepository.remove(id)
         store.updateTable()
         toast.success('Produto deletado com sucesso')
         openDelete.value = false
