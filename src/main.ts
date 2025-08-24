@@ -14,6 +14,7 @@ export const colorTheme = useColorMode({
   modes: {
     light: 'light',
     dark: 'dark',
+    auto: 'auto',
   },
 })
 

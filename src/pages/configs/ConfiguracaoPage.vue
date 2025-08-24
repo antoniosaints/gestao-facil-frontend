@@ -1,0 +1,439 @@
+<template>
+    <div class="container mx-auto space-y-6">
+        <div class="flex items-start md:items-center justify-between flex-col md:flex-row ">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">Configurações</h1>
+                <p class="text-muted-foreground">Ajuste preferências do sistema e integrações.</p>
+            </div>
+        </div>
+
+        <Tabs v-model="tab" class="w-auto">
+            <div class="overflow-auto max-w-full">
+                <TabsList class="grid w-max grid-cols-7">
+                    <TabsTrigger value="geral"><i class="fa-solid fa-gear mr-2"></i> Geral</TabsTrigger>
+                    <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
+                    <TabsTrigger value="pdv"><i class="fa-solid fa-cash-register mr-2"></i> PDV</TabsTrigger>
+                    <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
+                    <TabsTrigger value="integracoes"><i class="fa-solid fa-link mr-2"></i> Integrações</TabsTrigger>
+                    <TabsTrigger value="seguranca"><i class="fa-solid fa-shield mr-2"></i> Segurança</TabsTrigger>
+                    <TabsTrigger value="impressao"><i class="fa-solid fa-print mr-2"></i> Impressão</TabsTrigger>
+                </TabsList>
+            </div>
+
+            <!-- GERAL -->
+            <TabsContent value="geral">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Preferências gerais</CardTitle>
+                        <CardDescription>Defina idioma, moeda e formatação padrão.</CardDescription>
+                    </CardHeader>
+                    <CardContent class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <Label for="idioma">Idioma</Label>
+                            <Select v-model="form.geral.idioma">
+                                <SelectTrigger id="idioma">
+                                    <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
+                                    <SelectItem value="en-US">English (US)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="moeda">Moeda</Label>
+                            <Select v-model="form.geral.moeda">
+                                <SelectTrigger id="moeda">
+                                    <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="BRL">BRL</SelectItem>
+                                    <SelectItem value="USD">USD</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="timezone">Fuso horário</Label>
+                            <Input id="timezone" v-model="form.geral.timezone" placeholder="America/Fortaleza" />
+                        </div>
+
+                        <div class="flex items-center justify-between border rounded-lg p-3">
+                            <div>
+                                <Label>Ativar logs detalhados</Label>
+                                <p class="text-sm text-muted-foreground">Útil para suporte e auditoria.</p>
+                            </div>
+                            <Switch v-model:checked="form.geral.debug" />
+                        </div>
+                    </CardContent>
+                    <CardFooter class="justify-end">
+                        <Button variant="outline" @click="reset('geral')">Cancelar</Button>
+                        <Button class="ml-2" @click="save('geral')">Salvar</Button>
+                    </CardFooter>
+                </Card>
+            </TabsContent>
+
+            <!-- EMPRESA -->
+            <TabsContent value="empresa">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Dados da empresa</CardTitle>
+                        <CardDescription>Informações exibidas em notas, recibos e relatórios.</CardDescription>
+                    </CardHeader>
+                    <CardContent class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <Label for="razao">Razão Social</Label>
+                            <Input id="razao" v-model="form.empresa.razao" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="fantasia">Nome Fantasia</Label>
+                            <Input id="fantasia" v-model="form.empresa.fantasia" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="cnpj">CNPJ</Label>
+                            <Input id="cnpj" v-model="form.empresa.cnpj" placeholder="00.000.000/0001-00" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="ie">Inscrição Estadual</Label>
+                            <Input id="ie" v-model="form.empresa.ie" />
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <Label for="endereco">Endereço</Label>
+                            <Input id="endereco" v-model="form.empresa.endereco" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="telefone">Telefone</Label>
+                            <Input id="telefone" v-model="form.empresa.telefone" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="email">E-mail</Label>
+                            <Input id="email" type="email" v-model="form.empresa.email" />
+                        </div>
+                    </CardContent>
+                    <CardFooter class="justify-end">
+                        <Button variant="outline" @click="reset('empresa')">Cancelar</Button>
+                        <Button class="ml-2" @click="save('empresa')">Salvar</Button>
+                    </CardFooter>
+                </Card>
+            </TabsContent>
+
+            <!-- PDV -->
+            <TabsContent value="pdv">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Configurações do PDV</CardTitle>
+                        <CardDescription>Preferências de caixa, troco e descontos.</CardDescription>
+                    </CardHeader>
+                    <CardContent class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <Label for="troco">Caixa inicial (R$)</Label>
+                            <Input id="troco" v-model.number="form.pdv.caixaInicial" type="number" step="0.01" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="descontoMax">Desconto máx. (%)</Label>
+                            <Input id="descontoMax" v-model.number="form.pdv.descontoMax" type="number" step="0.01" />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="imprimir">
+                                Impressão automática ao finalizar venda
+                            </Label>
+                            <div class="flex justify-between items-center border rounded-lg p-3">
+                                <span class="text-sm text-muted-foreground">Enviar direto para impressora padrão.</span>
+                                <Switch v-model:checked="form.pdv.impressaoAutomatica" />
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="abrirGaveta">
+                                Abrir gaveta automaticamente
+                            </Label>
+                            <div class="flex justify-between items-center border rounded-lg p-3">
+                                <span class="text-sm text-muted-foreground">Quando a venda for finalizada.</span>
+                                <Switch v-model:checked="form.pdv.abrirGaveta" />
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter class="justify-end">
+                        <Button variant="outline" @click="reset('pdv')">Cancelar</Button>
+                        <Button class="ml-2" @click="save('pdv')">Salvar</Button>
+                    </CardFooter>
+                </Card>
+            </TabsContent>
+
+            <!-- NOTIFICAÇÕES -->
+            <TabsContent value="notificacoes">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Notificações</CardTitle>
+                        <CardDescription>Configure e-mails e push de eventos.</CardDescription>
+                    </CardHeader>
+                    <CardContent class="space-y-6">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <Label for="emailNotif">E-mail para avisos</Label>
+                                <Input id="emailNotif" type="email" v-model="form.notificacoes.email" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="push">Push</Label>
+                                <div class="flex items-center justify-between border rounded-lg p-3">
+                                    <span class="text-sm text-muted-foreground">Enviar notificações via serviço de
+                                        push.</span>
+                                    <Switch v-model:checked="form.notificacoes.push" />
+                                </div>
+                            </div>
+                        </div>
+                        <Separator />
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <Label>Eventos</Label>
+                                <div class="grid gap-3">
+                                    <div class="flex items-center justify-between">
+                                        <span>Venda concluída</span>
+                                        <Switch v-model:checked="form.notificacoes.eventos.vendaConcluida" />
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span>Sangria registrada</span>
+                                        <Switch v-model:checked="form.notificacoes.eventos.sangria" />
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span>Estoque baixo</span>
+                                        <Switch v-model:checked="form.notificacoes.eventos.estoqueBaixo" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter class="justify-end">
+                        <Button variant="outline" @click="reset('notificacoes')">Cancelar</Button>
+                        <Button class="ml-2" @click="save('notificacoes')">Salvar</Button>
+                    </CardFooter>
+                </Card>
+            </TabsContent>
+
+            <!-- INTEGRAÇÕES -->
+            <TabsContent value="integracoes">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Integrações</CardTitle>
+                        <CardDescription>Conecte serviços externos (ex.: Asaas, QZ Tray, Supabase).</CardDescription>
+                    </CardHeader>
+                    <CardContent class="space-y-8">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <Label for="mercadoPagoKey">Mercado Pago API Key</Label>
+                                <Input id="mercadoPagoKey" v-model="form.integracoes.mercadoPago.apiKey" type="password" />
+                                <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
+                                    clientes.</p>
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="mercadoPagoEnv">Ambiente</Label>
+                                <Select v-model="form.integracoes.mercadoPago.ambiente">
+                                    <SelectTrigger id="mercadoPagoEnv">
+                                        <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="sandbox">Sandbox</SelectItem>
+                                        <SelectItem value="production">Produção</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <Separator />
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <Label for="asaasKey">Asaas API Key</Label>
+                                <Input id="asaasKey" v-model="form.integracoes.asaas.apiKey" type="password" />
+                                <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
+                                    clientes.</p>
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="asaasAmb">Ambiente</Label>
+                                <Select v-model="form.integracoes.asaas.ambiente">
+                                    <SelectTrigger id="asaasAmb">
+                                        <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="sandbox">Sandbox</SelectItem>
+                                        <SelectItem value="production">Produção</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <Separator />
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <Label for="qzHost">QZ Tray Host</Label>
+                                <Input id="qzHost" v-model="form.integracoes.qztray.host"
+                                    placeholder="127.0.0.1:8182" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="qzCert">Certificado (base64)</Label>
+                                <Textarea id="qzCert" v-model="form.integracoes.qztray.certBase64" rows="4" />
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter class="justify-end">
+                        <Button variant="outline" @click="reset('integracoes')">Cancelar</Button>
+                        <Button class="ml-2" @click="save('integracoes')">Salvar</Button>
+                    </CardFooter>
+                </Card>
+            </TabsContent>
+
+            <!-- SEGURANÇA -->
+            <TabsContent value="seguranca">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Segurança</CardTitle>
+                        <CardDescription>Políticas de sessão e autenticação.</CardDescription>
+                    </CardHeader>
+                    <CardContent class="space-y-6">
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="space-y-2">
+                                <Label for="sessionMin">Sessão (minutos)</Label>
+                                <Input id="sessionMin" v-model.number="form.seguranca.sessaoMinutos" type="number"
+                                    min="5" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="tentativas">Tentativas de login</Label>
+                                <Input id="tentativas" v-model.number="form.seguranca.tentativas" type="number"
+                                    min="3" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="mfa">MFA obrigatório</Label>
+                                <div class="flex items-center justify-between border rounded-lg p-3">
+                                    <span class="text-sm text-muted-foreground">Exigir autenticação em duas
+                                        etapas.</span>
+                                    <Switch v-model:checked="form.seguranca.mfa" />
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter class="justify-end">
+                        <Button variant="outline" @click="reset('seguranca')">Cancelar</Button>
+                        <Button class="ml-2" @click="save('seguranca')">Salvar</Button>
+                    </CardFooter>
+                </Card>
+            </TabsContent>
+
+            <!-- IMPRESSÃO -->
+            <TabsContent value="impressao">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Impressão</CardTitle>
+                        <CardDescription>Preferências de impressão não fiscal.</CardDescription>
+                    </CardHeader>
+                    <CardContent class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <Label for="modeloImp">Modelo de impressora</Label>
+                            <Select v-model="form.impressao.modelo">
+                                <SelectTrigger id="modeloImp">
+                                    <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="epson">Epson</SelectItem>
+                                    <SelectItem value="bematech">Bematech</SelectItem>
+                                    <SelectItem value="elgin">Elgin</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="largura">Largura do papel (mm)</Label>
+                            <Input id="largura" v-model.number="form.impressao.largura" type="number" min="48"
+                                step="1" />
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <Label for="preview">Pré-visualização</Label>
+                            <div class="border rounded-lg p-4 text-sm text-muted-foreground">
+                                Saída simulada do cupom com largura {{ form.impressao.largura }}mm.
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter class="justify-end">
+                        <Button variant="outline" @click="reset('impressao')">Cancelar</Button>
+                        <Button class="ml-2" @click="save('impressao')">Salvar</Button>
+                    </CardFooter>
+                </Card>
+            </TabsContent>
+        </Tabs>
+    </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue'
+// shadcn-vue components (ajuste os imports conforme sua pasta de componentes)
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { Separator } from '@/components/ui/separator'
+import { Loader2 } from 'lucide-vue-next'
+import { useToast } from 'vue-toastification'
+
+// Estado
+const tab = ref<'geral' | 'empresa' | 'pdv' | 'notificacoes' | 'integracoes' | 'aparencia' | 'seguranca' | 'impressao'>('geral')
+const saving = ref(false)
+const toast = useToast()
+
+const defaults = {
+    geral: { idioma: 'pt-BR', moeda: 'BRL', timezone: 'America/Fortaleza', debug: false },
+    empresa: { razao: '', fantasia: '', cnpj: '', ie: '', endereco: '', telefone: '', email: '' },
+    pdv: { caixaInicial: 0, descontoMax: 5, impressaoAutomatica: true, abrirGaveta: true },
+    notificacoes: {
+        email: '', push: true,
+        eventos: { vendaConcluida: true, sangria: true, estoqueBaixo: true }
+    },
+    integracoes: {
+        asaas: { apiKey: '', ambiente: 'sandbox' as 'sandbox' | 'production' },
+        mercadoPago: { apiKey: '', ambiente: 'sandbox' as 'sandbox' | 'production' },
+        qztray: { host: '127.0.0.1:8182', certBase64: '' },
+        supabase: { url: '', key: '' }
+    },
+    aparencia: { tema: 'system' as 'light' | 'dark' | 'system', densidade: 'comfortable' as 'comfortable' | 'compact' },
+    seguranca: { sessaoMinutos: 30, tentativas: 5, mfa: false },
+    impressao: { modelo: 'epson', largura: 80 }
+}
+
+const form = reactive(structuredClone(defaults))
+
+// Ações
+async function save(section?: keyof typeof form) {
+    saving.value = true
+    try {
+        // TODO: chame sua API aqui (axios/fetch). Ex.: await api.save(section, form[section])
+        await new Promise((r) => setTimeout(r, 500))
+        toast({ title: 'Configurações salvas', description: section ? `Seção “${section}” atualizada.` : 'Todas as seções atualizadas.' })
+    } finally {
+        saving.value = false
+    }
+}
+
+function reset(section?: keyof typeof form) {
+    if (section) {
+        // @ts-ignore
+        form[section] = structuredClone(defaults[section])
+        return
+    }
+    Object.assign(form, structuredClone(defaults))
+}
+
+function resetAll() { reset() }
+async function saveAll() { await save() }
+</script>
+
+<style scoped>
+/********** Densidade **********/
+:root {
+    --pad: 0.75rem;
+}
+
+.compact :is(input, button, .shadcn-control) {
+    padding: calc(var(--pad) * 0.6);
+}
+</style>
