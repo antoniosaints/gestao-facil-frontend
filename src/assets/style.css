@@ -75,7 +75,9 @@
     @apply bg-background text-foreground;
   }
 }
-
+.dp__main {
+  --dp-font-family: 'Roboto', sans-serif !important;
+}
 .dp__theme_light {
   --dp-cell-border-radius: 0.5rem !important;
   --dp-border-radius: 0.3rem !important;
