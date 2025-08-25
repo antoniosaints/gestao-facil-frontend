@@ -22,7 +22,7 @@
 
             <!-- GERAL -->
             <TabsContent value="geral">
-                <Card>
+                <Card class="rounded-t-none">
                     <CardHeader>
                         <CardTitle>Preferências gerais</CardTitle>
                         <CardDescription>Defina idioma, moeda e formatação padrão.</CardDescription>
@@ -81,7 +81,7 @@
 
             <!-- PDV -->
             <TabsContent value="pdv">
-                <Card>
+                <Card class="rounded-t-none">
                     <CardHeader>
                         <CardTitle>Configurações do PDV</CardTitle>
                         <CardDescription>Preferências de caixa, troco e descontos.</CardDescription>
@@ -123,7 +123,7 @@
 
             <!-- NOTIFICAÇÕES -->
             <TabsContent value="notificacoes">
-                <Card>
+                <Card class="rounded-t-none">
                     <CardHeader>
                         <CardTitle>Notificações</CardTitle>
                         <CardDescription>Configure e-mails e push de eventos.</CardDescription>
@@ -167,12 +167,12 @@
 
             <!-- INTEGRAÇÕES -->
             <TabsContent value="integracoes">
-                <Card>
+                <Card class="rounded-t-none">
                     <CardHeader>
                         <CardTitle>Integrações</CardTitle>
                         <CardDescription>Conecte serviços externos (ex.: Asaas, QZ Tray, Supabase).</CardDescription>
                     </CardHeader>
-                    <CardContent class="space-y-8">
+                    <CardContent class="space-y-3">
                         <div class="grid md:grid-cols-2 gap-6">
                             <div class="space-y-2">
                                 <Label for="mercadoPagoKey">Mercado Pago API Key</Label>
@@ -240,7 +240,7 @@
 
             <!-- SEGURANÇA -->
             <TabsContent value="seguranca">
-                <Card>
+                <Card class="rounded-t-none">
                     <CardHeader>
                         <CardTitle>Segurança</CardTitle>
                         <CardDescription>Políticas de sessão e autenticação.</CardDescription>
@@ -276,7 +276,7 @@
 
             <!-- IMPRESSÃO -->
             <TabsContent value="impressao">
-                <Card>
+                <Card class="rounded-t-none">
                     <CardHeader>
                         <CardTitle>Impressão</CardTitle>
                         <CardDescription>Preferências de impressão não fiscal.</CardDescription>
