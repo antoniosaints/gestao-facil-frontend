@@ -27,10 +27,19 @@ app.use(Toast, {
   closeOnClick: true,
   pauseOnHover: true,
   newestOnTop: true,
-  hideProgressBar: true
+  hideProgressBar: true,
 })
 
 app.use(createPinia())
 app.use(router)
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .then((reg) => console.log('[SW] Registrado'))
+      .catch((err) => console.error('[SW] Erro ao registrar:', err))
+  })
+}
 
 app.mount('#app')

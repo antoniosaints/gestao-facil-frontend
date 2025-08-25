@@ -76,46 +76,7 @@
 
             <!-- EMPRESA -->
             <TabsContent value="empresa">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Dados da empresa</CardTitle>
-                        <CardDescription>Informações exibidas em notas, recibos e relatórios.</CardDescription>
-                    </CardHeader>
-                    <CardContent class="grid md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <Label for="razao">Razão Social</Label>
-                            <Input id="razao" v-model="form.empresa.razao" />
-                        </div>
-                        <div class="space-y-2">
-                            <Label for="fantasia">Nome Fantasia</Label>
-                            <Input id="fantasia" v-model="form.empresa.fantasia" />
-                        </div>
-                        <div class="space-y-2">
-                            <Label for="cnpj">CNPJ</Label>
-                            <Input id="cnpj" v-model="form.empresa.cnpj" placeholder="00.000.000/0001-00" />
-                        </div>
-                        <div class="space-y-2">
-                            <Label for="ie">Inscrição Estadual</Label>
-                            <Input id="ie" v-model="form.empresa.ie" />
-                        </div>
-                        <div class="space-y-2 md:col-span-2">
-                            <Label for="endereco">Endereço</Label>
-                            <Input id="endereco" v-model="form.empresa.endereco" />
-                        </div>
-                        <div class="space-y-2">
-                            <Label for="telefone">Telefone</Label>
-                            <Input id="telefone" v-model="form.empresa.telefone" />
-                        </div>
-                        <div class="space-y-2">
-                            <Label for="email">E-mail</Label>
-                            <Input id="email" type="email" v-model="form.empresa.email" />
-                        </div>
-                    </CardContent>
-                    <CardFooter class="justify-end">
-                        <Button variant="outline" @click="reset('empresa')">Cancelar</Button>
-                        <Button class="ml-2" @click="save('empresa')">Salvar</Button>
-                    </CardFooter>
-                </Card>
+                <EmpresaPage />
             </TabsContent>
 
             <!-- PDV -->
@@ -171,16 +132,10 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div class="space-y-2">
                                 <Label for="emailNotif">E-mail para avisos</Label>
-                                <Input id="emailNotif" type="email" v-model="form.notificacoes.email" />
+                                <Input id="emailNotif" type="email" placeholder="seu@email.com"
+                                    v-model="form.notificacoes.email" />
                             </div>
-                            <div class="space-y-2">
-                                <Label for="push">Push</Label>
-                                <div class="flex items-center justify-between border rounded-lg p-3">
-                                    <span class="text-sm text-muted-foreground">Enviar notificações via serviço de
-                                        push.</span>
-                                    <Switch v-model:checked="form.notificacoes.push" />
-                                </div>
-                            </div>
+                            <SubscribeNotification />
                         </div>
                         <Separator />
                         <div class="grid md:grid-cols-2 gap-6">
@@ -221,7 +176,8 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div class="space-y-2">
                                 <Label for="mercadoPagoKey">Mercado Pago API Key</Label>
-                                <Input id="mercadoPagoKey" v-model="form.integracoes.mercadoPago.apiKey" type="password" />
+                                <Input id="mercadoPagoKey" v-model="form.integracoes.mercadoPago.apiKey"
+                                    type="password" />
                                 <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
                                     clientes.</p>
                             </div>
@@ -363,7 +319,6 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-// shadcn-vue components (ajuste os imports conforme sua pasta de componentes)
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -373,8 +328,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { Loader2 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
+import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
+import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
 
 // Estado
 const tab = ref<'geral' | 'empresa' | 'pdv' | 'notificacoes' | 'integracoes' | 'aparencia' | 'seguranca' | 'impressao'>('geral')
@@ -423,8 +379,6 @@ function reset(section?: keyof typeof form) {
     Object.assign(form, structuredClone(defaults))
 }
 
-function resetAll() { reset() }
-async function saveAll() { await save() }
 </script>
 
 <style scoped>

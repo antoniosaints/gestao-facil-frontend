@@ -13,7 +13,6 @@
             <SidebarMenu :menu="sidebarMenuOptions" />
             <ColorToggle />
             <LogoutButton />
-
             <button id="closeSidebarButton"
                 class="md:hidden mt-4 flex items-center border border-border gap-2 px-4 py-3 rounded transition text-white bg-orange-500 dark:bg-orange-800 dark:border-border-dark w-full justify-center">
                 <i class="fa-solid fa-circle-xmark mr-1"></i> Fechar

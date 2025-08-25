@@ -5,16 +5,7 @@
       <button class="hidden p-2"><i class="fa-solid fa-bars"></i></button>
     </div>
     <div class="flex gap-2">
-      <button style="display: none" id="unsubscribeBtn"
-        class="px-3 py-0.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-800 dark:hover:bg-blue-700 dark:text-blue-200 transition-colors">
-        <i class="fa-solid fa-bell"></i>
-      </button>
-      <button style="display: none" id="subscribeBtn"
-        class="px-2 py-0.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-800 dark:hover:bg-red-700 dark:text-red-200 transition-colors">
-        <i class="fa-solid fa-bell-slash"></i>
-      </button>
-
-      <div class="flex justify-between flex-col text-sm text-right">
+      <div class="flex justify-between flex-col text-sm text-left">
         <div>{{ useStore.user }}</div>
         <p class="text-xs">{{ horarioSistemaAtual }}</p>
       </div>

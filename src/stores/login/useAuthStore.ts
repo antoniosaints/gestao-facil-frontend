@@ -77,16 +77,9 @@ export const useAuthStore = defineStore('authStore', () => {
       if (!rfToken) {
         return false
       }
-      const api = axios.create({
-        baseURL: import.meta.env.VITE_API_URL,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          Authorization: `Bearer ${rfToken}`,
-        },
-      })
-      const { data } = (await api.get('/auth/renew')) as defaultResponse & { data: loginResponse }
-      console.log(data)
+      const { data } = (await http.get('/auth/renew', {
+        headers: { Authorization: `Bearer ${rfToken}` },
+      })) as defaultResponse & { data: loginResponse }
       token.value = data.data.token
       refreshToken.value = data.data.refreshToken
       user.value = data.data.nome
