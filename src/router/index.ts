@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { useToast } from 'vue-toastification'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -74,6 +75,15 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+})
+
+const toast = useToast()
+
+router.beforeEach((to) => {
+  if (to.path !== '/login' && !localStorage.getItem('gestao_facil:token')) {
+    toast.error('Necessário efetuar login para acessar essa rota!')
+    return { name: 'login' }
+  }
 })
 
 export default router

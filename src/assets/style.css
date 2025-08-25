@@ -75,3 +75,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+.dp__theme_light {
+  --dp-cell-border-radius: 0.5rem !important;
+  --dp-border-radius: 0.3rem !important;
+  --dp-text-color: #000 !important;
+  --dp-border-radius: 0.5rem !important;
+}
+.dp__theme_dark {
+  --dp-background-color: #020817 !important;
+  --dp-text-color: #fff !important;
+  --dp-hover-color: #484848 !important;
+  --dp-hover-text-color: #fff !important;
+  --dp-hover-icon-color: #959595 !important;
+  --dp-cell-border-radius: 0.5rem !important;
+  --dp-border-color: #21303d !important;
+  --dp-border-radius: 0.5rem !important;
+  --dp-menu-border-color: #2d2d2d !important;
+  --dp-border-color-hover: #aaaeb7 !important;
+  --dp-border-color-focus: #28292b !important;
+}

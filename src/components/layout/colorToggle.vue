@@ -7,8 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { colorTheme } from '@/main';
-
+import { colorTheme } from '@/utils/theme';
 
 function toggleColorMode() {
   colorTheme.value = colorTheme.value === 'light' ? 'dark' : 'light';

@@ -7,12 +7,13 @@ import {
   LineElement,
   PointElement,
   CategoryScale,
-  LinearScale
+  LinearScale,
+  Filler
 } from 'chart.js'
 import { Line } from 'vue-chartjs'
 
 // Registrando componentes do ChartJS
-ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale)
+ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale, Filler)
 
 defineProps<{
   data: any,

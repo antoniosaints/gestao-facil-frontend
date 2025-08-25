@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import ModalView from "@/components/formulario/ModalView.vue";
+import Select2Ajax from "@/components/formulario/Select2Ajax.vue";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { colorTheme } from "@/utils/theme";
+import { ptBR } from "date-fns/locale";
 import { ref } from "vue";
 
 const title = ref('Cadastro de venda')
 const description = ref('Preencha os campos abaixo')
 
 const open = defineModel({ default: false })
+
+const dataVenda = ref(new Date())
 </script>
 
 <template>
@@ -16,61 +24,82 @@ const open = defineModel({ default: false })
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Cliente</label>
                     <div class="flex items-center justify-center gap-2">
-                        <select id="select_cliente_venda_formulario" name="cliente"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-
-                        </select>
+                        <Select2Ajax class="w-full" url="/clientes/select2" :allow-clear="true" />
                         <button type="button" onclick="openModalClientes()"
-                            class="bg-blue-500 px-4 py-2 text-white dark:bg-blue-600 rounded-md border border-border dark:border-border-dark flex justify-center items-center">+</button>
+                            class="bg-primary px-4 py-1.5 text-white rounded-md border border-border dark:border-border-dark flex justify-center items-center">+</button>
                     </div>
                 </div>
 
                 <div class="md:col-span-3">
                     <label class="block text-sm mb-1">Data da Venda <span class="text-red-500">*</span></label>
-                    <input type="date" required id="input_data_venda_formulario" placeholder="DD/MM/AAAA"
-                        name="data_venda"
-                        class="w-full p-1.5 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                    <DatePicker placeholder="Data da venda" required v-model="dataVenda" :dark="(colorTheme === 'dark')"
+                        cancelText="Cancelar" selectText="Selecionar" :format-locale="ptBR" :format="'dd/MM/yyyy'"
+                        :enable-time-picker="false" auto-apply />
                 </div>
 
                 <div class="md:col-span-3">
                     <label class="block text-sm mb-1">Status <span class="text-red-500">*</span></label>
-                    <select required name="status" id="select_status_venda_formulario"
-                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-                        <option value="ORCAMENTO">Orçamento</option>
-                        <option value="ANDAMENTO">Em andamento</option>
-                        <option value="FINALIZADO" selected>Finalizado</option>
-                        <option value="PENDENTE">Pendente</option>
-                        <option value="CANCELADO">Cancelado</option>
-                    </select>
+                    <Select default-value="ORCAMENTO">
+                        <SelectTrigger class="w-full bg-card dark:bg-card-dark">
+                            <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ORCAMENTO">
+                                Orçamento
+                            </SelectItem>
+                            <SelectItem value="ANDAMENTO">
+                                Em andamento
+                            </SelectItem>
+                            <SelectItem value="FINALIZADO">
+                                Finalizado
+                            </SelectItem>
+                            <SelectItem value="PENDENTE">
+                                Pendente
+                            </SelectItem>
+                            <SelectItem value="CANCELADO">
+                                Cancelado
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Vendedor <span class="text-red-500">*</span></label>
-                    <select required id="select_vendedor_venda_formulario" name="vendedor"
-                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-                    </select>
+                    <Select2Ajax class="w-full" url="/usuarios/select2" :allow-clear="true" />
                 </div>
 
 
                 <div class="md:col-span-2">
-                    <label class="block text-sm mb-1">Garantia (dias)</label>
-                    <input type="number" name="garantia" id="input_garantia_venda_formulario"
-                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
-                        placeholder="Ex: 90 dias" />
+                    <label for="garantia" class="block text-sm mb-1">Garantia (dias)</label>
+                    <NumberField class="bg-card dark:bg-card-dark" id="garantia" :default-value="0" :min="0">
+                        <NumberFieldContent>
+                            <NumberFieldDecrement />
+                            <NumberFieldInput />
+                            <NumberFieldIncrement />
+                        </NumberFieldContent>
+                    </NumberField>
                 </div>
 
                 <div class="md:col-span-2">
                     <label for="tipo_desconto" class="block text-sm mb-1">Tipo <span
                             class="text-red-500">*</span></label>
-                    <select required name="tipo_desconto" id="select_tipo_desconto_formulario"
-                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-                        <option value="PORCENTAGEM">Porcentagem</option>
-                        <option value="VALOR">Valor</option>
-                    </select>
+                    <Select required default-value="PORCENTAGEM">
+                        <SelectTrigger class="w-full bg-card dark:bg-card-dark">
+                            <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="PORCENTAGEM">
+                                Porcentagem
+                            </SelectItem>
+                            <SelectItem value="VALOR">
+                                Valor
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div class="md:col-span-2">
                     <label for="input_desconto_venda_formulario" class="block text-sm mb-1">Desconto</label>
-                    <input type="text" id="input_desconto_venda_formulario" name="desconto"
+                    <Input type="text" id="input_desconto_venda_formulario" name="desconto"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
                         placeholder="Ex: 1,99" />
                 </div>
@@ -90,28 +119,33 @@ const open = defineModel({ default: false })
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Produto <span class="text-red-500">*</span></label>
-                    <select id="select_produto_venda_formulario"
-                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-                    </select>
+                    <Select2Ajax class="w-full" url="/produtos/select2" :allow-clear="true" />
                 </div>
 
                 <div class="md:col-span-2">
-                    <label class="block text-sm mb-1">Quantidade <span class="text-red-500">*</span></label>
-                    <input type="number" placeholder="1" id="input_quantidade_venda_formulario"
-                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                    <label for="quantidade_carrinho_adicionar" class="block text-sm mb-1">Quantidade <span
+                            class="text-red-500">*</span></label>
+                    <NumberField class="bg-card dark:bg-card-dark" id="quantidade_carrinho_adicionar" :default-value="1"
+                        :min="1">
+                        <NumberFieldContent>
+                            <NumberFieldDecrement />
+                            <NumberFieldInput />
+                            <NumberFieldIncrement />
+                        </NumberFieldContent>
+                    </NumberField>
                 </div>
 
                 <div class="md:col-span-2">
                     <label class="block text-sm mb-1">Preço <span class="text-red-500">*</span></label>
-                    <input type="text" placeholder="R$ 0,00" id="input_preco_venda_formulario"
+                    <Input type="text" placeholder="R$ 0,00" id="input_preco_venda_formulario"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
                 </div>
 
                 <div class="md:col-span-2">
-                    <button id="btn_adicionar_produto_venda" type="button"
-                        class="w-full p-2 bg-info dark:bg-info-dark text-white rounded"><i
-                            class="fa-solid fa-cart-plus"></i>
-                        Adicionar</button>
+                    <Button type="button" class="text-white w-full">
+                        <i class="fa-solid fa-cart-plus"></i>
+                        Adicionar
+                    </Button>
                 </div>
             </div>
 
@@ -119,13 +153,12 @@ const open = defineModel({ default: false })
             <div>
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-medium mb-2">Itens da Venda</h3>
-                    <div>
-
+                    <div class="flex gap-2">
                         <button onclick="informarValorPropostoCliente()" type="button"
-                            class="text-sm text-white py-1 px-2 mb-2 rounded bg-emerald-500 dark:bg-emerald-600 dark:text-gray-200"><i
+                            class="text-sm text-white py-1 px-2 mb-2 rounded bg-emerald-500 dark:bg-emerald-800 dark:text-gray-200"><i
                                 class="fa-solid fa-money-bill"></i> Propor</button>
                         <button id="btn_limpar_carrinho" type="button"
-                            class="text-sm text-white py-1 px-2 mb-2 rounded bg-red-500 dark:bg-red-600 dark:text-gray-200"><i
+                            class="text-sm text-white py-1 px-2 mb-2 rounded bg-red-500 dark:bg-red-800 dark:text-gray-200"><i
                                 class="fa-solid fa-cart-shopping"></i> Limpar</button>
                     </div>
                 </div>

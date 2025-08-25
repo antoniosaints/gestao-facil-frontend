@@ -20,11 +20,6 @@ const store = useVendasStore()
 const openDelete = ref(false)
 const id = ref<number | null>(null)
 
-function copiar(id: string) {
-    navigator.clipboard.writeText(id)
-    toast.success('Copiado para a área de transferência')
-}
-
 async function gerarCupom(id: number) {
     try {
         VendaRepository.getCupomPDF(id)
@@ -77,28 +72,24 @@ async function deletar(id: number) {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuItem @click=" copiar(data.Uid!)" class="cursor-pointer">
-                <i class="fa-regular fa-copy mr-1"></i>
-                Copiar ID
-            </DropdownMenuItem>
-            <DropdownMenuItem v-if="data.status !== 'FATURADO'" class="cursor-pointer">
+            <DropdownMenuItem v-if="data.status !== 'FATURADO'">
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
             </DropdownMenuItem>
-            <DropdownMenuItem @click="gerarCupom(data.id!)" class="cursor-pointer">
+            <DropdownMenuItem @click="gerarCupom(data.id!)">
                 <i class="fa-regular fa-file-pdf mr-1"></i>
                 Cupom PDF
             </DropdownMenuItem>
-            <DropdownMenuItem class="text-success cursor-pointer" v-if="data.status !== 'FATURADO'">
-                <i class="fa-regular fa-square-plus mr-1"></i>
+            <DropdownMenuItem v-if="data.status !== 'FATURADO'">
+                <i class="fa-regular text-success fa-square-plus mr-1"></i>
                 Faturar
             </DropdownMenuItem>
-            <DropdownMenuItem class="text-warning cursor-pointer" v-if="data.status === 'FATURADO'">
-                <i class="fa-regular fa-square-minus mr-1"></i>
+            <DropdownMenuItem v-if="data.status === 'FATURADO'">
+                <i class="fa-regular text-warning fa-square-minus mr-1"></i>
                 Estornar
             </DropdownMenuItem>
             <DropdownMenuSeparator v-if="data.status !== 'FATURADO'" />
-            <DropdownMenuItem v-if="data.status !== 'FATURADO'" class="text-danger cursor-pointer" @click="openModalDelete(data.id!)">
+            <DropdownMenuItem v-if="data.status !== 'FATURADO'" class="text-danger" @click="openModalDelete(data.id!)">
                 <i class="fa-regular fa-trash-can mr-1"></i>
                 Excluir
             </DropdownMenuItem>

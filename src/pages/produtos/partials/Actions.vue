@@ -84,13 +84,9 @@ async function deletar(id: number) {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuItem @click=" store.openUpdate(data.id!)">
+            <DropdownMenuItem @click="store.openUpdate(data.id!)">
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem @click=" copiar(data)">
-                <i class="fa-regular fa-copy mr-1"></i>
-                Copiar
             </DropdownMenuItem>
             <DropdownMenuItem>
                 <i class="fa-solid fa-dolly text-success"></i>

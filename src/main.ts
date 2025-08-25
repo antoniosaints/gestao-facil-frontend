@@ -1,27 +1,20 @@
 import './assets/style.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import './utils/worker'
 import Toast, { POSITION } from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 
 import App from './App.vue'
 import router from './router'
-import { useColorMode } from '@vueuse/core'
 
-export const colorTheme = useColorMode({
-  emitAuto: true,
-  storageKey: 'tema_sistema_gestao_facil',
-  modes: {
-    light: 'light',
-    dark: 'dark',
-    auto: 'auto',
-  },
-})
+import VueDatePicker from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
 
 const app = createApp(App)
 
 app.use(Toast, {
-  positon: POSITION.TOP_RIGHT,
+  position: POSITION.TOP_RIGHT,
   transition: 'Vue-Toastification__fade',
   timeout: 1500,
   closeOnClick: true,
@@ -33,13 +26,6 @@ app.use(Toast, {
 app.use(createPinia())
 app.use(router)
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/service-worker.js')
-      .then((reg) => console.log('[SW] Registrado'))
-      .catch((err) => console.error('[SW] Erro ao registrar:', err))
-  })
-}
+app.component('DatePicker', VueDatePicker)
 
 app.mount('#app')

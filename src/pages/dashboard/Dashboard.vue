@@ -10,14 +10,13 @@
                         class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
                         <i class="fa-solid fa-filter-circle-xmark"></i>
                     </button>
-                    <input type="text" id="filtro_dashboard_periodo" placeholder="Filtrar por período"
-                        class="rounded-md border w-max bg-card dark:bg-card-dark border-border dark:border-border-dark px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                    <Calendarpicker v-model="filtroPeriodo" />
                 </div>
             </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
                 <!-- Metric Item Start -->
-                <div
+                <div @click="goTo('/clientes')"
                     class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-violet-50 dark:bg-violet-950/50 px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-user-tag h-8 w-8 bg-violet-500/10 p-2 rounded-md text-violet-500"></i>
@@ -39,7 +38,7 @@
                     </div>
                 </div>
 
-                <div
+                <div @click="goTo('/produtos')"
                     class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-blue-50 dark:bg-blue-950/50 px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-boxes-packing w-8 h-8 bg-blue-500/10 p-2 rounded-md text-blue-500"></i>
@@ -67,7 +66,7 @@
                     </div>
                 </div>
 
-                <div onclick="loadPage('/produtos/resumo')"
+                <div @click="goTo('/produtos')"
                     class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-red-50 dark:bg-red-950/50 px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-cubes w-8 h-8 bg-red-500/10 p-2 rounded-md text-red-500"></i>
@@ -94,7 +93,7 @@
                     </div>
                 </div>
 
-                <div onclick="loadPage('/vendas/resumo')"
+                <div @click="goTo('/vendas')"
                     class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-green-50 dark:bg-green-950/50 px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-dollar-sign h-8 w-8 bg-green-500/10 p-2 rounded-md text-green-400"></i>
@@ -132,7 +131,7 @@
                         <h2 class="text-lg font-semibold px-0 py-1">
                             <i class="fa-solid fa-chart-simple text-green-600"></i> Vendas Mensais
                         </h2>
-                        <button onclick="loadPage('/vendas/resumo')"
+                        <button type="button" @click="goTo('/vendas')"
                             class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
                             <i class="fa-solid fa-square-arrow-up-right"></i>
                             Ver mais
@@ -150,7 +149,7 @@
                         <h2 class="text-lg font-semibold px-0 py-1">
                             <i class="fa-solid fa-chart-simple text-green-600"></i> Saldo mensal
                         </h2>
-                        <button onclick="loadPage('/lancamentos/resumo')"
+                        <button @click="goTo('/lancamentos/resumo')" type="button"
                             class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
                             <i class="fa-solid fa-square-arrow-up-right"></i>
                             Ver mais
@@ -168,7 +167,7 @@
                         <h2 class="text-lg font-semibold px-0 py-1">
                             <i class="fa-solid fa-boxes-packing text-blue-600"></i> Últimos Produtos
                         </h2>
-                        <button onclick="loadPage('produtos/resumo')" type="button"
+                        <button @click="goTo('/produtos')" type="button"
                             class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-color">
                             <i class="fa-solid fa-square-arrow-up-right"></i>
                             Ver mais
@@ -190,7 +189,7 @@
                             <i class="fa-solid fa-box-open text-red-600"></i>
                             Estoques baixos
                         </h2>
-                        <button onclick="loadPage('produtos/resumo')" type="button"
+                        <button @click="goTo('/produtos')" type="button"
                             class="border-2 border-gray-300 text-gray-950 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-color">
                             <i class="fa-solid fa-square-arrow-up-right"></i>
                             Ver mais
@@ -217,11 +216,14 @@ import { useDashboardStore } from '@/stores/dashboard/useDashboardStore';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
 import { onMounted, ref, computed } from 'vue';
 import { VendaRepository } from '@/repositories/venda-repository';
-import { colorTheme } from '@/main';
+import { goTo } from '@/hooks/links';
+import { ptBR } from 'date-fns/locale';
+import { colorTheme } from '@/utils/theme';
+import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 
 const store = useDashboardStore();
 const storeLancamento = useLancamentosStore();
-
+const filtroPeriodo = ref(new Date());
 // Cor reativa baseada no tema
 const currentColor = computed(() => (colorTheme.value === 'dark' ? '#ffffff' : '#000000'));
 
