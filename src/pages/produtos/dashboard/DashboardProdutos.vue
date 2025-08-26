@@ -1,0 +1,125 @@
+<script setup lang="ts">
+import { ref } from "vue"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Package, TrendingDown, BarChart3, DollarSign, AlertTriangle } from "lucide-vue-next"
+import { Bar, Line, Pie } from "vue-chartjs"
+import {
+  Chart as ChartJS,
+  Title, Tooltip, Legend,
+  BarElement, LineElement, PointElement,
+  ArcElement, CategoryScale, LinearScale
+} from "chart.js"
+
+// Registrar plugins do Chart.js
+ChartJS.register(
+  Title, Tooltip, Legend,
+  BarElement, LineElement, PointElement,
+  ArcElement, CategoryScale, LinearScale
+)
+
+// Indicadores (simulação)
+const indicadores = ref([
+  { titulo: "Produtos Totais", valor: "850", detalhe: "R$ 120.000", icone: Package },
+  { titulo: "Produtos em Baixa", valor: "35", detalhe: "Abaixo do mínimo", icone: TrendingDown },
+  { titulo: "Ticket Médio", valor: "R$ 320", detalhe: "Markup 45%", icone: BarChart3 },
+  { titulo: "Faturamento Mensal", valor: "R$ 48.500", detalhe: "Agosto 2025", icone: DollarSign }
+])
+
+// Gráficos (mock)
+const chartReposicoes = {
+  labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"],
+  datasets: [{ label: "Reposições", data: [20, 35, 40, 30, 25, 50], backgroundColor: "#60a5fa", borderRadius: 6 }]
+}
+
+const chartVendas = {
+  labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"],
+  datasets: [{ label: "Vendas", data: [5000, 8000, 7500, 9000, 8500, 11000], backgroundColor: "#4ade80", borderRadius: 6 }]
+}
+
+const chartMaisVendidos = {
+  labels: ["Notebook", "Smartphone", "Mouse", "Teclado", "Monitor"],
+  datasets: [{ label: "Qtd Vendida", data: [120, 200, 150, 90, 80], backgroundColor: "#fbbf24", borderRadius: 6 }]
+}
+
+const chartCategorias = {
+  labels: ["Informática", "Eletrônicos", "Acessórios", "Móveis"],
+  datasets: [{ label: "Lucro", data: [25000, 18000, 8000, 5000], backgroundColor: ["#6366f1", "#f87171", "#34d399", "#facc15"], borderRadius: 6 }]
+}
+
+// Alertas
+const alertas = ref([
+  "Produto XYZ está com estoque zerado",
+  "15 produtos abaixo do mínimo",
+  "Produto ABC sem movimentação há 90 dias",
+  "2 produtos com margem negativa"
+])
+</script>
+
+<template>
+  <div class="space-y-4">
+
+    <!-- Indicadores -->
+    <section>
+      <h2 class="text-2xl font-bold mb-4"><i class="fa-solid fa-chart-line text-green-600"></i> Dashboard de produtos</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-2xl hover:scale-[1.02] transition">
+          <CardHeader class="flex flex-row items-center gap-2">
+            <component :is="kpi.icone" class="w-5 h-5 text-blue-500" />
+            <CardTitle class="text-sm">{{ kpi.titulo }}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p class="text-xl font-bold">{{ kpi.valor }}</p>
+            <p class="text-xs text-muted-foreground">{{ kpi.detalhe }}</p>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+
+    <!-- Gráficos -->
+    <section class="bg-card border border-border rounded-2xl p-4">
+      <h2 class="text-lg font-bold mb-4">📈 Análises de Estoque e Vendas</h2>
+      <Tabs default-value="reposicoes" class="w-full">
+        <TabsList class="rounded-md">
+          <TabsTrigger value="reposicoes"><i class="fa-solid fa-boxes-stacked"></i> Reposições</TabsTrigger>
+          <TabsTrigger value="vendas"><i class="fa-solid fa-chart-line"></i> Vendas</TabsTrigger>
+          <TabsTrigger value="vendidos"><i class="fa-solid fa-chart-line"></i> Mais Vendidos</TabsTrigger>
+          <TabsTrigger value="categorias"><i class="fa-solid fa-chart-pie"></i> Categorias</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="reposicoes">
+          <Bar class="max-h-[400px]" :data="chartReposicoes" :options="{ responsive: true }" />
+        </TabsContent>
+
+        <TabsContent value="vendas">
+          <Line class="max-h-[400px]" :data="chartVendas" :options="{ responsive: true }" />
+        </TabsContent>
+
+        <TabsContent value="vendidos">
+          <Bar class="max-h-[400px]" :data="chartMaisVendidos" :options="{ responsive: true }" />
+        </TabsContent>
+
+        <TabsContent value="categorias">
+          <Pie class="max-h-[400px]" :data="chartCategorias" />
+        </TabsContent>
+      </Tabs>
+    </section>
+
+    <!-- Alertas e Ações -->
+    <section>
+      <h2 class="text-lg font-bold mb-4">🔔 Alertas e Ações</h2>
+      <Card>
+        <CardHeader class="flex gap-2 items-center">
+          <AlertTriangle class="w-5 h-5 text-red-500" />
+          <CardTitle>Itens que exigem atenção imediata</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul class="list-disc list-inside space-y-1 text-sm">
+            <li v-for="a in alertas" :key="a">{{ a }}</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </section>
+
+  </div>
+</template>

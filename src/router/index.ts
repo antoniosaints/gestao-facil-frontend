@@ -23,6 +23,14 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'dashboard',
+        name: 'vendas-dashboard',
+        component: () => import('@/pages/vendas/dashboard/DashboardVendas.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+      {
         path: 'pdv',
         name: 'vendas-pdv',
         component: () => import('@/pages/vendas/formulario/PDV.vue'),
@@ -40,6 +48,14 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'produtos-home',
         component: () => import('@/pages/produtos/Home.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+      {
+        path: 'dashboard',
+        name: 'produtos-dashboard',
+        component: () => import('@/pages/produtos/dashboard/DashboardProdutos.vue'),
         meta: {
           layout: 'main',
         },

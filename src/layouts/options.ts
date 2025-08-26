@@ -11,13 +11,39 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     nome: 'Vendas',
     icone: 'fa-solid fa-tags',
     color: 'green',
-    link: '/vendas',
+    children: [
+      {
+        nome: 'Painel',
+        link: '/vendas/dashboard',
+        icone: 'fa-solid fa-chart-pie',
+        color: 'green',
+      },
+      {
+        nome: 'Vendas',
+        link: '/vendas',
+        icone: 'fa-solid fa-tags',
+        color: 'green',
+      },
+    ]
   },
   {
     nome: 'Produtos',
     icone: 'fa-solid fa-boxes',
     color: 'blue',
-    link: '/produtos',
+    children: [
+      {
+        nome: 'Painel',
+        link: '/produtos/dashboard',
+        icone: 'fa-solid fa-chart-pie',
+        color: 'blue',
+      },
+      {
+        nome: 'Produtos',
+        link: '/produtos',
+        icone: 'fa-solid fa-boxes',
+        color: 'blue',
+      },
+    ]
   },
   {
     nome: 'Financeiro',
