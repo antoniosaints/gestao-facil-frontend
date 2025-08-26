@@ -24,7 +24,7 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
         icone: 'fa-solid fa-tags',
         color: 'green',
       },
-    ]
+    ],
   },
   {
     nome: 'Produtos',
@@ -43,7 +43,7 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
         icone: 'fa-solid fa-boxes',
         color: 'blue',
       },
-    ]
+    ],
   },
   {
     nome: 'Financeiro',
@@ -115,6 +115,12 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     divisor: true,
   },
   {
+    nome: 'Assinatura',
+    color: 'orange',
+    icone: 'fa-solid fa-star',
+    link: '/assinatura',
+  },
+  {
     nome: 'Modo Admin',
     color: 'violet',
     icone: 'fa-solid fa-lock',
@@ -125,5 +131,5 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     color: 'blue',
     icone: 'fa-solid fa-user',
     link: '/perfil',
-  }
+  },
 ]

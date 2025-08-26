@@ -112,10 +112,12 @@ onMounted(async () => {
                     <span class="truncate whitespace-nowrap">
                         {{ selected?.label ?? 'Selecione...' }}
                     </span>
-                    <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    <Button v-if="allowClear && selected" variant="ghost" size="sm"
-                        class="h-8 w-8 text-danger mr-[-10px]" @click="selected = null"> <i
-                            class="fa-solid fa-square-xmark"></i> </Button>
+                    <div class="flex items-center ml-2">
+                        <ChevronsUpDown class="h-4 w-4 shrink-0 opacity-50" />
+                        <Button v-if="allowClear && selected" variant="ghost" size="sm"
+                            class="h-8 w-8 text-danger mr-[-10px]" @click="selected = null"> <i
+                                class="fa-solid fa-square-xmark"></i> </Button>
+                    </div>
                 </Button>
             </ComboboxTrigger>
         </ComboboxAnchor>

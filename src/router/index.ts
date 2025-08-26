@@ -63,6 +63,28 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/assinatura',
+    name: 'assinatura',
+    children: [
+      {
+        path: '',
+        name: 'assinatura-home',
+        component: () => import('@/pages/assinatura/AssinaturaPage.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+      {
+        path: 'resumo',
+        name: 'assinatura-resumo',
+        component: () => import('@/pages/assinatura/ResumoAssinatura.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+    ],
+  },
+  {
     path: '/configuracoes',
     name: 'configuracoes',
     children: [
