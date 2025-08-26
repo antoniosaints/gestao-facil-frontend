@@ -13,14 +13,15 @@ import {
   PointElement,
   ArcElement,
   CategoryScale,
-  LinearScale
+  LinearScale,
+  Filler
 } from "chart.js"
 
 // Registrando plugins Chart.js
 ChartJS.register(
   Title, Tooltip, Legend,
   BarElement, LineElement, PointElement,
-  ArcElement, CategoryScale, LinearScale
+  ArcElement, CategoryScale, LinearScale, Filler
 )
 
 // --- Indicadores (KPI) ---
@@ -36,17 +37,17 @@ const indicadores = ref([
 // --- Gráficos (exemplos mockados) ---
 const chartStatus = {
   labels: ["Orçamento", "Faturado", "Andamento", "Finalizado", "Pendente", "Cancelado"],
-  datasets: [{ label: "Qtd Vendas", data: [10, 40, 15, 30, 5, 20], backgroundColor: "#4ade80" }]
+  datasets: [{ label: "Qtd Vendas", data: [10, 40, 15, 30, 5, 20], backgroundColor: "#4ade80", borderRadius: 6 }]
 }
 
 const chartMetodo = {
   labels: ["PIX", "Dinheiro", "Cartão"],
-  datasets: [{ label: "Método", data: [35, 20, 45], backgroundColor: ["#60a5fa", "#fbbf24", "#f87171"] }]
+  datasets: [{ label: "Método", data: [35, 20, 45], backgroundColor: ["#60a5fa", "#fbbf24", "#f87171"], borderRadius: 6 }]
 }
 
 const chartPeriodo = {
   labels: ["01", "02", "03", "04", "05", "06", "07"],
-  datasets: [{ label: "Vendas", data: [500, 700, 400, 900, 650, 800, 950], borderColor: "#6366f1", backgroundColor: "#a5b4fc" }]
+  datasets: [{ label: "Vendas", data: [500, 700, 400, 900, 650, 800, 950], borderColor: "#6366f1", backgroundColor: "rgba(99, 102, 241, 0.2)", fill: true, borderRadius: 6, tension: 0.4 }]
 }
 
 // --- Listagens ---
@@ -63,13 +64,6 @@ const pendentesPagamento = ref([
 
 const garantias = ref([
   { id: 7, produto: "Notebook Dell", cliente: "Lucas", validade: "10/09/2025" }
-])
-
-// --- Alertas ---
-const alertas = ref([
-  "3 vendas aguardando faturamento",
-  "2 pagamentos estornados",
-  "5 produtos com estoque baixo"
 ])
 </script>
 
@@ -96,19 +90,20 @@ const alertas = ref([
     <section class="bg-card shadow-md rounded-lg p-4 border border-border">
       <h2 class="text-lg font-bold mb-4">📈 Gráficos de Vendas</h2>
       <Tabs default-value="status" class="w-full">
-        <TabsList>
+        <TabsList class="rounded-md">
           <TabsTrigger value="status">Por Status</TabsTrigger>
           <TabsTrigger value="metodo">Por Método</TabsTrigger>
           <TabsTrigger value="periodo">Por Período</TabsTrigger>
         </TabsList>
         <TabsContent value="status">
-          <Bar class="max-h-[400px]" :data="chartStatus" :options="{ responsive: true, plugins: { legend: { display: false }}}"/>
+          <Bar class="max-h-[400px] p-4" :data="chartStatus"
+            :options="{ responsive: true, plugins: { legend: { display: false } } }" />
         </TabsContent>
         <TabsContent value="metodo">
-          <Pie class="max-h-[400px]" :data="chartMetodo" />
+          <Pie class="max-h-[400px] p-4" :data="chartMetodo" />
         </TabsContent>
         <TabsContent value="periodo">
-          <Line class="max-h-[400px]" :data="chartPeriodo" />
+          <Line class="max-h-[400px] p-4" :data="chartPeriodo" />
         </TabsContent>
       </Tabs>
     </section>
@@ -117,10 +112,12 @@ const alertas = ref([
     <section>
       <h2 class="text-lg font-bold mb-4">📋 Listagens Rápidas</h2>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        
+
         <!-- Últimas vendas -->
         <Card>
-          <CardHeader><CardTitle>Últimas Vendas</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Últimas Vendas</CardTitle>
+          </CardHeader>
           <CardContent>
             <ul class="space-y-2 text-sm">
               <li v-for="v in ultimasVendas" :key="v.id" class="flex justify-between">
@@ -133,7 +130,9 @@ const alertas = ref([
 
         <!-- Pendentes -->
         <Card>
-          <CardHeader><CardTitle>Pagamentos Pendentes</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Pagamentos Pendentes</CardTitle>
+          </CardHeader>
           <CardContent>
             <ul class="space-y-2 text-sm">
               <li v-for="p in pendentesPagamento" :key="p.id" class="flex justify-between">
@@ -146,7 +145,9 @@ const alertas = ref([
 
         <!-- Garantias -->
         <Card>
-          <CardHeader><CardTitle>Vendas com Garantia</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Vendas com Garantia</CardTitle>
+          </CardHeader>
           <CardContent>
             <ul class="space-y-2 text-sm">
               <li v-for="g in garantias" :key="g.id" class="flex justify-between">
@@ -158,18 +159,5 @@ const alertas = ref([
         </Card>
       </div>
     </section>
-
-    <!-- Alertas -->
-    <section>
-      <h2 class="text-lg font-bold mb-4">🔔 Alertas / Ações</h2>
-      <Card>
-        <CardContent>
-          <ul class="list-disc list-inside space-y-1 text-sm">
-            <li v-for="a in alertas" :key="a">{{ a }}</li>
-          </ul>
-        </CardContent>
-      </Card>
-    </section>
-
   </div>
 </template>

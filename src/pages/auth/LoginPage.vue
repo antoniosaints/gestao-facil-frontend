@@ -43,7 +43,6 @@ const getOnTestemonials = () => {
 
 async function loginUsuario() {
     await store.login(login.value.email, login.value.password);
-    toast.success('Login efetuado com sucesso!');
 }
 
 </script>

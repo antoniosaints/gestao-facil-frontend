@@ -9,9 +9,11 @@
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/login/useAuthStore';
+import { useToast } from 'vue-toastification';
 const store = useAuthStore();
-
+const toast = useToast()
 function logOut() {
   store.logout()
+  toast.info("Logout efetuado com sucesso!")
 }
 </script>

@@ -100,6 +100,9 @@ router.beforeEach((to) => {
     toast.error('Necessário efetuar login para acessar essa rota!')
     return { name: 'login' }
   }
+  if (to.path === '/login' && localStorage.getItem('gestao_facil:token')) {
+    return { name: 'home' }
+  }
 })
 
 export default router

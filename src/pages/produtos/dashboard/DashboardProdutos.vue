@@ -2,20 +2,22 @@
 import { ref } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Package, TrendingDown, BarChart3, DollarSign, AlertTriangle } from "lucide-vue-next"
+import { Package, TrendingDown, BarChart3, DollarSign } from "lucide-vue-next"
 import { Bar, Line, Pie } from "vue-chartjs"
 import {
   Chart as ChartJS,
   Title, Tooltip, Legend,
   BarElement, LineElement, PointElement,
-  ArcElement, CategoryScale, LinearScale
+  ArcElement, CategoryScale,
+  LinearScale,
+  Filler
 } from "chart.js"
 
 // Registrar plugins do Chart.js
 ChartJS.register(
   Title, Tooltip, Legend,
   BarElement, LineElement, PointElement,
-  ArcElement, CategoryScale, LinearScale
+  ArcElement, CategoryScale, LinearScale, Filler
 )
 
 // Indicadores (simulação)
@@ -34,7 +36,7 @@ const chartReposicoes = {
 
 const chartVendas = {
   labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"],
-  datasets: [{ label: "Vendas", data: [5000, 8000, 7500, 9000, 8500, 11000], backgroundColor: "#4ade80", borderRadius: 6 }]
+  datasets: [{ label: "Vendas", data: [5000, 8000, 7500, 9000, 8500, 11000], backgroundColor: "rgba(75, 192, 192, 0.2)", borderRadius: 6, borderColor: "#4ade80", fill: true, tension: 0.4 }]
 }
 
 const chartMaisVendidos = {
@@ -47,13 +49,6 @@ const chartCategorias = {
   datasets: [{ label: "Lucro", data: [25000, 18000, 8000, 5000], backgroundColor: ["#6366f1", "#f87171", "#34d399", "#facc15"], borderRadius: 6 }]
 }
 
-// Alertas
-const alertas = ref([
-  "Produto XYZ está com estoque zerado",
-  "15 produtos abaixo do mínimo",
-  "Produto ABC sem movimentação há 90 dias",
-  "2 produtos com margem negativa"
-])
 </script>
 
 <template>
@@ -61,7 +56,8 @@ const alertas = ref([
 
     <!-- Indicadores -->
     <section>
-      <h2 class="text-2xl font-bold mb-4"><i class="fa-solid fa-chart-line text-green-600"></i> Dashboard de produtos</h2>
+      <h2 class="text-2xl font-bold mb-4"><i class="fa-solid fa-chart-line text-green-600"></i> Dashboard de produtos
+      </h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-2xl hover:scale-[1.02] transition">
           <CardHeader class="flex flex-row items-center gap-2">
@@ -88,38 +84,21 @@ const alertas = ref([
         </TabsList>
 
         <TabsContent value="reposicoes">
-          <Bar class="max-h-[400px]" :data="chartReposicoes" :options="{ responsive: true }" />
+          <Bar class="max-h-[400px] p-4" :data="chartReposicoes" :options="{ responsive: true }" />
         </TabsContent>
 
         <TabsContent value="vendas">
-          <Line class="max-h-[400px]" :data="chartVendas" :options="{ responsive: true }" />
+          <Line class="max-h-[400px] p-4" :data="chartVendas" :options="{ responsive: true }" />
         </TabsContent>
 
         <TabsContent value="vendidos">
-          <Bar class="max-h-[400px]" :data="chartMaisVendidos" :options="{ responsive: true }" />
+          <Bar class="max-h-[400px] p-4" :data="chartMaisVendidos" :options="{ responsive: true }" />
         </TabsContent>
 
         <TabsContent value="categorias">
-          <Pie class="max-h-[400px]" :data="chartCategorias" />
+          <Pie class="max-h-[400px] p-4" :data="chartCategorias" />
         </TabsContent>
       </Tabs>
     </section>
-
-    <!-- Alertas e Ações -->
-    <section>
-      <h2 class="text-lg font-bold mb-4">🔔 Alertas e Ações</h2>
-      <Card>
-        <CardHeader class="flex gap-2 items-center">
-          <AlertTriangle class="w-5 h-5 text-red-500" />
-          <CardTitle>Itens que exigem atenção imediata</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul class="list-disc list-inside space-y-1 text-sm">
-            <li v-for="a in alertas" :key="a">{{ a }}</li>
-          </ul>
-        </CardContent>
-      </Card>
-    </section>
-
   </div>
 </template>
