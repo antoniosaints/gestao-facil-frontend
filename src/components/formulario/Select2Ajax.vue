@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue"
-import { Check, ChevronsUpDown, Search } from "lucide-vue-next"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import {
-    Combobox,
-    ComboboxAnchor,
-    ComboboxEmpty,
-    ComboboxGroup,
-    ComboboxInput,
-    ComboboxItem,
-    ComboboxItemIndicator,
-    ComboboxList,
-    ComboboxTrigger,
-} from "@/components/ui/combobox"
 import http from "@/utils/axios"
+import { X } from "lucide-vue-next"
+
+import {
+    Select,
+    SelectTrigger,
+    SelectValue,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+} from "@/components/ui/select"
+
+import { Input } from "@/components/ui/input"
+
 interface Item {
     id: string | number
     label: string
@@ -28,119 +27,108 @@ const props = withDefaults(defineProps<{
     allowClear: false,
 })
 
-
 const emit = defineEmits<{
     (e: "update:modelValue", value: string | number | null): void
 }>()
 
 const items = ref<Item[]>([])
-const selected = ref<Item | null>(null)
+const selectedId = ref<string | number | null>(props.modelValue ?? null)
+const selectedItem = ref<Item | null>(null)
 const search = ref("")
-const isOpen = ref(false) // controle do estado do combobox
+const loading = ref(false)
 let timeout: ReturnType<typeof setTimeout> | null = null
 
+// Busca lista pelo texto
 const fetchItems = async () => {
-    const url = `${props.url}?search=${search.value || ''}`
-    const { data } = await http.get(url)
-    return data.results
+    loading.value = true
+    try {
+        const url = `${props.url}?search=${search.value || ''}`
+        const { data } = await http.get(url)
+        items.value = data.results ?? []
+    } finally {
+        loading.value = false
+    }
 }
+
+// Busca item específico pelo ID
 const fetchById = async (id: number | string) => {
     const url = `${props.url}?id=${id}`
     const { data } = await http.get(url)
-
-    return data.results
+    return data.results?.[0] ?? null
 }
 
-// Atualiza quando modelValue é alterado externamente
+// Atualiza quando o modelValue externo mudar
 watch(
     () => props.modelValue,
-    (id) => {
-        if (timeout) clearTimeout(timeout)
+    async (id) => {
+        selectedId.value = id ?? null
 
-        timeout = setTimeout(async () => {
-            if (id != null && id !== "") {
-                if (fetchById) {
-                    const item = await fetchById(id)
-                    if (item) selected.value = item
-                } else {
-                    const result = await fetchItems()
-                    const found = result.find((i: Item) => i.id == id)
-                    if (found) {
-                        selected.value = found
-                        if (!items.value.length) items.value = result
-                    }
-                }
-            } else {
-                selected.value = null
+        if (id != null && id !== "") {
+            const item = await fetchById(id)
+            if (item) {
+                // Evita duplicar
+                const exists = items.value.find((i) => i.id === item.id)
+                if (!exists) items.value.push(item)
+                selectedItem.value = item
             }
-        }, 150) // espera 300ms após última digitação
+        }
     },
     { immediate: true }
 )
 
-// Atualiza lista quando digita
-watch(search, async (val) => {
-    items.value = await fetchItems()
+// Atualiza quando selecionar
+watch(selectedId, (val) => {
+    emit("update:modelValue", val ?? null)
 })
 
-// Emite o id quando muda
-watch(selected, (val) => {
-    emit("update:modelValue", val ? val.id : null)
+// Debounce na busca
+watch(search, (val) => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(fetchItems, 300)
 })
 
-// Limpa busca sempre que abrir o combobox
-watch(isOpen, async (val) => {
-    if (val) {
-        search.value = ""
-        items.value = await fetchItems()
-    }
-})
+// Carrega inicial
+onMounted(fetchItems)
 
-onMounted(async () => {
-    if (!items.value.length) {
-        items.value = await fetchItems()
-    }
-})
-
+const clearSelection = () => {
+    selectedId.value = null
+    selectedItem.value = null
+}
 </script>
 
 <template>
-    <Combobox :ignore-filter="true" v-model="selected" v-model:open="isOpen" by="id">
-        <ComboboxAnchor as-child>
-            <ComboboxTrigger as-child>
-                <Button variant="outline" class="justify-between w-full overflow-hidden">
-                    <span class="truncate whitespace-nowrap">
-                        {{ selected?.label ?? 'Selecione...' }}
-                    </span>
-                    <div class="flex items-center ml-2">
-                        <ChevronsUpDown class="h-4 w-4 shrink-0 opacity-50" />
-                        <Button v-if="allowClear && selected" variant="ghost" size="sm"
-                            class="h-8 w-8 text-danger mr-[-10px]" @click="selected = null"> <i
-                                class="fa-solid fa-square-xmark"></i> </Button>
-                    </div>
-                </Button>
-            </ComboboxTrigger>
-        </ComboboxAnchor>
+    <div class="flex items-center w-full max-w-full gap-2">
+        <Select v-model="selectedId">
+            <SelectTrigger class="bg-card dark:bg-card-dark"
+                :class="{ 'w-[calc(100%-2rem)]': allowClear && selectedId }">
+                <SelectValue :value="selectedId" :placeholder="'Selecione...'">
+                    {{ selectedItem?.label ?? 'Selecione...' }}
+                </SelectValue>
+            </SelectTrigger>
 
-        <ComboboxList>
-            <div class="relative w-full max-w-md items-center">
-                <ComboboxInput v-model="search" class="pl-9 focus-visible:ring-0 border-0 border-b rounded-none h-10"
-                    placeholder="Buscar..." />
-                <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
-                    <Search class="size-4 text-muted-foreground" />
-                </span>
-            </div>
-
-            <ComboboxEmpty>Nenhum item encontrado.</ComboboxEmpty>
-
-            <ComboboxGroup class="max-h-80 overflow-y-auto">
-                <ComboboxItem v-for="item in items" :key="item.id" :value="item">
-                    {{ item.label }}
-                    <ComboboxItemIndicator>
-                        <Check :class="cn('ml-auto h-4 w-4')" />
-                    </ComboboxItemIndicator>
-                </ComboboxItem>
-            </ComboboxGroup>
-        </ComboboxList>
-    </Combobox>
+            <SelectContent>
+                <div class="p-2 border-b">
+                    <Input v-model="search" placeholder="Buscar..." class="w-full" />
+                </div>
+                <SelectGroup>
+                    <template v-if="loading">
+                        <div class="p-2 text-sm text-muted-foreground">Carregando...</div>
+                    </template>
+                    <template v-else-if="items.length === 0">
+                        <div class="p-2 text-sm text-muted-foreground">Nenhum resultado</div>
+                    </template>
+                    <template v-else>
+                        <SelectItem v-for="item in items" :key="item.id" :value="item.id">
+                            {{ item.label }}
+                        </SelectItem>
+                    </template>
+                </SelectGroup>
+            </SelectContent>
+        </Select>
+        <button v-if="allowClear && selectedId" type="button"
+            class="bg-danger dark:bg-red-800 hover:bg-danger/80 rounded h-8 w-8 flex items-center justify-center"
+            @click.stop="clearSelection">
+            <X class="h-4 w-4" />
+        </button>
+    </div>
 </template>

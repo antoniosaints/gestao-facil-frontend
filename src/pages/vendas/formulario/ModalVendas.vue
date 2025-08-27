@@ -329,7 +329,7 @@ clearCartVendas();
 
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Vendedor <span class="text-red-500">*</span></label>
-                    <Select2Ajax class="w-full" url="/usuarios/select2" :allow-clear="true" />
+                    <Select2Ajax v-model="formularioVenda.vendedorId" class="w-full" url="/usuarios/select2" />
                 </div>
 
 
@@ -389,8 +389,8 @@ clearCartVendas();
                 <div class="md:col-span-2">
                     <label for="quantidade_carrinho_adicionar" class="block text-sm mb-1">Quantidade <span
                             class="text-red-500">*</span></label>
-                    <NumberField v-model="addItemForm.quantidade" class="bg-card dark:bg-card-dark" id="quantidade_carrinho_adicionar" :default-value="1"
-                        :min="1">
+                    <NumberField v-model="addItemForm.quantidade" class="bg-card dark:bg-card-dark"
+                        id="quantidade_carrinho_adicionar" :default-value="1" :min="1">
                         <NumberFieldContent>
                             <NumberFieldDecrement />
                             <NumberFieldInput />
@@ -401,7 +401,8 @@ clearCartVendas();
 
                 <div class="md:col-span-2">
                     <label class="block text-sm mb-1">Preço <span class="text-red-500">*</span></label>
-                    <Input v-model="(addItemForm.preco as number)" type="text" placeholder="R$ 0,00" id="input_preco_venda_formulario"
+                    <Input v-model="(addItemForm.preco as number)" type="text" placeholder="R$ 0,00"
+                        id="input_preco_venda_formulario"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
                 </div>
 
@@ -430,21 +431,21 @@ clearCartVendas();
                     <div class="grid grid-cols-12 gap-4">
                         <!-- Lista do carrinho -->
                         <div id="lista-carrinho-vendas" class="col-span-12 lg:col-span-8 space-y-2">
-                            <div v-if="carrinho.length === 0" class="p-3 text-center text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-md">
+                            <div v-if="carrinho.length === 0"
+                                class="p-3 text-center text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-md">
                                 Nenhum item adicionado
                             </div>
-                            <div
-                                v-else
-                                v-for="item in carrinho"
-                                :key="item.id"
+                            <div v-else v-for="item in carrinho" :key="item.id"
                                 class="flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-2 shadow-sm">
                                 <div class="flex flex-col text-sm">
                                     <span class="font-medium text-gray-800 dark:text-gray-200">{{ item.produto }}</span>
                                     <span class="text-gray-500 dark:text-gray-400">Qtd: {{ item.quantidade }}</span>
                                 </div>
                                 <div class="flex flex-col text-right text-sm">
-                                    <span class="font-medium text-gray-800 dark:text-gray-200">R$ {{ item.preco }}</span>
-                                    <span class="text-gray-500 dark:text-gray-400">Subtotal: R$ {{ item.subtotal }}</span>
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">R$ {{ item.preco
+                                    }}</span>
+                                    <span class="text-gray-500 dark:text-gray-400">Subtotal: R$ {{ item.subtotal
+                                    }}</span>
                                 </div>
                                 <button type="button" @click="removeFromCartVendas(item.id)"
                                     class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 py-1 px-2 rounded-sm">
