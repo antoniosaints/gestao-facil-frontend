@@ -110,17 +110,17 @@ const clearSelection = () => {
     <div class="flex items-center w-full max-w-full gap-2">
         <Select v-model="selectedId" :required="required">
             <SelectTrigger class="bg-card dark:bg-card-dark"
-                :class="{ 'w-[calc(100%-2rem)]': allowClear && selectedId }">
+                :class="{ 'w-[calc(100%-2.5rem)]': allowClear && selectedId }">
                 <SelectValue :value="selectedId" :placeholder="'Selecione...'">
                     {{ selectedItem?.label ?? 'Selecione...' }}
                 </SelectValue>
             </SelectTrigger>
 
-            <SelectContent>
+            <SelectContent class="w-full">
                 <div class="p-2 border-b">
                     <Input v-model="search" placeholder="Buscar..." class="w-full" />
                 </div>
-                <SelectGroup>
+                <SelectGroup class="max-h-60 overflow-y-auto">
                     <template v-if="loading">
                         <div class="p-2 text-sm text-muted-foreground">Carregando...</div>
                     </template>
