@@ -39,10 +39,12 @@ async function deletar(id: number) {
     try {
         await VendaRepository.remove(id)
         toast.success('Registro deletado com sucesso')
-        table.setPageIndex(table.getState().pagination.pageIndex - 1)
+        openDelete.value = false
+        store.updateTable()
     } catch (error) {
         console.log(error)
         toast.error('Erro ao deletar o registro')
+        openDelete.value = false
     }
 }
 </script>

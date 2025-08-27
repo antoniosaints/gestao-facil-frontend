@@ -2,116 +2,107 @@
 
 // Enums
 export enum Status {
-  ATIVO = "ATIVO",
-  INATIVO = "INATIVO",
-  BLOQUEADO = "BLOQUEADO",
+  ATIVO = 'ATIVO',
+  INATIVO = 'INATIVO',
+  BLOQUEADO = 'BLOQUEADO',
 }
 
 export enum StatusFatura {
-  PENDENTE = "PENDENTE",
-  PAGO = "PAGO",
-  ATRASADO = "ATRASADO",
-  CANCELADO = "CANCELADO",
+  PENDENTE = 'PENDENTE',
+  PAGO = 'PAGO',
+  ATRASADO = 'ATRASADO',
+  CANCELADO = 'CANCELADO',
 }
 
 export enum GatewayConta {
-  mercadopago = "mercadopago",
-  asaass = "asaass",
+  mercadopago = 'mercadopago',
+  asaass = 'asaass',
 }
 
 export enum PermissaoUsuario {
-  root = "root",
-  admin = "admin",
-  gerente = "gerente",
-  vendedor = "vendedor",
-  tecnico = "tecnico",
-  usuario = "usuario",
+  root = 'root',
+  admin = 'admin',
+  gerente = 'gerente',
+  vendedor = 'vendedor',
+  tecnico = 'tecnico',
+  usuario = 'usuario',
 }
 
 export enum TipoCliente {
-  FORNECEDOR = "FORNECEDOR",
-  CLIENTE = "CLIENTE",
+  FORNECEDOR = 'FORNECEDOR',
+  CLIENTE = 'CLIENTE',
 }
 
 export enum TipoMovimentacao {
-  ENTRADA = "ENTRADA",
-  SAIDA = "SAIDA",
-  DESCARTE = "DESCARTE",
-  TRANSFERENCIA = "TRANSFERENCIA",
+  ENTRADA = 'ENTRADA',
+  SAIDA = 'SAIDA',
+  DESCARTE = 'DESCARTE',
+  TRANSFERENCIA = 'TRANSFERENCIA',
 }
 
 export enum StatusMovimentacao {
-  PENDENTE = "PENDENTE",
-  CONCLUIDO = "CONCLUIDO",
-  CANCELADO = "CANCELADO",
+  PENDENTE = 'PENDENTE',
+  CONCLUIDO = 'CONCLUIDO',
+  CANCELADO = 'CANCELADO',
 }
 
 export enum StatusOrdemServico {
-  ABERTA = "ABERTA",
-  ORCAMENTO = "ORCAMENTO",
-  APROVADA = "APROVADA",
-  ANDAMENTO = "ANDAMENTO",
-  FATURADA = "FATURADA",
-  CANCELADA = "CANCELADA",
+  ABERTA = 'ABERTA',
+  ORCAMENTO = 'ORCAMENTO',
+  APROVADA = 'APROVADA',
+  ANDAMENTO = 'ANDAMENTO',
+  FATURADA = 'FATURADA',
+  CANCELADA = 'CANCELADA',
 }
 
 export enum TipoItemOrdemServico {
-  SERVICO = "SERVICO",
-  PRODUTO = "PRODUTO",
+  SERVICO = 'SERVICO',
+  PRODUTO = 'PRODUTO',
 }
 
 export enum AssinaturaInternaStatus {
-  ATIVA = "ATIVA",
-  CANCELADA = "CANCELADA",
-  SUSPENSA = "SUSPENSA",
+  ATIVA = 'ATIVA',
+  CANCELADA = 'CANCELADA',
+  SUSPENSA = 'SUSPENSA',
 }
 
 export enum AssinaturaInternaRecorrencia {
-  MENSAL = "MENSAL",
-  BIMESTRAL = "BIMESTRAL",
-  TRIMESTRAL = "TRIMESTRAL",
-  ANUAL = "ANUAL",
-}
-
-export enum StatusVenda {
-  ORCAMENTO = "ORCAMENTO",
-  FATURADO = "FATURADO",
-  ANDAMENTO = "ANDAMENTO",
-  FINALIZADO = "FINALIZADO",
-  PENDENTE = "PENDENTE",
-  CANCELADO = "CANCELADO",
+  MENSAL = 'MENSAL',
+  BIMESTRAL = 'BIMESTRAL',
+  TRIMESTRAL = 'TRIMESTRAL',
+  ANUAL = 'ANUAL',
 }
 
 export enum StatusPagamento {
-  PENDENTE = "PENDENTE",
-  EFETIVADO = "EFETIVADO",
-  ESTORNADO = "ESTORNADO",
-  CANCELADO = "CANCELADO",
+  PENDENTE = 'PENDENTE',
+  EFETIVADO = 'EFETIVADO',
+  ESTORNADO = 'ESTORNADO',
+  CANCELADO = 'CANCELADO',
 }
 
 export enum MetodoPagamento {
-  PIX = "PIX",
-  DINHEIRO = "DINHEIRO",
-  CARTAO = "CARTAO",
-  BOLETO = "BOLETO",
-  TRANSFERENCIA = "TRANSFERENCIA",
-  CHEQUE = "CHEQUE",
-  CREDITO = "CREDITO",
-  DEBITO = "DEBITO",
-  GATEWAY = "GATEWAY",
-  OUTRO = "OUTRO",
+  PIX = 'PIX',
+  DINHEIRO = 'DINHEIRO',
+  CARTAO = 'CARTAO',
+  BOLETO = 'BOLETO',
+  TRANSFERENCIA = 'TRANSFERENCIA',
+  CHEQUE = 'CHEQUE',
+  CREDITO = 'CREDITO',
+  DEBITO = 'DEBITO',
+  GATEWAY = 'GATEWAY',
+  OUTRO = 'OUTRO',
 }
 
 export enum TipoLancamentoFinanceiro {
-  RECEITA = "RECEITA",
-  DESPESA = "DESPESA",
+  RECEITA = 'RECEITA',
+  DESPESA = 'DESPESA',
 }
 
 export enum StatusPagamentoFinanceiro {
-  PENDENTE = "PENDENTE",
-  PAGO = "PAGO",
-  ATRASADO = "ATRASADO",
-  PARCIAL = "PARCIAL",
+  PENDENTE = 'PENDENTE',
+  PAGO = 'PAGO',
+  ATRASADO = 'ATRASADO',
+  PARCIAL = 'PARCIAL',
 }
 
 // Interfaces
@@ -273,13 +264,13 @@ export interface Vendas {
   data: Date
   valor: number
   clienteId?: number
-  status: StatusVenda
+  status: 'ORCAMENTO' | 'ANDAMENTO' | 'FINALIZADO' | 'PENDENTE' | 'CANCELADO' | 'FATURADO'
   vendedorId?: number
   garantia?: number
   faturado: boolean
   observacoes?: string
-  desconto: number,
-  cliente?: ClientesFornecedores,
+  desconto: number
+  cliente?: ClientesFornecedores
   vendedor?: Usuarios
 }
 

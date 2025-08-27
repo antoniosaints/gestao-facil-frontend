@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useVendasStore } from "@/stores/vendas/useVenda";
 import http from "@/utils/axios";
 import { colorTheme } from "@/utils/theme";
 import { ptBR } from "date-fns/locale";
@@ -14,6 +15,7 @@ import { useToast } from "vue-toastification";
 const title = ref('Cadastro de venda')
 const description = ref('Preencha os campos abaixo')
 const toast = useToast()
+const store = useVendasStore()
 
 const labelProdutoInsert = ref<string>('')
 const tipoDesconto = ref<"PORCENTAGEM" | "VALOR">('PORCENTAGEM')
@@ -34,7 +36,7 @@ interface FormularioVenda {
     clienteId: number | null,
     data: Date | null,
     vendedorId: number | null,
-    status: "ORCAMENTO" | "ANDAMENTO" | "FINALIZADO" | "PENDENTE" | "CANCELADO",
+    status: "ORCAMENTO" | "ANDAMENTO" | "FINALIZADO" | "PENDENTE" | "CANCELADO" | "FATURADO",
     garantia: number | null,
     observacoes: string | null,
     desconto: number | string | null,
@@ -127,16 +129,27 @@ async function submitFormularioVenda() {
     const hasId = formularioVenda.value.id;
 
     try {
-        const response = await http.post(`vendas/criar${hasId ? `?id=${hasId}` : ''}`, {
-            ...formularioVenda.value,
+        const data: FormularioVenda = {
+            id: formularioVenda.value.id,
+            data: formularioVenda.value.data!,
+            desconto: formularioVenda.value.desconto ? getValorDesconto.value : 0,
+            status: formularioVenda.value.status,
+            clienteId: formularioVenda.value.clienteId,
+            vendedorId: formularioVenda.value.vendedorId,
+            garantia: formularioVenda.value.garantia,
+            observacoes: formularioVenda.value.observacoes,
             itens: carrinho.value.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco }))
-        });
+        };
+        await http.post(`vendas/criar${hasId ? `?id=${hasId}` : ''}`, data);
 
         if (hasId) {
             toast.success('Venda atualizada com sucesso!');
         } else {
             toast.success('Venda criada com sucesso!');
         }
+
+        store.updateTable();
+        open.value = false;
     } catch (error) {
         console.log(error);
         toast.error('Erro ao registrar a venda, tente novamente!');
@@ -398,10 +411,10 @@ clearCartVendas();
                                 <div class="flex flex-col text-right text-sm">
                                     <span class="font-medium text-gray-800 dark:text-gray-200">R$ {{
                                         String(item.preco).replace('.', ',')
-                                        }}</span>
+                                    }}</span>
                                     <span class="text-gray-500 dark:text-gray-400">Subtotal: R$ {{
                                         String(item.subtotal.toFixed(2)).replace('.', ',')
-                                        }}</span>
+                                    }}</span>
                                 </div>
                                 <button type="button" @click="removeFromCartVendas(item.id)"
                                     class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 py-1 px-2 rounded-sm">
@@ -430,7 +443,7 @@ clearCartVendas();
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { StatusVenda, type Vendas } from '@/types/schemas'
+import { type Vendas } from '@/types/schemas'
 import { useToast } from 'vue-toastification'
 import { VendaRepository } from '@/repositories/venda-repository'
 
@@ -11,26 +11,26 @@ export const useVendasStore = defineStore('vendasStore', () => {
 
   const form = ref<Vendas>({
     id: undefined,
-    status: StatusVenda.ORCAMENTO,
+    status: 'ORCAMENTO',
     data: new Date(),
     desconto: 0,
     faturado: false,
-    valor: 0
+    valor: 0,
   })
 
   const reset = () => {
     form.value = {
       id: undefined,
-      status: StatusVenda.ORCAMENTO,
+      status: 'ORCAMENTO',
       data: new Date(),
       desconto: 0,
       faturado: false,
-      valor: 0
+      valor: 0,
     }
   }
 
   const openSave = () => {
-    if (form.value.id) reset();
+    if (form.value.id) reset()
     openModal.value = true
   }
 
@@ -43,20 +43,20 @@ export const useVendasStore = defineStore('vendasStore', () => {
   }
 
   const openUpdate = async (id: number) => {
-     try {
-        const { data } = await VendaRepository.get(id)
-        form.value = {
-          id: id,
-          status: data?.status,
-          data: data?.data,
-          desconto: data?.desconto,
-          faturado: data?.faturado,
-          valor: data?.valor
-        }
-        openModal.value = true
+    try {
+      const { data } = await VendaRepository.get(id)
+      form.value = {
+        id: id,
+        status: data?.status,
+        data: data?.data,
+        desconto: data?.desconto,
+        faturado: data?.faturado,
+        valor: data?.valor,
+      }
+      openModal.value = true
     } catch (error) {
-        console.log(error)
-        toast.error('Erro ao buscar os dados!')
+      console.log(error)
+      toast.error('Erro ao buscar os dados!')
     }
   }
 
