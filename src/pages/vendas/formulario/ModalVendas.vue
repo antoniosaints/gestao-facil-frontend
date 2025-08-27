@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ProdutoRepository } from "@/repositories/produto-repository";
 import { useVendasStore } from "@/stores/vendas/useVenda";
+import type { FormularioVenda } from "@/types/schemas";
 import http from "@/utils/axios";
 import { colorTheme } from "@/utils/theme";
 import { ptBR } from "date-fns/locale";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useToast } from "vue-toastification";
 
 const title = ref('Cadastro de venda')
@@ -18,45 +20,7 @@ const toast = useToast()
 const store = useVendasStore()
 
 const labelProdutoInsert = ref<string>('')
-const tipoDesconto = ref<"PORCENTAGEM" | "VALOR">('PORCENTAGEM')
-interface CarrinhoItem {
-    id: number;
-    produto: string;
-    quantidade: number;
-    preco: number;
-    subtotal: number;
-}
-interface ItemVenda {
-    id: number;
-    quantidade: number;
-    preco: number;
-}
-
-interface FormularioVenda {
-    clienteId: number | null,
-    data: Date | null,
-    vendedorId: number | null,
-    status: "ORCAMENTO" | "ANDAMENTO" | "FINALIZADO" | "PENDENTE" | "CANCELADO" | "FATURADO",
-    garantia: number | null,
-    observacoes: string | null,
-    desconto: number | string | null,
-    id: number | null,
-    itens: ItemVenda[];
-}
-
-const carrinho = ref<CarrinhoItem[]>(localStorage.getItem('gestao_facil:cartVendas') ? JSON.parse(localStorage.getItem('gestao_facil:cartVendas') as string) : [])
-
-const formularioVenda = ref<FormularioVenda>({
-    id: null,
-    vendedorId: null,
-    clienteId: null,
-    data: new Date(),
-    desconto: null,
-    status: 'ORCAMENTO',
-    garantia: 0,
-    observacoes: '',
-    itens: carrinho.value.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco }))
-})
+const tipoDesconto = ref<"PORCENTAGEM" | "VALOR">('VALOR')
 
 const addItemForm = ref<{ id: number | null, preco: number | string | null, quantidade: number }>({
     id: null,
@@ -66,10 +30,8 @@ const addItemForm = ref<{ id: number | null, preco: number | string | null, quan
 
 const propostaPreco = ref<string | null>('')
 
-const open = defineModel({ default: false })
-
 function getValorTotalCarrinho() {
-    return carrinho.value.reduce((total, item) => total + item.subtotal, 0);
+    return store.carrinho.reduce((total, item) => total + item.subtotal, 0);
 }
 
 function proporValorVendaCliente(valorProposto: number) {
@@ -77,13 +39,13 @@ function proporValorVendaCliente(valorProposto: number) {
 
     const valorCarrinho = parseFloat(String(getValorTotalCarrinho())) || 0;
     if (valorProposto >= valorCarrinho) {
-        formularioVenda.value.desconto = 0;
+        store.form.desconto = 0;
         return;
     }
     tipoDesconto.value = 'VALOR';
 
     const valorDescontoNovo = valorCarrinho - valorProposto;
-    formularioVenda.value.desconto = valorDescontoNovo;
+    store.form.desconto = valorDescontoNovo;
 }
 
 function definirValorProporcionalVenda() {
@@ -93,6 +55,7 @@ function definirValorProporcionalVenda() {
 }
 
 function setCartFromVendaRealizada(venda: { ItensVendas: any[] }) {
+    store.carrinho = [];
     venda.ItensVendas.forEach(item => {
         const newItem = {
             id: item.id,
@@ -101,44 +64,31 @@ function setCartFromVendaRealizada(venda: { ItensVendas: any[] }) {
             preco: parseFloat(item.valor.replace(',', '.')),
             subtotal: parseFloat(item.valor.replace(',', '.')) * item.quantidade
         };
-        carrinho.value.push(newItem);
+        store.carrinho.push(newItem);
     })
 
-    localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(carrinho.value));
+    localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(store.carrinho));
 }
-
-async function loadVendaEdicao() {
-    try {
-        if (formularioVenda.value.id) {
-            const data = await http.get("/vendas/" + formularioVenda.value.id)
-            formularioVenda.value = data.data;
-        }
-    } catch (error) {
-        console.log(error);
-    }
-}
-
-loadVendaEdicao();
 
 async function submitFormularioVenda() {
-    if (carrinho.value.length === 0) {
+    if (store.carrinho.length === 0) {
         toast.error('Adicione pelo menos um item ao carrinho');
         return;
     }
 
-    const hasId = formularioVenda.value.id;
+    const hasId = store.form.id;
 
     try {
-        const data: FormularioVenda = {
-            id: formularioVenda.value.id,
-            data: formularioVenda.value.data!,
-            desconto: formularioVenda.value.desconto ? getValorDesconto.value : 0,
-            status: formularioVenda.value.status,
-            clienteId: formularioVenda.value.clienteId,
-            vendedorId: formularioVenda.value.vendedorId,
-            garantia: formularioVenda.value.garantia,
-            observacoes: formularioVenda.value.observacoes,
-            itens: carrinho.value.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco }))
+        const data: FormularioVenda & { itens: { id: number, quantidade: number, preco: number }[] } = {
+            id: store.form.id,
+            data: store.form.data!,
+            desconto: store.form.desconto ? getValorDesconto.value : 0,
+            status: store.form.status,
+            clienteId: store.form.clienteId,
+            vendedorId: store.form.vendedorId,
+            garantia: store.form.garantia,
+            observacoes: store.form.observacoes,
+            itens: store.carrinho.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco }))
         };
         await http.post(`vendas/criar${hasId ? `?id=${hasId}` : ''}`, data);
 
@@ -149,7 +99,7 @@ async function submitFormularioVenda() {
         }
 
         store.updateTable();
-        open.value = false;
+        store.openModal = false;
     } catch (error) {
         console.log(error);
         toast.error('Erro ao registrar a venda, tente novamente!');
@@ -170,7 +120,7 @@ function addToCartVendas() {
     }
 
     // Verifica se o produto já foi adicionado
-    const exists = carrinho.value.some(item => item.id === addItemForm.value.id);
+    const exists = store.carrinho.some(item => item.id === addItemForm.value.id);
     if (exists) {
         return toast.error('Este produto já está na lista.');
     }
@@ -183,22 +133,22 @@ function addToCartVendas() {
         subtotal: +(parseFloat(String(addItemForm.value.preco).replace(',', '.')) * addItemForm.value.quantidade)
     };
 
-    carrinho.value.push(newItem);
-    localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(carrinho.value));
+    store.carrinho.push(newItem);
+    localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(store.carrinho));
 
     clearFormularioAddItem();
 }
 
 
 function removeFromCartVendas(produtoId: number) {
-    const novoCarrinho = carrinho.value.filter(item => Number(item.id) !== Number(produtoId));
+    const novoCarrinho = store.carrinho.filter(item => Number(item.id) !== Number(produtoId));
 
-    carrinho.value = novoCarrinho;
+    store.carrinho = novoCarrinho;
     localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(novoCarrinho));
 }
 
 function calculateTotalCartVendas() {
-    const total = carrinho.value.reduce((sum, item) => {
+    const total = store.carrinho.reduce((sum, item) => {
         return sum + item.subtotal;
     }, 0);
 
@@ -207,19 +157,19 @@ function calculateTotalCartVendas() {
 
 function clearCartVendas() {
     localStorage.removeItem('gestao_facil:cartVendas');
-    carrinho.value = [];
+    store.carrinho = [];
 }
 
 const getValorDesconto = computed(() => {
-    if (carrinho.value.length === 0) return 0;
+    if (store.carrinho.length === 0) return 0;
 
-    const subtotalValue = carrinho.value.reduce((total, item) => {
+    const subtotalValue = store.carrinho.reduce((total, item) => {
         // substitui vírgula por ponto para parseFloat funcionar corretamente
         const preco = item.preco;
         return total + preco * item.quantidade;
     }, 0);
 
-    const descontoRaw = parseFloat(String(formularioVenda.value.desconto).replace(',', '.')) || 0;
+    const descontoRaw = parseFloat(String(store.form.desconto).replace(',', '.')) || 0;
 
     if (tipoDesconto.value === 'PORCENTAGEM') {
         return subtotalValue * (descontoRaw / 100);
@@ -228,10 +178,37 @@ const getValorDesconto = computed(() => {
     }
 });
 
+async function getValorProduto(id: number) {
+    try {
+        const { data } = await ProdutoRepository.get(id);
+        if (data.estoque <= 0) {
+            addItemForm.value.preco = null;
+            return toast.error('Produto sem estoque disponível');
+        }
 
+        if (data.estoque <= data.minimo) {
+            toast.warning('Produto com estoque baixo, por favor, verificar o estoque antes de adicionar ao carrinho', { timeout: 3000 });
+        }
+
+        addItemForm.value.preco = String(data.preco).replace('.', ',');
+    } catch (error) {
+        addItemForm.value.preco = null;
+        toast.warning('Erro ao buscar o produto, informe o preço manualmente', {
+            timeout: 3000
+        });
+    }
+}
+
+watch(() => addItemForm.value.id, (id) => {
+    if (id) {
+        getValorProduto(id);
+    } else {
+        addItemForm.value.preco = null
+    }
+})
 
 const resumoCarrinho = computed(() => {
-    const subtotal = carrinho.value.reduce((total, item) => total + item.subtotal, 0);
+    const subtotal = store.carrinho.reduce((total, item) => total + item.subtotal, 0);
     const desconto = getValorDesconto.value;
     return {
         subtotal,
@@ -244,13 +221,13 @@ clearCartVendas();
 </script>
 
 <template>
-    <ModalView v-model:open="open" :title="title" :description="description" size="5xl">
+    <ModalView v-model:open="store.openModal" :title="title" :description="description" size="5xl">
         <form @submit.prevent="submitFormularioVenda" class="space-y-4 px-4">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Cliente</label>
                     <div class="flex items-center justify-center gap-2">
-                        <Select2Ajax v-model="formularioVenda.clienteId" class="w-full" url="/clientes/select2"
+                        <Select2Ajax v-model="store.form.clienteId" class="w-full" url="/clientes/select2"
                             :allow-clear="true" />
                         <button type="button" onclick="openModalClientes()"
                             class="bg-primary px-4 py-1.5 text-white rounded-md border border-border dark:border-border-dark flex justify-center items-center">+</button>
@@ -259,14 +236,14 @@ clearCartVendas();
 
                 <div class="md:col-span-3">
                     <label class="block text-sm mb-1">Data da Venda <span class="text-red-500">*</span></label>
-                    <DatePicker placeholder="Data da venda" required v-model="formularioVenda.data"
+                    <DatePicker placeholder="Data da venda" required v-model="store.form.data"
                         :dark="(colorTheme === 'dark')" cancelText="Cancelar" selectText="Selecionar"
                         :format-locale="ptBR" :format="'dd/MM/yyyy'" :enable-time-picker="false" auto-apply />
                 </div>
 
                 <div class="md:col-span-3">
                     <label class="block text-sm mb-1">Status <span class="text-red-500">*</span></label>
-                    <Select v-model="formularioVenda.status" default-value="ORCAMENTO">
+                    <Select v-model="store.form.status" default-value="ORCAMENTO">
                         <SelectTrigger class="w-full bg-card dark:bg-card-dark">
                             <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
@@ -292,13 +269,13 @@ clearCartVendas();
 
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Vendedor <span class="text-red-500">*</span></label>
-                    <Select2Ajax required v-model="formularioVenda.vendedorId" class="w-full" url="/usuarios/select2" />
+                    <Select2Ajax required v-model="store.form.vendedorId" class="w-full" url="/usuarios/select2" />
                 </div>
 
 
                 <div class="md:col-span-2">
                     <label for="garantia" class="block text-sm mb-1">Garantia (dias)</label>
-                    <NumberField v-model="formularioVenda.garantia" class="bg-card dark:bg-card-dark" id="garantia"
+                    <NumberField v-model="store.form.garantia" class="bg-card dark:bg-card-dark" id="garantia"
                         :default-value="0" :min="0">
                         <NumberFieldContent>
                             <NumberFieldDecrement />
@@ -327,8 +304,8 @@ clearCartVendas();
                 </div>
                 <div class="md:col-span-2">
                     <label for="input_desconto_venda_formulario" class="block text-sm mb-1">Desconto</label>
-                    <Input v-model="(formularioVenda.desconto as string)" type="text"
-                        id="input_desconto_venda_formulario" name="desconto"
+                    <Input v-model="(store.form.desconto as string)" type="text" id="input_desconto_venda_formulario"
+                        name="desconto"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
                         placeholder="Ex: 1,99" />
                 </div>
@@ -337,8 +314,7 @@ clearCartVendas();
             <!-- Observações -->
             <div>
                 <label class="block text-sm mb-1">Observações</label>
-                <textarea v-model="formularioVenda.observacoes" name="observacoes"
-                    id="input_observacoes_venda_formulario"
+                <textarea v-model="store.form.observacoes" name="observacoes" id="input_observacoes_venda_formulario"
                     class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
                     rows="3" placeholder="Observações da venda..."></textarea>
             </div>
@@ -398,11 +374,11 @@ clearCartVendas();
                     <div class="grid grid-cols-12 gap-4">
                         <!-- Lista do carrinho -->
                         <div id="lista-carrinho-vendas" class="col-span-12 lg:col-span-8 space-y-2">
-                            <div v-if="carrinho.length === 0"
+                            <div v-if="store.carrinho.length === 0"
                                 class="p-3 text-center text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-md">
                                 Nenhum item adicionado
                             </div>
-                            <div v-else v-for="item in carrinho" :key="item.id"
+                            <div v-else v-for="item in store.carrinho" :key="item.id"
                                 class="flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-2 shadow-sm">
                                 <div class="flex flex-col text-sm">
                                     <span class="font-medium text-gray-800 dark:text-gray-200">{{ item.produto }}</span>
@@ -411,10 +387,10 @@ clearCartVendas();
                                 <div class="flex flex-col text-right text-sm">
                                     <span class="font-medium text-gray-800 dark:text-gray-200">R$ {{
                                         String(item.preco).replace('.', ',')
-                                    }}</span>
+                                        }}</span>
                                     <span class="text-gray-500 dark:text-gray-400">Subtotal: R$ {{
                                         String(item.subtotal.toFixed(2)).replace('.', ',')
-                                    }}</span>
+                                        }}</span>
                                 </div>
                                 <button type="button" @click="removeFromCartVendas(item.id)"
                                     class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 py-1 px-2 rounded-sm">
@@ -443,7 +419,7 @@ clearCartVendas();
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                     </div>
@@ -453,7 +429,7 @@ clearCartVendas();
             </div>
             <input type="hidden" name="id" id="input_id_venda_formulario" value="{{venda.id}}">
             <div class="flex justify-end gap-2">
-                <Button type="button" variant="secondary" @click="open = false">
+                <Button type="button" variant="secondary" @click="store.openModal = false">
                     Fechar
                 </Button>
                 <Button class="text-white" type="submit">

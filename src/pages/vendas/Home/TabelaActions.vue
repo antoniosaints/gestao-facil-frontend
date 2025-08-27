@@ -30,8 +30,17 @@ async function gerarCupom(id: number) {
     }
 }
 
-function openModalDelete(number: number) {
-    id.value = number
+async function editarVenda(id: number) {
+    try {
+        await store.openUpdate(id);
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao buscar os dados da venda!')
+    }
+}
+
+async function openModalDelete(number: number) {
+    await store.openUpdate(number);
     openDelete.value = true
 }
 async function deletar(id: number) {
@@ -74,7 +83,7 @@ async function deletar(id: number) {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuItem v-if="data.status !== 'FATURADO'">
+            <DropdownMenuItem v-if="data.status !== 'FATURADO'" @click="editarVenda(data.id!)">
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
             </DropdownMenuItem>

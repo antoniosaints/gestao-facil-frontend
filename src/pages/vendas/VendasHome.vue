@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import MobileVendas from '@/pages/vendas/Home/MobileVendas.vue';
 import TabelaVendas from './Home/TabelaVendas.vue';
-import { ref } from 'vue';
 import ModalVendas from './formulario/ModalVendas.vue';
+import { useVendasStore } from '@/stores/vendas/useVenda';
 
-const modalOpen = ref(false)
+const store = useVendasStore();
 </script>
 
 <template>
@@ -18,7 +18,7 @@ const modalOpen = ref(false)
                     class="border-2 border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
                     <i class="fa-solid fa-filter"></i>
                 </button>
-                <button @click="modalOpen = true" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
+                <button @click="store.openModal = true" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-solid fa-circle-plus"></i> <span class="hidden md:inline">Nova Venda</span>
                 </button>
                 <RouterLink to="/vendas/pdv"
@@ -34,6 +34,6 @@ const modalOpen = ref(false)
         <div class="overflow-x-auto block md:hidden rounded-lg">
             <MobileVendas />
         </div>
-        <ModalVendas v-model:model-value="modalOpen" />
+        <ModalVendas />
     </div>
 </template>

@@ -274,12 +274,37 @@ export interface Vendas {
   vendedor?: Usuarios
 }
 
+export interface CarrinhoItem {
+  id: number
+  produto: string
+  quantidade: number
+  preco: number
+  subtotal: number
+}
+export interface ItemVenda {
+  id: number
+  quantidade: number
+  preco: number
+}
+
+export interface FormularioVenda {
+  clienteId: number | null
+  data: Date | null
+  vendedorId: number | null
+  status: 'ORCAMENTO' | 'ANDAMENTO' | 'FINALIZADO' | 'PENDENTE' | 'CANCELADO' | 'FATURADO'
+  garantia: number | null
+  observacoes: string | null
+  desconto: number | string | null
+  id: number | null
+}
+
 export interface ItensVendas {
   id?: number
   vendaId: number
   produtoId: number
   quantidade: number
   valor: number
+  produto: Produto
 }
 
 export interface PagamentoVendas {
