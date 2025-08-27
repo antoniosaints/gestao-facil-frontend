@@ -71,7 +71,9 @@ watch(
                 if (!exists) items.value.push(item)
                 selectedItem.value = item
             }
-        }
+        } else[
+            selectedItem.value = null
+        ]
     },
     { immediate: true }
 )
@@ -118,7 +120,7 @@ const clearSelection = () => {
                         <div class="p-2 text-sm text-muted-foreground">Nenhum resultado</div>
                     </template>
                     <template v-else>
-                        <SelectItem v-for="item in items" :key="item.id" :value="item.id">
+                        <SelectItem @click.stop="(search = '')" v-for="item in items" :key="item.id" :value="item.id">
                             {{ item.label }}
                         </SelectItem>
                     </template>
@@ -126,7 +128,7 @@ const clearSelection = () => {
             </SelectContent>
         </Select>
         <button v-if="allowClear && selectedId" type="button"
-            class="bg-danger dark:bg-red-800 hover:bg-danger/80 rounded h-8 w-8 flex items-center justify-center"
+            class="bg-danger text-white dark:bg-red-800 hover:bg-danger/80 rounded h-8 w-8 flex items-center justify-center"
             @click.stop="clearSelection">
             <X class="h-4 w-4" />
         </button>

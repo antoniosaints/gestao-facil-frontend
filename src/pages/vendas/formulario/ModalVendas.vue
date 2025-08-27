@@ -7,8 +7,8 @@ import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncre
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import http from "@/utils/axios";
 import { colorTheme } from "@/utils/theme";
-import { id, ptBR } from "date-fns/locale";
-import { ref } from "vue";
+import { ptBR } from "date-fns/locale";
+import { computed, ref } from "vue";
 import { useToast } from "vue-toastification";
 
 const title = ref('Cadastro de venda')
@@ -19,13 +19,26 @@ interface CarrinhoItem {
     id: number;
     produto: string;
     quantidade: number;
-    preco: number;
+    preco: number | string;
     subtotal: number;
+}
+
+interface FormularioVenda {
+    id: number | null;
+    vendedorId: number | null;
+    clienteId: number | null;
+    dataVenda: Date | null;
+    tipoDesconto: string;
+    desconto: number | string | null;
+    valorTotal: number;
+    garantia: string;
+    observacoes: string;
+    itens: any[];
 }
 
 const carrinho = ref<CarrinhoItem[]>(localStorage.getItem('gestao_facil:cartVendas') ? JSON.parse(localStorage.getItem('gestao_facil:cartVendas') as string) : [])
 
-const formularioVenda = ref({
+const formularioVenda = ref<FormularioVenda>({
     id: null,
     vendedorId: null,
     clienteId: null,
@@ -38,7 +51,7 @@ const formularioVenda = ref({
     itens: []
 })
 
-const addItemForm = ref<{ id: number | null, preco: number | null, quantidade: number }>({
+const addItemForm = ref<{ id: number | null, preco: number | string | null, quantidade: number }>({
     id: null,
     preco: null,
     quantidade: 1
@@ -64,7 +77,6 @@ function proporValorVendaCliente(valorProposto: number) {
     // Se o valor proposto for maior ou igual ao subtotal, desconto = 0
     if (valorPropostoNum >= valorCarrinho) {
         formularioVenda.value.desconto = 0;
-        atualizarTabelaCart();
         return;
     }
     formularioVenda.value.tipoDesconto = 'VALOR';
@@ -72,7 +84,6 @@ function proporValorVendaCliente(valorProposto: number) {
     // Desconto necessário para chegar no valor desejado
     const valorDescontoNovo = valorCarrinho - valorPropostoNum;
     formularioVenda.value.desconto = valorDescontoNovo;
-    atualizarTabelaCart();
 }
 
 function definirValorProporcionalVenda() {
@@ -94,7 +105,6 @@ function setCartFromVendaRealizada(venda: { ItensVendas: any[] }) {
     })
 
     localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(carrinho.value));
-    atualizarTabelaCart();
 }
 
 async function loadVendaEdicao() {
@@ -188,13 +198,12 @@ function addToCartVendas() {
         produto: "Produto " + addItemForm.value.id,
         quantidade: addItemForm.value.quantidade,
         preco: addItemForm.value.preco,
-        subtotal: +(addItemForm.value.preco * addItemForm.value.quantidade)
+        subtotal: +(parseFloat(String(addItemForm.value.preco).replace(',', '.')) * addItemForm.value.quantidade)
     };
 
     carrinho.value.push(newItem);
     localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(carrinho.value));
 
-    atualizarTabelaCart();
     clearFormularioAddItem();
 }
 
@@ -204,14 +213,10 @@ function removeFromCartVendas(produtoId: number) {
 
     carrinho.value = novoCarrinho;
     localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(novoCarrinho));
-    atualizarTabelaCart();
 }
 
 function calculateTotalCartVendas() {
-    const cart = localStorage.getItem('gestao_facil:cartVendas');
-    const cartItems: CarrinhoItem[] = cart ? JSON.parse(cart) : [];
-
-    const total = cartItems.reduce((sum, item) => {
+    const total = carrinho.value.reduce((sum, item) => {
         return sum + item.subtotal;
     }, 0);
 
@@ -220,63 +225,38 @@ function calculateTotalCartVendas() {
 
 function clearCartVendas() {
     localStorage.removeItem('gestao_facil:cartVendas');
-    atualizarTabelaCart();
+    carrinho.value = [];
 }
 
-function getValorDesconto() {
-    let descontoTotal = 0;
+const getValorDesconto = computed(() => {
+    if (carrinho.value.length === 0) return 0;
 
-    if (carrinho.value.length === 0) {
-        return descontoTotal;
-    }
+    const subtotalValue = carrinho.value.reduce((total, item) => {
+        // substitui vírgula por ponto para parseFloat funcionar corretamente
+        const preco = parseFloat(String(item.preco).replace(',', '.')) || 0;
+        return total + preco * item.quantidade;
+    }, 0);
 
-    const subtotalValue = carrinho.value.reduce((total, item) => total + (item.preco * item.quantidade), 0);
+    const descontoRaw = parseFloat(String(formularioVenda.value.desconto).replace(',', '.')) || 0;
 
-    if (formularioVenda.value.desconto && !isNaN(formularioVenda.value.desconto)) {
-        if (formularioVenda.value.tipoDesconto === 'PORCENTAGEM') {
-            descontoTotal = subtotalValue * (formularioVenda.value.desconto / 100);
-        } else {
-            descontoTotal = formularioVenda.value.desconto;
-        }
+    if (formularioVenda.value.tipoDesconto === 'PORCENTAGEM') {
+        return subtotalValue * (descontoRaw / 100);
     } else {
-        descontoTotal = 0;
+        return descontoRaw;
     }
+});
 
-    return descontoTotal;
-}
 
-function atualizarTabelaCart() {
-    // const cartList = $('#lista-carrinho-vendas');
-    // const resumoCarrinho = $('#resumo-carrinho-vendas');
-    // const subtotalCarrinho = $('#subtotal-carrinho-vendas');
-    // const totalCarrinho = $('#total-carrinho-vendas');
-    // const descontoCarrinho = $('#desconto-total-carrinho');
 
-    // cartList.empty();
-
-    // if (cartItems.length === 0) {
-    //     cartList.append(`
-    //         <div class="p-3 text-center text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-md">
-    //             Nenhum item adicionado
-    //         </div>
-    //     `);
-    //     descontoCarrinho.text(`R$ 0,00`);
-    //     subtotalCarrinho.text(`R$ 0,00`);
-    //     totalCarrinho.text(`R$ 0,00`);
-    //     return;
-    // }
-
-    // let total = 0;
-
-    // cartItems.forEach(item => {
-    //     total += item.subtotal;
-    // });
-
-    // // Exibe total no resumo
-    // descontoCarrinho.text(`R$ ${getValorDesconto().toFixed(2).replace('.', ',')}`);
-    // subtotalCarrinho.text(`R$ ${total.toFixed(2).replace('.', ',')}`);
-    // totalCarrinho.text(`R$ ${(total - getValorDesconto()).toFixed(2).replace('.', ',')}`);
-}
+const resumoCarrinho = computed(() => {
+    const subtotal = carrinho.value.reduce((total, item) => total + item.subtotal, 0);
+    const desconto = getValorDesconto.value;
+    return {
+        subtotal,
+        desconto,
+        total: (subtotal - desconto)
+    };
+});
 
 clearCartVendas();
 </script>
@@ -288,7 +268,8 @@ clearCartVendas();
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Cliente</label>
                     <div class="flex items-center justify-center gap-2">
-                        <Select2Ajax class="w-full" url="/clientes/select2" :allow-clear="true" />
+                        <Select2Ajax v-model="formularioVenda.clienteId" class="w-full" url="/clientes/select2"
+                            :allow-clear="true" />
                         <button type="button" onclick="openModalClientes()"
                             class="bg-primary px-4 py-1.5 text-white rounded-md border border-border dark:border-border-dark flex justify-center items-center">+</button>
                     </div>
@@ -347,7 +328,7 @@ clearCartVendas();
                 <div class="md:col-span-2">
                     <label for="tipo_desconto" class="block text-sm mb-1">Tipo <span
                             class="text-red-500">*</span></label>
-                    <Select required default-value="PORCENTAGEM">
+                    <Select required default-value="PORCENTAGEM" v-model="formularioVenda.tipoDesconto">
                         <SelectTrigger class="w-full bg-card dark:bg-card-dark">
                             <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
@@ -363,7 +344,8 @@ clearCartVendas();
                 </div>
                 <div class="md:col-span-2">
                     <label for="input_desconto_venda_formulario" class="block text-sm mb-1">Desconto</label>
-                    <Input type="text" id="input_desconto_venda_formulario" name="desconto"
+                    <Input v-model="(formularioVenda.desconto as string)" type="text"
+                        id="input_desconto_venda_formulario" name="desconto"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
                         placeholder="Ex: 1,99" />
                 </div>
@@ -443,9 +425,10 @@ clearCartVendas();
                                 </div>
                                 <div class="flex flex-col text-right text-sm">
                                     <span class="font-medium text-gray-800 dark:text-gray-200">R$ {{ item.preco
-                                    }}</span>
-                                    <span class="text-gray-500 dark:text-gray-400">Subtotal: R$ {{ item.subtotal
-                                    }}</span>
+                                        }}</span>
+                                    <span class="text-gray-500 dark:text-gray-400">Subtotal: R$ {{
+                                        String(item.subtotal).replace('.', ',')
+                                        }}</span>
                                 </div>
                                 <button type="button" @click="removeFromCartVendas(item.id)"
                                     class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 py-1 px-2 rounded-sm">
@@ -460,15 +443,21 @@ clearCartVendas();
                             <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Resumo</h3>
                             <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                                 <span>Desconto:</span>
-                                <span id="desconto-total-carrinho">R$ 0,00</span>
+                                <span id="desconto-total-carrinho">R$ {{
+                                    String(resumoCarrinho.desconto.toFixed(2)).replace('.',
+                                        ',') }}</span>
                             </div>
                             <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                                 <span>Subtotal:</span>
-                                <span id="subtotal-carrinho-vendas">R$ 0,00</span>
+                                <span id="subtotal-carrinho-vendas">R$ {{
+                                    String(resumoCarrinho.subtotal.toFixed(2)).replace('.',
+                                        ',') }}</span>
                             </div>
                             <div class="flex justify-between text-bold text-md text-gray-700 dark:text-gray-300">
                                 <span>Total:</span>
-                                <span id="total-carrinho-vendas">R$ 0,00</span>
+                                <span id="total-carrinho-vendas">R$ {{
+                                    String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
+                                    }}</span>
                             </div>
                         </div>
                     </div>
