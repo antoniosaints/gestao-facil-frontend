@@ -15,25 +15,31 @@ const title = ref('Cadastro de venda')
 const description = ref('Preencha os campos abaixo')
 const toast = useToast()
 
+const labelProdutoInsert = ref<string>('')
+const tipoDesconto = ref<"PORCENTAGEM" | "VALOR">('PORCENTAGEM')
 interface CarrinhoItem {
     id: number;
     produto: string;
     quantidade: number;
-    preco: number | string;
+    preco: number;
     subtotal: number;
+}
+interface ItemVenda {
+    id: number;
+    quantidade: number;
+    preco: number;
 }
 
 interface FormularioVenda {
-    id: number | null;
-    vendedorId: number | null;
-    clienteId: number | null;
-    dataVenda: Date | null;
-    tipoDesconto: string;
-    desconto: number | string | null;
-    valorTotal: number;
-    garantia: string;
-    observacoes: string;
-    itens: any[];
+    clienteId: number | null,
+    data: Date | null,
+    vendedorId: number | null,
+    status: "ORCAMENTO" | "ANDAMENTO" | "FINALIZADO" | "PENDENTE" | "CANCELADO",
+    garantia: number | null,
+    observacoes: string | null,
+    desconto: number | string | null,
+    id: number | null,
+    itens: ItemVenda[];
 }
 
 const carrinho = ref<CarrinhoItem[]>(localStorage.getItem('gestao_facil:cartVendas') ? JSON.parse(localStorage.getItem('gestao_facil:cartVendas') as string) : [])
@@ -42,13 +48,12 @@ const formularioVenda = ref<FormularioVenda>({
     id: null,
     vendedorId: null,
     clienteId: null,
-    dataVenda: null,
-    tipoDesconto: 'PORCENTAGEM',
-    desconto: 0,
-    valorTotal: 0,
-    garantia: '',
+    data: new Date(),
+    desconto: null,
+    status: 'ORCAMENTO',
+    garantia: 0,
     observacoes: '',
-    itens: []
+    itens: carrinho.value.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco }))
 })
 
 const addItemForm = ref<{ id: number | null, preco: number | string | null, quantidade: number }>({
@@ -61,9 +66,6 @@ const propostaPreco = ref<string | null>('')
 
 const open = defineModel({ default: false })
 
-const dataVenda = ref(new Date())
-
-
 function getValorTotalCarrinho() {
     return carrinho.value.reduce((total, item) => total + item.subtotal, 0);
 }
@@ -71,18 +73,14 @@ function getValorTotalCarrinho() {
 function proporValorVendaCliente(valorProposto: number) {
     if (!valorProposto) return;
 
-    const valorCarrinho = parseFloat(String(getValorTotalCarrinho())) || 0; // subtotal
-    const valorPropostoNum = parseFloat(String(valorProposto)) || 0;
-
-    // Se o valor proposto for maior ou igual ao subtotal, desconto = 0
-    if (valorPropostoNum >= valorCarrinho) {
+    const valorCarrinho = parseFloat(String(getValorTotalCarrinho())) || 0;
+    if (valorProposto >= valorCarrinho) {
         formularioVenda.value.desconto = 0;
         return;
     }
-    formularioVenda.value.tipoDesconto = 'VALOR';
+    tipoDesconto.value = 'VALOR';
 
-    // Desconto necessário para chegar no valor desejado
-    const valorDescontoNovo = valorCarrinho - valorPropostoNum;
+    const valorDescontoNovo = valorCarrinho - valorProposto;
     formularioVenda.value.desconto = valorDescontoNovo;
 }
 
@@ -120,60 +118,31 @@ async function loadVendaEdicao() {
 
 loadVendaEdicao();
 
-// $("#formulario_cadastro_venda").submit((e) => {
-//     e.preventDefault();
+async function submitFormularioVenda() {
+    if (carrinho.value.length === 0) {
+        toast.error('Adicione pelo menos um item ao carrinho');
+        return;
+    }
 
-//     const cart = localStorage.getItem('gestao_facil:cartVendas');
-//     const cartItems = cart ? JSON.parse(cart) : [];
+    const hasId = formularioVenda.value.id;
 
-//     if (cartItems.length === 0) {
-//         Swal.fire({
-//             icon: "error",
-//             title: "Erro!",
-//             text: "Nenhum item adicionado na venda",
-//             confirmButtonText: "Ok",
-//         });
-//         return;
-//     }
+    try {
+        const response = await http.post(`vendas/criar${hasId ? `?id=${hasId}` : ''}`, {
+            ...formularioVenda.value,
+            itens: carrinho.value.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco }))
+        });
 
-//     const data = {
-//         clienteId: $('#select_cliente_venda_formulario').val(),
-//         data: $('#input_data_venda_formulario').val(),
-//         vendedorId: $('#select_vendedor_venda_formulario').val(),
-//         status: $('#select_status_venda_formulario').val(),
-//         garantia: $('#input_garantia_venda_formulario').val(),
-//         observacoes: $('#input_observacoes_venda_formulario').val(),
-//         desconto: getValorDesconto(),
-//         id: $("#input_id_venda_formulario").val(),
-//         itens: cartItems.map(item => (
-//             {
-//                 id: item.id,
-//                 quantidade: item.quantidade,
-//                 preco: item.preco
-//             }
-//         ))
-//     };
-//     const hasId = $("#input_id_venda_formulario").val();
-//     $.ajax({
-//         url: `/api/vendas/criar${hasId ? `?id=${hasId}` : ''}`,
-//         method: 'POST',
-//         data: data,
-//         dataType: 'json',
-//         headers: {
-//             'Authorization': `Bearer ${localStorage.getItem('gestao_facil:token')}`
-//         },
-//         success: function (data) {
-//             showNotification('Venda salva com sucesso!', 'success');
-//             loadPage('/vendas/resumo');
-//         },
-//         error: function (xhr, status, error) {
-//             console.log(xhr);
-//             const mensagem =
-//                 xhr.responseJSON?.message || "Erro inesperado na requisição";
-//             showNotification(mensagem, 'error');
-//         }
-//     });
-// });
+        if (hasId) {
+            toast.success('Venda atualizada com sucesso!');
+        } else {
+            toast.success('Venda criada com sucesso!');
+        }
+    } catch (error) {
+        console.log(error);
+        toast.error('Erro ao registrar a venda, tente novamente!');
+    }
+}
+
 
 
 function clearFormularioAddItem() {
@@ -195,9 +164,9 @@ function addToCartVendas() {
 
     const newItem = {
         id: addItemForm.value.id,
-        produto: "Produto " + addItemForm.value.id,
+        produto: labelProdutoInsert.value,
         quantidade: addItemForm.value.quantidade,
-        preco: addItemForm.value.preco,
+        preco: parseFloat(String(addItemForm.value.preco).replace(',', '.')),
         subtotal: +(parseFloat(String(addItemForm.value.preco).replace(',', '.')) * addItemForm.value.quantidade)
     };
 
@@ -233,13 +202,13 @@ const getValorDesconto = computed(() => {
 
     const subtotalValue = carrinho.value.reduce((total, item) => {
         // substitui vírgula por ponto para parseFloat funcionar corretamente
-        const preco = parseFloat(String(item.preco).replace(',', '.')) || 0;
+        const preco = item.preco;
         return total + preco * item.quantidade;
     }, 0);
 
     const descontoRaw = parseFloat(String(formularioVenda.value.desconto).replace(',', '.')) || 0;
 
-    if (formularioVenda.value.tipoDesconto === 'PORCENTAGEM') {
+    if (tipoDesconto.value === 'PORCENTAGEM') {
         return subtotalValue * (descontoRaw / 100);
     } else {
         return descontoRaw;
@@ -263,7 +232,7 @@ clearCartVendas();
 
 <template>
     <ModalView v-model:open="open" :title="title" :description="description" size="5xl">
-        <form id="formulario_cadastro_venda" class="space-y-4 px-4">
+        <form @submit.prevent="submitFormularioVenda" class="space-y-4 px-4">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Cliente</label>
@@ -277,14 +246,14 @@ clearCartVendas();
 
                 <div class="md:col-span-3">
                     <label class="block text-sm mb-1">Data da Venda <span class="text-red-500">*</span></label>
-                    <DatePicker placeholder="Data da venda" required v-model="dataVenda" :dark="(colorTheme === 'dark')"
-                        cancelText="Cancelar" selectText="Selecionar" :format-locale="ptBR" :format="'dd/MM/yyyy'"
-                        :enable-time-picker="false" auto-apply />
+                    <DatePicker placeholder="Data da venda" required v-model="formularioVenda.data"
+                        :dark="(colorTheme === 'dark')" cancelText="Cancelar" selectText="Selecionar"
+                        :format-locale="ptBR" :format="'dd/MM/yyyy'" :enable-time-picker="false" auto-apply />
                 </div>
 
                 <div class="md:col-span-3">
                     <label class="block text-sm mb-1">Status <span class="text-red-500">*</span></label>
-                    <Select default-value="ORCAMENTO">
+                    <Select v-model="formularioVenda.status" default-value="ORCAMENTO">
                         <SelectTrigger class="w-full bg-card dark:bg-card-dark">
                             <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
@@ -310,13 +279,14 @@ clearCartVendas();
 
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Vendedor <span class="text-red-500">*</span></label>
-                    <Select2Ajax v-model="formularioVenda.vendedorId" class="w-full" url="/usuarios/select2" />
+                    <Select2Ajax required v-model="formularioVenda.vendedorId" class="w-full" url="/usuarios/select2" />
                 </div>
 
 
                 <div class="md:col-span-2">
                     <label for="garantia" class="block text-sm mb-1">Garantia (dias)</label>
-                    <NumberField class="bg-card dark:bg-card-dark" id="garantia" :default-value="0" :min="0">
+                    <NumberField v-model="formularioVenda.garantia" class="bg-card dark:bg-card-dark" id="garantia"
+                        :default-value="0" :min="0">
                         <NumberFieldContent>
                             <NumberFieldDecrement />
                             <NumberFieldInput />
@@ -328,7 +298,7 @@ clearCartVendas();
                 <div class="md:col-span-2">
                     <label for="tipo_desconto" class="block text-sm mb-1">Tipo <span
                             class="text-red-500">*</span></label>
-                    <Select required default-value="PORCENTAGEM" v-model="formularioVenda.tipoDesconto">
+                    <Select required default-value="PORCENTAGEM" v-model="tipoDesconto">
                         <SelectTrigger class="w-full bg-card dark:bg-card-dark">
                             <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
@@ -354,7 +324,8 @@ clearCartVendas();
             <!-- Observações -->
             <div>
                 <label class="block text-sm mb-1">Observações</label>
-                <textarea name="observacoes" id="input_observacoes_venda_formulario"
+                <textarea v-model="formularioVenda.observacoes" name="observacoes"
+                    id="input_observacoes_venda_formulario"
                     class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
                     rows="3" placeholder="Observações da venda..."></textarea>
             </div>
@@ -365,7 +336,8 @@ clearCartVendas();
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Produto <span class="text-red-500">*</span></label>
-                    <Select2Ajax v-model="addItemForm.id" class="w-full" url="/produtos/select2" :allow-clear="true" />
+                    <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
+                        url="/produtos/select2" :allow-clear="true" />
                 </div>
 
                 <div class="md:col-span-2">
@@ -424,10 +396,11 @@ clearCartVendas();
                                     <span class="text-gray-500 dark:text-gray-400">Qtd: {{ item.quantidade }}</span>
                                 </div>
                                 <div class="flex flex-col text-right text-sm">
-                                    <span class="font-medium text-gray-800 dark:text-gray-200">R$ {{ item.preco
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">R$ {{
+                                        String(item.preco).replace('.', ',')
                                         }}</span>
                                     <span class="text-gray-500 dark:text-gray-400">Subtotal: R$ {{
-                                        String(item.subtotal).replace('.', ',')
+                                        String(item.subtotal.toFixed(2)).replace('.', ',')
                                         }}</span>
                                 </div>
                                 <button type="button" @click="removeFromCartVendas(item.id)"

@@ -23,8 +23,10 @@ const props = withDefaults(defineProps<{
     modelValue?: string | number | null
     url: string
     allowClear?: boolean
+    required?: boolean
 }>(), {
     allowClear: false,
+    required: false
 })
 
 const emit = defineEmits<{
@@ -34,6 +36,10 @@ const emit = defineEmits<{
 const items = ref<Item[]>([])
 const selectedId = ref<string | number | null>(props.modelValue ?? null)
 const selectedItem = ref<Item | null>(null)
+const label = defineModel('label', {
+    default: '',
+    required: false
+})
 const search = ref("")
 const loading = ref(false)
 let timeout: ReturnType<typeof setTimeout> | null = null
@@ -70,6 +76,7 @@ watch(
                 const exists = items.value.find((i) => i.id === item.id)
                 if (!exists) items.value.push(item)
                 selectedItem.value = item
+                label.value = item.label
             }
         } else[
             selectedItem.value = null
@@ -95,12 +102,13 @@ onMounted(fetchItems)
 const clearSelection = () => {
     selectedId.value = null
     selectedItem.value = null
+    label.value = ''
 }
 </script>
 
 <template>
     <div class="flex items-center w-full max-w-full gap-2">
-        <Select v-model="selectedId">
+        <Select v-model="selectedId" :required="required">
             <SelectTrigger class="bg-card dark:bg-card-dark"
                 :class="{ 'w-[calc(100%-2rem)]': allowClear && selectedId }">
                 <SelectValue :value="selectedId" :placeholder="'Selecione...'">
