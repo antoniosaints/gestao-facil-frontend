@@ -107,13 +107,21 @@
                 <!-- Desconto -->
                 <div class="mb-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <select v-model="discountType"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-                            <option value="percentage">Desconto %</option>
-                            <option value="value">Desconto R$</option>
-                        </select>
-                        <input type="text" v-model="discountValue" placeholder="0,00"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
+                        <Select v-model="discountType">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Tipo de desconto" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="percentage">
+                                    Desconto %
+                                </SelectItem>
+                                <SelectItem value="value">
+                                    Desconto R$
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Input type="text" v-model="discountValue!" placeholder="0,00"
+                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
                     </div>
                 </div>
 
@@ -170,14 +178,13 @@
                 <!-- Botão Finalizar Venda -->
                 <button
                     class="w-full bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
-                    disabled>
+                    :disabled="!canFinalizeSale">
                     <i class="fas fa-check mr-2"></i>
                     Finalizar Venda
                 </button>
             </div>
         </div>
     </div>
-
     <div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 items-center justify-center min-h-screen">
         <div
             class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4 text-center transform scale-90 opacity-0 transition duration-300 ease-out">
@@ -215,6 +222,7 @@ import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
 import { POSITION, useToast } from 'vue-toastification';
 
 const toast = useToast()
+const canFinalizeSale = ref(false)
 
 interface Product {
     id: number
@@ -242,12 +250,13 @@ const subtotal = computed(() =>
 )
 
 const discount = computed(() => {
-    const value = discountValue.value || 0
+    const value = parseFloat(String(discountValue.value).replace(",", ".")) || 0
     if (!value) return 0
     return discountType.value === "percentage"
         ? subtotal.value * (value / 100)
         : value
 })
+
 
 const total = computed(() => Math.max(0, subtotal.value - discount.value))
 
@@ -256,9 +265,6 @@ const change = computed(() => {
     return Math.max(0, (receivedAmount.value || 0) - total.value)
 })
 
-const showSuccessModal = ref(false)
-
-// ---- API ----
 async function fetchProducts() {
     try {
         const { data } = await http.get("/produtos", {
@@ -271,6 +277,9 @@ async function fetchProducts() {
             price: parseFloat(p.preco),
             stock: p.estoque,
         }))
+        if (cart.value.length > 0) {
+            canFinalizeSale.value = true
+        }
     } catch {
         alert("Erro ao buscar produtos")
     }
@@ -279,6 +288,7 @@ async function fetchProducts() {
 // ---- Carrinho ----
 function saveCart() {
     localStorage.setItem("gestao_facil:cartPDV", JSON.stringify(cart.value))
+    if (cart.value.length > 0) canFinalizeSale.value = true
 }
 
 function addToCart(product: Product) {
@@ -304,30 +314,31 @@ function updateQuantity(id: number, qty: number) {
     } else if (qty <= item.stock) {
         item.quantity = qty
     } else {
-        alert("Estoque insuficiente!")
+        toast.error("Estoque insuficiente!")
     }
     saveCart()
 }
 
 function clearCart() {
     cart.value = []
-    saveCart()
+    canFinalizeSale.value = false
     toast.success("Carrinho limpo!", { timeout: 2000 })
+    saveCart()
 }
 
 // ---- Venda ----
 async function finalizeSale() {
     if (!cart.value.length) {
-        alert("Carrinho vazio!")
+        toast.error("Carrinho vazio!")
         return
     }
     if (paymentMethod.value === "money" && (receivedAmount.value || 0) < total.value) {
-        alert("Valor recebido insuficiente!")
+        toast.error("Valor recebido insuficiente!")
         return
     }
 
     const data = {
-        clienteId: null, // implementar cliente
+        clienteId: cliente.value,
         data: new Date().toISOString().split("T")[0],
         desconto: discount.value,
         itens: cart.value.map((i) => ({
@@ -338,25 +349,13 @@ async function finalizeSale() {
     }
 
     try {
-        await http.post("/vendas/criar", data, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("gestao_facil:token")}`,
-            },
-        })
-        showSuccessModal.value = true
+        await http.post("/vendas/criar", data)
         clearCart()
         await fetchProducts()
+        toast.success("Venda realizada com sucesso!")
     } catch (err: any) {
-        alert(err.response?.data?.message || "Erro inesperado")
+        toast.error(err.response?.data?.message || "Erro inesperado")
     }
-}
-
-function newSale() {
-    clearCart()
-    discountValue.value = 0
-    paymentMethod.value = "money"
-    receivedAmount.value = null
-    showSuccessModal.value = false
 }
 
 const resumoVenda = computed(() => ({
