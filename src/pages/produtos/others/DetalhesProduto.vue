@@ -198,17 +198,5 @@ const status = computed(() => {
                 </div>
             </CardContent>
         </Card>
-
-        <!-- Histórico -->
-        <Card>
-            <CardHeader>
-                <CardTitle>Histórico</CardTitle>
-            </CardHeader>
-            <CardContent class="grid grid-cols-3 gap-2">
-                <div><span>Última compra:</span> {{ produto?.id }}</div>
-                <div><span>Última venda:</span> {{ produto?.id }}</div>
-                <div><span>Fornecedor:</span> {{ produto?.id }}</div>
-            </CardContent>
-        </Card>
     </div>
 </template>
