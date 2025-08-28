@@ -8,6 +8,7 @@ import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
 import Actions from './Actions.vue'
 import { goTo } from '@/hooks/links'
+import { RouterLink } from 'vue-router'
 
 export const columnsProdutos: ColumnDef<Produto>[] = [
   {
@@ -23,14 +24,14 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
       ),
     cell: ({ row }) => {
       const isLowStock = row.original.estoque <= row.original.minimo
-      return render(BadgeCell, {
-        label: row.getValue('Uid') as string,
-        color: isLowStock ? 'orange' : 'gray',
-        icon: 'fa-solid fa-box',
-        capitalize: false,
-        onClick: () => goTo(`/produtos/detalhes`),
-        class: 'cursor-pointer',
-      })
+      return render(RouterLink, { to: `/produtos/detalhes?id=${row.original.id}` }, () =>
+        render(BadgeCell, {
+          label: row.getValue('Uid') as string,
+          color: isLowStock ? 'orange' : 'gray',
+          icon: 'fa-solid fa-box',
+          capitalize: false,
+        }),
+      )
     },
   },
   {

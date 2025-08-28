@@ -20,7 +20,7 @@
             <div class="flex-1 overflow-y-auto scrollbar-thin">
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 px-2 gap-4">
                     <div v-for="p in products" :key="p.id"
-                        class="border border-border bg-background shadow-md rounded-lg p-4 card-hover cursor-pointer product-card"
+                        class="border border-border bg-background shadow-md rounded-lg p-4 card-hover cursor-pointer product-card flex flex-col justify-between"
                         data-product-id="${product.id}">
                         <div class="text-center mb-3">
                             <h3 class="text-gray-800 dark:text-white text-xs mb-1">{{ p.name }}</h3>
@@ -49,7 +49,7 @@
                         <i class="fas fa-shopping-cart text-green-600 mr-2"></i>
                         Carrinho
                     </h2>
-                    <button
+                    <button @click="clearCart"
                         class="text-red-500 dark:text-red-300 bg-red-100 px-3 py-1 rounded-md bg-red-10 dark:bg-red-900"
                         title="Limpar carrinho">
                         <i class="fas fa-trash text-sm"></i>
@@ -212,6 +212,9 @@ import { ref, computed, onMounted } from "vue"
 import http from "@/utils/axios"
 import { Input } from '@/components/ui/input';
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
+import { POSITION, useToast } from 'vue-toastification';
+
+const toast = useToast()
 
 interface Product {
     id: number
@@ -284,9 +287,10 @@ function addToCart(product: Product) {
         if (existing.quantity < product.stock) {
             existing.quantity++
         } else {
-            alert("Estoque insuficiente!")
+            toast.error("Estoque insuficiente!")
         }
     } else {
+        if (!product.stock) return toast.error("Produto sem estoque!", { timeout: 3000, position: POSITION.BOTTOM_RIGHT })
         cart.value.push({ ...product, quantity: 1 })
     }
     saveCart()
@@ -308,6 +312,7 @@ function updateQuantity(id: number, qty: number) {
 function clearCart() {
     cart.value = []
     saveCart()
+    toast.success("Carrinho limpo!", { timeout: 2000 })
 }
 
 // ---- Venda ----

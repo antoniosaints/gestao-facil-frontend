@@ -96,11 +96,11 @@
                 Página {{ pageIndex + 1 }} de {{ totalPages }}
             </div>
             <div class="space-x-2">
-                <Button variant="outline" size="sm" :disabled="pageIndex === 0"
+                <Button variant="outline" size="sm" :disabled="pageIndex === 0 || loading"
                     @click="pageIndex = Math.max(pageIndex - 1, 0)">
                     Anterior
                 </Button>
-                <Button variant="outline" size="sm" :disabled="pageIndex >= totalPages - 1"
+                <Button variant="outline" size="sm" :disabled="pageIndex >= totalPages - 1 || loading"
                     @click="pageIndex = Math.min(pageIndex + 1, totalPages - 1)">
                     Próximo
                 </Button>

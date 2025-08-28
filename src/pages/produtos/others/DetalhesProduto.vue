@@ -1,29 +1,31 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, FileText, Edit, Trash2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
+import router from "@/router"
+import { onMounted, ref } from "vue"
+import { type Produto } from "@/types/schemas"
+import { useToast } from "vue-toastification"
+import { ProdutoRepository } from "@/repositories/produto-repository"
 
-const produto = {
-    nome: "BATERIA FOXCONN IPHONE 11 PRO MAX (3969mAh) - CAIXA PRETA",
-    codigo: "124",
-    preco: 120.0,
-    estoque: 2,
-    unidade: "UND",
-    minimo: 1,
-    descricao: "N/A",
-    compras: 0,
-    vendas: 0,
-    valorGasto: 0,
-    lucroLiquido: 0,
-    custoMedio: 95.0,
-    valorEstoque: 240.0,
-    margem: "26%",
-    ultimaCompra: "05/08/2025",
-    ultimaVenda: "10/08/2025",
-    fornecedor: "Apple Distribuidora"
+const toast = useToast()
+const query = router.currentRoute.value.query
+const produto = ref<Produto>()
+
+async function getProduto() {
+    try {
+        const data = await ProdutoRepository.get(Number(query.id))
+        produto.value = data.data
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao buscar o produto')
+    }
 }
+
+onMounted(() => {
+    getProduto()
+})
 </script>
 
 <template>
@@ -32,7 +34,7 @@ const produto = {
         <div class="flex items-center justify-between flex-col md:flex-row">
             <h1 class="text-md md:text-xl flex items-center gap-2">
                 <FileText class="w-6 h-6 text-blue-600" />
-                {{ produto.nome }}
+                {{ produto?.nome }}
             </h1>
             <div class="hidden md:flex gap-2">
                 <RouterLink to="/produtos" as-child>
@@ -58,7 +60,7 @@ const produto = {
                 class="rounded-lg inline-flex items-center px-4 py-4 border border-red-800 dark:border-red-600 bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200">
                 <i class="fa-solid fa-turn-down w-7 h-7"></i>
                 <div class="text-left rtl:text-right">
-                    <div class="mb-1 text-sm">Compras/Reposições</div>
+                    <div class="mb-1 text-sm">Compras / Reposições</div>
                     <div class="-mt-1 font-sans text-lg font-semibold">100</div>
                 </div>
             </span>
@@ -95,12 +97,13 @@ const produto = {
             </CardHeader>
             <CardContent class="grid grid-cols-2 gap-2">
                 <div><span>Código:</span>
-                    <BadgeCell color="gray" :label="produto.codigo" class="ml-2 text-sm" />
+                    <BadgeCell color="gray" :label="produto?.codigo || 'N/A'" class="ml-2 text-sm"
+                        :capitalize="false" />
                 </div>
-                <div><span>Preço:</span> R$ {{ produto.preco.toFixed(2) }}</div>
-                <div><span>Estoque:</span> {{ produto.estoque }} {{ produto.unidade }}</div>
-                <div><span>Estoque Mínimo:</span> {{ produto.minimo }} {{ produto.unidade }}</div>
-                <div class="col-span-2"><span>Descrição:</span> {{ produto.descricao }}</div>
+                <div><span>Preço:</span> R$ {{ Number(produto?.preco).toFixed(2) }}</div>
+                <div><span>Estoque:</span> {{ produto?.estoque }} {{ produto?.unidade }}</div>
+                <div><span>Estoque Mínimo:</span> {{ produto?.minimo }} {{ produto?.unidade }}</div>
+                <div class="col-span-2"><span>Descrição:</span> {{ produto?.descricao || 'N/A' }}</div>
             </CardContent>
         </Card>
 
@@ -112,15 +115,13 @@ const produto = {
             </CardHeader>
             <CardContent class="grid grid-cols-3 gap-2">
                 <div><span>Custo médio:</span>
-                    <BadgeCell color="yellow" :label="`R$ ${produto.custoMedio.toFixed(2).replace('.', ',')}`"
-                        class="ml-2 text-sm" />
+                    <BadgeCell color="yellow" :label="`R$ `" class="ml-2 text-sm" />
                 </div>
                 <div><span>Valor em estoque:</span>
-                    <BadgeCell color="green" :label="`R$ ${produto.valorEstoque.toFixed(2).replace('.', ',')}`"
-                        class="ml-2 text-sm" />
+                    <BadgeCell color="green" :label="`R$ `" class="ml-2 text-sm" />
                 </div>
                 <div><span>Margem de lucro:</span>
-                    <BadgeCell color="blue" :label="produto.margem" class="ml-2 text-sm" />
+                    <BadgeCell color="blue" :label="`25%`" class="ml-2 text-sm" />
                 </div>
             </CardContent>
         </Card>
@@ -131,9 +132,9 @@ const produto = {
                 <CardTitle>Histórico</CardTitle>
             </CardHeader>
             <CardContent class="grid grid-cols-3 gap-2">
-                <div><span>Última compra:</span> {{ produto.ultimaCompra }}</div>
-                <div><span>Última venda:</span> {{ produto.ultimaVenda }}</div>
-                <div><span>Fornecedor:</span> {{ produto.fornecedor }}</div>
+                <div><span>Última compra:</span> {{ produto?.id }}</div>
+                <div><span>Última venda:</span> {{ produto?.id }}</div>
+                <div><span>Fornecedor:</span> {{ produto?.id }}</div>
             </CardContent>
         </Card>
     </div>
