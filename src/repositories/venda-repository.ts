@@ -1,6 +1,12 @@
-import type { Vendas } from "@/types/schemas"
-import http from "@/utils/axios"
+import type { MetodoPagamento, Vendas } from '@/types/schemas'
+import http from '@/utils/axios'
 
+export interface VendaEfetivar {
+  pagamento: MetodoPagamento
+  dataPagamento: string
+  categoria: number
+  conta: number | null
+}
 export class VendaRepository {
   static async get(id: number) {
     const data = await http.get(`/vendas/${id}`)
@@ -14,6 +20,14 @@ export class VendaRepository {
   static async update(data: Partial<Vendas>, id: number) {
     data.id = id
     await http.post(`/vendas`, data)
+  }
+
+  static async efetivar(id: number, data: VendaEfetivar) {
+    const res = await http.post(`/vendas/efetivar/${id}`, data)
+    return res.data
+  }
+  static async estornar(id: number) {
+    await http.get(`/vendas/estornar/${id}`)
   }
 
   static async save(data: Omit<Vendas, 'id'>) {

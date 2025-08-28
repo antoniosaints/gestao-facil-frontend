@@ -39,6 +39,17 @@ async function editarVenda(id: number) {
     }
 }
 
+async function estornarVenda(id: number) {
+    try {
+        await VendaRepository.estornar(id)
+        toast.success('Venda estornada com sucesso')
+        store.updateTable()
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao estornar a venda')
+    }
+}
+
 async function openModalDelete(number: number) {
     await store.openUpdate(number);
     openDelete.value = true
@@ -95,7 +106,7 @@ async function deletar(id: number) {
                 <i class="fa-regular text-success fa-square-plus mr-1"></i>
                 Faturar
             </DropdownMenuItem>
-            <DropdownMenuItem v-if="data.status === 'FATURADO'">
+            <DropdownMenuItem @click="estornarVenda(data.id!)" v-if="data.status === 'FATURADO'">
                 <i class="fa-regular text-warning fa-square-minus mr-1"></i>
                 Estornar
             </DropdownMenuItem>
