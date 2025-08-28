@@ -190,13 +190,20 @@ const getValorDesconto = computed(() => {
 });
 
 const maxQuantidadeAdd = ref(999999999999999);
+const ableAdd = ref(true);
 async function getValorProduto(id: number) {
     try {
+        ableAdd.value = true
         const { data } = await ProdutoRepository.get(id);
         if (data.estoque <= 0) {
             addItemForm.value.preco = null;
             addItemForm.value.id = null;
-            return toast.error('Produto sem estoque disponível');
+            maxQuantidadeAdd.value = 1
+            ableAdd.value = false
+            return toast.error('Produto sem estoque disponível', {
+                timeout: 3000,
+                position: POSITION.BOTTOM_RIGHT
+            });
         }
 
         if (data.estoque <= data.minimo) {
@@ -360,13 +367,13 @@ clearCartVendas();
 
                 <div class="md:col-span-2">
                     <label class="block text-sm mb-1">Preço <span class="text-red-500">*</span></label>
-                    <Input v-model="(addItemForm.preco as number)" type="text" placeholder="R$ 0,00"
-                        v-maska="moneyMaskOptions" id="input_preco_venda_formulario"
+                    <Input v-model="(addItemForm.preco as number)" :disabled="!ableAdd" type="text"
+                        placeholder="R$ 0,00" v-maska="moneyMaskOptions" id="input_preco_venda_formulario"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
                 </div>
 
                 <div class="md:col-span-2">
-                    <Button type="button" @click="addToCartVendas" class="text-white w-full">
+                    <Button type="button" :disabled="!ableAdd" @click="addToCartVendas" class="text-white w-full">
                         <i class="fa-solid fa-cart-plus"></i>
                         Adicionar
                     </Button>
@@ -403,10 +410,10 @@ clearCartVendas();
                                 <div class="flex flex-col text-right text-sm">
                                     <span class="font-medium text-gray-800 dark:text-gray-200">R$ {{
                                         String(item.preco).replace('.', ',')
-                                    }}</span>
+                                        }}</span>
                                     <span class="text-gray-500 dark:text-gray-400">Subtotal: R$ {{
                                         String(item.subtotal.toFixed(2)).replace('.', ',')
-                                    }}</span>
+                                        }}</span>
                                 </div>
                                 <button type="button" @click="removeFromCartVendas(item.id)"
                                     class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 py-1 px-2 rounded-sm">
@@ -435,7 +442,7 @@ clearCartVendas();
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                     </div>

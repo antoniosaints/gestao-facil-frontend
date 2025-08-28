@@ -12,14 +12,29 @@
                 <!-- Barra de Busca -->
                 <div class="relative">
                     <input type="text" placeholder="Buscar por nome ou código..."
-                        class="w-full p-2 rounded-md border bg-background dark:bg-background-dark border-border dark:border-gray-500 outline-none">
+                        class="w-full p-2 rounded-md border bg-background border-border dark:border-gray-500 outline-none">
                 </div>
             </div>
 
             <!-- Grid de Produtos -->
             <div class="flex-1 overflow-y-auto scrollbar-thin">
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    <!-- Produtos serão carregados aqui -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 px-2 gap-4">
+                    <div v-for="p in products" :key="p.id"
+                        class="border border-border bg-background shadow-md rounded-lg p-4 card-hover cursor-pointer product-card"
+                        data-product-id="${product.id}">
+                        <div class="text-center mb-3">
+                            <h3 class="text-gray-800 dark:text-white text-xs mb-1">{{ p.name }}</h3>
+                            <p class="text-gray-500 dark:text-gray-400 text-xs mb-2">Cód: {{ p.code }}</p>
+                            <p class="text-md font-bold text-green-600 dark:text-green-400">R$ {{
+                                p.price.toFixed(2).replace('.', ',') }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Estoque: {{ p.stock }}</p>
+                        </div>
+                        <button @click="addToCart(p)"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-1"></i>
+                            Adicionar
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -48,17 +63,41 @@
                         <a onclick="openModalClientes()" class="text-blue-500 px-2 cursor-pointer">Novo
                             cliente</a>
                     </label>
-                    <Select2Ajax :url="'/produtos/select2'" v-model:model-value="cliente" :allowClear="true" />
+                    <Select2Ajax :url="'/clientes/select2'" v-model:model-value="cliente" :allowClear="true" />
                 </div>
             </div>
 
             <!-- Lista de Itens do Carrinho -->
             <div class="flex-1 min-h-48 overflow-y-auto scrollbar-thin p-4">
                 <div>
-                    <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+                    <div v-if="!cart.length" class="text-center text-gray-500 dark:text-gray-400 py-8">
                         <i class="fas fa-shopping-cart text-4xl mb-3 opacity-50"></i>
                         <p>Carrinho vazio</p>
                         <p class="text-sm">Adicione produtos para começar</p>
+                    </div>
+                    <div v-for="item in cart" :key="item.id"
+                        class="border-border bg-card dark:bg-gray-800 shadow-md rounded-lg p-3 mb-3">
+                        <div class="flex justify-between items-start max-w-80 mb-2">
+                            <h4 class="text-xs text-gray-800 dark:text-white truncate">{{ item.name }}</h4>
+                            <button type="button" @click="updateQuantity(item.id, 0)"
+                                class="text-red-500 hover:text-red-700 text-sm">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <button type="button" @click="updateQuantity(item.id, item.quantity - 1)"
+                                    class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">-</button>
+                                <span class="text-sm font-medium">{{ item.quantity }}</span>
+                                <button type="button" @click="updateQuantity(item.id, item.quantity + 1)"
+                                    class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">+</button>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-500">R$ {{ item.price.toFixed(2).replace('.', ',') }}</p>
+                                <p class="font-bold text-sm">R$ {{ (item.price * item.quantity).toFixed(2).replace('.',
+                                    ',') }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -68,12 +107,12 @@
                 <!-- Desconto -->
                 <div class="mb-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <select
+                        <select v-model="discountType"
                             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
                             <option value="percentage">Desconto %</option>
                             <option value="value">Desconto R$</option>
                         </select>
-                        <input type="text" placeholder="0,00"
+                        <input type="text" v-model="discountValue" placeholder="0,00"
                             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
                     </div>
                 </div>
@@ -82,16 +121,16 @@
                 <div class="space-y-2 mb-4">
                     <div class="flex justify-between text-sm">
                         <span>Subtotal:</span>
-                        <span id="subtotal">R$ 0,00</span>
+                        <span id="subtotal">R$ {{ resumoVenda.subtotal.toFixed(2).replace('.', ',') }}</span>
                     </div>
                     <div class="flex justify-between text-sm">
                         <span>Desconto:</span>
-                        <span id="discount">R$ 0,00</span>
+                        <span id="discount">R$ {{ resumoVenda.discount.toFixed(2).replace('.', ',') }}</span>
                     </div>
                     <div
                         class="flex justify-between text-lg font-semibold border-t border-border dark:border-border-dark pt-2">
                         <span>Total:</span>
-                        <span id="total">R$ 0,00</span>
+                        <span id="total">R$ {{ total.toFixed(2).replace('.', ',') }}</span>
                     </div>
                 </div>
 
@@ -190,7 +229,7 @@ const products = ref<Product[]>([])
 const cart = ref<CartItem[]>(JSON.parse(localStorage.getItem("gestao_facil:cartPDV") || "[]"))
 const searchTerm = ref("")
 const discountType = ref<"percentage" | "value">("percentage")
-const discountValue = ref<number>(0)
+const discountValue = ref<number | null>(null)
 const paymentMethod = ref("money")
 const receivedAmount = ref<number | null>(null)
 const cliente = ref(null)
@@ -200,13 +239,15 @@ const subtotal = computed(() =>
 )
 
 const discount = computed(() => {
-    if (!discountValue.value) return 0
+    const value = discountValue.value || 0
+    if (!value) return 0
     return discountType.value === "percentage"
-        ? subtotal.value * (discountValue.value / 100)
-        : discountValue.value
+        ? subtotal.value * (value / 100)
+        : value
 })
 
 const total = computed(() => Math.max(0, subtotal.value - discount.value))
+
 const change = computed(() => {
     if (paymentMethod.value !== "money") return 0
     return Math.max(0, (receivedAmount.value || 0) - total.value)
@@ -312,6 +353,13 @@ function newSale() {
     receivedAmount.value = null
     showSuccessModal.value = false
 }
+
+const resumoVenda = computed(() => ({
+    subtotal: subtotal.value,
+    discount: discount.value,
+    total: total.value,
+    change: change.value,
+}))
 
 onMounted(fetchProducts)
 </script>
