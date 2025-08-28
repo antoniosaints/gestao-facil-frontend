@@ -4,27 +4,74 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, FileText, Edit, Trash2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import router from "@/router"
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { type Produto } from "@/types/schemas"
 import { useToast } from "vue-toastification"
 import { ProdutoRepository } from "@/repositories/produto-repository"
+import Separator from "@/components/ui/separator/Separator.vue"
+import { formatDateToPtBR } from "@/utils/formatters"
+
+interface Resumoproduto {
+    totalGasto: string,
+    lucroLiquido: string,
+    totalEntradas: number,
+    totalSaidas: number,
+    estoqueAtual: number,
+    custoMedio: string,
+    valorEstoque: string,
+    margemLucro: string
+}
 
 const toast = useToast()
-const query = router.currentRoute.value.query
 const produto = ref<Produto>()
+const resumo = ref<Resumoproduto>()
 
-async function getProduto() {
+async function getProduto(id: number) {
     try {
-        const data = await ProdutoRepository.get(Number(query.id))
-        produto.value = data.data
+        const [produtoResp, resumoResp] = await Promise.all([
+            ProdutoRepository.get(Number(id)),
+            ProdutoRepository.resumo(Number(id))
+        ]);
+        produto.value = produtoResp.data;
+        resumo.value = resumoResp;
     } catch (error) {
-        console.log(error)
-        toast.error('Erro ao buscar o produto')
+        console.error(error);
+        toast.error("Erro ao buscar o produto");
     }
 }
 
-onMounted(() => {
-    getProduto()
+function copiarId() {
+    navigator.clipboard.writeText(produto.value?.id!.toString() || "");
+    toast.success("ID copiado para o clipboard");
+}
+
+function loadProduto() {
+    const id = Number(router.currentRoute.value.query.id);
+    if (!id || isNaN(id)) {
+        toast.error("ID de produto inválido");
+        return;
+    }
+    getProduto(id);
+}
+
+
+onMounted(loadProduto)
+
+watch(() => router.currentRoute.value.query.id, loadProduto)
+
+
+const status = computed(() => {
+    if (produto.value?.status === "ATIVO") {
+        return {
+            label: "Ativo",
+            color: "green"
+        }
+    } else {
+        return {
+            label: "Inativo",
+            color: "red"
+        }
+    }
 })
 </script>
 
@@ -34,6 +81,7 @@ onMounted(() => {
         <div class="flex items-center justify-between flex-col md:flex-row">
             <h1 class="text-md md:text-xl flex items-center gap-2">
                 <FileText class="w-6 h-6 text-blue-600" />
+                <BadgeCell class="text-sm" :color="(status.color as any)" :label="status.label" />
                 {{ produto?.nome }}
             </h1>
             <div class="hidden md:flex gap-2">
@@ -61,7 +109,7 @@ onMounted(() => {
                 <i class="fa-solid fa-turn-down w-7 h-7"></i>
                 <div class="text-left rtl:text-right">
                     <div class="mb-1 text-sm">Compras / Reposições</div>
-                    <div class="-mt-1 font-sans text-lg font-semibold">100</div>
+                    <div class="-mt-1 font-sans text-lg font-semibold">{{ resumo?.totalEntradas }}</div>
                 </div>
             </span>
             <span
@@ -69,7 +117,7 @@ onMounted(() => {
                 <i class="fa-solid fa-turn-up w-7 h-7"></i>
                 <div class="text-left rtl:text-right">
                     <div class="mb-1 text-sm">Vendas</div>
-                    <div class="-mt-1 font-sans text-lg font-semibold">100</div>
+                    <div class="-mt-1 font-sans text-lg font-semibold">{{ resumo?.totalSaidas }}</div>
                 </div>
             </span>
             <span
@@ -77,7 +125,8 @@ onMounted(() => {
                 <i class="fa-solid fa-dollar-sign w-7 h-7"></i>
                 <div class="text-left rtl:text-right">
                     <div class="mb-1 text-sm">Valor gasto</div>
-                    <div class="-mt-1 font-sans text-lg font-semibold">R$ 2000</div>
+                    <div class="-mt-1 font-sans text-lg font-semibold">R$ {{ resumo?.totalGasto.replace(".", ",") }}
+                    </div>
                 </div>
             </span>
             <span
@@ -85,7 +134,8 @@ onMounted(() => {
                 <i class="fa-solid fa-money-bills w-7 h-7 mr-2"></i>
                 <div class="text-left rtl:text-right">
                     <div class="mb-1 text-sm">Lucro líquido</div>
-                    <div class="-mt-1 font-sans text-lg font-semibold">R$ 500</div>
+                    <div class="-mt-1 font-sans text-lg font-semibold">R$ {{ resumo?.lucroLiquido.replace(".", ",") }}
+                    </div>
                 </div>
             </span>
         </div>
@@ -96,13 +146,34 @@ onMounted(() => {
                 <CardTitle>Informações do Produto</CardTitle>
             </CardHeader>
             <CardContent class="grid grid-cols-2 gap-2">
+                <div class="flex items-center gap-2"><span>Código:</span>
+                    <div class="flex items-center gap-2">
+                        <BadgeCell color="gray" :label="produto?.Uid || 'N/A'" class="text-sm" :capitalize="false" />
+                        <Button @click="copiarId" variant="outline" size="xs"><i
+                                class="fa-solid fa-copy fa-xs"></i></Button>
+                    </div>
+                </div>
                 <div><span>Código:</span>
                     <BadgeCell color="gray" :label="produto?.codigo || 'N/A'" class="ml-2 text-sm"
                         :capitalize="false" />
                 </div>
-                <div><span>Preço:</span> R$ {{ Number(produto?.preco).toFixed(2) }}</div>
+                <div><span>Preço:</span>
+                    <BadgeCell color="green" :label="`R$ ${(Number(produto?.preco).toFixed(2).replace('.', ','))}`"
+                        class="ml-2 text-sm" />
+                </div>
+                <div><span>Preço de compra:</span> {{ Number(produto?.precoCompra).toFixed(2).replace('.', ',') || 'N/A'
+                }}</div>
                 <div><span>Estoque:</span> {{ produto?.estoque }} {{ produto?.unidade }}</div>
-                <div><span>Estoque Mínimo:</span> {{ produto?.minimo }} {{ produto?.unidade }}</div>
+                <div><span>Mínimo:</span> {{ produto?.minimo }} {{ produto?.unidade }}</div>
+                <div><span>Permite entradas:</span>
+                    <BadgeCell :color="produto?.entradas ? 'green' : 'red'" :label="produto?.entradas ? 'Sim' : 'Nao'"
+                        class="ml-2 text-sm" />
+                </div>
+                <div><span>Permite saídas:</span>
+                    <BadgeCell :color="produto?.saidas ? 'green' : 'red'" :label="produto?.saidas ? 'Sim' : 'Nao'"
+                        class="ml-2 text-sm" />
+                </div>
+                <Separator class="col-span-2" />
                 <div class="col-span-2"><span>Descrição:</span> {{ produto?.descricao || 'N/A' }}</div>
             </CardContent>
         </Card>
@@ -115,13 +186,15 @@ onMounted(() => {
             </CardHeader>
             <CardContent class="grid grid-cols-3 gap-2">
                 <div><span>Custo médio:</span>
-                    <BadgeCell color="yellow" :label="`R$ `" class="ml-2 text-sm" />
+                    <BadgeCell color="yellow" :label="`R$ ${(resumo?.custoMedio.replace('.', ','))}`"
+                        class="ml-2 text-sm" />
                 </div>
                 <div><span>Valor em estoque:</span>
-                    <BadgeCell color="green" :label="`R$ `" class="ml-2 text-sm" />
+                    <BadgeCell color="green" :label="`R$ ${(resumo?.valorEstoque.replace('.', ','))}`"
+                        class="ml-2 text-sm" />
                 </div>
                 <div><span>Margem de lucro:</span>
-                    <BadgeCell color="blue" :label="`25%`" class="ml-2 text-sm" />
+                    <BadgeCell color="blue" :label="`${resumo?.margemLucro}`" class="ml-2 text-sm" />
                 </div>
             </CardContent>
         </Card>

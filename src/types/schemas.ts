@@ -193,7 +193,7 @@ export interface MovimentacoesEstoque {
 export interface Produto {
   id?: number
   Uid?: string
-  status: Status
+  status: Status | string
   nome: string
   descricao?: string
   preco: number | string
