@@ -116,8 +116,8 @@ const clearSelection = () => {
                 </SelectValue>
             </SelectTrigger>
 
-            <SelectContent class="w-full">
-                <div class="p-2 border-b">
+            <SelectContent class="w-min">
+                <div class="p-1 border-b">
                     <Input v-model="search" placeholder="Buscar..." class="w-full" />
                 </div>
                 <SelectGroup class="max-h-60 overflow-y-auto">

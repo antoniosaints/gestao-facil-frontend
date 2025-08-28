@@ -111,7 +111,10 @@ async function submitFormularioVenda() {
     }
 }
 
-
+function clearCart () {
+    store.carrinho = [];
+    localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(store.carrinho));
+}
 
 function clearFormularioAddItem() {
     addItemForm.value.id = null;
@@ -370,7 +373,7 @@ clearCartVendas();
                         <button onclick="informarValorPropostoCliente()" type="button"
                             class="text-sm text-white py-1 px-2 mb-2 rounded bg-emerald-500 dark:bg-emerald-800 dark:text-gray-200"><i
                                 class="fa-solid fa-money-bill"></i> Propor</button>
-                        <button id="btn_limpar_carrinho" type="button"
+                        <button @click="clearCart" type="button"
                             class="text-sm text-white py-1 px-2 mb-2 rounded bg-red-500 dark:bg-red-800 dark:text-gray-200"><i
                                 class="fa-solid fa-cart-shopping"></i> Limpar</button>
                     </div>
