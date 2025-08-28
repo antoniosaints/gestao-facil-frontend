@@ -45,9 +45,10 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
       ),
     cell: ({ row }) => {
       const valor = formatCurrencyBR(row.original.valor)
+      const color = row.getValue('status') === 'FATURADO' ? 'green' : 'gray'
       return render(BadgeCell, {
         label: valor,
-        color: 'green',
+        color: color,
         icon: 'fa-solid fa-coins',
       })
     },
@@ -63,6 +64,41 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
         },
         () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
+    cell: ({ row }) => {
+      let color: "cyan" | "yellow" | "gray" | "violet" | "purple" | "green" | "emerald" | "orange" | "red" | "blue" = 'gray'
+      let icon = 'fa-solid fa-check'
+      switch (row.original.status) {
+        case 'PENDENTE':
+          color = 'yellow'
+          icon = 'fa-solid fa-clock'
+          break
+        case 'CANCELADO':
+          color = 'red'
+          icon = 'fa-solid fa-xmark'
+          break
+        case 'FINALIZADO':
+          color = 'purple'
+          icon = 'fa-solid fa-check'
+          break
+        case 'ANDAMENTO':
+          color = 'blue'
+          icon = 'fa-solid fa-spinner'
+          break
+        case 'FATURADO':
+          color = 'green'
+          icon = 'fa-solid fa-money-bill'
+          break
+        default:
+          color = 'gray'
+          icon = 'fa-solid fa-check'
+          break
+      }
+      return render(BadgeCell, {
+        label: row.original.status,
+        color: color,
+        icon: icon,
+      })
+    },
   },
   {
     accessorKey: 'vendedorId',

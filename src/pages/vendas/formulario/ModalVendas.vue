@@ -12,7 +12,7 @@ import http from "@/utils/axios";
 import { colorTheme } from "@/utils/theme";
 import { ptBR } from "date-fns/locale";
 import { computed, ref, watch } from "vue";
-import { useToast } from "vue-toastification";
+import { POSITION, useToast } from "vue-toastification";
 
 const title = ref('Cadastro de venda')
 const description = ref('Preencha os campos abaixo')
@@ -72,11 +72,16 @@ function setCartFromVendaRealizada(venda: { ItensVendas: any[] }) {
 
 async function submitFormularioVenda() {
     if (store.carrinho.length === 0) {
-        toast.error('Adicione pelo menos um item ao carrinho');
+        toast.error('Adicione pelo menos um item ao carrinho', { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
         return;
     }
 
     const hasId = store.form.id;
+
+    if (resumoCarrinho.value.total <= 0) {
+        toast.error('O valor total da venda deve ser maior que zero', { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
+        return;
+    }
 
     try {
         const data: FormularioVenda & { itens: { id: number, quantidade: number, preco: number }[] } = {

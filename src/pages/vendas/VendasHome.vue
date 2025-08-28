@@ -18,7 +18,7 @@ const store = useVendasStore();
                     class="border-2 border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
                     <i class="fa-solid fa-filter"></i>
                 </button>
-                <button @click="store.openModal = true" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
+                <button @click="store.openSave" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-solid fa-circle-plus"></i> <span class="hidden md:inline">Nova Venda</span>
                 </button>
                 <RouterLink to="/vendas/pdv"

@@ -6,7 +6,6 @@ import {
   type ItensVendas,
   type Vendas,
 } from '@/types/schemas'
-import { useToast } from 'vue-toastification'
 import { VendaRepository } from '@/repositories/venda-repository'
 
 export const useVendasStore = defineStore('vendasStore', () => {
@@ -24,7 +23,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
     clienteId: null,
     data: new Date(),
     desconto: null,
-    status: 'ORCAMENTO',
+    status: 'FINALIZADO',
     garantia: 0,
     observacoes: '',
   })
@@ -32,14 +31,16 @@ export const useVendasStore = defineStore('vendasStore', () => {
   const reset = () => {
     form.value = {
       id: null,
-      status: 'ORCAMENTO',
+      status: 'FINALIZADO',
       data: new Date(),
-      desconto: 0,
+      desconto: null,
       clienteId: null,
-      garantia: null,
+      garantia: 0,
       observacoes: '',
       vendedorId: null,
     }
+    carrinho.value = []
+    localStorage.removeItem('gestao_facil:cartVendas')
   }
 
   const openSave = () => {
@@ -72,7 +73,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
     }
     data.ItensVendas.forEach((item) => {
       const newItem = {
-        id: item.id!,
+        id: item.produtoId,
         produto: item.produto.nome,
         quantidade: item.quantidade,
         preco: parseFloat(String(item.valor).replace(',', '.')),
