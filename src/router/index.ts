@@ -53,6 +53,14 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'detalhes',
+        name: 'produtos-detalhes',
+        component: () => import('@/pages/produtos/others/DetalhesProduto.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+      {
         path: 'dashboard',
         name: 'produtos-dashboard',
         component: () => import('@/pages/produtos/dashboard/DashboardProdutos.vue'),

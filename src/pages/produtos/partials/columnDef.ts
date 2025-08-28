@@ -7,6 +7,7 @@ import { ArrowUpDown } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
 import Actions from './Actions.vue'
+import { goTo } from '@/hooks/links'
 
 export const columnsProdutos: ColumnDef<Produto>[] = [
   {
@@ -27,6 +28,8 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
         color: isLowStock ? 'orange' : 'gray',
         icon: 'fa-solid fa-box',
         capitalize: false,
+        onClick: () => goTo(`/produtos/detalhes`),
+        class: 'cursor-pointer',
       })
     },
   },

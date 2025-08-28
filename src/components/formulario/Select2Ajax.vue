@@ -78,9 +78,9 @@ watch(
                 selectedItem.value = item
                 label.value = item.label
             }
-        } else[
-            selectedItem.value = null
-        ]
+        } else {
+            clearSelection()
+        }
     },
     { immediate: true }
 )

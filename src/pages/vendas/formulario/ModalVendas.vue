@@ -13,6 +13,8 @@ import { colorTheme } from "@/utils/theme";
 import { ptBR } from "date-fns/locale";
 import { computed, ref, watch } from "vue";
 import { POSITION, useToast } from "vue-toastification";
+import { vMaska } from "maska/vue"
+import { moneyMaskOptions } from "@/lib/imaska";
 
 const title = ref('Cadastro de venda')
 const description = ref('Preencha os campos abaixo')
@@ -105,13 +107,14 @@ async function submitFormularioVenda() {
 
         store.updateTable();
         store.openModal = false;
-    } catch (error) {
+    } catch (error: any) {
         console.log(error);
-        toast.error('Erro ao registrar a venda, tente novamente!');
+        const msg = error?.response?.data?.message || 'Ocorreu um erro ao registrar a venda';
+        toast.error(msg, { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
     }
 }
 
-function clearCart () {
+function clearCart() {
     store.carrinho = [];
     localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(store.carrinho));
 }
@@ -186,11 +189,13 @@ const getValorDesconto = computed(() => {
     }
 });
 
+const maxQuantidadeAdd = ref(999999999999999);
 async function getValorProduto(id: number) {
     try {
         const { data } = await ProdutoRepository.get(id);
         if (data.estoque <= 0) {
             addItemForm.value.preco = null;
+            addItemForm.value.id = null;
             return toast.error('Produto sem estoque disponível');
         }
 
@@ -198,7 +203,10 @@ async function getValorProduto(id: number) {
             toast.warning('Produto com estoque baixo, por favor, verificar o estoque antes de adicionar ao carrinho', { timeout: 3000 });
         }
 
-        addItemForm.value.preco = String(data.preco).replace('.', ',');
+        addItemForm.value.quantidade = 1
+        maxQuantidadeAdd.value = data.estoque
+
+        addItemForm.value.preco = data.preco;
     } catch (error) {
         addItemForm.value.preco = null;
         toast.warning('Erro ao buscar o produto, informe o preço manualmente', {
@@ -296,7 +304,7 @@ clearCartVendas();
                 <div class="md:col-span-2">
                     <label for="tipo_desconto" class="block text-sm mb-1">Tipo <span
                             class="text-red-500">*</span></label>
-                    <Select required default-value="PORCENTAGEM" v-model="tipoDesconto">
+                    <Select required v-model="tipoDesconto">
                         <SelectTrigger class="w-full bg-card dark:bg-card-dark">
                             <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
@@ -313,7 +321,7 @@ clearCartVendas();
                 <div class="md:col-span-2">
                     <label for="input_desconto_venda_formulario" class="block text-sm mb-1">Desconto</label>
                     <Input v-model="(store.form.desconto as string)" type="text" id="input_desconto_venda_formulario"
-                        name="desconto"
+                        name="desconto" v-maska="moneyMaskOptions"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
                         placeholder="Ex: 1,99" />
                 </div>
@@ -341,7 +349,7 @@ clearCartVendas();
                     <label for="quantidade_carrinho_adicionar" class="block text-sm mb-1">Quantidade <span
                             class="text-red-500">*</span></label>
                     <NumberField v-model="addItemForm.quantidade" class="bg-card dark:bg-card-dark"
-                        id="quantidade_carrinho_adicionar" :default-value="1" :min="1">
+                        id="quantidade_carrinho_adicionar" :default-value="1" :min="1" :max="maxQuantidadeAdd">
                         <NumberFieldContent>
                             <NumberFieldDecrement />
                             <NumberFieldInput />
@@ -353,7 +361,7 @@ clearCartVendas();
                 <div class="md:col-span-2">
                     <label class="block text-sm mb-1">Preço <span class="text-red-500">*</span></label>
                     <Input v-model="(addItemForm.preco as number)" type="text" placeholder="R$ 0,00"
-                        id="input_preco_venda_formulario"
+                        v-maska="moneyMaskOptions" id="input_preco_venda_formulario"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
                 </div>
 
@@ -395,10 +403,10 @@ clearCartVendas();
                                 <div class="flex flex-col text-right text-sm">
                                     <span class="font-medium text-gray-800 dark:text-gray-200">R$ {{
                                         String(item.preco).replace('.', ',')
-                                        }}</span>
+                                    }}</span>
                                     <span class="text-gray-500 dark:text-gray-400">Subtotal: R$ {{
                                         String(item.subtotal.toFixed(2)).replace('.', ',')
-                                        }}</span>
+                                    }}</span>
                                 </div>
                                 <button type="button" @click="removeFromCartVendas(item.id)"
                                     class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 py-1 px-2 rounded-sm">
@@ -427,7 +435,7 @@ clearCartVendas();
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </div>
