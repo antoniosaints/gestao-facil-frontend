@@ -58,7 +58,7 @@ const chartCategorias = {
     <section>
       <h2 class="text-2xl font-bold mb-4"><i class="fa-solid fa-chart-line text-green-600"></i> Dashboard de produtos
       </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-2xl hover:scale-[1.02] transition">
           <CardHeader class="flex flex-row items-center gap-2">
             <component :is="kpi.icone" class="w-5 h-5 text-blue-500" />

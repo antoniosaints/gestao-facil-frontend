@@ -11,8 +11,8 @@
                 </h2>
                 <!-- Barra de Busca -->
                 <div class="relative">
-                    <input type="text" placeholder="Buscar por nome ou código..."
-                        class="w-full p-2 rounded-md border bg-background border-border dark:border-gray-500 outline-none">
+                    <Input type="text" placeholder="Buscar por nome ou código..."
+                        class="w-full p-2 rounded-md border bg-background border-border outline-none" />
                 </div>
             </div>
 
@@ -41,7 +41,7 @@
 
         <!-- Carrinho Lateral -->
         <div
-            class="overflow-auto max-w-md border-border dark:border-border-dark bg-background dark:bg-background-dark shadow-md rounded-lg p-4 border flex flex-col">
+            class="overflow-auto max-w-full xl:max-w-md min-w-md w-full border-border dark:border-border-dark bg-background dark:bg-background-dark shadow-md rounded-lg p-4 border flex flex-col">
             <!-- Header do Carrinho -->
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between mb-4">
@@ -145,7 +145,7 @@
                 <!-- Forma de Pagamento -->
                 <div class="mb-4 flex flex-col gap-2">
                     <label class="block text-sm font-medium text-gray-700 dark:text-white mb-2">Pagamento</label>
-                    <Select>
+                    <Select v-model="paymentMethod">
                         <SelectTrigger>
                             <SelectValue placeholder="Pagamento" />
                         </SelectTrigger>
@@ -165,18 +165,18 @@
                         </SelectContent>
                     </Select>
 
-                    <!-- Campo de Troco (apenas para dinheiro) -->
-                    <div class="space-y-2">
-                        <Input id="changeInput" type="text" placeholder="Valor recebido" />
+                    <div class="space-y-2" v-if="paymentMethod === 'DINHEIRO'">
+                        <Input :required="paymentMethod === 'DINHEIRO'" v-model="(receivedAmount as string)" type="text"
+                            placeholder="Valor recebido" />
                         <div class="flex justify-between text-sm font-medium">
                             <span>Troco:</span>
-                            <span>R$ 0,00</span>
+                            <span>R$ {{ change.toFixed(2).replace('.', ',') }}</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Botão Finalizar Venda -->
-                <button
+                <button @click="finalizeSale"
                     class="w-full bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
                     :disabled="!canFinalizeSale">
                     <i class="fas fa-check mr-2"></i>
@@ -220,8 +220,10 @@ import http from "@/utils/axios"
 import { Input } from '@/components/ui/input';
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
 import { POSITION, useToast } from 'vue-toastification';
+import { useUiStore } from '@/stores/ui/uiStore';
 
 const toast = useToast()
+const uiStore = useUiStore()
 const canFinalizeSale = ref(false)
 
 interface Product {
@@ -241,8 +243,8 @@ const cart = ref<CartItem[]>(JSON.parse(localStorage.getItem("gestao_facil:cartP
 const searchTerm = ref("")
 const discountType = ref<"percentage" | "value">("percentage")
 const discountValue = ref<number | null>(null)
-const paymentMethod = ref("money")
-const receivedAmount = ref<number | null>(null)
+const paymentMethod = ref("DINHEIRO")
+const receivedAmount = ref<string | null>(null)
 const cliente = ref(null)
 
 const subtotal = computed(() =>
@@ -261,8 +263,8 @@ const discount = computed(() => {
 const total = computed(() => Math.max(0, subtotal.value - discount.value))
 
 const change = computed(() => {
-    if (paymentMethod.value !== "money") return 0
-    return Math.max(0, (receivedAmount.value || 0) - total.value)
+    if (paymentMethod.value !== "DINHEIRO") return 0
+    return Math.max(0, (receivedAmount.value ? parseFloat(receivedAmount.value?.replace(",", ".")) : 0) - total.value)
 })
 
 async function fetchProducts() {
@@ -322,7 +324,6 @@ function updateQuantity(id: number, qty: number) {
 function clearCart() {
     cart.value = []
     canFinalizeSale.value = false
-    toast.success("Carrinho limpo!", { timeout: 2000 })
     saveCart()
 }
 
@@ -332,7 +333,7 @@ async function finalizeSale() {
         toast.error("Carrinho vazio!")
         return
     }
-    if (paymentMethod.value === "money" && (receivedAmount.value || 0) < total.value) {
+    if (paymentMethod.value === "DINHEIRO" && (receivedAmount.value ? parseFloat(receivedAmount.value?.replace(",", ".")) : 0) < total.value) {
         toast.error("Valor recebido insuficiente!")
         return
     }
@@ -365,5 +366,10 @@ const resumoVenda = computed(() => ({
     change: change.value,
 }))
 
-onMounted(fetchProducts)
+onMounted(() => {
+    fetchProducts()
+    cart.value = [];
+    saveCart();
+    uiStore.openSidebar = false
+})
 </script>

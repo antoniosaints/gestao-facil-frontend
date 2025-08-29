@@ -10,6 +10,8 @@ import { VendaRepository } from '@/repositories/venda-repository'
 
 export const useVendasStore = defineStore('vendasStore', () => {
   const openModal = ref(false)
+  const openModalPropor = ref(false)
+  const tipoDesconto = ref<'VALOR' | 'PORCENTAGEM'>('VALOR')
 
   const carrinho = ref<CarrinhoItem[]>(
     localStorage.getItem('gestao_facil:cartVendas')
@@ -67,7 +69,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
       data: data?.data,
       desconto: data?.desconto,
       clienteId: data?.clienteId ? data?.clienteId : null,
-      garantia: data?.garantia ? data?.garantia : null,
+      garantia: data?.garantia ? data?.garantia : 0,
       observacoes: data?.observacoes ? data?.observacoes : '',
       vendedorId: data?.vendedorId ? data?.vendedorId : null,
     }
@@ -88,7 +90,9 @@ export const useVendasStore = defineStore('vendasStore', () => {
   return {
     carrinho,
     openModal,
+    openModalPropor,
     openSave,
+    tipoDesconto,
     openUpdate,
     updateTable,
     filters,

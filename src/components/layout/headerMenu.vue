@@ -1,8 +1,11 @@
 <template>
   <header
-    class="hidden md:flex md:ml-64 items-center justify-between border border-border bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-6 py-3 shadow z-20">
-    <div class="text-xl font-bold">
-      <button class="hidden p-2"><i class="fa-solid fa-bars"></i></button>
+    class="hidden md:flex items-center justify-between border border-border bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-6 py-3 shadow z-20 transition-all duration-300 ease-in-out"
+    :class="{ 'md:ml-64': uiStore.openSidebar }">
+
+    <div class="text-md font-bold flex items-center gap-4">
+      <Button size="xs" variant="ghost" @click="uiStore.toggleSidebar"><i class="fa-solid fa-bars"></i></Button>
+      <Breadcrumb />
     </div>
     <div class="flex gap-2">
       <div class="flex justify-between flex-col text-sm text-left">
@@ -16,7 +19,11 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/login/useAuthStore'
 import { onMounted, onUnmounted, ref } from 'vue'
+import Breadcrumb from './breadcrumb.vue';
+import { useUiStore } from '@/stores/ui/uiStore';
+import { Button } from '../ui/button';
 const useStore = useAuthStore();
+const uiStore = useUiStore()
 const horarioSistemaAtual = ref('')
 
 let intervalId: number | undefined

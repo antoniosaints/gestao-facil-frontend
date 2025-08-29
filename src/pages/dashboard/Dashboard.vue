@@ -14,7 +14,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
                 <!-- Metric Item Start -->
                 <div @click="goTo('/clientes')"
                     class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">

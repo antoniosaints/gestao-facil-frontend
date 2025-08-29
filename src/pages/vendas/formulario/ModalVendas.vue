@@ -22,55 +22,11 @@ const toast = useToast()
 const store = useVendasStore()
 
 const labelProdutoInsert = ref<string>('')
-const tipoDesconto = ref<"PORCENTAGEM" | "VALOR">('VALOR')
-
 const addItemForm = ref<{ id: number | null, preco: number | string | null, quantidade: number }>({
     id: null,
     preco: null,
     quantidade: 1
 })
-
-const propostaPreco = ref<string | null>('')
-
-function getValorTotalCarrinho() {
-    return store.carrinho.reduce((total, item) => total + item.subtotal, 0);
-}
-
-function proporValorVendaCliente(valorProposto: number) {
-    if (!valorProposto) return;
-
-    const valorCarrinho = parseFloat(String(getValorTotalCarrinho())) || 0;
-    if (valorProposto >= valorCarrinho) {
-        store.form.desconto = 0;
-        return;
-    }
-    tipoDesconto.value = 'VALOR';
-
-    const valorDescontoNovo = valorCarrinho - valorProposto;
-    store.form.desconto = valorDescontoNovo;
-}
-
-function definirValorProporcionalVenda() {
-    const valorTratado = propostaPreco.value ? parseFloat(propostaPreco.value.replace(',', '.')) : 0;
-    proporValorVendaCliente(valorTratado);
-    propostaPreco.value = null;
-}
-
-function setCartFromVendaRealizada(venda: { ItensVendas: any[] }) {
-    store.carrinho = [];
-    venda.ItensVendas.forEach(item => {
-        const newItem = {
-            id: item.id,
-            produto: item.produto.nome,
-            quantidade: item.quantidade,
-            preco: parseFloat(item.valor.replace(',', '.')),
-            subtotal: parseFloat(item.valor.replace(',', '.')) * item.quantidade
-        };
-        store.carrinho.push(newItem);
-    })
-
-    localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(store.carrinho));
-}
 
 async function submitFormularioVenda() {
     if (store.carrinho.length === 0) {
@@ -182,7 +138,7 @@ const getValorDesconto = computed(() => {
 
     const descontoRaw = parseFloat(String(store.form.desconto).replace(',', '.')) || 0;
 
-    if (tipoDesconto.value === 'PORCENTAGEM') {
+    if (store.tipoDesconto === 'PORCENTAGEM') {
         return subtotalValue * (descontoRaw / 100);
     } else {
         return descontoRaw;
@@ -311,9 +267,9 @@ clearCartVendas();
                 <div class="md:col-span-2">
                     <label for="tipo_desconto" class="block text-sm mb-1">Tipo <span
                             class="text-red-500">*</span></label>
-                    <Select required v-model="tipoDesconto">
+                    <Select required v-model="store.tipoDesconto">
                         <SelectTrigger class="w-full bg-card dark:bg-card-dark">
-                            <SelectValue placeholder="Selecione o status" />
+                            <SelectValue placeholder="Desconto" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="PORCENTAGEM">
@@ -385,7 +341,7 @@ clearCartVendas();
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-medium mb-2">Itens da Venda</h3>
                     <div class="flex gap-2">
-                        <button onclick="informarValorPropostoCliente()" type="button"
+                        <button @click="store.openModalPropor = true" type="button"
                             class="text-sm text-white py-1 px-2 mb-2 rounded bg-emerald-500 dark:bg-emerald-800 dark:text-gray-200"><i
                                 class="fa-solid fa-money-bill"></i> Propor</button>
                         <button @click="clearCart" type="button"

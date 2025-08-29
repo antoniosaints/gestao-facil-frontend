@@ -3,6 +3,7 @@ import MobileVendas from '@/pages/vendas/Home/MobileVendas.vue';
 import TabelaVendas from './Home/TabelaVendas.vue';
 import ModalVendas from './formulario/ModalVendas.vue';
 import { useVendasStore } from '@/stores/vendas/useVenda';
+import ModalProporValor from './formulario/ModalProporValor.vue';
 
 const store = useVendasStore();
 </script>
@@ -35,5 +36,6 @@ const store = useVendasStore();
             <MobileVendas />
         </div>
         <ModalVendas />
+        <ModalProporValor />
     </div>
 </template>
