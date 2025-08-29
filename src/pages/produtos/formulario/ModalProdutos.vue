@@ -46,8 +46,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                             Produto <span class="text-red-500">*</span>
                         </label>
                         <input type="text" id="nome" name="nome" required placeholder="Nome do produto"
-                            v-model="store.form.nome"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                            v-model="store.form.nome" class="w-full p-2 rounded-md border bg-card border-border" />
                     </div>
 
                     <!-- Permitir Entrada e Saída de Estoque -->
@@ -57,8 +56,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                         </label>
                         <div class="grid grid-cols-12 space-x-2 mt-1 items-center md:col-span-12">
                             <div class="col-span-6">
-                                <div
-                                    class="border bg-card dark:bg-card-dark border-border dark:border-border-dark px-3 py-2.5 rounded-md">
+                                <div class="border bg-card border-border px-3 py-2.5 rounded-md">
                                     <div class="flex items-center">
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <Switch v-model:model-value="store.form.entradas" />
@@ -69,8 +67,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                                 </div>
                             </div>
                             <div class="col-span-6">
-                                <div
-                                    class="border bg-card dark:bg-card-dark border-border dark:border-border-dark px-3 py-2.5 rounded-md">
+                                <div class="border bg-card border-border px-3 py-2.5 rounded-md">
                                     <div class="flex items-center">
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <Switch v-model:model-value="store.form.saidas" />
@@ -81,14 +78,14 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                                 </div>
                             </div>
                         </div>
-                        
+
                     </div>
                     <!-- Código -->
                     <div class="md:col-span-4">
                         <label for="codigo" class="block text-sm font-medium mb-1">Código</label>
                         <input v-model="store.form.codigo" type="text" id="codigo" name="codigo"
-                        placeholder="Código do produto"
-                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                            placeholder="Código do produto"
+                            class="w-full p-2 rounded-md border bg-card border-border" />
                     </div>
 
                     <!-- Preço -->
@@ -98,7 +95,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                         </label>
                         <input v-model="store.form.precoCompra" v-maska="moneyMaskOptions" type="text"
                             ref="precoProdutoCompra" name="precoCompra" placeholder="Ex: 79,90"
-                            class="w-full p-2 money_mask rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                            class="w-full p-2 money_mask rounded-md border bg-card border-border" />
                     </div>
 
                     <div class="md:col-span-4">
@@ -107,7 +104,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                         </label>
                         <input v-model="store.form.preco" v-maska="moneyMaskOptions" type="text" id="precoProdutoVenda"
                             name="preco" required placeholder="Ex: 99,90"
-                            class="w-full p-2 money_mask rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                            class="w-full p-2 money_mask rounded-md border bg-card border-border" />
                     </div>
 
                     <!-- Estoque Inicial -->
@@ -116,8 +113,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                             Estoque Inicial <span class="text-red-500">*</span>
                         </label>
                         <input v-model="store.form.estoque" type="number" id="estoque" name="estoque" required
-                            placeholder="Ex: 100"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                            placeholder="Ex: 100" class="w-full p-2 rounded-md border bg-card border-border" />
                     </div>
 
                     <!-- Estoque Mínimo -->
@@ -126,8 +122,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                             Estoque Mínimo <span class="text-red-500">*</span>
                         </label>
                         <input v-model="store.form.minimo" type="number" id="minimo" name="minimo" required
-                            placeholder="Ex: 10"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                            placeholder="Ex: 10" class="w-full p-2 rounded-md border bg-card border-border" />
                     </div>
 
                     <!-- Unidade de medida -->
@@ -136,8 +131,8 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                             Unidade <span class="text-red-500">*</span>
                         </label>
                         <select v-model="store.form.unidade" required
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
-                            name="unidade" id="unidade_select_produto">
+                            class="w-full p-2.5 rounded-md border bg-card border-border" name="unidade"
+                            id="unidade_select_produto">
                             <option value="">Selecione uma unidade</option>
                             <option value="un">Unidade</option>
                             <option value="kg">Quilograma</option>
@@ -157,7 +152,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                         <label for="descricao" class="block text-sm font-medium mb-1">Observação</label>
                         <textarea v-model="store.form.descricao" id="descricao" name="descricao" rows="4"
                             placeholder="Adicione observações sobre o produto"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"></textarea>
+                            class="w-full p-2 rounded-md border bg-card border-border"></textarea>
                     </div>
 
                     <input type="hidden" id="id" name="id" />

@@ -27,7 +27,7 @@
                 <slot />
             </div>
         </main>
-
+        <InstallPrompt />
     </div>
 </template>
 
@@ -39,6 +39,7 @@ import TopMenu from '@/components/layout/topMenu.vue'
 import { sidebarMenuOptions } from './options'
 import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
+import InstallPrompt from '@/components/layout/installPrompt.vue'
 
 const store = useUiStore()
 </script>
