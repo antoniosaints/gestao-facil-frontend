@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-background text-text dark:text-text-dark min-h-screen overflow-hidden flex flex-col">
+    <div class="bg-body text-text dark:text-text-dark min-h-screen overflow-hidden flex flex-col">
         <HeaderMenu />
         <!-- Botão de abrir menu (mobile) -->
         <button type="button" id="openSidebarButton"

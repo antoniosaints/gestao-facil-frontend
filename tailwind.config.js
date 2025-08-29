@@ -10,6 +10,11 @@ export default {
           dark: 'hsl(var(--background))',
           hover: 'hsl(var(--background))',
         },
+        body: {
+          DEFAULT: 'hsl(var(--body))',
+          dark: 'hsl(var(--body))',
+          hover: 'hsl(var(--background))',
+        },
         card: {
           DEFAULT: 'hsl(var(--card))',
           dark: 'hsl(var(--card))',

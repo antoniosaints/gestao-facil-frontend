@@ -15,14 +15,14 @@ const store = useVendasStore();
             </h2>
             <div class="justify-between gap-2 items-center hidden md:flex">
                 <button onclick="openModalFiltroVendas()"
-                    class="border-2 border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
+                    class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
                     <i class="fa-solid fa-filter"></i>
                 </button>
                 <button @click="store.openSave" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-solid fa-circle-plus"></i> <span class="hidden md:inline">Nova Venda</span>
                 </button>
                 <RouterLink to="/vendas/pdv"
-                    class="border-2 border-secondary hover:border-secondary-dark px-3 py-1.5 text-sm rounded-lg">
+                    class="border border-body bg-secondary hover:border-secondary px-3 py-1.5 text-sm rounded-lg">
                     <i class="fa-solid fa-cart-arrow-down"></i> PDV
                 </RouterLink>
             </div>

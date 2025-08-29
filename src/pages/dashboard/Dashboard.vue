@@ -17,7 +17,7 @@
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
                 <!-- Metric Item Start -->
                 <div @click="goTo('/clientes')"
-                    class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-violet-50 dark:bg-violet-950/50 px-6 pb-5 pt-6">
+                    class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-user-tag h-8 w-8 bg-violet-500/10 p-2 rounded-md text-violet-500"></i>
 
@@ -39,7 +39,7 @@
                 </div>
 
                 <div @click="goTo('/produtos')"
-                    class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-blue-50 dark:bg-blue-950/50 px-6 pb-5 pt-6">
+                    class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-boxes-packing w-8 h-8 bg-blue-500/10 p-2 rounded-md text-blue-500"></i>
 
@@ -67,7 +67,7 @@
                 </div>
 
                 <div @click="goTo('/produtos')"
-                    class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-red-50 dark:bg-red-950/50 px-6 pb-5 pt-6">
+                    class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-cubes w-8 h-8 bg-red-500/10 p-2 rounded-md text-red-500"></i>
 
@@ -94,7 +94,7 @@
                 </div>
 
                 <div @click="goTo('/vendas')"
-                    class="rounded-2xl cursor-pointer border border-border dark:border-border-dark bg-green-50 dark:bg-green-950/50 px-6 pb-5 pt-6">
+                    class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-dollar-sign h-8 w-8 bg-green-500/10 p-2 rounded-md text-green-400"></i>
 

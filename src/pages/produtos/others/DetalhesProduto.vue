@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, FileText, Edit, Trash2 } from "lucide-vue-next"
+import { ArrowLeft, FileText, Edit, Trash2, Redo } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import router from "@/router"
 import { computed, onMounted, ref, watch } from "vue"
@@ -9,7 +9,14 @@ import { type Produto } from "@/types/schemas"
 import { useToast } from "vue-toastification"
 import { ProdutoRepository } from "@/repositories/produto-repository"
 import Separator from "@/components/ui/separator/Separator.vue"
-import { formatDateToPtBR } from "@/utils/formatters"
+import { useRoute } from "vue-router"
+import { useProdutoStore } from "@/stores/produtos/useProduto"
+import ConfirmModal from "@/components/hooks/ConfirmModal.vue"
+import ModalProdutos from "../formulario/ModalProdutos.vue"
+
+const route = useRoute()
+const store = useProdutoStore()
+const confirmDeleteModal = ref(false)
 
 interface Resumoproduto {
     totalGasto: string,
@@ -40,13 +47,25 @@ async function getProduto(id: number) {
     }
 }
 
+async function gerarRelatorio() {
+    try {
+        await ProdutoRepository.gerarRelatorio(produto.value?.id!, "asc");
+        toast.success("Relatorio gerado com sucesso");
+    } catch (error) {
+        console.error(error);
+        toast.info("O produto não possui movimentações para gerar o relatório.", {
+            timeout: 5000,
+        });
+    }
+}
+
 function copiarId() {
-    navigator.clipboard.writeText(produto.value?.id!.toString() || "");
+    navigator.clipboard.writeText(produto.value?.Uid!.toString() || "");
     toast.success("ID copiado para o clipboard");
 }
 
 function loadProduto() {
-    const id = Number(router.currentRoute.value.query.id);
+    const id = Number(route.query.id);
     if (!id || isNaN(id)) {
         toast.error("ID de produto inválido");
         return;
@@ -54,11 +73,12 @@ function loadProduto() {
     getProduto(id);
 }
 
+function atualizarDetalhes() {
+    loadProduto();
+}
 
 onMounted(loadProduto)
-
-watch(() => router.currentRoute.value.query.id, loadProduto)
-
+watch(() => store.openModal, loadProduto)
 
 const status = computed(() => {
     if (produto.value?.status === "ATIVO") {
@@ -73,13 +93,27 @@ const status = computed(() => {
         }
     }
 })
+
+async function deletarProduto(id: number) {
+    try {
+        await ProdutoRepository.remove(id);
+        toast.success("Produto deletado com sucesso");
+        router.push("/produtos");
+    } catch (error) {
+        console.error(error);
+        toast.error("Erro ao deletar o produto");
+    }
+}
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-4">
+        <ConfirmModal @confirm="deletarProduto(produto?.id!)" v-model:open="confirmDeleteModal"
+            description="Tem certeza que deseja excluir esse produto?" title="Excluir produto" />
+            
         <!-- Cabeçalho -->
-        <div class="flex items-center justify-between flex-col md:flex-row">
-            <h1 class="text-md md:text-xl flex items-center gap-2">
+        <div class="flex items-center justify-between flex-col md:flex-row bg-card shadow-md border rounded-md p-4">
+            <h1 class="text-md md:text-lg flex items-center gap-2">
                 <FileText class="w-6 h-6 text-blue-600" />
                 <BadgeCell class="text-sm" :color="(status.color as any)" :label="status.label" />
                 {{ produto?.nome }}
@@ -90,14 +124,17 @@ const status = computed(() => {
                         <ArrowLeft class="w-4 h-4 mr-1" /> Voltar
                     </Button>
                 </RouterLink>
-                <Button variant="secondary">
+                <Button class="bg-warning text-white hover:bg-warning/80" @click="gerarRelatorio">
                     <FileText class="w-4 h-4 mr-1" /> Relatório
                 </Button>
-                <Button variant="default" class="text-white">
+                <Button @click="store.openUpdate(produto?.id!)" variant="default" class="text-white">
                     <Edit class="w-4 h-4 mr-1" /> Editar
                 </Button>
-                <Button variant="destructive">
+                <Button @click="confirmDeleteModal = true" variant="destructive">
                     <Trash2 class="w-4 h-4 mr-1" /> Excluir
+                </Button>
+                <Button @click="atualizarDetalhes" variant="outline">
+                    <i class="fa-solid fa-sync "></i>
                 </Button>
             </div>
         </div>
@@ -105,7 +142,7 @@ const status = computed(() => {
         <!-- Indicadores -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <span
-                class="rounded-lg inline-flex items-center px-4 py-4 border border-red-800 dark:border-red-600 bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200">
+                class="rounded-md inline-flex items-center px-4 py-4 border border-red-800 dark:border-red-600 bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200">
                 <i class="fa-solid fa-turn-down w-7 h-7"></i>
                 <div class="text-left rtl:text-right">
                     <div class="mb-1 text-sm">Compras / Reposições</div>
@@ -113,7 +150,7 @@ const status = computed(() => {
                 </div>
             </span>
             <span
-                class="rounded-lg inline-flex items-center px-4 py-4 border border-green-800 dark:border-green-600 bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200">
+                class="rounded-md inline-flex items-center px-4 py-4 border border-green-800 dark:border-green-600 bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200">
                 <i class="fa-solid fa-turn-up w-7 h-7"></i>
                 <div class="text-left rtl:text-right">
                     <div class="mb-1 text-sm">Vendas</div>
@@ -121,7 +158,7 @@ const status = computed(() => {
                 </div>
             </span>
             <span
-                class="rounded-lg inline-flex items-center px-4 py-4 border border-yellow-800 dark:border-yellow-600 bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                class="rounded-md inline-flex items-center px-4 py-4 border border-yellow-800 dark:border-yellow-600 bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
                 <i class="fa-solid fa-dollar-sign w-7 h-7"></i>
                 <div class="text-left rtl:text-right">
                     <div class="mb-1 text-sm">Valor gasto</div>
@@ -130,7 +167,7 @@ const status = computed(() => {
                 </div>
             </span>
             <span
-                class="rounded-lg inline-flex items-center px-4 py-4 border border-blue-800 dark:border-blue-600 bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                class="rounded-md inline-flex items-center px-4 py-4 border border-blue-800 dark:border-blue-600 bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200">
                 <i class="fa-solid fa-money-bills w-7 h-7 mr-2"></i>
                 <div class="text-left rtl:text-right">
                     <div class="mb-1 text-sm">Lucro líquido</div>
@@ -141,7 +178,7 @@ const status = computed(() => {
         </div>
 
         <!-- Informações principais -->
-        <Card>
+        <Card class="rounded-md">
             <CardHeader>
                 <CardTitle>Informações do Produto</CardTitle>
             </CardHeader>
@@ -162,7 +199,7 @@ const status = computed(() => {
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Preço de compra:</span> {{ Number(produto?.precoCompra).toFixed(2).replace('.', ',') || 'N/A'
-                }}</div>
+                    }}</div>
                 <div><span>Estoque:</span> {{ produto?.estoque }} {{ produto?.unidade }}</div>
                 <div><span>Mínimo:</span> {{ produto?.minimo }} {{ produto?.unidade }}</div>
                 <div><span>Permite entradas:</span>
@@ -180,7 +217,7 @@ const status = computed(() => {
 
 
         <!-- Financeiro extra -->
-        <Card>
+        <Card class="rounded-md">
             <CardHeader>
                 <CardTitle>Financeiro</CardTitle>
             </CardHeader>
@@ -198,5 +235,6 @@ const status = computed(() => {
                 </div>
             </CardContent>
         </Card>
+        <ModalProdutos />
     </div>
 </template>
