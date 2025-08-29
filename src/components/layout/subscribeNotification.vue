@@ -7,8 +7,7 @@ const toast = useToast()
 const isSubscribed = ref(false)
 const isSupported = ref("serviceWorker" in navigator && "Notification" in window)
 
-const applicationServerKey =
-    "BEvOYxnUgVFlu2FKPdGZ29LqI3oq98V36gXqETlmaVFVxDsjKx16cSxVt_sl5SPl8SMo_183GjPIUQAXYWv7Rsk"
+const applicationServerKey = import.meta.env.VITE_API_PUSH
 
 onMounted(async () => {
     if (!isSupported.value) return
