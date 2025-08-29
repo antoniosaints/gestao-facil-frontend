@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
-import { Slash } from 'lucide-vue-next';
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 

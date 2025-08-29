@@ -29,7 +29,10 @@
                 <div v-show="openDropdown === item.nome"
                     class="dropdown-content flex flex-col p-1 gap-1 transition-all">
                     <router-link v-for="(child, i) in item.children" :key="i" :to="child.link || 'javascript:void(0)'"
-                        class="block p-2 hover:bg-gray-200 pl-4 dark:hover:bg-gray-800 cursor-pointer dark:bg-background-dark rounded-md transition-colors">
+                        :class="[
+                            'block p-2 hover:bg-gray-200 pl-4 dark:hover:bg-gray-800 cursor-pointer dark:bg-background-dark rounded-md transition-colors',
+                            route.path === child.link ? 'bg-gray-200 dark:bg-gray-800' : ''
+                        ]">
                         <i
                             :class="[child.icone, 'mr-1', child.color ? colorClasses[child.color] : 'text-gray-500']"></i>
                         {{ child.nome }}
@@ -38,8 +41,10 @@
             </div>
 
             <!-- Link normal -->
-            <router-link v-else :to="item.link || 'javascript:void(0)'"
-                class="cursor-pointer border border-border mt-2 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-background-dark dark:border-border-dark p-2 rounded-lg transition flex items-center">
+            <router-link v-else :to="item.link || 'javascript:void(0)'" :class="[
+                'cursor-pointer border border-border mt-2 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-background-dark dark:border-border-dark p-2 rounded-lg transition flex items-center',
+                route.path === item.link ? 'bg-gray-200 dark:bg-gray-800' : ''
+            ]">
                 <i :class="[item.icone, 'px-2', item.color ? colorClasses[item.color] : 'text-gray-500']"></i>
                 {{ item.nome }}
             </router-link>
@@ -50,8 +55,10 @@
 <script setup lang="ts">
 import type { SidebarMenuType } from '@/types/sidebar'
 import { ref } from 'vue'
+import { useRoute } from 'vue-router';
 
 defineProps<{ menu: SidebarMenuType[] }>()
+const route = useRoute()
 
 const colorClasses = {
     red: "text-red-500",
