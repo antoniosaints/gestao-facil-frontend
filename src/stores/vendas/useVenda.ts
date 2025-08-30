@@ -11,6 +11,8 @@ import { VendaRepository } from '@/repositories/venda-repository'
 export const useVendasStore = defineStore('vendasStore', () => {
   const openModal = ref(false)
   const openModalPropor = ref(false)
+  const openModalFaturar = ref(false)
+  const idMutation = ref<number | null>(null)
   const tipoDesconto = ref<'VALOR' | 'PORCENTAGEM'>('VALOR')
 
   const carrinho = ref<CarrinhoItem[]>(
@@ -90,7 +92,9 @@ export const useVendasStore = defineStore('vendasStore', () => {
   return {
     carrinho,
     openModal,
+    idMutation,
     openModalPropor,
+    openModalFaturar,
     openSave,
     tipoDesconto,
     openUpdate,

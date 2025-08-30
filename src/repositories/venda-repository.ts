@@ -3,7 +3,7 @@ import http from '@/utils/axios'
 
 export interface VendaEfetivar {
   pagamento: MetodoPagamento
-  dataPagamento: string
+  dataPagamento: Date | string
   categoria: number
   conta: number | null
 }

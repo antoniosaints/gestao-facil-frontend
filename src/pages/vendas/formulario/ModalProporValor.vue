@@ -42,7 +42,7 @@ function definirValorProporcionalVenda() {
 
 <template>
     <ModalView v-model:open="store.openModalPropor" title="Propor valor" size="md"
-        description="Preencha o valor da venda a ser faturada">
+        description="Preencha o valor da venda!">
         <form @submit.prevent="definirValorProporcionalVenda" class="flex flex-col px-4">
             <div class="bg-background dark:bg-background-dark rounded-md w-full h-full">
                 <div class="grid w-full items-center gap-1.5">

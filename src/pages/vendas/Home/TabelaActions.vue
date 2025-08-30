@@ -50,6 +50,12 @@ async function estornarVenda(id: number) {
     }
 }
 
+function openModalFaturar(id: number) {
+    if (!id) return toast.error('ID nao informado!')
+    store.idMutation = id
+    store.openModalFaturar = true
+}
+
 async function openModalDelete(number: number) {
     id.value = number
     openDelete.value = true
@@ -102,7 +108,7 @@ async function deletar(id: number) {
                 <i class="fa-regular fa-file-pdf mr-1"></i>
                 Cupom PDF
             </DropdownMenuItem>
-            <DropdownMenuItem v-if="data.status !== 'FATURADO'">
+            <DropdownMenuItem @click="openModalFaturar(data.id!)" v-if="data.status !== 'FATURADO'">
                 <i class="fa-regular text-success fa-square-plus mr-1"></i>
                 Faturar
             </DropdownMenuItem>

@@ -40,6 +40,13 @@ import { sidebarMenuOptions } from './options'
 import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import InstallPrompt from '@/components/layout/installPrompt.vue'
-
 const store = useUiStore()
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth < 768) {
+        store.openSidebar = false
+    } else {
+        store.openSidebar = true
+    }
+})
 </script>

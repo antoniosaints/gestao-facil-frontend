@@ -4,6 +4,7 @@ import TabelaVendas from './Home/TabelaVendas.vue';
 import ModalVendas from './formulario/ModalVendas.vue';
 import { useVendasStore } from '@/stores/vendas/useVenda';
 import ModalProporValor from './formulario/ModalProporValor.vue';
+import ModalFaturar from './formulario/ModalFaturar.vue';
 
 const store = useVendasStore();
 </script>
@@ -37,5 +38,6 @@ const store = useVendasStore();
         </div>
         <ModalVendas />
         <ModalProporValor />
+        <ModalFaturar />
     </div>
 </template>

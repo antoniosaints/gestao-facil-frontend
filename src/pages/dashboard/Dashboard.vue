@@ -101,7 +101,7 @@
                         <div>
                             <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Vendas</h3>
                             <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
-                                Resumo de vendas
+                                Resumo
                             </span>
                         </div>
                     </div>
@@ -217,7 +217,6 @@ import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
 import { onMounted, ref, computed } from 'vue';
 import { VendaRepository } from '@/repositories/venda-repository';
 import { goTo } from '@/hooks/links';
-import { ptBR } from 'date-fns/locale';
 import { colorTheme } from '@/utils/theme';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 

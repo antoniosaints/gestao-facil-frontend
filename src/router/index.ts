@@ -1,3 +1,4 @@
+import { useUiStore } from '@/stores/ui/uiStore'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useToast } from 'vue-toastification'
 
@@ -123,9 +124,12 @@ const router = createRouter({
   routes,
 })
 
-const toast = useToast()
-
 router.beforeEach((to) => {
+  const toast = useToast()
+  const storeUi = useUiStore()
+  if (window.innerWidth < 768) {
+    storeUi.openSidebar = false
+  }
   if (to.path !== '/login' && !localStorage.getItem('gestao_facil:token')) {
     toast.error('Necessário efetuar login para acessar essa rota!')
     return { name: 'login' }
