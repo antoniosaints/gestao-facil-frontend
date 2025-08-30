@@ -96,6 +96,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/usuario',
     name: 'usuario',
+    redirect: { name: 'perfil-usuario' },
     children: [
       {
         path: 'perfil',

@@ -72,16 +72,21 @@ const filtroPeriodo = ref(new Date())
 
 <template>
   <div class="space-y-4">
-
-    <!-- Indicadores -->
-    <section>
-      <div class="grid grid-cols-1 md:grid-cols-3">
-        <h2 class="text-2xl font-bold mb-4 w-2/3 col-span-2"><i class="fa-solid fa-tags text-green-600"></i>
-          Painel de
+    <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
+      <h2 class="text-2xl text-left font-bold text-black dark:text-white">
+        <i class="fa-solid fa-tags text-green-600"></i> Painel de
           vendas
-        </h2>
-        <Calendarpicker v-model="filtroPeriodo" />
+      </h2>
+      <div class="flex items-center gap-2 w-content">
+        <button type="button"
+          class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
+          <i class="fa-solid fa-filter-circle-xmark"></i>
+        </button>
+        <Calendarpicker class="w-content" v-model="filtroPeriodo" />
       </div>
+    </div>
+
+    <section>
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl hover:scale-[1.02] transition">
           <CardHeader>

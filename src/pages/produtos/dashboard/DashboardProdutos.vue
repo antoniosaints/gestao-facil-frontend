@@ -12,6 +12,7 @@ import {
   LinearScale,
   Filler
 } from "chart.js"
+import Calendarpicker from "@/components/formulario/calendarpicker.vue"
 
 // Registrar plugins do Chart.js
 ChartJS.register(
@@ -49,15 +50,25 @@ const chartCategorias = {
   datasets: [{ label: "Lucro", data: [25000, 18000, 8000, 5000], backgroundColor: ["#6366f1", "#f87171", "#34d399", "#facc15"], borderRadius: 6 }]
 }
 
+const filtroPeriodo = ref(new Date())
 </script>
 
 <template>
   <div class="space-y-4">
-
+    <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
+      <h2 class="text-2xl text-left font-bold text-black dark:text-white">
+        <i class="fa-solid fa-chart-line text-emerald-600"></i> Painel de produtos
+      </h2>
+      <div class="flex items-center gap-2 w-content">
+        <button type="button"
+          class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
+          <i class="fa-solid fa-filter-circle-xmark"></i>
+        </button>
+        <Calendarpicker class="w-content" v-model="filtroPeriodo" />
+      </div>
+    </div>
     <!-- Indicadores -->
     <section>
-      <h2 class="text-2xl font-bold mb-4"><i class="fa-solid fa-chart-line text-green-600"></i> Dashboard de produtos
-      </h2>
       <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl hover:scale-[1.02] transition">
           <CardHeader class="flex flex-row items-center gap-2">
