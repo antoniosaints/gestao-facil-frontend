@@ -51,7 +51,7 @@ async function estornarVenda(id: number) {
 }
 
 async function openModalDelete(number: number) {
-    await store.openUpdate(number);
+    id.value = number
     openDelete.value = true
 }
 async function deletar(id: number) {

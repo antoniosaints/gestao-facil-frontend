@@ -26,7 +26,8 @@ interface Resumoproduto {
     estoqueAtual: number,
     custoMedio: string,
     valorEstoque: string,
-    margemLucro: string
+    margemLucro: string,
+    ticketMedio: string
 }
 
 const toast = useToast()
@@ -110,7 +111,7 @@ async function deletarProduto(id: number) {
     <div class="space-y-4">
         <ConfirmModal @confirm="deletarProduto(produto?.id!)" v-model:open="confirmDeleteModal"
             description="Tem certeza que deseja excluir esse produto?" title="Excluir produto" />
-            
+
         <!-- Cabeçalho -->
         <div class="flex items-center justify-between flex-col md:flex-row bg-card shadow-md border rounded-md p-4">
             <h1 class="text-md md:text-lg flex items-center gap-2">
@@ -199,7 +200,7 @@ async function deletarProduto(id: number) {
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Preço de compra:</span> {{ Number(produto?.precoCompra).toFixed(2).replace('.', ',') || 'N/A'
-                    }}</div>
+                }}</div>
                 <div><span>Estoque:</span> {{ produto?.estoque }} {{ produto?.unidade }}</div>
                 <div><span>Mínimo:</span> {{ produto?.minimo }} {{ produto?.unidade }}</div>
                 <div><span>Permite entradas:</span>
@@ -221,13 +222,17 @@ async function deletarProduto(id: number) {
             <CardHeader>
                 <CardTitle>Financeiro</CardTitle>
             </CardHeader>
-            <CardContent class="grid grid-cols-3 gap-2">
+            <CardContent class="grid grid-cols-4 gap-2">
                 <div><span>Custo médio:</span>
                     <BadgeCell color="yellow" :label="`R$ ${(resumo?.custoMedio.replace('.', ','))}`"
                         class="ml-2 text-sm" />
                 </div>
+                <div><span>Tícket médio:</span>
+                    <BadgeCell color="emerald" :label="`R$ ${(resumo?.ticketMedio.replace('.', ','))}`"
+                        class="ml-2 text-sm" />
+                </div>
                 <div><span>Valor em estoque:</span>
-                    <BadgeCell color="green" :label="`R$ ${(resumo?.valorEstoque.replace('.', ','))}`"
+                    <BadgeCell color="gray" :label="`R$ ${(resumo?.valorEstoque.replace('.', ','))}`"
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Margem de lucro:</span>
