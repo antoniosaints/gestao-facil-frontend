@@ -84,6 +84,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  input[type='date']::-webkit-calendar-picker-indicator {
+    @apply invert sepia saturate-200 hue-rotate-180 cursor-pointer;
+  }
 }
 .dp__main {
   --dp-font-family: 'Roboto', sans-serif !important;

@@ -1,33 +1,50 @@
 <template>
-    <DatePicker :placeholder="placeholder" required v-model="data" :dark="(colorTheme === 'dark')" cancelText="Cancelar"
-        selectText="Selecionar" :format-locale="ptBR" :format="'dd/MM/yyyy'" :enable-time-picker="false" auto-apply />
+    <DatePicker v-model="data" :placeholder="placeholder" :teleport-center="teleport" :required="required"
+        :dark="colorTheme === 'dark'" cancel-text="Cancelar" select-text="Selecionar" :format-locale="ptBR"
+        format="dd/MM/yyyy" :enable-time-picker="false" auto-apply />
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { ptBR } from 'date-fns/locale';
-import { colorTheme } from '@/utils/theme';
+import { ref, watch } from "vue";
+import { ptBR } from "date-fns/locale";
+import { colorTheme } from "@/utils/theme";
 
+// Props
 const props = defineProps({
     placeholder: {
         type: String,
-        default: 'Selecione a data'
+        default: "Selecione a data",
     },
     modelValue: {
-        type: Date,
-        default: new Date()
+        type: [Date, String, Number], // aceita mais formatos
+        default: null,
+    },
+    teleport: {
+        type: Boolean,
+        default: false, // pode ser true ou "body"
+    },
+    required: {
+        type: Boolean,
+        default: true,
     }
-})
+});
 
-const emit = defineEmits(['update:modelValue'])
+// Emits
+const emit = defineEmits(["update:modelValue"]);
 
-const data = ref(props.modelValue)
+// Ref interna
+const data = ref(props.modelValue);
 
-watch(data, () => {
-    emit('update:modelValue', data.value)
-})
+// Sincroniza -> interno → externo
+watch(data, (val) => {
+    emit("update:modelValue", val);
+});
 
-watch(props, () => {
-    data.value = props.modelValue
-})
+// Sincroniza -> externo → interno
+watch(
+    () => props.modelValue,
+    (val) => {
+        data.value = val;
+    }
+);
 </script>

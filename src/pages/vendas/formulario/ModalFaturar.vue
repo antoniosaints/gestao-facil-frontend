@@ -10,6 +10,7 @@ import { VendaRepository, type VendaEfetivar } from '@/repositories/venda-reposi
 import { MetodoPagamento } from '@/types/schemas';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
+import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 
 const store = useVendasStore();
 const toast = useToast();
@@ -70,18 +71,18 @@ async function submit() {
                 </div>
                 <div class="w-full gap-2 flex flex-col">
                     <Label for="dataPagamento">Data</Label>
-                    <Input id="dataPagamento" type="date" v-model="(faturarVenda.dataPagamento as string)"
-                        class="w-full bg-card" />
+                    <Calendarpicker id="dataPagamento" required teleport
+                        v-model="(faturarVenda.dataPagamento as Date)" />
                 </div>
                 <div class="w-full gap-2 flex flex-col">
                     <Label for="contaPagamento">Conta de pagamento</Label>
                     <Select2Ajax id="contaPagamento" required v-model="faturarVenda.conta" class="w-full"
-                        url="/usuarios/select2" />
+                        url="lancamentos/contas/select2" />
                 </div>
                 <div class="w-full gap-2 flex flex-col">
                     <Label for="categoriaFinanceira">Categoria financeira</Label>
                     <Select2Ajax id="categoriaFinanceira" required v-model="faturarVenda.categoria" class="w-full"
-                        url="/usuarios/select2" />
+                        url="lancamentos/categorias/select2" />
                 </div>
             </div>
             <div class="flex justify-end gap-2 mt-4">
