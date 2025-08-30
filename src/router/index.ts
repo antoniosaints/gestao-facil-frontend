@@ -94,15 +94,30 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/usuario',
+    name: 'usuario',
+    children: [
+      {
+        path: 'perfil',
+        name: 'perfil-usuario',
+        component: () => import('@/pages/perfil/PerfilUsuario.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+    ],
+  },
+  {
     path: '/configuracoes',
     name: 'configuracoes',
     children: [
       {
         path: '',
-        name: 'configruacoes-home',
+        name: 'configuracoes-home',
         component: () => import('@/pages/configs/ConfiguracaoPage.vue'),
         meta: {
           layout: 'main',
+          permissao: 6,
         },
       },
     ],
@@ -111,6 +126,9 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'login',
     component: () => import('@/pages/auth/LoginPage.vue'),
+    meta: {
+      isPublic: true,
+    }
   },
   {
     path: '/:pathMatch(.*)*',
@@ -124,18 +142,27 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+router.beforeEach((to, from) => {
   const toast = useToast()
   const storeUi = useUiStore()
   if (window.innerWidth < 768) {
     storeUi.openSidebar = false
   }
-  if (to.path !== '/login' && !localStorage.getItem('gestao_facil:token')) {
-    toast.error('Necessário efetuar login para acessar essa rota!')
+  if (!to.meta?.isPublic && !localStorage.getItem('gestao_facil:token')) {
+    toast.info('Necessário efetuar login para acessar essa rota!')
     return { name: 'login' }
   }
   if (to.path === '/login' && localStorage.getItem('gestao_facil:token')) {
     return { name: 'home' }
+  }
+
+  if (to.meta?.permissao) {
+    const level = Number(to.meta?.permissao);
+
+    if (level < 5) {
+      toast.info('Você não tem permissão para acessar essa rota!')
+      return { name: from.name }
+    }
   }
 })
 

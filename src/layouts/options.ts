@@ -130,6 +130,6 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     nome: 'Perfil',
     color: 'blue',
     icone: 'fa-solid fa-user',
-    link: '/perfil',
+    link: '/usuario/perfil',
   },
 ]
