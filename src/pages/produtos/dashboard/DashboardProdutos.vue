@@ -59,7 +59,7 @@ const chartCategorias = {
       <h2 class="text-2xl font-bold mb-4"><i class="fa-solid fa-chart-line text-green-600"></i> Dashboard de produtos
       </h2>
       <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-2xl hover:scale-[1.02] transition">
+        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl hover:scale-[1.02] transition">
           <CardHeader class="flex flex-row items-center gap-2">
             <component :is="kpi.icone" class="w-5 h-5 text-blue-500" />
             <CardTitle class="text-sm">{{ kpi.titulo }}</CardTitle>
@@ -73,7 +73,7 @@ const chartCategorias = {
     </section>
 
     <!-- Gráficos -->
-    <section class="bg-card border border-border rounded-2xl p-4">
+    <section class="bg-card border border-border rounded-xl shadow p-4">
       <h2 class="text-lg font-bold mb-4">📈 Análises de Estoque e Vendas</h2>
       <Tabs default-value="reposicoes" class="w-full">
         <TabsList class="rounded-md">

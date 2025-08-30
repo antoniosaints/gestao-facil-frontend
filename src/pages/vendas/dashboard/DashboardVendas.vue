@@ -16,6 +16,7 @@ import {
   LinearScale,
   Filler
 } from "chart.js"
+import Calendarpicker from "@/components/formulario/calendarpicker.vue"
 
 // Registrando plugins Chart.js
 ChartJS.register(
@@ -65,16 +66,24 @@ const pendentesPagamento = ref([
 const garantias = ref([
   { id: 7, produto: "Notebook Dell", cliente: "Lucas", validade: "10/09/2025" }
 ])
+
+const filtroPeriodo = ref(new Date())
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-4">
 
     <!-- Indicadores -->
     <section>
-      <h2 class="text-2xl font-bold mb-4"><i class="fa-solid fa-chart-line text-green-600"></i> Dashboard de vendas</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3">
+        <h2 class="text-2xl font-bold mb-4 w-2/3 col-span-2"><i class="fa-solid fa-tags text-green-600"></i>
+          Painel de
+          vendas
+        </h2>
+        <Calendarpicker v-model="filtroPeriodo" />
+      </div>
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-lg hover:scale-[1.02] transition">
+        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl hover:scale-[1.02] transition">
           <CardHeader>
             <CardTitle class="text-sm text-muted-foreground"><i :class="kpi.icone"></i> {{ kpi.titulo }}</CardTitle>
           </CardHeader>
@@ -87,7 +96,7 @@ const garantias = ref([
     </section>
 
     <!-- Gráficos -->
-    <section class="bg-card shadow-md rounded-lg p-4 border border-border">
+    <section class="bg-card shadow rounded-xl p-4 border border-border">
       <h2 class="text-lg font-bold mb-4">📈 Gráficos de Vendas</h2>
       <Tabs default-value="status" class="w-full">
         <TabsList class="rounded-md">

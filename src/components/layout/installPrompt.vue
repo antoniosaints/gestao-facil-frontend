@@ -50,7 +50,7 @@ const fecharDialog = () => {
     <AlertDialog :open="showDialog">
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Instale nosso app</AlertDialogTitle>
+                <AlertDialogTitle><i class="fa-solid fa-mobile-screen-button"></i> Instale nosso app</AlertDialogTitle>
                 <AlertDialogDescription>
                     Adicione a aplicação à tela inicial para ter acesso mais rápido e uma melhor experiência.
                 </AlertDialogDescription>

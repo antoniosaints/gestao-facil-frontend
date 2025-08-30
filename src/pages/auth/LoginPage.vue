@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/login/useAuthStore';
 import { ref } from 'vue';
-import { useToast } from 'vue-toastification';
-const toast = useToast();
 const store = useAuthStore();
 const login = ref({
     email: '',
     password: ''
 });
 const showForgotPasswordModal = ref(false);
+const saveDataLogin = ref<boolean>(localStorage.getItem('gestao_facil:credentials_login') == 'true' || false);
 
 const testemonials = [
     {
@@ -34,14 +33,51 @@ const testemonials = [
         slug: 'PC',
         text: 'Precisava de uma ferramenta simples para gerenciar minha loja, e o Gestão Fácil me ajudou!',
         store: 'PC Tech'
+    },
+    {
+        name: 'Carla Mendes',
+        slug: 'CM',
+        text: 'Consigo controlar meu estoque em tempo real e nunca mais fiquei sem produto em dias de alta demanda.',
+        store: 'Carla Presentes'
+    },
+    {
+        name: 'Rafael Lima',
+        slug: 'RL',
+        text: 'A automação de relatórios de vendas economizou horas do meu trabalho toda semana. Excelente investimento!',
+        store: 'Lima Supermercados'
+    },
+    {
+        name: 'Fernanda Rocha',
+        slug: 'FR',
+        text: 'O suporte da equipe é incrível. Sempre que precisei, fui atendida com rapidez e clareza.',
+        store: 'Doces da Fe'
+    },
+    {
+        name: 'Lucas Almeida',
+        slug: 'LA',
+        text: 'Depois que comecei a usar o Gestão Fácil, consegui focar no crescimento da minha loja e não apenas na burocracia.',
+        store: 'Almeida Games'
+    },
+    {
+        name: 'Juliana Ferreira',
+        slug: 'JF',
+        text: 'A praticidade no cadastro de produtos e clientes agilizou muito meu atendimento.',
+        store: 'JF Cosméticos'
+    },
+    {
+        name: 'Marcos Pereira',
+        slug: 'MP',
+        text: 'Controle financeiro ficou muito mais simples. Agora sei exatamente meu lucro ao final do mês.',
+        store: 'MP Ferragens'
     }
 ];
 
-const getOnTestemonials = () => {
-    return testemonials[Math.floor(Math.random() * testemonials.length)];
-}
+const randomTestimonial = ref(
+    testemonials[Math.floor(Math.random() * testemonials.length)]
+);
 
 async function loginUsuario() {
+    localStorage.setItem('gestao_facil:credentials_login', saveDataLogin.value.toString());
     await store.login(login.value.email, login.value.password);
 }
 
@@ -65,7 +101,7 @@ async function loginUsuario() {
                             <h2 class="text-5xl font-bold text-gray-800 dark:text-white mb-6 leading-tight">
                                 Bem-vindo de volta ao seu
                                 <span
-                                    class="text-primary-500 bg-gradient-to-r dark:from-cyan-400 dark:to-cyan-200 from-cyan-600 to-cyan-400 bg-clip-text text-transparent">
+                                    class="text-primary-500 bg-gradient-to-r dark:from-orange-400 dark:to-orange-200 from-orange-600 to-orange-400 bg-clip-text text-transparent">
                                     negócio
                                 </span>
                             </h2>
@@ -76,22 +112,20 @@ async function loginUsuario() {
 
                         <!-- Quick Stats -->
                         <div class="grid grid-cols-2 gap-6">
-                            <div
-                                class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+                            <div class="bg-card backdrop-blur-sm rounded-xl p-6 border border-border">
                                 <div class="flex items-center space-x-3">
                                     <div
-                                        class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                                        <i class="fas fa-users text-blue-600 dark:text-blue-400 text-xl"></i>
+                                        class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-users text-orange-600 dark:text-orange-400 text-xl"></i>
                                     </div>
                                     <div>
                                         <p class="text-2xl font-bold text-gray-800 dark:text-white">100+</p>
-                                        <p class="text-gray-600 dark:text-gray-300 text-sm">Lojas ativas</p>
+                                        <p class="text-gray-600 dark:text-gray-300 text-sm">Gestões ativas</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div
-                                class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+                            <div class="bg-card backdrop-blur-sm rounded-xl p-6 border border-border">
                                 <div class="flex items-center space-x-3">
                                     <div
                                         class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -112,7 +146,7 @@ async function loginUsuario() {
                             <div class="space-y-3">
                                 <div class="flex items-center space-x-3">
                                     <div
-                                        class="w-8 h-8 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center">
+                                        class="w-8 h-8 bg-success text-white rounded-lg flex items-center justify-center">
                                         <i class="fas fa-check text-primary-600 dark:text-primary-400"></i>
                                     </div>
                                     <span class="text-gray-700 dark:text-gray-300">Visualizar relatório de vendas do
@@ -120,7 +154,7 @@ async function loginUsuario() {
                                 </div>
                                 <div class="flex items-center space-x-3">
                                     <div
-                                        class="w-8 h-8 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center">
+                                        class="w-8 h-8 bg-success text-white rounded-lg flex items-center justify-center">
                                         <i class="fas fa-check text-primary-600 dark:text-primary-400"></i>
                                     </div>
                                     <span class="text-gray-700 dark:text-gray-300">Gerenciar produtos com estoque
@@ -128,7 +162,7 @@ async function loginUsuario() {
                                 </div>
                                 <div class="flex items-center space-x-3">
                                     <div
-                                        class="w-8 h-8 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center">
+                                        class="w-8 h-8 bg-success text-white rounded-lg flex items-center justify-center">
                                         <i class="fas fa-check text-primary-600 dark:text-primary-400"></i>
                                     </div>
                                     <span class="text-gray-700 dark:text-gray-300">Acompanhar pedidos em tempo
@@ -138,23 +172,22 @@ async function loginUsuario() {
                         </div>
 
                         <!-- Testimonial -->
-                        <div
-                            class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50">
-                            <div class="flex items-start space-x-4">
+                        <div class="bg-card backdrop-blur-sm rounded-xl p-6 border border-border">
+                            <div class="flex items-center space-x-4">
                                 <div
-                                    class="w-12 h-12 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-bold">
-                                    {{ getOnTestemonials().slug }}
+                                    class="w-12 h-12 bg-gradient-to-br p-4 from-primary to-primary rounded-full flex items-center justify-center text-white font-bold">
+                                    {{ randomTestimonial.slug }}
                                 </div>
                                 <div>
                                     <p class="text-gray-700 dark:text-gray-300 italic mb-2">
-                                        "{{ getOnTestemonials().text }}"
+                                        "{{ randomTestimonial.text }}"
                                     </p>
                                     <div class="flex items-center space-x-2">
                                         <span class="font-semibold text-gray-800 dark:text-white">{{
-                                            getOnTestemonials().name }}</span>
+                                            randomTestimonial.name }}</span>
                                         <span class="text-gray-500 dark:text-gray-400">•</span>
                                         <span class="text-sm text-gray-600 dark:text-gray-400">{{
-                                            getOnTestemonials().store }}</span>
+                                            randomTestimonial.store }}</span>
                                         <div class="flex text-yellow-400 ml-2">
                                             <i class="fas fa-star text-xs"></i>
                                             <i class="fas fa-star text-xs"></i>
@@ -171,13 +204,12 @@ async function loginUsuario() {
                     <!-- Right Side - Login Form -->
                     <div class="flex justify-center lg:justify-end">
                         <div class="w-full max-w-md">
-                            <div
-                                class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-200/50 dark:border-gray-700/50">
+                            <div class="bg-card backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-border">
 
                                 <!-- Form Header -->
                                 <div class="text-center mb-8">
                                     <div
-                                        class="w-16 h-16 bg-gradient-to-br from-primary to-info rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                        class="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
                                         <i class="fas fa-user text-white text-2xl"></i>
                                     </div>
                                     <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Entrar na sua
@@ -223,7 +255,7 @@ async function loginUsuario() {
                                     <!-- Remember Me & Forgot Password -->
                                     <div class="flex items-center justify-between">
                                         <label class="flex items-center space-x-2">
-                                            <input type="checkbox" id="remember"
+                                            <input type="checkbox" v-model="saveDataLogin"
                                                 class="w-4 h-4 text-primary-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-500">
                                             <span class="text-sm text-gray-600 dark:text-gray-300">Lembrar de mim</span>
                                         </label>
@@ -235,7 +267,7 @@ async function loginUsuario() {
 
                                     <!-- Login Button -->
                                     <button type="submit"
-                                        class="w-full bg-gradient-to-r from-primary to-info hover:from-info hover:to-primary text-white py-3 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                                        class="w-full bg-gradient-to-r from-primary/80 to-primary hover:from-primary/90 hover:to-primary/80 text-white py-3 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
                                         <i class="fas fa-sign-in-alt mr-2"></i>
                                         Entrar
                                     </button>
@@ -271,8 +303,8 @@ async function loginUsuario() {
                 :class="showForgotPasswordModal ? 'scale-100 opacity-100' : 'scale-95 opacity-0'">
                 <div class="text-center mb-6">
                     <div
-                        class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-key text-blue-600 dark:text-blue-400 text-2xl"></i>
+                        class="w-16 h-16 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-key text-orange-600 dark:text-orange-400 text-2xl"></i>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Recuperar senha</h3>
                     <p class="text-gray-600 dark:text-gray-300">Digite seu e-mail para receber as instruções</p>
@@ -284,7 +316,7 @@ async function loginUsuario() {
                             E-mail cadastrado
                         </label>
                         <input type="email" id="forgotEmail" required
-                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                             placeholder="seu@email.com">
                     </div>
 
@@ -294,7 +326,7 @@ async function loginUsuario() {
                             Cancelar
                         </button>
                         <button type="submit"
-                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors duration-200">
+                            class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition-colors duration-200">
                             Enviar
                         </button>
                     </div>

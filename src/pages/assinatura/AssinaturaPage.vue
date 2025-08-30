@@ -6,7 +6,7 @@ import { ref } from "vue"
 
 const planos = ref([
     {
-        nome: "Pro",
+        nome: "Gestão Fácil",
         preco: "R$ 70/mês",
         descricao: "Mais recursos para empresas em crescimento.",
         features: [
@@ -33,20 +33,22 @@ const selecionarPlano = (plano: string) => {
 <template>
     <div class="max-w-7xl mx-auto py-6">
         <div class="max-w-xl mx-auto">
-            <h2 class="text-3xl font-bold text-center">Assinar Gestão Fácil PRO</h2>
-            <p class="text-center text-gray-500 mb-10">As cobranças são geradas no momento do pagamento, não sendo
+            <h2 class="text-2xl md:text-3xl font-bold text-center">Pague mensalmente sem complicações</h2>
+            <p class="text-sm md:text-base text-center text-gray-500 mb-10">As cobranças são geradas no momento do
+                pagamento, não
+                sendo
                 necessário cartão
                 de
                 crédito</p>
         </div>
         <div class="flex justify-center gap-4">
             <Card v-for="plano in planos" :key="plano.nome"
-                :class="plano.destaque ? 'border-primary shadow-xl scale-105' : ''">
+                :class="plano.destaque ? 'border-border border-2 w-96 shadow-xl scale-105' : ''">
                 <CardHeader>
                     <CardTitle class="flex justify-between items-center text-2xl">
                         {{ plano.nome }}
                         <span v-if="plano.destaque"
-                            class="text-sm bg-primary text-whitef font-thin px-2 py-1 rounded-md">
+                            class="text-sm bg-primary text-white font-thin px-2 py-1 rounded-md">
                             Mensal
                         </span>
                     </CardTitle>
