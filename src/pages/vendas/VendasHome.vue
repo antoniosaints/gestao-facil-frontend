@@ -30,7 +30,7 @@ const store = useVendasStore();
             </div>
         </div>
         <div
-            class="overflow-x-auto hidden md:block shadow rounded-lg border bg-background dark:bg-background-dark border-gray-200 px-2 dark:border-gray-700">
+            class="overflow-x-auto hidden md:block rounded-lg">
             <TabelaVendas />
         </div>
         <div class="overflow-x-auto block md:hidden rounded-lg">

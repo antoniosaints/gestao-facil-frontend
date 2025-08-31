@@ -1,8 +1,8 @@
 <template>
     <div class="w-full">
         <!-- Busca e menu -->
-        <div class="flex items-center py-4">
-            <div class="flex items-center space-x-1 bg-card rounded-md border pl-4">
+        <div class="flex items-center py-2">
+            <div class="flex items-center space-x-1 bg-card rounded-md border border-border pl-4">
                 <i class="fa-solid fa-magnifying-glass text-sm"></i>
                 <Input placeholder="Buscar registro..." v-model="search"
                     class="border-none outline-none focus-visible:ring-0 shadow-none" />
@@ -26,7 +26,7 @@
                 </Select>
                 <DropdownMenu>
                     <DropdownMenuTrigger as-child>
-                        <Button variant="outline" class="ml-auto">
+                        <Button variant="outline" class="ml-auto bg-card">
                             Mostrar
                             <ChevronDown class="ml-2 h-4 w-4" />
                         </Button>
@@ -45,7 +45,7 @@
         </div>
 
         <!-- Tabela -->
-        <div class="rounded-md border overflow-x-auto">
+        <div class="rounded-lg border bg-background border-gray-300 dark:border-gray-600 overflow-x-auto">
             <Table class="min-w-full">
                 <TableHeader class="bg-gray-100 dark:bg-gray-800">
                     <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
@@ -54,7 +54,7 @@
                                 ? 'sticky right-0 bg-gray-100 dark:bg-gray-800 z-10'
                                 : ''
                         ]">
-                            <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+                            <FlexRender class="text-gray-900 dark:text-gray-100" v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                                 :props="header.getContext()" />
                         </TableHead>
                     </TableRow>

@@ -101,7 +101,7 @@ const filtroPeriodo = ref(new Date())
     </section>
 
     <!-- Gráficos -->
-    <section class="bg-card shadow rounded-xl p-4 border border-border">
+    <section class="bg-card border border-border rounded-xl shadow p-4">
       <h2 class="text-lg font-bold mb-4">📈 Gráficos de Vendas</h2>
       <Tabs default-value="status" class="w-full">
         <TabsList class="rounded-md">
