@@ -50,8 +50,8 @@
                         Carrinho
                     </h2>
                     <button @click="clearCart"
-                        class="text-red-500 dark:text-red-300 bg-red-100 px-3 py-1 rounded-md bg-red-10 dark:bg-red-900"
-                        title="Limpar carrinho">
+                        :title="cart.length ? 'Limpar carrinho' : 'Carrinho vazio'"
+                        class="text-red-500 dark:text-red-300 bg-red-100 px-3 py-1 rounded-md bg-red-10 dark:bg-red-900">
                         <i class="fas fa-trash text-sm"></i>
                     </button>
                 </div>
@@ -77,19 +77,19 @@
                     </div>
                     <div v-for="item in cart" :key="item.id"
                         class="border-border bg-card dark:bg-gray-800 shadow-md rounded-lg p-3 mb-3">
-                        <div class="flex justify-between items-start max-w-80 mb-2">
+                        <div class="flex justify-between items-start mb-2">
                             <h4 class="text-xs text-gray-800 dark:text-white truncate">{{ item.name }}</h4>
-                            <button type="button" @click="updateQuantity(item.id, 0)"
+                            <button type="button" title="Remover item" @click="updateQuantity(item.id, 0)"
                                 class="text-red-500 hover:text-red-700 text-sm">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
-                                <button type="button" @click="updateQuantity(item.id, item.quantity - 1)"
+                                <button type="button" title="Diminuir quantidade" @click="updateQuantity(item.id, item.quantity - 1)"
                                     class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">-</button>
                                 <span class="text-sm font-medium">{{ item.quantity }}</span>
-                                <button type="button" @click="updateQuantity(item.id, item.quantity + 1)"
+                                <button type="button" title="Aumentar quantidade" @click="updateQuantity(item.id, item.quantity + 1)"
                                     class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">+</button>
                             </div>
                             <div class="text-right">
