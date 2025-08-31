@@ -22,7 +22,7 @@
 
             <!-- GERAL -->
             <TabsContent value="geral">
-                <Card class="rounded-t-none">
+                <Card class="rounded-t-none bg-background">
                     <CardHeader>
                         <CardTitle>Preferências gerais</CardTitle>
                         <CardDescription>Defina idioma, moeda e formatação padrão.</CardDescription>
@@ -81,7 +81,7 @@
 
             <!-- PDV -->
             <TabsContent value="pdv">
-                <Card class="rounded-t-none">
+                <Card class="rounded-t-none bg-background">
                     <CardHeader>
                         <CardTitle>Configurações do PDV</CardTitle>
                         <CardDescription>Preferências de caixa, troco e descontos.</CardDescription>
@@ -123,7 +123,7 @@
 
             <!-- NOTIFICAÇÕES -->
             <TabsContent value="notificacoes">
-                <Card class="rounded-t-none">
+                <Card class="rounded-t-none bg-background">
                     <CardHeader>
                         <CardTitle>Notificações</CardTitle>
                         <CardDescription>Configure e-mails e push de eventos.</CardDescription>
@@ -167,7 +167,7 @@
 
             <!-- INTEGRAÇÕES -->
             <TabsContent value="integracoes">
-                <Card class="rounded-t-none">
+                <Card class="rounded-t-none bg-background">
                     <CardHeader>
                         <CardTitle>Integrações</CardTitle>
                         <CardDescription>Conecte serviços externos (ex.: Asaas, QZ Tray, Supabase).</CardDescription>
@@ -240,7 +240,7 @@
 
             <!-- SEGURANÇA -->
             <TabsContent value="seguranca">
-                <Card class="rounded-t-none">
+                <Card class="rounded-t-none bg-background">
                     <CardHeader>
                         <CardTitle>Segurança</CardTitle>
                         <CardDescription>Políticas de sessão e autenticação.</CardDescription>
@@ -276,7 +276,7 @@
 
             <!-- IMPRESSÃO -->
             <TabsContent value="impressao">
-                <Card class="rounded-t-none">
+                <Card class="rounded-t-none bg-background">
                     <CardHeader>
                         <CardTitle>Impressão</CardTitle>
                         <CardDescription>Preferências de impressão não fiscal.</CardDescription>

@@ -1,5 +1,5 @@
 <template>
-    <Card class="rounded-t-none">
+    <Card class="rounded-t-none bg-background">
         <CardHeader>
             <CardTitle>Dados da empresa</CardTitle>
             <CardDescription>Informações exibidas em notas, recibos e relatórios.</CardDescription>

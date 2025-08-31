@@ -11,7 +11,7 @@
                 </h2>
                 <!-- Barra de Busca -->
                 <div class="relative">
-                    <Input type="text" placeholder="Buscar por nome ou código..."
+                    <Input v-model="searchTerm" type="text" placeholder="Buscar por nome ou código..."
                         class="w-full p-2 rounded-md border bg-background border-border outline-none" />
                 </div>
             </div>
@@ -215,7 +215,7 @@
 
 <script setup lang="ts">
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, watch } from "vue"
 import http from "@/utils/axios"
 import { Input } from '@/components/ui/input';
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
@@ -251,6 +251,14 @@ const subtotal = computed(() =>
     cart.value.reduce((t, item) => t + item.price * item.quantity, 0)
 )
 
+watch(() => searchTerm.value, () => {
+    fetchProducts()
+})
+
+watch(() => cart.value, () => {
+    searchTerm.value = ""
+}, { deep: true })
+
 const discount = computed(() => {
     const value = parseFloat(String(discountValue.value).replace(",", ".")) || 0
     if (!value) return 0
@@ -269,8 +277,8 @@ const change = computed(() => {
 
 async function fetchProducts() {
     try {
-        const { data } = await http.get("/produtos", {
-            params: { search: searchTerm.value },
+        const { data } = await http.get("/produtos/lista/geral", {
+            params: { search: searchTerm.value, limit: 12 },
         })
         products.value = data.data.map((p: any) => ({
             id: p.id,
