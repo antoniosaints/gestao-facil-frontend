@@ -36,7 +36,7 @@
 
     --danger: 0 72.2% 50.6%;
     --info: 198.6 88.7% 48.4%;
-    --warning: 37.7 92.1% 50.2%;
+    --warning: 37.7 92.1% 45.2%;
     --success: 142.1 70.6% 45.3%;
   }
 
@@ -112,4 +112,26 @@
   --dp-menu-border-color: #2d2d2d !important;
   --dp-border-color-hover: #aaaeb7 !important;
   --dp-border-color-focus: #28292b !important;
+}
+
+/* Tema claro */
+.Vue-Toastification__toast--warning {
+  background-color: #c98104 !important;
+}
+/* Tema escuro */
+.dark .Vue-Toastification__toast {
+  color: #f9fafb;
+}
+
+.dark .Vue-Toastification__toast--success {
+  background-color: #0f662f !important;
+}
+.dark .Vue-Toastification__toast--error {
+  background-color: #811010 !important;
+}
+.dark .Vue-Toastification__toast--info {
+  background-color: #113a7c !important;
+}
+.dark .Vue-Toastification__toast--warning {
+  background-color: #754c04 !important;
 }
