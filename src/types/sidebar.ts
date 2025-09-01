@@ -1,6 +1,8 @@
+import type { Component } from 'vue'
+
 export type SidebarMenuType = {
   nome: string
-  icone?: string
+  icone?: string | Component
   color?:
     | 'blue'
     | 'red'

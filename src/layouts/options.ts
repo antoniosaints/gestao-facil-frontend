@@ -1,72 +1,85 @@
 import type { SidebarMenuType } from '@/types/sidebar'
+import {
+  Boxes,
+  ChartPie,
+  CircleDollarSign,
+  Cog,
+  FileCheck2,
+  Lock,
+  Sparkles,
+  Tags,
+  User,
+  UserStar,
+  Wrench,
+} from 'lucide-vue-next'
 
 export const sidebarMenuOptions: SidebarMenuType[] = [
   {
     nome: 'Dashboard',
-    icone: 'fa-solid fa-chart-line',
+    icone: ChartPie,
     color: 'orange',
     link: '/',
   },
   {
     nome: 'Vendas',
-    icone: 'fa-solid fa-tags',
+    icone: Tags,
     color: 'green',
     children: [
       {
         nome: 'Painel',
         link: '/vendas/dashboard',
-        icone: 'fa-solid fa-chart-pie',
+        icone: ChartPie,
         color: 'green',
       },
       {
         nome: 'Vendas',
         link: '/vendas',
-        icone: 'fa-solid fa-tags',
+        icone: Tags,
         color: 'green',
       },
     ],
   },
   {
     nome: 'Produtos',
-    icone: 'fa-solid fa-boxes',
+    icone: Boxes,
     color: 'blue',
     children: [
       {
         nome: 'Painel',
         link: '/produtos/dashboard',
-        icone: 'fa-solid fa-chart-pie',
+        icone: ChartPie,
         color: 'blue',
       },
       {
         nome: 'Produtos',
         link: '/produtos',
-        icone: 'fa-solid fa-boxes',
+        icone: Boxes,
         color: 'blue',
       },
     ],
   },
   {
     nome: 'Financeiro',
-    icone: 'fa-solid fa-coins',
+    icone: CircleDollarSign,
     color: 'emerald',
     children: [
       {
         nome: 'Painel',
         link: '/financeiro/painel',
-        icone: 'fa-solid fa-chart-pie',
+        icone: ChartPie,
         color: 'emerald',
       },
       {
         nome: 'Lançamentos',
         link: '/financeiro/lancamentos',
-        icone: 'fa-solid fa-coins',
+        icone: CircleDollarSign,
         color: 'emerald',
       },
     ],
   },
   {
     nome: 'Clientes',
-    icone: 'fa-solid fa-users',
+    icone: UserStar,
     color: 'violet',
     link: '/clientes',
   },
@@ -76,7 +89,7 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
   },
   {
     nome: 'Serviços',
-    icone: 'fa-solid fa-screwdriver-wrench',
+    icone: Wrench,
     color: 'yellow',
     link: '/servicos',
     children: [
@@ -86,7 +99,7 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
   },
   {
     nome: 'Notas Fiscais',
-    icone: 'fa-solid fa-receipt',
+    icone: FileCheck2,
     color: 'cyan',
     link: '/notas-fiscais',
     children: [
@@ -100,13 +113,13 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
   },
   {
     nome: 'Usuários',
-    icone: 'fa-solid fa-user',
+    icone: User,
     color: 'purple',
     link: '/usuarios',
   },
   {
     nome: 'Configurações',
-    icone: 'fa-solid fa-cog',
+    icone: Cog,
     color: 'indigo',
     link: '/configuracoes',
   },
@@ -117,19 +130,19 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
   {
     nome: 'Assinatura',
     color: 'orange',
-    icone: 'fa-solid fa-star',
+    icone: Sparkles,
     link: '/assinatura',
   },
   {
     nome: 'Modo Admin',
     color: 'violet',
-    icone: 'fa-solid fa-lock',
+    icone: Lock,
     link: '/admin',
   },
   {
     nome: 'Perfil',
     color: 'blue',
-    icone: 'fa-solid fa-user',
+    icone: User,
     link: '/usuario/perfil',
   },
 ]
