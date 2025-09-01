@@ -11,6 +11,7 @@ import { MetodoPagamento } from '@/types/schemas';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
+import { Switch } from '@/components/ui/switch';
 
 const store = useVendasStore();
 const toast = useToast();
@@ -20,6 +21,7 @@ const faturarVenda = ref<VendaEfetivar>({
     conta: 0,
     dataPagamento: new Date().toISOString().split('T')[0],
     pagamento: MetodoPagamento.PIX,
+    lancamentoManual: false
 })
 
 async function submit() {
@@ -83,6 +85,13 @@ async function submit() {
                     <Label for="categoriaFinanceira">Categoria financeira</Label>
                     <Select2Ajax id="categoriaFinanceira" required v-model="faturarVenda.categoria" class="w-full"
                         url="lancamentos/categorias/select2" />
+                </div>
+                <div class="flex items-center bg-card justify-between border rounded-lg p-3 col-span-2">
+                    <div>
+                        <Label>Lançamento manual</Label>
+                        <p class="text-sm text-muted-foreground">Não criar financeiro para essa venda.</p>
+                    </div>
+                    <Switch v-model:checked="faturarVenda.lancamentoManual" />
                 </div>
             </div>
             <div class="flex justify-end gap-2 mt-4">

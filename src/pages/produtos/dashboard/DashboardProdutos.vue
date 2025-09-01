@@ -50,7 +50,7 @@ const chartCategorias = {
   datasets: [{ label: "Lucro", data: [25000, 18000, 8000, 5000], backgroundColor: ["#6366f1", "#f87171", "#34d399", "#facc15"], borderRadius: 6 }]
 }
 
-const filtroPeriodo = ref(new Date())
+const filtroPeriodo = ref([new Date(), new Date()])
 </script>
 
 <template>
@@ -67,7 +67,7 @@ const filtroPeriodo = ref(new Date())
           class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
           <i class="fa-solid fa-filter-circle-xmark"></i>
         </button>
-        <Calendarpicker class="w-content" v-model="filtroPeriodo" />
+        <Calendarpicker class="w-content" :range="true" v-model="filtroPeriodo" />
       </div>
     </div>
     <!-- Indicadores -->

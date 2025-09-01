@@ -67,7 +67,11 @@ const garantias = ref([
   { id: 7, produto: "Notebook Dell", cliente: "Lucas", validade: "10/09/2025" }
 ])
 
-const filtroPeriodo = ref(new Date())
+const filtroPeriodo = ref([new Date(), new Date()])
+
+function onDateSelected(data: Date[]) {
+  // faça o filtro aqui
+}
 </script>
 
 <template>
@@ -84,7 +88,7 @@ const filtroPeriodo = ref(new Date())
           class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
           <i class="fa-solid fa-filter-circle-xmark"></i>
         </button>
-        <Calendarpicker class="w-content" v-model="filtroPeriodo" />
+        <Calendarpicker @range-end="onDateSelected" class="w-content" :range="true" v-model="filtroPeriodo" />
       </div>
     </div>
 

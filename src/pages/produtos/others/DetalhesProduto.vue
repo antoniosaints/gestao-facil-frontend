@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, FileText, Edit, Trash2, Box, TrendingDown, TrendingUp, HandCoins, CircleDollarSign } from "lucide-vue-next"
+import { ArrowLeft, FileText, Edit, Trash2, Box, TrendingDown, TrendingUp, HandCoins, CircleDollarSign, Tag } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import router from "@/router"
 import { computed, onMounted, ref, watch } from "vue"
@@ -202,7 +202,7 @@ async function deletarProduto(id: number) {
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Preço de compra:</span> {{ Number(produto?.precoCompra).toFixed(2).replace('.', ',') || 'N/A'
-                    }}</div>
+                }}</div>
                 <div><span>Estoque:</span> {{ produto?.estoque }} {{ produto?.unidade }}</div>
                 <div><span>Mínimo:</span> {{ produto?.minimo }} {{ produto?.unidade }}</div>
                 <div><span>Permite entradas:</span>
@@ -242,6 +242,18 @@ async function deletarProduto(id: number) {
                 <div><span>Margem de lucro:</span>
                     <BadgeCell color="blue" :label="`${resumo?.margemLucro}`" class="ml-2 text-sm" />
                 </div>
+            </CardContent>
+        </Card>
+
+        <!-- Vendas -->
+        <Card class="rounded-md">
+            <CardHeader>
+                <CardTitle class="flex items-center gap-2">
+                    <Tag class="w-5 h-5" /> Vendas
+                </CardTitle>
+            </CardHeader>
+            <CardContent class="grid grid-cols-4 gap-2">
+                <div class="col-span-4">Em breve...</div>
             </CardContent>
         </Card>
         <ModalProdutos />

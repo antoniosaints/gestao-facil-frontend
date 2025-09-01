@@ -6,6 +6,7 @@ export interface VendaEfetivar {
   dataPagamento: Date | string
   categoria: number
   conta: number | null
+  lancamentoManual: boolean
 }
 export class VendaRepository {
   static async get(id: number) {

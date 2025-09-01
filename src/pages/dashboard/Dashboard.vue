@@ -13,7 +13,7 @@
                         class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
                         <i class="fa-solid fa-filter-circle-xmark"></i>
                     </button>
-                    <Calendarpicker v-model="filtroPeriodo" />
+                    <Calendarpicker :range="true" v-model="filtroPeriodo" />
                 </div>
             </div>
 
@@ -225,7 +225,7 @@ import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 
 const store = useDashboardStore();
 const storeLancamento = useLancamentosStore();
-const filtroPeriodo = ref(new Date());
+const filtroPeriodo = ref([new Date(), new Date()]);
 // Cor reativa baseada no tema
 const currentColor = computed(() => (colorTheme.value === 'dark' ? '#ffffff' : '#000000'));
 
