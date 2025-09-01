@@ -12,10 +12,34 @@ export const columnsClientes: ColumnDef<ClientesFornecedores>[] = [
     enableSorting: false,
     header: () => render('div', { class: 'ml-2 h-4 w-4' }, 'ID'),
     cell: ({ row }) => {
+      const tipo =
+        row.original.tipo == 'CLIENTE' ? 'fa-solid fa-user-tag' : 'fa-solid fa-business-time'
       return render(BadgeCell, {
         label: row.getValue('Uid') as string,
         color: 'gray',
-        icon: 'fa-solid fa-box',
+        icon: tipo,
+        capitalize: false,
+      })
+    },
+  },
+  {
+    accessorKey: 'status',
+    header: ({ column }) =>
+      render(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
+    cell: ({ row }) => {
+      const tipo = row.original.status == 'ATIVO' ? 'fa-solid fa-check' : 'fa-solid fa-xmark'
+      const color = row.original.status == 'ATIVO' ? 'green' : 'red'
+      return render(BadgeCell, {
+        label: row.getValue('status') as string,
+        color: color,
+        icon: tipo,
         capitalize: false,
       })
     },
@@ -43,6 +67,7 @@ export const columnsClientes: ColumnDef<ClientesFornecedores>[] = [
         },
         () => ['CPF/CNPJ', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
+    cell: ({ row }) => render('div', { class: 'text-left' }, row.original.documento || '-'),
   },
   {
     accessorKey: 'email',
@@ -55,6 +80,7 @@ export const columnsClientes: ColumnDef<ClientesFornecedores>[] = [
         },
         () => ['E-mail', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
+    cell: ({ row }) => render('div', { class: 'text-left' }, row.original.email || '-'),
   },
   {
     accessorKey: 'telefone',
@@ -67,6 +93,7 @@ export const columnsClientes: ColumnDef<ClientesFornecedores>[] = [
         },
         () => ['Telefone', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
+    cell: ({ row }) => render('div', { class: 'text-left' }, row.original.telefone || '-'),
   },
   {
     accessorKey: 'acoes',
