@@ -4,10 +4,22 @@ import { render } from '@/lib/utils'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
 import type { Vendas } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown } from 'lucide-vue-next'
+import {
+  ArrowUpDown,
+  BadgeCheck,
+  BanknoteArrowDown,
+  CalendarArrowDown,
+  CircleDollarSign,
+  CircleX,
+  FileClock,
+  FlagTriangleRight,
+  Loader,
+  Tag,
+} from 'lucide-vue-next'
 import TabelaActions from './TabelaActions.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
+import type { Component } from 'vue'
 
 const useProduto = useProdutoStore()
 
@@ -27,7 +39,7 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
       return render(BadgeCell, {
         label: row.getValue('Uid') as string,
         color: 'gray',
-        icon: 'fa-solid fa-tag',
+        icon: Tag,
         capitalize: false,
       })
     },
@@ -49,7 +61,7 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
       return render(BadgeCell, {
         label: valor,
         color: color,
-        icon: 'fa-solid fa-coins',
+        icon: CircleDollarSign,
       })
     },
   },
@@ -65,32 +77,38 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
         () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) => {
-      let color: "cyan" | "yellow" | "gray" | "violet" | "purple" | "green" | "emerald" | "orange" | "red" | "blue" = 'gray'
-      let icon = 'fa-solid fa-check'
+      let color:
+        | 'cyan'
+        | 'yellow'
+        | 'gray'
+        | 'violet'
+        | 'purple'
+        | 'green'
+        | 'emerald'
+        | 'orange'
+        | 'red'
+        | 'blue' = 'gray'
+      let icon: Component = FlagTriangleRight
       switch (row.original.status) {
         case 'PENDENTE':
           color = 'yellow'
-          icon = 'fa-solid fa-clock'
+          icon = FileClock
           break
         case 'CANCELADO':
           color = 'red'
-          icon = 'fa-solid fa-xmark'
+          icon = CircleX
           break
         case 'FINALIZADO':
           color = 'purple'
-          icon = 'fa-solid fa-check'
+          icon = BadgeCheck
           break
         case 'ANDAMENTO':
           color = 'blue'
-          icon = 'fa-solid fa-spinner'
+          icon = Loader
           break
         case 'FATURADO':
           color = 'green'
-          icon = 'fa-solid fa-money-bill'
-          break
-        default:
-          color = 'gray'
-          icon = 'fa-solid fa-check'
+          icon = BanknoteArrowDown
           break
       }
       return render(BadgeCell, {
@@ -166,7 +184,7 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
         render(BadgeCell, {
           label: formattedDate,
           color: 'gray',
-          icon: 'fa-solid fa-calendar',
+          icon: CalendarArrowDown,
         }),
       )
     },

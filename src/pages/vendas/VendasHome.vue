@@ -12,9 +12,12 @@ const store = useVendasStore();
 <template>
     <div>
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
-            <h2 class="text-2xl font-bold text-black dark:text-white"><i class="fa-solid fa-tags text-green-600"></i>
-                Vendas
-            </h2>
+            <div>
+                <h2 class="text-2xl font-bold text-black dark:text-white">
+                    Vendas
+                </h2>
+                <p class="text-sm text-muted-foreground">Listagem de vendas cadastrados</p>
+            </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
                 <button onclick="openModalFiltroVendas()"
                     class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
@@ -29,8 +32,7 @@ const store = useVendasStore();
                 </RouterLink>
             </div>
         </div>
-        <div
-            class="overflow-x-auto hidden md:block rounded-lg">
+        <div class="overflow-x-auto hidden md:block rounded-lg">
             <TabelaVendas />
         </div>
         <div class="overflow-x-auto block md:hidden rounded-lg">

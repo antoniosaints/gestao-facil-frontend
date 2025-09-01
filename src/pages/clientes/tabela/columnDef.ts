@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { ClientesFornecedores } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown } from 'lucide-vue-next'
+import { ArrowUpDown, Ban, Building, Check, UserSearch } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from '@/pages/clientes/tabela/Actions.vue'
 
@@ -12,8 +12,7 @@ export const columnsClientes: ColumnDef<ClientesFornecedores>[] = [
     enableSorting: false,
     header: () => render('div', { class: 'ml-2 h-4 w-4' }, 'ID'),
     cell: ({ row }) => {
-      const tipo =
-        row.original.tipo == 'CLIENTE' ? 'fa-solid fa-user-tag' : 'fa-solid fa-business-time'
+      const tipo = row.original.tipo == 'CLIENTE' ? UserSearch : Building
       return render(BadgeCell, {
         label: row.getValue('Uid') as string,
         color: 'gray',
@@ -34,7 +33,7 @@ export const columnsClientes: ColumnDef<ClientesFornecedores>[] = [
         () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) => {
-      const tipo = row.original.status == 'ATIVO' ? 'fa-solid fa-check' : 'fa-solid fa-xmark'
+      const tipo = row.original.status == 'ATIVO' ? Check : Ban
       const color = row.original.status == 'ATIVO' ? 'green' : 'red'
       return render(BadgeCell, {
         label: row.getValue('status') as string,

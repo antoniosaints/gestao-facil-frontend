@@ -56,9 +56,12 @@ const filtroPeriodo = ref(new Date())
 <template>
   <div class="space-y-4">
     <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
-      <h2 class="text-2xl text-left font-bold text-black dark:text-white">
-        <i class="fa-solid fa-chart-line text-emerald-600"></i> Painel de produtos
-      </h2>
+      <div>
+        <h2 class="text-2xl font-bold text-black dark:text-white">
+          Painel de produtos
+        </h2>
+        <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
+      </div>
       <div class="flex items-center gap-2 w-content">
         <button type="button"
           class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">

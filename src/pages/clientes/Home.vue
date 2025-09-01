@@ -8,10 +8,12 @@ const store = useClientesStore();
 <template>
     <div>
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
-            <h2 class="text-2xl font-bold text-black dark:text-white"><i
-                    class="fa-solid fa-user-tag text-purple-600"></i>
-                Clientes
-            </h2>
+            <div>
+                <h2 class="text-2xl font-bold text-black dark:text-white">
+                    Clientes
+                </h2>
+                <p class="text-sm text-muted-foreground">Clientes cadastrados no sistema</p>
+            </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
                 <button @click="store.openSave" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-solid fa-user-tag"></i> <span class="hidden md:inline">Novo cliente</span>

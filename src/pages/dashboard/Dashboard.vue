@@ -2,9 +2,12 @@
     <div>
         <div class="flex flex-col gap-4">
             <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
-                <h2 class="text-2xl text-left font-bold text-black dark:text-white">
-                    <i class="fa-solid fa-chart-simple text-orange-600"></i> Dashboard
-                </h2>
+                <div>
+                    <h2 class="text-2xl font-bold text-black dark:text-white">
+                        Dashboard
+                    </h2>
+                    <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
+                </div>
                 <div class="flex items-center gap-2 w-content">
                     <button type="button" id="limpar_filtro_dashboard_periodo"
                         class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">

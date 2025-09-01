@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, type Component } from "vue"
 
 interface Props {
   label: string
   color: "cyan" | "yellow" | "gray" | "violet" | "purple" | "green" | "emerald" | "orange" | "red" | "blue"
-  icon?: string
+  icon?: string | Component
   capitalize?: boolean
 }
 
@@ -40,7 +40,8 @@ const colors = {
 
 <template>
   <span :class="[baseClasses, colors[props.color] || colors.cyan]">
-    <i v-if="props.icon" :class="props.icon"></i>
+    <i :class="props?.icon" v-if="typeof props.icon === 'string' && props.icon"></i>
+    <component :is="props.icon" class="h-4 w-4" v-else></component>
     <span>{{ formattedLabel }}</span>
   </span>
 </template>
