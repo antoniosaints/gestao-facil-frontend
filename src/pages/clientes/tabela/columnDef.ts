@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { ClientesFornecedores } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Ban, Building, Check, UserSearch } from 'lucide-vue-next'
+import { ArrowUpDown, Ban, Building, CircleCheck, UserSearch } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from '@/pages/clientes/tabela/Actions.vue'
 
@@ -33,7 +33,7 @@ export const columnsClientes: ColumnDef<ClientesFornecedores>[] = [
         () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) => {
-      const tipo = row.original.status == 'ATIVO' ? Check : Ban
+      const tipo = row.original.status == 'ATIVO' ? CircleCheck : Ban
       const color = row.original.status == 'ATIVO' ? 'green' : 'red'
       return render(BadgeCell, {
         label: row.getValue('status') as string,

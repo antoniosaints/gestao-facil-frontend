@@ -5,8 +5,10 @@ import ModalVendas from './formulario/ModalVendas.vue';
 import { useVendasStore } from '@/stores/vendas/useVenda';
 import ModalProporValor from './formulario/ModalProporValor.vue';
 import ModalFaturar from './formulario/ModalFaturar.vue';
+import { useUiStore } from '@/stores/ui/uiStore';
 
 const store = useVendasStore();
+const storeUi = useUiStore();
 </script>
 
 <template>
@@ -32,10 +34,10 @@ const store = useVendasStore();
                 </RouterLink>
             </div>
         </div>
-        <div class="overflow-x-auto hidden md:block rounded-lg">
+        <div v-if="!storeUi.isMobile" class="overflow-x-auto hidden md:block rounded-lg">
             <TabelaVendas />
         </div>
-        <div class="overflow-x-auto block md:hidden rounded-lg">
+        <div v-else class="overflow-x-auto block md:hidden rounded-lg">
             <MobileVendas />
         </div>
         <ModalVendas />

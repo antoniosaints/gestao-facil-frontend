@@ -52,7 +52,7 @@ const isDesktop = useMediaQuery("(min-width: 768px)")
                     <DialogTitle>{{ title }}</DialogTitle>
                     <DialogDescription v-if="description">{{ description }}</DialogDescription>
                 </DialogHeader>
-                <div class="grid gap-4 pt-4 overflow-y-auto px-2">
+                <div class="grid gap-4 py-4 overflow-y-auto px-2">
                     <slot />
                 </div>
             </DialogContent>

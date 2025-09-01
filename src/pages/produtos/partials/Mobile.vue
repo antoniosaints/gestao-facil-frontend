@@ -5,14 +5,14 @@
             <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark"></div>
         </div>
         <div v-else>
-            <div v-if="vendas.length === 0"
+            <div v-if="produtos.length === 0"
                 class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-12rem)]">
                 <div class="text-center">
                     <i class="fa-solid fa-box-open text-4xl text-gray-500 dark:text-gray-300 mb-4"></i>
                     <p class="text-gray-500 dark:text-gray-300">Nenhum ítem encontrado.</p>
                 </div>
             </div>
-            <div v-for="venda in vendas" :key="venda.id"
+            <div v-for="venda in produtos" :key="venda.id"
                 class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
                     <div class="text-sm font-semibold dark:text-white">{{ venda.Uid }}</div>
@@ -137,7 +137,7 @@ import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 
-const vendas = ref<any[]>([]);
+const produtos = ref<any[]>([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const loading = ref(false);
@@ -150,7 +150,7 @@ const emit = defineEmits(["openModalProduto"]);
 function renderListaVendas(page: number = 1) {
     loading.value = true;
     const token = localStorage.getItem("gestao_facil:token");
-    http.get(`/vendas/mobile/data`, {
+    http.get(`/produtos/mobile/data`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
             search: searchQuery.value,
@@ -158,14 +158,14 @@ function renderListaVendas(page: number = 1) {
             page
         }
     }).then(response => {
-        vendas.value = response.data.data;
+        produtos.value = response.data.data;
         currentPage.value = response.data.pagination.page;
         totalPages.value = response.data.pagination.totalPages;
         loading.value = false;
         showModalBuscarVendas.value = false;
     }).catch(err => {
         console.error("mobile_vendas:", err);
-        vendas.value = [];
+        produtos.value = [];
         loading.value = false;
     });
 }
