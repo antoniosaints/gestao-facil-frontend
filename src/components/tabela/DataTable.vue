@@ -9,7 +9,7 @@
             </div>
             <div class="ml-auto flex items-center space-x-2">
                 <Select v-model="pageSize">
-                    <SelectTrigger>
+                    <SelectTrigger class="border border-border">
                         <SelectValue placeholder="Registros por página" />
                     </SelectTrigger>
                     <SelectContent>
@@ -26,7 +26,7 @@
                 </Select>
                 <DropdownMenu>
                     <DropdownMenuTrigger as-child>
-                        <Button variant="outline" class="ml-auto bg-card">
+                        <Button variant="outline" class="ml-auto bg-card border border-border">
                             Mostrar
                             <ChevronDown class="ml-2 h-4 w-4" />
                         </Button>
@@ -54,8 +54,8 @@
                                 ? 'sticky right-0 bg-gray-100 dark:bg-gray-800 z-10'
                                 : ''
                         ]">
-                            <FlexRender class="text-gray-900 dark:text-gray-100" v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
-                                :props="header.getContext()" />
+                            <FlexRender class="text-gray-900 dark:text-gray-100" v-if="!header.isPlaceholder"
+                                :render="header.column.columnDef.header" :props="header.getContext()" />
                         </TableHead>
                     </TableRow>
                 </TableHeader>

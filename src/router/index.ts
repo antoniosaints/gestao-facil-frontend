@@ -109,6 +109,21 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/clientes',
+    name: 'clientes',
+    children: [
+      {
+        path: '',
+        name: 'clientes-tabela',
+        component: () => import('@/pages/clientes/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+    ],
+  },
+  {
     path: '/configuracoes',
     name: 'configuracoes',
     children: [
@@ -129,7 +144,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/auth/LoginPage.vue'),
     meta: {
       isPublic: true,
-    }
+    },
   },
   {
     path: '/:pathMatch(.*)*',
@@ -158,9 +173,9 @@ router.beforeEach((to, from) => {
   }
 
   if (to.meta?.permissao) {
-    const level = Number(to.meta?.permissao);
+    const level = Number(to.meta?.permissao)
 
-    if (level < 5) {
+    if (level > 6) {
       toast.info('Você não tem permissão para acessar essa rota!')
       return { name: from.name }
     }
