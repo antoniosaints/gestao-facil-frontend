@@ -1,6 +1,3 @@
-// interfaces.ts
-
-// Enums
 export type Status = 'ATIVO' | 'INATIVO' | 'BLOQUEADO'
 
 export enum StatusFatura {

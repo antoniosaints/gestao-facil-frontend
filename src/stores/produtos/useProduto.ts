@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { Status, type Produto } from '@/types/schemas'
+import { type Produto } from '@/types/schemas'
 import { useToast } from 'vue-toastification'
 import { ProdutoRepository } from '@/repositories/produto-repository'
 
@@ -21,7 +21,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     precoCompra: '',
     saidas: true,
     unidade: '',
-    status: Status.ATIVO,
+    status: 'ATIVO',
   })
 
   const reset = () => {
@@ -37,7 +37,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
       precoCompra: '',
       saidas: true,
       unidade: 'un',
-      status: Status.ATIVO,
+      status: 'ATIVO',
     }
   }
 

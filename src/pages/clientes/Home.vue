@@ -3,7 +3,9 @@ import Tabela from './tabela/Tabela.vue';
 import Mobile from './tabela/Mobile.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
 import ClientesModal from './modais/ClientesModal.vue';
+import { useUiStore } from '@/stores/ui/uiStore';
 const store = useClientesStore();
+const uiStore = useUiStore()
 </script>
 
 <template>
@@ -25,10 +27,10 @@ const store = useClientesStore();
                 </button>
             </div>
         </div>
-        <div class="overflow-x-auto hidden md:block rounded-lg">
+        <div v-if="!uiStore.isMobile" class="overflow-x-auto hidden md:block rounded-lg">
             <Tabela />
         </div>
-        <div class="overflow-x-auto block md:hidden rounded-lg">
+        <div v-else class="overflow-x-auto block md:hidden rounded-lg">
             <Mobile @openModalProduto="store.openSave" />
         </div>
         <ClientesModal />
