@@ -246,7 +246,7 @@ async function deletarProduto(id: number) {
         </Card>
 
         <!-- Vendas -->
-        <Card class="rounded-md">
+        <Card class="rounded-md hidden">
             <CardHeader>
                 <CardTitle class="flex items-center gap-2">
                     <Tag class="w-5 h-5" /> Vendas
