@@ -267,7 +267,7 @@ async function loginUsuario() {
 
                                     <!-- Login Button -->
                                     <button type="submit"
-                                        class="w-full bg-gradient-to-r from-primary/80 to-primary hover:from-primary/90 hover:to-primary/80 text-white py-3 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                                        class="w-full bg-gradient-to-r from-primary/80 to-primary hover:from-primary/90 hover:to-primary/80 text-white py-3 rounded-lg font-semibold text-lg transition-all duration-200 transform shadow-lg hover:shadow-xl">
                                         <i class="fas fa-sign-in-alt mr-2"></i>
                                         Entrar
                                     </button>
