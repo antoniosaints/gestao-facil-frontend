@@ -37,7 +37,7 @@
                             route.path === child.link ? 'bg-gray-200 dark:bg-gray-800' : ''
                         ]">
                         <i v-if="typeof child.icone === 'string'"
-                            :class="[child.icone, 'mr-1', child.color ? colorClasses[child.color] : 'text-gray-500']"></i>
+                            :class="[child.icone, 'mr-2', child.color ? colorClasses[child.color] : 'text-gray-500']"></i>
                         <component v-else :is="child.icone"
                             :class="['mr-2 w-4 h-4', child.color ? colorClasses[child.color] : 'text-gray-500']">
                         </component>
@@ -54,7 +54,7 @@
                 <i v-if="typeof item.icone === 'string'"
                     :class="[item.icone, 'px-2', item.color ? colorClasses[item.color] : 'text-gray-500']"></i>
                 <component v-else :is="item.icone"
-                    :class="['mx-2 w-4 h-4', item.color ? colorClasses[item.color] : 'text-gray-500']"></component>
+                    :class="['ml-2 mr-3 w-4 h-4', item.color ? colorClasses[item.color] : 'text-gray-500']"></component>
                 {{ item.nome }}
             </router-link>
         </div>

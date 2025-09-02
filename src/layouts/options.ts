@@ -6,6 +6,7 @@ import {
   Cog,
   FileCheck2,
   Lock,
+  ScrollText,
   Sparkles,
   Tags,
   User,
@@ -91,10 +92,9 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     nome: 'Serviços',
     icone: Wrench,
     color: 'yellow',
-    link: '/servicos',
     children: [
-      // { nome: "Painel", link: "/financeiro/painel", icone: "fa-solid fa-chart-pie" },
-      // { nome: "Lançamentos", link: "/financeiro/lancamentos", icone: "fa-solid fa-coins" },
+      { nome: 'Ordens', link: '/servicos/ordens', color: 'yellow', icone: ScrollText },
+      { nome: 'Serviços', link: '/serviços', color: 'yellow', icone: Wrench },
     ],
   },
   {
