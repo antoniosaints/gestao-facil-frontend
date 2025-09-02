@@ -1,19 +1,25 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { Status, TipoCliente, type ClientesFornecedores } from '@/types/schemas'
+import { type ClientesFornecedores } from '@/types/schemas'
+import { ClienteRepository } from '@/repositories/cliente-repository'
 
 export const useClientesStore = defineStore('clientesStore', () => {
   const openModal = ref(false)
   const idMutation = ref<number | null>(null)
 
   const form = ref<ClientesFornecedores>({
-    id: undefined,
     nome: '',
+    status: 'ATIVO',
+    tipo: 'CLIENTE',
+    cep: '',
+    cidade: '',
     documento: '',
-    tipo: TipoCliente.CLIENTE,
-    telefone: '',
     email: '',
-    status: Status.ATIVO,
+    endereco: '',
+    estado: '',
+    observacaos: '',
+    telefone: '',
+    whastapp: '',
   })
 
   const reset = () => {
@@ -21,15 +27,29 @@ export const useClientesStore = defineStore('clientesStore', () => {
       id: undefined,
       nome: '',
       documento: '',
-      tipo: TipoCliente.CLIENTE,
+      tipo: 'CLIENTE',
       telefone: '',
       email: '',
-      status: Status.ATIVO,
+      status: 'ATIVO',
+      cep: '',
+      cidade: '',
+      endereco: '',
+      estado: '',
+      observacaos: '',
+      whastapp: '',
     }
   }
 
   const openSave = () => {
     if (form.value.id) reset()
+    openModal.value = true
+  }
+  const openUpdate = async (id: number) => {
+    const cliente = await ClienteRepository.get(id)
+    console.log(cliente)
+    form.value = {
+      ...cliente.data,
+    }
     openModal.value = true
   }
 
@@ -45,6 +65,7 @@ export const useClientesStore = defineStore('clientesStore', () => {
     openModal,
     idMutation,
     openSave,
+    openUpdate,
     updateTable,
     filters,
     reset,

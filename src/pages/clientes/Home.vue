@@ -2,6 +2,7 @@
 import Tabela from './tabela/Tabela.vue';
 import Mobile from './tabela/Mobile.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
+import ClientesModal from './modais/ClientesModal.vue';
 const store = useClientesStore();
 </script>
 
@@ -30,5 +31,6 @@ const store = useClientesStore();
         <div class="overflow-x-auto block md:hidden rounded-lg">
             <Mobile @openModalProduto="store.openSave" />
         </div>
+        <ClientesModal />
     </div>
 </template>

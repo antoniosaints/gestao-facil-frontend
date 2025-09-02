@@ -1,11 +1,7 @@
 // interfaces.ts
 
 // Enums
-export enum Status {
-  ATIVO = 'ATIVO',
-  INATIVO = 'INATIVO',
-  BLOQUEADO = 'BLOQUEADO',
-}
+export type Status = 'ATIVO' | 'INATIVO' | 'BLOQUEADO'
 
 export enum StatusFatura {
   PENDENTE = 'PENDENTE',
@@ -28,10 +24,7 @@ export enum PermissaoUsuario {
   usuario = 'usuario',
 }
 
-export enum TipoCliente {
-  FORNECEDOR = 'FORNECEDOR',
-  CLIENTE = 'CLIENTE',
-}
+export type TipoCliente = 'FORNECEDOR' | 'CLIENTE'
 
 export enum TipoMovimentacao {
   ENTRADA = 'ENTRADA',

@@ -62,7 +62,7 @@
                         </div>
 
                         <span
-                            class="flex items-center gap-1 rounded-full bg-blue-100 py-0.5 pl-2 pr-2.5 text-sm font-medium text-blue-600 dark:bg-blue-500/15 dark:text-blue-500">
+                            class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-blue-600 dark:text-blue-500">
                             <i class="fa-solid fa-boxes-packing"></i>
                             Total
                         </span>
@@ -89,7 +89,7 @@
                         </div>
 
                         <span id="produtos_em_baixa_dashboard_alerta"
-                            class="flex items-center gap-1 rounded-full bg-red-100 py-0.5 pl-2 pr-2.5 text-sm font-medium text-red-600 dark:bg-red-500/15 dark:text-red-500">
+                            class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-red-600 dark:text-red-500">
                             <i class="fa-solid fa-triangle-exclamation"></i>
                             Atenção!
                         </span>
@@ -117,7 +117,7 @@
                         </div>
 
                         <span id="porcentagem_vendas_dashboard_alerta"
-                            class="flex items-center gap-1 rounded-full bg-green-50 py-0.5 pl-2 pr-2.5 text-sm font-medium text-green-600 dark:bg-green-500/15 dark:text-green-500">
+                            class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-green-600 dark:text-green-500">
                             <i class="fa-solid fa-dollar-sign"></i>
                             <span id="porcentagem_vendas_dashboard">0%</span>
                         </span>

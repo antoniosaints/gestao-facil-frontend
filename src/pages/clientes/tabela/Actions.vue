@@ -6,8 +6,8 @@ import type { ClientesFornecedores } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ref } from 'vue';
-import { ProdutoRepository } from '@/repositories/produto-repository';
 import { useClientesStore } from '@/stores/clientes/useClientes';
+import { ClienteRepository } from '@/repositories/cliente-repository';
 
 const store = useClientesStore()
 const openDelete = ref(false)
@@ -19,22 +19,6 @@ const { data } = defineProps<{
 
 const toast = useToast()
 
-function copiar(data: ClientesFornecedores) {
-    const produtoString = `ID: ${data?.Uid}`;
-    navigator.clipboard.writeText(produtoString);
-    toast.success('Copiado para a área de transferência')
-}
-
-async function gerarRelatorio(id: number, ordem: "asc" | "desc") {
-    try {
-        await ProdutoRepository.gerarRelatorio(id, ordem)
-        toast.success('Relatorio gerado com sucesso')
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao gerar o relatorio')
-    }
-}
-
 function openDeleteModal(number: number) {
     id.value = number
     openDelete.value = true
@@ -43,13 +27,13 @@ function openDeleteModal(number: number) {
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     try {
-        await ProdutoRepository.remove(id)
+        await ClienteRepository.remove(id)
         store.updateTable()
-        toast.success('Produto deletado com sucesso')
+        toast.success('Cliente deletado com sucesso')
         openDelete.value = false
     } catch (error) {
         console.log(error)
-        toast.error('Erro ao deletar o produto')
+        toast.error('Erro ao deletar o cliente')
         openDelete.value = false
     }
 }
@@ -82,17 +66,9 @@ async function deletar(id: number) {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+            <DropdownMenuItem @click="store.openUpdate(data.id!)">
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-                <i class="fa-solid fa-dolly text-success"></i>
-                Reposição
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="gerarRelatorio(data.id!, 'asc')">
-                <i class="fa-regular fa-file-pdf mr-1"></i>
-                Relatório
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem class="text-danger" @click="openDeleteModal(data.id!)">
