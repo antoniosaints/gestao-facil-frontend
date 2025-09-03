@@ -4,7 +4,7 @@
         <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-12rem)]">
             <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark"></div>
         </div>
-        <div v-else>
+        <div v-else class="flex flex-col gap-2">
             <div v-if="vendas.length === 0"
                 class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-12rem)]">
                 <div class="text-center">
@@ -28,21 +28,18 @@
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ venda.observacoes || '-' }}</div>
                 <div class="mt-2 flex justify-between gap-2">
-                    <div>
-                        <button @click="visualizarVenda(venda.id)"
-                            class="bg-secondary text-white px-3 py-1 rounded-md text-sm">
+                    <div class="flex gap-1">
+                        <button @click="visualizarVenda(venda.id)" class="bg-secondary px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <button @click="gerarCupomPorVendaId(venda.id)"
-                            class="bg-primary text-white px-3 py-1 rounded-md text-sm">
+                        <button @click="gerarCupomPorVendaId(venda.id)" class="bg-primary px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-file-pdf"></i>
                         </button>
                         <button v-if="!venda.faturado" @click="efetivarVenda(venda.id)"
-                            class="bg-green-500 text-white px-3 py-1 rounded-md text-sm">
+                            class="bg-success px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-circle-check"></i>
                         </button>
-                        <button v-else @click="estornarVenda(venda.id)"
-                            class="bg-yellow-500 text-white px-3 py-1 rounded-md text-sm">
+                        <button v-else @click="estornarVenda(venda.id)" class="bg-warning px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-undo"></i>
                         </button>
                     </div>

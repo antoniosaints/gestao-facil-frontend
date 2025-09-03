@@ -8,8 +8,15 @@ import {
 } from '@/types/schemas'
 import { VendaRepository } from '@/repositories/venda-repository'
 
+interface filtroVendas {
+  periodo: { inicio: string | null; fim: string | null }
+  status: string
+  update: boolean
+}
+
 export const useVendasStore = defineStore('vendasStore', () => {
   const openModal = ref(false)
+  const openModalDelete = ref(false)
   const openModalPropor = ref(false)
   const openModalFaturar = ref(false)
   const idMutation = ref<number | null>(null)
@@ -52,7 +59,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
     openModal.value = true
   }
 
-  const filters = ref<Partial<Vendas> & { update: boolean }>({
+  const filters = ref<Partial<filtroVendas>>({
     update: false,
   })
 
@@ -95,6 +102,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
     idMutation,
     openModalPropor,
     openModalFaturar,
+    openModalDelete,
     openSave,
     tipoDesconto,
     openUpdate,

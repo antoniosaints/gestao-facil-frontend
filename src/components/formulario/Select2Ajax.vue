@@ -44,6 +44,12 @@ const search = ref("")
 const loading = ref(false)
 let timeout: ReturnType<typeof setTimeout> | null = null
 
+const clearSelection = () => {
+    selectedId.value = null
+    selectedItem.value = null
+    label.value = ''
+}
+
 // Busca lista pelo texto
 const fetchItems = async () => {
     loading.value = true
@@ -98,12 +104,6 @@ watch(search, (val) => {
 
 // Carrega inicial
 onMounted(fetchItems)
-
-const clearSelection = () => {
-    selectedId.value = null
-    selectedItem.value = null
-    label.value = ''
-}
 </script>
 
 <template>

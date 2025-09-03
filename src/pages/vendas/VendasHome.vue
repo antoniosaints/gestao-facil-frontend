@@ -6,9 +6,14 @@ import { useVendasStore } from '@/stores/vendas/useVenda';
 import ModalProporValor from './formulario/ModalProporValor.vue';
 import ModalFaturar from './formulario/ModalFaturar.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
+import ModalFiltro from './formulario/ModalFiltro.vue';
+import { provide, ref } from 'vue';
 
 const store = useVendasStore();
 const storeUi = useUiStore();
+const openFilter = ref(false);
+
+provide('openModalFiltroVendas', openFilter);
 </script>
 
 <template>
@@ -21,7 +26,7 @@ const storeUi = useUiStore();
                 <p class="text-sm text-muted-foreground">Listagem de vendas cadastrados</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <button onclick="openModalFiltroVendas()"
+                <button @click="openFilter = true"
                     class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
                     <i class="fa-solid fa-filter"></i>
                 </button>
@@ -34,14 +39,13 @@ const storeUi = useUiStore();
                 </RouterLink>
             </div>
         </div>
-        <div v-if="!storeUi.isMobile" class="overflow-x-auto hidden md:block rounded-lg">
-            <TabelaVendas />
-        </div>
-        <div v-else class="overflow-x-auto block md:hidden rounded-lg">
-            <MobileVendas />
+        <div class="overflow-x-auto rounded-lg">
+            <TabelaVendas v-if="!storeUi.isMobile" />
+            <MobileVendas v-else />
         </div>
         <ModalVendas />
         <ModalProporValor />
         <ModalFaturar />
+        <ModalFiltro />
     </div>
 </template>

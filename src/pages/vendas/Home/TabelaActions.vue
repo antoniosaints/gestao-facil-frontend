@@ -3,80 +3,19 @@ import { Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { Vendas } from '@/types/schemas';
-import { useToast } from 'vue-toastification';
 import type { Table } from '@tanstack/vue-table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ref } from 'vue';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useVendasStore } from '@/stores/vendas/useVenda';
-import { VendaRepository } from '@/repositories/venda-repository';
-
-const { data, table } = defineProps<{
+import { deletarVenda, editarVenda, estornarVenda, gerarCupomVenda, openModalDeleteVenda, openModalFaturarVenda } from '../ActionsVendas';
+const { data } = defineProps<{
     data: Vendas,
     table: Table<Vendas>
 }>()
-
-const toast = useToast()
 const store = useVendasStore()
-const openDelete = ref(false)
-const id = ref<number | null>(null)
-
-async function gerarCupom(id: number) {
-    try {
-        VendaRepository.getCupomPDF(id)
-        toast.success('Cupom gerado com sucesso')
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao gerar o cupom')
-    }
-}
-
-async function editarVenda(id: number) {
-    try {
-        await store.openUpdate(id);
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao buscar os dados da venda!')
-    }
-}
-
-async function estornarVenda(id: number) {
-    try {
-        await VendaRepository.estornar(id)
-        toast.success('Venda estornada com sucesso')
-        store.updateTable()
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao estornar a venda')
-    }
-}
-
-function openModalFaturar(id: number) {
-    if (!id) return toast.error('ID nao informado!')
-    store.idMutation = id
-    store.openModalFaturar = true
-}
-
-async function openModalDelete(number: number) {
-    id.value = number
-    openDelete.value = true
-}
-async function deletar(id: number) {
-    if (!id) return toast.error('ID nao informado!')
-    try {
-        await VendaRepository.remove(id)
-        toast.success('Registro deletado com sucesso')
-        openDelete.value = false
-        store.updateTable()
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao deletar o registro')
-        openDelete.value = false
-    }
-}
 </script>
 
 <template>
-    <AlertDialog :open="openDelete">
+    <AlertDialog :open="store.openModalDelete">
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Deseja deletar o registro?</AlertDialogTitle>
@@ -85,8 +24,8 @@ async function deletar(id: number) {
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel @click="openDelete = false">Cancelar</AlertDialogCancel>
-                <AlertDialogAction class="text-white bg-danger hover:bg-danger/40" @click="deletar(id!)">
+                <AlertDialogCancel @click="store.openModalDelete = false">Cancelar</AlertDialogCancel>
+                <AlertDialogAction class="text-white bg-danger hover:bg-danger/40" @click="deletarVenda(data.id!)">
                     Sim, deletar
                 </AlertDialogAction>
             </AlertDialogFooter>
@@ -104,11 +43,11 @@ async function deletar(id: number) {
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
             </DropdownMenuItem>
-            <DropdownMenuItem @click="gerarCupom(data.id!)">
+            <DropdownMenuItem @click="gerarCupomVenda(data.id!)">
                 <i class="fa-regular fa-file-pdf mr-1"></i>
                 Cupom PDF
             </DropdownMenuItem>
-            <DropdownMenuItem @click="openModalFaturar(data.id!)" v-if="data.status !== 'FATURADO'">
+            <DropdownMenuItem @click="openModalFaturarVenda(data.id!)" v-if="data.status !== 'FATURADO'">
                 <i class="fa-regular text-success fa-square-plus mr-1"></i>
                 Faturar
             </DropdownMenuItem>
@@ -117,7 +56,8 @@ async function deletar(id: number) {
                 Estornar
             </DropdownMenuItem>
             <DropdownMenuSeparator v-if="data.status !== 'FATURADO'" />
-            <DropdownMenuItem v-if="data.status !== 'FATURADO'" class="text-danger" @click="openModalDelete(data.id!)">
+            <DropdownMenuItem v-if="data.status !== 'FATURADO'" class="text-danger"
+                @click="openModalDeleteVenda(data.id!)">
                 <i class="fa-regular fa-trash-can mr-1"></i>
                 Excluir
             </DropdownMenuItem>

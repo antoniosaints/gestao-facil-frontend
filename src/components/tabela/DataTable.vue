@@ -137,8 +137,8 @@ const {
     fetchData
 } = useServerTable(api, columns, filters ?? {});
 
-watch(() => filters, () => {
+watch(() => filters!.update, () => {
     fetchData()
-}, { deep: true })
+})
 
 </script>

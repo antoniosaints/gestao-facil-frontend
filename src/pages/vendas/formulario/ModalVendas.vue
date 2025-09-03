@@ -9,12 +9,12 @@ import { ProdutoRepository } from "@/repositories/produto-repository";
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import type { FormularioVenda } from "@/types/schemas";
 import http from "@/utils/axios";
-import { colorTheme } from "@/utils/theme";
-import { ptBR } from "date-fns/locale";
 import { computed, ref, watch } from "vue";
 import { POSITION, useToast } from "vue-toastification";
 import { vMaska } from "maska/vue"
 import { moneyMaskOptions } from "@/lib/imaska";
+import { Trash } from "lucide-vue-next";
+import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 
 const title = ref('Cadastro de venda')
 const description = ref('Preencha os campos abaixo')
@@ -215,9 +215,7 @@ clearCartVendas();
 
                 <div class="md:col-span-3">
                     <label class="block text-sm mb-1">Data da Venda <span class="text-red-500">*</span></label>
-                    <DatePicker placeholder="Data da venda" required v-model="store.form.data"
-                        :dark="(colorTheme === 'dark')" cancelText="Cancelar" selectText="Selecionar"
-                        :format-locale="ptBR" :format="'dd/MM/yyyy'" :enable-time-picker="false" auto-apply />
+                    <Calendarpicker v-model="store.form.data" :range="false" />
                 </div>
 
                 <div class="md:col-span-3">
@@ -349,7 +347,7 @@ clearCartVendas();
                                 class="fa-solid fa-cart-shopping"></i> Limpar</button>
                     </div>
                 </div>
-                <div class="relative overflow-x-auto sm:rounded-lg">
+                <div class="relative overflow-x-auto rounded-sm">
                     <div class="grid grid-cols-12 gap-4">
                         <!-- Lista do carrinho -->
                         <div id="lista-carrinho-vendas" class="col-span-12 lg:col-span-8 space-y-2">
@@ -363,25 +361,27 @@ clearCartVendas();
                                     <span class="font-medium text-gray-800 dark:text-gray-200">{{ item.produto }}</span>
                                     <span class="text-gray-500 dark:text-gray-400">Qtd: {{ item.quantidade }}</span>
                                 </div>
-                                <div class="flex flex-col text-right text-sm">
-                                    <span class="font-medium text-gray-800 dark:text-gray-200">R$ {{
-                                        String(item.preco).replace('.', ',')
+                                <div class="flex items-center">
+                                    <div class="flex flex-col text-right text-sm">
+                                        <span class="text-gray-500 text-md dark:text-gray-200">R$ {{
+                                            String(item.subtotal.toFixed(2)).replace('.', ',')
                                         }}</span>
-                                    <span class="text-gray-500 dark:text-gray-400">Subtotal: R$ {{
-                                        String(item.subtotal.toFixed(2)).replace('.', ',')
-                                        }}</span>
+                                        <span class="font-medium text-xs text-gray-800 dark:text-gray-400">R$ {{
+                                            String(item.preco.toFixed(2)).replace('.', ',') }} x {{ item.quantidade
+                                            }}</span>
+                                    </div>
+                                    <button type="button" @click="removeFromCartVendas(item.id)"
+                                        class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 p-2 rounded-sm">
+                                        <Trash class="w-4 h-4" />
+                                    </button>
                                 </div>
-                                <button type="button" @click="removeFromCartVendas(item.id)"
-                                    class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 py-1 px-2 rounded-sm">
-                                    Remover
-                                </button>
                             </div>
                         </div>
 
                         <!-- Total do carrinho -->
                         <div id="resumo-carrinho-vendas"
                             class="col-span-12 lg:col-span-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-4 shadow-sm">
-                            <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Resumo</h3>
+                            <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Resumo da venda</h3>
                             <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                                 <span>Desconto:</span>
                                 <span id="desconto-total-carrinho">R$ {{
@@ -394,11 +394,11 @@ clearCartVendas();
                                     String(resumoCarrinho.subtotal.toFixed(2)).replace('.',
                                         ',') }}</span>
                             </div>
-                            <div class="flex justify-between text-bold text-md text-gray-700 dark:text-gray-300">
+                            <div class="flex justify-between font-semibold text-md text-gray-700 dark:text-gray-300">
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </div>
