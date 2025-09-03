@@ -8,6 +8,7 @@ import ModalFaturar from './formulario/ModalFaturar.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import ModalFiltro from './formulario/ModalFiltro.vue';
 import { provide, ref } from 'vue';
+import ClientesModal from '../clientes/modais/ClientesModal.vue';
 
 const store = useVendasStore();
 const storeUi = useUiStore();
@@ -47,5 +48,6 @@ provide('openModalFiltroVendas', openFilter);
         <ModalProporValor />
         <ModalFaturar />
         <ModalFiltro />
+        <ClientesModal />
     </div>
 </template>

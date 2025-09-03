@@ -48,15 +48,15 @@ const store = useVendasStore()
                 Cupom PDF
             </DropdownMenuItem>
             <DropdownMenuItem @click="openModalFaturarVenda(data.id!)" v-if="data.status !== 'FATURADO'">
-                <i class="fa-regular text-success fa-square-plus mr-1"></i>
+                <i class="fa-solid fa-dollar-sign mr-1"></i>
                 Faturar
             </DropdownMenuItem>
             <DropdownMenuItem @click="estornarVenda(data.id!)" v-if="data.status === 'FATURADO'">
-                <i class="fa-regular text-warning fa-square-minus mr-1"></i>
+                <i class="fa-regular fa-square-minus mr-1"></i>
                 Estornar
             </DropdownMenuItem>
             <DropdownMenuSeparator v-if="data.status !== 'FATURADO'" />
-            <DropdownMenuItem v-if="data.status !== 'FATURADO'" class="text-danger"
+            <DropdownMenuItem v-if="data.status !== 'FATURADO'" class="text-red-500"
                 @click="openModalDeleteVenda(data.id!)">
                 <i class="fa-regular fa-trash-can mr-1"></i>
                 Excluir

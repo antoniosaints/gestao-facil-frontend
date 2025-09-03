@@ -100,7 +100,7 @@
   --dp-text-color: #000 !important;
   --dp-border-radius: 0.5rem !important;
 }
-.dp__theme_dark {
+.dark .dp__theme_light {
   --dp-background-color: #111827 !important;
   --dp-text-color: #fff !important;
   --dp-hover-color: #484848 !important;

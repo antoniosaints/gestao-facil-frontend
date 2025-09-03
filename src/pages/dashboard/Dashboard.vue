@@ -141,7 +141,7 @@
                         </button>
                     </div>
                     <div>
-                        <BarChart class="max-h-64" :data="dataVendas" :options="options" />
+                        <BarChart class="max-h-64" :data="dataVendas" :options="optionsChartBar" />
                     </div>
                 </div>
 
@@ -159,7 +159,7 @@
                         </button>
                     </div>
                     <div>
-                        <LineChart class="max-h-64" :data="dataSaldo" :options="optionsSaldo" />
+                        <LineChart class="max-h-64" :data="dataSaldo" :options="optionsChartLine" />
                     </div>
                 </div>
 
@@ -217,60 +217,23 @@ import BarChart from '@/components/graficos/BarChart.vue';
 import LineChart from '@/components/graficos/LineChart.vue';
 import { useDashboardStore } from '@/stores/dashboard/useDashboardStore';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref } from 'vue';
 import { VendaRepository } from '@/repositories/venda-repository';
 import { goTo } from '@/hooks/links';
-import { colorTheme } from '@/utils/theme';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
+import { optionsChartBar, optionsChartLine } from '@/composables/useChartOptions';
 
 const store = useDashboardStore();
 const storeLancamento = useLancamentosStore();
 const filtroPeriodo = ref([new Date(), new Date()]);
-// Cor reativa baseada no tema
-const currentColor = computed(() => (colorTheme.value === 'dark' ? '#ffffff' : '#000000'));
-
-// Options dos gráficos com cores reativas
-const options = computed(() => ({
-    responsive: true,
-    interaction: { mode: 'index', intersect: false },
-    plugins: { legend: { display: false } },
-    scales: {
-        x: { ticks: { color: currentColor.value } },
-        y1: {
-            ticks: { color: currentColor.value },
-            type: 'linear',
-            position: 'left',
-            title: { display: true, text: 'Valor Total (R$)', color: currentColor.value },
-            stacked: false,
-        },
-        y2: {
-            ticks: { color: currentColor.value },
-            type: 'linear',
-            position: 'right',
-            title: { display: true, text: 'Quantidade de Vendas', color: currentColor.value },
-            grid: { drawOnChartArea: false },
-            stacked: false,
-        },
-    },
-    elements: { bar: { borderRadius: 6 } }
-}));
-
-const optionsSaldo = computed(() => ({
-    interaction: { mode: 'index', intersect: false },
-    plugins: { title: { display: false }, legend: { display: false } },
-    scales: {
-        y: { ticks: { color: currentColor.value } },
-        x: { ticks: { color: currentColor.value } },
-    }
-}));
 
 const dataVendas: any = ref({ labels: [], datasets: [] });
 const dataSaldo: any = ref({ labels: [], datasets: [] });
 
 async function getResumoVendas() {
     try {
-        const data = await VendaRepository.getResumoMensal();
-        dataVendas.value = { labels: [...data.data.labels], datasets: [...data.data.datasets] };
+        const { data } = await VendaRepository.getResumoMensal();
+        dataVendas.value = { labels: [...data.labels], datasets: [...data.datasets] };
     } catch (error) {
         console.log(error);
     }

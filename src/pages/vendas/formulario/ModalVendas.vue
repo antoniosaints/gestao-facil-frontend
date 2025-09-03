@@ -13,13 +13,15 @@ import { computed, ref, watch } from "vue";
 import { POSITION, useToast } from "vue-toastification";
 import { vMaska } from "maska/vue"
 import { moneyMaskOptions } from "@/lib/imaska";
-import { Trash } from "lucide-vue-next";
+import { HandCoins, Trash } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
+import { useClientesStore } from "@/stores/clientes/useClientes";
 
 const title = ref('Cadastro de venda')
 const description = ref('Preencha os campos abaixo')
 const toast = useToast()
 const store = useVendasStore()
+const storeCliente = useClientesStore()
 
 const labelProdutoInsert = ref<string>('')
 const addItemForm = ref<{ id: number | null, preco: number | string | null, quantidade: number }>({
@@ -208,7 +210,7 @@ clearCartVendas();
                     <div class="flex items-center justify-center gap-2">
                         <Select2Ajax v-model="store.form.clienteId" class="w-full" url="/clientes/select2"
                             :allow-clear="true" />
-                        <button type="button" onclick="openModalClientes()"
+                        <button type="button" @click="storeCliente.openModal = true"
                             class="bg-primary px-4 py-1.5 text-white rounded-md border border-border dark:border-border-dark flex justify-center items-center">+</button>
                     </div>
                 </div>
@@ -339,12 +341,15 @@ clearCartVendas();
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-medium mb-2">Itens da Venda</h3>
                     <div class="flex gap-2">
-                        <button @click="store.openModalPropor = true" type="button"
-                            class="text-sm text-white py-1 px-2 mb-2 rounded bg-emerald-500 dark:bg-emerald-800 dark:text-gray-200"><i
-                                class="fa-solid fa-money-bill"></i> Propor</button>
-                        <button @click="clearCart" type="button"
-                            class="text-sm text-white py-1 px-2 mb-2 rounded bg-red-500 dark:bg-red-800 dark:text-gray-200"><i
-                                class="fa-solid fa-cart-shopping"></i> Limpar</button>
+                        <button :disabled="store.carrinho.length === 0" @click="store.openModalPropor = true"
+                            type="button"
+                            class="text-sm text-white py-1 px-2 mb-2 rounded bg-emerald-500 dark:bg-emerald-800 dark:text-gray-200 disabled:opacity-50 flex items-center">
+                            <HandCoins class="mr-1 w-4 h-4" /> Propor
+                        </button>
+                        <button :disabled="store.carrinho.length === 0" @click="clearCart" type="button"
+                            class="text-sm text-white py-1 px-2 mb-2 rounded bg-red-500 dark:bg-red-800 disabled:opacity-50 dark:text-gray-200 flex items-center">
+                            <Trash class="mr-1 w-4 h-4" /> Limpar
+                        </button>
                     </div>
                 </div>
                 <div class="relative overflow-x-auto rounded-sm">
@@ -363,10 +368,10 @@ clearCartVendas();
                                 </div>
                                 <div class="flex items-center">
                                     <div class="flex flex-col text-right text-sm">
-                                        <span class="text-gray-500 text-md dark:text-gray-200">R$ {{
+                                        <span class="text-gray-800 text-md dark:text-gray-200">R$ {{
                                             String(item.subtotal.toFixed(2)).replace('.', ',')
-                                        }}</span>
-                                        <span class="font-medium text-xs text-gray-800 dark:text-gray-400">R$ {{
+                                            }}</span>
+                                        <span class="font-medium text-xs text-gray-600 dark:text-gray-400">R$ {{
                                             String(item.preco.toFixed(2)).replace('.', ',') }} x {{ item.quantidade
                                             }}</span>
                                     </div>
@@ -398,12 +403,10 @@ clearCartVendas();
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                     </div>
-
-
                 </div>
             </div>
             <input type="hidden" name="id" id="input_id_venda_formulario" value="{{venda.id}}">
@@ -411,7 +414,7 @@ clearCartVendas();
                 <Button type="button" variant="secondary" @click="store.openModal = false">
                     Fechar
                 </Button>
-                <Button class="text-white" type="submit">
+                <Button :disabled="store.carrinho.length === 0" class="text-white" type="submit">
                     Registrar
                 </Button>
             </div>

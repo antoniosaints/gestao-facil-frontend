@@ -108,7 +108,7 @@ onMounted(fetchItems)
 
 <template>
     <div class="flex items-center w-full max-w-full gap-2">
-        <Select v-model="selectedId" :required="required">
+        <Select v-model="selectedId" :required="required" @update:open="(open) => open && fetchItems()">
             <SelectTrigger class="bg-card dark:bg-card-dark"
                 :class="{ 'w-[calc(100%-2.5rem)]': allowClear && selectedId }">
                 <SelectValue :value="selectedId" :placeholder="'Selecione...'">
@@ -118,7 +118,7 @@ onMounted(fetchItems)
 
             <SelectContent class="w-min">
                 <div class="p-1 border-b">
-                    <Input v-model="search" placeholder="Buscar..." class="w-full" />
+                    <Input v-model="search" placeholder="Buscar..." class="w-full" @keydown.stop />
                 </div>
                 <SelectGroup class="max-h-60 overflow-y-auto">
                     <template v-if="loading">
