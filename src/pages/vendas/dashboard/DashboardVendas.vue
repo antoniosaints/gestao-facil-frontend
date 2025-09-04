@@ -1,29 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Bar, Line, Pie } from "vue-chartjs"
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  BarElement,
-  LineElement,
-  PointElement,
-  ArcElement,
-  CategoryScale,
-  LinearScale,
-  Filler
-} from "chart.js"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
-
-// Registrando plugins Chart.js
-ChartJS.register(
-  Title, Tooltip, Legend,
-  BarElement, LineElement, PointElement,
-  ArcElement, CategoryScale, LinearScale, Filler
-)
+import { optionsChartBarDefault, optionsChartLine, optionsChartPie } from "@/composables/useChartOptions"
+import BarChart from "@/components/graficos/BarChart.vue"
+import LineChart from "@/components/graficos/LineChart.vue"
+import PieChart from "@/components/graficos/PieChart.vue"
 
 // --- Indicadores (KPI) ---
 const indicadores = ref([
@@ -45,27 +27,15 @@ const chartMetodo = {
   labels: ["PIX", "Dinheiro", "Cartão"],
   datasets: [{ label: "Método", data: [35, 20, 45], backgroundColor: ["#60a5fa", "#fbbf24", "#f87171"], borderRadius: 6 }]
 }
+const chartCategoria = {
+  labels: ["Informática", "Eletrônicos", "Acessórios"],
+  datasets: [{ label: "Categorias", data: [35, 20, 45], backgroundColor: ["#a855f7", "#7dd3fc", "#34d399"], borderRadius: 6 }]
+}
 
 const chartPeriodo = {
   labels: ["01", "02", "03", "04", "05", "06", "07"],
   datasets: [{ label: "Vendas", data: [500, 700, 400, 900, 650, 800, 950], borderColor: "#6366f1", backgroundColor: "rgba(99, 102, 241, 0.2)", fill: true, borderRadius: 6, tension: 0.4 }]
 }
-
-// --- Listagens ---
-const ultimasVendas = ref([
-  { id: 1, cliente: "João", valor: 300, status: "FATURADO", data: "20/08/2025" },
-  { id: 2, cliente: "Maria", valor: 150, status: "ORCAMENTO", data: "21/08/2025" },
-  { id: 3, cliente: "Carlos", valor: 700, status: "ANDAMENTO", data: "22/08/2025" }
-])
-
-const pendentesPagamento = ref([
-  { id: 5, cliente: "Carlos", valor: 500, metodo: "Cartão" },
-  { id: 6, cliente: "Fernanda", valor: 250, metodo: "PIX" }
-])
-
-const garantias = ref([
-  { id: 7, produto: "Notebook Dell", cliente: "Lucas", validade: "10/09/2025" }
-])
 
 const filtroPeriodo = ref([new Date(), new Date()])
 
@@ -106,78 +76,39 @@ function onDateSelected(data: Date[]) {
       </div>
     </section>
 
-    <!-- Gráficos -->
-    <section class="bg-card border border-border rounded-xl shadow p-4">
-      <h2 class="text-lg font-bold mb-4">📈 Gráficos de Vendas</h2>
-      <Tabs default-value="status" class="w-full">
-        <TabsList class="rounded-md">
-          <TabsTrigger value="status">Por Status</TabsTrigger>
-          <TabsTrigger value="metodo">Por Método</TabsTrigger>
-          <TabsTrigger value="periodo">Por Período</TabsTrigger>
-        </TabsList>
-        <TabsContent value="status">
-          <Bar class="max-h-[400px] p-4" :data="chartStatus"
-            :options="{ responsive: true, plugins: { legend: { display: false } } }" />
-        </TabsContent>
-        <TabsContent value="metodo">
-          <Pie class="max-h-[400px] p-4" :data="chartMetodo" />
-        </TabsContent>
-        <TabsContent value="periodo">
-          <Line class="max-h-[400px] p-4" :data="chartPeriodo" />
-        </TabsContent>
-      </Tabs>
-    </section>
-
-    <!-- Listagens rápidas -->
-    <section>
-      <h2 class="text-lg font-bold mb-4">📋 Listagens Rápidas</h2>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        <!-- Últimas vendas -->
-        <Card>
-          <CardHeader>
-            <CardTitle>Últimas Vendas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul class="space-y-2 text-sm">
-              <li v-for="v in ultimasVendas" :key="v.id" class="flex justify-between">
-                <span>{{ v.cliente }} ({{ v.status }})</span>
-                <span class="font-bold">R$ {{ v.valor }}</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        <!-- Pendentes -->
-        <Card>
-          <CardHeader>
-            <CardTitle>Pagamentos Pendentes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul class="space-y-2 text-sm">
-              <li v-for="p in pendentesPagamento" :key="p.id" class="flex justify-between">
-                <span>{{ p.cliente }} - {{ p.metodo }}</span>
-                <span class="font-bold">R$ {{ p.valor }}</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        <!-- Garantias -->
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendas com Garantia</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul class="space-y-2 text-sm">
-              <li v-for="g in garantias" :key="g.id" class="flex justify-between">
-                <span>{{ g.produto }} - {{ g.cliente }}</span>
-                <span>Validade: {{ g.validade }}</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Gráfico de Barras -->
+      <div
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
+          Vendas por status
+        </h2>
+        <BarChart class="max-h-64" :data="chartStatus" :options="optionsChartBarDefault" />
       </div>
-    </section>
+
+      <div
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
+          Resumo por período
+        </h2>
+        <LineChart class="max-h-64" :data="chartPeriodo" :options="optionsChartLine" />
+      </div>
+
+      <div
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
+          Plano de contas
+        </h2>
+        <PieChart class="max-h-64" :data="chartMetodo" :options="optionsChartPie" />
+      </div>
+
+      <div
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-pie text-emerald-600"></i>
+          Por categoria
+        </h2>
+        <PieChart class="max-h-64" :data="chartCategoria" :options="optionsChartPie" />
+      </div>
+    </div>
   </div>
 </template>

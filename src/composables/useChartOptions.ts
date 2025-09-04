@@ -27,6 +27,16 @@ export const optionsChartBar = computed(() => ({
   },
   elements: { bar: { borderRadius: 6 } },
 }))
+export const optionsChartBarDefault = computed(() => ({
+  responsive: true,
+  interaction: { mode: 'index', intersect: false },
+  plugins: { legend: { display: false } },
+  scales: {
+    y: { ticks: { color: currentColor.value } },
+    x: { ticks: { color: currentColor.value } },
+  },
+  elements: { bar: { borderRadius: 6 } },
+}))
 
 export const optionsChartLine = computed(() => ({
   interaction: { mode: 'index', intersect: false },
@@ -35,4 +45,16 @@ export const optionsChartLine = computed(() => ({
     y: { ticks: { color: currentColor.value } },
     x: { ticks: { color: currentColor.value } },
   },
+}))
+
+export const optionsChartPie = computed(() => ({
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    title: { display: false },
+    legend: { display: true, labels: { color: currentColor.value } },
+  },
+  scales: {
+    y: { ticks: { color: currentColor.value }, display: false },
+  },
+  elements: { arc: { borderWidth: 0 } },
 }))
