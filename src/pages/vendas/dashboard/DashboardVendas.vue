@@ -1,21 +1,36 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { onMounted, ref, watch } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
 import { optionsChartBarDefault, optionsChartLine, optionsChartPie } from "@/composables/useChartOptions"
 import BarChart from "@/components/graficos/BarChart.vue"
 import LineChart from "@/components/graficos/LineChart.vue"
 import PieChart from "@/components/graficos/PieChart.vue"
+import { useToast } from "vue-toastification"
+import { VendaRepository } from "@/repositories/venda-repository"
+import { endOfMonth, startOfMonth } from "date-fns"
 
-// --- Indicadores (KPI) ---
-const indicadores = ref([
-  { titulo: "Total de Vendas", valor: "120", detalhe: "R$ 35.000", icone: "fa-solid fa-chart-line text-green-600" },
-  { titulo: "Total Faturado", valor: "95", detalhe: "R$ 28.000", icone: "fa-solid fa-money-bills text-blue-600" },
-  { titulo: "Total em Aberto", valor: "15", detalhe: "R$ 5.000", icone: "fa-solid fa-chart-line text-yellow-600" },
-  { titulo: "Cancelado", valor: "10", detalhe: "R$ 2.000", icone: "fa-solid fa-times text-red-600" },
-  { titulo: "Descontos", valor: "-", detalhe: "R$ 1.500", icone: "fa-solid fa-percent text-green-600" },
-  { titulo: "Ticket Médio", valor: "-", detalhe: "R$ 291,67", icone: "fa-solid fa-chart-line text-blue-600" },
-])
+const toast = useToast()
+
+const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
+const indicadores = ref<any[]>([])
+
+const getIndicadores = async (inicio?: string, fim?: string) => {
+  try {
+    const { data }: any = await VendaRepository.resumo(inicio, fim)
+    indicadores.value = [
+      { titulo: "Total de Vendas", valor: data.totalVendas, detalhe: data.totalValorVendas, icone: "fa-solid fa-chart-line text-green-600" },
+      { titulo: "Total Faturado", valor: data.totalFaturado, detalhe: data.totalValorFaturado, icone: "fa-solid fa-money-bills text-blue-600" },
+      { titulo: "Total em Aberto", valor: data.totalAberto, detalhe: data.totalValorAberto, icone: "fa-solid fa-chart-line text-yellow-600" },
+      { titulo: "Cancelado", valor: data.totalCancelado, detalhe: data.totalValorCancelado, icone: "fa-solid fa-times text-red-600" },
+      { titulo: "Descontos", valor: data.totalVendasComDesconto, detalhe: data.totalValorDescontos, icone: "fa-solid fa-percent text-green-600" },
+      { titulo: "Ticket Médio", valor: null, detalhe: data.ticketMedio, icone: "fa-solid fa-chart-line text-blue-600" },
+    ]
+  } catch (error) {
+    console.error(error)
+    toast.error('Erro ao carregar os indicadores')
+  }
+}
 
 // --- Gráficos (exemplos mockados) ---
 const chartStatus = {
@@ -37,11 +52,16 @@ const chartPeriodo = {
   datasets: [{ label: "Vendas", data: [500, 700, 400, 900, 650, 800, 950], borderColor: "#6366f1", backgroundColor: "rgba(99, 102, 241, 0.2)", fill: true, borderRadius: 6, tension: 0.4 }]
 }
 
-const filtroPeriodo = ref([new Date(), new Date()])
+watch(filtroPeriodo, async (data) => {
+  if (data === null) return await getIndicadores()
+  await getIndicadores(data[0].toISOString(), data[1].toISOString())
+  toast.info('Indicadores atualizados')
+})
 
-function onDateSelected(data: Date[]) {
-  // faça o filtro aqui
-}
+
+onMounted(() => {
+  getIndicadores()
+})
 </script>
 
 <template>
@@ -58,7 +78,7 @@ function onDateSelected(data: Date[]) {
           class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
           <i class="fa-solid fa-filter-circle-xmark"></i>
         </button>
-        <Calendarpicker @range-end="onDateSelected" class="w-content" :range="true" v-model="filtroPeriodo" />
+        <Calendarpicker class="w-content" :range="true" v-model="filtroPeriodo" />
       </div>
     </div>
 
@@ -66,11 +86,11 @@ function onDateSelected(data: Date[]) {
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl hover:scale-[1.02] transition">
           <CardHeader>
-            <CardTitle class="text-sm text-muted-foreground"><i :class="kpi.icone"></i> {{ kpi.titulo }}</CardTitle>
+            <CardTitle class="text-sm font-normal"><i :class="kpi.icone"></i> {{ kpi.titulo }}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p class="text-xl font-bold">{{ kpi.valor }}</p>
-            <p class="text-xs text-muted-foreground">{{ kpi.detalhe }}</p>
+            <p class="text-xs text-muted-foreground">{{ kpi.valor != null ? `Qtd ${kpi.valor}` : 'No período' }}</p>
+            <p class="text-lg">R$ {{ kpi.detalhe.replace('.', ',') }}</p>
           </CardContent>
         </Card>
       </div>

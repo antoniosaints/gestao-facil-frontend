@@ -30,6 +30,10 @@ export class VendaRepository {
   static async estornar(id: number) {
     await http.get(`/vendas/estornar/${id}`)
   }
+  static async resumo(inicio?: string, fim?: string) {
+    const query = (inicio && fim) ? `?inicio=${inicio}&fim=${fim}` : ''
+    return await http.get(`/vendas/resumo/dashboard${query}`)
+  }
 
   static async save(data: Omit<Vendas, 'id'>) {
     await http.post(`/vendas`, data)

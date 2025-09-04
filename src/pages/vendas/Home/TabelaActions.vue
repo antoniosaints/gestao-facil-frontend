@@ -25,7 +25,7 @@ const store = useVendasStore()
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel @click="store.openModalDelete = false">Cancelar</AlertDialogCancel>
-                <AlertDialogAction class="text-white bg-danger hover:bg-danger/40" @click="deletarVenda(data.id!)">
+                <AlertDialogAction class="text-white bg-danger hover:bg-danger/40" @click="deletarVenda(store.idMutation!)">
                     Sim, deletar
                 </AlertDialogAction>
             </AlertDialogFooter>
