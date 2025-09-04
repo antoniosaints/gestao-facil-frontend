@@ -42,6 +42,21 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/financeiro',
+    name: 'financeiro',
+    redirect: { name: 'lancamentos-financeiro' },
+    children: [
+      {
+        path: 'lancamentos',
+        name: 'lancamentos-financeiro',
+        component: () => import('@/pages/financeiro/lancamentos/Home.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+    ],
+  },
+  {
     path: '/produtos',
     name: 'produtos',
     children: [
