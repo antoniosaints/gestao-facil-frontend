@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeDollarSign, Check, Edit, HandCoins, Trash2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeCheck, BadgeDollarSign, Edit, HandCoins, Trash2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { useRoute } from "vue-router"
 import type { LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
@@ -31,6 +31,14 @@ async function getLancamento(id: number) {
         toast.error("Erro ao buscar o lançamento");
     }
 }
+
+const totalPago = computed(() => {
+    return lancamento.value?.parcelas.filter((parcela) => parcela.pago).reduce((acc, parcela) => acc + parcela.valor, 0);
+})
+
+const totalPendente = computed(() => {
+    return lancamento.value?.parcelas.filter((parcela) => !parcela.pago).reduce((acc, parcela) => acc + parcela.valor, 0);
+})
 
 
 function loadLancamento() {
@@ -85,8 +93,9 @@ onMounted(loadLancamento);
                     </div>
                 </div>
                 <div><span>Recorrência:</span>
-                    <BadgeCell color="green" :label="lancamento?.recorrente ? 'Recorrente' : 'Único'"
-                        class="ml-2 text-sm" :capitalize="false" />
+                    <BadgeCell :color="lancamento?.recorrente ? 'purple' : 'green'"
+                        :label="lancamento?.recorrente ? 'Recorrente' : 'Único'" class="ml-2 text-sm"
+                        :capitalize="false" />
                 </div>
                 <div><span>Valor:</span>
                     <BadgeCell color="green"
@@ -94,6 +103,10 @@ onMounted(loadLancamento);
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Desconto:</span> {{ Number(lancamento?.desconto).toFixed(2).replace('.', ',') || 'N/A'
+                    }}</div>
+                <div><span>Total pago:</span> {{ Number(totalPago).toFixed(2).replace('.', ',') || 'N/A'
+                    }}</div>
+                <div><span>Total pendente:</span> {{ Number(totalPendente).toFixed(2).replace('.', ',') || 'N/A'
                     }}</div>
                 <div><span>Data:</span> {{ lancamento?.dataLancamento ? formatDateToPtBR(lancamento?.dataLancamento,
                     false) :
@@ -113,48 +126,49 @@ onMounted(loadLancamento);
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>#</TableHead>
-                            <TableHead>Vencimento</TableHead>
-                            <TableHead>Valor</TableHead>
-                            <TableHead>Valor Pago</TableHead>
-                            <TableHead>Pagamento</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead class="text-right">Ações</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow v-for="p in lancamento?.parcelas" :key="p.numero">
-                            <TableCell>
-                                <span class="font-normal px-2 py-1 bg-primary text-white rounded-sm">
-                                    {{ p.numero === 1 && lancamento.parcelas.length === 1 ? "À vista" : p.numero ===
-                                        0 ? "Entrada" : `# ${p.numero}` }}
-                                </span>
-                            </TableCell>
-                            <TableCell>{{ p.vencimento ? formatDate(p.vencimento, "dd/MM/yyyy") : "-" }}</TableCell>
-                            <TableCell>{{ formatCurrencyBR(p.valor) }}</TableCell>
-                            <TableCell>{{ p.valorPago ? formatCurrencyBR(p.valorPago) : "-" }}</TableCell>
-                            <TableCell>{{ p.dataPagamento ? formatDate(p.dataPagamento, "dd/MM/yyyy") : "-" }}
-                            </TableCell>
-                            <TableCell>
-                                <Badge class="text-white" :variant="p.pago ? 'default' : 'destructive'">
-                                    {{ p.pago ? "Pago" : "Pendente" }}
-                                </Badge>
-                            </TableCell>
-                            <TableCell class="flex justify-end">
-                                <div class="flex items-center gap-2">
-                                    <RouterLink to="/produtos" as-child>
-                                        <Button variant="outline">
-                                            <Check class="w-4 h-4" />
+                <div class="relative overflow-x-auto shadow-md sm:rounded-lg border border-border">
+                    <Table>
+                        <TableHeader class="text-sm bg-body">
+                            <TableRow>
+                                <TableHead>#</TableHead>
+                                <TableHead>Vencimento</TableHead>
+                                <TableHead>Valor</TableHead>
+                                <TableHead>Valor Pago</TableHead>
+                                <TableHead>Pagamento</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead class="text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody class="bg-body/30">
+                            <TableRow v-for="p in lancamento?.parcelas" :key="p.numero">
+                                <TableCell>
+                                    <span class="font-normal px-2 py-1 bg-primary text-white rounded-sm">
+                                        {{ p.numero === 1 && lancamento.parcelas.length === 1 ? "À vista" : p.numero ===
+                                            0 ? "Entrada" : `# ${p.numero}` }}
+                                    </span>
+                                </TableCell>
+                                <TableCell>{{ p.vencimento ? formatDate(p.vencimento, "dd/MM/yyyy") : "-" }}</TableCell>
+                                <TableCell>{{ formatCurrencyBR(p.valor) }}</TableCell>
+                                <TableCell>{{ p.valorPago ? formatCurrencyBR(p.valorPago) : "-" }}</TableCell>
+                                <TableCell>{{ p.dataPagamento ? formatDate(p.dataPagamento, "dd/MM/yyyy") : "-" }}
+                                </TableCell>
+                                <TableCell>
+                                    <Badge class="text-white px-2 py-1 rounded-sm font-normal"
+                                        :variant="p.pago ? 'default' : 'destructive'">
+                                        {{ p.pago ? "Pago" : "Pendente" }}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell class="flex justify-end">
+                                    <div class="flex items-center gap-2">
+                                        <Button variant="default" class="w-8 h-8 p-0 text-white">
+                                            <BadgeCheck class="w-4 h-4" />
                                         </Button>
-                                    </RouterLink>
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
             </CardContent>
         </Card>
     </div>
