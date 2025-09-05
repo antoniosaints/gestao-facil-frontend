@@ -17,6 +17,7 @@ import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from './Actions.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { formatDate } from 'date-fns'
+import { RouterLink } from 'vue-router'
 
 export const columnsLancamentos: ColumnDef<LancamentoFinanceiro>[] = [
   {
@@ -24,12 +25,14 @@ export const columnsLancamentos: ColumnDef<LancamentoFinanceiro>[] = [
     enableSorting: false,
     header: () => render('div', { class: 'ml-2 h-4 w-4' }, 'ID'),
     cell: ({ row }) => {
-      return render(BadgeCell, {
-        label: row.getValue('Uid') as string,
-        color: 'gray',
-        icon: CircleDollarSign,
-        capitalize: false,
-      })
+      return render(RouterLink, { to: `/financeiro/detalhes?id=${row.original.id}` }, () =>
+        render(BadgeCell, {
+          label: row.getValue('Uid') as string,
+          color: 'gray',
+          icon: CircleDollarSign,
+          capitalize: false,
+        }),
+      )
     },
   },
   {

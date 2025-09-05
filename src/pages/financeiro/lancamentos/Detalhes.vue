@@ -1,36 +1,48 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { onMounted, ref } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeDollarSign, Box, Edit, FileText, Trash2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeDollarSign, Check, Edit, HandCoins, Trash2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
+import { useRoute } from "vue-router"
+import type { LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
+import http from "@/utils/axios"
+import { useToast } from "vue-toastification"
+import { formatDate } from "date-fns"
+import { formatCurrencyBR, formatDateToPtBR } from "@/utils/formatters"
 
-interface Parcela {
-    numero: number
-    vencimento: string
-    valor: number
-    status: "PAGO" | "PENDENTE"
+const route = useRoute()
+const toast = useToast()
+const lancamento = ref<LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro> }>()
+
+interface DataLancamento {
+    data: LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro> }
+}
+async function getLancamento(id: number) {
+    try {
+        const [res] = await Promise.all([
+            http.get<DataLancamento>(`/lancamentos/${id}`)
+        ]);
+        lancamento.value = res.data.data;
+    } catch (error) {
+        console.error(error);
+        toast.error("Erro ao buscar o lançamento");
+    }
 }
 
-interface Lancamento {
-    descricao: string
-    tipo: "RECEITA" | "DESPESA"
-    total: number
-    parcelas: Parcela[]
+
+function loadLancamento() {
+    const id = Number(route.query.id);
+    if (!id || isNaN(id)) {
+        toast.error("ID de produto inválido");
+        return;
+    }
+    getLancamento(id);
 }
 
-const lancamento = ref<Lancamento>({
-    descricao: "Mensalidade Academia",
-    tipo: "DESPESA",
-    total: 300,
-    parcelas: [
-        { numero: 1, vencimento: "2025-09-10", valor: 100, status: "PAGO" },
-        { numero: 2, vencimento: "2025-10-10", valor: 100, status: "PENDENTE" },
-        { numero: 3, vencimento: "2025-11-10", valor: 100, status: "PENDENTE" },
-    ],
-})
+onMounted(loadLancamento);
 </script>
 
 <template>
@@ -40,10 +52,10 @@ const lancamento = ref<Lancamento>({
             <h1 class="text-md md:text-lg flex items-center gap-2">
                 <BadgeDollarSign class="w-6 h-6 text-emerald-600" />
                 <BadgeCell class="text-sm" :color="'green'" :label="'Efetivado'" />
-                #FIN_732834257
+                #{{ lancamento?.Uid }}
             </h1>
             <div class="hidden md:flex gap-2">
-                <RouterLink to="/produtos" as-child>
+                <RouterLink to="/financeiro/lancamentos" as-child>
                     <Button variant="outline">
                         <ArrowLeft class="w-4 h-4 mr-1" /> Voltar
                     </Button>
@@ -59,24 +71,46 @@ const lancamento = ref<Lancamento>({
                 </Button>
             </div>
         </div>
-        <Card class="shadow-md rounded-md">
+        <Card class="rounded-md">
             <CardHeader>
-                <CardTitle class="flex justify-between items-center font-normal">
-                    <span>{{ lancamento.descricao }}</span>
-                    <Badge :variant="lancamento.tipo === 'RECEITA' ? 'default' : 'destructive'">
-                        {{ lancamento.tipo }}
-                    </Badge>
+                <CardTitle class="flex items-center gap-2">
+                    <BadgeDollarSign class="w-5 h-5" /> Informações do lançamento
                 </CardTitle>
             </CardHeader>
-            <CardContent>
-                <p class="text-lg font-semibold">Total: R$ {{ lancamento.total.toFixed(2) }}</p>
+            <CardContent class="grid grid-cols-2 gap-2">
+                <div class="flex items-center gap-2"><span>Código:</span>
+                    <div class="flex items-center gap-2">
+                        <BadgeCell color="gray" :label="lancamento?.Uid || 'N/A'" class="text-sm" :capitalize="false" />
+                        <Button variant="outline" size="xs"><i class="fa-solid fa-copy fa-xs"></i></Button>
+                    </div>
+                </div>
+                <div><span>Recorrência:</span>
+                    <BadgeCell color="green" :label="lancamento?.recorrente ? 'Recorrente' : 'Único'"
+                        class="ml-2 text-sm" :capitalize="false" />
+                </div>
+                <div><span>Valor:</span>
+                    <BadgeCell color="green"
+                        :label="`R$ ${(Number(lancamento?.valorTotal).toFixed(2).replace('.', ','))}`"
+                        class="ml-2 text-sm" />
+                </div>
+                <div><span>Desconto:</span> {{ Number(lancamento?.desconto).toFixed(2).replace('.', ',') || 'N/A'
+                    }}</div>
+                <div><span>Data:</span> {{ lancamento?.dataLancamento ? formatDateToPtBR(lancamento?.dataLancamento,
+                    false) :
+                    'N/A'
+                }}</div>
+                <div><span>Parcelas:</span> {{lancamento?.parcelas.length === 1 && !lancamento.recorrente ? 'À vista' :
+                    `${lancamento?.parcelas.filter((p) => p.numero != 0).length} parcelas`}}</div>
+                <Separator class="col-span-2" />
+                <div class="col-span-2"><span>Descrição:</span> {{ lancamento?.descricao || 'N/A' }}</div>
             </CardContent>
         </Card>
-
         <!-- Tabela de Parcelas -->
-        <Card class="shadow-md rounded-md">
+        <Card class="shadow-md rounded-md" v-if="lancamento?.parcelas.length">
             <CardHeader>
-                <CardTitle>Parcelas</CardTitle>
+                <CardTitle class="flex items-center gap-2">
+                    <HandCoins class="w-5 h-5" /> Parcelas
+                </CardTitle>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -85,25 +119,35 @@ const lancamento = ref<Lancamento>({
                             <TableHead>#</TableHead>
                             <TableHead>Vencimento</TableHead>
                             <TableHead>Valor</TableHead>
+                            <TableHead>Valor Pago</TableHead>
+                            <TableHead>Pagamento</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead class="text-right">Ações</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow v-for="p in lancamento.parcelas" :key="p.numero">
-                            <TableCell>{{ p.numero }}</TableCell>
-                            <TableCell>{{ p.vencimento }}</TableCell>
-                            <TableCell>R$ {{ p.valor.toFixed(2) }}</TableCell>
+                        <TableRow v-for="p in lancamento?.parcelas" :key="p.numero">
                             <TableCell>
-                                <Badge :variant="p.status === 'PAGO' ? 'default' : 'secondary'">
-                                    {{ p.status }}
+                                <span class="font-normal px-2 py-1 bg-primary text-white rounded-sm">
+                                    {{ p.numero === 1 && lancamento.parcelas.length === 1 ? "À vista" : p.numero ===
+                                        0 ? "Entrada" : `# ${p.numero}` }}
+                                </span>
+                            </TableCell>
+                            <TableCell>{{ p.vencimento ? formatDate(p.vencimento, "dd/MM/yyyy") : "-" }}</TableCell>
+                            <TableCell>{{ formatCurrencyBR(p.valor) }}</TableCell>
+                            <TableCell>{{ p.valorPago ? formatCurrencyBR(p.valorPago) : "-" }}</TableCell>
+                            <TableCell>{{ p.dataPagamento ? formatDate(p.dataPagamento, "dd/MM/yyyy") : "-" }}
+                            </TableCell>
+                            <TableCell>
+                                <Badge class="text-white" :variant="p.pago ? 'default' : 'destructive'">
+                                    {{ p.pago ? "Pago" : "Pendente" }}
                                 </Badge>
                             </TableCell>
                             <TableCell class="flex justify-end">
                                 <div class="flex items-center gap-2">
                                     <RouterLink to="/produtos" as-child>
                                         <Button variant="outline">
-                                            <ArrowLeft class="w-4 h-4 mr-1" /> Voltar
+                                            <Check class="w-4 h-4" />
                                         </Button>
                                     </RouterLink>
                                 </div>

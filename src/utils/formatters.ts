@@ -99,7 +99,7 @@ export function formatGerarIdUnicoSimples(): string {
   return `${timestamp}-${random}`
 }
 
-export function formatDateToPtBR(input: string | Date): string {
+export function formatDateToPtBR(input: string | Date, showTime?: boolean): string {
   try {
     const date: Date = typeof input === 'string' ? parseISO(input) : input
 
@@ -107,7 +107,7 @@ export function formatDateToPtBR(input: string | Date): string {
 
     const hasTime = typeof input === 'string' && /T\d{2}:\d{2}/.test(input)
 
-    const pattern = hasTime ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy'
+    const pattern = hasTime && showTime ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy'
 
     return format(date, pattern, { locale: ptBR })
   } catch {
