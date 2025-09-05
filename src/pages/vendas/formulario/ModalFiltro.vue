@@ -70,8 +70,8 @@ function limparFiltro() {
                     </Select>
                 </div>
 
-                <div class="md:col-span-12 text-end flex justify-end">
-                    <Button variant="outline" class="text-white mr-2" @click="limparFiltro">
+                <div class="md:col-span-12 text-end flex justify-end gap-2">
+                    <Button variant="outline" @click="limparFiltro">
                         Limpar
                     </Button>
                     <Button class="text-white" @click="aplicarFiltro">
