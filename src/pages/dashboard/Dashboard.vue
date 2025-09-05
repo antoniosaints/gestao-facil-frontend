@@ -17,7 +17,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
                 <!-- Metric Item Start -->
                 <div @click="goTo('/clientes')"
                     class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
@@ -126,7 +126,7 @@
                 <!-- Metric Item End -->
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Gráfico de Barras -->
                 <div
                     class="border-border bg-card shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">

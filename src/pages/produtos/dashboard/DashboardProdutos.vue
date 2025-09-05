@@ -13,6 +13,10 @@ import {
   Filler
 } from "chart.js"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
+import { optionsChartBarDefault, optionsChartLine, optionsChartPie } from "@/composables/useChartOptions"
+import BarChart from "@/components/graficos/BarChart.vue"
+import LineChart from "@/components/graficos/LineChart.vue"
+import PieChart from "@/components/graficos/PieChart.vue"
 
 // Registrar plugins do Chart.js
 ChartJS.register(
@@ -86,33 +90,39 @@ const filtroPeriodo = ref([new Date(), new Date()])
       </div>
     </section>
 
-    <!-- Gráficos -->
-    <section class="bg-card border border-border rounded-xl shadow p-4">
-      <h2 class="text-lg font-bold mb-4">📈 Análises de Estoque e Vendas</h2>
-      <Tabs default-value="reposicoes" class="w-full">
-        <TabsList class="rounded-md">
-          <TabsTrigger value="reposicoes"><i class="fa-solid fa-boxes-stacked"></i> Reposições</TabsTrigger>
-          <TabsTrigger value="vendas"><i class="fa-solid fa-chart-line"></i> Vendas</TabsTrigger>
-          <TabsTrigger value="vendidos"><i class="fa-solid fa-chart-line"></i> Mais Vendidos</TabsTrigger>
-          <TabsTrigger value="categorias"><i class="fa-solid fa-chart-pie"></i> Categorias</TabsTrigger>
-        </TabsList>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Gráfico de Barras -->
+      <div
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
+          Reposições
+        </h2>
+        <BarChart class="max-h-64" :data="chartReposicoes" :options="optionsChartBarDefault" />
+      </div>
 
-        <TabsContent value="reposicoes">
-          <Bar class="max-h-[400px] p-4" :data="chartReposicoes" :options="{ responsive: true }" />
-        </TabsContent>
+      <div
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-line text-emerald-600"></i>
+          Vendas
+        </h2>
+        <LineChart class="max-h-64" :data="chartVendas" :options="optionsChartLine" />
+      </div>
 
-        <TabsContent value="vendas">
-          <Line class="max-h-[400px] p-4" :data="chartVendas" :options="{ responsive: true }" />
-        </TabsContent>
+      <div
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-pie text-emerald-600"></i>
+          Categorias
+        </h2>
+        <PieChart class="max-h-64" :data="chartCategorias" :options="optionsChartPie" />
+      </div>
 
-        <TabsContent value="vendidos">
-          <Bar class="max-h-[400px] p-4" :data="chartMaisVendidos" :options="{ responsive: true }" />
-        </TabsContent>
-
-        <TabsContent value="categorias">
-          <Pie class="max-h-[400px] p-4" :data="chartCategorias" />
-        </TabsContent>
-      </Tabs>
-    </section>
+      <div
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
+          Mais vendidos
+        </h2>
+        <BarChart class="max-h-64" :data="chartMaisVendidos" :options="optionsChartBarDefault" />
+      </div>
+    </div>
   </div>
 </template>

@@ -19,10 +19,10 @@ const getIndicadores = async (inicio?: string, fim?: string) => {
   try {
     const { data }: any = await VendaRepository.resumo(inicio, fim)
     indicadores.value = [
-      { titulo: "Total de Vendas", valor: data.totalVendas, detalhe: data.totalValorVendas, icone: "fa-solid fa-chart-line text-green-600" },
-      { titulo: "Total Faturado", valor: data.totalFaturado, detalhe: data.totalValorFaturado, icone: "fa-solid fa-money-bills text-blue-600" },
-      { titulo: "Total em Aberto", valor: data.totalAberto, detalhe: data.totalValorAberto, icone: "fa-solid fa-chart-line text-yellow-600" },
-      { titulo: "Cancelado", valor: data.totalCancelado, detalhe: data.totalValorCancelado, icone: "fa-solid fa-times text-red-600" },
+      { titulo: "Total geral", valor: data.totalVendas, detalhe: data.totalValorVendas, icone: "fa-solid fa-chart-line text-green-600" },
+      { titulo: "Faturado", valor: data.totalFaturado, detalhe: data.totalValorFaturado, icone: "fa-solid fa-money-bills text-blue-600" },
+      { titulo: "Em Aberto", valor: data.totalAberto, detalhe: data.totalValorAberto, icone: "fa-solid fa-chart-line text-yellow-600" },
+      { titulo: "Orçamento", valor: data.totalOrcamento, detalhe: data.totalValorOrcamento, icone: "fa-solid fa-list-check text-red-600" },
       { titulo: "Descontos", valor: data.totalVendasComDesconto, detalhe: data.totalValorDescontos, icone: "fa-solid fa-percent text-green-600" },
       { titulo: "Ticket Médio", valor: null, detalhe: data.ticketMedio, icone: "fa-solid fa-chart-line text-blue-600" },
     ]
@@ -84,9 +84,12 @@ onMounted(() => {
 
     <section>
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl hover:scale-[1.02] transition">
+        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition">
           <CardHeader>
-            <CardTitle class="text-sm font-normal"><i :class="kpi.icone"></i> {{ kpi.titulo }}</CardTitle>
+            <CardTitle class="flex flex-row items-center gap-2 text-sm font-semibold"><i
+                class="p-1 bg-background/20 rounded-md" :class="kpi.icone"></i> {{
+                  kpi.titulo }}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p class="text-xs text-muted-foreground">{{ kpi.valor != null ? `Qtd ${kpi.valor}` : 'No período' }}</p>
@@ -96,7 +99,7 @@ onMounted(() => {
       </div>
     </section>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Gráfico de Barras -->
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">

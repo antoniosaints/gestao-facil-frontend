@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-4">
         <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
             <div>
                 <h2 class="text-2xl font-bold text-black dark:text-white">
@@ -17,11 +17,11 @@
                 </input>
             </div>
         </div>
-        <div class="flex flex-col gap-6" id="dashboard_financeiro_container_main">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
+        <div class="flex flex-col gap-4" id="dashboard_financeiro_container_main">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
                 <!-- Metric Item Start -->
                 <div onclick="loadPage('/lancamentos/resumo')"
-                    class="rounded-2xl cursor-pointer border border-border bg-card px-6 pb-5 pt-6">
+                    class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-arrow-up h-8 w-8 bg-emerald-500/10 p-2 rounded-md text-emerald-500"></i>
 
@@ -52,7 +52,7 @@
                 </div>
 
                 <div onclick="loadPage('/lancamentos/resumo')"
-                    class="rounded-2xl cursor-pointer border border-border bg-card px-6 pb-5 pt-6">
+                    class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-arrow-down w-8 h-8 bg-red-500/10 p-2 rounded-md text-red-500"></i>
 
@@ -75,7 +75,7 @@
                         </div>
 
                         <span
-                            class="flex items-center gap-1 rounded-full bg-red-100 py-0.5 pl-2 pr-2.5 text-xs font-medium text-red-600 dark:bg-red-500/15 dark:text-red-500">
+                            class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-xs font-medium text-red-600 dark:text-red-500">
                             <i class="fa-solid fa-coins"></i>
                             Saídas
                         </span>
@@ -83,7 +83,7 @@
                 </div>
 
                 <div onclick="loadPage('/lancamentos/resumo')"
-                    class="rounded-2xl cursor-pointer border border-border bg-card px-6 pb-5 pt-6">
+                    class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i
                             class="fa-solid fa-money-bill-trend-up w-8 h-8 bg-blue-500/10 p-2 rounded-md text-blue-500"></i>
@@ -107,7 +107,7 @@
                         </div>
 
                         <span id="produtos_em_baixa_dashboard_alerta"
-                            class="flex items-center gap-1 rounded-full bg-blue-100 py-0.5 pl-2 pr-2.5 text-xs font-medium text-blue-600 dark:bg-blue-500/15 dark:text-blue-500">
+                            class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-xs font-medium text-blue-600 dark:text-blue-500">
                             <i class="fa-solid fa-coins"></i>
                             Lucro
                         </span>
@@ -115,7 +115,7 @@
                 </div>
 
                 <div onclick="loadPage('/lancamentos/resumo')"
-                    class="rounded-2xl cursor-pointer border border-border bg-card px-6 pb-5 pt-6">
+                    class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i
                             class="fa-solid fa-hourglass-end h-8 w-8 bg-yellow-500/10 p-2 rounded-md text-yellow-400"></i>
@@ -139,7 +139,7 @@
                         </div>
 
                         <span id="porcentagem_vendas_dashboard_alerta"
-                            class="flex items-center gap-1 rounded-full bg-yellow-50 py-0.5 pl-2 pr-2.5 text-xs font-medium text-yellow-600 dark:bg-yellow-500/15 dark:text-yellow-500">
+                            class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-xs font-medium text-yellow-600 dark:text-yellow-500">
                             <i class="fa-solid fa-dollar-sign"></i>
                             <span id="porcentagem_vendas_dashboard">
                                 Revisar
@@ -147,11 +147,9 @@
                         </span>
                     </div>
                 </div>
-                <!-- Metric Item End -->
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Gráfico de Barras -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div
                     class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
                     <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
