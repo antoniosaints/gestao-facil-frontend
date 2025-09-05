@@ -55,6 +55,14 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'detalhes',
+        name: 'lancamentos-financeiro-detalhes',
+        component: () => import('@/pages/financeiro/lancamentos/Detalhes.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+      {
         path: 'painel',
         name: 'lancamentos-financeiro-dashboard',
         component: () => import('@/pages/financeiro/lancamentos/Dashboard.vue'),
