@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeCheck, BadgeDollarSign, Edit, HandCoins, Trash2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeCheck, BadgeDollarSign, Edit, HandCoins, OctagonX, Trash2, Undo2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { useRoute } from "vue-router"
 import type { LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
@@ -12,6 +12,8 @@ import http from "@/utils/axios"
 import { useToast } from "vue-toastification"
 import { formatDate } from "date-fns"
 import { formatCurrencyBR, formatDateToPtBR } from "@/utils/formatters"
+import { Separator } from "@/components/ui/separator"
+import { LancamentosRepository } from "@/repositories/lancamento-repository"
 
 const route = useRoute()
 const toast = useToast()
@@ -33,13 +35,17 @@ async function getLancamento(id: number) {
 }
 
 const totalPago = computed(() => {
-    return lancamento.value?.parcelas.filter((parcela) => parcela.pago).reduce((acc, parcela) => acc + parcela.valor, 0);
+    return lancamento.value?.parcelas.filter((parcela) => parcela.pago).reduce((acc, parcela) => acc + Number(parcela.valor), 0);
 })
 
 const totalPendente = computed(() => {
-    return lancamento.value?.parcelas.filter((parcela) => !parcela.pago).reduce((acc, parcela) => acc + parcela.valor, 0);
+    return lancamento.value?.parcelas.filter((parcela) => !parcela.pago).reduce((acc, parcela) => acc + Number(parcela.valor), 0);
 })
 
+function copiarUid() {
+    navigator.clipboard.writeText(lancamento.value?.Uid ?? "");
+    toast.success("UID copiado para clipboard");
+}
 
 function loadLancamento() {
     const id = Number(route.query.id);
@@ -48,6 +54,27 @@ function loadLancamento() {
         return;
     }
     getLancamento(id);
+}
+
+async function efetivarParcela(id: number) {
+    try {
+        await LancamentosRepository.pagarParcela(id);
+        toast.success("Parcela efetivada com sucesso");
+        loadLancamento();
+    } catch (error) {
+        console.error(error);
+        toast.error("Erro ao efetivar a parcela");
+    }
+}
+async function estornarParcela(id: number) {
+    try {
+        await LancamentosRepository.estornarParcela(id);
+        toast.success("Parcela estornada com sucesso");
+        loadLancamento();
+    } catch (error) {
+        console.error(error);
+        toast.error("Erro ao estornar a parcela");
+    }
 }
 
 onMounted(loadLancamento);
@@ -81,7 +108,7 @@ onMounted(loadLancamento);
         </div>
         <Card class="rounded-md">
             <CardHeader>
-                <CardTitle class="flex items-center gap-2">
+                <CardTitle class="flex items-center gap-2 font-normal">
                     <BadgeDollarSign class="w-5 h-5" /> Informações do lançamento
                 </CardTitle>
             </CardHeader>
@@ -89,7 +116,8 @@ onMounted(loadLancamento);
                 <div class="flex items-center gap-2"><span>Código:</span>
                     <div class="flex items-center gap-2">
                         <BadgeCell color="gray" :label="lancamento?.Uid || 'N/A'" class="text-sm" :capitalize="false" />
-                        <Button variant="outline" size="xs"><i class="fa-solid fa-copy fa-xs"></i></Button>
+                        <Button @click="copiarUid" variant="outline" size="xs"><i
+                                class="fa-solid fa-copy fa-xs"></i></Button>
                     </div>
                 </div>
                 <div><span>Recorrência:</span>
@@ -97,19 +125,20 @@ onMounted(loadLancamento);
                         :label="lancamento?.recorrente ? 'Recorrente' : 'Único'" class="ml-2 text-sm"
                         :capitalize="false" />
                 </div>
-                <div><span>Valor:</span>
-                    <BadgeCell color="green"
-                        :label="`R$ ${(Number(lancamento?.valorTotal).toFixed(2).replace('.', ','))}`"
+                <div><span>Valor total:</span>
+                    <BadgeCell color="green" :label="formatCurrencyBR(lancamento?.valorTotal || 0)"
                         class="ml-2 text-sm" />
                 </div>
-                <div><span>Desconto:</span> {{ Number(lancamento?.desconto).toFixed(2).replace('.', ',') || 'N/A'
-                    }}</div>
-                <div><span>Total pago:</span> {{ Number(totalPago).toFixed(2).replace('.', ',') || 'N/A'
-                    }}</div>
-                <div><span>Total pendente:</span> {{ Number(totalPendente).toFixed(2).replace('.', ',') || 'N/A'
-                    }}</div>
-                <div><span>Data:</span> {{ lancamento?.dataLancamento ? formatDateToPtBR(lancamento?.dataLancamento,
-                    false) :
+                <div><span>Desconto:</span> {{ formatCurrencyBR(lancamento?.desconto || 0) }}</div>
+                <div><span>Total pago:</span>
+                    <BadgeCell color="emerald" :label="formatCurrencyBR(totalPago!)" class="ml-2 text-sm" />
+                </div>
+                <div><span>Total pendente:</span>
+                    <BadgeCell color="yellow" :label="formatCurrencyBR(totalPendente!)" class="ml-2 text-sm" />
+                </div>
+                <div><span>Data cadastro:</span> {{ lancamento?.dataLancamento ?
+                    formatDateToPtBR(lancamento?.dataLancamento,
+                        false) :
                     'N/A'
                 }}</div>
                 <div><span>Parcelas:</span> {{lancamento?.parcelas.length === 1 && !lancamento.recorrente ? 'À vista' :
@@ -121,7 +150,7 @@ onMounted(loadLancamento);
         <!-- Tabela de Parcelas -->
         <Card class="shadow-md rounded-md" v-if="lancamento?.parcelas.length">
             <CardHeader>
-                <CardTitle class="flex items-center gap-2">
+                <CardTitle class="flex items-center gap-2 font-normal">
                     <HandCoins class="w-5 h-5" /> Parcelas
                 </CardTitle>
             </CardHeader>
@@ -149,19 +178,28 @@ onMounted(loadLancamento);
                                 </TableCell>
                                 <TableCell>{{ p.vencimento ? formatDate(p.vencimento, "dd/MM/yyyy") : "-" }}</TableCell>
                                 <TableCell>{{ formatCurrencyBR(p.valor) }}</TableCell>
-                                <TableCell>{{ p.valorPago ? formatCurrencyBR(p.valorPago) : "-" }}</TableCell>
+                                <TableCell>{{ p.valorPago ? formatCurrencyBR(p.valorPago || 0) : "-" }}</TableCell>
                                 <TableCell>{{ p.dataPagamento ? formatDate(p.dataPagamento, "dd/MM/yyyy") : "-" }}
                                 </TableCell>
                                 <TableCell>
-                                    <Badge class="text-white px-2 py-1 rounded-sm font-normal"
+                                    <Badge class="text-white px-2 py-1 rounded-md text-sm font-normal"
                                         :variant="p.pago ? 'default' : 'destructive'">
                                         {{ p.pago ? "Pago" : "Pendente" }}
                                     </Badge>
                                 </TableCell>
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
-                                        <Button variant="default" class="w-8 h-8 p-0 text-white">
+                                        <Button v-if="!p.pago" @click="efetivarParcela(p.id!)" variant="default"
+                                            class="w-8 h-8 p-0 text-white">
                                             <BadgeCheck class="w-4 h-4" />
+                                        </Button>
+                                        <Button v-if="!p.pago" variant="default"
+                                            class="w-8 h-8 p-0 bg-danger hover:bg-danger/80 text-white">
+                                            <OctagonX class="w-4 h-4" />
+                                        </Button>
+                                        <Button v-if="p.pago" @click="estornarParcela(p.id!)" variant="default"
+                                            class="w-8 h-8 p-0 bg-warning hover:bg-warning/80 text-white">
+                                            <Undo2 class="w-4 h-4" />
                                         </Button>
                                     </div>
                                 </TableCell>
