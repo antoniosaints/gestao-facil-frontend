@@ -1,6 +1,6 @@
 <template>
     <div v-if="show"
-        class="flex items-center justify-between space-x-4 relative rounded-md w-full border-2 border-primary py-2 px-4 mb-2">
+        class="flex items-center justify-between space-x-4 relative rounded-lg w-full border-2 border-primary py-2 px-4 mb-2">
         <div class="absolute left-0 rounded-l-sm w-3 h-full bg-primary"></div>
         <div class="flex flex-col">
             <h2 class="font-semibold flex items-center">
