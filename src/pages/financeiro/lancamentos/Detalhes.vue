@@ -112,7 +112,7 @@ onMounted(loadLancamento);
                     <BadgeDollarSign class="w-5 h-5" /> Informações do lançamento
                 </CardTitle>
             </CardHeader>
-            <CardContent class="grid grid-cols-2 gap-2">
+            <CardContent class="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div class="flex items-center gap-2"><span>Código:</span>
                     <div class="flex items-center gap-2">
                         <BadgeCell color="gray" :label="lancamento?.Uid || 'N/A'" class="text-sm" :capitalize="false" />
@@ -159,7 +159,7 @@ onMounted(loadLancamento);
                     <Table>
                         <TableHeader class="text-sm bg-body">
                             <TableRow>
-                                <TableHead>#</TableHead>
+                                <TableHead>Tipo</TableHead>
                                 <TableHead>Vencimento</TableHead>
                                 <TableHead>Valor</TableHead>
                                 <TableHead>Valor Pago</TableHead>
@@ -171,9 +171,10 @@ onMounted(loadLancamento);
                         <TableBody class="bg-body/30">
                             <TableRow v-for="p in lancamento?.parcelas" :key="p.numero">
                                 <TableCell>
-                                    <span class="font-normal px-2 py-1 bg-primary text-white rounded-sm">
+                                    <span
+                                        class="font-normal px-2 py-1 text-nowrap bg-primary text-sm text-white rounded-md">
                                         {{ p.numero === 1 && lancamento.parcelas.length === 1 ? "À vista" : p.numero ===
-                                            0 ? "Entrada" : `# ${p.numero}` }}
+                                            0 ? "Entrada" : `Parcela ${p.numero}` }}
                                     </span>
                                 </TableCell>
                                 <TableCell>{{ p.vencimento ? formatDate(p.vencimento, "dd/MM/yyyy") : "-" }}</TableCell>
@@ -193,10 +194,10 @@ onMounted(loadLancamento);
                                             class="w-8 h-8 p-0 text-white">
                                             <BadgeCheck class="w-4 h-4" />
                                         </Button>
-                                        <Button v-if="!p.pago" variant="default"
+                                        <!-- <Button v-if="!p.pago" variant="default"
                                             class="w-8 h-8 p-0 bg-danger hover:bg-danger/80 text-white">
                                             <OctagonX class="w-4 h-4" />
-                                        </Button>
+                                        </Button> -->
                                         <Button v-if="p.pago" @click="estornarParcela(p.id!)" variant="default"
                                             class="w-8 h-8 p-0 bg-warning hover:bg-warning/80 text-white">
                                             <Undo2 class="w-4 h-4" />
