@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
-import type { LancamentoFinanceiro } from '@/types/schemas'
+import type { LancamentoFinanceiro, ParcelaFinanceiro } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
   ArrowUpDown,
@@ -16,10 +16,10 @@ import {
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from './Actions.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
-import { formatDate } from 'date-fns'
+import { formatDate, isAfter } from 'date-fns'
 import { RouterLink } from 'vue-router'
 
-export const columnsLancamentos: ColumnDef<LancamentoFinanceiro>[] = [
+export const columnsLancamentos: ColumnDef<LancamentoFinanceiro & {parcelas: Array<ParcelaFinanceiro>}>[] = [
   {
     accessorKey: 'Uid',
     enableSorting: false,
@@ -49,6 +49,7 @@ export const columnsLancamentos: ColumnDef<LancamentoFinanceiro>[] = [
     cell: ({ row }) => {
       let cor: any = 'gray'
       let icon = BadgeCheck
+      let label = row.getValue('status') as string
       switch (row.original.status) {
         case 'PAGO':
           cor = 'green'
@@ -67,8 +68,19 @@ export const columnsLancamentos: ColumnDef<LancamentoFinanceiro>[] = [
           icon = ClockAlert
           break
       }
+      const parcelas = row.original.parcelas.filter((p) => p.numero !== 0)
+      const efetivadas = parcelas.filter((p) => p.pago).length
+      const pendentes = parcelas.filter((p) => !p.pago).length
+      const idOverdue = row.original.parcelas.some((p) => !p.pago && isAfter(new Date(), new Date(p.vencimento)))
+      if (pendentes > 0 && row.original.recorrente ) {
+        label = `${efetivadas}/${parcelas.length} ${Math.round((efetivadas / parcelas.length) * 100)}%`
+      }
+      if (idOverdue) {
+        cor = 'red'
+        icon = ClockAlert
+      }
       return render(BadgeCell, {
-        label: row.getValue('status') as string,
+        label,
         color: cor,
         icon: icon,
         capitalize: false,

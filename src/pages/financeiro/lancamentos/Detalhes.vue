@@ -88,6 +88,7 @@ onMounted(loadLancamento);
                 <BadgeDollarSign class="w-6 h-6 text-emerald-600" />
                 <BadgeCell class="text-sm" :color="'green'" :label="'Efetivado'" />
                 #{{ lancamento?.Uid }}
+                <p class="text-sm text-muted-foreground">{{ lancamento?.vendaId ? ' (Lançamento automático)' : '' }}</p>
             </h1>
             <div class="hidden md:flex gap-2">
                 <RouterLink to="/financeiro/lancamentos" as-child>
@@ -95,7 +96,7 @@ onMounted(loadLancamento);
                         <ArrowLeft class="w-4 h-4 mr-1" /> Voltar
                     </Button>
                 </RouterLink>
-                <Button variant="default" class="text-white">
+                <Button :disabled="lancamento?.vendaId" variant="default" class="text-white">
                     <Edit class="w-4 h-4 mr-1" /> Editar
                 </Button>
                 <Button variant="destructive">
@@ -190,7 +191,7 @@ onMounted(loadLancamento);
                                 </TableCell>
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
-                                        <Button v-if="!p.pago" @click="efetivarParcela(p.id!)" variant="default"
+                                        <Button v-if="!p.pago" :disabled="lancamento.vendaId" @click="efetivarParcela(p.id!)" variant="default"
                                             class="w-8 h-8 p-0 text-white">
                                             <BadgeCheck class="w-4 h-4" />
                                         </Button>
@@ -198,7 +199,7 @@ onMounted(loadLancamento);
                                             class="w-8 h-8 p-0 bg-danger hover:bg-danger/80 text-white">
                                             <OctagonX class="w-4 h-4" />
                                         </Button> -->
-                                        <Button v-if="p.pago" @click="estornarParcela(p.id!)" variant="default"
+                                        <Button v-if="p.pago" :disabled="lancamento.vendaId" @click="estornarParcela(p.id!)" variant="default"
                                             class="w-8 h-8 p-0 bg-warning hover:bg-warning/80 text-white">
                                             <Undo2 class="w-4 h-4" />
                                         </Button>
