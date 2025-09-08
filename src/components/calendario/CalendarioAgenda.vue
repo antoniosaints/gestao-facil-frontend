@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { format, startOfDay, addHours, isEqual, parseISO } from "date-fns"
+import { inject } from "vue";
 
 const props = defineProps<{ eventos: { id: number; titulo: string; data: string }[] }>()
 
@@ -18,10 +19,12 @@ function eventosNaHora(hora: Date) {
         )
     })
 }
+
+const visualizacao = inject("visualizacao") as "mes" | "semana" | "dia" | "agenda"
 </script>
 
 <template>
-    <div class="border rounded">
+    <div class="rounded">
         <h3 class="font-bold p-2">Agenda do dia {{ format(hoje, "dd/MM/yyyy") }}</h3>
         <div class="divide-y">
             <div v-for="hora in horas" :key="hora.toISOString()" class="flex items-start">
@@ -31,9 +34,10 @@ function eventosNaHora(hora: Date) {
                 </div>
 
                 <!-- Eventos -->
-                <div class="flex-1 min-h-[40px] border-l pl-2">
+                <div class="flex flex-col gap-1 min-h-[40px] w-full border-l p-2">
                     <div v-for="ev in eventosNaHora(hora)" :key="ev.id"
-                        class="mb-1 p-1 text-xs bg-blue-100 text-blue-700 rounded-xs">
+                        class="p-1 text-xs bg-primary text-white rounded-sm">
+                        {{ format(new Date(ev.data), "HH:mm") }} -
                         {{ ev.titulo }}
                     </div>
                 </div>

@@ -18,7 +18,8 @@ function eventosDoDia(data: Date) {
     <div class="grid grid-cols-7 gap-2">
         <div v-for="dia in diasSemana" :key="dia.toISOString()" class="border rounded p-2 text-sm">
             <div class="font-bold">{{ format(dia, "EEE dd/MM", { locale: ptBR }) }}</div>
-            <div v-for="ev in eventosDoDia(dia)" :key="ev.id" class="mt-1 bg-primary truncate text-white px-1 rounded">
+            <div v-for="ev in eventosDoDia(dia)" :key="ev.id"
+                class="mt-1 bg-primary text-xs truncate text-white px-1 rounded">
                 {{ format(new Date(ev.data), "HH:mm") }}
                 {{ ev.titulo }}
             </div>

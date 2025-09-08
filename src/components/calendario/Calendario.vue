@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { provide, ref } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
@@ -12,17 +12,20 @@ const visualizacao = ref<"mes" | "semana" | "dia" | "agenda">("mes")
 
 // Exemplo de eventos de ordens com hora
 const eventos = [
-    { id: 1, titulo: "Troca de tela - Cliente X", data: "2025-09-08T09:30" },
-    { id: 2, titulo: "Manutenção impressora - Cliente Y", data: "2025-09-08T11:00" },
-    { id: 3, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30" },
-    { id: 4, titulo: "Backup servidor", data: "2025-09-08T16:00" },
+    { id: 1, titulo: "Troca de tela - Cliente X", data: "2025-09-08T09:30", fim: "2025-09-08T11:00" },
+    { id: 6, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00" },
+    { id: 2, titulo: "Manutenção impressora - Cliente Y", data: "2025-09-08T11:00", fim: "2025-09-08T13:00" },
+    { id: 3, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00" },
+    { id: 4, titulo: "Backup servidor", data: "2025-09-08T16:00", fim: "2025-09-08T18:00" },
 ]
+
+provide("visualizacao", visualizacao)
 </script>
 
 <template>
-    <Card class="shadow-md rounded-lg">
+    <Card class="shadow-md rounded-lg bg-background">
         <CardHeader class="flex justify-between items-center flex-row">
-            <CardTitle>Calendário de Ordens</CardTitle>
+            <CardTitle class="text-lg font-semibold">Calendário de Ordens</CardTitle>
             <Select v-model="visualizacao">
                 <SelectTrigger class="w-[160px]">
                     <SelectValue placeholder="Visualização" />
@@ -37,10 +40,14 @@ const eventos = [
         </CardHeader>
 
         <CardContent>
-            <CalendarioMes v-if="visualizacao === 'mes'" :eventos="eventos" />
-            <CalendarioSemana v-if="visualizacao === 'semana'" :eventos="eventos" />
-            <CalendarioDia v-if="visualizacao === 'dia'" :eventos="eventos" />
-            <CalendarioAgenda v-if="visualizacao === 'agenda'" :eventos="eventos" />
+            <CalendarioMes v-if="visualizacao === 'mes'"
+                :eventos="eventos.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())" />
+            <CalendarioSemana v-if="visualizacao === 'semana'"
+                :eventos="eventos.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())" />
+            <CalendarioDia v-if="visualizacao === 'dia'"
+                :eventos="eventos.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())" />
+            <CalendarioAgenda v-if="visualizacao === 'agenda'"
+                :eventos="eventos.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())" />
         </CardContent>
     </Card>
 </template>
