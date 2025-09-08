@@ -12,6 +12,20 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/administracao',
+    name: 'administracao',
+    children: [
+      {
+        path: 'usuarios',
+        name: 'usuarios',
+        component: () => import('@/pages/usuarios/Home.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+    ],
+  },
+  {
     path: '/vendas',
     name: 'vendas',
     children: [
@@ -118,6 +132,21 @@ const routes: RouteRecordRaw[] = [
         path: 'resumo',
         name: 'assinatura-resumo',
         component: () => import('@/pages/assinatura/ResumoAssinatura.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+    ],
+  },
+  {
+    path: '/servicos',
+    name: 'servicos',
+    redirect: { name: 'perfil-usuario' },
+    children: [
+      {
+        path: 'painel',
+        name: 'perfil-servicos',
+        component: () => import('@/pages/servicos/Dashboard.vue'),
         meta: {
           layout: 'main',
         },

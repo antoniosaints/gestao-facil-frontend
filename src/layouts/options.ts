@@ -93,6 +93,7 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     icone: Wrench,
     color: 'yellow',
     children: [
+      { nome: 'Painel', link: '/servicos/painel', color: 'yellow', icone: ChartPie },
       { nome: 'Ordens', link: '/servicos/ordens', color: 'yellow', icone: ScrollText },
       { nome: 'Serviços', link: '/serviços', color: 'yellow', icone: Wrench },
     ],
@@ -115,7 +116,7 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     nome: 'Usuários',
     icone: User,
     color: 'purple',
-    link: '/usuarios',
+    link: '/administracao/usuarios',
   },
   {
     nome: 'Configurações',
