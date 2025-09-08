@@ -12,11 +12,11 @@ const visualizacao = ref<"mes" | "semana" | "dia" | "agenda">("mes")
 
 // Exemplo de eventos de ordens com hora
 const eventos = [
-    { id: 1, titulo: "Troca de tela - Cliente X", data: "2025-09-08T09:30", fim: "2025-09-08T11:00" },
-    { id: 6, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00" },
-    { id: 2, titulo: "Manutenção impressora - Cliente Y", data: "2025-09-08T11:00", fim: "2025-09-08T13:00" },
-    { id: 3, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00" },
-    { id: 4, titulo: "Backup servidor", data: "2025-09-08T16:00", fim: "2025-09-08T18:00" },
+    { id: 1, titulo: "Troca de tela - Cliente X", data: "2025-09-08T09:30", fim: "2025-09-08T11:00", status: "concluida" },
+    { id: 6, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00", status: "concluida" },
+    { id: 2, titulo: "Manutenção impressora - Cliente Y", data: "2025-09-08T11:00", fim: "2025-09-08T13:00", status: "concluida" },
+    { id: 3, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00", status: "concluida" },
+    { id: 4, titulo: "Backup servidor", data: "2025-09-08T16:00", fim: "2025-09-08T18:00", status: "concluida" },
 ]
 
 provide("visualizacao", visualizacao)

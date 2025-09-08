@@ -59,8 +59,7 @@ function eventosDoDia(dia: number | null) {
             <div v-for="(dia, i) in dias" :key="i" class="min-h-[80px] border rounded p-1 text-left">
                 <div class="font-semibold">{{ dia }}</div>
                 <div v-for="ev in eventosDoDia(dia)" :key="ev.id"
-                    class="mt-1 bg-primary truncate text-white px-1 rounded">
-                    {{ format(new Date(ev.data), "HH:mm") }}
+                    class="mt-1 bg-primary text-white truncate px-1 rounded">
                     {{ ev.titulo }}
                 </div>
             </div>
