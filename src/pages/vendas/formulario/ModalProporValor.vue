@@ -13,31 +13,42 @@ const store = useVendasStore();
 const toast = useToast();
 const propostaPreco = ref<string | null>('')
 
-function getValorTotalCarrinho() {
-    return store.carrinho.reduce((total, item) => total + item.subtotal, 0);
+function getValorTotalCarrinhoCentavos() {
+    return store.carrinho.reduce((total: number, item: any) => {
+        const sub = Math.round(Number(item.subtotal) * 100); // converte para centavos
+        return total + sub;
+    }, 0);
 }
 
-function proporValorVendaCliente(valorProposto: number) {
-    if (!valorProposto) return;
+function proporValorVendaCliente(valorPropostoReais: number) {
+    if (!valorPropostoReais) return;
 
-    const valorCarrinho = parseFloat(String(getValorTotalCarrinho())) || 0;
-    if (valorProposto >= valorCarrinho) {
+    const valorCarrinhoCentavos = getValorTotalCarrinhoCentavos();
+    const valorPropostoCentavos = Math.round(valorPropostoReais * 100);
+
+    if (valorPropostoCentavos >= valorCarrinhoCentavos) {
         store.form.desconto = 0;
         return;
     }
-    store.tipoDesconto = 'VALOR';
 
-    const valorDescontoNovo = valorCarrinho - valorProposto;
-    store.form.desconto = valorDescontoNovo;
+    store.tipoDesconto = "VALOR";
+    const descontoCentavos = valorCarrinhoCentavos - valorPropostoCentavos;
+
+    // guarda em reais (duas casas fixas)
+    store.form.desconto = Number((descontoCentavos / 100).toFixed(2));
 }
 
 function definirValorProporcionalVenda() {
-    const valorTratado = propostaPreco.value ? parseFloat(propostaPreco.value.replace(',', '.')) : 0;
+    const valorTratado = propostaPreco.value
+        ? parseFloat(propostaPreco.value.replace(",", "."))
+        : 0;
+
     proporValorVendaCliente(valorTratado);
     propostaPreco.value = null;
     store.openModalPropor = false;
-    toast.success('Valor da venda proporcionado com sucesso!');
+    toast.success("Valor da venda proporcionado com sucesso!");
 }
+
 </script>
 
 <template>

@@ -49,8 +49,7 @@
                         <i class="fas fa-shopping-cart text-green-600 mr-2"></i>
                         Carrinho
                     </h2>
-                    <button @click="clearCart"
-                        :title="cart.length ? 'Limpar carrinho' : 'Carrinho vazio'"
+                    <button @click="clearCart" :title="cart.length ? 'Limpar carrinho' : 'Carrinho vazio'"
                         class="text-red-500 dark:text-red-300 bg-red-100 px-3 py-1 rounded-md bg-red-10 dark:bg-red-900">
                         <i class="fas fa-trash text-sm"></i>
                     </button>
@@ -86,10 +85,12 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
-                                <button type="button" title="Diminuir quantidade" @click="updateQuantity(item.id, item.quantity - 1)"
+                                <button type="button" title="Diminuir quantidade"
+                                    @click="updateQuantity(item.id, item.quantity - 1)"
                                     class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">-</button>
                                 <span class="text-sm font-medium">{{ item.quantity }}</span>
-                                <button type="button" title="Aumentar quantidade" @click="updateQuantity(item.id, item.quantity + 1)"
+                                <button type="button" title="Aumentar quantidade"
+                                    @click="updateQuantity(item.id, item.quantity + 1)"
                                     class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">+</button>
                             </div>
                             <div class="text-right">

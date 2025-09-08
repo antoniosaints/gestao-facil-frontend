@@ -1,13 +1,13 @@
 <template>
     <div class="w-full">
         <!-- Busca e menu -->
-        <div class="flex items-center py-2">
-            <div class="flex items-center space-x-1 bg-card rounded-md border border-border pl-4">
+        <div class="flex items-center justify-between py-2 gap-2">
+            <div class="flex items-center space-x-1 bg-card rounded-md border border-border pl-4 w-96">
                 <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                <Input placeholder="Buscar registro..." v-model="search"
+                <Input type="search" placeholder="Buscar registro..." v-model="search"
                     class="border-none outline-none focus-visible:ring-0 shadow-none" />
             </div>
-            <div class="ml-auto flex items-center space-x-2">
+            <div class="flex items-center space-x-2">
                 <Select v-model="pageSize">
                     <SelectTrigger class="border border-border">
                         <SelectValue placeholder="Registros por página" />
@@ -27,8 +27,8 @@
                 <DropdownMenu>
                     <DropdownMenuTrigger as-child>
                         <Button variant="outline" class="ml-auto bg-card border border-border">
+                            <Eye />
                             Mostrar
-                            <ChevronDown class="ml-2 h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -117,7 +117,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from '../ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
-import { ChevronDown, Loader } from 'lucide-vue-next';
+import { Eye, Loader } from 'lucide-vue-next';
 import { watch } from 'vue';
 
 const { columns, api, filters } = defineProps<{
