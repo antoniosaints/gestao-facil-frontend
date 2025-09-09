@@ -27,7 +27,7 @@ const horas = Array.from({ length: 11 }, (_, i) => addHours(inicioDia, i + 8))
                 {{ format(hora, "HH:mm") }}
             </div>
             <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-                <div v-for="ev in eventos.filter(e => isSameHour(e.data, hora))"
+                <div v-for="ev in eventosHoje.filter(e => isSameHour(e.data, hora))"
                     class="px-3 py-2 rounded-lg bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
                     <div class="font-medium truncate">
                         {{ ev.titulo }}
