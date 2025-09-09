@@ -7,7 +7,6 @@ import CalendarioMes from "@/components/calendario/CalendarioMes.vue"
 import CalendarioSemana from "@/components/calendario/CalendarioSemana.vue"
 import CalendarioDia from "@/components/calendario/CalendarioDia.vue"
 import CalendarioAgenda from "@/components/calendario/CalendarioAgenda.vue"
-import { Calendar } from "lucide-vue-next"
 
 const visualizacao = ref<"mes" | "semana" | "dia" | "agenda">("mes")
 const selectedDate = ref(new Date())

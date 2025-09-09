@@ -5,13 +5,12 @@ import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMont
 import { ptBR } from "date-fns/locale";
 import { formatToCapitalize } from "@/utils/formatters";
 
-const selectedDate = ref(inject("selectedDate", new Date()))
 const visualizacao = ref<"mes" | "semana" | "dia" | "agenda">(inject("visualizacao", 'mes'))
 const props = defineProps<{ eventos: { id: number; titulo: string; data: string, fim: string }[] }>()
 
 const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 
-const currentMonth = ref(new Date());
+const currentMonth = ref(inject("selectedDate", new Date()))
 
 const monthStart = computed(() => startOfMonth(currentMonth.value));
 const monthEnd = computed(() => endOfMonth(monthStart.value));
@@ -38,7 +37,7 @@ const navigateMonth = (direction: "prev" | "next") => {
 };
 
 const navigateToDay = (dia: Date) => {
-    selectedDate.value = dia
+    currentMonth.value = dia
     visualizacao.value = 'dia'
 }
 
@@ -62,7 +61,7 @@ const navigateToDay = (dia: Date) => {
 
         <div class="grid grid-cols-7 gap-1 text-xs">
             <div v-for="(dia, i) in days" :key="i" @click="navigateToDay(dia)"
-                class="h-24 border bg-gray-200 dark:bg-gray-800 rounded p-2 text-left"
+                class="h-24 border bg-gray-200 dark:bg-gray-800 rounded cursor-pointer p-2 text-left"
                 :class="{ 'bg-white dark:bg-gray-950': isSameMonth(dia, currentMonth) }">
                 <div class="font-semibold">{{ format(dia, "dd") }}</div>
                 <div v-for="ev in eventosDoDia(dia).slice(0, 2)" :key="ev.id"

@@ -21,14 +21,11 @@ const changeDay = (type: "prev" | "next") => {
     selectedDate.value = type === "prev" ? subDays(selectedDate.value, 1) : addDays(selectedDate.value, 1)
 }
 
-const MesmaHora = (hour: any) => {
-    const timeSlot = new Date(selectedDate.value);
-    timeSlot.setHours(hour, 0, 0, 0);
-
+const sameHour = (hour: any) => {
     const now = new Date();
     return (
-        isSameDay(timeSlot, new Date()) &&
-        now.getHours() === timeSlot.getHours()
+        isSameDay(hour, new Date()) &&
+        now.getHours() === hour.getHours()
     );
 }
 
@@ -52,7 +49,7 @@ const MesmaHora = (hour: any) => {
             class="flex items-center space-x-4 p-3 border relative rounded-lg mb-2">
             <span
                 class="absolute left-[-.85rem] bg-gray-50 dark:dark:bg-gray-900 border-2 p-1 border-primary rounded-full"
-                :class="{ 'bg-danger text-white': MesmaHora(hora) }">
+                :class="{ 'bg-primary text-white': sameHour(hora) }">
                 <ArrowBigRight class="h-4 w-4" />
             </span>
             <div class="w-16 text-sm font-medium text-muted-foreground">
@@ -60,7 +57,7 @@ const MesmaHora = (hour: any) => {
             </div>
             <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
                 <div v-for="ev in eventosHoje.filter(e => isSameHour(new Date(e.data), hora))" :key="ev.id"
-                    class="px-3 py-2 rounded-lg bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                    class="px-3 py-2 rounded-sm bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
                     <div class="font-medium truncate">
                         {{ ev.titulo }}
                     </div>
