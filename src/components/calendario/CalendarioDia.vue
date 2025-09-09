@@ -52,7 +52,7 @@ const sameHour = (hour: any) => {
                 :class="{ 'bg-primary text-white': sameHour(hora) }">
                 <ArrowBigRight class="h-4 w-4" />
             </span>
-            <div class="w-16 text-sm font-medium text-muted-foreground">
+            <div class="text-sm font-medium text-muted-foreground">
                 {{ format(hora, "HH:mm") }}
             </div>
             <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">

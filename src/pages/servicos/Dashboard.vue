@@ -23,6 +23,7 @@ const eventos = [
     { id: 2, titulo: "Manutenção impressora - Cliente Y", data: "2025-09-08T11:00", fim: "2025-09-08T13:00", status: "concluida" },
     { id: 3, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00", status: "concluida" },
     { id: 4, titulo: "Backup servidor", data: "2025-09-08T16:00", fim: "2025-09-08T18:00", status: "concluida" },
+    { id: 5, titulo: "Pegar o celular", data: "2025-09-09T16:00", fim: "2025-09-09T17:00", status: "concluida" },
     { id: 6, titulo: "Ajuste no FPC da placa", data: "2025-09-09T14:30", fim: "2025-09-08T16:00", status: "concluida" },
 ]
 
