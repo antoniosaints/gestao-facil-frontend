@@ -1,52 +1,50 @@
 <script setup lang="ts">
-import { ref, computed } from "vue"
+import { computed, ref } from "vue"
 import { ChevronLeft, ChevronRight } from "lucide-vue-next"
-import { format } from "date-fns";
+import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const props = defineProps<{ eventos: { id: number; titulo: string; data: string }[] }>()
 
-const hoje = new Date()
-const mesAtual = ref(hoje.getMonth())
-const anoAtual = ref(hoje.getFullYear())
-
-const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
 const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 
-function gerarCalendario(mes: number, ano: number) {
-    const primeiroDia = new Date(ano, mes, 1).getDay()
-    const diasNoMes = new Date(ano, mes + 1, 0).getDate()
-    const dias = []
-    for (let i = 0; i < primeiroDia; i++) dias.push(null)
-    for (let d = 1; d <= diasNoMes; d++) dias.push(d)
-    return dias
-}
+const currentMonth = ref(new Date());
 
-const dias = computed(() => gerarCalendario(mesAtual.value, anoAtual.value))
+const monthStart = computed(() => startOfMonth(currentMonth.value));
+const monthEnd = computed(() => endOfMonth(monthStart.value));
 
-function mesAnterior() {
-    mesAtual.value = mesAtual.value === 0 ? 11 : mesAtual.value - 1
-    if (mesAtual.value === 11) anoAtual.value--
-}
-function proximoMes() {
-    mesAtual.value = mesAtual.value === 11 ? 0 : mesAtual.value + 1
-    if (mesAtual.value === 0) anoAtual.value++
-}
+const startDate = computed(() => startOfWeek(monthStart.value, { weekStartsOn: 0 }));
+const endDate = computed(() => endOfWeek(monthEnd.value, { weekStartsOn: 0 }));
 
-function eventosDoDia(dia: number | null) {
+const days = computed(() =>
+  eachDayOfInterval({ start: startDate.value, end: endDate.value })
+);
+
+
+function eventosDoDia(dia: Date | null) {
     if (!dia) return []
-    const dataStr = `${anoAtual.value}-${String(mesAtual.value + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`
-    return props.eventos.filter(e => format(e.data, "yyyy-MM-dd") === format(new Date(dataStr), "yyyy-MM-dd"))
+    const dataStr = format(dia, "yyyy-MM-dd")
+    return props.eventos.filter(e => format(new Date(e.data), "yyyy-MM-dd") === dataStr)
 }
+
+const navigateMonth = (direction: "prev" | "next") => {
+    currentMonth.value =
+        direction === "prev"
+            ? subMonths(currentMonth.value, 1)
+            : addMonths(currentMonth.value, 1)
+};
+
+
 </script>
 
 <template>
     <div>
         <div class="flex justify-between items-center mb-2">
-            <button @click="mesAnterior">
+            <button @click="navigateMonth('prev')">
                 <ChevronLeft class="w-5 h-5" />
             </button>
-            <h2 class="font-bold">{{ meses[mesAtual] }} {{ anoAtual }}</h2>
-            <button @click="proximoMes">
+            <h2 class="font-bold">{{ format(currentMonth, "MMMM yyyy", { locale: ptBR }) }}</h2>
+            <button @click="navigateMonth('next')">
                 <ChevronRight class="w-5 h-5" />
             </button>
         </div>
@@ -56,11 +54,17 @@ function eventosDoDia(dia: number | null) {
         </div>
 
         <div class="grid grid-cols-7 gap-1 text-xs">
-            <div v-for="(dia, i) in dias" :key="i" class="min-h-[80px] border rounded p-1 text-left">
-                <div class="font-semibold">{{ dia }}</div>
-                <div v-for="ev in eventosDoDia(dia)" :key="ev.id"
+            <div v-for="(dia, i) in days" :key="i"
+                class="h-24 border bg-gray-200 dark:bg-gray-800 rounded p-2 text-left"
+                :class="{ 'bg-white dark:bg-gray-950': isSameMonth(dia, currentMonth) }">
+                <div class="font-semibold">{{ format(dia, "dd") }}</div>
+                <div v-for="ev in eventosDoDia(dia).slice(0, 2)" :key="ev.id"
                     class="mt-1 bg-primary text-white truncate px-1 rounded">
+                    {{ format(new Date(ev.data), "HH:mm") }}
                     {{ ev.titulo }}
+                </div>
+                <div v-if="eventosDoDia(dia).length > 2" class="text-xs text-gray-500 dark:text-gray-300 ">
+                    {{ eventosDoDia(dia).length - 2 }} mais ...
                 </div>
             </div>
         </div>

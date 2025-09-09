@@ -12,6 +12,11 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/reservar-horario/:conta',
+    name: 'reservar-horario',
+    component: () => import('@/pages/publico/ReservarHorario.vue'),
+  },
+  {
     path: '/administracao',
     name: 'administracao',
     children: [
