@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { computed, inject, ref } from "vue"
 import { ChevronLeft, ChevronRight } from "lucide-vue-next"
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatToCapitalize } from "@/utils/formatters";
 
-const props = defineProps<{ eventos: { id: number; titulo: string; data: string }[] }>()
+const selectedDate = ref(inject("selectedDate", new Date()))
+const visualizacao = ref<"mes" | "semana" | "dia" | "agenda">(inject("visualizacao", 'mes'))
+const props = defineProps<{ eventos: { id: number; titulo: string; data: string, fim: string }[] }>()
 
 const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 
@@ -17,7 +20,7 @@ const startDate = computed(() => startOfWeek(monthStart.value, { weekStartsOn: 0
 const endDate = computed(() => endOfWeek(monthEnd.value, { weekStartsOn: 0 }));
 
 const days = computed(() =>
-  eachDayOfInterval({ start: startDate.value, end: endDate.value })
+    eachDayOfInterval({ start: startDate.value, end: endDate.value })
 );
 
 
@@ -34,6 +37,10 @@ const navigateMonth = (direction: "prev" | "next") => {
             : addMonths(currentMonth.value, 1)
 };
 
+const navigateToDay = (dia: Date) => {
+    selectedDate.value = dia
+    visualizacao.value = 'dia'
+}
 
 </script>
 
@@ -43,7 +50,7 @@ const navigateMonth = (direction: "prev" | "next") => {
             <button @click="navigateMonth('prev')">
                 <ChevronLeft class="w-5 h-5" />
             </button>
-            <h2 class="font-bold">{{ format(currentMonth, "MMMM yyyy", { locale: ptBR }) }}</h2>
+            <h2 class="font-bold">{{ formatToCapitalize(format(currentMonth, "MMMM yyyy", { locale: ptBR })) }}</h2>
             <button @click="navigateMonth('next')">
                 <ChevronRight class="w-5 h-5" />
             </button>
@@ -54,7 +61,7 @@ const navigateMonth = (direction: "prev" | "next") => {
         </div>
 
         <div class="grid grid-cols-7 gap-1 text-xs">
-            <div v-for="(dia, i) in days" :key="i"
+            <div v-for="(dia, i) in days" :key="i" @click="navigateToDay(dia)"
                 class="h-24 border bg-gray-200 dark:bg-gray-800 rounded p-2 text-left"
                 :class="{ 'bg-white dark:bg-gray-950': isSameMonth(dia, currentMonth) }">
                 <div class="font-semibold">{{ format(dia, "dd") }}</div>

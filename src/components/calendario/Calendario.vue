@@ -7,25 +7,32 @@ import CalendarioMes from "@/components/calendario/CalendarioMes.vue"
 import CalendarioSemana from "@/components/calendario/CalendarioSemana.vue"
 import CalendarioDia from "@/components/calendario/CalendarioDia.vue"
 import CalendarioAgenda from "@/components/calendario/CalendarioAgenda.vue"
+import { Calendar } from "lucide-vue-next"
 
 const visualizacao = ref<"mes" | "semana" | "dia" | "agenda">("mes")
+const selectedDate = ref(new Date())
 
-// Exemplo de eventos de ordens com hora
-const eventos = [
-    { id: 1, titulo: "Troca de tela - Cliente X", data: "2025-09-08T09:30", fim: "2025-09-08T11:00", status: "concluida" },
-    { id: 6, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00", status: "concluida" },
-    { id: 2, titulo: "Manutenção impressora - Cliente Y", data: "2025-09-08T11:00", fim: "2025-09-08T13:00", status: "concluida" },
-    { id: 3, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00", status: "concluida" },
-    { id: 4, titulo: "Backup servidor", data: "2025-09-08T16:00", fim: "2025-09-08T18:00", status: "concluida" },
-]
+provide("visualizacao", visualizacao);
+provide("selectedDate", selectedDate);
 
-provide("visualizacao", visualizacao)
+interface Props {
+    eventos: { id: number; titulo: string; data: string, fim: string }[]
+    title: string
+    description?: string
+}
+
+defineProps<Props>()
 </script>
 
 <template>
     <Card class="shadow-md rounded-lg bg-background">
         <CardHeader class="flex justify-between items-center flex-row">
-            <CardTitle class="text-lg font-semibold">Calendário de Ordens</CardTitle>
+            <CardTitle class="text-lg font-normal flex items-center">
+                <div class="flex flex-col">
+                    <h1>{{ title }}</h1>
+                    <span v-if="description" class="text-sm text-muted-foreground">{{ description }}</span>
+                </div>
+            </CardTitle>
             <Select v-model="visualizacao">
                 <SelectTrigger class="w-[160px]">
                     <SelectValue placeholder="Visualização" />

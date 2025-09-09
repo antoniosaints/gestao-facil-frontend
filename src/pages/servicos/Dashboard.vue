@@ -2,8 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { PlusCircle, ClipboardList, CheckCircle2, Clock, ChevronLeft, ChevronRight, DollarSign } from "lucide-vue-next"
-import { computed, ref } from "vue"
+import { PlusCircle, ClipboardList, CheckCircle2, Clock, DollarSign } from "lucide-vue-next"
 import Calendario from "@/components/calendario/Calendario.vue"
 
 const estatisticas = [
@@ -19,62 +18,14 @@ const ultimasOrdens = [
     { id: "OS-003", cliente: "Maria Souza", status: "Concluída", data: "05/09/2025" },
 ]
 
-const hoje = new Date()
-const mesAtual = ref(hoje.getMonth())
-const anoAtual = ref(hoje.getFullYear())
-
-// nomes dos meses
-const meses = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+const eventos = [
+    { id: 1, titulo: "Troca de tela - Cliente X", data: "2025-09-08T09:30", fim: "2025-09-08T11:00", status: "concluida" },
+    { id: 6, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00", status: "concluida" },
+    { id: 2, titulo: "Manutenção impressora - Cliente Y", data: "2025-09-08T11:00", fim: "2025-09-08T13:00", status: "concluida" },
+    { id: 3, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00", status: "concluida" },
+    { id: 4, titulo: "Backup servidor", data: "2025-09-08T16:00", fim: "2025-09-08T18:00", status: "concluida" },
 ]
 
-// dias da semana
-const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
-
-// gera os dias do calendário
-function gerarCalendario(mes: number, ano: number) {
-    const primeiroDia = new Date(ano, mes, 1).getDay()
-    const diasNoMes = new Date(ano, mes + 1, 0).getDate()
-
-    const dias = []
-    for (let i = 0; i < primeiroDia; i++) {
-        dias.push(null) // espaços antes do 1º dia
-    }
-    for (let d = 1; d <= diasNoMes; d++) {
-        dias.push(d)
-    }
-    return dias
-}
-
-const dias = computed(() => gerarCalendario(mesAtual.value, anoAtual.value))
-
-function mesAnterior() {
-    if (mesAtual.value === 0) {
-        mesAtual.value = 11
-        anoAtual.value--
-    } else {
-        mesAtual.value--
-    }
-}
-
-function proximoMes() {
-    if (mesAtual.value === 11) {
-        mesAtual.value = 0
-        anoAtual.value++
-    } else {
-        mesAtual.value++
-    }
-}
-
-function isHoje(dia: number | null) {
-    return (
-        dia &&
-        dia === hoje.getDate() &&
-        mesAtual.value === hoje.getMonth() &&
-        anoAtual.value === hoje.getFullYear()
-    )
-}
 </script>
 
 <template>
@@ -87,7 +38,7 @@ function isHoje(dia: number | null) {
                 </h2>
                 <p class="text-sm text-muted-foreground">Acompanhamento e controle de serviços</p>
             </div>
-            <Button>
+            <Button class="text-white">
                 <PlusCircle class="w-4 h-4 mr-2" /> Nova OS
             </Button>
         </div>
@@ -105,7 +56,8 @@ function isHoje(dia: number | null) {
             </Card>
         </div>
 
-        <Calendario />
+        <Calendario :eventos="eventos" title="Calendário de Serviços"
+            description="Visualização de eventos de serviços" />
 
         <!-- Últimas Ordens -->
         <Card class="shadow-md rounded-lg">
