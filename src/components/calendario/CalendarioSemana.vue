@@ -34,7 +34,7 @@ function changeWeek(type: "prev" | "next") {
 </script>
 
 <template>
-    <div class="flex items-center space-x-4 p-3 border rounded-lg mb-2 justify-between">
+    <div class="flex items-center space-x-4 rounded-lg mb-2 justify-between">
         <ArrowBigLeft class="cursor-pointer p-2" :size="35" @click="changeWeek('prev')" />
         <div class="flex flex-col items-center">
             <h1 class="text-md font-bold">{{ format(inicioSemana, "dd/MM/yyyy") }} até {{ format(addDays(inicioSemana,
@@ -44,7 +44,7 @@ function changeWeek(type: "prev" | "next") {
     </div>
     <div class="grid grid-cols-7 gap-2">
         <div v-for="dia in diasSemana" :key="dia.toISOString()" class="border rounded p-2 text-sm">
-            <div class="font-bold">{{ formatToCapitalize(format(dia, "EEE dd/MM", { locale: ptBR })) }}</div>
+            <div>{{ formatToCapitalize(format(dia, "EEE dd/MM", { locale: ptBR })) }}</div>
             <div v-for="ev in eventosDoDia(dia)" :key="ev.id"
                 class="mt-1 bg-primary text-xs truncate text-white px-1 rounded">
                 {{ format(new Date(ev.data), "HH:mm") }}

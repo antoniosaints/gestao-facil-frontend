@@ -34,7 +34,7 @@ const sameHour = (hour: any) => {
 <template>
 
     <div>
-        <div class="flex items-center space-x-4 p-3 border rounded-lg mb-2 justify-between">
+        <div class="flex items-center space-x-4 rounded-lg mb-2 justify-between">
             <ArrowBigLeft class="cursor-pointer p-2" :size="35" @click="changeDay('prev')" />
             <div class="flex flex-col items-center">
                 <span class="text-sm font-medium text-muted-foreground">{{

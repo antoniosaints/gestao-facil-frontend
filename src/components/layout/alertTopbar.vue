@@ -17,7 +17,7 @@ import { Sparkles } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { Button } from '../ui/button';
 
-const show = ref(false);
+const show = ref(true);
 
 const infos = ref({
     title: 'Gestão Fácil - Assinatura',

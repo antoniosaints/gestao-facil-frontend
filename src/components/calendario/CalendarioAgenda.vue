@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { format, startOfDay, addHours, isEqual, parseISO } from "date-fns"
-import { inject } from "vue";
+import { inject, ref } from "vue";
 
+const selectedDate = ref(inject("selectedDate", new Date()))
 const props = defineProps<{ eventos: { id: number; titulo: string; data: string }[] }>()
 
-const hoje = new Date()
+const hoje = selectedDate.value
 const inicioDia = startOfDay(hoje)
 
 // gera lista de horas (08h às 18h por exemplo)
@@ -19,8 +20,6 @@ function eventosNaHora(hora: Date) {
         )
     })
 }
-
-const visualizacao = inject("visualizacao") as "mes" | "semana" | "dia" | "agenda"
 </script>
 
 <template>

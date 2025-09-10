@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, ref } from "vue"
-import { ChevronLeft, ChevronRight } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight } from "lucide-vue-next"
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatToCapitalize } from "@/utils/formatters";
@@ -47,11 +47,11 @@ const navigateToDay = (dia: Date) => {
     <div>
         <div class="flex justify-between items-center mb-2">
             <button @click="navigateMonth('prev')">
-                <ChevronLeft class="w-5 h-5" />
+                <ArrowBigLeft class="w-5 h-5" />
             </button>
             <h2 class="font-bold">{{ formatToCapitalize(format(currentMonth, "MMMM yyyy", { locale: ptBR })) }}</h2>
             <button @click="navigateMonth('next')">
-                <ChevronRight class="w-5 h-5" />
+                <ArrowBigRight class="w-5 h-5" />
             </button>
         </div>
 

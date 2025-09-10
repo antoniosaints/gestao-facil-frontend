@@ -1,3 +1,4 @@
+import { useControlRouter } from '@/composables/useRouterControl'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useToast } from 'vue-toastification'
