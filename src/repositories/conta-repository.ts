@@ -1,6 +1,6 @@
 import type { FaturasContas } from '@/types/schemas'
 import http from '@/utils/axios'
-interface StatusConta {
+export interface StatusConta {
   status: string
   valor: string
   faturas: FaturasContas[]
