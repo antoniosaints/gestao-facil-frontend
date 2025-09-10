@@ -14,7 +14,7 @@ interface StatusConta {
   labelAssinatura: string
 }
 export class ContaRepository {
-  static async status(): Promise<StatusConta> {
+  static async status(): Promise<{ data: StatusConta }> {
     const data = await http.get(`/contas/assinatura/status`)
     return data.data
   }

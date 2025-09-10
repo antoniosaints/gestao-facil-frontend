@@ -1,4 +1,4 @@
-import { useControlRouter } from '@/composables/useRouterControl'
+import { handleRouteGuard } from '@/composables/useRouterControl'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useToast } from 'vue-toastification'
@@ -224,28 +224,6 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from) => {
-  const toast = useToast()
-  const storeUi = useUiStore()
-  if (window.innerWidth < 768) {
-    storeUi.openSidebar = false
-  }
-  if (!to.meta?.isPublic && !localStorage.getItem('gestao_facil:token')) {
-    toast.info('Necessário efetuar login para acessar essa rota!')
-    return { name: 'login' }
-  }
-  if (to.path === '/login' && localStorage.getItem('gestao_facil:token')) {
-    return { name: 'home' }
-  }
-
-  if (to.meta?.permissao) {
-    const level = Number(to.meta?.permissao)
-
-    if (level > 6) {
-      toast.info('Você não tem permissão para acessar essa rota!')
-      return { name: from.name }
-    }
-  }
-})
+router.beforeEach((to, from) => handleRouteGuard(to, from))
 
 export default router

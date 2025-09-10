@@ -20,7 +20,6 @@ app.use(Toast, {
   closeOnClick: true,
   pauseOnHover: true,
   newestOnTop: true,
-  toastClassName: 'bg-danger',
   hideProgressBar: true,
 })
 
