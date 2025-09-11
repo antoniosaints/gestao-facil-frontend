@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Clock, BadgeDollarSign, CreditCard, RotateCw } from "lucide-vue-next"
+import { CheckCircle, XCircle, Clock, BadgeDollarSign, CreditCard, RotateCw, Sparkles } from "lucide-vue-next"
 import { onMounted, ref } from "vue"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { ContaRepository, type StatusConta } from "@/repositories/conta-repository"
@@ -19,9 +19,10 @@ const faturas = ref<any[]>()
 
 async function getDataConta() {
     try {
-        const response = await ContaRepository.status();
-        assinatura.value = response.data
-        faturas.value = response.data.faturas;
+        const response = await storeUi.getStatus()
+
+        assinatura.value = response!
+        faturas.value = response?.faturas;
     } catch (error) {
         console.error(error);
     }
@@ -61,7 +62,10 @@ onMounted(() => {
         <Card class="border shadow-lg">
             <CardHeader>
                 <CardTitle class="flex justify-between items-center text-xl">
-                    Assinatura Gestão Fácil
+                    <div class="flex items-center">
+                        <Sparkles class="mr-2 w-4 h-4" />
+                        Assinatura Gestão Fácil
+                    </div>
                     <Badge variant="outline" :class="storeUi.status === 'ATIVO' ? 'bg-success' : 'bg-danger'">
                         {{ storeUi.status }}
                     </Badge>
@@ -71,7 +75,7 @@ onMounted(() => {
 
             <CardContent class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <p class="text-sm text-muted-foreground">Preço</p>
+                    <p class="text-sm text-muted-foreground">Valor</p>
                     <p class="text-lg font-semibold">{{ assinatura?.valor }}</p>
                 </div>
                 <div>
@@ -89,9 +93,17 @@ onMounted(() => {
             </CardContent>
 
             <CardFooter class="flex gap-2 justify-end">
-                <Button variant="outline" class="text-white" @click="getDataConta"><RotateCw /> Atualizar</Button>
-                <Button v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento == null" @click="renovarAssinatura" variant="default" class="text-white"><CreditCard /> {{ renewText }}</Button>
-                <Button v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento" @click="abrirLinkPagamento" variant="default" class="text-white bg-warning"><BadgeDollarSign /> Pagar agora</Button>
+                <Button variant="outline" class="text-white" @click="getDataConta">
+                    <RotateCw /> Atualizar
+                </Button>
+                <Button v-if="storeUi.diasParaVencer <= 3 && assinatura?.proximoLinkPagamento == null"
+                    @click="renovarAssinatura" variant="default" class="text-white">
+                    <CreditCard /> {{ renewText }}
+                </Button>
+                <Button v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento"
+                    @click="abrirLinkPagamento" variant="default" class="text-white bg-warning">
+                    <BadgeDollarSign /> Pagar agora
+                </Button>
             </CardFooter>
         </Card>
 
@@ -100,10 +112,11 @@ onMounted(() => {
             <h3 class="text-2xl font-bold mb-2">Minhas Faturas</h3>
 
             <div class="space-y-4 overflow-auto max-h-80">
-                <Card v-for="fatura in faturas?.slice(0, 10)" :key="fatura.id" class="flex justify-between items-center p-4">
+                <Card v-for="fatura in faturas?.slice(0, 10)" :key="fatura.id"
+                    class="flex justify-between items-center p-4">
                     <div>
                         <p class="text-lg font-semibold">{{ formatCurrencyBR(parseFloat(fatura.valor.replace(',', '.')))
-                        }}</p>
+                            }}</p>
                         <p class="text-sm text-muted-foreground">Vencimento: {{ fatura.vencimento }}</p>
                     </div>
 

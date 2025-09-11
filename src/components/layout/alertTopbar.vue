@@ -4,27 +4,33 @@
         <div class="absolute left-0 rounded-l-sm w-3 h-full bg-warning"></div>
         <div class="flex flex-col">
             <h2 class="font-semibold flex items-center">
-                <Sparkles class="mr-2 w-4 h-4" /> {{ infos.title }}
+                <CircleDollarSign class="mr-2 w-4 h-4" /> Gestão Fácil - Assinatura
             </h2>
-            <p class="text-sm text-muted-foreground">{{ infos.subtitle }}</p>
+            <p class="text-sm text-muted-foreground">
+                {{ label }}. Renove para manter sua assinatura ativa e ter acesso a todos os recursos da plataforma.
+            </p>
         </div>
-        <div>
-            <Button variant="destructive" class="mr-2" @click="dismiss">Ignorar</Button>
+        <div class="flex items-center">
+            <Button variant="outline" class="mr-2" @click="dismiss">
+                <X />
+            </Button>
             <RouterLink to="/assinatura/resumo" as-child>
-                <Button variant="default" class="text-white">Pagar</Button>
+                <Button variant="default" class="text-white">
+                    <CircleDollarSign /> Pagar
+                </Button>
             </RouterLink>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { Sparkles } from 'lucide-vue-next';
+import { CircleDollarSign, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { Button } from '../ui/button';
 import { useUiStore } from '@/stores/ui/uiStore';
 
 const store = useUiStore()
-const showToast = ref<boolean>(localStorage.getItem('gestao_facil:showToast') === 'true' ? true : false)
+const showToast = ref<boolean>(localStorage.getItem('gestao_facil:showToast') === 'true')
 
 if (store.diasParaVencer > 3 && !showToast.value) {
     localStorage.setItem('gestao_facil:showToast', 'true')
@@ -43,12 +49,7 @@ const dias = computed(() => {
 })
 
 const label = computed(() => {
-    if (Math.floor(store.diasParaVencer) < 0) return 'Assinatura expirada'
+    if (store.diasParaVencer < 0) return 'Assinatura expirada'
     return `Assinatura vence em ${Math.floor(store.diasParaVencer)} ${dias.value}`
-})
-
-const infos = ref({
-    title: 'Gestão Fácil - Assinatura',
-    subtitle: `${label.value}. Renove para manter sua assinatura ativa e ter acesso a todos os recursos da plataforma.`,
 })
 </script>

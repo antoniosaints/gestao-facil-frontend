@@ -6,7 +6,7 @@
         </div>
         <div v-else class="flex flex-col gap-2">
             <div v-if="vendas.length === 0"
-                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-12rem)]">
+                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-13rem)]">
                 <div class="text-center">
                     <i class="fa-solid fa-box-open text-4xl text-gray-500 dark:text-gray-300 mb-4"></i>
                     <p class="text-gray-500 dark:text-gray-300">Nenhum ítem encontrado.</p>
@@ -29,21 +29,22 @@
                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ venda.observacoes || '-' }}</div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-1">
-                        <button @click="visualizarVenda(venda.id)" class="bg-secondary px-3 py-1 rounded-md text-sm">
+                        <button class="bg-secondary px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <button @click="gerarCupomPorVendaId(venda.id)" class="bg-primary px-3 py-1 rounded-md text-sm">
+                        <button @click="gerarCupomVenda(venda.id!)" class="bg-primary px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-file-pdf"></i>
                         </button>
-                        <button v-if="!venda.faturado" @click="efetivarVenda(venda.id)"
+                        <button v-if="!venda.faturado" @click="openModalFaturarVenda(venda.id!)"
                             class="bg-success px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-circle-check"></i>
                         </button>
-                        <button v-else @click="estornarVenda(venda.id)" class="bg-warning px-3 py-1 rounded-md text-sm">
+                        <button v-else @click="estornarVenda(venda.id!)"
+                            class="bg-warning px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-undo"></i>
                         </button>
                     </div>
-                    <button @click="excluirVenda(venda.id)" class="bg-danger text-white px-3 py-1 rounded-md text-sm">
+                    <button @click="deletarVenda(venda.id!)" class="bg-danger text-white px-3 py-1 rounded-md text-sm">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
@@ -90,14 +91,16 @@
         </button>
         <!-- Conteúdo do Drawer -->
         <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
-            <div
-                class="p-4 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:hover:bg-gray-600 dark:bg-gray-700">
+            <router-link to="/vendas/pdv">
                 <div
-                    class="flex justify-center items-center p-2 mx-auto mb-2 bg-gray-200 dark:bg-gray-600 rounded-full w-[48px] h-[48px] max-w-[48px] max-h-[48px]">
-                    <i class="fa-solid fa-cart-plus text-2xl text-gray-500 dark:text-gray-400"></i>
+                    class="p-4 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:hover:bg-gray-600 dark:bg-gray-700">
+                    <div
+                        class="flex justify-center items-center p-2 mx-auto mb-2 bg-gray-200 dark:bg-gray-600 rounded-full w-[48px] h-[48px] max-w-[48px] max-h-[48px]">
+                        <i class="fa-solid fa-cart-plus text-2xl text-gray-500 dark:text-gray-400"></i>
+                    </div>
+                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">PDV</div>
                 </div>
-                <div class="font-medium text-center text-gray-500 dark:text-gray-400">PDV</div>
-            </div>
+            </router-link>
             <!-- Outros itens iguais -->
         </div>
     </div>
@@ -131,8 +134,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
+import type { Vendas } from "@/types/schemas";
+import { deletarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from "../ActionsVendas";
 
-const vendas = ref<any[]>([]);
+const vendas = ref<Vendas[]>([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const loading = ref(false);
@@ -170,13 +175,6 @@ function previousPage() {
 function nextPage() {
     if (currentPage.value < totalPages.value) renderListaVendas(currentPage.value + 1);
 }
-
-// Funções placeholder
-function visualizarVenda(id: number) { console.log("Visualizar", id); }
-function gerarCupomPorVendaId(id: number) { console.log("Gerar cupom", id); }
-function efetivarVenda(id: number) { console.log("Efetivar", id); }
-function estornarVenda(id: number) { console.log("Estornar", id); }
-function excluirVenda(id: number) { console.log("Excluir", id); }
 
 onMounted(() => renderListaVendas());
 </script>

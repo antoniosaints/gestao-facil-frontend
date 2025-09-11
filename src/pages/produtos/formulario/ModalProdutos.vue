@@ -112,8 +112,9 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                         <label for="estoque" class="block text-sm font-medium mb-1">
                             Estoque Inicial <span class="text-red-500">*</span>
                         </label>
-                        <input v-model="store.form.estoque" type="number" id="estoque" name="estoque" required
-                            placeholder="Ex: 100" class="w-full p-2 rounded-md border bg-card border-border" />
+                        <input v-model="store.form.estoque" :readonly="store.form.id != null" type="number" id="estoque"
+                            name="estoque" required placeholder="Ex: 100"
+                            class="w-full p-2 rounded-md border bg-card border-border read-only:bg-body read-only:cursor-not-allowed" />
                     </div>
 
                     <!-- Estoque Mínimo -->

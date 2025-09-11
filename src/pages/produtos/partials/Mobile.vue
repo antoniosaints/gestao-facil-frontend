@@ -4,9 +4,9 @@
         <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-12rem)]">
             <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark"></div>
         </div>
-        <div v-else>
+        <div v-else class="flex flex-col gap-2">
             <div v-if="produtos.length === 0"
-                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-12rem)]">
+                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-13rem)]">
                 <div class="text-center">
                     <i class="fa-solid fa-box-open text-4xl text-gray-500 dark:text-gray-300 mb-4"></i>
                     <p class="text-gray-500 dark:text-gray-300">Nenhum ítem encontrado.</p>
@@ -15,38 +15,30 @@
             <div v-for="venda in produtos" :key="venda.id"
                 class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
-                    <div class="text-sm font-semibold dark:text-white">{{ venda.Uid }}</div>
+                    <div class="text-sm font-semibold dark:text-white">{{ venda.nome }}</div>
                     <div class="text-sm text-green-500 dark:text-green-400">R$ {{
-                        Number(venda.valor).toFixed(2).replace('.', ',') }}</div>
+                        Number(venda.preco).toFixed(2).replace('.', ',') }}</div>
                 </div>
                 <div class="flex justify-between">
-                    <div
-                        :class="`text-xs text-${venda.status === 'FATURADO' ? 'green' : 'gray'}-500 dark:text-${venda.status === 'FATURADO' ? 'green' : 'gray'}-400`">
+                    <div class="text-xs"
+                        :class="{ 'text-green-500': venda.status === 'ATIVO', 'text-red-500': venda.status === 'INATIVO' }">
                         {{ venda.status }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ new
-                        Date(venda.data).toLocaleDateString('pt-BR') }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{
+                        venda.codigo || '-' }}</div>
                 </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">{{ venda.observacoes || '-' }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">{{ venda.descricao || '-' }}</div>
                 <div class="mt-2 flex justify-between gap-2">
-                    <div>
-                        <button @click="visualizarVenda(venda.id)"
+                    <div class="flex gap-2">
+                        <button @click="visualizarVenda(venda.id!)"
                             class="bg-secondary text-white px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <button @click="gerarCupomPorVendaId(venda.id)"
-                            class="bg-primary text-white px-3 py-1 rounded-md text-sm">
+                        <button @click="gerarCupomPorVendaId(venda.id!)"
+                            class="bg-warning text-white px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-file-pdf"></i>
                         </button>
-                        <button v-if="!venda.faturado" @click="efetivarVenda(venda.id)"
-                            class="bg-green-500 text-white px-3 py-1 rounded-md text-sm">
-                            <i class="fa-solid fa-circle-check"></i>
-                        </button>
-                        <button v-else @click="estornarVenda(venda.id)"
-                            class="bg-yellow-500 text-white px-3 py-1 rounded-md text-sm">
-                            <i class="fa-solid fa-undo"></i>
-                        </button>
                     </div>
-                    <button @click="excluirVenda(venda.id)" class="bg-danger text-white px-3 py-1 rounded-md text-sm">
+                    <button @click="excluirVenda(venda.id!)" class="bg-danger text-white px-3 py-1 rounded-md text-sm">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
@@ -134,10 +126,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import type { Produto } from "@/types/schemas";
 
-const produtos = ref<any[]>([]);
+const produtos = ref<Produto[]>([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const loading = ref(false);

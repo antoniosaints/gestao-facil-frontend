@@ -18,10 +18,14 @@ export async function handleRouteGuard(
   to: RouteLocationNormalizedGeneric,
   from: RouteLocationNormalizedGeneric,
 ) {
+  const storeUi = useUiStore()
   const toast = useToast()
 
-  const token = localStorage.getItem('gestao_facil:token')
+  if (window.innerWidth < 768) {
+    storeUi.openSidebar = false
+  }
 
+  const token = localStorage.getItem('gestao_facil:token')
   // Rota privada sem login
   if (!to.meta?.isPublic && !token) {
     toast.info('Necessário efetuar login para acessar essa rota!')

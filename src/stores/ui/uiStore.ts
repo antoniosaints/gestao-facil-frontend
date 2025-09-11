@@ -4,7 +4,7 @@ import { ContaRepository } from '@/repositories/conta-repository'
 
 export const useUiStore = defineStore('uiStore', () => {
   const openSidebar = ref(true)
-  const isMobile = ref(false)
+  const isMobile = ref(window.innerWidth < 768)
   const status = ref(localStorage.getItem('gestao_facil:status') || 'INATIVO')
   const diasParaVencer = ref<number>(
     Number(localStorage.getItem('gestao_facil:diasParaVencer')) || 0,
@@ -28,11 +28,14 @@ export const useUiStore = defineStore('uiStore', () => {
       status.value = data.status
       diasParaVencer.value = data.diasParaVencer
       localStorage.setItem('gestao_facil:status', data.status)
-      localStorage.setItem('gestao_facil:diasParaVencer', String(data.diasParaVencer))
+      localStorage.setItem('gestao_facil:diasParaVencer', String(data.diasParaVencer.toFixed(0)))
+
+      return data
     } catch (error) {
       status.value = 'INATIVO'
       localStorage.setItem('gestao_facil:status', 'INATIVO')
       localStorage.setItem('gestao_facil:diasParaVencer', '0')
+      return null
     }
   }
 

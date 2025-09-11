@@ -57,7 +57,8 @@ const fecharDialog = () => {
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel @click="fecharDialog">Agora não</AlertDialogCancel>
-                <AlertDialogAction @click="instalarApp">Instalar</AlertDialogAction>
+                <AlertDialogAction class="text-white bg-success hover:bg-success/40" @click="instalarApp">Instalar
+                </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
