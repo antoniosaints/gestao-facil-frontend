@@ -18,4 +18,8 @@ export class ContaRepository {
     const data = await http.get(`/contas/assinatura/status`)
     return data.data
   }
+  static async gerarLink(): Promise<{ link: string }> {
+    const data = await http.get(`/contas/assinatura/mercadopago`)
+    return data.data
+  }
 }

@@ -125,9 +125,10 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/assinatura',
     name: 'assinatura',
+    redirect: { name: 'assinatura-resumo' },
     children: [
       {
-        path: '',
+        path: 'assinar',
         name: 'assinatura-home',
         component: () => import('@/pages/assinatura/AssinaturaPage.vue'),
         meta: {

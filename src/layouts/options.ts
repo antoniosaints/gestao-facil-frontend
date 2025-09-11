@@ -132,7 +132,7 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     nome: 'Assinatura',
     color: 'orange',
     icone: Sparkles,
-    link: '/assinatura',
+    link: '/assinatura/resumo',
   },
   {
     nome: 'Modo Admin',

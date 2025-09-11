@@ -2,16 +2,20 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Clock } from "lucide-vue-next"
+import { CheckCircle, XCircle, Clock, BadgeDollarSign, CreditCard, RotateCw } from "lucide-vue-next"
 import { onMounted, ref } from "vue"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { ContaRepository, type StatusConta } from "@/repositories/conta-repository"
 import { formatCurrencyBR } from "@/utils/formatters"
+import { useToast } from "vue-toastification"
+import type { FaturasContas } from "@/types/schemas"
 const storeUi = useUiStore();
+const toast = useToast()
 
 const assinatura = ref<StatusConta>()
+const renewText = ref("Renovar assinatura")
 
-const faturas = ref()
+const faturas = ref<any[]>()
 
 async function getDataConta() {
     try {
@@ -23,8 +27,27 @@ async function getDataConta() {
     }
 }
 
+async function renovarAssinatura() {
+    try {
+        renewText.value = "Gerando link..."
+        const response = await ContaRepository.gerarLink();
+        window.open(response.link, "_blank");
+        renewText.value = "Renovar assinatura"
+        toast.success("Link gerado com sucesso")
+    } catch (error) {
+        console.error(error);
+        toast.error("Erro ao gerar o link")
+    }
+}
+
 function pagarFatura(link: string) {
     window.open(link, "_blank");
+}
+
+function abrirLinkPagamento() {
+    if (assinatura.value?.proximoLinkPagamento) {
+        window.open(assinatura.value.proximoLinkPagamento, "_blank");
+    }
 }
 
 onMounted(() => {
@@ -35,7 +58,7 @@ onMounted(() => {
 <template>
     <div class="max-w-7xl mx-auto space-y-4">
         <!-- Assinatura atual -->
-        <Card class="border-primary shadow-lg">
+        <Card class="border shadow-lg">
             <CardHeader>
                 <CardTitle class="flex justify-between items-center text-xl">
                     Assinatura Gestão Fácil
@@ -55,12 +78,20 @@ onMounted(() => {
                     <p class="text-sm text-muted-foreground">Próximo vencimento</p>
                     <p class="text-lg font-semibold">{{ assinatura?.proximoVencimento }}</p>
                 </div>
+                <div>
+                    <p class="text-sm text-muted-foreground">Faturas geradas</p>
+                    <p class="text-lg font-semibold">{{ assinatura?.faturas.length }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-muted-foreground">Dias até o vencimento</p>
+                    <p class="text-lg font-semibold">{{ Math.max(assinatura?.diasParaVencer || 0, 0).toFixed(0) }}</p>
+                </div>
             </CardContent>
 
             <CardFooter class="flex gap-2 justify-end">
-                <Button variant="outline" class="text-white" @click="getDataConta">Atualizar</Button>
-                <Button v-if="storeUi.status !== 'ATIVO'" variant="default" class="text-white">Renovar
-                    Assinatura</Button>
+                <Button variant="outline" class="text-white" @click="getDataConta"><RotateCw /> Atualizar</Button>
+                <Button v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento == null" @click="renovarAssinatura" variant="default" class="text-white"><CreditCard /> {{ renewText }}</Button>
+                <Button v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento" @click="abrirLinkPagamento" variant="default" class="text-white bg-warning"><BadgeDollarSign /> Pagar agora</Button>
             </CardFooter>
         </Card>
 
@@ -69,7 +100,7 @@ onMounted(() => {
             <h3 class="text-2xl font-bold mb-2">Minhas Faturas</h3>
 
             <div class="space-y-4 overflow-auto max-h-80">
-                <Card v-for="fatura in faturas" :key="fatura.id" class="flex justify-between items-center p-4">
+                <Card v-for="fatura in faturas?.slice(0, 10)" :key="fatura.id" class="flex justify-between items-center p-4">
                     <div>
                         <p class="text-lg font-semibold">{{ formatCurrencyBR(parseFloat(fatura.valor.replace(',', '.')))
                         }}</p>
