@@ -16,22 +16,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ContaRepository } from '@/repositories/conta-repository'
+import { onMounted, ref } from 'vue'
 const logoSistemaGestaoFacil = ref('imgs/logo.png')
 const nameSistemaGestaoFacil = ref('Gestão Fácil')
 const infoSistemaGestaoFacil = ref('Gestão inteligente')
-function atualizarLogoSistema() {
-  fetch(`/api/contas/infos`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('gestao_facil:token')}`,
-    },
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      logoSistemaGestaoFacil.value = data.profile + '?_t=' + Date.now()
-      nameSistemaGestaoFacil.value = data.nome
-      infoSistemaGestaoFacil.value = data?.Usuarios[0]?.email
-    })
+async function atualizarLogoSistema() {
+  try {
+    const data = await ContaRepository.info()
+    const url_backend = import.meta.env.VITE_API_URL
+    logoSistemaGestaoFacil.value = url_backend.replace('/api', '/') + data.profile + '?_t=' + Date.now()
+    nameSistemaGestaoFacil.value = data.nome
+    infoSistemaGestaoFacil.value = data?.Usuarios[0]?.email
+  } catch (error) {
+    console.log(error)
+  }
 }
+
+onMounted(() => {
+  atualizarLogoSistema()
+})
 </script>

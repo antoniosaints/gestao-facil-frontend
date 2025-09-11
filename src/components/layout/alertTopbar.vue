@@ -44,12 +44,12 @@ function dismiss() {
 }
 
 const dias = computed(() => {
-    if (Math.floor(store.diasParaVencer) === 1) return 'dia'
+    if (Math.ceil(store.diasParaVencer || 0) === 1) return 'dia'
     return 'dias'
 })
 
 const label = computed(() => {
     if (store.diasParaVencer < 0) return 'Assinatura expirada'
-    return `Assinatura vence em ${Math.floor(store.diasParaVencer)} ${dias.value}`
+    return `Assinatura vence em ${Math.max(store.diasParaVencer || 0, 0).toFixed(0)} ${dias.value}`
 })
 </script>

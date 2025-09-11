@@ -2,29 +2,31 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Clock, BadgeDollarSign, CreditCard, RotateCw, Sparkles } from "lucide-vue-next"
+import { CheckCircle, XCircle, Clock, BadgeDollarSign, CreditCard, RotateCw, Sparkles, FileCheck2 } from "lucide-vue-next"
 import { onMounted, ref } from "vue"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { ContaRepository, type StatusConta } from "@/repositories/conta-repository"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { useToast } from "vue-toastification"
-import type { FaturasContas } from "@/types/schemas"
 const storeUi = useUiStore();
 const toast = useToast()
 
 const assinatura = ref<StatusConta>()
 const renewText = ref("Renovar assinatura")
+const refresh = ref(false)
 
 const faturas = ref<any[]>()
 
 async function getDataConta() {
     try {
+        refresh.value = true
         const response = await storeUi.getStatus()
-
         assinatura.value = response!
         faturas.value = response?.faturas;
+        refresh.value = false
     } catch (error) {
         console.error(error);
+        refresh.value = false
     }
 }
 
@@ -51,6 +53,10 @@ function abrirLinkPagamento() {
     }
 }
 
+function abrirComprovante(link: string) {
+    window.open(link, "_blank");
+}
+
 onMounted(() => {
     getDataConta()
 })
@@ -59,18 +65,20 @@ onMounted(() => {
 <template>
     <div class="max-w-7xl mx-auto space-y-4">
         <!-- Assinatura atual -->
-        <Card class="border shadow-lg">
+        <Card class="border shadow-md">
             <CardHeader>
                 <CardTitle class="flex justify-between items-center text-xl">
                     <div class="flex items-center">
                         <Sparkles class="mr-2 w-4 h-4" />
                         Assinatura Gestão Fácil
                     </div>
-                    <Badge variant="outline" :class="storeUi.status === 'ATIVO' ? 'bg-success' : 'bg-danger'">
+                    <Badge variant="outline" class="text-white"
+                        :class="storeUi.status === 'ATIVO' ? 'bg-success' : 'bg-danger'">
                         {{ storeUi.status }}
                     </Badge>
                 </CardTitle>
-                <CardDescription>Assinatura atual do ERP Gestão Fácil</CardDescription>
+                <CardDescription>Assinatura atual do ERP Gestão Fácil, tenha acesso a todos os recursos da plataforma
+                    mantendo a sua assinatura ativa</CardDescription>
             </CardHeader>
 
             <CardContent class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -93,34 +101,39 @@ onMounted(() => {
             </CardContent>
 
             <CardFooter class="flex gap-2 justify-end">
-                <Button variant="outline" class="text-white" @click="getDataConta">
-                    <RotateCw /> Atualizar
+                <Button variant="outline" @click="getDataConta">
+                    <RotateCw :class="refresh ? 'animate-spin' : ''" /> {{ refresh ? "Atualizando..." : "Atualizar" }}
                 </Button>
                 <Button v-if="storeUi.diasParaVencer <= 3 && assinatura?.proximoLinkPagamento == null"
                     @click="renovarAssinatura" variant="default" class="text-white">
                     <CreditCard /> {{ renewText }}
                 </Button>
                 <Button v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento"
-                    @click="abrirLinkPagamento" variant="default" class="text-white bg-warning">
+                    @click="abrirLinkPagamento" variant="default" class="text-white bg-warning hover:bg-warning/80">
                     <BadgeDollarSign /> Pagar agora
                 </Button>
             </CardFooter>
         </Card>
 
         <!-- Faturas -->
-        <div>
+        <div v-if="faturas && faturas.length > 0">
             <h3 class="text-2xl font-bold mb-2">Minhas Faturas</h3>
 
-            <div class="space-y-4 overflow-auto max-h-80">
+            <div class="space-y-4 overflow-auto max-h-80 pb-2">
                 <Card v-for="fatura in faturas?.slice(0, 10)" :key="fatura.id"
                     class="flex justify-between items-center p-4">
                     <div>
                         <p class="text-lg font-semibold">{{ formatCurrencyBR(parseFloat(fatura.valor.replace(',', '.')))
-                            }}</p>
+                        }}</p>
                         <p class="text-sm text-muted-foreground">Vencimento: {{ fatura.vencimento }}</p>
                     </div>
 
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center text-white gap-2">
+                        <span v-if="fatura.status === 'PAGO'" @click="abrirComprovante(fatura.linkPagamento)"
+                            class="px-2 py-2 rounded-md flex items-center cursor-pointer bg-info">
+                            <FileCheck2 class="w-4 h-4" />
+                        </span>
+
                         <span v-if="fatura.status === 'PAGO'" class="px-2 py-1 rounded-md flex items-center bg-success">
                             <CheckCircle class="w-4 h-4 mr-1" /> Paga
                         </span>
@@ -132,8 +145,7 @@ onMounted(() => {
                             <XCircle class="w-4 h-4 mr-1" /> Cancelada
                         </span>
 
-                        <Button class="text-white" v-if="fatura.status === 'PENDENTE'"
-                            @click="pagarFatura(fatura.linkPagamento)">
+                        <Button v-if="fatura.status === 'PENDENTE'" @click="pagarFatura(fatura.linkPagamento)">
                             Pagar
                         </Button>
                     </div>

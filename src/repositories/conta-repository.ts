@@ -1,4 +1,4 @@
-import type { FaturasContas } from '@/types/schemas'
+import type { Contas, FaturasContas, Usuarios } from '@/types/schemas'
 import http from '@/utils/axios'
 export interface StatusConta {
   status: string
@@ -16,6 +16,10 @@ export interface StatusConta {
 export class ContaRepository {
   static async status(): Promise<{ data: StatusConta }> {
     const data = await http.get(`/contas/assinatura/status`)
+    return data.data
+  }
+  static async info(): Promise<Contas & { Usuarios: Usuarios[] }> {
+    const data = await http.get(`/contas/infos`)
     return data.data
   }
   static async gerarLink(): Promise<{ link: string }> {
