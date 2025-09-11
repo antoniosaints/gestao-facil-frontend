@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { formatToCapitalize } from "@/utils/formatters";
-import { startOfWeek, addDays, format } from "date-fns"
+import { startOfWeek, addDays, format, isSameDay } from "date-fns"
 import { ptBR } from "date-fns/locale";
 import { ArrowBigLeft, ArrowBigRight } from "lucide-vue-next";
 import { computed, inject, ref } from "vue";
@@ -43,7 +43,8 @@ function changeWeek(type: "prev" | "next") {
         <ArrowBigRight class="cursor-pointer p-2" :size="35" @click="changeWeek('next')" />
     </div>
     <div class="grid grid-cols-7 gap-2">
-        <div v-for="dia in diasSemana" :key="dia.toISOString()" class="border rounded p-2 text-sm">
+        <div v-for="dia in diasSemana" :key="dia.toISOString()" class="border rounded p-2 text-sm"
+            :class="{ 'bg-slate-200 dark:bg-slate-800': isSameDay(dia, new Date()) }">
             <div>{{ formatToCapitalize(format(dia, "EEE dd/MM", { locale: ptBR })) }}</div>
             <div v-for="ev in eventosDoDia(dia)" :key="ev.id"
                 class="mt-1 bg-primary text-xs truncate text-white px-1 rounded">
