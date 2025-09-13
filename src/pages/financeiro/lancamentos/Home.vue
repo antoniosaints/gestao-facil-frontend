@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import Tabela from './tabela/Tabela.vue';
 import Mobile from './tabela/Mobile.vue';
-import { useClientesStore } from '@/stores/clientes/useClientes';
 import { useUiStore } from '@/stores/ui/uiStore';
-const store = useClientesStore();
+import LancamentoModal from './formulario/LancamentoModal.vue';
+import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
+const store = useLancamentosStore();
 const uiStore = useUiStore()
 </script>
 
@@ -32,5 +33,7 @@ const uiStore = useUiStore()
         <div v-else class="overflow-x-auto block md:hidden rounded-lg">
             <Mobile @openModalProduto="store.openSave" />
         </div>
+
+        <LancamentoModal />
     </div>
 </template>

@@ -409,7 +409,6 @@ clearCartVendas();
                     </div>
                 </div>
             </div>
-            <input type="hidden" name="id" id="input_id_venda_formulario" value="{{venda.id}}">
             <div class="flex justify-end gap-2">
                 <Button type="button" variant="secondary" @click="store.openModal = false">
                     Fechar
