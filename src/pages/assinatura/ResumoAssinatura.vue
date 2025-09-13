@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Clock, BadgeDollarSign, CreditCard, RotateCw, Sparkles, FileCheck2 } from "lucide-vue-next"
+import { CheckCircle, XCircle, Clock, BadgeDollarSign, CreditCard, RotateCw, Sparkles, FileCheck2, CircleDollarSign } from "lucide-vue-next"
 import { onMounted, ref } from "vue"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { ContaRepository, type StatusConta } from "@/repositories/conta-repository"
@@ -145,7 +145,8 @@ onMounted(() => {
                             <XCircle class="w-4 h-4 mr-1" /> Cancelada
                         </span>
 
-                        <Button v-if="fatura.status === 'PENDENTE'" @click="pagarFatura(fatura.linkPagamento)">
+                        <Button v-if="fatura.status === 'PENDENTE'" class="text-white" @click="pagarFatura(fatura.linkPagamento)">
+                            <CircleDollarSign />
                             Pagar
                         </Button>
                     </div>
