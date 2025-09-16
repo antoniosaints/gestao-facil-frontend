@@ -45,12 +45,14 @@ const isDesktop = useMediaQuery("(min-width: 768px)")
 <template>
     <div>
         <!-- Desktop: Modal -->
-        <Dialog v-if="isDesktop" v-model:open="isOpen">
+        <Dialog v-if="isDesktop" v-model:open="isOpen" >
             <DialogContent class="p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
-                :class="[sizeModal, 'mx-auto']">
+                :disable-outside-pointer-events="true" :class="[sizeModal, 'mx-auto']">
                 <DialogHeader class="p-6 pb-0">
                     <DialogTitle>{{ title }}</DialogTitle>
-                    <DialogDescription v-if="description">{{ description }}</DialogDescription>
+                    <DialogDescription v-if="description">
+                        {{ description }}
+                    </DialogDescription>
                 </DialogHeader>
                 <div class="grid gap-4 py-4 overflow-y-auto px-2">
                     <slot />
@@ -63,7 +65,9 @@ const isDesktop = useMediaQuery("(min-width: 768px)")
             <DrawerContent>
                 <DrawerHeader class="text-left">
                     <DrawerTitle>{{ title }}</DrawerTitle>
-                    <DrawerDescription v-if="description">{{ description }}</DrawerDescription>
+                    <DrawerDescription v-if="description">
+                        {{ description }}
+                    </DrawerDescription>
                 </DrawerHeader>
                 <div class="overflow-y-auto max-h-[calc(100vh-6rem)] pb-6">
                     <slot />
