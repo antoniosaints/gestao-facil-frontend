@@ -1,14 +1,18 @@
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
   Boxes,
+  CalendarCheck,
+  CalendarCheck2,
   ChartPie,
   CircleDollarSign,
   Cog,
   FileCheck2,
   Lock,
+  MapPinned,
   ScrollText,
   Sparkles,
   Tags,
+  TicketCheck,
   User,
   UserStar,
   Wrench,
@@ -20,6 +24,37 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     icone: ChartPie,
     color: 'orange',
     link: '/',
+  },
+  {
+    nome: 'Arena',
+    icone: CalendarCheck,
+    color: 'blue',
+    children: [
+      {
+        nome: 'Painel',
+        link: '/vendas/dashboard',
+        icone: ChartPie,
+        color: 'blue',
+      },
+      {
+        nome: 'Calendário',
+        link: '/vendas',
+        icone: CalendarCheck2,
+        color: 'blue',
+      },
+      {
+        nome: 'Reservas',
+        link: '/vendas/dashboard',
+        icone: TicketCheck,
+        color: 'blue',
+      },
+      {
+        nome: 'Quadras',
+        link: '/vendas/dashboard',
+        icone: MapPinned,
+        color: 'blue',
+      },
+    ],
   },
   {
     nome: 'Vendas',
