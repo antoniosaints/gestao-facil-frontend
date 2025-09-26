@@ -89,10 +89,8 @@ const totalPrice = computed(() =>
 </script>
 
 <template>
-  <div
-    class="min-h-screen p-4 relative"
-    style="background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-size: cover; background-position: center; background-attachment: fixed;"
-  >
+  <div class="min-h-screen p-4 relative"
+    style="background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-size: cover; background-position: center; background-attachment: fixed;">
     <div class="max-w-md mx-auto space-y-6">
       <!-- Header -->
       <div class="text-center py-6">
@@ -110,14 +108,11 @@ const totalPrice = computed(() =>
 
       <!-- Carrinho flutuante -->
       <div v-if="cartItems.length > 0" class="fixed bottom-4 right-4 z-50">
-        <Button
-          @click="showCart = true"
-          class="bg-primary hover:bg-primary/90 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg relative"
-        >
+        <Button @click="showCart = true"
+          class="bg-primary hover:bg-primary/90 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg relative">
           <ShoppingCart class="h-6 w-6" />
           <span
-            class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center"
-          >
+            class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
             {{ cartItems.length }}
           </span>
         </Button>
@@ -133,13 +128,9 @@ const totalPrice = computed(() =>
         </CardHeader>
         <CardContent>
           <div class="grid grid-cols-1 gap-3">
-            <div
-              v-for="quadra in activeQuadras"
-              :key="quadra.id"
-              @click="selectedQuadra = quadra"
+            <div v-for="quadra in activeQuadras" :key="quadra.id" @click="selectedQuadra = quadra"
               class="p-4 rounded-lg border-2 cursor-pointer transition-all"
-              :class="selectedQuadra?.id === quadra.id ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'"
-            >
+              :class="selectedQuadra?.id === quadra.id ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'">
               <div class="flex justify-between items-center">
                 <div>
                   <h3 class="font-semibold">{{ quadra.nome }}</h3>
@@ -181,12 +172,9 @@ const totalPrice = computed(() =>
         <CardContent>
           <!-- Mock de horários -->
           <div class="grid grid-cols-2 gap-2">
-            <Button
-              v-for="hora in ['09:00', '10:00', '11:00', '14:00', '15:00']"
-              :key="hora"
+            <Button v-for="hora in ['09:00', '10:00', '11:00', '14:00', '15:00']" :key="hora"
               @click="addToCart(selectedQuadra, selectedDate, hora, hora)"
-              :variant="isTimeSlotInCart(selectedQuadra.id, selectedDate, hora) ? 'secondary' : 'default'"
-            >
+              :variant="isTimeSlotInCart(selectedQuadra.id, selectedDate, hora) ? 'secondary' : 'default'">
               {{ hora }}
             </Button>
           </div>
@@ -194,10 +182,7 @@ const totalPrice = computed(() =>
       </Card>
 
       <!-- Modal de Carrinho -->
-      <div
-        v-if="showCart"
-        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      >
+      <div v-if="showCart" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md">
           <h2 class="text-lg font-bold mb-4">Carrinho</h2>
           <div v-for="(item, index) in cartItems" :key="index" class="flex justify-between border-b py-2">
