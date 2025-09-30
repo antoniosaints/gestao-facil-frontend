@@ -14,44 +14,45 @@ export const useControlRouter = async () => {
   }
 }
 
-export async function handleRouteGuard(
-  to: RouteLocationNormalizedGeneric,
-  from: RouteLocationNormalizedGeneric,
-) {
+type typed = RouteLocationNormalizedGeneric
+
+export async function handleRouteGuard(to: typed, from: typed) {
   const storeUi = useUiStore()
   const toast = useToast()
+
+  const home = { name: 'home' }
+  const login = { name: 'login' }
+  const assinatura = { name: 'assinatura-home' }
+  const allowedRoutes = ['/login', '/assinatura', '/assinatura/resumo']
+  const token = localStorage.getItem('gestao_facil:token')
 
   if (window.innerWidth < 768) {
     storeUi.openSidebar = false
   }
 
-  const token = localStorage.getItem('gestao_facil:token')
   // Rota privada sem login
   if (!to.meta?.isPublic && !token) {
     toast.info('Necessário efetuar login para acessar essa rota!')
-    return { name: 'login' }
+    return login
   }
 
   // Evita login autenticado
-  if (to.path === '/login' && token) {
-    return { name: 'home' }
-  }
+  if (to.path === '/login' && token) return home
 
   // Checa status da conta (exceto login/assinatura)
-  if (!['/login', '/assinatura/resumo', '/assinatura'].includes(to.path)) {
+  if (!allowedRoutes.includes(to.path)) {
     const ativo = await useControlRouter()
     if (!ativo) {
       toast.info('Sua conta está inativa, realize o pagamento para ativá-la.')
-      return { name: 'assinatura-resumo' }
+      return assinatura
     }
   }
 
   // Verificação de permissão
   if (to.meta?.permissao) {
-    const level = Number(to.meta?.permissao)
-    if (level > 6) {
+    if (Number(to.meta?.permissao) > 6) {
       toast.info('Você não tem permissão para acessar essa rota!')
-      return from.name ? { name: from.name as string } : { name: 'home' }
+      return from.name ? { name: from.name as string } : home
     }
   }
 

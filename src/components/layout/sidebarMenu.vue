@@ -12,9 +12,9 @@
 
             <!-- Dropdown -->
             <div v-else-if="item.children && item.children.length"
-                class="mb-1 cursor-pointer dark:bg-background-dark mt-2 rounded-lg border dark:border-border-dark border-border transition-all">
+                class="mb-1 cursor-pointer dark:bg-background-dark mt-2 rounded-lg border border-border/70 transition-all">
                 <button @click="toggleDropdown(item.nome)"
-                    class="dropdown-toggle w-full flex items-center hover:bg-gray-200 dark:hover:bg-gray-800 justify-between border-b dark:border-border-dark border-border px-4 py-2 text-left cursor-pointer dark:bg-background-dark rounded-lg transition-colors group">
+                    class="dropdown-toggle w-full flex items-center hover:bg-gray-200 dark:hover:bg-gray-800 justify-between px-4 py-2 text-left cursor-pointer dark:bg-background-dark rounded-lg transition-colors group">
                     <div class="flex items-center space-x-3">
                         <i v-if="typeof item.icone === 'string'"
                             :class="[item.icone, item.color ? colorClasses[item.color] : 'text-gray-500']"></i>
@@ -48,7 +48,7 @@
 
             <!-- Link normal -->
             <router-link v-else :to="item.link || 'javascript:void(0)'" :class="[
-                'cursor-pointer border border-border mt-2 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-background-dark dark:border-border-dark p-2 rounded-lg transition flex items-center',
+                'cursor-pointer border border-border/70 mt-2 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-background-dark dark:border-border-dark p-2 rounded-lg transition flex items-center',
                 route.path === item.link ? 'bg-gray-200 dark:bg-gray-800' : ''
             ]">
                 <i v-if="typeof item.icone === 'string'"
