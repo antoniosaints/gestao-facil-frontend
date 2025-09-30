@@ -1,13 +1,22 @@
 <script setup lang="ts">
+import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 import ModalView from "@/components/formulario/ModalView.vue";
 import Select2Ajax from "@/components/formulario/Select2Ajax.vue";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos";
 import { ref } from "vue";
 
 const title = ref('Cadastro de lançamentos')
 const description = ref('Preencha os campos abaixo')
 const store = useLancamentosStore()
+
+const params = ref<{ metodo: "AVISTA" | "PARCELADO", efetivado: boolean }>({
+    metodo: "AVISTA",
+    efetivado: false
+})
 
 </script>
 
@@ -19,22 +28,29 @@ const store = useLancamentosStore()
                     <label for="descricao" class="block text-sm font-medium mb-1">
                         Descrição *
                     </label>
-                    <input type="text" id="descricao" name="descricao" required placeholder="Ex: Venda de 1 notebook"
-                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
+                    <Input v-model="store.form.descricao" type="text" id="descricao" name="descricao" required
+                        placeholder="Ex: Venda de 1 notebook" />
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                     <!-- Tipo -->
                     <div>
                         <label for="tipoLancamentoFinanceiro" class="block text-sm font-medium mb-1">
-                            Tipo *
+                            Tipo/Natureza *
                         </label>
-                        <select id="tipoLancamentoFinanceiro" name="tipo" required
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-                            <option value="">Selecione o tipo</option>
-                            <option value="RECEITA">Receita</option>
-                            <option value="DESPESA">Despesa</option>
-                        </select>
+                        <Select v-model="store.form.tipo" required>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Natureza" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="RECEITA">
+                                    Receita
+                                </SelectItem>
+                                <SelectItem value="DESPESA">
+                                    Despesa
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <!-- Valor Total -->
@@ -42,40 +58,45 @@ const store = useLancamentosStore()
                         <label for="valorTotalLancamento" class="block text-sm font-medium mb-1">
                             Valor Total *
                         </label>
-                        <input type="text" id="valorTotalLancamento" name="valorTotal" required placeholder="0,00"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
+                        <Input type="text" id="valorTotalLancamento" name="valorTotal" required placeholder="0,00" />
                     </div>
                     <!-- Valor Total -->
                     <div>
                         <label for="metodoLancamentoModoLancamento" class="block text-sm font-medium mb-1">
                             Método *
                         </label>
-                        <select name="tipoLancamentoModo" id="metodoLancamentoModoLancamento" required
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-                            <option value="">Forma de pagamento</option>
-                            <option value="AVISTA">À vista</option>
-                            <option value="PARCELADO">Parcelado</option>
-                        </select>
+                        <Select v-model="params.metodo" required id="metodoLancamentoModoLancamento">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Forma de pagamento" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="AVISTA">
+                                    Á vista
+                                </SelectItem>
+                                <SelectItem value="PARCELADO">
+                                    Parcelado
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                 </div>
 
-                <div id="modalFormularioLancamentosParcelamento" class="grid hidden grid-cols-1 md:grid-cols-3 gap-2">
+                <div v-if="params.metodo === 'PARCELADO'" class="grid grid-cols-1 md:grid-cols-3 gap-2">
                     <!-- Parcelas -->
                     <div>
                         <label for="parcelas" class="block text-sm font-medium mb-1">
                             Parcelas *
                         </label>
-                        <input type="number" id="parcelas" name="parcelas" required min="1" value="1"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
+                        <Input type="number" id="parcelas" name="parcelas" placeholder="1" required min="1"
+                            v-model="store.form.parcelas" />
                     </div>
                     <!-- Valor Entrada -->
                     <div>
                         <label for="valorEntradaLancamento" class="block text-sm font-medium mb-1">
                             Valor Entrada
                         </label>
-                        <input type="text" id="valorEntradaLancamento" name="valorEntrada" placeholder="0,00"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
+                        <Input type="text" id="valorEntradaLancamento" name="valorEntrada" placeholder="0,00" />
                     </div>
 
                     <!-- Data Entrada -->
@@ -83,8 +104,8 @@ const store = useLancamentosStore()
                         <label for="dataEntradaLancamento" class="block text-sm font-medium mb-1">
                             Data Entrada
                         </label>
-                        <input type="text" placeholder="dd/mm/aaaa" id="dataEntradaLancamento" name="dataEntrada"
-                            class="w-full p-2 rounded-md disabled:bg-gray-300 dark:disabled:bg-gray-900 border bg-card dark:bg-card-dark border-border dark:border-border-dark">
+                        <Calendarpicker id="dataEntradaLancamento" name="dataEntrada"
+                            v-model="store.form.dataEntrada" />
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -93,8 +114,7 @@ const store = useLancamentosStore()
                         <label for="descontoFormularioLancamento" class="block text-sm font-medium mb-1">
                             Desconto
                         </label>
-                        <input type="text" id="descontoFormularioLancamento" name="desconto" placeholder="0,00"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
+                        <Input type="text" id="descontoFormularioLancamento" name="desconto" placeholder="0,00" />
                     </div>
 
                     <!-- Forma de Pagamento -->
@@ -102,16 +122,31 @@ const store = useLancamentosStore()
                         <label for="formaPagamentoLancamento" class="block text-sm font-medium mb-1">
                             Forma de Pagamento *
                         </label>
-                        <select id="formaPagamentoLancamento" name="formaPagamento" required
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
-                            <option value="">Selecione a forma</option>
-                            <option value="PIX">PIX</option>
-                            <option value="DINHEIRO">Dinheiro</option>
-                            <option value="CREDITO">Cartão de Crédito</option>
-                            <option value="DEBITO">Cartão de Débito</option>
-                            <option value="BOLETO">Boleto</option>
-                            <option value="TRANSFERENCIA">Transferência</option>
-                        </select>
+                        <Select v-model="store.form.formaPagamento" required>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Forma de pagamento" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="PIX">
+                                    PIX
+                                </SelectItem>
+                                <SelectItem value="DINHEIRO">
+                                    Dinheiro
+                                </SelectItem>
+                                <SelectItem value="CREDITO">
+                                    Cartão de Crédito
+                                </SelectItem>
+                                <SelectItem value="DEBITO">
+                                    Cartão de Débito
+                                </SelectItem>
+                                <SelectItem value="BOLETO">
+                                    Boleto
+                                </SelectItem>
+                                <SelectItem value="TRANSFERENCIA">
+                                    Transferência
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div class="block text-sm font-medium mb-1">
@@ -121,14 +156,10 @@ const store = useLancamentosStore()
                         <div class="gap-2 mt-1 items-center">
                             <div>
                                 <label for="lancamentoEfetivadoTotal"
-                                    class="border block cursor-pointer bg-card dark:bg-card-dark border-border dark:border-border-dark px-3 py-2.5 rounded-md">
+                                    class="border cursor-pointer bg-card dark:bg-card-dark border-border px-3 h-[36px] flex rounded-lg">
                                     <div class="flex items-center">
                                         <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" id="lancamentoEfetivadoTotal"
-                                                name="lancamentoEfetivado" class="sr-only peer" />
-                                            <div
-                                                class="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary dark:peer-focus:ring-primary-dark dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-4 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary dark:peer-checked:bg-primary-dark">
-                                            </div>
+                                            <Switch id="lancamentoEfetivadoTotal" v-model="params.efetivado" />
                                             <span
                                                 class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Efetivado</span>
                                         </label>
@@ -167,9 +198,8 @@ const store = useLancamentosStore()
                         <label for="dataFinanceiroLancamento" class="block text-sm font-medium mb-1">
                             Data Lançamento *
                         </label>
-                        <input type="text" placeholder="dd/mm/aaaa" id="dataFinanceiroLancamento" name="dataLancamento"
-                            required
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark">
+                        <Calendarpicker id="dataFinanceiroLancamento" name="dataLancamento"
+                            v-model="store.form.dataLancamento" />
                     </div>
 
                     <!-- Conta Financeiro -->

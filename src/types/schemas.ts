@@ -287,6 +287,29 @@ export interface FormularioVenda {
   desconto: number | string | null
   id: number | null
 }
+export interface FormularioLancamento {
+  id: number | null
+  clienteId: number | null
+  categoriaId: number | null
+  contaFinanceiroId: number | null
+  dataLancamento: Date | string | null
+  tipo: 'RECEITA' | 'DESPESA'
+  formaPagamento:
+    | 'DINHEIRO'
+    | 'DEBITO'
+    | 'CREDITO'
+    | 'BOLETO'
+    | 'DEPOSITO'
+    | 'TRANSFERENCIA'
+    | 'CHEQUE'
+    | 'PIX'
+  dataEntrada: Date | string | null
+  valorTotal: number | string
+  valorEntrada: number | string
+  desconto: number | string
+  parcelas: number | undefined
+  descricao: string
+}
 
 export interface ItensVendas {
   id?: number

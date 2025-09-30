@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { type FormularioVenda, type ItensVendas, type Vendas } from '@/types/schemas'
-import { VendaRepository } from '@/repositories/venda-repository'
+import { type FormularioLancamento, type LancamentoFinanceiro } from '@/types/schemas'
+import { LancamentosRepository } from '@/repositories/lancamento-repository'
 
 interface filtro {
   periodo: { inicio: string | null; fim: string | null }
@@ -16,27 +16,37 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const openModalFaturar = ref(false)
   const idMutation = ref<number | null>(null)
 
-  const form = ref<FormularioVenda>({
+  const form = ref<FormularioLancamento>({
     id: null,
-    vendedorId: null,
     clienteId: null,
-    data: new Date(),
-    desconto: null,
-    status: 'FINALIZADO',
-    garantia: 0,
-    observacoes: '',
+    categoriaId: null,
+    contaFinanceiroId: null,
+    dataLancamento: new Date(),
+    dataEntrada: null,
+    desconto: 0,
+    descricao: '',
+    formaPagamento: 'DINHEIRO',
+    parcelas: 1,
+    tipo: 'RECEITA',
+    valorEntrada: 0,
+    valorTotal: 0,
   })
 
   const reset = () => {
     form.value = {
       id: null,
-      status: 'FINALIZADO',
-      data: new Date(),
-      desconto: null,
       clienteId: null,
-      garantia: 0,
-      observacoes: '',
-      vendedorId: null,
+      categoriaId: null,
+      contaFinanceiroId: null,
+      dataLancamento: new Date(),
+      dataEntrada: null,
+      desconto: 0,
+      descricao: '',
+      formaPagamento: 'DINHEIRO',
+      parcelas: 1,
+      tipo: 'RECEITA',
+      valorEntrada: 0,
+      valorTotal: 0,
     }
   }
 
@@ -54,28 +64,32 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
   }
 
   const openUpdate = async (id: number) => {
-    const { data } = (await VendaRepository.get(id)) as {
-      data: Vendas & { ItensVendas: ItensVendas[] }
+    const { data } = (await LancamentosRepository.get(id)) as {
+      data: LancamentoFinanceiro
     }
     form.value = {
       id: id,
-      status: data?.status,
-      data: data?.data,
-      desconto: data?.desconto,
-      clienteId: data?.clienteId ? data?.clienteId : null,
-      garantia: data?.garantia ? data?.garantia : 0,
-      observacoes: data?.observacoes ? data?.observacoes : '',
-      vendedorId: data?.vendedorId ? data?.vendedorId : null,
+      categoriaId: data.categoriaId,
+      contaFinanceiroId: data.contasFinanceiroId!,
+      clienteId: data.clienteId ? data.clienteId : null,
+      dataEntrada: data.dataEntrada ? data.dataEntrada : null,
+      dataLancamento: data.dataLancamento,
+      desconto: data.desconto,
+      descricao: data.descricao,
+      parcelas: 1,
+      formaPagamento: data.formaPagamento as
+        | 'DINHEIRO'
+        | 'DEBITO'
+        | 'CREDITO'
+        | 'BOLETO'
+        | 'DEPOSITO'
+        | 'TRANSFERENCIA'
+        | 'CHEQUE'
+        | 'PIX',
+      tipo: data.tipo,
+      valorEntrada: data.valorEntrada,
+      valorTotal: data.valorTotal,
     }
-    data.ItensVendas.forEach((item) => {
-      const newItem = {
-        id: item.produtoId,
-        produto: item.produto.nome,
-        quantidade: item.quantidade,
-        preco: parseFloat(String(item.valor).replace(',', '.')),
-        subtotal: parseFloat(String(item.valor).replace(',', '.')) * item.quantidade,
-      }
-    })
     openModal.value = true
   }
 

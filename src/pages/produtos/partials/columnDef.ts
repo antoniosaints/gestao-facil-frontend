@@ -27,7 +27,7 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
       return render(RouterLink, { to: `/produtos/detalhes?id=${row.original.id}` }, () =>
         render(BadgeCell, {
           label: row.getValue('Uid') as string,
-          color: isLowStock ? 'orange' : 'gray',
+          color: isLowStock ? 'red' : 'gray',
           icon: Package,
           capitalize: false,
         }),

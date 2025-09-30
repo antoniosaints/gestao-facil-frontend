@@ -9,6 +9,7 @@ import {
   CircleDollarSign,
   ClockAlert,
   Loader,
+  Tag,
   TrendingDown,
   TrendingUp,
   Ungroup,
@@ -19,7 +20,9 @@ import { formatCurrencyBR } from '@/utils/formatters'
 import { formatDate, isAfter } from 'date-fns'
 import { RouterLink } from 'vue-router'
 
-export const columnsLancamentos: ColumnDef<LancamentoFinanceiro & {parcelas: Array<ParcelaFinanceiro>}>[] = [
+export const columnsLancamentos: ColumnDef<
+  LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro> }
+>[] = [
   {
     accessorKey: 'Uid',
     enableSorting: false,
@@ -29,7 +32,7 @@ export const columnsLancamentos: ColumnDef<LancamentoFinanceiro & {parcelas: Arr
         render(BadgeCell, {
           label: row.getValue('Uid') as string,
           color: 'gray',
-          icon: CircleDollarSign,
+          icon: row.original.vendaId ? Tag : CircleDollarSign,
           capitalize: false,
         }),
       )
@@ -71,8 +74,10 @@ export const columnsLancamentos: ColumnDef<LancamentoFinanceiro & {parcelas: Arr
       const parcelas = row.original.parcelas.filter((p) => p.numero !== 0)
       const efetivadas = parcelas.filter((p) => p.pago).length
       const pendentes = parcelas.filter((p) => !p.pago).length
-      const idOverdue = row.original.parcelas.some((p) => !p.pago && isAfter(new Date(), new Date(p.vencimento)))
-      if (pendentes > 0 && row.original.recorrente ) {
+      const idOverdue = row.original.parcelas.some(
+        (p) => !p.pago && isAfter(new Date(), new Date(p.vencimento)),
+      )
+      if (pendentes > 0 && row.original.recorrente) {
         label = `${efetivadas}/${parcelas.length} ${Math.round((efetivadas / parcelas.length) * 100)}%`
       }
       if (idOverdue) {
@@ -101,8 +106,12 @@ export const columnsLancamentos: ColumnDef<LancamentoFinanceiro & {parcelas: Arr
     cell: ({ row }) =>
       render(
         'div',
-        { class: 'text-left w-full truncate max-w-[450px]' },
-        row.getValue('descricao') as string,
+        {
+          class: 'text-left w-full truncate max-w-[450px] p-1 px-2 rounded-md',
+        },
+        row.original.vendaId
+          ? `🏷️ ${row.getValue('descricao')}`
+          : `${row.getValue('descricao') as string}`,
       ),
   },
   {

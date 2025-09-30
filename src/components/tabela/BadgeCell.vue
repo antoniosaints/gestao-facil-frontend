@@ -21,7 +21,7 @@ const formattedLabel = computed(() =>
 )
 
 const baseClasses =
-  "inline-flex items-center gap-1 px-2 py-0.5 border rounded-md w-max";
+  "inline-flex items-center gap-1 px-2 py-1 border rounded-lg w-max";
 
 
 const colors = {

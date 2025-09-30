@@ -30,15 +30,17 @@ const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
 
             <BreadcrumbSeparator v-if="segments.length > 0" />
 
-            <BreadcrumbItem v-for="(segment, index) in segments" :key="index">
-                <BreadcrumbLink as-child>
-                    <RouterLink :to="buildPath(index)"
-                        :class="index === segments.length - 1 ? 'text-foreground' : 'text-muted-foreground'">
-                        {{ route.matched[index + 1]?.meta?.title || capitalize(segment) }}
-                    </RouterLink>
-                </BreadcrumbLink>
+            <template v-for="(segment, index) in segments" :key="index">
+                <BreadcrumbItem>
+                    <BreadcrumbLink as-child>
+                        <RouterLink :to="buildPath(index)"
+                            :class="index === segments.length - 1 ? 'text-foreground' : 'text-muted-foreground'">
+                            {{ route.matched[index + 1]?.meta?.title || capitalize(segment) }}
+                        </RouterLink>
+                    </BreadcrumbLink>
+                </BreadcrumbItem>
                 <BreadcrumbSeparator v-if="index !== segments.length - 1" />
-            </BreadcrumbItem>
+            </template>
         </BreadcrumbList>
     </Breadcrumb>
 </template>
