@@ -1,4 +1,3 @@
-import BadgeInfo from '@/components/tabela/BadgeInfo.vue'
 import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { Produto } from '@/types/schemas'
@@ -7,7 +6,6 @@ import { ArrowUpDown, Package, ScanQrCode } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
 import Actions from './Actions.vue'
-import { goTo } from '@/hooks/links'
 import { RouterLink } from 'vue-router'
 
 export const columnsProdutos: ColumnDef<Produto>[] = [

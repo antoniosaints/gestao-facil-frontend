@@ -4,10 +4,10 @@
     <div class="flex gap-2 justify-between items-center" onclick="openModalUploadProfileAccount()">
       <img :src="logoSistemaGestaoFacil" alt="PR" class="rounded-full w-8 h-8 bg-gray-500" />
       <div class="flex flex-col truncate">
-        <h1 class="text-base overflow-hidden text-ellipsis whitespace-nowrap text-gray-950 truncate dark:text-white">
+        <h1 class="text-base overflow-hidden text-ellipsis whitespace-nowrap truncate text-gray-700 dark:text-gray-300">
           {{ nameSistemaGestaoFacil }}
         </h1>
-        <p class="text-xs overflow-hidden text-ellipsis whitespace-nowrap text-gray-950 truncate dark:text-gray-200">
+        <p class="text-xs overflow-hidden text-ellipsis whitespace-nowrap truncate text-gray-700 dark:text-gray-300">
           {{ infoSistemaGestaoFacil }}
         </p>
       </div>

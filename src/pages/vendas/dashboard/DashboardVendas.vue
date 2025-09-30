@@ -68,7 +68,7 @@ onMounted(() => {
   <div class="space-y-4">
     <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
       <div>
-        <h2 class="text-2xl font-bold text-black dark:text-white">
+        <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">
           Painel de vendas
         </h2>
         <p class="text-sm text-muted-foreground">Resumo geral e insights</p>

@@ -34,7 +34,7 @@ const eventos = [
         <!-- Cabeçalho -->
         <div class="flex justify-between items-center">
             <div>
-                <h2 class="text-2xl font-bold text-black dark:text-white">
+                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">
                     Painel de serviços
                 </h2>
                 <p class="text-sm text-muted-foreground">Acompanhamento e controle de serviços</p>

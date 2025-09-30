@@ -12,7 +12,7 @@ const uiStore = useUiStore()
     <div>
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
             <div>
-                <h2 class="text-2xl font-bold text-black dark:text-white">
+                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">
                     Usuários
                 </h2>
                 <p class="text-sm text-muted-foreground">Usuários cadastrados no sistema</p>

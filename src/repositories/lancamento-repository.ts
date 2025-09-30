@@ -36,6 +36,10 @@ export class LancamentosRepository {
   static async deletarCategoria(id: number) {
     await http.delete(`/lancamentos/contas/${id}`)
   }
+  static async getSaldoMensal() {
+    const data = await http.get(`/lancamentos/graficos/saldo-mensal`)
+    return data.data
+  }
   static async gerarDRE(inicio: Date, fim: Date) {
     await http.get(`/lancamentos/relatorios/dre`, {
       params: {

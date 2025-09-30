@@ -3,7 +3,7 @@
         <div class="flex flex-col gap-4">
             <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
                 <div>
-                    <h2 class="text-2xl font-bold text-black dark:text-white">
+                    <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">
                         Dashboard
                     </h2>
                     <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
@@ -216,15 +216,14 @@
 import BarChart from '@/components/graficos/BarChart.vue';
 import LineChart from '@/components/graficos/LineChart.vue';
 import { useDashboardStore } from '@/stores/dashboard/useDashboardStore';
-import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
 import { onMounted, ref } from 'vue';
 import { VendaRepository } from '@/repositories/venda-repository';
 import { goTo } from '@/hooks/links';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import { optionsChartBar, optionsChartLine } from '@/composables/useChartOptions';
+import { LancamentosRepository } from '@/repositories/lancamento-repository';
 
 const store = useDashboardStore();
-const storeLancamento = useLancamentosStore();
 const filtroPeriodo = ref([new Date(), new Date()]);
 
 const dataVendas: any = ref({ labels: [], datasets: [] });
@@ -241,7 +240,7 @@ async function getResumoVendas() {
 
 async function getSaldoMensal() {
     try {
-        const data = await storeLancamento.getSaldoMensal();
+        const data = await LancamentosRepository.getSaldoMensal();
         dataSaldo.value = { labels: [...data.labels], datasets: [...data.datasets] };
     } catch (error) {
         console.log(error);
