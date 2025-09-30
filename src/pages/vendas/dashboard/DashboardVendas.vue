@@ -84,16 +84,16 @@ onMounted(() => {
 
     <section>
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition">
+        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-md transition ">
           <CardHeader>
-            <CardTitle class="flex flex-row items-center gap-2 text-sm font-semibold"><i
+            <CardTitle class="flex flex-row items-center gap-2 text-md text-gray-700 dark:text-gray-300"><i
                 class="p-1 bg-background/20 rounded-md" :class="kpi.icone"></i> {{
                   kpi.titulo }}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p class="text-xs text-muted-foreground">{{ kpi.valor != null ? `Qtd ${kpi.valor}` : 'No período' }}</p>
-            <p class="text-lg">R$ {{ kpi.detalhe.replace('.', ',') }}</p>
+            <p class="text-lg text-gray-700 dark:text-gray-300">R$ {{ kpi.detalhe.replace('.', ',') }}</p>
           </CardContent>
         </Card>
       </div>

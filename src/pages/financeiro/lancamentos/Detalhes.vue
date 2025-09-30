@@ -191,7 +191,8 @@ onMounted(loadLancamento);
                                 </TableCell>
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
-                                        <Button v-if="!p.pago" :disabled="lancamento.vendaId" @click="efetivarParcela(p.id!)" variant="default"
+                                        <Button v-if="!p.pago" :disabled="lancamento.vendaId"
+                                            @click="efetivarParcela(p.id!)" variant="default"
                                             class="w-8 h-8 p-0 text-white">
                                             <BadgeCheck class="w-4 h-4" />
                                         </Button>
@@ -199,7 +200,8 @@ onMounted(loadLancamento);
                                             class="w-8 h-8 p-0 bg-danger hover:bg-danger/80 text-white">
                                             <OctagonX class="w-4 h-4" />
                                         </Button> -->
-                                        <Button v-if="p.pago" :disabled="lancamento.vendaId" @click="estornarParcela(p.id!)" variant="default"
+                                        <Button v-if="p.pago" :disabled="lancamento.vendaId"
+                                            @click="estornarParcela(p.id!)" variant="default"
                                             class="w-8 h-8 p-0 bg-warning hover:bg-warning/80 text-white">
                                             <Undo2 class="w-4 h-4" />
                                         </Button>

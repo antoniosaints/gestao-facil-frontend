@@ -68,11 +68,11 @@ onMounted(() => {
         <Card class="border shadow-md">
             <CardHeader>
                 <CardTitle class="flex justify-between items-center text-xl">
-                    <div class="flex items-center">
+                    <div class="flex items-center text-gray-700 dark:text-gray-300">
                         <Sparkles class="mr-2 w-4 h-4" />
                         Assinatura Gestão Fácil
                     </div>
-                    <Badge variant="outline" class="text-white"
+                    <Badge variant="outline" class="text-gray-700 dark:text-gray-300"
                         :class="storeUi.status === 'ATIVO' ? 'bg-success' : 'bg-danger'">
                         {{ storeUi.status }}
                     </Badge>
@@ -81,7 +81,7 @@ onMounted(() => {
                     mantendo a sua assinatura ativa</CardDescription>
             </CardHeader>
 
-            <CardContent class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700 dark:text-gray-300">
                 <div>
                     <p class="text-sm text-muted-foreground">Valor</p>
                     <p class="text-lg font-semibold">{{ assinatura?.valor }}</p>
@@ -105,11 +105,12 @@ onMounted(() => {
                     <RotateCw :class="refresh ? 'animate-spin' : ''" /> {{ refresh ? "Atualizando..." : "Atualizar" }}
                 </Button>
                 <Button v-if="storeUi.diasParaVencer <= 3 && assinatura?.proximoLinkPagamento == null"
-                    @click="renovarAssinatura" variant="default" class="text-white">
+                    @click="renovarAssinatura" variant="default" class="text-gray-700 dark:text-gray-300">
                     <CreditCard /> {{ renewText }}
                 </Button>
                 <Button v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento"
-                    @click="abrirLinkPagamento" variant="default" class="text-white bg-warning hover:bg-warning/80">
+                    @click="abrirLinkPagamento" variant="default"
+                    class="text-gray-700 dark:text-gray-300 bg-warning hover:bg-warning/80">
                     <BadgeDollarSign /> Pagar agora
                 </Button>
             </CardFooter>
@@ -128,7 +129,7 @@ onMounted(() => {
                         <p class="text-sm text-muted-foreground">Vencimento: {{ fatura.vencimento }}</p>
                     </div>
 
-                    <div class="flex items-center text-white gap-2">
+                    <div class="flex items-center text-gray-700 dark:text-gray-300 gap-2">
                         <span v-if="fatura.status === 'PAGO'" @click="abrirComprovante(fatura.linkPagamento)"
                             class="px-2 py-2 rounded-md flex items-center cursor-pointer bg-info">
                             <FileCheck2 class="w-4 h-4" />
@@ -145,7 +146,8 @@ onMounted(() => {
                             <XCircle class="w-4 h-4 mr-1" /> Cancelada
                         </span>
 
-                        <Button v-if="fatura.status === 'PENDENTE'" class="text-white" @click="pagarFatura(fatura.linkPagamento)">
+                        <Button v-if="fatura.status === 'PENDENTE'" class="text-white"
+                            @click="pagarFatura(fatura.linkPagamento)">
                             <CircleDollarSign />
                             Pagar
                         </Button>

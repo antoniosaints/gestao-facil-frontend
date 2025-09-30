@@ -80,10 +80,10 @@ const filtroPeriodo = ref([new Date(), new Date()])
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl hover:scale-[1.02] transition">
           <CardHeader class="flex flex-row items-center gap-2">
             <component :is="kpi.icone" class="w-5 h-5 text-blue-500" />
-            <CardTitle class="text-sm">{{ kpi.titulo }}</CardTitle>
+            <CardTitle class="text-md text-gray-700 dark:text-gray-300">{{ kpi.titulo }}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p class="text-xl font-bold">{{ kpi.valor }}</p>
+            <p class="text-xl font-bold text-gray-700 dark:text-gray-300">{{ kpi.valor }}</p>
             <p class="text-xs text-muted-foreground">{{ kpi.detalhe }}</p>
           </CardContent>
         </Card>
