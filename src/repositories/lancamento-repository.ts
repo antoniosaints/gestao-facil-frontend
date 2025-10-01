@@ -1,4 +1,4 @@
-import type { CategoriaFinanceiro, ContasFinanceiro, LancamentoFinanceiro } from '@/types/schemas'
+import type { CategoriaFinanceiro, ContasFinanceiro, FormularioLancamento } from '@/types/schemas'
 import http from '@/utils/axios'
 export class LancamentosRepository {
   static async get(id: number) {
@@ -8,7 +8,7 @@ export class LancamentosRepository {
   static async remove(id: number) {
     await http.delete(`/lancamentos/${id}`)
   }
-  static async save(data: Omit<LancamentoFinanceiro, 'id'>) {
+  static async save(data: Omit<FormularioLancamento, 'id'>) {
     await http.post(`/lancamentos`, data)
   }
   static async reciboParcela(idParcela: number) {

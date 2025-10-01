@@ -29,7 +29,7 @@ async function submit() {
 </script>
 
 <template>
-    <ModalView v-model:open="store.openModal" description="Preencha dos dados do cliente"
+    <ModalView v-model:open="store.openModal" size="xl" description="Preencha dos dados do cliente"
         title="Formulário de clientes">
         <form @submit.prevent="submit" class="flex flex-col px-4">
             <div class="bg-background dark:bg-background-dark rounded-md w-full h-full grid grid-cols-2 gap-4">
