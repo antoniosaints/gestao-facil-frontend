@@ -1,6 +1,6 @@
 <template>
   <header
-    class="hidden md:flex items-center justify-between border border-border bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-6 py-3 shadow z-20 transition-all duration-300 ease-in-out"
+    class="hidden md:flex items-center justify-between bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-6 py-3 z-20 transition-all duration-300 ease-in-out"
     :class="{ 'md:ml-64': uiStore.openSidebar }">
 
     <div class="text-md font-bold flex items-center gap-4">
