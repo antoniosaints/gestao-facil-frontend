@@ -72,7 +72,7 @@ onMounted(() => {
                         <Sparkles class="mr-2 w-4 h-4" />
                         Assinatura Gestão Fácil
                     </div>
-                    <Badge variant="outline" class="text-gray-700 dark:text-gray-300"
+                    <Badge variant="outline" class="text-white dark:text-gray-300 border-none"
                         :class="storeUi.status === 'ATIVO' ? 'bg-success' : 'bg-danger'">
                         {{ storeUi.status }}
                     </Badge>
@@ -125,24 +125,25 @@ onMounted(() => {
                     class="flex justify-between items-center p-4">
                     <div>
                         <p class="text-lg font-semibold">{{ formatCurrencyBR(parseFloat(fatura.valor.replace(',', '.')))
-                        }}</p>
+                            }}</p>
                         <p class="text-sm text-muted-foreground">Vencimento: {{ fatura.vencimento }}</p>
                     </div>
 
                     <div class="flex items-center text-gray-700 dark:text-gray-300 gap-2">
                         <span v-if="fatura.status === 'PAGO'" @click="abrirComprovante(fatura.linkPagamento)"
-                            class="px-2 py-2 rounded-md flex items-center cursor-pointer bg-info">
+                            class="px-2 py-2 rounded-md flex items-center cursor-pointer bg-info text-white">
                             <FileCheck2 class="w-4 h-4" />
                         </span>
 
-                        <span v-if="fatura.status === 'PAGO'" class="px-2 py-1 rounded-md flex items-center bg-success">
+                        <span v-if="fatura.status === 'PAGO'"
+                            class="px-2 py-1 rounded-md flex items-center bg-success text-white">
                             <CheckCircle class="w-4 h-4 mr-1" /> Paga
                         </span>
                         <span v-else-if="fatura.status === 'PENDENTE'"
-                            class="px-2 py-1 rounded-md flex items-center bg-warning">
+                            class="px-2 py-1 rounded-md flex items-center bg-warning text-white">
                             <Clock class="w-4 h-4 mr-1" /> Pendente
                         </span>
-                        <span v-else class="px-2 py-1 rounded-md flex items-center bg-danger">
+                        <span v-else class="px-2 py-1 rounded-md flex items-center bg-danger text-white">
                             <XCircle class="w-4 h-4 mr-1" /> Cancelada
                         </span>
 
