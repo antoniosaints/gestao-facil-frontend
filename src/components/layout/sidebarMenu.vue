@@ -12,15 +12,15 @@
 
             <!-- Dropdown -->
             <div v-else-if="item.children && item.children.length"
-                class="mb-1 cursor-pointer mt-2 rounded-lg border border-border/70 transition-all">
+                class="mb-1 cursor-pointer mt-2 rounded-xl border border-border/70 transition-all">
                 <button @click="toggleDropdown(item.nome)"
-                    class="dropdown-toggle w-full flex items-center hover:bg-gray-200 dark:hover:bg-gray-800 justify-between px-4 py-2 text-left cursor-pointer dark:bg-background-dark rounded-lg transition-colors group">
+                    class="dropdown-toggle w-full flex items-center bg-gray-100 dark:bg-body hover:bg-gray-200 dark:hover:bg-gray-800 justify-between px-4 py-2 text-left cursor-pointer rounded-xl transition-colors group">
                     <div class="flex items-center space-x-3">
                         <i v-if="typeof item.icone === 'string'"
-                            :class="[item.icone, item.color ? colorClasses[item.color] : 'text-gray-500']"></i>
-                        <component v-else :is="item.icone"
-                            :class="['w-4 h-4', item.color ? colorClasses[item.color] : 'text-gray-500']"></component>
-                        <span class="font-medium text-gray-700 dark:text-gray-300">{{ item.nome }}</span>
+                            :class="[item.icone, 'text-blue-800 dark:text-blue-400']"></i>
+                        <component v-else :is="item.icone" :class="['w-5 h-5', 'text-blue-800 dark:text-blue-400']">
+                        </component>
+                        <span class="text-gray-600 dark:text-gray-300">{{ item.nome }}</span>
                     </div>
                     <svg class="dropdown-arrow w-4 h-4 transition-transform duration-200"
                         :class="{ 'rotate-90': openDropdown === item.nome }" fill="none" stroke="currentColor"
@@ -33,28 +33,30 @@
                     class="dropdown-content flex flex-col p-1 gap-1 transition-all">
                     <router-link v-for="(child, i) in item.children" :key="i" :to="child.link || 'javascript:void(0)'"
                         :class="[
-                            'flex items-center p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 pl-4 dark:hover:bg-gray-800 cursor-pointer dark:bg-background-dark rounded-md transition-colors',
-                            route.path === child.link ? 'bg-gray-200 dark:bg-gray-800' : ''
+                            'flex items-center p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 pl-4 dark:hover:bg-gray-800 cursor-pointer rounded-xl transition-colors',
+                            route.path === child.link && 'bg-gray-200 dark:bg-gray-800'
                         ]">
                         <i v-if="typeof child.icone === 'string'"
-                            :class="[child.icone, 'mr-2', child.color ? colorClasses[child.color] : 'text-gray-500']"></i>
+                            :class="[child.icone, 'mr-2', 'text-blue-600 dark:text-blue-600']"></i>
                         <component v-else :is="child.icone"
-                            :class="['mr-2 w-4 h-4', child.color ? colorClasses[child.color] : 'text-gray-500']">
+                            :class="['mr-2 w-5 h-5', 'text-blue-600 dark:text-blue-600']">
                         </component>
-                        {{ child.nome }}
+                        <span class="truncate">
+                            {{ child.nome }}
+                        </span>
                     </router-link>
                 </div>
             </div>
 
             <!-- Link normal -->
             <router-link v-else :to="item.link || 'javascript:void(0)'" :class="[
-                'cursor-pointer border border-border/70 mt-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-background-dark dark:border-border-dark p-2 rounded-lg transition flex items-center',
-                route.path === item.link ? 'bg-gray-200 dark:bg-gray-800' : ''
+                'cursor-pointer border bg-gray-100 dark:bg-body border-border/70 mt-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 p-2 rounded-xl transition flex items-center',
+                route.path === item.link && 'bg-gray-200 dark:bg-gray-800'
             ]">
                 <i v-if="typeof item.icone === 'string'"
-                    :class="[item.icone, 'px-2', item.color ? colorClasses[item.color] : 'text-gray-500']"></i>
-                <component v-else :is="item.icone"
-                    :class="['ml-2 mr-3 w-4 h-4', item.color ? colorClasses[item.color] : 'text-gray-500']"></component>
+                    :class="[item.icone, 'px-2', 'text-blue-800 dark:text-blue-400']"></i>
+                <component v-else :is="item.icone" :class="['ml-2 mr-3 w-5 h-5', 'text-blue-800 dark:text-blue-400']">
+                </component>
                 {{ item.nome }}
             </router-link>
         </div>

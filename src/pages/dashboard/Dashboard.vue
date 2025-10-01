@@ -129,7 +129,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Gráfico de Barras -->
                 <div
-                    class="border-border bg-card shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+                    class="border-border bg-card shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
                     <div class="flex items-center justify-between mb-2">
                         <h2 class="text-lg font-semibold px-0 py-1">
                             <i class="fa-solid fa-chart-simple text-green-600"></i> Vendas Mensais
@@ -147,7 +147,7 @@
 
                 <!-- Gráfico de Linhas -->
                 <div
-                    class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+                    class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
                     <div class="flex items-center justify-between mb-2">
                         <h2 class="text-lg font-semibold px-0 py-1">
                             <i class="fa-solid fa-chart-simple text-green-600"></i> Saldo mensal
@@ -165,7 +165,7 @@
 
                 <!-- Últimas Vendas -->
                 <div
-                    class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+                    class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-lg font-semibold px-0 py-1">
                             <i class="fa-solid fa-boxes-packing text-blue-600"></i> Últimos Produtos
@@ -176,7 +176,7 @@
                             Ver mais
                         </button>
                     </div>
-                    <div class="overflow-x-auto max-h-96 relative sm:rounded-lg">
+                    <div class="overflow-x-auto max-h-96 relative sm:rounded-xl">
                         <div id="produtos_tabela_dashboard_sem_produtos"
                             class="p-2 text-sm h-80 text-gray-500 dark:text-gray-400 flex justify-center items-center flex-col">
                             <i class="fa-solid fa-boxes-stacked text-5xl"></i>
@@ -186,7 +186,7 @@
                     </div>
                 </div>
                 <div
-                    class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+                    class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-lg font-semibold px-0 py-1">
                             <i class="fa-solid fa-box-open text-red-600"></i>
@@ -198,7 +198,7 @@
                             Ver mais
                         </button>
                     </div>
-                    <div class="overflow-x-auto max-h-96 relative sm:rounded-lg">
+                    <div class="overflow-x-auto max-h-96 relative sm:rounded-xl">
                         <div id="produtos_em_baixa_dashboard_sem_produtos"
                             class="p-2 text-sm h-80 text-gray-500 dark:text-gray-400 flex justify-center items-center flex-col">
                             <i class="fa-solid fa-box-open text-5xl"></i>

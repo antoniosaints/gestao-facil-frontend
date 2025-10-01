@@ -84,11 +84,10 @@ onMounted(() => {
 
     <section>
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-md transition ">
+        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition ">
           <CardHeader>
             <CardTitle class="flex flex-row items-center gap-2 text-md text-gray-700 dark:text-gray-300"><i
-                class="p-1 bg-background/20 rounded-md" :class="kpi.icone"></i> {{
-                  kpi.titulo }}
+                class="p-1 bg-background/20 rounded-md" :class="kpi.icone"></i> {{ kpi.titulo }}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -102,7 +101,7 @@ onMounted(() => {
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Gráfico de Barras -->
       <div
-        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
         <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
           Vendas por status
         </h2>
@@ -110,7 +109,7 @@ onMounted(() => {
       </div>
 
       <div
-        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
         <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
           Resumo por período
         </h2>
@@ -118,7 +117,7 @@ onMounted(() => {
       </div>
 
       <div
-        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
         <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
           Plano de contas
         </h2>
@@ -126,7 +125,7 @@ onMounted(() => {
       </div>
 
       <div
-        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
+        class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
         <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-pie text-emerald-600"></i>
           Por categoria
         </h2>

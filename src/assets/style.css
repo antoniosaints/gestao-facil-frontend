@@ -75,10 +75,9 @@
     --warning: 22.7 82.5% 31.4%;
     --success: 142.8 64.2% 24.1%;
   }
-}
 
-@layer base {
   * {
+    font-family: 'Roboto', sans-serif;
     @apply border-border;
   }
   body {
