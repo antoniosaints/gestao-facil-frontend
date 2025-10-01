@@ -22,8 +22,8 @@ export async function handleRouteGuard(to: typed, from: typed) {
 
   const home = { name: 'home' }
   const login = { name: 'login' }
-  const assinatura = { name: 'assinatura-home' }
-  const allowedRoutes = ['/login', '/assinatura', '/assinatura/resumo']
+  const assinatura = { name: 'assinatura-resumo' }
+  const allowedRouteNames = ['login', 'assinatura-home', 'assinatura-resumo']
   const token = localStorage.getItem('gestao_facil:token')
 
   if (window.innerWidth < 768) {
@@ -40,7 +40,7 @@ export async function handleRouteGuard(to: typed, from: typed) {
   if (to.path === '/login' && token) return home
 
   // Checa status da conta (exceto login/assinatura)
-  if (!allowedRoutes.includes(to.path)) {
+  if (!allowedRouteNames.includes(to.name as string)) {
     const ativo = await useControlRouter()
     if (!ativo) {
       toast.info('Sua conta está inativa, realize o pagamento para ativá-la.')

@@ -105,7 +105,7 @@ onMounted(() => {
                     <RotateCw :class="refresh ? 'animate-spin' : ''" /> {{ refresh ? "Atualizando..." : "Atualizar" }}
                 </Button>
                 <Button v-if="storeUi.diasParaVencer <= 3 && assinatura?.proximoLinkPagamento == null"
-                    @click="renovarAssinatura" variant="default" class="text-gray-700 dark:text-gray-300">
+                    @click="renovarAssinatura" variant="default" class="text-white">
                     <CreditCard /> {{ renewText }}
                 </Button>
                 <Button v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento"
