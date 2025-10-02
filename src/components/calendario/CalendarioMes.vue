@@ -63,7 +63,7 @@ const navigateToDay = (dia: Date) => {
         <div class="grid grid-cols-7 gap-1 text-xs">
             <div v-for="(dia, i) in days" :key="i" @click="navigateToDay(dia)"
                 class="h-24 border bg-gray-200 dark:bg-gray-800 rounded cursor-pointer p-2 text-left"
-                :class="{ 'bg-white dark:bg-gray-950': isSameMonth(dia, currentMonth), 'bg-slate-200 dark:bg-slate-800': isSameDay(dia, hoje) }">
+                :class="{ 'bg-white dark:bg-gray-950': isSameMonth(dia, currentMonth), 'bg-blue-200 dark:bg-slate-900': isSameDay(dia, hoje) }">
                 <div class="font-semibold">{{ format(dia, "dd") }}</div>
                 <div v-for="ev in eventosDoDia(dia).slice(0, 2)" :key="ev.id"
                     class="mt-1 bg-primary text-white truncate px-1 rounded">

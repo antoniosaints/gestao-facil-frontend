@@ -9,14 +9,13 @@
 
         <Tabs v-model="tab" class="w-auto">
             <div class="overflow-auto max-w-full">
-                <TabsList class="grid w-max grid-cols-7">
+                <TabsList class="grid w-max grid-cols-6">
                     <TabsTrigger value="geral"><i class="fa-solid fa-gear mr-2"></i> Geral</TabsTrigger>
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="pdv"><i class="fa-solid fa-cash-register mr-2"></i> PDV</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger value="integracoes"><i class="fa-solid fa-link mr-2"></i> Integrações</TabsTrigger>
                     <TabsTrigger value="seguranca"><i class="fa-solid fa-shield mr-2"></i> Segurança</TabsTrigger>
-                    <TabsTrigger value="impressao"><i class="fa-solid fa-print mr-2"></i> Impressão</TabsTrigger>
                 </TabsList>
             </div>
 
@@ -176,8 +175,8 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div class="space-y-2">
                                 <Label for="mercadoPagoKey">Mercado Pago API Key</Label>
-                                <Input id="mercadoPagoKey" v-model="form.integracoes.mercadoPago.apiKey"
-                                    type="password" />
+                                <Input id="mercadoPagoKey" v-model="form.integracoes.mercadoPago.apiKey" type="password"
+                                    placeholder="Sua chave de acesso" />
                                 <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
                                     clientes.</p>
                             </div>
@@ -199,7 +198,8 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div class="space-y-2">
                                 <Label for="asaasKey">Asaas API Key</Label>
-                                <Input id="asaasKey" v-model="form.integracoes.asaas.apiKey" type="password" />
+                                <Input id="asaasKey" placeholder="Sua chave de acesso"
+                                    v-model="form.integracoes.asaas.apiKey" type="password" />
                                 <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
                                     clientes.</p>
                             </div>
@@ -214,20 +214,6 @@
                                         <SelectItem value="production">Produção</SelectItem>
                                     </SelectContent>
                                 </Select>
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
-                                <Label for="qzHost">QZ Tray Host</Label>
-                                <Input id="qzHost" v-model="form.integracoes.qztray.host"
-                                    placeholder="127.0.0.1:8182" />
-                            </div>
-                            <div class="space-y-2">
-                                <Label for="qzCert">Certificado (base64)</Label>
-                                <Textarea id="qzCert" v-model="form.integracoes.qztray.certBase64" rows="4" />
                             </div>
                         </div>
                     </CardContent>
@@ -270,46 +256,6 @@
                     <CardFooter class="justify-end">
                         <Button variant="outline" @click="reset('seguranca')">Cancelar</Button>
                         <Button class="ml-2" @click="save('seguranca')">Salvar</Button>
-                    </CardFooter>
-                </Card>
-            </TabsContent>
-
-            <!-- IMPRESSÃO -->
-            <TabsContent value="impressao">
-                <Card class="rounded-t-none bg-background">
-                    <CardHeader>
-                        <CardTitle>Impressão</CardTitle>
-                        <CardDescription>Preferências de impressão não fiscal.</CardDescription>
-                    </CardHeader>
-                    <CardContent class="grid md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <Label for="modeloImp">Modelo de impressora</Label>
-                            <Select v-model="form.impressao.modelo">
-                                <SelectTrigger id="modeloImp">
-                                    <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="epson">Epson</SelectItem>
-                                    <SelectItem value="bematech">Bematech</SelectItem>
-                                    <SelectItem value="elgin">Elgin</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="space-y-2">
-                            <Label for="largura">Largura do papel (mm)</Label>
-                            <Input id="largura" v-model.number="form.impressao.largura" type="number" min="48"
-                                step="1" />
-                        </div>
-                        <div class="space-y-2 md:col-span-2">
-                            <Label for="preview">Pré-visualização</Label>
-                            <div class="border rounded-lg p-4 text-sm text-muted-foreground">
-                                Saída simulada do cupom com largura {{ form.impressao.largura }}mm.
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter class="justify-end">
-                        <Button variant="outline" @click="reset('impressao')">Cancelar</Button>
-                        <Button class="ml-2" @click="save('impressao')">Salvar</Button>
                     </CardFooter>
                 </Card>
             </TabsContent>
