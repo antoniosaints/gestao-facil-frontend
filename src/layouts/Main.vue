@@ -24,6 +24,7 @@
             class="overflow-y-auto h-[calc(100vh-5rem)] text-gray-700 dark:text-gray-300 md:h-[calc(100vh-4.3rem)] p-6 mt-0 transition-all duration-300 ease-in-out"
             :class="{ 'md:ml-64': store.openSidebar }">
             <div class="max-w-7xl mx-auto" id="content">
+                <AlertTopbar />
                 <slot />
             </div>
         </main>
@@ -40,6 +41,7 @@ import { sidebarMenuOptions } from './options'
 import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import InstallPrompt from '@/components/layout/installPrompt.vue'
+import AlertTopbar from '@/components/layout/alertTopbar.vue'
 const store = useUiStore()
 
 window.addEventListener('resize', () => {
