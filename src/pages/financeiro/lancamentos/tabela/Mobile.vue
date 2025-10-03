@@ -149,9 +149,7 @@ const emit = defineEmits(["openModalProduto"]);
 
 function renderListaVendas(page: number = 1) {
     loading.value = true;
-    const token = localStorage.getItem("gestao_facil:token");
     http.get(`/clientes/mobile/data`, {
-        headers: { Authorization: `Bearer ${token}` },
         params: {
             search: searchQuery.value,
             limit: 10,
