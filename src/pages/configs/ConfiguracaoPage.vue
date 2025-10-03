@@ -12,115 +12,16 @@
 
         <Tabs v-model="tab" class="w-auto">
             <div class="overflow-auto max-w-full">
-                <TabsList class="grid w-max grid-cols-6">
-                    <TabsTrigger value="geral"><i class="fa-solid fa-gear mr-2"></i> Geral</TabsTrigger>
+                <TabsList class="grid w-max grid-cols-3">
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
-                    <TabsTrigger value="pdv"><i class="fa-solid fa-cash-register mr-2"></i> PDV</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger value="integracoes"><i class="fa-solid fa-link mr-2"></i> Integrações</TabsTrigger>
-                    <TabsTrigger value="seguranca"><i class="fa-solid fa-shield mr-2"></i> Segurança</TabsTrigger>
                 </TabsList>
             </div>
-
-            <!-- GERAL -->
-            <TabsContent value="geral">
-                <Card class="rounded-t-none bg-background">
-                    <CardHeader>
-                        <CardTitle>Preferências gerais</CardTitle>
-                        <CardDescription>Defina idioma, moeda e formatação padrão.</CardDescription>
-                    </CardHeader>
-                    <CardContent class="grid md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <Label for="idioma">Idioma</Label>
-                            <Select v-model="form.geral.idioma">
-                                <SelectTrigger id="idioma">
-                                    <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
-                                    <SelectItem value="en-US">English (US)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div class="space-y-2">
-                            <Label for="moeda">Moeda</Label>
-                            <Select v-model="form.geral.moeda">
-                                <SelectTrigger id="moeda">
-                                    <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="BRL">BRL</SelectItem>
-                                    <SelectItem value="USD">USD</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div class="space-y-2">
-                            <Label for="timezone">Fuso horário</Label>
-                            <Input id="timezone" v-model="form.geral.timezone" placeholder="America/Fortaleza" />
-                        </div>
-
-                        <div class="flex items-center justify-between border rounded-lg p-3">
-                            <div>
-                                <Label>Ativar logs detalhados</Label>
-                                <p class="text-sm text-muted-foreground">Útil para suporte e auditoria.</p>
-                            </div>
-                            <Switch v-model:checked="form.geral.debug" />
-                        </div>
-                    </CardContent>
-                    <CardFooter class="justify-end">
-                        <Button variant="outline" @click="reset('geral')">Cancelar</Button>
-                        <Button class="ml-2" @click="save('geral')">Salvar</Button>
-                    </CardFooter>
-                </Card>
-            </TabsContent>
 
             <!-- EMPRESA -->
             <TabsContent value="empresa">
                 <EmpresaPage />
-            </TabsContent>
-
-            <!-- PDV -->
-            <TabsContent value="pdv">
-                <Card class="rounded-t-none bg-background">
-                    <CardHeader>
-                        <CardTitle>Configurações do PDV</CardTitle>
-                        <CardDescription>Preferências de caixa, troco e descontos.</CardDescription>
-                    </CardHeader>
-                    <CardContent class="grid md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <Label for="troco">Caixa inicial (R$)</Label>
-                            <Input id="troco" v-model.number="form.pdv.caixaInicial" type="number" step="0.01" />
-                        </div>
-                        <div class="space-y-2">
-                            <Label for="descontoMax">Desconto máx. (%)</Label>
-                            <Input id="descontoMax" v-model.number="form.pdv.descontoMax" type="number" step="0.01" />
-                        </div>
-                        <div class="space-y-2">
-                            <Label for="imprimir">
-                                Impressão automática ao finalizar venda
-                            </Label>
-                            <div class="flex justify-between items-center border rounded-lg p-3">
-                                <span class="text-sm text-muted-foreground">Enviar direto para impressora padrão.</span>
-                                <Switch v-model:checked="form.pdv.impressaoAutomatica" />
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <Label for="abrirGaveta">
-                                Abrir gaveta automaticamente
-                            </Label>
-                            <div class="flex justify-between items-center border rounded-lg p-3">
-                                <span class="text-sm text-muted-foreground">Quando a venda for finalizada.</span>
-                                <Switch v-model:checked="form.pdv.abrirGaveta" />
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter class="justify-end">
-                        <Button variant="outline" @click="reset('pdv')">Cancelar</Button>
-                        <Button class="ml-2" @click="save('pdv')">Salvar</Button>
-                    </CardFooter>
-                </Card>
             </TabsContent>
 
             <!-- NOTIFICAÇÕES -->
@@ -226,42 +127,6 @@
                     </CardFooter>
                 </Card>
             </TabsContent>
-
-            <!-- SEGURANÇA -->
-            <TabsContent value="seguranca">
-                <Card class="rounded-t-none bg-background">
-                    <CardHeader>
-                        <CardTitle>Segurança</CardTitle>
-                        <CardDescription>Políticas de sessão e autenticação.</CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-6">
-                        <div class="grid md:grid-cols-3 gap-6">
-                            <div class="space-y-2">
-                                <Label for="sessionMin">Sessão (minutos)</Label>
-                                <Input id="sessionMin" v-model.number="form.seguranca.sessaoMinutos" type="number"
-                                    min="5" />
-                            </div>
-                            <div class="space-y-2">
-                                <Label for="tentativas">Tentativas de login</Label>
-                                <Input id="tentativas" v-model.number="form.seguranca.tentativas" type="number"
-                                    min="3" />
-                            </div>
-                            <div class="space-y-2">
-                                <Label for="mfa">MFA obrigatório</Label>
-                                <div class="flex items-center justify-between border rounded-lg p-3">
-                                    <span class="text-sm text-muted-foreground">Exigir autenticação em duas
-                                        etapas.</span>
-                                    <Switch v-model:checked="form.seguranca.mfa" />
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter class="justify-end">
-                        <Button variant="outline" @click="reset('seguranca')">Cancelar</Button>
-                        <Button class="ml-2" @click="save('seguranca')">Salvar</Button>
-                    </CardFooter>
-                </Card>
-            </TabsContent>
         </Tabs>
     </div>
 </template>
@@ -275,7 +140,6 @@ import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
@@ -283,7 +147,7 @@ import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
 import { Cog } from 'lucide-vue-next'
 
 // Estado
-const tab = ref<'geral' | 'empresa' | 'pdv' | 'notificacoes' | 'integracoes' | 'aparencia' | 'seguranca' | 'impressao'>('geral')
+const tab = ref<'empresa' | 'notificacoes' | 'integracoes'>('empresa')
 const saving = ref(false)
 const toast = useToast()
 
@@ -332,7 +196,6 @@ function reset(section?: keyof typeof form) {
 </script>
 
 <style scoped>
-/********** Densidade **********/
 :root {
     --pad: 0.75rem;
 }

@@ -4,7 +4,8 @@
     :class="{ 'md:ml-64': uiStore.openSidebar }">
 
     <div class="text-md font-bold flex items-center gap-4">
-      <Button size="xs" variant="ghost" @click="uiStore.toggleSidebar"><i class="fa-solid fa-bars"></i></Button>
+      <Button size="xs" variant="ghost" class="border border-gray-500" @click="uiStore.toggleSidebar"><i
+          class="fa-solid fa-bars"></i></Button>
       <Breadcrumb />
     </div>
     <div class="flex gap-2">

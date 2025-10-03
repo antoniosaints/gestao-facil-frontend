@@ -173,7 +173,7 @@ onMounted(loadLancamento);
                             <TableRow v-for="p in lancamento?.parcelas" :key="p.numero">
                                 <TableCell>
                                     <span
-                                        class="font-normal px-2 py-1 text-nowrap bg-primary text-sm text-white rounded-md">
+                                        class="font-normal px-2 py-1.5 text-nowrap bg-primary text-sm text-white rounded-md">
                                         {{ p.numero === 1 && lancamento.parcelas.length === 1 ? "À vista" : p.numero ===
                                             0 ? "Entrada" : `Parcela ${p.numero}` }}
                                     </span>
