@@ -305,7 +305,7 @@ clearCartVendas();
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Produto <span class="text-red-500">*</span></label>
                     <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
-                        url="/produtos/select2" :allow-clear="true" />
+                        url="/produtos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
                 </div>
 
                 <div class="md:col-span-2">

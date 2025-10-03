@@ -24,6 +24,7 @@ const props = withDefaults(defineProps<{
     url: string
     allowClear?: boolean
     required?: boolean
+    params?: { key: string, value: any }[]
 }>(), {
     allowClear: false,
     required: false
@@ -54,7 +55,8 @@ const clearSelection = () => {
 const fetchItems = async () => {
     loading.value = true
     try {
-        const url = `${props.url}?search=${search.value || ''}`
+        let url = `${props.url}?search=${search.value || ''}`
+        if (props.params) url += `&${props.params.map((p) => `${p.key}=${p.value}`).join('&')}`
         const { data } = await http.get(url)
         items.value = data.results ?? []
     } finally {
