@@ -152,9 +152,7 @@ const saving = ref(false)
 const toast = useToast()
 
 const defaults = {
-    geral: { idioma: 'pt-BR', moeda: 'BRL', timezone: 'America/Fortaleza', debug: false },
     empresa: { razao: '', fantasia: '', cnpj: '', ie: '', endereco: '', telefone: '', email: '' },
-    pdv: { caixaInicial: 0, descontoMax: 5, impressaoAutomatica: true, abrirGaveta: true },
     notificacoes: {
         email: '', push: true,
         eventos: { vendaConcluida: true, sangria: true, estoqueBaixo: true }
@@ -162,12 +160,7 @@ const defaults = {
     integracoes: {
         asaas: { apiKey: '', ambiente: 'sandbox' as 'sandbox' | 'production' },
         mercadoPago: { apiKey: '', ambiente: 'sandbox' as 'sandbox' | 'production' },
-        qztray: { host: '127.0.0.1:8182', certBase64: '' },
-        supabase: { url: '', key: '' }
     },
-    aparencia: { tema: 'system' as 'light' | 'dark' | 'system', densidade: 'comfortable' as 'comfortable' | 'compact' },
-    seguranca: { sessaoMinutos: 30, tentativas: 5, mfa: false },
-    impressao: { modelo: 'epson', largura: 80 }
 }
 
 const form = reactive(structuredClone(defaults))
