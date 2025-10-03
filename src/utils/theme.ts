@@ -18,11 +18,11 @@ function updateMetaTags() {
   if (!themeMeta || !bgMeta) return
 
   if (colorTheme.value === 'dark') {
-    themeMeta.setAttribute('content', '#0f172a') // cor do tema dark
-    bgMeta.setAttribute('content', '#0f172a')
+    themeMeta.setAttribute('content', '#0c0a09') // cor do tema dark
+    bgMeta.setAttribute('content', '#0c0a09')
   } else {
-    themeMeta.setAttribute('content', '#ffffff') // cor do tema light
-    bgMeta.setAttribute('content', '#ffffff')
+    themeMeta.setAttribute('content', '#f2f2f2') // cor do tema light
+    bgMeta.setAttribute('content', '#f2f2f2')
   }
 }
 
