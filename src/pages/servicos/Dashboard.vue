@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { PlusCircle, ClipboardList, CheckCircle2, Clock, DollarSign } from "lucide-vue-next"
+import { PlusCircle, ClipboardList, CheckCircle2, Clock, DollarSign, Wrench } from "lucide-vue-next"
 import Calendario from "@/components/calendario/Calendario.vue"
 
 const estatisticas = [
@@ -34,7 +34,8 @@ const eventos = [
         <!-- Cabeçalho -->
         <div class="flex justify-between items-center">
             <div>
-                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">
+                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <Wrench class="h-6 w-6" :stroke-width="2.5" />
                     Painel de serviços
                 </h2>
                 <p class="text-sm text-muted-foreground">Acompanhamento e controle de serviços</p>

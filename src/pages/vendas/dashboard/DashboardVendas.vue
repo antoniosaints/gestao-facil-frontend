@@ -9,14 +9,18 @@ import PieChart from "@/components/graficos/PieChart.vue"
 import { useToast } from "vue-toastification"
 import { VendaRepository } from "@/repositories/venda-repository"
 import { endOfMonth, startOfMonth } from "date-fns"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Tags } from "lucide-vue-next"
 
 const toast = useToast()
 
 const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
+const loading = ref(true);
 const indicadores = ref<any[]>([])
 
 const getIndicadores = async (inicio?: string, fim?: string) => {
   try {
+    loading.value = true
     const { data }: any = await VendaRepository.resumo(inicio, fim)
     indicadores.value = [
       { titulo: "Total geral", valor: data.totalVendas, detalhe: data.totalValorVendas, icone: "fa-solid fa-chart-line text-green-600" },
@@ -26,7 +30,10 @@ const getIndicadores = async (inicio?: string, fim?: string) => {
       { titulo: "Descontos", valor: data.totalVendasComDesconto, detalhe: data.totalValorDescontos, icone: "fa-solid fa-percent text-green-600" },
       { titulo: "Ticket Médio", valor: null, detalhe: data.ticketMedio, icone: "fa-solid fa-chart-line text-blue-600" },
     ]
+
+    loading.value = false
   } catch (error) {
+    loading.value = false
     console.error(error)
     toast.error('Erro ao carregar os indicadores')
   }
@@ -68,7 +75,8 @@ onMounted(() => {
   <div class="space-y-4">
     <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
       <div>
-        <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">
+        <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          <Tags class="h-6 w-6" :stroke-width="2.5" />
           Painel de vendas
         </h2>
         <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
@@ -82,7 +90,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <section>
+    <section v-if="!loading">
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition ">
           <CardHeader>
@@ -95,6 +103,13 @@ onMounted(() => {
             <p class="text-lg text-gray-700 dark:text-gray-300">R$ {{ kpi.detalhe.replace('.', ',') }}</p>
           </CardContent>
         </Card>
+      </div>
+    </section>
+    <section v-if="loading" class="flex">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="flex flex-col space-y-3">
+          <Skeleton class="h-[130px] w-[250px] rounded-xl" />
+        </div>
       </div>
     </section>
 

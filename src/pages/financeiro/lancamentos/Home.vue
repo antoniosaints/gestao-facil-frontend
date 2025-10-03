@@ -4,6 +4,7 @@ import Mobile from './tabela/Mobile.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import LancamentoModal from './formulario/LancamentoModal.vue';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
+import { Wallet } from 'lucide-vue-next';
 const store = useLancamentosStore();
 const uiStore = useUiStore()
 </script>
@@ -12,7 +13,8 @@ const uiStore = useUiStore()
     <div>
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
             <div>
-                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">
+                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <Wallet class="h-6 w-6" :stroke-width="2.5" />
                     Lançamentos
                 </h2>
                 <p class="text-sm text-muted-foreground">Lançamentos financeiros do sistema</p>

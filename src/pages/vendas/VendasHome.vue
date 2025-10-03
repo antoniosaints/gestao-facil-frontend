@@ -9,6 +9,7 @@ import { useUiStore } from '@/stores/ui/uiStore';
 import ModalFiltro from './formulario/ModalFiltro.vue';
 import { provide, ref } from 'vue';
 import ClientesModal from '../clientes/modais/ClientesModal.vue';
+import { Tags } from 'lucide-vue-next';
 
 const store = useVendasStore();
 const storeUi = useUiStore();
@@ -21,7 +22,8 @@ provide('openModalFiltroVendas', openFilter);
     <div>
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
             <div>
-                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">
+                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <Tags class="h-6 w-6" :stroke-width="2.5" />
                     Vendas
                 </h2>
                 <p class="text-sm text-muted-foreground">Listagem de vendas cadastrados</p>

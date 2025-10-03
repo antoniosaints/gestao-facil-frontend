@@ -4,6 +4,7 @@ import Mobile from './tabela/Mobile.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
 import ClientesModal from './modais/ClientesModal.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
+import { UserStar } from 'lucide-vue-next';
 const store = useClientesStore();
 const uiStore = useUiStore()
 </script>
@@ -12,7 +13,8 @@ const uiStore = useUiStore()
     <div>
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
             <div>
-                <h2 class="text-2xl font-bold text-black dark:text-white">
+                <h2 class="text-2xl font-bold text-black dark:text-white flex items-center gap-2">
+                    <UserStar class="h-6 w-6" :stroke-width="2.5" />
                     Clientes
                 </h2>
                 <p class="text-sm text-muted-foreground">Clientes cadastrados no sistema</p>

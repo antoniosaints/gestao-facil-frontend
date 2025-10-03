@@ -7,7 +7,7 @@ import { useToast } from 'vue-toastification';
 import ModalProdutos from './formulario/ModalProdutos.vue';
 import ModalCriarLote from './others/ModalCriarLote.vue';
 import { ProdutoRepository } from '@/repositories/produto-repository';
-import { Boxes } from 'lucide-vue-next';
+import { Boxes, Package } from 'lucide-vue-next';
 
 const toast = useToast();
 const store = useProdutoStore();
@@ -31,7 +31,8 @@ const relatorioGeral = async () => {
     <div>
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
             <div>
-                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">
+                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <Package class="h-6 w-6" :stroke-width="2.5" />
                     Produtos
                 </h2>
                 <p class="text-sm text-muted-foreground">Listagem de produtos cadastrados</p>

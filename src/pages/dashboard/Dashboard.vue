@@ -3,7 +3,8 @@
         <div class="flex flex-col gap-4">
             <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300">
+                    <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <ChartPie class="h-6 w-6" :stroke-width="2.5" />
                         Dashboard
                     </h2>
                     <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
@@ -222,6 +223,7 @@ import { goTo } from '@/hooks/links';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import { optionsChartBar, optionsChartLine } from '@/composables/useChartOptions';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
+import { ChartPie } from 'lucide-vue-next';
 
 const store = useDashboardStore();
 const filtroPeriodo = ref([new Date(), new Date()]);

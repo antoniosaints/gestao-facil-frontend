@@ -2,7 +2,10 @@
     <div class="container mx-auto space-y-6">
         <div class="flex items-start md:items-center justify-between flex-col md:flex-row ">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight">Configurações</h1>
+                <h1 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+                    <Cog class="h-6 w-6" :stroke-width="2.5" />
+                    Configurações
+                </h1>
                 <p class="text-muted-foreground">Ajuste preferências do sistema e integrações.</p>
             </div>
         </div>
@@ -277,6 +280,7 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
+import { Cog } from 'lucide-vue-next'
 
 // Estado
 const tab = ref<'geral' | 'empresa' | 'pdv' | 'notificacoes' | 'integracoes' | 'aparencia' | 'seguranca' | 'impressao'>('geral')
