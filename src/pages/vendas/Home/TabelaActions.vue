@@ -4,21 +4,15 @@ import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { Vendas } from '@/types/schemas';
 import type { Table } from '@tanstack/vue-table';
-import { useVendasStore } from '@/stores/vendas/useVenda';
-import { deletarVenda, editarVenda, estornarVenda, gerarCupomVenda, openModalDeleteVenda, openModalFaturarVenda } from '../ActionsVendas';
-import ConfirmModal from '@/components/formulario/ConfirmModal.vue';
+import { editarVenda, estornarVenda, gerarCupomVenda, openModalDeleteVenda, openModalFaturarVenda } from '../ActionsVendas';
 const { data } = defineProps<{
     data: Vendas,
     table: Table<Vendas>
 }>()
-const store = useVendasStore()
 </script>
 
 <template>
     <div>
-        <ConfirmModal title="Excluir venda" description="Tem certeza que deseja excluir essa venda?"
-            :open="store.openModalDelete" @confirm="deletarVenda(store.idMutation!)"
-            @cancel="store.openModalDelete = false" />
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
                 <Button variant="default" class="w-8 h-8 p-0 text-white">

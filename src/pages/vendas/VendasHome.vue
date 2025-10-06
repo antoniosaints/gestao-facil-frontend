@@ -10,6 +10,8 @@ import ModalFiltro from './formulario/ModalFiltro.vue';
 import { provide, ref } from 'vue';
 import ClientesModal from '../clientes/modais/ClientesModal.vue';
 import { Tags } from 'lucide-vue-next';
+import ConfirmModal from '@/components/formulario/ConfirmModal.vue';
+import { deletarVenda } from './ActionsVendas';
 
 const store = useVendasStore();
 const storeUi = useUiStore();
@@ -51,5 +53,8 @@ provide('openModalFiltroVendas', openFilter);
         <ModalFaturar />
         <ModalFiltro />
         <ClientesModal />
+        <ConfirmModal title="Excluir venda" description="Tem certeza que deseja excluir essa venda?"
+            :open="store.openModalDelete" @confirm="deletarVenda(store.idMutation!)"
+            @cancel="store.openModalDelete = false" />
     </div>
 </template>
