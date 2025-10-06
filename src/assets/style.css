@@ -87,7 +87,7 @@
   }
 }
 .dp__main {
-  --dp-font-family: 'Roboto', sans-serif !important;
+  --dp-font-family: 'Poppins', 'Roboto', sans-serif !important;
   --dp-font-size: 14px !important;
   --dp-input-padding: 7px 30px 7px 30px !important;
 }
