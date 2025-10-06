@@ -4,8 +4,8 @@
     :class="{ 'md:ml-64': uiStore.openSidebar }">
 
     <div class="text-md font-bold flex items-center gap-4">
-      <Button size="xs" variant="ghost" class="border border-gray-500" @click="uiStore.toggleSidebar"><i
-          class="fa-solid fa-bars"></i></Button>
+      <PanelLeftOpen v-if="!uiStore.openSidebar" class="h-6 w-6 cursor-pointer p-0.5" @click="uiStore.toggleSidebar" />
+      <PanelRightOpen v-else class="h-6 w-6 cursor-pointer p-0.5" @click="uiStore.toggleSidebar" />
       <Breadcrumb />
     </div>
     <div class="flex gap-2">
@@ -22,7 +22,7 @@ import { useAuthStore } from '@/stores/login/useAuthStore'
 import { onMounted, onUnmounted, ref } from 'vue'
 import Breadcrumb from './breadcrumb.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
-import { Button } from '../ui/button';
+import { PanelLeftOpen, PanelRightOpen } from 'lucide-vue-next';
 const useStore = useAuthStore();
 const uiStore = useUiStore()
 const horarioSistemaAtual = ref('')

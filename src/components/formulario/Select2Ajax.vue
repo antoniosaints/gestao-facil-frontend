@@ -119,9 +119,10 @@ onMounted(fetchItems)
             </SelectTrigger>
 
             <SelectContent class="w-min">
-                <div class="p-1 border-b">
+                <div class="p-1">
                     <Input v-model="search" placeholder="Buscar..." class="w-full" @keydown.stop />
                 </div>
+                <hr class="m-1">
                 <SelectGroup class="max-h-60 overflow-y-auto">
                     <template v-if="loading">
                         <div class="p-2 text-sm text-muted-foreground">Carregando...</div>
@@ -130,7 +131,8 @@ onMounted(fetchItems)
                         <div class="p-2 text-sm text-muted-foreground">Nenhum resultado</div>
                     </template>
                     <template v-else>
-                        <SelectItem @click.stop="(search = '')" v-for="item in items" :key="item.id" :value="item.id">
+                        <SelectItem class="cursor-pointer" @click.stop="(search = '')" v-for="item in items"
+                            :key="item.id" :value="item.id">
                             {{ item.label }}
                         </SelectItem>
                     </template>
