@@ -15,7 +15,7 @@ const uiStore = useUiStore()
             <div>
                 <h2 class="text-2xl font-bold text-black dark:text-white flex items-center gap-2">
                     <UserStar class="h-6 w-6" :stroke-width="2.5" />
-                    Clientes
+                    Clientes & Fornecedores
                 </h2>
                 <p class="text-sm text-muted-foreground">Clientes cadastrados no sistema</p>
             </div>

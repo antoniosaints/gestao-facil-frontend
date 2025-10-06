@@ -8,6 +8,8 @@ const toast = useToast()
 
 export const useProdutoStore = defineStore('produtoStore', () => {
   const openModal = ref(false)
+  const openModalReposicao = ref(false)
+  const idMutation = ref<number | null>(null)
 
   const form = ref<Produto>({
     id: undefined,
@@ -80,11 +82,13 @@ export const useProdutoStore = defineStore('produtoStore', () => {
 
   return {
     openModal,
+    openModalReposicao,
     openSave,
     openUpdate,
     updateTable,
     filters,
     reset,
     form,
+    idMutation,
   }
 })

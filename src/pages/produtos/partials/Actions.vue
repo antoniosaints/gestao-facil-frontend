@@ -42,6 +42,11 @@ function openDeleteModal(number: number) {
     openDelete.value = true
 }
 
+function openModalReposicao(number: number) {
+    store.idMutation = number
+    store.openModalReposicao = true
+}
+
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     try {
@@ -88,8 +93,8 @@ async function deletar(id: number) {
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
             </DropdownMenuItem>
-            <DropdownMenuItem>
-                <i class="fa-solid fa-dolly text-success"></i>
+            <DropdownMenuItem @click="openModalReposicao(data.id!)">
+                <i class="fa-solid fa-dolly"></i>
                 Reposição
             </DropdownMenuItem>
             <DropdownMenuItem @click="gerarRelatorio(data.id!, 'asc')">

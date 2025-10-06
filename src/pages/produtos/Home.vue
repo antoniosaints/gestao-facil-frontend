@@ -8,6 +8,7 @@ import ModalProdutos from './formulario/ModalProdutos.vue';
 import ModalCriarLote from './others/ModalCriarLote.vue';
 import { ProdutoRepository } from '@/repositories/produto-repository';
 import { Boxes, Package } from 'lucide-vue-next';
+import ModalReposicao from './formulario/ModalReposicao.vue';
 
 const toast = useToast();
 const store = useProdutoStore();
@@ -61,5 +62,6 @@ const relatorioGeral = async () => {
         </div>
         <ModalProdutos />
         <ModalCriarLote />
+        <ModalReposicao />
     </div>
 </template>
