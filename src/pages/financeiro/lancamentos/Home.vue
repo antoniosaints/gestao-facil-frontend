@@ -29,10 +29,10 @@ const uiStore = useUiStore()
                 </button>
             </div>
         </div>
-        <div v-if="!uiStore.isMobile" class="overflow-x-auto hidden md:block rounded-lg">
+        <div v-if="!uiStore.isMobile" class="overflow-x-auto rounded-lg">
             <Tabela />
         </div>
-        <div v-else class="overflow-x-auto block md:hidden rounded-lg">
+        <div v-else class="overflow-x-auto rounded-lg">
             <Mobile @openModalProduto="store.openSave" />
         </div>
 
