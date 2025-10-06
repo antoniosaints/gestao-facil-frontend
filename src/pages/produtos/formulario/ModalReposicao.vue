@@ -70,10 +70,10 @@ async function submit() {
                 <!-- Cliente / Fornecedor -->
                 <div class="md:col-span-6">
                     <label class="block text-sm font-medium mb-1">
-                        Cliente / Fornecedor
+                        Fornecedor
                     </label>
-                    <Select2Ajax :url="'/clientes/select2'" v-model:model-value="formulario.clienteFornecedor"
-                        :allowClear="true" />
+                    <Select2Ajax :url="'/clientes/select2'" :params="[{ key: 'fornecedor', value: true }]"
+                        v-model:model-value="formulario.clienteFornecedor" :allowClear="true" />
                 </div>
 
 
