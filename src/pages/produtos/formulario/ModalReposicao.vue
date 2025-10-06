@@ -4,10 +4,13 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { vMaska } from "maska/vue"
+import { moneyMaskOptions } from '@/lib/imaska'
 import { ProdutoRepository } from '@/repositories/produto-repository'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
 import { ref } from 'vue'
 import { useToast } from 'vue-toastification'
+import { formatToNumberValue } from '@/utils/formatters'
 
 const store = useProdutoStore()
 const toast = useToast()
@@ -15,10 +18,10 @@ const toast = useToast()
 const formulario = ref({
     quantidade: 0,
     clienteFornecedor: undefined,
-    custo: 0,
+    custo: '',
     data: new Date().toISOString().slice(0, 10),
-    desconto: 0,
-    frete: 0,
+    desconto: '',
+    frete: '',
     notaFiscal: ''
 })
 
@@ -27,7 +30,13 @@ async function submit() {
         if (!store.idMutation) return toast.error('ID não informado!')
         await ProdutoRepository.repor({
             produtoId: store.idMutation,
-            ...formulario.value
+            custo: formatToNumberValue(formulario.value.custo),
+            quantidade: formulario.value.quantidade,
+            clienteFornecedor: formulario.value.clienteFornecedor,
+            data: formulario.value.data,
+            desconto: formatToNumberValue(formulario.value.desconto),
+            frete: formatToNumberValue(formulario.value.frete),
+            notaFiscal: formulario.value.notaFiscal,
         })
         toast.success('Reposição de produto registrada!')
         store.updateTable()
@@ -55,7 +64,7 @@ async function submit() {
                 <!-- Custo -->
                 <div class="md:col-span-6">
                     <label class="block text-sm font-medium mb-1">Custo (R$)</label>
-                    <Input type="number" step="0.01" v-model.number="formulario.custo" placeholder="Ex: 12.50" />
+                    <Input type="text" v-maska="moneyMaskOptions" v-model="formulario.custo" placeholder="Ex: 12.50" />
                 </div>
 
                 <!-- Cliente / Fornecedor -->
@@ -77,13 +86,14 @@ async function submit() {
                 <!-- Desconto -->
                 <div class="md:col-span-6">
                     <label class="block text-sm font-medium mb-1">Desconto (R$)</label>
-                    <Input type="number" step="0.01" v-model.number="formulario.desconto" placeholder="Ex: 5.00" />
+                    <Input type="text" v-maska="moneyMaskOptions" v-model="formulario.desconto"
+                        placeholder="Ex: 5.00" />
                 </div>
 
                 <!-- Frete -->
                 <div class="md:col-span-6">
                     <label class="block text-sm font-medium mb-1">Frete (R$)</label>
-                    <Input type="number" step="0.01" v-model.number="formulario.frete" placeholder="Ex: 10.00" />
+                    <Input type="text" v-maska="moneyMaskOptions" v-model="formulario.frete" placeholder="Ex: 10.00" />
                 </div>
 
                 <!-- Nota Fiscal -->

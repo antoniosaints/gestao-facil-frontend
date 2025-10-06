@@ -9,6 +9,25 @@ export const formatToMoneyValue = (value: any) => {
     currency: 'BRL',
   })
 }
+
+export const formatToNumberValue = (value: string | number) => {
+  if (typeof value !== 'string') return Number(value)
+
+  // Remove espaços e símbolos de moeda
+  value = value.trim().replace(/[^\d.,-]/g, '')
+
+  // Se tiver vírgula e ponto, assume que vírgula é decimal (ex: 1.234,56)
+  if (value.includes(',') && value.includes('.')) {
+    value = value.replace(/\./g, '').replace(',', '.')
+  }
+  // Se tiver só vírgula, substitui por ponto
+  else if (value.includes(',')) {
+    value = value.replace(',', '.')
+  }
+
+  const number = parseFloat(value)
+  return isNaN(number) ? 0 : number
+}
 export const formatToMoneyDecimalValue = (valor: Decimal | number): string => {
   return `R$ ${new Decimal(valor).toFixed(2)}`
 }
