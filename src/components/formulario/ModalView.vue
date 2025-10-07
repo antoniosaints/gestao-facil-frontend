@@ -45,7 +45,7 @@ const isDesktop = useMediaQuery("(min-width: 768px)")
 <template>
     <div>
         <!-- Desktop: Modal -->
-        <Dialog v-if="isDesktop" v-model:open="isOpen" >
+        <Dialog v-if="isDesktop" v-model:open="isOpen">
             <DialogContent class="p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
                 :disable-outside-pointer-events="true" :class="[sizeModal, 'mx-auto']">
                 <DialogHeader class="p-6 pb-0">

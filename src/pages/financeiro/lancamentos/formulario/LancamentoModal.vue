@@ -31,7 +31,7 @@ async function submit() {
             categoriaId: store.form.categoriaId,
             clienteId: store.form.clienteId,
             descricao: store.form.descricao,
-            contaFinanceiroId: store.form.contaFinanceiroId,
+            contasFinanceiroId: store.form.contasFinanceiroId,
             dataEntrada: store.form.dataEntrada,
             dataLancamento: store.form.dataLancamento,
             desconto: formatToNumberValue(store.form.desconto),
@@ -252,7 +252,7 @@ async function submit() {
                             <a onclick="openModalContasFinanceiras()" class="text-blue-500 px-2 cursor-pointer">+
                                 Nova</a>
                         </label>
-                        <Select2Ajax id="contasFinanceiroId" v-model="store.form.contaFinanceiroId" required
+                        <Select2Ajax id="contasFinanceiroId" v-model="store.form.contasFinanceiroId" required
                             url="lancamentos/contas/select2" />
                     </div>
                 </div>

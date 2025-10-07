@@ -24,6 +24,14 @@ export class LancamentosRepository {
   static async estornarParcela(id: number) {
     await http.post(`/lancamentos/parcelas/${id}/estornar`)
   }
+  static async resumoTotal() {
+    const data = await http.get(`/lancamentos/relatorios/totais`)
+    return data.data
+  }
+  static async resumoStatusTotal() {
+    const data = await http.get(`/lancamentos/relatorios/valor-status`)
+    return data.data
+  }
   static async criarConta(data: Omit<ContasFinanceiro, 'id'>) {
     await http.post(`/lancamentos/contas`, data)
   }
@@ -63,5 +71,36 @@ export class LancamentosRepository {
         fim: fim.toDateString,
       },
     })
+  }
+  static async graficoCategorias(inicio: Date | string, fim: Date | string) {
+    const data = await http.get(`/lancamentos/graficos/categorias`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data.data
+  }
+  static async graficoContas(inicio: Date | string, fim: Date | string) {
+    const data = await http.get(`/lancamentos/graficos/contas`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data.data
+  }
+  static async graficoStatus(inicio: Date | string, fim: Date | string) {
+    const data = await http.get(`/lancamentos/graficos/status`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data.data
+  }
+  static async graficoBalanco() {
+    const data = await http.get(`/lancamentos/graficos/receita-despesa-mensal`)
+    return data.data
   }
 }

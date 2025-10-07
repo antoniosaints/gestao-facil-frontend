@@ -21,12 +21,6 @@ const { data, table } = defineProps<{
 
 const toast = useToast()
 
-function copiar(data: Produto) {
-    const produtoString = `ID: ${data?.Uid}\nProduto: ${data?.nome}\nCodigo: ${data?.codigo}\nPreco: ${data?.preco}\nEstoque: ${data?.estoque}`;
-    navigator.clipboard.writeText(produtoString);
-    toast.success('Copiado para a área de transferência')
-}
-
 async function gerarRelatorio(id: number, ordem: "asc" | "desc") {
     try {
         await ProdutoRepository.gerarRelatorio(id, ordem)

@@ -1,6 +1,55 @@
 <script setup lang="ts">
+import Calendarpicker from '@/components/formulario/calendarpicker.vue';
+import BarChart from '@/components/graficos/BarChart.vue';
+import PieChart from '@/components/graficos/PieChart.vue';
+import { optionsChartBarDefault, optionsChartPie } from '@/composables/useChartOptions';
+import { LancamentosRepository } from '@/repositories/lancamento-repository';
+import { endOfMonth, startOfMonth } from 'date-fns';
 import { Landmark } from 'lucide-vue-next';
+import { onMounted, ref } from 'vue';
+import { useToast } from 'vue-toastification';
+const toast = useToast();
+const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
+const balancoData: any = ref({ labels: [], datasets: [] });
+const statusData: any = ref({ labels: [], datasets: [] });
+const contasData: any = ref({ labels: [], datasets: [] });
+const categoriasData: any = ref({ labels: [], datasets: [] });
+const dataResumo = ref<{ despesas: string, receitas: string, saldo: string }>({
+    despesas: 'R$ 0,00',
+    receitas: 'R$ 0,00',
+    saldo: 'R$ 0,00'
+})
+const dataResumoStatus = ref<{ pendente: string, pago: string }>({
+    pendente: 'R$ 0,00',
+    pago: 'R$ 0,00'
+})
+async function getDataDashboard() {
+    try {
+        const inicio = filtroPeriodo.value === null ? startOfMonth(new Date()) : filtroPeriodo.value[0].toISOString();
+        const fim = filtroPeriodo.value === null ? endOfMonth(new Date()) : filtroPeriodo.value[1].toISOString();
+        const [resumo, resumoStatus, balanco, status, categorias, contas] = await Promise.all([
+            LancamentosRepository.resumoTotal(),
+            LancamentosRepository.resumoStatusTotal(),
+            LancamentosRepository.graficoBalanco(),
+            LancamentosRepository.graficoStatus(inicio, fim),
+            LancamentosRepository.graficoCategorias(inicio, fim),
+            LancamentosRepository.graficoContas(inicio, fim),
+        ])
+        balancoData.value = { labels: [...balanco.labels], datasets: [...balanco.datasets] };
+        statusData.value = { labels: [...status.labels], datasets: [...status.datasets] };
+        contasData.value = { labels: [...contas.labels], datasets: [...contas.datasets] };
+        categoriasData.value = { labels: [...categorias.labels], datasets: [...categorias.datasets] };
+        dataResumo.value = resumo
+        dataResumoStatus.value = resumoStatus
+    } catch (error) {
+        console.log(error)
+        toast.warning('Erro ao buscar os dados do dashboard, recarregue a página!')
+    }
+}
 
+onMounted(() => {
+    getDataDashboard()
+})
 </script>
 
 <template>
@@ -18,16 +67,13 @@ import { Landmark } from 'lucide-vue-next';
                     class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
                     <i class="fa-solid fa-filter-circle-xmark"></i>
                 </button>
-                <input id="filtro_dashboard_financeiro_periodo" placeholder="Filtrar por período"
-                    class="rounded-md border w-max bg-card dark:bg-card-dark border-border dark:border-border-dark px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                </input>
+                <Calendarpicker :range="true" v-model="filtroPeriodo" @update:model-value="getDataDashboard" />
             </div>
         </div>
         <div class="flex flex-col gap-4" id="dashboard_financeiro_container_main">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
                 <!-- Metric Item Start -->
-                <div onclick="loadPage('/lancamentos/resumo')"
-                    class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
+                <div class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-arrow-up h-8 w-8 bg-emerald-500/10 p-2 rounded-md text-emerald-500"></i>
 
@@ -45,7 +91,7 @@ import { Landmark } from 'lucide-vue-next';
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
                                 id="total_receitas_dashboard">
-                                0
+                                {{ dataResumo.receitas }}
                             </h4>
                         </div>
 
@@ -57,8 +103,7 @@ import { Landmark } from 'lucide-vue-next';
                     </div>
                 </div>
 
-                <div onclick="loadPage('/lancamentos/resumo')"
-                    class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
+                <div class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-arrow-down w-8 h-8 bg-red-500/10 p-2 rounded-md text-red-500"></i>
 
@@ -76,7 +121,7 @@ import { Landmark } from 'lucide-vue-next';
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
                                 id="total_despesas_dashboard">
-                                0
+                                {{ dataResumo.despesas }}
                             </h4>
                         </div>
 
@@ -88,8 +133,7 @@ import { Landmark } from 'lucide-vue-next';
                     </div>
                 </div>
 
-                <div onclick="loadPage('/lancamentos/resumo')"
-                    class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
+                <div class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i
                             class="fa-solid fa-money-bill-trend-up w-8 h-8 bg-blue-500/10 p-2 rounded-md text-blue-500"></i>
@@ -108,7 +152,7 @@ import { Landmark } from 'lucide-vue-next';
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
                                 id="saldo_financeiro_dashboard">
-                                0
+                                {{ dataResumo.saldo }}
                             </h4>
                         </div>
 
@@ -120,8 +164,7 @@ import { Landmark } from 'lucide-vue-next';
                     </div>
                 </div>
 
-                <div onclick="loadPage('/lancamentos/resumo')"
-                    class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
+                <div class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i
                             class="fa-solid fa-hourglass-end h-8 w-8 bg-yellow-500/10 p-2 rounded-md text-yellow-400"></i>
@@ -140,7 +183,7 @@ import { Landmark } from 'lucide-vue-next';
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
                                 id="resumo_pendentes_total">
-                                R$ 0,00
+                                {{ dataResumoStatus.pendente }}
                             </h4>
                         </div>
 
@@ -161,7 +204,7 @@ import { Landmark } from 'lucide-vue-next';
                     <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
                         Balanço mensal
                     </h2>
-                    <canvas class="max-h-64" id="grafico_receita_despesa_mensal"></canvas>
+                    <BarChart class="max-h-64" :data="balancoData" :options="optionsChartBarDefault" />
                 </div>
 
                 <div
@@ -170,7 +213,7 @@ import { Landmark } from 'lucide-vue-next';
                         Resumo por
                         status
                     </h2>
-                    <canvas class="max-h-64" id="grafico_por_status_pagamento"></canvas>
+                    <BarChart class="max-h-64" :data="statusData" :options="optionsChartBarDefault" />
                 </div>
 
                 <div
@@ -178,7 +221,7 @@ import { Landmark } from 'lucide-vue-next';
                     <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
                         Plano de contas
                     </h2>
-                    <canvas class="max-h-64" id="grafico_plano_contas"></canvas>
+                    <PieChart class="max-h-64" :data="contasData" :options="optionsChartPie" />
                 </div>
 
                 <div
@@ -187,7 +230,7 @@ import { Landmark } from 'lucide-vue-next';
                         por
                         categoria
                     </h2>
-                    <canvas class="max-h-64" id="grafico_por_categoria"></canvas>
+                    <BarChart class="max-h-64" :data="categoriasData" :options="optionsChartBarDefault" />
                 </div>
             </div>
         </div>

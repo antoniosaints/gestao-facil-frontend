@@ -291,7 +291,7 @@ export interface FormularioLancamento {
   id: number | null
   clienteId: number | null
   categoriaId: number | null
-  contaFinanceiroId: number | null
+  contasFinanceiroId: number | null
   dataLancamento: Date | string | null
   tipo: 'RECEITA' | 'DESPESA'
   formaPagamento:

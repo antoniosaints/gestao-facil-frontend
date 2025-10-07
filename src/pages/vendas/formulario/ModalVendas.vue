@@ -370,7 +370,7 @@ clearCartVendas();
                                     <div class="flex flex-col text-right text-sm">
                                         <span class="text-gray-800 text-md dark:text-gray-200">R$ {{
                                             String(item.subtotal.toFixed(2)).replace('.', ',')
-                                            }}</span>
+                                        }}</span>
                                         <span class="font-medium text-xs text-gray-600 dark:text-gray-400">R$ {{
                                             String(item.preco.toFixed(2)).replace('.', ',') }} x {{ item.quantidade
                                             }}</span>
@@ -403,7 +403,7 @@ clearCartVendas();
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </div>
