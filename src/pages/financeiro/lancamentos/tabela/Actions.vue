@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Menu } from 'lucide-vue-next'
+import { BadgeCheck, FileText, Menu, Nfc } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { LancamentoFinanceiro } from '@/types/schemas';
@@ -51,9 +51,17 @@ async function deletar(id: number) {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem @click="store.openUpdate(data.id!)">
-                    <i class="fa-regular fa-pen-to-square mr-1"></i>
-                    Editar
+                <DropdownMenuItem>
+                    <BadgeCheck />
+                    Efetivar
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                    <Nfc />
+                    Gerar PIX
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                    <FileText />
+                    Gerar Boleto
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem class="text-danger" @click="openDeleteModal(data.id!)">
