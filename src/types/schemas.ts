@@ -126,6 +126,10 @@ export interface Contas {
   tipo?: string
   documento?: string
   funcionarios: number
+  endereco?: string
+  nomeFantasia?: string
+  cep?: string
+  emailAvisos?: string
   categoria?: string
   gateway: GatewayConta
   email: string

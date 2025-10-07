@@ -13,6 +13,14 @@ export interface StatusConta {
   proximoLinkPagamento: string | null
   labelAssinatura: string
 }
+export interface UpdateConta {
+  nome: string
+  nomeFantasia: string
+  documento: string
+  telefone: string
+  endereco: string
+  tipo: string
+}
 export class ContaRepository {
   static async status(): Promise<{ data: StatusConta }> {
     const data = await http.get(`/contas/assinatura/status`)
@@ -21,6 +29,13 @@ export class ContaRepository {
   static async info(): Promise<Contas & { Usuarios: Usuarios[] }> {
     const data = await http.get(`/contas/infos`)
     return data.data
+  }
+  static async detalhes(): Promise<Contas> {
+    const data = await http.get(`/contas/detalhes`)
+    return data.data
+  }
+  static async update(data: Partial<UpdateConta>): Promise<void> {
+    await http.post(`/contas/atualizar`, data)
   }
   static async gerarLink(): Promise<{ link: string }> {
     const data = await http.get(`/contas/assinatura/mercadopago`)

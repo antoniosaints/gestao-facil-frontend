@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { vMaska } from "maska/vue"
 import { moneyMaskOptions } from "@/lib/imaska";
 import type { FormularioLancamento } from "@/types/schemas";
@@ -15,7 +15,6 @@ import { LancamentosRepository } from "@/repositories/lancamento-repository";
 import { useToast } from "vue-toastification";
 import { formatToNumberValue } from "@/utils/formatters";
 
-const title = ref('Cadastro de lançamentos')
 const description = ref('Preencha os campos abaixo')
 const store = useLancamentosStore()
 const toast = useToast()
@@ -23,6 +22,10 @@ const toast = useToast()
 const params = ref<{ metodo: "AVISTA" | "PARCELADO", lancamentoEfetivado: boolean }>({
     metodo: "AVISTA",
     lancamentoEfetivado: false
+})
+const title = computed(() => {
+    const tipo = store.form.tipo === "RECEITA" ? "receita" : "despesa"
+    return params.value.metodo === "AVISTA" ? `Lançamento de ${tipo}` : `Lançamento parcelado (${tipo})`
 })
 
 async function submit() {
@@ -76,7 +79,7 @@ async function submit() {
                         <label for="tipoLancamentoFinanceiro" class="block text-sm font-medium mb-1">
                             Tipo/Natureza *
                         </label>
-                        <Select v-model="store.form.tipo" required>
+                        <Select disabled v-model="store.form.tipo" required>
                             <SelectTrigger>
                                 <SelectValue placeholder="Natureza" />
                             </SelectTrigger>

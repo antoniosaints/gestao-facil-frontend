@@ -47,6 +47,11 @@ async function getDataDashboard() {
     }
 }
 
+async function atualizarIndicadores() {
+    await getDataDashboard()
+    toast.info('Indicadores atualizados!')
+}
+
 onMounted(() => {
     getDataDashboard()
 })
@@ -67,7 +72,7 @@ onMounted(() => {
                     class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
                     <i class="fa-solid fa-filter-circle-xmark"></i>
                 </button>
-                <Calendarpicker :range="true" v-model="filtroPeriodo" @update:model-value="getDataDashboard" />
+                <Calendarpicker :range="true" v-model="filtroPeriodo" @update:model-value="atualizarIndicadores" />
             </div>
         </div>
         <div class="flex flex-col gap-4" id="dashboard_financeiro_container_main">

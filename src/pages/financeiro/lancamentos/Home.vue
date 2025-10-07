@@ -4,9 +4,14 @@ import Mobile from './tabela/Mobile.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import LancamentoModal from './formulario/LancamentoModal.vue';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
-import { Wallet } from 'lucide-vue-next';
+import { CirclePlus, Wallet } from 'lucide-vue-next';
 const store = useLancamentosStore();
 const uiStore = useUiStore()
+
+const openByTipo = (tipo: 'RECEITA' | 'DESPESA') => {
+    store.form.tipo = tipo
+    store.openSave()
+}
 </script>
 
 <template>
@@ -20,8 +25,13 @@ const uiStore = useUiStore()
                 <p class="text-sm text-muted-foreground">Lançamentos financeiros do sistema</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <button @click="store.openSave" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-circle-plus"></i> <span class="hidden md:inline">Novo lançamento</span>
+                <button @click="openByTipo('RECEITA')"
+                    class="bg-success text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-2">
+                    <CirclePlus class="h-5 w-5" /> <span class="hidden md:inline">Receita</span>
+                </button>
+                <button @click="openByTipo('DESPESA')"
+                    class="bg-danger text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-2">
+                    <CirclePlus class="h-5 w-5" /> <span class="hidden md:inline">Despesa</span>
                 </button>
                 <button @click="store.updateTable"
                     class="bg-background border border-border px-3 py-1.5 text-sm rounded-md">
