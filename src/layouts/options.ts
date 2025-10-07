@@ -28,6 +28,7 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
   {
     nome: 'Arena',
     icone: CalendarCheck,
+    show: false,
     color: 'blue',
     children: [
       {
@@ -122,10 +123,12 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
   {
     nome: 'Desenvolvimento',
     divisor: true,
+    show: false,
   },
   {
     nome: 'Serviços',
     icone: Wrench,
+    show: false,
     color: 'yellow',
     children: [
       { nome: 'Painel', link: '/servicos/painel', color: 'yellow', icone: ChartPie },
@@ -136,6 +139,7 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
   {
     nome: 'Notas Fiscais',
     icone: FileCheck2,
+    show: false,
     color: 'cyan',
     link: '/notas-fiscais',
     children: [

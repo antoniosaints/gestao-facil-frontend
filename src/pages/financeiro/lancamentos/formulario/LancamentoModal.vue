@@ -8,21 +8,59 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos";
 import { ref } from "vue";
+import { vMaska } from "maska/vue"
+import { moneyMaskOptions } from "@/lib/imaska";
+import type { FormularioLancamento } from "@/types/schemas";
+import { LancamentosRepository } from "@/repositories/lancamento-repository";
+import { useToast } from "vue-toastification";
+import { formatToNumberValue } from "@/utils/formatters";
 
 const title = ref('Cadastro de lançamentos')
 const description = ref('Preencha os campos abaixo')
 const store = useLancamentosStore()
+const toast = useToast()
 
-const params = ref<{ metodo: "AVISTA" | "PARCELADO", efetivado: boolean }>({
+const params = ref<{ metodo: "AVISTA" | "PARCELADO", lancamentoEfetivado: boolean }>({
     metodo: "AVISTA",
-    efetivado: false
+    lancamentoEfetivado: false
 })
+
+async function submit() {
+    try {
+        const data = {
+            categoriaId: store.form.categoriaId,
+            clienteId: store.form.clienteId,
+            descricao: store.form.descricao,
+            contaFinanceiroId: store.form.contaFinanceiroId,
+            dataEntrada: store.form.dataEntrada,
+            dataLancamento: store.form.dataLancamento,
+            desconto: formatToNumberValue(store.form.desconto),
+            lancamentoEfetivado: params.value.lancamentoEfetivado,
+            tipoLancamentoModo: params.value.metodo,
+            formaPagamento: store.form.formaPagamento,
+            parcelas: store.form.parcelas,
+            valorEntrada: formatToNumberValue(store.form.valorEntrada),
+            tipo: store.form.tipo,
+            valorTotal: formatToNumberValue(store.form.valorTotal),
+        } as FormularioLancamento & { lancamentoEfetivado: boolean, tipoLancamentoModo: "AVISTA" | "PARCELADO" }
+
+        await LancamentosRepository.save(data)
+        store.openModal = false
+        store.updateTable()
+        store.reset()
+        params.value = { metodo: "AVISTA", lancamentoEfetivado: false }
+        toast.success('Lançamento cadastrado com sucesso')
+    } catch (error: any) {
+        console.log(error)
+        toast.error(error?.response?.data?.message || 'Erro ao realizar o cadastro!')
+    }
+}
 
 </script>
 
 <template>
     <ModalView v-model:open="store.openModal" :title="title" :description="description" size="3xl">
-        <form id="modalFormularioLancamentos" class="space-y-4 px-4">
+        <form class="space-y-4 px-4" @submit.prevent="submit">
             <div class="grid grid-cols-1 gap-6">
                 <div>
                     <label for="descricao" class="block text-sm font-medium mb-1">
@@ -58,7 +96,8 @@ const params = ref<{ metodo: "AVISTA" | "PARCELADO", efetivado: boolean }>({
                         <label for="valorTotalLancamento" class="block text-sm font-medium mb-1">
                             Valor Total *
                         </label>
-                        <Input type="text" id="valorTotalLancamento" name="valorTotal" required placeholder="0,00" />
+                        <Input type="text" v-maska="moneyMaskOptions" id="valorTotalLancamento"
+                            v-model="store.form.valorTotal" name="valorTotal" required placeholder="0,00" />
                     </div>
                     <!-- Valor Total -->
                     <div>
@@ -96,7 +135,8 @@ const params = ref<{ metodo: "AVISTA" | "PARCELADO", efetivado: boolean }>({
                         <label for="valorEntradaLancamento" class="block text-sm font-medium mb-1">
                             Valor Entrada
                         </label>
-                        <Input type="text" id="valorEntradaLancamento" name="valorEntrada" placeholder="0,00" />
+                        <Input type="text" v-maska="moneyMaskOptions" v-model="store.form.valorEntrada"
+                            id="valorEntradaLancamento" name="valorEntrada" placeholder="0,00" />
                     </div>
 
                     <!-- Data Entrada -->
@@ -114,7 +154,8 @@ const params = ref<{ metodo: "AVISTA" | "PARCELADO", efetivado: boolean }>({
                         <label for="descontoFormularioLancamento" class="block text-sm font-medium mb-1">
                             Desconto
                         </label>
-                        <Input type="text" id="descontoFormularioLancamento" name="desconto" placeholder="0,00" />
+                        <Input type="text" v-maska="moneyMaskOptions" v-model="store.form.desconto"
+                            id="descontoFormularioLancamento" name="desconto" placeholder="0,00" />
                     </div>
 
                     <!-- Forma de Pagamento -->
@@ -159,7 +200,8 @@ const params = ref<{ metodo: "AVISTA" | "PARCELADO", efetivado: boolean }>({
                                     class="border cursor-pointer bg-card dark:bg-card-dark border-border px-3 h-[36px] flex rounded-lg">
                                     <div class="flex items-center">
                                         <label class="relative inline-flex items-center cursor-pointer">
-                                            <Switch id="lancamentoEfetivadoTotal" v-model="params.efetivado" />
+                                            <Switch id="lancamentoEfetivadoTotal"
+                                                v-model="params.lancamentoEfetivado" />
                                             <span
                                                 class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Efetivado</span>
                                         </label>
@@ -174,21 +216,22 @@ const params = ref<{ metodo: "AVISTA" | "PARCELADO", efetivado: boolean }>({
                     <!-- Cliente -->
                     <div>
                         <label for="clienteIdLancamento" class="block text-sm font-medium mb-1">
-                            Cliente
-                            <a onclick="openModalClientes()" class="text-blue-500 px-2 cursor-pointer">Novo</a>
+                            {{ store.form.tipo === 'RECEITA' ? 'Cliente' : 'Fornecedor' }}
+                            <a onclick="openModalClientes()" class="text-blue-500 px-2 cursor-pointer">+ Novo</a>
                         </label>
                         <Select2Ajax id="clienteIdLancamento" v-model="store.form.clienteId" url="/clientes/select2"
-                            allowClear required />
+                            allowClear />
                     </div>
 
                     <!-- Categoria -->
                     <div>
                         <label for="categoriaIdLancamento" class="block text-sm font-medium mb-1">
                             Categoria *
-                            <a onclick="openModalCategoriaFinanceira()"
-                                class="text-blue-500 px-2 cursor-pointer">Nova</a>
+                            <a onclick="openModalCategoriaFinanceira()" class="text-blue-500 px-2 cursor-pointer">+
+                                Nova</a>
                         </label>
-                        <Select2Ajax id="categoriaIdLancamento" required url="lancamentos/categorias/select2" />
+                        <Select2Ajax id="categoriaIdLancamento" v-model="store.form.categoriaId" required
+                            url="lancamentos/categorias/select2" />
                     </div>
                 </div>
 
@@ -206,9 +249,11 @@ const params = ref<{ metodo: "AVISTA" | "PARCELADO", efetivado: boolean }>({
                     <div>
                         <label for="contasFinanceiroId" class="block text-sm font-medium mb-1">
                             Conta Financeira *
-                            <a onclick="openModalContasFinanceiras()" class="text-blue-500 px-2 cursor-pointer">Nova</a>
+                            <a onclick="openModalContasFinanceiras()" class="text-blue-500 px-2 cursor-pointer">+
+                                Nova</a>
                         </label>
-                        <Select2Ajax id="contasFinanceiroId" required url="lancamentos/contas/select2" />
+                        <Select2Ajax id="contasFinanceiroId" v-model="store.form.contaFinanceiroId" required
+                            url="lancamentos/contas/select2" />
                     </div>
                 </div>
                 <div class="flex justify-end gap-2">

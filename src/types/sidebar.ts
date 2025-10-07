@@ -3,6 +3,7 @@ import type { Component } from 'vue'
 export type SidebarMenuType = {
   nome: string
   icone?: string | Component
+  show?: boolean
   color?:
     | 'blue'
     | 'red'

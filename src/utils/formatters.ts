@@ -10,8 +10,11 @@ export const formatToMoneyValue = (value: any) => {
   })
 }
 
-export const formatToNumberValue = (value: string | number) => {
+export const formatToNumberValue = (value: string | number): number => {
   if (typeof value !== 'string') return Number(value)
+
+  // Se for uma string vazia, retorne 0
+  if (typeof value === 'string' && value.trim() === '') return 0
 
   // Remove espaços e símbolos de moeda
   value = value.trim().replace(/[^\d.,-]/g, '')

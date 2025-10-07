@@ -2,7 +2,7 @@
     <div>
         <div v-for="(item, index) in menu" :key="index" class="space-y-4">
             <!-- Divisor -->
-            <div v-if="item.divisor" class="flex items-center mt-2">
+            <div v-if="item.divisor" v-show="item.show !== false" class="flex items-center mt-2">
                 <div class="flex-grow border-t border-border"></div>
                 <span class="mx-4 text-gray-500 dark:text-gray-200 text-xs uppercase">
                     {{ item.nome }}
@@ -11,7 +11,7 @@
             </div>
 
             <!-- Dropdown -->
-            <div v-else-if="item.children && item.children.length"
+            <div v-else-if="item.children && item.children.length" v-show="item.show !== false"
                 class="mb-1 cursor-pointer mt-2 rounded-xl border border-border/70 transition-all">
                 <button @click="toggleDropdown(item.nome)"
                     class="dropdown-toggle w-full flex items-center bg-background hover:bg-gray-200 dark:hover:bg-gray-800 justify-between px-4 py-2 text-left cursor-pointer rounded-xl transition-colors group">
@@ -49,7 +49,7 @@
             </div>
 
             <!-- Link normal -->
-            <router-link v-else :to="item.link || 'javascript:void(0)'" :class="[
+            <router-link v-else :to="item.link || 'javascript:void(0)'" v-show="item.show !== false" :class="[
                 'cursor-pointer border bg-background border-border/70 mt-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 p-2 rounded-xl transition flex items-center',
                 route.path === item.link && 'bg-gray-200 dark:bg-gray-800'
             ]">

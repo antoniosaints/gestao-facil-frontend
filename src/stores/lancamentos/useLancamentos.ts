@@ -23,13 +23,13 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     contaFinanceiroId: null,
     dataLancamento: new Date(),
     dataEntrada: null,
-    desconto: 0,
+    desconto: '',
     descricao: '',
     formaPagamento: 'DINHEIRO',
     parcelas: 1,
     tipo: 'RECEITA',
-    valorEntrada: 0,
-    valorTotal: 0,
+    valorEntrada: '',
+    valorTotal: '',
   })
 
   const reset = () => {
@@ -40,13 +40,13 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
       contaFinanceiroId: null,
       dataLancamento: new Date(),
       dataEntrada: null,
-      desconto: 0,
+      desconto: '',
       descricao: '',
       formaPagamento: 'DINHEIRO',
       parcelas: 1,
       tipo: 'RECEITA',
-      valorEntrada: 0,
-      valorTotal: 0,
+      valorEntrada: '',
+      valorTotal: '',
     }
   }
 

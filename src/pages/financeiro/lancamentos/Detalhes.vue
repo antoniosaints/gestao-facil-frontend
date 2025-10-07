@@ -126,7 +126,7 @@ onMounted(loadLancamento);
                         :label="lancamento?.recorrente ? 'Recorrente' : 'Único'" class="ml-2 text-sm"
                         :capitalize="false" />
                 </div>
-                <div><span>Valor total:</span>
+                <div><span>Valor líquido:</span>
                     <BadgeCell color="green" :label="formatCurrencyBR(lancamento?.valorTotal || 0)"
                         class="ml-2 text-sm" />
                 </div>

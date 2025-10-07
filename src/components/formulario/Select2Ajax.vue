@@ -2,7 +2,6 @@
 import { ref, watch, onMounted } from "vue"
 import http from "@/utils/axios"
 import { X } from "lucide-vue-next"
-
 import {
     Select,
     SelectTrigger,
@@ -11,7 +10,6 @@ import {
     SelectGroup,
     SelectItem,
 } from "@/components/ui/select"
-
 import { Input } from "@/components/ui/input"
 
 interface Item {
@@ -19,15 +17,17 @@ interface Item {
     label: string
 }
 
-const props = withDefaults(defineProps<{
+interface Props {
     modelValue?: string | number | null
     url: string
     allowClear?: boolean
     required?: boolean
     params?: { key: string, value: any }[]
-}>(), {
+}
+
+const props = withDefaults(defineProps<Props>(), {
     allowClear: false,
-    required: false
+    required: false,
 })
 
 const emit = defineEmits<{
