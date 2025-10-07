@@ -11,6 +11,11 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/site',
+    name: 'site-page',
+    component: () => import('@/pages/site/HomePage.vue'),
+  },
+  {
     path: '/reservar-horario/:conta',
     name: 'reservar-horario',
     component: () => import('@/pages/publico/ReservarHorario.vue'),
