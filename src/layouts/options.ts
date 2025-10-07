@@ -177,6 +177,7 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     nome: 'Modo Admin',
     color: 'violet',
     icone: Lock,
+    show: false,
     link: '/admin',
   },
   {
