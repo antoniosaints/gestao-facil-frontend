@@ -85,8 +85,8 @@ onMounted(loadLancamento);
         <!-- Card do Lançamento -->
         <div class="flex items-center justify-between flex-col md:flex-row bg-card shadow-md border rounded-md p-4">
             <h1 class="text-md md:text-lg flex items-center gap-2">
+                <BadgeCell class="text-sm" :color="'green'" :label="lancamento?.tipo || 'N/A'" :capitalize="false" />
                 <BadgeDollarSign class="w-6 h-6 text-emerald-600" />
-                <BadgeCell class="text-sm" :color="'green'" :label="'Efetivado'" />
                 #{{ lancamento?.Uid }}
                 <p class="text-sm text-muted-foreground">{{ lancamento?.vendaId ? ' (Lançamento automático)' : '' }}</p>
             </h1>
