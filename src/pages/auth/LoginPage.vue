@@ -276,18 +276,11 @@ async function loginUsuario() {
                                 <div class="mt-8 text-center">
                                     <p class="text-sm text-gray-600 dark:text-gray-400">
                                         Não tem uma conta?
-                                        <a href="/site/cadastro"
+                                        <RouterLink to="/site/cadastro"
                                             class="text-primary-500 hover:text-primary-600 font-semibold transition-colors duration-200">
                                             Cadastre-se gratuitamente
-                                        </a>
+                                        </RouterLink>
                                     </p>
-                                </div>
-
-                                <!-- Security Badge -->
-                                <div
-                                    class="mt-6 flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                                    <i class="fas fa-shield-alt text-green-500"></i>
-                                    <span>Conexão segura SSL</span>
                                 </div>
                             </div>
                         </div>
