@@ -10,6 +10,24 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   const openModal = ref(false)
   const openModalReposicao = ref(false)
   const idMutation = ref<number | null>(null)
+  const selectedIds = ref<number[]>([])
+
+  function resetSelectedIds() {
+    selectedIds.value = []
+  }
+
+  function addSelectedId(id: number) {
+    if (!selectedIds.value.includes(id)) {
+      selectedIds.value.push(id)
+    }
+  }
+
+  function removeSelectedId(id: number) {
+    const index = selectedIds.value.indexOf(id)
+    if (index !== -1) {
+      selectedIds.value.splice(index, 1)
+    }
+  }
 
   const form = ref<Produto>({
     id: undefined,
@@ -54,6 +72,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
 
   const updateTable = () => {
     filters.value.update = !filters.value.update
+    resetSelectedIds()
   }
 
   const openUpdate = async (id: number) => {
@@ -90,5 +109,9 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     reset,
     form,
     idMutation,
+    selectedIds,
+    addSelectedId,
+    resetSelectedIds,
+    removeSelectedId,
   }
 })

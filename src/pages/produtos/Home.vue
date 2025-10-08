@@ -7,8 +7,10 @@ import { useToast } from 'vue-toastification';
 import ModalProdutos from './formulario/ModalProdutos.vue';
 import ModalCriarLote from './others/ModalCriarLote.vue';
 import { ProdutoRepository } from '@/repositories/produto-repository';
-import { Boxes, Package } from 'lucide-vue-next';
+import { Boxes, CircleChevronDown, Package, Trash } from 'lucide-vue-next';
 import ModalReposicao from './formulario/ModalReposicao.vue';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 const toast = useToast();
 const store = useProdutoStore();
@@ -26,6 +28,20 @@ const relatorioGeral = async () => {
     }
 }
 
+async function excluirEmLote() {
+    try {
+        if (!store.selectedIds.length) return toast.error('Nenhum produto selecionado')
+        const confirm = window.confirm('Tem certeza que deseja excluir os produtos selecionados?')
+        if (!confirm) return
+        await Promise.all(store.selectedIds.map(id => ProdutoRepository.remove(id)))
+        store.updateTable()
+        toast.success('Produtos excluidos com sucesso')
+    } catch (error) {
+        toast.error('Erro ao excluir os produtos')
+        console.log(error)
+    }
+}
+
 </script>
 
 <template>
@@ -39,6 +55,24 @@ const relatorioGeral = async () => {
                 <p class="text-sm text-muted-foreground">Listagem de produtos cadastrados</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
+                <DropdownMenu v-if="store.selectedIds.length">
+                    <DropdownMenuTrigger as-child>
+                        <Button variant="outline">
+                            <CircleChevronDown />
+                            Ações
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem @click="excluirEmLote" class="cursor-pointer">
+                                <Trash />
+                                <span>
+                                    Excluir em lote
+                                </span>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <button @click="relatorioGeral()" class="bg-orange-600 text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-regular fa-file-pdf"></i>
                 </button>

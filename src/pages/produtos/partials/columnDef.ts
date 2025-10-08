@@ -7,8 +7,27 @@ import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
 import Actions from './Actions.vue'
 import { RouterLink } from 'vue-router'
+import { Checkbox } from '@/components/ui/checkbox'
+import { useProdutoStore } from '@/stores/produtos/useProduto'
+const store = useProdutoStore()
 
 export const columnsProdutos: ColumnDef<Produto>[] = [
+  {
+    id: 'select',
+    header: ({ table }) => render('div', {}, ''),
+    cell: ({ row }) =>
+      render(Checkbox, {
+        modelValue: store.selectedIds.includes(row.original.id!),
+        'onUpdate:modelValue': (value: boolean | string) => {
+          row.toggleSelected(!!value)
+          if (value) store.addSelectedId(row.original.id!)
+          else store.removeSelectedId(row.original.id!)
+        },
+        ariaLabel: 'Select row',
+      }),
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: 'Uid',
     header: ({ column }) =>
