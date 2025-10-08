@@ -48,29 +48,56 @@ export class LancamentosRepository {
     const data = await http.get(`/lancamentos/graficos/saldo-mensal`)
     return data.data
   }
-  static async gerarDRE(inicio: Date, fim: Date) {
+  static async gerarDRE(inicio: string, fim: string) {
     await http.get(`/lancamentos/relatorios/dre`, {
+      responseType: 'blob',
       params: {
-        inicio: inicio.toDateString,
-        fim: fim.toDateString,
+        inicio: inicio,
+        fim: fim,
       },
     })
   }
-  static async gerarDREPDF(inicio: Date, fim: Date) {
-    await http.get(`/lancamentos/relatorios/dre-pdf`, {
+  static async gerarDREPDF(inicio: string, fim: string) {
+    const data = await http.get(`/lancamentos/relatorios/dre-pdf`, {
+      responseType: 'blob',
+      headers: { 'Content-Type': 'application/pdf' },
       params: {
-        inicio: inicio.toDateString,
-        fim: fim.toDateString,
+        inicio: inicio,
+        fim: fim,
       },
     })
+
+    const url = window.URL.createObjectURL(data.data)
+    const a = document.createElement('a')
+    a.href = url
+    const dataHoje = new Date()
+      .toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      .replace(/\//g, '-')
+    a.download = `lancamentos_dre_${dataHoje}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
   }
-  static async gerarDREPDF2(inicio: Date, fim: Date) {
-    await http.get(`/lancamentos/relatorios/dre-pdf-2`, {
+  static async gerarDREPDF2(inicio: string, fim: string) {
+    const data = await http.get(`/lancamentos/relatorios/dre-pdf-2`, {
+      responseType: 'blob',
+      headers: { 'Content-Type': 'application/pdf' },
       params: {
-        inicio: inicio.toDateString,
-        fim: fim.toDateString,
+        inicio: inicio,
+        fim: fim,
       },
     })
+
+    const url = window.URL.createObjectURL(data.data)
+    const a = document.createElement('a')
+    a.href = url
+    const dataHoje = new Date()
+      .toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      .replace(/\//g, '-')
+    a.download = `lancamentos_dre_${dataHoje}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
   }
   static async graficoCategorias(inicio: Date | string, fim: Date | string) {
     const data = await http.get(`/lancamentos/graficos/categorias`, {

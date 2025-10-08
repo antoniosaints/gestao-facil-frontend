@@ -14,6 +14,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const openModalDelete = ref(false)
   const openModalPropor = ref(false)
   const openModalFaturar = ref(false)
+  const openModalDre = ref(false)
   const idMutation = ref<number | null>(null)
 
   const form = ref<FormularioLancamento>({
@@ -99,6 +100,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     openModalPropor,
     openModalFaturar,
     openModalDelete,
+    openModalDre,
     openSave,
     openUpdate,
     updateTable,
