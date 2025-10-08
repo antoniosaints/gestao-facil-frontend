@@ -52,10 +52,6 @@ async function deletar(id: number) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem>
-                    <BadgeCheck />
-                    Efetivar
-                </DropdownMenuItem>
-                <DropdownMenuItem>
                     <Nfc />
                     Gerar PIX
                 </DropdownMenuItem>

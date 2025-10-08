@@ -31,7 +31,7 @@ export class VendaRepository {
     await http.get(`/vendas/estornar/${id}`)
   }
   static async resumo(inicio?: string, fim?: string) {
-    const query = (inicio && fim) ? `?inicio=${inicio}&fim=${fim}` : ''
+    const query = inicio && fim ? `?inicio=${inicio}&fim=${fim}` : ''
     return await http.get(`/vendas/resumo/dashboard${query}`)
   }
 

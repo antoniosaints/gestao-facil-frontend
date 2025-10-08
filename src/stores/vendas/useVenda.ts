@@ -4,10 +4,12 @@ import {
   type CarrinhoItem,
   type FormularioVenda,
   type ItensVendas,
+  type PagamentoVendas,
   type Vendas,
 } from '@/types/schemas'
 import { VendaRepository } from '@/repositories/venda-repository'
-
+import { useToast } from 'vue-toastification'
+const toast = useToast()
 interface filtroVendas {
   periodo: { inicio: string | null; fim: string | null }
   status: string
@@ -19,8 +21,10 @@ export const useVendasStore = defineStore('vendasStore', () => {
   const openModalDelete = ref(false)
   const openModalPropor = ref(false)
   const openModalFaturar = ref(false)
+  const openModalDetalhes = ref(false)
   const idMutation = ref<number | null>(null)
   const tipoDesconto = ref<'VALOR' | 'PORCENTAGEM'>('VALOR')
+  const venda = ref<Vendas & { ItensVendas: ItensVendas[]; PagamentoVendas: PagamentoVendas }>()
 
   const carrinho = ref<CarrinhoItem[]>(
     localStorage.getItem('gestao_facil:cartVendas')
@@ -57,6 +61,20 @@ export const useVendasStore = defineStore('vendasStore', () => {
   const openSave = () => {
     if (form.value.id) reset()
     openModal.value = true
+  }
+  const openDetalhes = async (id: number) => {
+    try {
+      if (!id) {
+        return toast.info('ID nao informado!')
+      }
+      const data = await VendaRepository.get(id)
+      console.log(data.data)
+      venda.value = data.data
+      openModalDetalhes.value = true
+    } catch (error) {
+      toast.error('Erro ao buscar venda, tente novamente')
+      console.log(error)
+    }
   }
 
   const filters = ref<Partial<filtroVendas>>({
@@ -103,7 +121,10 @@ export const useVendasStore = defineStore('vendasStore', () => {
     openModalPropor,
     openModalFaturar,
     openModalDelete,
+    openModalDetalhes,
     openSave,
+    openDetalhes,
+    venda,
     tipoDesconto,
     openUpdate,
     updateTable,
