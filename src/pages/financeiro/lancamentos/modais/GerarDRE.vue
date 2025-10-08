@@ -33,7 +33,7 @@ async function generateDre(type: "01" | "02") {
 </script>
 
 <template>
-    <ModalView v-model:open="store.openModalDre" title="Gerar DRE" description="Gerar DRE" size="md">
+    <ModalView v-model:open="store.openModalDre" title="Gerar DRE" description="Exporte um PDF com o DRE" size="md">
         <div class="grid grid-cols-2 gap-6 px-4">
             <Calendarpicker class="col-span-2" v-model="filtroPeriodo" :teleport="true" :range="true" />
             <div class="col-span-2 flex gap-2 justify-end">

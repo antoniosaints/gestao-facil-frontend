@@ -30,6 +30,7 @@ export async function handleRouteGuard(to: typed, from: typed) {
     storeUi.openSidebar = false
   }
 
+  if (to.meta?.isPublic) return true
   // Rota privada sem login
   if (!to.meta?.isPublic && !token) {
     toast.info('Necessário efetuar login para acessar essa rota!')
