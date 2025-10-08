@@ -13,7 +13,7 @@ import {
   Filler
 } from "chart.js"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
-import { optionsChartBarDefault, optionsChartLine, optionsChartPie } from "@/composables/useChartOptions"
+import { optionsChartBarStack, optionsChartLine, optionsChartPie } from "@/composables/useChartOptions"
 import BarChart from "@/components/graficos/BarChart.vue"
 import LineChart from "@/components/graficos/LineChart.vue"
 import PieChart from "@/components/graficos/PieChart.vue"
@@ -98,7 +98,7 @@ const filtroPeriodo = ref([new Date(), new Date()])
         <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
           Reposições
         </h2>
-        <BarChart class="max-h-64" :data="chartReposicoes" :options="optionsChartBarDefault" />
+        <BarChart class="max-h-64" :data="chartReposicoes" :options="optionsChartBarStack" />
       </div>
 
       <div
@@ -122,7 +122,7 @@ const filtroPeriodo = ref([new Date(), new Date()])
         <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
           Mais vendidos
         </h2>
-        <BarChart class="max-h-64" :data="chartMaisVendidos" :options="optionsChartBarDefault" />
+        <BarChart class="max-h-64" :data="chartMaisVendidos" :options="optionsChartBarStack" />
       </div>
     </div>
   </div>

@@ -5,13 +5,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import type { Vendas } from '@/types/schemas';
 import type { Table } from '@tanstack/vue-table';
 import { editarVenda, estornarVenda, gerarCupomVenda, openModalDeleteVenda, openModalFaturarVenda } from '../ActionsVendas';
-import { useVendasStore } from '@/stores/vendas/useVenda';
 const { data } = defineProps<{
     data: Vendas,
     table: Table<Vendas>
 }>()
-
-const store = useVendasStore()
 </script>
 
 <template>
@@ -24,10 +21,6 @@ const store = useVendasStore()
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem @click="store.openDetalhes(data.id!)">
-                    <i class="fa-regular fa-eye mr-1"></i>
-                    Visualizar
-                </DropdownMenuItem>
                 <DropdownMenuItem v-if="data.status !== 'FATURADO'" @click="editarVenda(data.id!)">
                     <i class="fa-regular fa-pen-to-square mr-1"></i>
                     Editar

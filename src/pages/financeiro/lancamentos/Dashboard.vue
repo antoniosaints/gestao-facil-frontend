@@ -2,7 +2,7 @@
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import BarChart from '@/components/graficos/BarChart.vue';
 import PieChart from '@/components/graficos/PieChart.vue';
-import { optionsChartBarDefault, optionsChartPie } from '@/composables/useChartOptions';
+import { optionsChartBarStack, optionsChartPie } from '@/composables/useChartOptions';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { endOfMonth, startOfMonth } from 'date-fns';
 import { Landmark } from 'lucide-vue-next';
@@ -209,7 +209,7 @@ onMounted(() => {
                     <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
                         Balanço mensal
                     </h2>
-                    <BarChart class="max-h-64" :data="balancoData" :options="optionsChartBarDefault" />
+                    <BarChart class="max-h-64" :data="balancoData" :options="optionsChartBarStack" />
                 </div>
 
                 <div
@@ -218,7 +218,7 @@ onMounted(() => {
                         Resumo por
                         status
                     </h2>
-                    <BarChart class="max-h-64" :data="statusData" :options="optionsChartBarDefault" />
+                    <BarChart class="max-h-64" :data="statusData" :options="optionsChartBarStack" />
                 </div>
 
                 <div
@@ -235,7 +235,7 @@ onMounted(() => {
                         por
                         categoria
                     </h2>
-                    <BarChart class="max-h-64" :data="categoriasData" :options="optionsChartBarDefault" />
+                    <BarChart class="max-h-64" :data="categoriasData" :options="optionsChartBarStack" />
                 </div>
             </div>
         </div>

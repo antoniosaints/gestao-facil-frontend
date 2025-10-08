@@ -19,7 +19,8 @@ import TabelaActions from './TabelaActions.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
 import type { Component } from 'vue'
-
+import { useVendasStore } from '@/stores/vendas/useVenda'
+const store = useVendasStore()
 export const columnsVendas: ColumnDef<Vendas>[] = [
   {
     accessorKey: 'Uid',
@@ -35,9 +36,11 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
     cell: ({ row }) =>
       render(BadgeCell, {
         label: row.original.Uid as string,
+        class: 'cursor-pointer',
         color: 'gray',
         icon: Tag,
         capitalize: false,
+        onClick: () => store.openDetalhes(row.original.id!),
       }),
   },
   {
