@@ -68,11 +68,12 @@ export const useVendasStore = defineStore('vendasStore', () => {
         return toast.info('ID nao informado!')
       }
       const data = await VendaRepository.get(id)
-      console.log(data.data)
       venda.value = data.data
+      idMutation.value = id
       openModalDetalhes.value = true
     } catch (error) {
       toast.error('Erro ao buscar venda, tente novamente')
+      idMutation.value = null
       console.log(error)
     }
   }

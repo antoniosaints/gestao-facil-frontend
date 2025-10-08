@@ -1,7 +1,7 @@
 <template>
     <div class="max-w-7xl mx-auto">
         <Card class="bg-background">
-            <div class="flex items-center space-x-6 p-6">
+            <div class="flex items-center flex-col justify-center md:flex-row gap-4 py-4 text-center md:text-left px-6">
                 <Avatar class="w-16 h-16">
                     <img :src="user.avatar || defaultAvatar" alt="avatar" />
                 </Avatar>

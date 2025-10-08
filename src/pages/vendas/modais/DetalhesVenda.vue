@@ -116,8 +116,9 @@
                 </div>
             </div>
         </div>
-        <div class="flex justify-end gap-2 px-4">
-            <Button type="button" variant="secondary" class="text-white bg-orange-500 hover:bg-orange-600">
+        <div class="flex justify-end gap-2 px-4 mt-2">
+            <Button type="button" variant="secondary" class="text-white bg-orange-500 hover:bg-orange-600"
+                @click.prevent="gerarCupomVenda(store.idMutation!)">
                 <FileText />
                 Cupom
             </Button>
@@ -136,6 +137,7 @@ import { formatCurrencyBR } from '@/utils/formatters';
 import { addDays } from 'date-fns';
 import { FileText } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { gerarCupomVenda } from '../ActionsVendas';
 const store = useVendasStore()
 
 const subtotal = computed(() => {

@@ -3,8 +3,8 @@
         <HeaderMenu />
         <!-- Botão de abrir menu (mobile) -->
         <button type="button" @click="store.toggleSidebar"
-            class="md:hidden fixed left-0 top-1/2 transform -translate-y-1/2 z-30 bg-primary/70 text-gray-700 dark:text-gray-300 px-2 py-3 rounded-r-xl shadow-lg">
-            ☰
+            class="md:hidden fixed flex items-center right-0 w-10 h-14 pl-3 pr-0 bottom-16 transform -translate-y-1/2 z-30 bg-primary/70 text-gray-200 dark:text-gray-300 px-2 py-3 rounded-l-full shadow-lg">
+            <PanelRightClose />
         </button>
         <!-- Sidebar -->
         <aside id="sidebar-content-sistema"
@@ -16,7 +16,7 @@
             <ColorToggle />
             <LogoutButton />
             <button @click="store.toggleSidebar"
-                class="md:hidden mt-4 flex items-center border border-border gap-2 px-4 py-3 rounded transition text-gray-700 dark:text-gray-300 bg-orange-500 dark:bg-orange-800 dark:border-border-dark w-full justify-center">
+                class="md:hidden mt-4 flex items-center border border-border gap-2 px-4 py-3 rounded-lg transition bg-secondary w-full justify-center">
                 <i class="fa-solid fa-circle-xmark mr-1"></i> Fechar
             </button>
         </aside>
@@ -42,6 +42,7 @@ import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import InstallPrompt from '@/components/layout/installPrompt.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
+import { EllipsisVertical, PanelRightClose } from 'lucide-vue-next'
 const store = useUiStore()
 
 window.addEventListener('resize', () => {

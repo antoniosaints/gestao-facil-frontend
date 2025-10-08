@@ -1,7 +1,7 @@
 <template>
-    <div class="flex flex-col gap-2 mt-2 overflow-auto max-h-[calc(100vh-12rem)] md:max-h-full">
+    <div class="flex flex-col gap-2 mt-2 overflow-auto max-h-[calc(100vh-13rem)] md:max-h-full">
         <!-- Lista de Vendas -->
-        <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-12rem)]">
+        <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-13rem)]">
             <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark"></div>
         </div>
         <div v-else class="flex flex-col gap-2">
@@ -29,22 +29,29 @@
                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ venda.observacoes || '-' }}</div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-1">
-                        <button class="bg-secondary px-3 py-1 rounded-md text-sm">
+                        <button @click="store.openDetalhes(venda.id!)"
+                            class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <button @click="gerarCupomVenda(venda.id!)" class="bg-primary px-3 py-1 rounded-md text-sm">
+                        <button @click="gerarCupomVenda(venda.id!)"
+                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-file-pdf"></i>
                         </button>
                         <button v-if="!venda.faturado" @click="openModalFaturarVenda(venda.id!)"
-                            class="bg-success px-3 py-1 rounded-md text-sm">
+                            class="bg-emerald-200 text-emerald-900 dark:text-emerald-100 dark:bg-emerald-800 px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-circle-check"></i>
                         </button>
                         <button v-else @click="estornarVenda(venda.id!)"
-                            class="bg-warning px-3 py-1 rounded-md text-sm">
+                            class="bg-yellow-200 text-yellow-900 dark:text-yellow-100 dark:bg-yellow-800 px-3 py-1 rounded-md text-sm">
                             <i class="fa-solid fa-undo"></i>
                         </button>
+                        <button v-if="!venda.faturado" @click="store.openUpdate(venda.id!)"
+                            class="bg-slate-200 text-slate-900 dark:text-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md text-sm">
+                            <i class="fa-solid fa-pencil"></i>
+                        </button>
                     </div>
-                    <button @click="deletarVenda(venda.id!)" class="bg-danger text-white px-3 py-1 rounded-md text-sm">
+                    <button @click="openModalDeleteVenda(venda.id!)"
+                        class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-3 py-1 rounded-md text-sm">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
@@ -77,19 +84,7 @@
         </div>
     </div>
 
-    <!-- Drawer Financeiro -->
-    <div v-show="showDrawerFinanceiro"
-        class="fixed bottom-20 left-0 right-0 z-10 w-full p-4 overflow-y-auto transition-transform bg-white dark:bg-gray-800">
-        <h5 id="drawer-bottom-label"
-            class="inline-flex items-center mb-4 text-base font-semibold text-gray-500 dark:text-gray-400">
-            <i class="fa-solid fa-circle-chevron-down mr-2"></i> Menu rápido
-        </h5>
-        <button type="button" @click="showDrawerFinanceiro = false"
-            class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 absolute top-2.5 end-2.5 inline-flex items-center justify-center dark:hover:bg-gray-600 dark:hover:text-white">
-            <i class="fa-regular fa-circle-xmark"></i>
-            <span class="sr-only">Close menu</span>
-        </button>
-        <!-- Conteúdo do Drawer -->
+    <ModalView v-model:open="showDrawerVendas" title="Vendas" description="Ações das vendas">
         <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
             <router-link to="/vendas/pdv">
                 <div
@@ -101,9 +96,21 @@
                     <div class="font-medium text-center text-gray-500 dark:text-gray-400">PDV</div>
                 </div>
             </router-link>
-            <!-- Outros itens iguais -->
+            <div @click="openSaveVenda"
+                class="p-4 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:hover:bg-gray-600 dark:bg-gray-700">
+                <div
+                    class="flex justify-center items-center p-2 mx-auto mb-2 bg-gray-200 dark:bg-gray-600 rounded-full w-[48px] h-[48px] max-w-[48px] max-h-[48px]">
+                    <i class="fa-solid fa-plus text-2xl text-gray-500 dark:text-gray-400"></i>
+                </div>
+                <div class="font-medium text-center text-gray-500 dark:text-gray-400">Cadastrar</div>
+            </div>
         </div>
-    </div>
+        <div class="px-8 flex justify-end">
+            <Button @click="showDrawerVendas = false" variant="outline">
+                Fechar
+            </Button>
+        </div>
+    </ModalView>
 
     <!-- Navegação Mobile -->
     <nav
@@ -118,7 +125,7 @@
             <i class="fa-solid fa-search text-lg"></i>
             <span class="text-xs">Busca</span>
         </button>
-        <button type="button" @click="showDrawerFinanceiro = !showDrawerFinanceiro"
+        <button type="button" @click="showDrawerVendas = !showDrawerVendas"
             class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
             <i class="fa-solid fa-bars text-lg"></i>
             <span class="text-xs">Mais</span>
@@ -132,19 +139,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import http from "@/utils/axios";
 import type { Vendas } from "@/types/schemas";
-import { deletarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from "../ActionsVendas";
-
+import { estornarVenda, gerarCupomVenda, openModalDeleteVenda, openModalFaturarVenda } from "../ActionsVendas";
+import { useVendasStore } from "@/stores/vendas/useVenda";
+import ModalView from "@/components/formulario/ModalView.vue";
+import { Button } from "@/components/ui/button";
+const store = useVendasStore();
 const vendas = ref<Vendas[]>([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const loading = ref(false);
 const searchQuery = ref("");
 const showModalBuscarVendas = ref(false);
-const showDrawerFinanceiro = ref(false);
+const showDrawerVendas = ref(false);
 
+function openSaveVenda() {
+    showDrawerVendas.value = false;
+    store.openSave();
+}
 function renderListaVendas(page: number = 1) {
     loading.value = true;
     const token = localStorage.getItem("gestao_facil:token");
@@ -175,6 +189,10 @@ function previousPage() {
 function nextPage() {
     if (currentPage.value < totalPages.value) renderListaVendas(currentPage.value + 1);
 }
+
+watch(() => store.filters.update, () => {
+    renderListaVendas();
+})
 
 onMounted(() => renderListaVendas());
 </script>
