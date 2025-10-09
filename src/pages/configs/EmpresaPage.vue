@@ -17,11 +17,31 @@
                 </div>
                 <div class="space-y-2">
                     <Label for="cnpj">CNPJ/CPF *</Label>
-                    <Input id="cnpj" v-model="form.documento" required placeholder="00.000.000/0001-00" />
+                    <Input id="cnpj" v-maska="cpfCnpjMaskOptions" v-model="form.documento" required
+                        placeholder="00.000.000/0001-00" />
                 </div>
                 <div class="space-y-2">
                     <Label for="categoria">Categoria</Label>
-                    <Input id="categoria" placeholder="Categoria de atividade" v-model="form.tipo" />
+                    <Select v-model="form.tipo" required>
+                        <SelectTrigger class="w-full">
+                            <SelectValue placeholder="Selecione uma categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectItem value="moda">Moda e Vestuário</SelectItem>
+                                <SelectItem value="assistencia">Assistência Técnica</SelectItem>
+                                <SelectItem value="eletronicos">Eletrônicos</SelectItem>
+                                <SelectItem value="alimentacao">Alimentação</SelectItem>
+                                <SelectItem value="joias">Joias e Acessórios</SelectItem>
+                                <SelectItem value="farmacia">Farmácia</SelectItem>
+                                <SelectItem value="casa">Casa e Decoração</SelectItem>
+                                <SelectItem value="beleza">Beleza e Cosméticos</SelectItem>
+                                <SelectItem value="esportes">Esportes</SelectItem>
+                                <SelectItem value="telecom">Telecomunicações</SelectItem>
+                                <SelectItem value="outros">Outros</SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div class="space-y-2">
                     <Label for="endereco">Endereço</Label>
@@ -33,7 +53,8 @@
                 </div>
                 <div class="space-y-2">
                     <Label for="telefone">Telefone</Label>
-                    <Input id="telefone" placeholder="(00) 0000-0000" v-model="form.telefone" />
+                    <Input id="telefone" v-maska="phoneMaskOptions" placeholder="(00) 0000-0000"
+                        v-model="form.telefone" />
                 </div>
                 <div class="space-y-2">
                     <Label for="email">E-mail</Label>
@@ -59,6 +80,9 @@ import { Label } from '@/components/ui/label'
 import { ContaRepository, type UpdateConta } from '@/repositories/conta-repository'
 import { useToast } from 'vue-toastification'
 import { CircleCheck } from 'lucide-vue-next'
+import { vMaska } from 'maska/vue'
+import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 const toast = useToast()
 
 const form = ref<Partial<UpdateConta & { email: string, cep: string }>>({

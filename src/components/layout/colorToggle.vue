@@ -1,14 +1,18 @@
 <template>
-  <button @click="toggleColorMode()"
-    class="mt-4 flex items-center border border-border gap-2 px-4 py-3 rounded-xl transition bg-background w-full justify-center">
-    <i class="fa-solid fa-sun" id="icon-sun"></i>
-    <i class="fa-solid fa-moon hidden" id="icon-moon"></i>
-  </button>
+  <Button @click="toggleColorMode" variant="outline" class="rounded-xl w-10">
+    <Sun v-show="showSun" />
+    <Moon v-show="!showSun" />
+  </Button>
 </template>
 
 <script setup lang="ts">
 import { colorTheme } from '@/utils/theme';
-
+import { Button } from '../ui/button';
+import { useUiStore } from '@/stores/ui/uiStore';
+import { computed } from 'vue';
+import { Moon, Sun } from 'lucide-vue-next';
+const uiStore = useUiStore()
+const showSun = computed(() => colorTheme.value === 'light')
 function toggleColorMode() {
   colorTheme.value = colorTheme.value === 'light' ? 'dark' : 'light';
 }

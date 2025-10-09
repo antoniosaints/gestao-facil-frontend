@@ -13,8 +13,11 @@
 
             <TopMenu />
             <SidebarMenu :menu="sidebarMenuOptions" />
-            <ColorToggle />
-            <LogoutButton />
+            <div class="grid grid-cols-12 gap-2 items-center justify-center">
+                <LogoutButton class="col-span-10 md:col-span-12" />
+                <ColorToggle class="col-span-2 h-full w-full border border-gray-200 dark:border-gray-700"
+                    v-if="store.isMobile" />
+            </div>
             <button @click="store.toggleSidebar"
                 class="md:hidden mt-4 flex items-center border border-border gap-2 px-4 py-3 rounded-lg transition bg-secondary w-full justify-center">
                 <i class="fa-solid fa-circle-xmark mr-1"></i> Fechar
@@ -43,7 +46,7 @@ import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import InstallPrompt from '@/components/layout/installPrompt.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
-import { EllipsisVertical, PanelRightClose } from 'lucide-vue-next'
+import { PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
 const store = useUiStore()
 

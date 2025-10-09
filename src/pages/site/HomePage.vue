@@ -5,7 +5,7 @@
             <div class="container mx-auto px-4 py-4 flex justify-between items-center">
                 <div class="flex items-center space-x-3">
                     <div
-                        class="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
+                        class="w-10 h-10 bg-gradient-to-br from-primary to-primary rounded-lg flex items-center justify-center">
                         <i class="fas fa-chart-bar text-white text-lg"></i>
                     </div>
                     <h1 class="text-2xl text-gray-800 dark:text-white">Gestão Fácil ERP</h1>
@@ -34,7 +34,7 @@
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
                     <RouterLink to="/site/cadastro"
-                        class="bg-primary-500 hover:bg-primary-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        class="bg-white hover:bg-gray-100 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
                         <i class="fas fa-rocket mr-2"></i>
                         Teste Grátis por 7 dias
                     </RouterLink>
@@ -364,7 +364,7 @@
                     <div>
                         <h5 class="font-semibold mb-4">Contato</h5>
                         <ul class="space-y-2 text-gray-400">
-                            <li><i class="fas fa-envelope mr-2"></i>costaantonio883@gmail.com</li>
+                            <li><i class="fas fa-envelope mr-2"></i>atendimento@userp.com.br</li>
                             <li><i class="fas fa-phone mr-2"></i>(99) 98414-0666</li>
                             <li><i class="fas fa-map-marker-alt mr-2"></i>São Paulo, SP</li>
                         </ul>
