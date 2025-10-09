@@ -43,33 +43,64 @@ onMounted(async () => {
 })
 
 async function subscribeUserOnReceiverPush() {
+    // Verifica suporte básico
+    if (!('serviceWorker' in navigator)) {
+        return toast.error("Seu navegador não suporta Service Workers.")
+    }
+
+    if (!('PushManager' in window)) {
+        return toast.error("Seu navegador não suporta notificações push.")
+    }
+
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        return toast.warning("Notificações push exigem HTTPS.")
+    }
+
+    // Solicita permissão
     const permission = await Notification.requestPermission()
     if (permission !== "granted") {
         return toast.warning("Permissão de notificação negada.")
     }
 
-    const reg = await navigator.serviceWorker.ready
-    let subscription = await reg.pushManager.getSubscription()
-
-    if (!subscription) {
-        subscription = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(applicationServerKey),
-        })
-    }
-
-
     try {
+        // Aguarda service worker pronto
+        const reg = await navigator.serviceWorker.ready
+
+        // Verifica inscrição existente
+        let subscription = await reg.pushManager.getSubscription()
+
+        // Converte applicationServerKey
+        const vapidKey = applicationServerKey
+        const convertedKey = urlBase64ToUint8Array(vapidKey)
+
+        if (!vapidKey || convertedKey.length === 0) {
+            return toast.error("Chave VAPID inválida ou ausente.")
+        }
+
+        // Faz nova inscrição se necessário
+        if (!subscription) {
+            subscription = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: convertedKey,
+            })
+        }
+
+        // Envia para backend
         const { data } = await http.post("subscribe", subscription)
         localStorage.setItem("pushEndpoint", subscription.endpoint)
         isSubscribed.value = true
+
         data.new ? toast.success(data.message) : toast.info(data.message)
-    } catch (err) {
+
+    } catch (err: any) {
         console.error("Erro ao inscrever:", err)
-        toast.error("Erro ao inscrever")
+        if (err.name === 'AbortError') {
+            toast.error("Falha no serviço de push. Verifique a chave VAPID ou conexão.")
+        } else {
+            toast.error("Erro ao inscrever para notificações.")
+        }
     }
 }
-
 async function unsubscribeUserToReceivePush() {
     const reg = await navigator.serviceWorker.ready
     const subscription = await reg.pushManager.getSubscription()
@@ -94,10 +125,17 @@ async function unsubscribeUserToReceivePush() {
 }
 
 function urlBase64ToUint8Array(base64String: string) {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
-    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/")
-    const rawData = atob(base64)
-    return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)))
+    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+    const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/')
+
+    const rawData = window.atob(base64)
+    const outputArray = new Uint8Array(rawData.length)
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i)
+    }
+    return outputArray
 }
 </script>
 
