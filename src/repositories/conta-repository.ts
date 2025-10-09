@@ -21,6 +21,17 @@ export interface UpdateConta {
   endereco: string
   tipo: string
 }
+export interface CreateConta {
+  nome: string
+  email: string
+  senha: string
+  telefone: string
+  conta: string
+  tipo: string
+  funcionarios: number
+  dicasNovidades: boolean
+  cpfCnpj: string
+}
 export class ContaRepository {
   static async status(): Promise<{ data: StatusConta }> {
     const data = await http.get(`/contas/assinatura/status`)
@@ -29,6 +40,10 @@ export class ContaRepository {
   static async info(): Promise<Contas & { Usuarios: Usuarios[] }> {
     const data = await http.get(`/contas/infos`)
     return data.data
+  }
+  static async create(data: CreateConta): Promise<Contas> {
+    const res = await http.post(`/contas/cadastro`, data)
+    return res.data
   }
   static async detalhes(): Promise<Contas> {
     const data = await http.get(`/contas/detalhes`)

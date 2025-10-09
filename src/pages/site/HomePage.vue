@@ -12,11 +12,6 @@
                 </div>
 
                 <div class="flex items-center space-x-4">
-                    <button @click="toggleTheme"
-                        class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200">
-                        <i :class="[isDark ? 'fas fa-sun' : 'fas fa-moon', 'text-gray-600 dark:text-gray-300']"></i>
-                    </button>
-
                     <RouterLink to="/site/cadastro"
                         class="bg-primary hover:bg-primary text-white px-6 py-2 rounded-lg transition-colors duration-200">
                         Começar Agora
@@ -385,33 +380,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-
-const isDark = ref(false)
-
-onMounted(() => {
-    const saved = localStorage.getItem('theme')
-    if (saved === 'dark') {
-        isDark.value = true
-        document.documentElement.classList.add('dark')
-    }
-})
-
-watch(isDark, (value) => {
-    const html = document.documentElement
-    if (value) {
-        html.classList.add('dark')
-        localStorage.setItem('theme', 'dark')
-    } else {
-        html.classList.remove('dark')
-        localStorage.setItem('theme', 'light')
-    }
-})
-
-const toggleTheme = () => {
-    isDark.value = !isDark.value
-}
 
 const dashboard = [
     { label: 'Clientes', value: '1.247', bg: 'bg-purple-600', textColor: 'text-purple-200', icon: 'fas fa-users', iconColor: 'text-purple-300' },

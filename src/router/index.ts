@@ -27,6 +27,11 @@ const routes: RouteRecordRaw[] = [
         name: 'site-sobre',
         component: () => import('@/pages/site/CadastroSite.vue'),
       },
+      {
+        path: 'termos-politica',
+        name: 'site-termos-politica',
+        component: () => import('@/pages/site/TermosPolitica.vue'),
+      },
     ],
   },
   {
@@ -42,6 +47,21 @@ const routes: RouteRecordRaw[] = [
         path: 'usuarios',
         name: 'usuarios',
         component: () => import('@/pages/usuarios/Home.vue'),
+        meta: {
+          layout: 'main',
+        },
+      },
+    ],
+  },
+  {
+    path: '/changelog',
+    name: 'changelog',
+    redirect: { name: 'changelog-home' },
+    children: [
+      {
+        path: '',
+        name: 'changelog-home',
+        component: () => import('@/pages/configs/ChangelogPage.vue'),
         meta: {
           layout: 'main',
         },

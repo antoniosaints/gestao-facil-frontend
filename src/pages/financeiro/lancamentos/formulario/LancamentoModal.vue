@@ -14,9 +14,11 @@ import type { FormularioLancamento } from "@/types/schemas";
 import { LancamentosRepository } from "@/repositories/lancamento-repository";
 import { useToast } from "vue-toastification";
 import { formatToNumberValue } from "@/utils/formatters";
+import { useClientesStore } from "@/stores/clientes/useClientes";
 
 const description = ref('Preencha os campos abaixo')
 const store = useLancamentosStore()
+const storeCliente = useClientesStore()
 const toast = useToast()
 
 const params = ref<{ metodo: "AVISTA" | "PARCELADO", lancamentoEfetivado: boolean }>({
@@ -220,7 +222,7 @@ async function submit() {
                     <div>
                         <label for="clienteIdLancamento" class="block text-sm font-medium mb-1">
                             {{ store.form.tipo === 'RECEITA' ? 'Cliente' : 'Fornecedor' }}
-                            <a onclick="openModalClientes()" class="text-blue-500 px-2 cursor-pointer">+ Novo</a>
+                            <a @click="storeCliente.openSave" class="text-blue-500 px-2 cursor-pointer">+ Novo</a>
                         </label>
                         <Select2Ajax id="clienteIdLancamento" v-model="store.form.clienteId" url="/clientes/select2"
                             allowClear />

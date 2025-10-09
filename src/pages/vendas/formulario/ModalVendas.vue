@@ -210,7 +210,7 @@ clearCartVendas();
                     <div class="flex items-center justify-center gap-2">
                         <Select2Ajax v-model="store.form.clienteId" class="w-full" url="/clientes/select2"
                             :allow-clear="true" />
-                        <button type="button" @click="storeCliente.openModal = true"
+                        <button type="button" @click="storeCliente.openSave"
                             class="bg-primary px-4 py-1.5 text-white rounded-md border border-border dark:border-border-dark flex justify-center items-center">+</button>
                     </div>
                 </div>
@@ -370,7 +370,7 @@ clearCartVendas();
                                     <div class="flex flex-col text-right text-sm">
                                         <span class="text-gray-800 text-md dark:text-gray-200">R$ {{
                                             String(item.subtotal.toFixed(2)).replace('.', ',')
-                                        }}</span>
+                                            }}</span>
                                         <span class="font-medium text-xs text-gray-600 dark:text-gray-400">R$ {{
                                             String(item.preco.toFixed(2)).replace('.', ',') }} x {{ item.quantidade
                                             }}</span>
@@ -403,7 +403,7 @@ clearCartVendas();
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                     </div>

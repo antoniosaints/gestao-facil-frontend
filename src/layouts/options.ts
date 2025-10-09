@@ -7,6 +7,7 @@ import {
   CircleDollarSign,
   Cog,
   FileCheck2,
+  GitBranchPlus,
   Lock,
   MapPinned,
   ScrollText,
@@ -179,6 +180,12 @@ export const sidebarMenuOptions: SidebarMenuType[] = [
     icone: Lock,
     show: false,
     link: '/admin',
+  },
+  {
+    nome: 'Atualizações',
+    color: 'blue',
+    icone: GitBranchPlus,
+    link: '/changelog',
   },
   {
     nome: 'Perfil',

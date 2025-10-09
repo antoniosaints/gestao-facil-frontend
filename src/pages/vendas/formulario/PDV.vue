@@ -59,8 +59,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-white mb-2">
                         Cliente
-                        <a onclick="openModalClientes()" class="text-blue-500 px-2 cursor-pointer">Novo
-                            cliente</a>
+                        <a @click="storeCliente.openSave" class="text-blue-500 px-2 cursor-pointer">+ Novo</a>
                     </label>
                     <Select2Ajax :url="'/clientes/select2'" v-model:model-value="cliente" :allowClear="true" />
                 </div>
@@ -200,7 +199,7 @@
             </button>
         </div>
     </div>
-
+    <ClientesModal />
     <nav
         class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20">
 
@@ -222,9 +221,12 @@ import { Input } from '@/components/ui/input';
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
 import { POSITION, useToast } from 'vue-toastification';
 import { useUiStore } from '@/stores/ui/uiStore';
+import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
+import { useClientesStore } from '@/stores/clientes/useClientes';
 
 const toast = useToast()
 const uiStore = useUiStore()
+const storeCliente = useClientesStore()
 const canFinalizeSale = ref(false)
 
 interface Product {

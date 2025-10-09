@@ -108,7 +108,7 @@
                         <p class="text-gray-600 dark:text-gray-300">Preencha os dados abaixo para começar</p>
                     </div>
 
-                    <form id="signupForm" class="space-y-6">
+                    <form @submit.prevent="submitForm" class="space-y-6">
                         <!-- Step Indicator -->
                         <div class="flex items-center justify-center mb-8">
                             <div class="flex items-center">
@@ -140,8 +140,7 @@
 
 
                         <!-- Step 1: Personal Info -->
-                        <div v-show="step === 1" id="step1Form" class="space-y-6">
-                            {{ step }}
+                        <div v-show="step === 1" id="step1Form" class="space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -177,7 +176,7 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Telefone *
                                 </label>
-                                <input type="tel" v-model="form.phone" required
+                                <input type="text" v-maska="phoneMaskOptions" v-model="form.phone" required
                                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                                     placeholder="(11) 99999-9999">
                                 <span v-if="errors.phone" class="text-red-500 text-sm">Campo obrigatório</span>
@@ -195,14 +194,14 @@
                                 </div>
                                 <div class="mt-2">
                                     <div class="flex items-center space-x-2 text-sm">
-                                        <div id="passwordStrength" class="flex space-x-1">
-                                            <div class="w-6 h-1 bg-gray-300 dark:bg-gray-600 rounded"></div>
-                                            <div class="w-6 h-1 bg-gray-300 dark:bg-gray-600 rounded"></div>
-                                            <div class="w-6 h-1 bg-gray-300 dark:bg-gray-600 rounded"></div>
-                                            <div class="w-6 h-1 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                                        <div class="flex space-x-1">
+                                            <div v-for="n in 4" :key="n"
+                                                class="w-6 h-1 rounded transition-colors duration-300"
+                                                :class="barClass(n)"></div>
                                         </div>
-                                        <span id="passwordStrengthText" class="text-gray-500 dark:text-gray-400">Força
-                                            da senha</span>
+                                        <span class="text-gray-500 dark:text-gray-400">
+                                            {{ strengthText }}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -215,7 +214,7 @@
                         </div>
 
                         <!-- Step 2: Store Info -->
-                        <div v-show="step === 2" id="step2Form" class="space-y-6">
+                        <div v-show="step === 2" id="step2Form" class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Nome da Loja *
@@ -234,12 +233,15 @@
                                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200">
                                     <option value="">Selecione o segmento</option>
                                     <option value="moda">Moda e Vestuário</option>
+                                    <option value="assistencia">Assistência Técnica</option>
                                     <option value="eletronicos">Eletrônicos</option>
                                     <option value="alimentacao">Alimentação</option>
+                                    <option value="joias">Joias e Acessórios</option>
                                     <option value="farmacia">Farmácia</option>
                                     <option value="casa">Casa e Decoração</option>
                                     <option value="beleza">Beleza e Cosméticos</option>
                                     <option value="esportes">Esportes</option>
+                                    <option value="telecom">Telecomunicações</option>
                                     <option value="outros">Outros</option>
                                 </select>
                                 <span v-if="errors.segment" class="text-red-500 text-sm">Campo obrigatório</span>
@@ -250,7 +252,7 @@
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         CPF/CNPJ
                                     </label>
-                                    <input type="text" v-model="form.cnpj"
+                                    <input type="text" v-maska="cpfCnpjMaskOptions" v-model="form.cnpj"
                                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                                         placeholder="CPF ou CNPJ">
                                 </div>
@@ -285,7 +287,7 @@
                         </div>
 
                         <!-- Step 3: Confirmation -->
-                        <div v-show="step === 3" id="step3Form" class="space-y-6">
+                        <div v-show="step === 3" id="step3Form" class="space-y-4">
                             <div class="text-center">
                                 <div
                                     class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -330,11 +332,11 @@
                                     <input type="checkbox" v-model="form.terms" required
                                         class="mt-1 w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500">
                                     <span class="text-sm text-gray-600 dark:text-gray-300">
-                                        Aceito os <a href="/site/termos-politica" target="_blank"
-                                            class="text-blue hover:underline">Termos de Uso</a>
+                                        Aceito os <RouterLink to="/site/termos-politica"
+                                            class="text-blue hover:underline">Termos de Uso</RouterLink>
                                         e
-                                        <a href="/site/termos-politica#privacidade" target="_blank"
-                                            class="text-blue hover:underline">Política de Privacidade</a>
+                                        <RouterLink to="/site/termos-politica" class="text-blue hover:underline">
+                                            Política de Privacidade</RouterLink>
                                     </span>
                                     <span v-if="errors.terms" class="text-red-500 text-sm">Campo obrigatório</span>
                                 </label>
@@ -380,10 +382,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ContaRepository } from '@/repositories/conta-repository';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
+import { vMaska } from 'maska/vue';
+import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska';
 const router = useRouter();
-
+const toast = useToast();
 // Step atual
 const step = ref(1);
 
@@ -448,18 +454,59 @@ const prevStep = () => {
     if (step.value > 1) step.value--;
 };
 
-const submitForm = () => {
+const strength = computed(() => {
+    let score = 0
+    if (form.value.password.length >= 6) score++
+    if (/[A-Z]/.test(form.value.password)) score++
+    if (/[0-9]/.test(form.value.password)) score++
+    if (/[^A-Za-z0-9]/.test(form.value.password)) score++
+    return score
+})
+
+const strengthText = computed(() => {
+    switch (strength.value) {
+        case 0:
+        case 1:
+            return 'Fraca'
+        case 2:
+            return 'Média'
+        case 3:
+            return 'Forte'
+        case 4:
+            return 'Muito forte'
+        default:
+            return 'Força da senha'
+    }
+})
+function barClass(n: number) {
+    if (strength.value >= n) {
+        if (strength.value <= 1) return 'bg-red-500'
+        if (strength.value === 2) return 'bg-yellow-500'
+        if (strength.value === 3) return 'bg-green-500'
+        return 'bg-emerald-600'
+    }
+    return 'bg-gray-300 dark:bg-gray-600'
+}
+const submitForm = async () => {
     if (validateStep3()) {
-        alert('Formulário enviado com sucesso!');
-        // router.push('/login') // redirecionar se necessário
+        try {
+            await ContaRepository.create({
+                nome: form.value.firstName + " " + form.value.lastName,
+                cpfCnpj: form.value.cnpj,
+                conta: form.value.storeName,
+                telefone: form.value.phone,
+                dicasNovidades: form.value.newsletter,
+                email: form.value.email,
+                senha: form.value.password,
+                funcionarios: Number(form.value.employees),
+                tipo: form.value.segment
+            });
+            toast.success("Conta criada com sucesso!");
+            router.push("/login");
+        } catch (error) {
+            console.error(error);
+            toast.error("Erro ao criar conta, tente novamente.");
+        }
     }
 };
-
-// Summary para Step 3
-const summary = computed(() => ({
-    name: `${form.value.firstName} ${form.value.lastName}`,
-    email: form.value.email,
-    store: form.value.storeName,
-    segment: form.value.segment
-}));
 </script>

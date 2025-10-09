@@ -6,6 +6,7 @@ import LancamentoModal from './formulario/LancamentoModal.vue';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
 import { CirclePlus, FileText, Wallet } from 'lucide-vue-next';
 import GerarDRE from './modais/GerarDRE.vue';
+import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 const store = useLancamentosStore();
 const uiStore = useUiStore()
 
@@ -51,6 +52,7 @@ const openByTipo = (tipo: 'RECEITA' | 'DESPESA') => {
             <Mobile @openModalProduto="store.openSave" />
         </div>
         <LancamentoModal />
+        <ClientesModal />
         <GerarDRE />
     </div>
 </template>
