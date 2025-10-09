@@ -11,7 +11,7 @@
                 </h2>
                 <!-- Barra de Busca -->
                 <div class="relative">
-                    <Input v-model="searchTerm" type="text" placeholder="Buscar por nome ou código..."
+                    <Input v-model="searchTerm" autofocus type="text" placeholder="Buscar por nome ou código..."
                         class="w-full p-2 rounded-md border bg-background border-border outline-none" />
                 </div>
             </div>

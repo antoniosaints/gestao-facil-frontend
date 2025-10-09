@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, FileText, Edit, Trash2, Box, TrendingDown, TrendingUp, HandCoins, CircleDollarSign, Tag } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
-import router from "@/router"
 import { computed, onMounted, ref, watch } from "vue"
 import { type Produto } from "@/types/schemas"
 import { useToast } from "vue-toastification"
@@ -11,13 +10,14 @@ import { ProdutoRepository } from "@/repositories/produto-repository"
 import Separator from "@/components/ui/separator/Separator.vue"
 import { useRoute } from "vue-router"
 import { useProdutoStore } from "@/stores/produtos/useProduto"
-import ConfirmModal from "@/components/hooks/ConfirmModal.vue"
 import ModalProdutos from "../formulario/ModalProdutos.vue"
 import GerarEtiquetas from "./GerarEtiquetas.vue"
+import { useConfirm } from "@/composables/useConfirm"
+import ModalRelatorio from "../formulario/ModalRelatorio.vue"
+import router from "@/router"
 
 const route = useRoute()
 const store = useProdutoStore()
-const confirmDeleteModal = ref(false)
 
 interface Resumoproduto {
     totalGasto: string,
@@ -50,15 +50,8 @@ async function getProduto(id: number) {
 }
 
 async function gerarRelatorio() {
-    try {
-        await ProdutoRepository.gerarRelatorio(produto.value?.id!, "asc");
-        toast.success("Relatorio gerado com sucesso");
-    } catch (error) {
-        console.error(error);
-        toast.info("O produto não possui movimentações para gerar o relatório.", {
-            timeout: 5000,
-        });
-    }
+    store.idMutation = produto.value?.id!;
+    store.openModalRelatorio = true
 }
 async function gerarEtiquetas() {
     store.idMutation = produto.value?.id!;
@@ -77,6 +70,25 @@ function loadProduto() {
         return;
     }
     getProduto(id);
+}
+
+async function deletar(id: number) {
+    if (!id) return toast.error('ID não informado!')
+    const confirm = await useConfirm().confirm({
+        title: 'Excluir produto',
+        message: 'Tem certeza que deseja excluir este produto?',
+        confirmText: 'Sim, excluir!',
+    })
+    if (!confirm) return
+    try {
+        await ProdutoRepository.remove(id)
+        store.updateTable()
+        toast.success('Produto deletado com sucesso')
+        router.back()
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao deletar o produto')
+    }
 }
 
 function atualizarDetalhes() {
@@ -99,25 +111,10 @@ const status = computed(() => {
         }
     }
 })
-
-async function deletarProduto(id: number) {
-    try {
-        await ProdutoRepository.remove(id);
-        toast.success("Produto deletado com sucesso");
-        router.push("/produtos");
-    } catch (error) {
-        console.error(error);
-        toast.error("Erro ao deletar o produto");
-    }
-}
 </script>
 
 <template>
     <div class="space-y-4">
-        <ConfirmModal @confirm="deletarProduto(produto?.id!)" v-model:open="confirmDeleteModal"
-            description="Tem certeza que deseja excluir esse produto?" title="Excluir produto" />
-
-        <!-- Cabeçalho -->
         <div class="flex items-center justify-between flex-col md:flex-row bg-card shadow-md border rounded-md p-4">
             <h1 class="text-md md:text-lg flex items-center gap-2">
                 <Box class="w-6 h-6 text-blue-600" />
@@ -139,7 +136,7 @@ async function deletarProduto(id: number) {
                 <Button @click="store.openUpdate(produto?.id!)" variant="default" class="text-white">
                     <Edit class="w-4 h-4" />
                 </Button>
-                <Button @click="confirmDeleteModal = true" variant="destructive">
+                <Button @click="deletar(produto?.id!)" class="text-white" variant="destructive">
                     <Trash2 class="w-4 h-4" />
                 </Button>
                 <Button @click="atualizarDetalhes" variant="outline">
@@ -266,5 +263,6 @@ async function deletarProduto(id: number) {
         </Card>
         <ModalProdutos />
         <GerarEtiquetas />
+        <ModalRelatorio />
     </div>
 </template>

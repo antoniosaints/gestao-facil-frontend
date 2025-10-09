@@ -11,7 +11,6 @@ import { ProdutoRepository } from '@/repositories/produto-repository';
 import { useConfirm } from '@/composables/useConfirm';
 
 const store = useProdutoStore()
-const openDelete = ref(false)
 
 const { data } = defineProps<{
     data: Produto,
@@ -20,24 +19,19 @@ const { data } = defineProps<{
 
 const toast = useToast()
 
-async function gerarRelatorio(id: number, ordem: "asc" | "desc") {
-    try {
-        await ProdutoRepository.gerarRelatorio(id, ordem)
-        toast.success('Relatorio gerado com sucesso')
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao gerar o relatorio')
-    }
-}
-
 function openModalReposicao(number: number) {
     store.idMutation = number
     store.openModalReposicao = true
 }
 
+async function gerarRelatorio(id: number) {
+    store.idMutation = id;
+    store.openModalRelatorio = true
+}
+
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
-        const confirm = await useConfirm().confirm({
+    const confirm = await useConfirm().confirm({
         title: 'Excluir produto',
         message: 'Tem certeza que deseja excluir este produto?',
         confirmText: 'Sim, excluir!',
@@ -47,11 +41,9 @@ async function deletar(id: number) {
         await ProdutoRepository.remove(id)
         store.updateTable()
         toast.success('Produto deletado com sucesso')
-        openDelete.value = false
     } catch (error) {
         console.log(error)
         toast.error('Erro ao deletar o produto')
-        openDelete.value = false
     }
 }
 </script>
@@ -73,7 +65,7 @@ async function deletar(id: number) {
                 <i class="fa-solid fa-dolly"></i>
                 Reposição
             </DropdownMenuItem>
-            <DropdownMenuItem @click="gerarRelatorio(data.id!, 'asc')">
+            <DropdownMenuItem @click="gerarRelatorio(data.id!)">
                 <i class="fa-regular fa-file-pdf mr-1"></i>
                 Relatório
             </DropdownMenuItem>

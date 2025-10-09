@@ -14,6 +14,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const openModalDelete = ref(false)
   const openModalPropor = ref(false)
   const openModalFaturar = ref(false)
+  const openModalCobranca = ref(false)
   const openModalDre = ref(false)
   const idMutation = ref<number | null>(null)
 
@@ -100,6 +101,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     openModalPropor,
     openModalFaturar,
     openModalDelete,
+    openModalCobranca,
     openModalDre,
     openSave,
     openUpdate,

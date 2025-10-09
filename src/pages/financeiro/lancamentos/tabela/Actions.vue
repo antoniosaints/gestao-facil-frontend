@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, Menu, Nfc } from 'lucide-vue-next'
+import { CircleDollarSign, FileText, Menu, Nfc } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { LancamentoFinanceiro } from '@/types/schemas';
@@ -10,17 +10,16 @@ import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
 import { useConfirm } from '@/composables/useConfirm';
 
 const store = useLancamentosStore()
-const openDelete = ref(false)
+const toast = useToast()
 
 const { data } = defineProps<{
     data: LancamentoFinanceiro,
 }>()
 
-const toast = useToast()
 
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
-        const confirm = await useConfirm().confirm({
+    const confirm = await useConfirm().confirm({
         title: 'Excluir lançamento',
         message: 'Tem certeza que deseja excluir este lançamento?',
         confirmText: 'Sim, excluir!',
@@ -30,11 +29,9 @@ async function deletar(id: number) {
         await LancamentosRepository.remove(id)
         store.updateTable()
         toast.success('Lançamento deletado com sucesso')
-        openDelete.value = false
     } catch (error) {
         console.log(error)
         toast.error('Erro ao deletar o lançamento')
-        openDelete.value = false
     }
 }
 </script>
@@ -49,13 +46,9 @@ async function deletar(id: number) {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                    <Nfc />
-                    Gerar PIX
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                    <FileText />
-                    Gerar Boleto
+                <DropdownMenuItem disabled>
+                    <CircleDollarSign />
+                    Gerar Cobrança
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">

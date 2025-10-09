@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeCheck, BadgeDollarSign, Edit, HandCoins, OctagonX, Trash2, Undo2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, HandCoins, RotateCw, Trash2, Undo2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { useRoute } from "vue-router"
 import type { LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
@@ -14,21 +14,30 @@ import { formatDate } from "date-fns"
 import { formatCurrencyBR, formatDateToPtBR } from "@/utils/formatters"
 import { Separator } from "@/components/ui/separator"
 import { LancamentosRepository } from "@/repositories/lancamento-repository"
+import { useConfirm } from "@/composables/useConfirm"
+import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos"
+import router from "@/router"
+import GerarCobranca from "./modais/GerarCobranca.vue"
 
 const route = useRoute()
 const toast = useToast()
 const lancamento = ref<LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro> }>()
+const store = useLancamentosStore()
+const loading = ref(false)
 
 interface DataLancamento {
     data: LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro> }
 }
 async function getLancamento(id: number) {
     try {
+        loading.value = true
         const [res] = await Promise.all([
             http.get<DataLancamento>(`/lancamentos/${id}`)
         ]);
         lancamento.value = res.data.data;
+        loading.value = false
     } catch (error) {
+        loading.value = false
         console.error(error);
         toast.error("Erro ao buscar o lançamento");
     }
@@ -41,6 +50,15 @@ const totalPago = computed(() => {
 const totalPendente = computed(() => {
     return lancamento.value?.parcelas.filter((parcela) => !parcela.pago).reduce((acc, parcela) => acc + Number(parcela.valor), 0);
 })
+
+function gerarCobrancaFatura() {
+    const id = Number(route.query.id);
+    if (!id || isNaN(id)) {
+        toast.error("ID de produto inválido");
+        return;
+    }
+    store.openModalCobranca = true
+}
 
 function copiarUid() {
     navigator.clipboard.writeText(lancamento.value?.Uid ?? "");
@@ -55,7 +73,24 @@ function loadLancamento() {
     }
     getLancamento(id);
 }
-
+async function deletar(id: number) {
+    if (!id) return toast.error('ID não informado!')
+    const confirm = await useConfirm().confirm({
+        title: 'Excluir lançamento',
+        message: 'Tem certeza que deseja excluir este lançamento?',
+        confirmText: 'Sim, excluir!',
+    })
+    if (!confirm) return
+    try {
+        await LancamentosRepository.remove(id)
+        store.updateTable()
+        toast.success('Lançamento deletado com sucesso')
+        router.back()
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao deletar o lançamento')
+    }
+}
 async function efetivarParcela(id: number) {
     try {
         await LancamentosRepository.pagarParcela(id);
@@ -96,14 +131,15 @@ onMounted(loadLancamento);
                         <ArrowLeft class="w-4 h-4 mr-1" /> Voltar
                     </Button>
                 </RouterLink>
-                <Button :disabled="lancamento?.vendaId" variant="default" class="text-white">
-                    <Edit class="w-4 h-4 mr-1" /> Editar
+                <Button :disabled="false" @click="gerarCobrancaFatura" variant="default"
+                    class="text-white bg-success hover:bg-success/80">
+                    <CircleDollarSign /> Gerar cobrança
                 </Button>
-                <Button variant="destructive">
-                    <Trash2 class="w-4 h-4 mr-1" /> Excluir
+                <Button @click="deletar(lancamento?.id!)" variant="destructive">
+                    <Trash2 class="w-4 h-4" />
                 </Button>
-                <Button variant="outline">
-                    <i class="fa-solid fa-sync "></i>
+                <Button @click="loadLancamento" variant="outline">
+                    <RotateCw :class="{ 'animate-spin': loading }" />
                 </Button>
             </div>
         </div>
@@ -213,5 +249,7 @@ onMounted(loadLancamento);
                 </div>
             </CardContent>
         </Card>
+
+        <GerarCobranca />
     </div>
 </template>

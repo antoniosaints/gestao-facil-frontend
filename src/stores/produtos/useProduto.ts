@@ -10,6 +10,8 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   const openModal = ref(false)
   const openModalReposicao = ref(false)
   const openModalEtiquetas = ref(false)
+  const openModalRelatorio = ref(false)
+  const openModalRelatorioGeral = ref(false)
   const idMutation = ref<number | null>(null)
   const selectedIds = ref<number[]>([])
 
@@ -104,6 +106,8 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     openModal,
     openModalReposicao,
     openModalEtiquetas,
+    openModalRelatorio,
+    openModalRelatorioGeral,
     openSave,
     openUpdate,
     updateTable,

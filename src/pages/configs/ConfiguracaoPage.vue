@@ -73,7 +73,7 @@
                 <Card class="rounded-t-none bg-background">
                     <CardHeader>
                         <CardTitle>Integrações</CardTitle>
-                        <CardDescription>Conecte serviços externos (ex.: Asaas, QZ Tray, Supabase).</CardDescription>
+                        <CardDescription>Conecte serviços externos (Mercado Pago, Asaas).</CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">
                         <div class="grid md:grid-cols-2 gap-6">

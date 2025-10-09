@@ -12,6 +12,8 @@ import ModalReposicao from './formulario/ModalReposicao.vue';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/composables/useConfirm';
+import ModalRelatorio from './formulario/ModalRelatorio.vue';
+import GerarRelatorioGeral from './others/GerarRelatorioGeral.vue';
 
 const toast = useToast();
 const store = useProdutoStore();
@@ -20,13 +22,7 @@ const modalCsv = ref(false);
 provide('modalCsv', modalCsv)
 
 const relatorioGeral = async () => {
-    try {
-        await ProdutoRepository.gerarRelatorioGeral()
-        toast.success('Relatório gerado com sucesso')
-    } catch (error) {
-        toast.error('Erro ao gerar o relatório')
-        console.log(error)
-    }
+    store.openModalRelatorioGeral = true
 }
 
 async function excluirEmLote() {
@@ -101,5 +97,7 @@ async function excluirEmLote() {
         <ModalProdutos />
         <ModalCriarLote />
         <ModalReposicao />
+        <ModalRelatorio />
+        <GerarRelatorioGeral />
     </div>
 </template>
