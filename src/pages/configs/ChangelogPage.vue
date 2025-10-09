@@ -1,10 +1,17 @@
 <template>
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-2xl font-bold text-center">Atualizações e Novidades</h1>
-        <p class="mb-10">Aqui você encontrará uma lista detalhada das atualizações e novidades do nosso sistema.</p>
+        <h1 class="text-2xl font-bold text-center">
+            <Binoculars class="h-6 w-6 inline-flex" /> Atualizações e Novidades
+        </h1>
+        <p class="mb-10 max-w-lg mx-auto text-center text-gray-600 dark:text-gray-400">Aqui você encontrará uma lista
+            detalhada das atualizações e
+            novidades do
+            nosso
+            sistema.</p>
         <div class="relative">
             <!-- Linha central -->
-            <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-1 bg-gray-300 dark:bg-gray-700 h-full">
+            <div
+                class="absolute rounded-full top-0 left-1/2 transform -translate-x-1/2 w-0.5 bg-gray-300 dark:bg-gray-700 h-full">
             </div>
 
             <!-- Itens do changelog -->
@@ -18,15 +25,19 @@
                 <!-- Cartão -->
                 <div class="w-full md:w-1/2"
                     :class="index % 2 === 0 ? 'pr-10 md:pl-0 text-right md:text-left' : 'pl-10 md:pr-0 text-left md:text-right'">
-                    <Card class="shadow-md">
+                    <Card class="shadow-md rounded-sm">
                         <CardHeader>
                             <CardTitle class="flex items-center justify-between">
-                                <span>{{ item.version }}</span>
-                                <span class="text-sm text-muted-foreground">{{ item.date }}</span>
+                                <BadgeCell color="emerald" :label="item.version" class="text-sm" />
+                                <BadgeCell color="gray" :label="item.date" class="text-xs" />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <ul class="list-disc pl-5 space-y-1 text-left" v-if="item.changes.length">
+                            <h2 class="text-md mb-2 text-left">
+                                <Milestone class="w-4 h-4 inline-flex" /> {{ item.title }}
+                            </h2>
+                            <ul class="list-disc pl-5 space-y-1 text-left text-gray-600 dark:text-gray-400 text-sm"
+                                v-if="item.changes.length">
                                 <li v-for="(change, cIndex) in item.changes" :key="cIndex">
                                     {{ change }}
                                 </li>
@@ -40,9 +51,12 @@
 </template>
 
 <script setup lang="ts">
+import BadgeCell from "@/components/tabela/BadgeCell.vue";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Binoculars, Milestone } from "lucide-vue-next";
 
 interface ChangelogItem {
+    title: string;
     version: string;
     date: string;
     changes: string[];
@@ -50,6 +64,7 @@ interface ChangelogItem {
 
 const changelog: ChangelogItem[] = [
     {
+        title: "Melhorias e Correções",
         version: "v1.3.0",
         date: "09/10/2025",
         changes: [
@@ -59,6 +74,7 @@ const changelog: ChangelogItem[] = [
         ]
     },
     {
+        title: "Melhorias e Correções",
         version: "v1.2.0",
         date: "06/10/2025",
         changes: [
@@ -68,6 +84,7 @@ const changelog: ChangelogItem[] = [
         ]
     },
     {
+        title: "Melhorias e Correções",
         version: "v1.1.0",
         date: "02/10/2025",
         changes: [
@@ -77,6 +94,7 @@ const changelog: ChangelogItem[] = [
         ]
     },
     {
+        title: "Lançamento Inicial",
         version: "v1.0.0",
         date: "15/09/2025",
         changes: [
