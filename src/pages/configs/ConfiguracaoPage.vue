@@ -27,104 +27,107 @@
             <!-- NOTIFICAÇÕES -->
             <TabsContent value="notificacoes">
                 <Card class="rounded-t-none bg-background">
-                    <CardHeader>
-                        <CardTitle>Notificações</CardTitle>
-                        <CardDescription>Configure e-mails e push de eventos.</CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-6">
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
-                                <Label for="emailNotif">E-mail para avisos</Label>
-                                <Input id="emailNotif" type="email" placeholder="seu@email.com"
-                                    v-model="form.notificacoes.email" />
+                    <form @submit.prevent="submitNotificacoes">
+                        <CardHeader>
+                            <CardTitle>Notificações</CardTitle>
+                            <CardDescription>Configure e-mails e push de eventos.</CardDescription>
+                        </CardHeader>
+                        <CardContent class="space-y-6">
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <Label for="emailNotif">E-mail para avisos</Label>
+                                    <Input id="emailNotif" type="email" placeholder="seu@email.com"
+                                        v-model="form.notificacoes.email" />
+                                </div>
+                                <SubscribeNotification />
                             </div>
-                            <SubscribeNotification />
-                        </div>
-                        <Separator />
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
-                                <Label>Eventos</Label>
-                                <div class="grid gap-3">
-                                    <div class="flex items-center justify-between">
-                                        <span>Venda concluída</span>
-                                        <Switch v-model:checked="form.notificacoes.eventos.vendaConcluida" />
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span>Sangria registrada</span>
-                                        <Switch v-model:checked="form.notificacoes.eventos.sangria" />
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span>Estoque baixo</span>
-                                        <Switch v-model:checked="form.notificacoes.eventos.estoqueBaixo" />
+                            <Separator />
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <Label>Eventos</Label>
+                                    <div class="grid gap-3">
+                                        <div class="flex items-center justify-between">
+                                            <span>Venda concluída</span>
+                                            <Switch v-model="formularioNotificacoes.eventoVendaConcluida" />
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span>Sangria registrada</span>
+                                            <Switch v-model="formularioNotificacoes.eventoSangria" />
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span>Estoque baixo</span>
+                                            <Switch v-model="formularioNotificacoes.eventoEstoqueBaixo" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter class="justify-end">
-                        <Button variant="outline" @click="reset('notificacoes')">Cancelar</Button>
-                        <Button class="ml-2" @click="save('notificacoes')">Salvar</Button>
-                    </CardFooter>
+                        </CardContent>
+                        <CardFooter class="justify-end">
+                            <Button class="ml-2 text-white" type="submit">Salvar</Button>
+                        </CardFooter>
+                    </form>
                 </Card>
             </TabsContent>
 
             <!-- INTEGRAÇÕES -->
             <TabsContent value="integracoes">
                 <Card class="rounded-t-none bg-background">
-                    <CardHeader>
-                        <CardTitle>Integrações</CardTitle>
-                        <CardDescription>Conecte serviços externos (Mercado Pago, Asaas).</CardDescription>
-                    </CardHeader>
-                    <CardContent class="space-y-3">
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
-                                <Label for="mercadoPagoKey">Mercado Pago API Key</Label>
-                                <Input id="mercadoPagoKey" v-model="(formularioIntegracoes.MercadoPagoApiKey as string)"
-                                    type="password" placeholder="Sua chave de acesso" />
-                                <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
-                                    clientes.</p>
+                    <form @submit.prevent="submitIntegracoes">
+                        <CardHeader>
+                            <CardTitle>Integrações</CardTitle>
+                            <CardDescription>Conecte serviços externos (Mercado Pago, Asaas).</CardDescription>
+                        </CardHeader>
+                        <CardContent class="space-y-3">
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <Label for="mercadoPagoKey">Mercado Pago API Key</Label>
+                                    <Input id="mercadoPagoKey"
+                                        v-model="(formularioIntegracoes.MercadoPagoApiKey as string)" type="password"
+                                        placeholder="Sua chave de acesso" />
+                                    <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
+                                        clientes.</p>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="mercadoPagoEnv">Ambiente</Label>
+                                    <Select v-model="(formularioIntegracoes.MercadoPagoEnv as string)">
+                                        <SelectTrigger id="mercadoPagoEnv">
+                                            <SelectValue placeholder="Selecione" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="sandbox">Sandbox</SelectItem>
+                                            <SelectItem value="production">Produção</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                            <div class="space-y-2">
-                                <Label for="mercadoPagoEnv">Ambiente</Label>
-                                <Select v-model="(formularioIntegracoes.MercadoPagoEnv as string)">
-                                    <SelectTrigger id="mercadoPagoEnv">
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="sandbox">Sandbox</SelectItem>
-                                        <SelectItem value="production">Produção</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
 
-                        <Separator />
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
-                                <Label for="asaasKey">Asaas API Key</Label>
-                                <Input id="asaasKey" placeholder="Sua chave de acesso"
-                                    v-model="(formularioIntegracoes.AsaasApiKey as string)" type="password" />
-                                <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
-                                    clientes.</p>
+                            <Separator />
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <Label for="asaasKey">Asaas API Key</Label>
+                                    <Input id="asaasKey" placeholder="Sua chave de acesso"
+                                        v-model="(formularioIntegracoes.AsaasApiKey as string)" type="password" />
+                                    <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
+                                        clientes.</p>
+                                </div>
+                                <div class="space-y-2">
+                                    <Label for="asaasAmb">Ambiente</Label>
+                                    <Select v-model="(formularioIntegracoes.AsaasEnv as string)">
+                                        <SelectTrigger id="asaasAmb">
+                                            <SelectValue placeholder="Selecione" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="sandbox">Sandbox</SelectItem>
+                                            <SelectItem value="production">Produção</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                            <div class="space-y-2">
-                                <Label for="asaasAmb">Ambiente</Label>
-                                <Select v-model="(formularioIntegracoes.AsaasEnv as string)">
-                                    <SelectTrigger id="asaasAmb">
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="sandbox">Sandbox</SelectItem>
-                                        <SelectItem value="production">Produção</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter class="justify-end">
-                        <Button variant="outline" @click="reset('integracoes')">Cancelar</Button>
-                        <Button class="ml-2" @click="save('integracoes')">Salvar</Button>
-                    </CardFooter>
+                        </CardContent>
+                        <CardFooter class="justify-end">
+                            <Button type="submit" class="ml-2 text-white">Salvar</Button>
+                        </CardFooter>
+                    </form>
                 </Card>
             </TabsContent>
         </Tabs>
@@ -146,6 +149,7 @@ import SubscribeNotification from '@/components/layout/subscribeNotification.vue
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
 import { Cog } from 'lucide-vue-next'
 import type { UpdateParametrosConta } from '@/types/schemas'
+import { ContaRepository } from '@/repositories/conta-repository'
 
 // Estado
 const tab = ref<'empresa' | 'notificacoes' | 'integracoes'>('empresa')
@@ -158,6 +162,30 @@ const formularioIntegracoes = reactive<UpdateParametrosConta>({
     MercadoPagoApiKey: '',
     MercadoPagoEnv: '',
 })
+const formularioNotificacoes = reactive<UpdateParametrosConta>({
+    eventoEstoqueBaixo: false,
+    eventoVendaConcluida: false,
+    eventoSangria: false,
+})
+
+async function submitIntegracoes() {
+    try {
+        await ContaRepository.parametros(formularioIntegracoes)
+        toast.success('Configurações salvas com sucesso')
+    } catch (error) {
+        console.error(error)
+        toast.error('Erro ao salvar as configurações')
+    }
+}
+async function submitNotificacoes() {
+    try {
+        await ContaRepository.parametros(formularioNotificacoes)
+        toast.success('Configurações salvas com sucesso')
+    } catch (error) {
+        console.error(error)
+        toast.error('Erro ao salvar as configurações')
+    }
+}
 
 const defaults = {
     empresa: { razao: '', fantasia: '', cnpj: '', ie: '', endereco: '', telefone: '', email: '' },
