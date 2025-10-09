@@ -1,4 +1,4 @@
-import type { Contas, FaturasContas, Usuarios } from '@/types/schemas'
+import type { Contas, FaturasContas, UpdateParametrosConta, Usuarios } from '@/types/schemas'
 import http from '@/utils/axios'
 export interface StatusConta {
   status: string
@@ -43,6 +43,10 @@ export class ContaRepository {
   }
   static async create(data: CreateConta): Promise<Contas> {
     const res = await http.post(`/contas/cadastro`, data)
+    return res.data
+  }
+  static async parametros(data: UpdateParametrosConta): Promise<any> {
+    const res = await http.post(`/contas/parametros`, data)
     return res.data
   }
   static async detalhes(): Promise<Contas> {

@@ -314,6 +314,16 @@ export interface FormularioLancamento {
   parcelas: number | undefined
   descricao: string
 }
+export interface UpdateParametrosConta {
+  AsaasApiKey?: string | null
+  AsaasApiSecret?: string | null
+  AsaasEnv?: string | null
+  eventoEstoqueBaixo?: boolean | null
+  eventoSangria?: boolean | null
+  eventoVendaConcluida?: boolean | null
+  MercadoPagoApiKey?: string | null
+  MercadoPagoEnv?: string | null
+}
 
 export interface ItensVendas {
   id?: number

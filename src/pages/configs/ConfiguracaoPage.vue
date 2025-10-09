@@ -79,14 +79,14 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div class="space-y-2">
                                 <Label for="mercadoPagoKey">Mercado Pago API Key</Label>
-                                <Input id="mercadoPagoKey" v-model="form.integracoes.mercadoPago.apiKey" type="password"
-                                    placeholder="Sua chave de acesso" />
+                                <Input id="mercadoPagoKey" v-model="(formularioIntegracoes.MercadoPagoApiKey as string)"
+                                    type="password" placeholder="Sua chave de acesso" />
                                 <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
                                     clientes.</p>
                             </div>
                             <div class="space-y-2">
                                 <Label for="mercadoPagoEnv">Ambiente</Label>
-                                <Select v-model="form.integracoes.mercadoPago.ambiente">
+                                <Select v-model="(formularioIntegracoes.MercadoPagoEnv as string)">
                                     <SelectTrigger id="mercadoPagoEnv">
                                         <SelectValue placeholder="Selecione" />
                                     </SelectTrigger>
@@ -103,13 +103,13 @@
                             <div class="space-y-2">
                                 <Label for="asaasKey">Asaas API Key</Label>
                                 <Input id="asaasKey" placeholder="Sua chave de acesso"
-                                    v-model="form.integracoes.asaas.apiKey" type="password" />
+                                    v-model="(formularioIntegracoes.AsaasApiKey as string)" type="password" />
                                 <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
                                     clientes.</p>
                             </div>
                             <div class="space-y-2">
                                 <Label for="asaasAmb">Ambiente</Label>
-                                <Select v-model="form.integracoes.asaas.ambiente">
+                                <Select v-model="(formularioIntegracoes.AsaasEnv as string)">
                                     <SelectTrigger id="asaasAmb">
                                         <SelectValue placeholder="Selecione" />
                                     </SelectTrigger>
@@ -145,11 +145,19 @@ import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
 import { Cog } from 'lucide-vue-next'
+import type { UpdateParametrosConta } from '@/types/schemas'
 
 // Estado
 const tab = ref<'empresa' | 'notificacoes' | 'integracoes'>('empresa')
 const saving = ref(false)
 const toast = useToast()
+
+const formularioIntegracoes = reactive<UpdateParametrosConta>({
+    AsaasApiKey: '',
+    AsaasEnv: '',
+    MercadoPagoApiKey: '',
+    MercadoPagoEnv: '',
+})
 
 const defaults = {
     empresa: { razao: '', fantasia: '', cnpj: '', ie: '', endereco: '', telefone: '', email: '' },
