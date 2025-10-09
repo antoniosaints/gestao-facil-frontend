@@ -1,5 +1,5 @@
-import type { Produto } from "@/types/schemas"
-import http from "@/utils/axios"
+import type { Produto } from '@/types/schemas'
+import http from '@/utils/axios'
 
 type ReposicaoEstoque = {
   produtoId: number
@@ -43,11 +43,14 @@ export class ProdutoRepository {
     return data
   }
 
-  static async gerarEtiquetas(id: number) {
-    const data = await http.get(`/produtos/${id}/etiquetas`, {
-      responseType: 'blob',
-      headers: { 'Content-Type': 'application/pdf' },
-    })
+  static async gerarEtiquetas(id: number, quantidade?: number) {
+    const data = await http.get(
+      `/produtos/${id}/etiquetas${quantidade ? `?quantidade=${quantidade}` : ''}`,
+      {
+        responseType: 'blob',
+        headers: { 'Content-Type': 'application/pdf' },
+      },
+    )
 
     const url = window.URL.createObjectURL(data.data)
     const a = document.createElement('a')
@@ -122,6 +125,4 @@ export class ProdutoRepository {
     a.click()
     a.remove()
   }
-
 }
-

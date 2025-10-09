@@ -9,6 +9,7 @@ const toast = useToast()
 export const useProdutoStore = defineStore('produtoStore', () => {
   const openModal = ref(false)
   const openModalReposicao = ref(false)
+  const openModalEtiquetas = ref(false)
   const idMutation = ref<number | null>(null)
   const selectedIds = ref<number[]>([])
 
@@ -102,6 +103,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   return {
     openModal,
     openModalReposicao,
+    openModalEtiquetas,
     openSave,
     openUpdate,
     updateTable,

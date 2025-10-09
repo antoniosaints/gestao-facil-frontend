@@ -13,6 +13,7 @@ import { useRoute } from "vue-router"
 import { useProdutoStore } from "@/stores/produtos/useProduto"
 import ConfirmModal from "@/components/hooks/ConfirmModal.vue"
 import ModalProdutos from "../formulario/ModalProdutos.vue"
+import GerarEtiquetas from "./GerarEtiquetas.vue"
 
 const route = useRoute()
 const store = useProdutoStore()
@@ -58,6 +59,10 @@ async function gerarRelatorio() {
             timeout: 5000,
         });
     }
+}
+async function gerarEtiquetas() {
+    store.idMutation = produto.value?.id!;
+    store.openModalEtiquetas = true
 }
 
 function copiarId() {
@@ -125,14 +130,17 @@ async function deletarProduto(id: number) {
                         <ArrowLeft class="w-4 h-4 mr-1" /> Voltar
                     </Button>
                 </RouterLink>
+                <Button class="bg-success text-white hover:bg-success/80" @click="gerarEtiquetas">
+                    <Tag class="w-4 h-4 mr-1" /> Etiquetas
+                </Button>
                 <Button class="bg-warning text-white hover:bg-warning/80" @click="gerarRelatorio">
-                    <FileText class="w-4 h-4 mr-1" /> Relatório
+                    <FileText class="w-4 h-4" />
                 </Button>
                 <Button @click="store.openUpdate(produto?.id!)" variant="default" class="text-white">
-                    <Edit class="w-4 h-4 mr-1" /> Editar
+                    <Edit class="w-4 h-4" />
                 </Button>
                 <Button @click="confirmDeleteModal = true" variant="destructive">
-                    <Trash2 class="w-4 h-4 mr-1" /> Excluir
+                    <Trash2 class="w-4 h-4" />
                 </Button>
                 <Button @click="atualizarDetalhes" variant="outline">
                     <i class="fa-solid fa-sync "></i>
@@ -257,5 +265,6 @@ async function deletarProduto(id: number) {
             </CardContent>
         </Card>
         <ModalProdutos />
+        <GerarEtiquetas />
     </div>
 </template>
