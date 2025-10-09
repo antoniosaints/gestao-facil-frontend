@@ -1,3 +1,4 @@
+import { useConfirm } from '@/composables/useConfirm'
 import { VendaRepository } from '@/repositories/venda-repository'
 import { useVendasStore } from '@/stores/vendas/useVenda'
 import { useToast } from 'vue-toastification'
@@ -41,22 +42,22 @@ export function openModalFaturarVenda(id: number) {
   store.openModalFaturar = true
 }
 
-export async function openModalDeleteVenda(number: number) {
-  store.idMutation = number
-  store.openModalDelete = true
-}
 export async function deletarVenda(id: number) {
   if (!id) return toast.error('ID nao informado!')
+  const confirm = await useConfirm().confirm({
+    title: 'Excluir venda',
+    message: 'Tem certeza que deseja excluir esta venda?',
+    confirmText: 'Sim, excluir!',
+  })
+  if (!confirm) return
   try {
     await VendaRepository.remove(id)
     toast.success('Registro deletado com sucesso')
-    store.openModalDelete = false
     store.idMutation = null
     store.updateTable()
   } catch (error) {
     console.log(error)
     toast.error('Erro ao deletar o registro')
-    store.openModalDelete = false
     store.idMutation = null
   }
 }

@@ -11,6 +11,7 @@ import { Boxes, CircleChevronDown, Package, Trash } from 'lucide-vue-next';
 import ModalReposicao from './formulario/ModalReposicao.vue';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/composables/useConfirm';
 
 const toast = useToast();
 const store = useProdutoStore();
@@ -31,7 +32,10 @@ const relatorioGeral = async () => {
 async function excluirEmLote() {
     try {
         if (!store.selectedIds.length) return toast.error('Nenhum produto selecionado')
-        const confirm = window.confirm('Tem certeza que deseja excluir os produtos selecionados?')
+        const confirm = await useConfirm().confirm({
+            title: 'Excluir em lote',
+            message: 'Tem certeza que deseja excluir esses produtos?'
+        });
         if (!confirm) return
         await Promise.all(store.selectedIds.map(id => ProdutoRepository.remove(id)))
         store.updateTable()

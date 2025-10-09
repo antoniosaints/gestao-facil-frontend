@@ -50,7 +50,7 @@
                             <i class="fa-solid fa-pencil"></i>
                         </button>
                     </div>
-                    <button @click="openModalDeleteVenda(venda.id!)"
+                    <button @click="deletarVenda(venda.id!)"
                         class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-3 py-1 rounded-md text-sm">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
@@ -142,7 +142,7 @@
 import { ref, onMounted, watch } from "vue";
 import http from "@/utils/axios";
 import type { Vendas } from "@/types/schemas";
-import { estornarVenda, gerarCupomVenda, openModalDeleteVenda, openModalFaturarVenda } from "../ActionsVendas";
+import { deletarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from "../ActionsVendas";
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";

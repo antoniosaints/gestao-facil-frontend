@@ -18,7 +18,6 @@ interface filtroVendas {
 
 export const useVendasStore = defineStore('vendasStore', () => {
   const openModal = ref(false)
-  const openModalDelete = ref(false)
   const openModalPropor = ref(false)
   const openModalFaturar = ref(false)
   const openModalDetalhes = ref(false)
@@ -121,7 +120,6 @@ export const useVendasStore = defineStore('vendasStore', () => {
     idMutation,
     openModalPropor,
     openModalFaturar,
-    openModalDelete,
     openModalDetalhes,
     openSave,
     openDetalhes,

@@ -6,15 +6,14 @@ import type { Produto } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import { useProdutoStore } from '@/stores/produtos/useProduto';
 import type { Table } from '@tanstack/vue-table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ref } from 'vue';
 import { ProdutoRepository } from '@/repositories/produto-repository';
+import { useConfirm } from '@/composables/useConfirm';
 
 const store = useProdutoStore()
 const openDelete = ref(false)
-const id = ref<number | null>(null)
 
-const { data, table } = defineProps<{
+const { data } = defineProps<{
     data: Produto,
     table: Table<Produto>
 }>()
@@ -31,11 +30,6 @@ async function gerarRelatorio(id: number, ordem: "asc" | "desc") {
     }
 }
 
-function openDeleteModal(number: number) {
-    id.value = number
-    openDelete.value = true
-}
-
 function openModalReposicao(number: number) {
     store.idMutation = number
     store.openModalReposicao = true
@@ -43,6 +37,12 @@ function openModalReposicao(number: number) {
 
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
+        const confirm = await useConfirm().confirm({
+        title: 'Excluir produto',
+        message: 'Tem certeza que deseja excluir este produto?',
+        confirmText: 'Sim, excluir!',
+    })
+    if (!confirm) return
     try {
         await ProdutoRepository.remove(id)
         store.updateTable()
@@ -57,24 +57,6 @@ async function deletar(id: number) {
 </script>
 
 <template>
-
-    <AlertDialog :open="openDelete">
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Deseja deletar o registro?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Essa ação não poderá ser desfeita, o registro sera deletado permanentemente
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel @click="openDelete = false">Cancelar</AlertDialogCancel>
-                <AlertDialogAction class="text-white bg-danger hover:bg-danger/40" @click="deletar(id!)">
-                    Sim, deletar
-                </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
-
     <DropdownMenu>
         <DropdownMenuTrigger as-child>
             <Button variant="default" class="w-8 h-8 p-0 text-white">
@@ -96,7 +78,7 @@ async function deletar(id: number) {
                 Relatório
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem class="text-danger" @click="openDeleteModal(data.id!)">
+            <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">
                 <i class="fa-regular fa-trash-can mr-1"></i>
                 Excluir
             </DropdownMenuItem>

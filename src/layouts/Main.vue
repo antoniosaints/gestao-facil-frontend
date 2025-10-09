@@ -29,6 +29,7 @@
             </div>
         </main>
         <InstallPrompt />
+        <ConfirmModal />
     </div>
 </template>
 
@@ -43,6 +44,7 @@ import { useUiStore } from '@/stores/ui/uiStore'
 import InstallPrompt from '@/components/layout/installPrompt.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
 import { EllipsisVertical, PanelRightClose } from 'lucide-vue-next'
+import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
 const store = useUiStore()
 
 window.addEventListener('resize', () => {

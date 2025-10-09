@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BadgeCheck, FileText, Menu, Nfc } from 'lucide-vue-next'
+import { FileText, Menu, Nfc } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { LancamentoFinanceiro } from '@/types/schemas';
@@ -7,11 +7,10 @@ import { useToast } from 'vue-toastification';
 import { ref } from 'vue';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
-import ConfirmModal from '@/components/formulario/ConfirmModal.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 const store = useLancamentosStore()
 const openDelete = ref(false)
-const id = ref<number | null>(null)
 
 const { data } = defineProps<{
     data: LancamentoFinanceiro,
@@ -19,13 +18,14 @@ const { data } = defineProps<{
 
 const toast = useToast()
 
-function openDeleteModal(number: number) {
-    id.value = number
-    openDelete.value = true
-}
-
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
+        const confirm = await useConfirm().confirm({
+        title: 'Excluir lançamento',
+        message: 'Tem certeza que deseja excluir este lançamento?',
+        confirmText: 'Sim, excluir!',
+    })
+    if (!confirm) return
     try {
         await LancamentosRepository.remove(id)
         store.updateTable()
@@ -41,8 +41,6 @@ async function deletar(id: number) {
 
 <template>
     <div>
-        <ConfirmModal title="Excluir lançamento" description="Tem certeza que deseja excluir esse lançamento?"
-            :open="openDelete" @confirm="deletar(id!)" @cancel="openDelete = false" />
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
                 <Button variant="default" class="w-8 h-8 p-0 text-white">
@@ -60,7 +58,7 @@ async function deletar(id: number) {
                     Gerar Boleto
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem class="text-danger" @click="openDeleteModal(data.id!)">
+                <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">
                     <i class="fa-regular fa-trash-can mr-1"></i>
                     Excluir
                 </DropdownMenuItem>

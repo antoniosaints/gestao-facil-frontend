@@ -174,8 +174,6 @@ function nextPage() {
 // Funções placeholder
 function visualizarVenda(id: number) { console.log("Visualizar", id); }
 function gerarCupomPorVendaId(id: number) { console.log("Gerar cupom", id); }
-function efetivarVenda(id: number) { console.log("Efetivar", id); }
-function estornarVenda(id: number) { console.log("Estornar", id); }
 function excluirVenda(id: number) { console.log("Excluir", id); }
 
 onMounted(() => renderListaVendas());

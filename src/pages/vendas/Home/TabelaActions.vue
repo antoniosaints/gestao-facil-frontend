@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { Vendas } from '@/types/schemas';
 import type { Table } from '@tanstack/vue-table';
-import { editarVenda, estornarVenda, gerarCupomVenda, openModalDeleteVenda, openModalFaturarVenda } from '../ActionsVendas';
+import { deletarVenda, editarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from '../ActionsVendas';
 const { data } = defineProps<{
     data: Vendas,
     table: Table<Vendas>
@@ -39,7 +39,7 @@ const { data } = defineProps<{
                 </DropdownMenuItem>
                 <DropdownMenuSeparator v-if="data.status !== 'FATURADO'" />
                 <DropdownMenuItem v-if="data.status !== 'FATURADO'" class="text-red-500"
-                    @click="openModalDeleteVenda(data.id!)">
+                    @click="deletarVenda(data.id!)">
                     <i class="fa-regular fa-trash-can mr-1"></i>
                     Excluir
                 </DropdownMenuItem>
