@@ -14,6 +14,7 @@ const toast = useToast()
 const assinatura = ref<StatusConta>()
 const renewText = ref("Renovar assinatura")
 const refresh = ref(false)
+const generatingLink = ref(false)
 
 const faturas = ref<any[]>()
 
@@ -33,12 +34,15 @@ async function getDataConta() {
 async function renovarAssinatura() {
     try {
         renewText.value = "Gerando link..."
+        generatingLink.value = true
         const response = await ContaRepository.gerarLink();
-        window.open(response.link, "_blank");
-        renewText.value = "Renovar assinatura"
+        window.location.href = response.link;
+        renewText.value = "Redirecionando..."
         toast.success("Link gerado com sucesso")
     } catch (error) {
         console.error(error);
+        renewText.value = "Renovar assinatura"
+        generatingLink.value = false
         toast.error("Erro ao gerar o link")
     }
 }
@@ -104,11 +108,12 @@ onMounted(() => {
                 <Button variant="outline" @click="getDataConta">
                     <RotateCw :class="refresh ? 'animate-spin' : ''" /> {{ refresh ? "Atualizando..." : "Atualizar" }}
                 </Button>
-                <Button v-if="storeUi.diasParaVencer <= 3 && assinatura?.proximoLinkPagamento == null"
+                <Button :disabled="generatingLink"
+                    v-if="storeUi.diasParaVencer <= 3 && assinatura?.proximoLinkPagamento == null"
                     @click="renovarAssinatura" variant="default" class="text-white">
                     <CreditCard /> {{ renewText }}
                 </Button>
-                <Button v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento"
+                <Button :disabled="generatingLink" v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento"
                     @click="abrirLinkPagamento" variant="default"
                     class="text-gray-700 dark:text-gray-300 bg-warning hover:bg-warning/80">
                     <BadgeDollarSign /> Pagar agora

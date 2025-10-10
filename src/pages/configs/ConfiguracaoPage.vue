@@ -95,9 +95,9 @@
                             <div class="grid md:grid-cols-2 gap-6">
                                 <div class="space-y-2">
                                     <Label for="mercadoPagoKey">Mercado Pago API Key</Label>
-                                    <Input id="mercadoPagoKey"
-                                        v-model="(formularioIntegracoes.MercadoPagoApiKey as string)" type="password"
-                                        placeholder="Sua chave de acesso" />
+                                    <Input id="mercadoPagoKey" autocomplete="off" autocapitalize="off"
+                                        spellcheck="false" v-model="(formularioIntegracoes.MercadoPagoApiKey as string)"
+                                        type="password" name="mercadoPagoKey" placeholder="Sua chave de acesso" />
                                     <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
                                         clientes.</p>
                                 </div>
@@ -119,7 +119,8 @@
                             <div class="grid md:grid-cols-2 gap-6">
                                 <div class="space-y-2">
                                     <Label for="asaasKey">Asaas API Key</Label>
-                                    <Input id="asaasKey" placeholder="Sua chave de acesso"
+                                    <Input id="asaasKey" placeholder="Sua chave de acesso" autocomplete="off"
+                                        autocapitalize="off" spellcheck="false" name="asaasKey"
                                         v-model="(formularioIntegracoes.AsaasApiKey as string)" type="password" />
                                     <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
                                         clientes.</p>

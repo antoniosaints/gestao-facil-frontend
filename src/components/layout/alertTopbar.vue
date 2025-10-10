@@ -1,7 +1,7 @@
 <template>
     <div v-if="show"
-        class="flex items-center justify-between space-x-4 relative rounded-lg w-full border-2 border-warning py-2 px-4 mb-2">
-        <div class="absolute left-0 rounded-l-sm w-3 h-full bg-warning"></div>
+        class="flex items-center justify-between space-x-4 relative rounded-lg w-full border-2 border-yellow-500 dark:border-yellow-800 bg-yellow-50 dark:bg-gray-800 py-2 -mt-4 px-4 mb-2">
+        <div class="absolute left-0 rounded-l-sm w-3 h-full bg-yellow-500 dark:bg-yellow-800"></div>
         <div class="flex flex-col">
             <h2 class="font-semibold flex items-center">
                 <CircleDollarSign class="mr-2 w-4 h-4" /> Gestão Fácil - Assinatura
@@ -15,7 +15,7 @@
                 <X />
             </Button>
             <RouterLink to="/assinatura/resumo" as-child>
-                <Button variant="default" class="text-white">
+                <Button variant="default" @click="dismiss" class="text-white">
                     <CircleDollarSign /> Pagar
                 </Button>
             </RouterLink>
