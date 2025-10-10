@@ -12,14 +12,7 @@ export enum GatewayConta {
   asaass = 'asaass',
 }
 
-export enum PermissaoUsuario {
-  root = 'root',
-  admin = 'admin',
-  gerente = 'gerente',
-  vendedor = 'vendedor',
-  tecnico = 'tecnico',
-  usuario = 'usuario',
-}
+export type PermissaoUsuario = 'root' | 'admin' | 'gerente' | 'vendedor' | 'tecnico' | 'usuario'
 
 export type TipoCliente = 'FORNECEDOR' | 'CLIENTE'
 

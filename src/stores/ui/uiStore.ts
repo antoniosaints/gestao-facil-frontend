@@ -2,15 +2,21 @@ import { onMounted, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
+import type { Usuarios } from '@/types/schemas'
+import { hasPermission } from '@/hooks/authorize'
 interface TipoPermissao {
   editar: boolean
   visualizar: boolean
   criar: boolean
   excluir: boolean
+  painel: boolean
 }
-interface Permissoes {
+export interface Permissoes {
+  superadmin: boolean
+  admin: boolean
   produtos: TipoPermissao
   clientes: TipoPermissao
+  servicos: TipoPermissao
   vendas: TipoPermissao
   financeiro: TipoPermissao
   relatorios: TipoPermissao
@@ -21,56 +27,135 @@ interface Permissoes {
 export const useUiStore = defineStore('uiStore', () => {
   const openSidebar = ref(true)
   const isMobile = ref(window.innerWidth < 768)
-  const usuarioLogged = ref(localStorage.getItem('gestao_facil:usuariologado') || '')
+  const usuarioLogged = ref<Usuarios>({} as Usuarios)
   const status = ref(localStorage.getItem('gestao_facil:status') || 'INATIVO')
   const diasParaVencer = ref<number>(
     Number(localStorage.getItem('gestao_facil:diasParaVencer')) || 0,
   )
 
   const permissoes = ref<Permissoes>({
+    superadmin: false,
+    admin: false,
     produtos: {
       editar: false,
       visualizar: false,
       criar: false,
       excluir: false,
+      painel: false,
     },
     clientes: {
       editar: false,
       visualizar: false,
       criar: false,
       excluir: false,
+      painel: false,
     },
     vendas: {
       editar: false,
       visualizar: false,
       criar: false,
       excluir: false,
+      painel: false,
+    },
+    servicos: {
+      editar: false,
+      visualizar: false,
+      criar: false,
+      excluir: false,
+      painel: false,
     },
     financeiro: {
       editar: false,
       visualizar: false,
       criar: false,
       excluir: false,
+      painel: false,
     },
     relatorios: {
       editar: false,
       visualizar: false,
       criar: false,
       excluir: false,
+      painel: false,
     },
     configuracoes: {
       editar: false,
       visualizar: false,
       criar: false,
       excluir: false,
+      painel: false,
     },
     usuarios: {
       editar: false,
       visualizar: false,
       criar: false,
       excluir: false,
+      painel: false,
     },
   })
+
+  const populatePermissoes = () => {
+    permissoes.value = {
+      superadmin: usuarioLogged.value.superAdmin,
+      admin: hasPermission(usuarioLogged.value, 4),
+      produtos: {
+        editar: hasPermission(usuarioLogged.value, 2),
+        visualizar: hasPermission(usuarioLogged.value, 1),
+        criar: hasPermission(usuarioLogged.value, 3),
+        excluir: hasPermission(usuarioLogged.value, 4),
+        painel: hasPermission(usuarioLogged.value, 3),
+      },
+      clientes: {
+        editar: hasPermission(usuarioLogged.value, 2),
+        visualizar: hasPermission(usuarioLogged.value, 1),
+        criar: hasPermission(usuarioLogged.value, 2),
+        excluir: hasPermission(usuarioLogged.value, 2),
+        painel: hasPermission(usuarioLogged.value, 3),
+      },
+      vendas: {
+        editar: hasPermission(usuarioLogged.value, 2),
+        visualizar: hasPermission(usuarioLogged.value, 1),
+        criar: hasPermission(usuarioLogged.value, 2),
+        excluir: hasPermission(usuarioLogged.value, 3),
+        painel: hasPermission(usuarioLogged.value, 3),
+      },
+      servicos: {
+        editar: hasPermission(usuarioLogged.value, 2),
+        visualizar: hasPermission(usuarioLogged.value, 1),
+        criar: hasPermission(usuarioLogged.value, 2),
+        excluir: hasPermission(usuarioLogged.value, 3),
+        painel: hasPermission(usuarioLogged.value, 3),
+      },
+      financeiro: {
+        editar: hasPermission(usuarioLogged.value, 3),
+        visualizar: hasPermission(usuarioLogged.value, 3),
+        criar: hasPermission(usuarioLogged.value, 3),
+        excluir: hasPermission(usuarioLogged.value, 3),
+        painel: hasPermission(usuarioLogged.value, 3),
+      },
+      relatorios: {
+        editar: hasPermission(usuarioLogged.value, 3),
+        visualizar: hasPermission(usuarioLogged.value, 3),
+        criar: hasPermission(usuarioLogged.value, 3),
+        excluir: hasPermission(usuarioLogged.value, 3),
+        painel: hasPermission(usuarioLogged.value, 3),
+      },
+      configuracoes: {
+        editar: hasPermission(usuarioLogged.value, 4),
+        visualizar: hasPermission(usuarioLogged.value, 4),
+        criar: hasPermission(usuarioLogged.value, 4),
+        excluir: hasPermission(usuarioLogged.value, 4),
+        painel: hasPermission(usuarioLogged.value, 3),
+      },
+      usuarios: {
+        editar: hasPermission(usuarioLogged.value, 4),
+        visualizar: hasPermission(usuarioLogged.value, 4),
+        criar: hasPermission(usuarioLogged.value, 4),
+        excluir: hasPermission(usuarioLogged.value, 4),
+        painel: hasPermission(usuarioLogged.value, 4),
+      },
+    }
+  }
 
   window.addEventListener('resize', () => {
     if (window.innerWidth < 768) {
@@ -83,7 +168,8 @@ export const useUiStore = defineStore('uiStore', () => {
   async function getDataUsuario() {
     try {
       const data = await UsuarioRepository.whoami()
-      usuarioLogged.value = data
+      usuarioLogged.value = data.data
+      populatePermissoes()
       return data
     } catch (error) {
       console.log(error)

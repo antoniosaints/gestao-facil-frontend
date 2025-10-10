@@ -12,7 +12,7 @@
             :class="{ '-translate-x-full': !store.openSidebar }">
 
             <TopMenu />
-            <SidebarMenu :menu="sidebarMenuOptions" />
+            <SidebarMenu :menu="sidebarMenuOptions(store.permissoes)" />
             <div class="grid grid-cols-12 gap-2 items-center justify-center">
                 <LogoutButton class="col-span-10 md:col-span-12" />
                 <ColorToggle class="col-span-2 h-full w-full border border-gray-200 dark:border-gray-700"
@@ -48,6 +48,7 @@ import InstallPrompt from '@/components/layout/installPrompt.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
 import { PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
+import { onMounted } from 'vue'
 const store = useUiStore()
 
 window.addEventListener('resize', () => {
@@ -56,5 +57,9 @@ window.addEventListener('resize', () => {
     } else {
         store.openSidebar = true
     }
+})
+
+onMounted(() => {
+    store.getDataUsuario()
 })
 </script>

@@ -32,7 +32,7 @@
                 <div v-show="openDropdown === item.nome"
                     class="dropdown-content flex flex-col p-1 gap-1 transition-all">
                     <router-link v-for="(child, i) in item.children" :key="i" :to="child.link || 'javascript:void(0)'"
-                        :class="[
+                        v-show="child.show !== false" :class="[
                             'flex items-center p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 pl-4 dark:hover:bg-gray-800 cursor-pointer rounded-xl transition-colors',
                             route.path === child.link && 'bg-gray-200 dark:bg-gray-800'
                         ]">
