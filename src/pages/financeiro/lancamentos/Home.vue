@@ -4,15 +4,37 @@ import Mobile from './tabela/Mobile.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import LancamentoModal from './formulario/LancamentoModal.vue';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
-import { CirclePlus, FileText, Wallet } from 'lucide-vue-next';
+import { CircleChevronDown, CirclePlus, FileText, Trash, Wallet } from 'lucide-vue-next';
 import GerarDRE from './modais/GerarDRE.vue';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/composables/useConfirm';
+import { LancamentosRepository } from '@/repositories/lancamento-repository';
+import { useToast } from 'vue-toastification';
 const store = useLancamentosStore();
 const uiStore = useUiStore()
-
+const toast = useToast()
 const openByTipo = (tipo: 'RECEITA' | 'DESPESA') => {
     store.form.tipo = tipo
     store.openSave()
+}
+
+async function excluirEmLote() {
+    try {
+        if (!store.selectedIds.length) return toast.error('Nenhum lançamento selecionado')
+        const confirm = await useConfirm().confirm({
+            title: 'Excluir em lote',
+            message: 'Tem certeza que deseja excluir esses lançamentos?'
+        });
+        if (!confirm) return
+        await Promise.all(store.selectedIds.map(id => LancamentosRepository.remove(id)))
+        store.updateTable()
+        toast.success('Lançamentos excluidos com sucesso')
+    } catch (error) {
+        toast.error('Erro ao excluir os lançamentos')
+        console.log(error)
+    }
 }
 </script>
 
@@ -27,6 +49,24 @@ const openByTipo = (tipo: 'RECEITA' | 'DESPESA') => {
                 <p class="text-sm text-muted-foreground">Lançamentos financeiros do sistema</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
+                <DropdownMenu v-if="store.selectedIds.length">
+                    <DropdownMenuTrigger as-child>
+                        <Button variant="outline">
+                            <CircleChevronDown />
+                            Ações
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem @click="excluirEmLote" class="cursor-pointer">
+                                <Trash />
+                                <span>
+                                    Excluir em lote
+                                </span>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <button @click="store.openModalDre = true"
                     class="bg-warning text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-2">
                     <FileText class="h-5 w-5" /> <span class="hidden md:inline">DRE</span>

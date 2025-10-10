@@ -19,10 +19,28 @@ import Actions from './Actions.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { formatDate, isAfter } from 'date-fns'
 import { RouterLink } from 'vue-router'
-
+import { Checkbox } from '@/components/ui/checkbox'
+import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
+const store = useLancamentosStore()
 export const columnsLancamentos: ColumnDef<
   LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro> }
 >[] = [
+  {
+    id: 'select',
+    header: ({ table }) => render('div', {}, ''),
+    cell: ({ row }) =>
+      render(Checkbox, {
+        modelValue: store.selectedIds.includes(row.original.id!),
+        'onUpdate:modelValue': (value: boolean | string) => {
+          row.toggleSelected(!!value)
+          if (value) store.addSelectedId(row.original.id!)
+          else store.removeSelectedId(row.original.id!)
+        },
+        ariaLabel: 'Select row',
+      }),
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: 'Uid',
     enableSorting: false,

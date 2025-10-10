@@ -76,13 +76,30 @@
 
                     <TableRow v-else>
                         <TableCell v-if="loading" :colspan="columns.length">
-                            <div class="flex items-center justify-center h-24">
-                                <Loader class="h-6 w-6 text-info animate-spin mr-1" />
-                                Carregando...
-                            </div>
+                            <Empty>
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <Loader class="h-6 w-6 text-info animate-spin mr-1" />
+                                    </EmptyMedia>
+                                    <EmptyTitle>Carregando...</EmptyTitle>
+                                    <EmptyDescription>
+                                        Buscando registros para serem listados aqui.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
                         </TableCell>
                         <TableCell v-else :colspan="columns.length" class="h-24 text-center">
-                            Nenhum resultado encontrado.
+                            <Empty>
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <BadgeQuestionMark />
+                                    </EmptyMedia>
+                                    <EmptyTitle>Nenhum registro encontrado</EmptyTitle>
+                                    <EmptyDescription>
+                                        Cadastre algo para que possa ser listado aqui.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
                         </TableCell>
                     </TableRow>
                 </TableBody>
@@ -117,8 +134,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from '../ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
-import { Eye, Loader } from 'lucide-vue-next';
+import { BadgeQuestionMark, Eye, Loader } from 'lucide-vue-next';
 import { watch } from 'vue';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
 
 const { columns, api, filters } = defineProps<{
     columns: ColumnDef<any>[],

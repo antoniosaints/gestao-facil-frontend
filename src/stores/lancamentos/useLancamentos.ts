@@ -17,6 +17,24 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const openModalCobranca = ref(false)
   const openModalDre = ref(false)
   const idMutation = ref<number | null>(null)
+  const selectedIds = ref<number[]>([])
+
+  function resetSelectedIds() {
+    selectedIds.value = []
+  }
+
+  function addSelectedId(id: number) {
+    if (!selectedIds.value.includes(id)) {
+      selectedIds.value.push(id)
+    }
+  }
+
+  function removeSelectedId(id: number) {
+    const index = selectedIds.value.indexOf(id)
+    if (index !== -1) {
+      selectedIds.value.splice(index, 1)
+    }
+  }
 
   const form = ref<FormularioLancamento>({
     id: null,
@@ -63,6 +81,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
 
   const updateTable = () => {
     filters.value.update = !filters.value.update
+    resetSelectedIds()
   }
 
   const openUpdate = async (id: number) => {
@@ -102,6 +121,10 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     openModalFaturar,
     openModalDelete,
     openModalCobranca,
+    selectedIds,
+    addSelectedId,
+    resetSelectedIds,
+    removeSelectedId,
     openModalDre,
     openSave,
     openUpdate,
