@@ -149,8 +149,8 @@ async function submit() {
                         <label for="dataEntradaLancamento" class="block text-sm font-medium mb-1">
                             Data Entrada
                         </label>
-                        <Calendarpicker id="dataEntradaLancamento" name="dataEntrada"
-                            v-model="store.form.dataEntrada" />
+                        <Calendarpicker :required="store.form.valorEntrada != ''" id="dataEntradaLancamento"
+                            name="dataEntrada" v-model="store.form.dataEntrada" />
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2">

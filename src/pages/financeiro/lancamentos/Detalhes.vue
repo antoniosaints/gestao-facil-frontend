@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, HandCoins, RotateCw, Trash2, Undo2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, HandCoins, RotateCw, ToggleLeft, Trash2, Undo2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { useRoute } from "vue-router"
 import type { LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
@@ -209,7 +209,7 @@ onMounted(loadLancamento);
                             <TableRow v-for="p in lancamento?.parcelas" :key="p.numero">
                                 <TableCell>
                                     <span
-                                        class="font-normal px-2 py-1.5 text-nowrap bg-primary text-sm text-white rounded-md">
+                                        class="font-normal px-2 py-1.5 text-nowrap bg-primary text-sm text-white rounded-lg">
                                         {{ p.numero === 1 && lancamento.parcelas.length === 1 ? "À vista" : p.numero ===
                                             0 ? "Entrada" : `Parcela ${p.numero}` }}
                                     </span>
@@ -220,22 +220,22 @@ onMounted(loadLancamento);
                                 <TableCell>{{ p.dataPagamento ? formatDate(p.dataPagamento, "dd/MM/yyyy") : "-" }}
                                 </TableCell>
                                 <TableCell>
-                                    <Badge class="text-white px-2 py-1 rounded-md text-sm font-normal"
+                                    <Badge class="text-white px-2 py-1 rounded-lg text-sm font-normal"
                                         :variant="p.pago ? 'default' : 'destructive'">
+                                        <ToggleLeft class="w-4 h-4 mr-1" />
                                         {{ p.pago ? "Pago" : "Pendente" }}
                                     </Badge>
                                 </TableCell>
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
-                                        <Button v-if="!p.pago" :disabled="lancamento.vendaId"
-                                            @click="efetivarParcela(p.id!)" variant="default"
+                                        <Button v-if="!p.pago" :disabled="true" variant="default"
+                                            class="w-8 h-8 p-0 bg-success hover:bg-success/80 text-white">
+                                            <CircleDollarSign class="w-4 h-4" />
+                                        </Button>
+                                        <Button v-if="!p.pago" :disabled="lancamento.vendaId" variant="default"
                                             class="w-8 h-8 p-0 text-white">
                                             <BadgeCheck class="w-4 h-4" />
                                         </Button>
-                                        <!-- <Button v-if="!p.pago" variant="default"
-                                            class="w-8 h-8 p-0 bg-danger hover:bg-danger/80 text-white">
-                                            <OctagonX class="w-4 h-4" />
-                                        </Button> -->
                                         <Button v-if="p.pago" :disabled="lancamento.vendaId"
                                             @click="estornarParcela(p.id!)" variant="default"
                                             class="w-8 h-8 p-0 bg-warning hover:bg-warning/80 text-white">

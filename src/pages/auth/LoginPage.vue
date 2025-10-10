@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/login/useAuthStore';
+import { Loader, LogIn } from 'lucide-vue-next';
 import { ref } from 'vue';
 const store = useAuthStore();
 const login = ref({
     email: '',
     password: ''
 });
+const textLogin = ref('Entrar');
+const iconLogin = ref(LogIn);
 const showForgotPasswordModal = ref(false);
 const saveDataLogin = ref<boolean>(localStorage.getItem('gestao_facil:credentials_login') == 'true' || false);
 
@@ -77,8 +81,12 @@ const randomTestimonial = ref(
 );
 
 async function loginUsuario() {
+    textLogin.value = 'Entrando...';
+    iconLogin.value = Loader;
     localStorage.setItem('gestao_facil:credentials_login', saveDataLogin.value.toString());
     await store.login(login.value.email, login.value.password);
+    textLogin.value = 'Entrar';
+    iconLogin.value = LogIn;
 }
 
 </script>
@@ -266,11 +274,11 @@ async function loginUsuario() {
                                     </div>
 
                                     <!-- Login Button -->
-                                    <button type="submit"
-                                        class="w-full bg-gradient-to-r from-primary/80 to-primary hover:from-primary/90 hover:to-primary/80 text-white py-3 rounded-lg font-semibold text-lg transition-all duration-200 transform shadow-lg hover:shadow-xl">
-                                        <i class="fas fa-sign-in-alt mr-2"></i>
-                                        Entrar
-                                    </button>
+                                    <Button type="submit"
+                                        class="w-full bg-gradient-to-r h-30 from-primary/80 to-primary hover:from-primary/90 hover:to-primary/80 text-white py-3 rounded-lg text-lg transition-all duration-200 transform shadow-lg hover:shadow-xl">
+                                        <component :is="iconLogin" class="w-8 h-8 mr-2" />
+                                        {{ textLogin }}
+                                    </Button>
                                 </form>
                                 <!-- Footer -->
                                 <div class="mt-8 text-center">

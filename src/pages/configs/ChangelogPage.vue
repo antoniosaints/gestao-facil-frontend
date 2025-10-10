@@ -65,6 +65,17 @@ interface ChangelogItem {
 const changelog: ChangelogItem[] = [
     {
         title: "Melhorias e Correções",
+        version: "v1.4.0",
+        date: "10/10/2025",
+        changes: [
+            "Adicionado excluir em lote para lançamentos",
+            "Corrigigo pagamento de mensalidade ",
+            "Adicionado novas funções em configurações",
+            "Melhorado o visual das tabelas"
+        ]
+    },
+    {
+        title: "Melhorias e Correções",
         version: "v1.3.0",
         date: "09/10/2025",
         changes: [
