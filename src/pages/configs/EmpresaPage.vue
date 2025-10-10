@@ -1,7 +1,7 @@
 <template>
     <Card class="rounded-t-none bg-background">
         <CardHeader>
-            <CardTitle>Dados da empresa</CardTitle>
+            <CardTitle class="font-normal">Dados da empresa</CardTitle>
             <CardDescription>Informações exibidas em notas, recibos e relatórios.</CardDescription>
         </CardHeader>
 
@@ -63,7 +63,7 @@
             </CardContent>
 
             <CardFooter class="justify-end">
-                <Button type="submit" class="ml-2">
+                <Button type="submit" class="ml-2 text-white">
                     <CircleCheck /> Salvar
                 </Button>
             </CardFooter>

@@ -27,37 +27,51 @@
             <!-- NOTIFICAÇÕES -->
             <TabsContent value="notificacoes">
                 <Card class="rounded-t-none bg-background">
-                    <form @submit.prevent="submitNotificacoes">
+                    <form @submit.prevent="submit(formularioNotificacoes)">
                         <CardHeader>
-                            <CardTitle>Notificações</CardTitle>
+                            <CardTitle class="font-normal">Notificações</CardTitle>
                             <CardDescription>Configure e-mails e push de eventos.</CardDescription>
                         </CardHeader>
                         <CardContent class="space-y-6">
-                            <div class="grid md:grid-cols-2 gap-6">
+                            <div class="grid md:grid-cols-2 gap-3">
                                 <div class="space-y-2">
                                     <Label for="emailNotif">E-mail para avisos</Label>
-                                    <Input id="emailNotif" type="email" placeholder="seu@email.com"
-                                        v-model="form.notificacoes.email" />
+                                    <Input id="emailNotif" v-model="(formularioNotificacoes.emailAvisos as string)"
+                                        type="email" placeholder="seu@email.com" />
                                 </div>
                                 <SubscribeNotification />
                             </div>
                             <Separator />
-                            <div class="grid md:grid-cols-2 gap-6">
+                            <div class="grid gap-6">
                                 <div class="space-y-2">
-                                    <Label>Eventos</Label>
-                                    <div class="grid gap-3">
-                                        <div class="flex items-center justify-between">
-                                            <span>Venda concluída</span>
-                                            <Switch v-model="formularioNotificacoes.eventoVendaConcluida" />
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <span>Sangria registrada</span>
-                                            <Switch v-model="formularioNotificacoes.eventoSangria" />
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <span>Estoque baixo</span>
-                                            <Switch v-model="formularioNotificacoes.eventoEstoqueBaixo" />
-                                        </div>
+                                    <Label class="text-md">Eventos</Label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <label for="vendaConcluida"
+                                            class="flex items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                            <span>Venda concluída <p class="text-xs text-muted-foreground">(Quando
+                                                    realizar uma venda)</p></span>
+                                            <Switch id="vendaConcluida"
+                                                v-model="formularioNotificacoes.eventoVendaConcluida" />
+                                        </label>
+                                        <label for="sangriaEvento"
+                                            class="flex items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                            <span>Sangria registrada <p class="text-xs text-muted-foreground">(Retiradas
+                                                    de valor em caixa PDV)</p></span>
+                                            <Switch id="sangriaEvento" v-model="formularioNotificacoes.eventoSangria" />
+                                        </label>
+                                        <label for="estoqueBaixo"
+                                            class="flex items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                            <span>Estoque baixo <p class="text-xs text-muted-foreground">(classificado
+                                                    em vermelho)</p></span>
+                                            <Switch id="estoqueBaixo"
+                                                v-model="formularioNotificacoes.eventoEstoqueBaixo" />
+                                        </label>
+                                        <label for="produtoEditadoReposicao"
+                                            class="flex items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                            <span>Alteração de produto <p class="text-xs text-muted-foreground">
+                                                    (reposição, edição)</p></span>
+                                            <Switch id="produtoEditadoReposicao" />
+                                        </label>
                                     </div>
                                 </div>
                             </div>
@@ -72,9 +86,9 @@
             <!-- INTEGRAÇÕES -->
             <TabsContent value="integracoes">
                 <Card class="rounded-t-none bg-background">
-                    <form @submit.prevent="submitIntegracoes">
+                    <form @submit.prevent="submit(formularioIntegracoes)">
                         <CardHeader>
-                            <CardTitle>Integrações</CardTitle>
+                            <CardTitle class="font-normal">Integrações</CardTitle>
                             <CardDescription>Conecte serviços externos (Mercado Pago, Asaas).</CardDescription>
                         </CardHeader>
                         <CardContent class="space-y-3">
@@ -135,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -151,9 +165,7 @@ import { Cog } from 'lucide-vue-next'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { ContaRepository } from '@/repositories/conta-repository'
 
-// Estado
 const tab = ref<'empresa' | 'notificacoes' | 'integracoes'>('empresa')
-const saving = ref(false)
 const toast = useToast()
 
 const formularioIntegracoes = reactive<UpdateParametrosConta>({
@@ -166,20 +178,12 @@ const formularioNotificacoes = reactive<UpdateParametrosConta>({
     eventoEstoqueBaixo: false,
     eventoVendaConcluida: false,
     eventoSangria: false,
+    emailAvisos: '',
 })
 
-async function submitIntegracoes() {
+async function submit(data: UpdateParametrosConta) {
     try {
-        await ContaRepository.parametros(formularioIntegracoes)
-        toast.success('Configurações salvas com sucesso')
-    } catch (error) {
-        console.error(error)
-        toast.error('Erro ao salvar as configurações')
-    }
-}
-async function submitNotificacoes() {
-    try {
-        await ContaRepository.parametros(formularioNotificacoes)
+        await ContaRepository.parametros(data)
         toast.success('Configurações salvas com sucesso')
     } catch (error) {
         console.error(error)
@@ -187,41 +191,30 @@ async function submitNotificacoes() {
     }
 }
 
-const defaults = {
-    empresa: { razao: '', fantasia: '', cnpj: '', ie: '', endereco: '', telefone: '', email: '' },
-    notificacoes: {
-        email: '', push: true,
-        eventos: { vendaConcluida: true, sangria: true, estoqueBaixo: true }
-    },
-    integracoes: {
-        asaas: { apiKey: '', ambiente: 'sandbox' as 'sandbox' | 'production' },
-        mercadoPago: { apiKey: '', ambiente: 'sandbox' as 'sandbox' | 'production' },
-    },
-}
-
-const form = reactive(structuredClone(defaults))
-
-// Ações
-async function save(section?: keyof typeof form) {
-    saving.value = true
+async function getParametros() {
     try {
-        // TODO: chame sua API aqui (axios/fetch). Ex.: await api.save(section, form[section])
-        await new Promise((r) => setTimeout(r, 500))
-        toast({ title: 'Configurações salvas', description: section ? `Seção “${section}” atualizada.` : 'Todas as seções atualizadas.' })
-    } finally {
-        saving.value = false
+        const response = await ContaRepository.getParametros()
+        if (response.data != null) {
+            Object.assign(formularioIntegracoes, {
+                AsaasApiKey: response.data.AsaasApiKey,
+                AsaasEnv: response.data.AsaasEnv,
+                MercadoPagoApiKey: response.data.MercadoPagoApiKey,
+                MercadoPagoEnv: response.data.MercadoPagoEnv,
+            })
+            Object.assign(formularioNotificacoes, {
+                eventoEstoqueBaixo: response.data.eventoEstoqueBaixo,
+                eventoVendaConcluida: response.data.eventoVendaConcluida,
+                eventoSangria: response.data.eventoSangria,
+                emailAvisos: response.data.emailAvisos,
+            })
+        }
+    } catch (error) {
+        console.error(error)
+        toast.error('Erro ao buscar as configurações')
     }
 }
 
-function reset(section?: keyof typeof form) {
-    if (section) {
-        // @ts-ignore
-        form[section] = structuredClone(defaults[section])
-        return
-    }
-    Object.assign(form, structuredClone(defaults))
-}
-
+onMounted(getParametros)
 </script>
 
 <style scoped>

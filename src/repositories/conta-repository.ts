@@ -49,6 +49,10 @@ export class ContaRepository {
     const res = await http.post(`/contas/parametros`, data)
     return res.data
   }
+  static async getParametros(): Promise<any> {
+    const res = await http.get(`/contas/parametros`)
+    return res.data
+  }
   static async detalhes(): Promise<Contas> {
     const data = await http.get(`/contas/detalhes`)
     return data.data

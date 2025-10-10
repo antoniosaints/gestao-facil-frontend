@@ -319,6 +319,7 @@ export interface UpdateParametrosConta {
   AsaasApiSecret?: string | null
   AsaasEnv?: string | null
   eventoEstoqueBaixo?: boolean | null
+  emailAvisos?: string | null
   eventoSangria?: boolean | null
   eventoVendaConcluida?: boolean | null
   MercadoPagoApiKey?: string | null
