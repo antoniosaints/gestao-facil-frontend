@@ -140,6 +140,9 @@ export class LancamentosRepository {
       if (!clienteId) {
         throw new Error('Cliente não informado, no boleto é necessario informar o ID do cliente')
       }
+      if (value < 4) {
+        throw new Error('O valor mínimo para boleto é R$ 4,00')
+      }
     }
     const data = await http.post(`/lancamentos/cobrancas/cobrar`, { type, value, gateway })
     return data.data
