@@ -130,4 +130,18 @@ export class LancamentosRepository {
     const data = await http.get(`/lancamentos/graficos/receita-despesa-mensal`)
     return data.data
   }
+  static async gerarCobranca(
+    type: 'BOLETO' | 'LINK' | 'PIX',
+    value: number,
+    gateway: 'mercadopago' | 'pagseguro' | 'asaas',
+    clienteId?: number,
+  ) {
+    if (type === 'BOLETO') {
+      if (!clienteId) {
+        throw new Error('Cliente não informado, no boleto é necessario informar o ID do cliente')
+      }
+    }
+    const data = await http.post(`/lancamentos/cobrancas/cobrar`, { type, value, gateway })
+    return data.data
+  }
 }

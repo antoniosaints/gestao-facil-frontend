@@ -232,7 +232,8 @@ onMounted(loadLancamento);
                                             class="w-8 h-8 p-0 bg-success hover:bg-success/80 text-white">
                                             <CircleDollarSign class="w-4 h-4" />
                                         </Button>
-                                        <Button v-if="!p.pago" :disabled="lancamento.vendaId" variant="default"
+                                        <Button v-if="!p.pago" :disabled="lancamento.vendaId"
+                                            @click="efetivarParcela(p.id!)" variant="default"
                                             class="w-8 h-8 p-0 text-white">
                                             <BadgeCheck class="w-4 h-4" />
                                         </Button>
@@ -249,7 +250,6 @@ onMounted(loadLancamento);
                 </div>
             </CardContent>
         </Card>
-
         <GerarCobranca />
     </div>
 </template>
