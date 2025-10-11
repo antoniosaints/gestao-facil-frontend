@@ -18,6 +18,7 @@ import { useConfirm } from "@/composables/useConfirm"
 import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos"
 import router from "@/router"
 import GerarCobranca from "./modais/GerarCobranca.vue"
+import ClientesModal from "@/pages/clientes/modais/ClientesModal.vue"
 
 const route = useRoute()
 const toast = useToast()
@@ -251,5 +252,6 @@ onMounted(loadLancamento);
             </CardContent>
         </Card>
         <GerarCobranca />
+        <ClientesModal />
     </div>
 </template>

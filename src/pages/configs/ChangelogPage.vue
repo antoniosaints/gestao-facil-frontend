@@ -19,7 +19,7 @@
                 :class="index % 2 === 0 ? 'justify-start' : 'justify-end'">
                 <!-- Ponto central alinhado -->
                 <div
-                    class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full w-4 h-4 z-10 border-2 border-white">
+                    class="absolute left-1/2 top-1/2 hidden md:block transform -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full w-4 h-4 z-10 border-2 border-white">
                 </div>
 
                 <!-- Cartão -->
@@ -64,12 +64,24 @@ interface ChangelogItem {
 
 const changelog: ChangelogItem[] = [
     {
+        title: "Melhorias e Novidades",
+        version: "v1.5.0",
+        date: "10/10/2025",
+        changes: [
+            "Adicionado geração de cobranças",
+            "Gere Links, Pix e Boletos sem precisar acessar seu banco",
+            "Conecte seu banco Mercado Pago",
+            "Melhorado a interface de configurações",
+            "Redirecionamentos de links melhorados"
+        ]
+    },
+    {
         title: "Melhorias e Correções",
         version: "v1.4.0",
         date: "10/10/2025",
         changes: [
             "Adicionado excluir em lote para lançamentos",
-            "Corrigigo pagamento de mensalidade ",
+            "Corrigido pagamento de mensalidade ",
             "Adicionado novas funções em configurações",
             "Melhorado o visual das tabelas"
         ]
