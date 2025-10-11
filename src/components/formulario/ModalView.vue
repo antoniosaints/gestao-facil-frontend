@@ -49,7 +49,7 @@ const isDesktop = useMediaQuery("(min-width: 768px)")
             <DialogContent class="p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
                 :disable-outside-pointer-events="true" :class="[sizeModal, 'mx-auto']">
                 <DialogHeader class="p-6 pb-0">
-                    <DialogTitle>{{ title }}</DialogTitle>
+                    <DialogTitle class="font-normal text-xl -mb-2">{{ title }}</DialogTitle>
                     <DialogDescription v-if="description">
                         {{ description }}
                     </DialogDescription>
