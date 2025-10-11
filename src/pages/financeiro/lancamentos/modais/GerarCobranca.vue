@@ -41,27 +41,39 @@ const resetModal = () => {
 
 async function gerarCobrancaLancamento() {
     try {
-        if (!gateway.value) return toast.error('Gateway de pagamento nao informado!')
-        if (criterio.value === "avulso" && !valorAvulso.value) return toast.error('Informe o valor da cobrança avulsa.')
+        if (!gateway.value) return toast.error('Gateway de pagamento nao informado!', {
+            timeout: 5000
+        })
+        if (criterio.value === "avulso" && !valorAvulso.value) return toast.error('Informe o valor da cobrança avulsa.', {
+            timeout: 5000
+        })
         if (tipo.value === "BOLETO") {
             if (!clienteId.value) {
-                return toast.error('Informe o cliente para gerar o boleto.')
+                return toast.error('Informe o cliente para gerar o boleto.', {
+                    timeout: 5000
+                })
             }
             if (Number(valorAvulso.value.replace(",", ".")) < 4) {
-                return toast.error('O valor mínimo para boleto é R$ 4,00')
+                return toast.error('O valor mínimo para boleto é R$ 4,00', {
+                    timeout: 5000
+                })
             }
         }
         loading.value = true
         submitText.value = 'Gerando cobrança...'
-        const response = await LancamentosRepository.gerarCobranca(tipo.value, Number(valorAvulso.value), gateway.value)
+        const response = await LancamentosRepository.gerarCobranca(tipo.value, Number(valorAvulso.value), gateway.value, clienteId.value)
         linkPayment.value = response.message
         linkExists.value = true
-        toast.success('Cobrança gerada com sucesso.')
+        toast.success('Cobrança gerada com sucesso.', {
+            timeout: 5000
+        })
         loading.value = false
         submitText.value = 'Gerar cobrança'
     } catch (error: any) {
         console.log(error)
-        toast.error(error.response?.data?.message || 'Erro ao gerar cobrança')
+        toast.error(error.response?.data?.message || 'Erro ao gerar cobrança', {
+            timeout: 5000
+        })
         loading.value = false
         submitText.value = 'Gerar cobrança'
     }

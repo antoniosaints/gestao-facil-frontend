@@ -134,9 +134,14 @@ export class LancamentosRepository {
     type: 'BOLETO' | 'LINK' | 'PIX',
     value: number,
     gateway: 'mercadopago' | 'pagseguro' | 'asaas',
-    clienteId?: number,
+    clienteId?: number | null,
   ) {
-    const data = await http.post(`/lancamentos/cobrancas/cobrar`, { type, value, gateway })
+    const data = await http.post(`/lancamentos/cobrancas/cobrar`, {
+      type,
+      value,
+      gateway,
+      clienteId,
+    })
     return data.data
   }
 }
