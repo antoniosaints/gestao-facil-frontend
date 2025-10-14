@@ -11,6 +11,7 @@ import { endOfMonth, startOfMonth } from "date-fns"
 import { ProdutoRepository } from "@/repositories/produto-repository"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCurrencyBR } from "@/utils/formatters"
+import { Input } from "@/components/ui/input"
 const toast = useToast()
 const loading = ref(true)
 const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
@@ -19,6 +20,7 @@ const ticketMedioChart: any = ref({ labels: [], datasets: [] });
 const reposicoesMensaisChart: any = ref({ labels: [], datasets: [] });
 const menosSaidasChart: any = ref({ labels: [], datasets: [] });
 const maisSaidasChart: any = ref({ labels: [], datasets: [] });
+const anoTicketMedio = ref(new Date().getFullYear())
 
 const getIndicadores = async (inicio?: string, fim?: string) => {
   try {
@@ -114,9 +116,11 @@ onMounted(() => {
       <!-- Gráfico de Barras -->
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4">
-          Tícket Médio Mensal
-        </h2>
+        <div class="flex flex-row items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">
+            Tícket Médio Mensal
+          </h2>
+        </div>
         <BarChart class="max-h-64" :data="ticketMedioChart" :options="optionsChartBarDefault" />
       </div>
 
