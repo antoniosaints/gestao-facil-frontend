@@ -13,7 +13,6 @@ import { useConfirm } from '@/composables/useConfirm';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { useToast } from 'vue-toastification';
 import { onMounted } from 'vue';
-import { entrarNaConta, socket } from '@/pluguins/socket';
 const store = useLancamentosStore();
 const uiStore = useUiStore()
 const toast = useToast()
@@ -40,9 +39,6 @@ async function excluirEmLote() {
 }
 
 onMounted(() => {
-    if (!uiStore.usuarioLogged.contaId) return
-    entrarNaConta(uiStore.usuarioLogged.contaId)
-
     // socket.on("socket:cobranca:conectado", (dados) => {
     //     toast.success('Cobranca conectada')
     // });

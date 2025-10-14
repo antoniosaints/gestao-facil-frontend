@@ -8,7 +8,7 @@
         </button>
         <!-- Sidebar -->
         <aside id="sidebar-content-sistema"
-            class="fixed overflow-auto top-0 left-0 h-full w-full md:w-64 border border-border bg-white dark:bg-gray-900 p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
+            class="fixed overflow-auto top-0 hidden_scrollbar left-0 h-full w-full md:w-64 border border-border bg-white dark:bg-gray-900 p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
             :class="{ '-translate-x-full': !store.openSidebar }">
 
             <TopMenu />
@@ -28,7 +28,13 @@
             :class="{ 'md:ml-64': store.openSidebar }">
             <div class="max-w-7xl mx-auto" id="content">
                 <AlertTopbar />
-                <slot />
+                <slot v-if="!loading" />
+                <div v-else
+                    class="flex flex-col gap-4 max-w-7xl mx-auto items-center justify-center h-[calc(100vh-12rem)]">
+                    <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark">
+                    </div>
+                    <p class="ml-2 text-primary dark:text-primary-dark">Carregando informações do usuário...</p>
+                </div>
             </div>
         </main>
         <InstallPrompt />
@@ -48,9 +54,10 @@ import InstallPrompt from '@/components/layout/installPrompt.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
 import { PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
+import { entrarNaConta } from '@/pluguins/socket'
 const store = useUiStore()
-
+const loading = ref(false)
 window.addEventListener('resize', () => {
     if (window.innerWidth < 768) {
         store.openSidebar = false
@@ -59,7 +66,28 @@ window.addEventListener('resize', () => {
     }
 })
 
+async function initialize() {
+    loading.value = true
+    try {
+        await store.getDataUsuario()
+        if (store.usuarioLogged.contaId) entrarNaConta(store.usuarioLogged.contaId) // socket IO para conectar no websocket da conta
+    } finally {
+        loading.value = false
+    }
+}
+
 onMounted(() => {
-    store.getDataUsuario()
+    initialize()
 })
 </script>
+
+<style scoped>
+.hidden_scrollbar {
+    overflow: auto;
+    /* ou scroll, conforme sua necessidade */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE e Edge antigo */
+}
+</style>

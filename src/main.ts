@@ -11,7 +11,6 @@ import router from './router'
 
 import VueDatePicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
-import { socket } from './pluguins/socket'
 
 const app = createApp(App)
 
@@ -30,5 +29,4 @@ app.use(router)
 
 app.component('DatePicker', VueDatePicker)
 
-app.config.globalProperties.$socket = socket;
 app.mount('#app')

@@ -7,14 +7,28 @@ import ModalProporValor from './formulario/ModalProporValor.vue';
 import ModalFaturar from './formulario/ModalFaturar.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import ModalFiltro from './formulario/ModalFiltro.vue';
-import { provide, ref } from 'vue';
+import { onMounted, onUnmounted, provide, ref } from 'vue';
 import ClientesModal from '../clientes/modais/ClientesModal.vue';
 import { Tags } from 'lucide-vue-next';
 import DetalhesVenda from './modais/DetalhesVenda.vue';
-
+import { getSocket } from '@/pluguins/socket';
+import type { Socket } from 'socket.io-client';
 const store = useVendasStore();
 const storeUi = useUiStore();
 const openFilter = ref(false);
+
+let socket: Socket;
+
+onMounted(() => {
+    socket = getSocket();
+    socket.on("vendas:updatetable", (dados) => {
+
+    });
+
+    onUnmounted(() => {
+        socket.off("vendas:updatetable");
+    })
+})
 
 provide('openModalFiltroVendas', openFilter);
 </script>
@@ -41,6 +55,9 @@ provide('openModalFiltroVendas', openFilter);
                     class="border border-body bg-secondary hover:border-secondary px-3 py-1.5 text-sm rounded-lg">
                     <i class="fa-solid fa-cart-arrow-down"></i> PDV
                 </RouterLink>
+                <button @click="store.updateTable" class="bg-background border px-3 py-1.5 text-sm rounded-md">
+                    <i class="fa-solid fa-arrow-rotate-right"></i> <span class="hidden md:inline"></span>
+                </button>
             </div>
         </div>
         <div class="overflow-x-auto rounded-lg">
