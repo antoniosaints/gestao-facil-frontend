@@ -34,7 +34,7 @@
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
                     <RouterLink to="/site/cadastro"
-                        class="bg-white hover:bg-gray-100 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        class="bg-primary hover:bg-primary/80 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
                         <i class="fas fa-rocket mr-2"></i>
                         Teste Grátis por 7 dias
                     </RouterLink>
@@ -175,7 +175,7 @@
                         <div class="p-8 pt-14">
                             <h4 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Plano Completo</h4>
                             <div class="mb-6">
-                                <span class="text-5xl text-primary-600">R$ 89,90</span>
+                                <span class="text-5xl text-primary-600">R$ 70,00</span>
                                 <span class="text-gray-600 dark:text-gray-300">/mês</span>
                             </div>
                             <p class="text-gray-600 dark:text-gray-300 mb-8">Pagamento antecipado mensal</p>
@@ -199,7 +199,7 @@
                                 </li>
                                 <li class="flex items-center">
                                     <i class="fas fa-check text-green-500 mr-3"></i>
-                                    <span class="text-gray-700 dark:text-gray-300">Suporte prioritário</span>
+                                    <span class="text-gray-700 dark:text-gray-300">Dashboards completas</span>
                                 </li>
                                 <li class="flex items-center">
                                     <i class="fas fa-check text-green-500 mr-3"></i>
@@ -329,7 +329,7 @@
         </section>
         <footer class="bg-gray-800 dark:bg-gray-900 text-white py-12">
             <div class="container mx-auto px-4">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="flex flex-col sm:flex-row justify-between gap-8">
                     <div>
                         <div class="flex items-center space-x-3 mb-4">
                             <div
@@ -341,24 +341,6 @@
                         <p class="text-gray-400">
                             Sistema completo de gestão para pequenas lojas.
                         </p>
-                    </div>
-
-                    <div>
-                        <h5 class="font-semibold mb-4">Produto</h5>
-                        <ul class="space-y-2 text-gray-400">
-                            <li><a href="#" class="hover:text-white transition-colors">Funcionalidades</a></li>
-                            <li><a href="#" class="hover:text-white transition-colors">Preços</a></li>
-                            <li><a href="#" class="hover:text-white transition-colors">Integração</a></li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h5 class="font-semibold mb-4">Suporte</h5>
-                        <ul class="space-y-2 text-gray-400">
-                            <li><a href="#" class="hover:text-white transition-colors">Central de Ajuda</a></li>
-                            <li><a href="#" class="hover:text-white transition-colors">Documentação</a></li>
-                            <li><a href="#" class="hover:text-white transition-colors">Contato</a></li>
-                        </ul>
                     </div>
 
                     <div>
