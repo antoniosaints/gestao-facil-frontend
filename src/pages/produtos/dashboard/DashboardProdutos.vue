@@ -47,7 +47,7 @@ async function getDataDashboard() {
     const fim = filtroPeriodo.value === null ? endOfMonth(new Date()).toISOString() : filtroPeriodo.value[1].toISOString();
     const [indicadores, ticket, reposicoes, menosSaidas, maisSaidas] = await Promise.all([
       getIndicadores(inicio, fim),
-      ProdutoRepository.getTicketMedioMensal(inicio, fim),
+      ProdutoRepository.getTicketMedioMensal(),
       ProdutoRepository.getReposicoesMensais(),
       ProdutoRepository.getProdutosMenosSaidas(inicio, fim),
       ProdutoRepository.getProdutosMaisSaidas(inicio, fim),
