@@ -17,6 +17,10 @@ const toast = useToast()
 const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
 const loading = ref(true);
 const indicadores = ref<any[]>([])
+const topProdutos: any = ref({ labels: [], datasets: [] });
+const faturamentoMensal: any = ref({ labels: [], datasets: [] });
+const tipoPagamento: any = ref({ labels: [], datasets: [] });
+const statusVendas: any = ref({ labels: [], datasets: [] });
 
 const getIndicadores = async (inicio?: string, fim?: string) => {
   try {
@@ -39,35 +43,34 @@ const getIndicadores = async (inicio?: string, fim?: string) => {
   }
 }
 
-// --- Gráficos (exemplos mockados) ---
-const chartStatus = {
-  labels: ["Orçamento", "Faturado", "Andamento", "Finalizado", "Pendente", "Cancelado"],
-  datasets: [{ label: "Qtd Vendas", data: [10, 40, 15, 30, 5, 20], backgroundColor: "#4ade80", borderRadius: 6 }]
+async function getDataDashboard() {
+  try {
+    const inicio = filtroPeriodo.value === null ? startOfMonth(new Date()).toISOString() : filtroPeriodo.value[0].toISOString();
+    const fim = filtroPeriodo.value === null ? endOfMonth(new Date()).toISOString() : filtroPeriodo.value[1].toISOString();
+    const [indicadores, produtos, faturamento, pagamentos, status] = await Promise.all([
+      getIndicadores(inicio, fim),
+      VendaRepository.getTopProdutos(inicio, fim),
+      VendaRepository.getFaturamentoMensal(),
+      VendaRepository.getMetodoPagamento(inicio, fim),
+      VendaRepository.getStatusVenda(inicio, fim),
+    ])
+    topProdutos.value = { labels: [...produtos.labels], datasets: [...produtos.datasets] };
+    faturamentoMensal.value = { labels: [...faturamento.labels], datasets: [...faturamento.datasets] };
+    tipoPagamento.value = { labels: [...pagamentos.labels], datasets: [...pagamentos.datasets] };
+    statusVendas.value = { labels: [...status.labels], datasets: [...status.datasets] };
+  } catch (error) {
+    console.log(error)
+    toast.warning('Erro ao buscar os dados do dashboard, recarregue a página!')
+  }
 }
 
-const chartMetodo = {
-  labels: ["PIX", "Dinheiro", "Cartão"],
-  datasets: [{ label: "Método", data: [35, 20, 45], backgroundColor: ["#60a5fa", "#fbbf24", "#f87171"], borderRadius: 6 }]
+async function atualizarIndicadores() {
+  await getDataDashboard()
+  toast.info('Indicadores atualizados!')
 }
-const chartCategoria = {
-  labels: ["Informática", "Eletrônicos", "Acessórios"],
-  datasets: [{ label: "Categorias", data: [35, 20, 45], backgroundColor: ["#a855f7", "#7dd3fc", "#34d399"], borderRadius: 6 }]
-}
-
-const chartPeriodo = {
-  labels: ["01", "02", "03", "04", "05", "06", "07"],
-  datasets: [{ label: "Vendas", data: [500, 700, 400, 900, 650, 800, 950], borderColor: "#6366f1", backgroundColor: "rgba(99, 102, 241, 0.2)", fill: true, borderRadius: 6, tension: 0.4 }]
-}
-
-watch(filtroPeriodo, async (data) => {
-  if (data === null) return await getIndicadores()
-  await getIndicadores(data[0].toISOString(), data[1].toISOString())
-  toast.info('Indicadores atualizados')
-})
-
 
 onMounted(() => {
-  getIndicadores()
+  getDataDashboard()
 })
 </script>
 
@@ -82,11 +85,8 @@ onMounted(() => {
         <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
       </div>
       <div class="flex items-center gap-2 w-content">
-        <button type="button"
-          class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
-          <i class="fa-solid fa-filter-circle-xmark"></i>
-        </button>
-        <Calendarpicker class="w-content" :range="true" v-model="filtroPeriodo" />
+        <Calendarpicker class="w-content" :range="true" v-model="filtroPeriodo"
+          @update:model-value="atualizarIndicadores" />
       </div>
     </div>
 
@@ -117,34 +117,34 @@ onMounted(() => {
       <!-- Gráfico de Barras -->
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
-          Vendas por status
+        <h2 class="text-lg font-semibold mb-4">
+          Top Produtos
         </h2>
-        <BarChart class="max-h-64" :data="chartStatus" :options="optionsChartBarDefault" />
+        <BarChart class="max-h-64" :data="topProdutos" :options="optionsChartBarDefault" />
       </div>
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
-          Resumo por período
+        <h2 class="text-lg font-semibold mb-4">
+          Faturamento Mensal
         </h2>
-        <LineChart class="max-h-64" :data="chartPeriodo" :options="optionsChartLine" />
+        <BarChart class="max-h-64" :data="faturamentoMensal" :options="optionsChartBarDefault" />
       </div>
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
-          Plano de contas
+        <h2 class="text-lg font-semibold mb-4">
+          Forma de pagamento
         </h2>
-        <PieChart class="max-h-64" :data="chartMetodo" :options="optionsChartPie" />
+        <BarChart class="max-h-64" :data="tipoPagamento" :options="optionsChartBarDefault" />
       </div>
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-pie text-emerald-600"></i>
-          Por categoria
+        <h2 class="text-lg font-semibold mb-4">
+          Por Status
         </h2>
-        <PieChart class="max-h-64" :data="chartCategoria" :options="optionsChartPie" />
+        <BarChart class="max-h-64" :data="statusVendas" :options="optionsChartBarDefault" />
       </div>
     </div>
   </div>

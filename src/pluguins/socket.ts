@@ -16,8 +16,14 @@ export function getSocket() {
 }
 
 export function entrarNaConta(contaId: number) {
-  socket.emit('entrarNaConta', contaId)
+  const s = getSocket()
+  s.emit('entrarNaConta', contaId)
 }
-export function saidDaConta(contaId: number) {
-  socket.emit('sairDaConta', contaId)
+export function sairDaConta(contaId: number) {
+  const s = getSocket()
+  s.emit('sairDaConta', contaId)
+}
+export function updateVendasTable() {
+  const s = getSocket()
+  s.emit('updateTable:vendas')
 }

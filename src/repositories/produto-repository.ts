@@ -125,4 +125,77 @@ export class ProdutoRepository {
     a.click()
     a.remove()
   }
+
+  static async getResumoGeral(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/produtos/graficos/resumo-geral`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
+  static async getReposicoesMensais(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/produtos/graficos/reposicao-mensal`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
+  static async getTicketMedioMensal(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/produtos/graficos/ticket-medio`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
+  static async getProdutosMenosSaidas(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/produtos/graficos/menos-saida`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
+  static async getProdutosMaisSaidas(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/produtos/graficos/mais-repostos`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
+  static async getLucroMedioProdutos(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/produtos/graficos/lucro-medio`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
+  static async getGiroEstoqueProdutos(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/produtos/graficos/giro-estoque`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
+  static async getMargemContribuicao(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/produtos/graficos/margem-media`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
 }

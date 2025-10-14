@@ -1,60 +1,75 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { onMounted, ref } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Package, TrendingDown, BarChart3, DollarSign } from "lucide-vue-next"
-import { Bar, Line, Pie } from "vue-chartjs"
-import {
-  Chart as ChartJS,
-  Title, Tooltip, Legend,
-  BarElement, LineElement, PointElement,
-  ArcElement, CategoryScale,
-  LinearScale,
-  Filler
-} from "chart.js"
+import { Package } from "lucide-vue-next"
+
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
-import { optionsChartBarStack, optionsChartLine, optionsChartPie } from "@/composables/useChartOptions"
+import { optionsChartBarDefault, optionsChartBarStack } from "@/composables/useChartOptions"
 import BarChart from "@/components/graficos/BarChart.vue"
-import LineChart from "@/components/graficos/LineChart.vue"
-import PieChart from "@/components/graficos/PieChart.vue"
+import { useToast } from "vue-toastification"
+import { endOfMonth, startOfMonth } from "date-fns"
+import { ProdutoRepository } from "@/repositories/produto-repository"
+import { Skeleton } from "@/components/ui/skeleton"
+import { formatCurrencyBR } from "@/utils/formatters"
+const toast = useToast()
+const loading = ref(true)
+const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
+const indicadores = ref<any[]>([])
+const ticketMedioChart: any = ref({ labels: [], datasets: [] });
+const reposicoesMensaisChart: any = ref({ labels: [], datasets: [] });
+const menosSaidasChart: any = ref({ labels: [], datasets: [] });
+const maisSaidasChart: any = ref({ labels: [], datasets: [] });
 
-// Registrar plugins do Chart.js
-ChartJS.register(
-  Title, Tooltip, Legend,
-  BarElement, LineElement, PointElement,
-  ArcElement, CategoryScale, LinearScale, Filler
-)
+const getIndicadores = async (inicio?: string, fim?: string) => {
+  try {
+    loading.value = true
+    const data: any = await ProdutoRepository.getResumoGeral(inicio, fim)
+    indicadores.value = [
+      { titulo: "Ticket Médio", valor: data.ticketMedioGeral ? formatCurrencyBR(data.ticketMedioGeral) : null, icone: "fa-solid fa-chart-line text-green-600" },
+      { titulo: "Estoques Baixos", valor: data.estoqueBaixo ? `${data.estoqueBaixo} produto(s)` : null, icone: "fa-solid fa-angles-down text-red-600" },
+      { titulo: "Lucro Mensal", valor: data.lucroMensal ? formatCurrencyBR(data.lucroMensal) : null, icone: "fa-solid fa-chart-line text-blue-600" },
+      { titulo: "Custo Reposições", valor: data.custoReposicoes ? formatCurrencyBR(data.custoReposicoes) : null, icone: "fa-solid fa-money-bill-trend-up text-purple-600" },
+    ]
 
-// Indicadores (simulação)
-const indicadores = ref([
-  { titulo: "Produtos Totais", valor: "850", detalhe: "R$ 120.000", icone: Package },
-  { titulo: "Produtos em Baixa", valor: "35", detalhe: "Abaixo do mínimo", icone: TrendingDown },
-  { titulo: "Ticket Médio", valor: "R$ 320", detalhe: "Markup 45%", icone: BarChart3 },
-  { titulo: "Faturamento Mensal", valor: "R$ 48.500", detalhe: "Agosto 2025", icone: DollarSign }
-])
-
-// Gráficos (mock)
-const chartReposicoes = {
-  labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"],
-  datasets: [{ label: "Reposições", data: [20, 35, 40, 30, 25, 50], backgroundColor: "#60a5fa", borderRadius: 6 }]
+    loading.value = false
+  } catch (error) {
+    console.error(error)
+    toast.error('Erro ao carregar os indicadores')
+  } finally {
+    loading.value = false
+  }
 }
 
-const chartVendas = {
-  labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"],
-  datasets: [{ label: "Vendas", data: [5000, 8000, 7500, 9000, 8500, 11000], backgroundColor: "rgba(75, 192, 192, 0.2)", borderRadius: 6, borderColor: "#4ade80", fill: true, tension: 0.4 }]
+
+async function getDataDashboard() {
+  try {
+    const inicio = filtroPeriodo.value === null ? startOfMonth(new Date()).toISOString() : filtroPeriodo.value[0].toISOString();
+    const fim = filtroPeriodo.value === null ? endOfMonth(new Date()).toISOString() : filtroPeriodo.value[1].toISOString();
+    const [indicadores, ticket, reposicoes, menosSaidas, maisSaidas] = await Promise.all([
+      getIndicadores(inicio, fim),
+      ProdutoRepository.getTicketMedioMensal(inicio, fim),
+      ProdutoRepository.getReposicoesMensais(),
+      ProdutoRepository.getProdutosMenosSaidas(inicio, fim),
+      ProdutoRepository.getProdutosMaisSaidas(inicio, fim),
+    ])
+    ticketMedioChart.value = { labels: [...ticket.labels], datasets: [...ticket.datasets] };
+    reposicoesMensaisChart.value = { labels: [...reposicoes.labels], datasets: [...reposicoes.datasets] };
+    menosSaidasChart.value = { labels: [...menosSaidas.labels], datasets: [...menosSaidas.datasets] };
+    maisSaidasChart.value = { labels: [...maisSaidas.labels], datasets: [...maisSaidas.datasets] };
+  } catch (error) {
+    console.log(error)
+    toast.warning('Erro ao buscar os dados do dashboard, recarregue a página!')
+  }
 }
 
-const chartMaisVendidos = {
-  labels: ["Notebook", "Smartphone", "Mouse", "Teclado", "Monitor"],
-  datasets: [{ label: "Qtd Vendida", data: [120, 200, 150, 90, 80], backgroundColor: "#fbbf24", borderRadius: 6 }]
+async function atualizarIndicadores() {
+  await getDataDashboard()
+  toast.info('Indicadores atualizados!')
 }
 
-const chartCategorias = {
-  labels: ["Informática", "Eletrônicos", "Acessórios", "Móveis"],
-  datasets: [{ label: "Lucro", data: [25000, 18000, 8000, 5000], backgroundColor: ["#6366f1", "#f87171", "#34d399", "#facc15"], borderRadius: 6 }]
-}
-
-const filtroPeriodo = ref([new Date(), new Date()])
+onMounted(() => {
+  getDataDashboard()
+})
 </script>
 
 <template>
@@ -68,26 +83,30 @@ const filtroPeriodo = ref([new Date(), new Date()])
         <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
       </div>
       <div class="flex items-center gap-2 w-content">
-        <button type="button"
-          class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
-          <i class="fa-solid fa-filter-circle-xmark"></i>
-        </button>
-        <Calendarpicker class="w-content" :range="true" v-model="filtroPeriodo" />
+        <Calendarpicker class="w-content" :range="true" v-model="filtroPeriodo"
+          @update:model-value="atualizarIndicadores" />
       </div>
     </div>
-    <!-- Indicadores -->
-    <section>
-      <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl hover:scale-[1.02] transition">
-          <CardHeader class="flex flex-row items-center gap-2">
-            <component :is="kpi.icone" class="w-5 h-5 text-blue-500" />
-            <CardTitle class="text-md text-gray-700 dark:text-gray-300">{{ kpi.titulo }}</CardTitle>
+
+    <section v-if="!loading">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition ">
+          <CardHeader>
+            <CardTitle class="flex flex-row items-center gap-1 text-md text-gray-700 dark:text-gray-300"><i
+                class="p-1 bg-background/20 rounded-md" :class="kpi.icone"></i> {{ kpi.titulo }}
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p class="text-xl font-bold text-gray-700 dark:text-gray-300">{{ kpi.valor }}</p>
-            <p class="text-xs text-muted-foreground">{{ kpi.detalhe }}</p>
+          <CardContent class="-mt-4">
+            <p class="text-lg text-gray-700 dark:text-gray-300">{{ kpi.valor }}</p>
           </CardContent>
         </Card>
+      </div>
+    </section>
+    <section v-if="loading" class="flex">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="flex flex-col space-y-3">
+          <Skeleton class="h-[130px] w-[250px] rounded-xl" />
+        </div>
       </div>
     </section>
 
@@ -95,34 +114,34 @@ const filtroPeriodo = ref([new Date(), new Date()])
       <!-- Gráfico de Barras -->
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
-          Reposições
+        <h2 class="text-lg font-semibold mb-4">
+          Tícket Médio Mensal
         </h2>
-        <BarChart class="max-h-64" :data="chartReposicoes" :options="optionsChartBarStack" />
+        <BarChart class="max-h-64" :data="ticketMedioChart" :options="optionsChartBarDefault" />
       </div>
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-line text-emerald-600"></i>
-          Vendas
+        <h2 class="text-lg font-semibold mb-4">
+          Reposições Mensais
         </h2>
-        <LineChart class="max-h-64" :data="chartVendas" :options="optionsChartLine" />
+        <BarChart class="max-h-64" :data="reposicoesMensaisChart" :options="optionsChartBarStack" />
       </div>
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-pie text-emerald-600"></i>
-          Categorias
+        <h2 class="text-lg font-semibold mb-4">
+          Menos Saídas
         </h2>
-        <PieChart class="max-h-64" :data="chartCategorias" :options="optionsChartPie" />
+        <BarChart class="max-h-64" :data="menosSaidasChart" :options="optionsChartBarDefault" />
       </div>
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
-          Mais vendidos
+        <h2 class="text-lg font-semibold mb-4">
+          Mais Reposições
         </h2>
-        <BarChart class="max-h-64" :data="chartMaisVendidos" :options="optionsChartBarStack" />
+        <BarChart class="max-h-64" :data="maisSaidasChart" :options="optionsChartBarDefault" />
       </div>
     </div>
   </div>

@@ -68,10 +68,6 @@ onMounted(() => {
                 <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
             </div>
             <div class="flex items-center space-x-2 w-content">
-                <button type="button" id="limpar_filtro_dashboard_financeiro_periodo"
-                    class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
-                    <i class="fa-solid fa-filter-circle-xmark"></i>
-                </button>
                 <Calendarpicker :range="true" v-model="filtroPeriodo" @update:model-value="atualizarIndicadores" />
             </div>
         </div>

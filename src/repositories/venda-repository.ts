@@ -43,6 +43,50 @@ export class VendaRepository {
     const { data } = await http.get(`/vendas/resumo/mensal`)
     return data
   }
+  static async getFaturamentoMensal(ano?: number) {
+    const { data } = await http.get(`/vendas/graficos/faturamento-mensal`, {
+      params: {
+        ano: ano,
+      },
+    })
+    return data
+  }
+  static async getFaturamentoDiario(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/vendas/graficos/faturamento-diario`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
+  static async getMetodoPagamento(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/vendas/graficos/metodo-pagamento`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
+  static async getStatusVenda(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/vendas/graficos/status-venda`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
+  static async getTopProdutos(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/vendas/graficos/top-produtos`, {
+      params: {
+        inicio: inicio,
+        fim: fim,
+      },
+    })
+    return data
+  }
 
   static async getCupomPDF(id: number) {
     const data = await http.get(`/vendas/cupom-pdf/${id}`, {
