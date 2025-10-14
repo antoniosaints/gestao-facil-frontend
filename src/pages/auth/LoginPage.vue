@@ -285,7 +285,7 @@ async function loginUsuario() {
                                     <p class="text-sm text-gray-600 dark:text-gray-400">
                                         Não tem uma conta?
                                         <RouterLink to="/site/cadastro"
-                                            class="text-primary-500 hover:text-primary-600 font-semibold transition-colors duration-200">
+                                            class="text-blue-500 hover:text-blue-600 font-semibold transition-colors duration-200">
                                             Cadastre-se gratuitamente
                                         </RouterLink>
                                     </p>

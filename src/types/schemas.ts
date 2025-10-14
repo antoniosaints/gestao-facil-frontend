@@ -142,6 +142,7 @@ export interface Usuarios {
   permissao: PermissaoUsuario
   pushReceiver?: boolean
   emailReceiver?: boolean
+  contaId?: number
   status: Status
 }
 
