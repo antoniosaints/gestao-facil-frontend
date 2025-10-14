@@ -23,13 +23,13 @@
                         <span class="text-gray-700 dark:text-gray-300">{{ item.nome }}</span>
                     </div>
                     <svg class="dropdown-arrow w-4 h-4 transition-transform duration-200"
-                        :class="{ 'rotate-90': openDropdown === item.nome }" fill="none" stroke="currentColor"
+                        :class="{ 'rotate-90': openDropdowns.includes(item.nome) }" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
 
-                <div v-show="openDropdown === item.nome"
+                <div v-show="openDropdowns.includes(item.nome)"
                     class="dropdown-content flex flex-col p-1 gap-1 transition-all">
                     <router-link v-for="(child, i) in item.children" :key="i" :to="child.link || 'javascript:void(0)'"
                         v-show="child.show !== false" :class="[
@@ -87,8 +87,13 @@ const colorClasses = {
     violet: "text-violet-500",
 };
 
-const openDropdown = ref<string | null>(null)
+const openDropdowns = ref<string[]>([])
 const toggleDropdown = (id: string) => {
-    openDropdown.value = openDropdown.value === id ? null : id
+    const index = openDropdowns.value.indexOf(id)
+    if (index !== -1) {
+        openDropdowns.value.splice(index, 1) // fecha se já estiver aberto
+    } else {
+        openDropdowns.value.push(id) // abre se estiver fechado
+    }
 }
 </script>
