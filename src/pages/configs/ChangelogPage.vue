@@ -72,7 +72,8 @@ const changelog: ChangelogItem[] = [
             "Gere Links, Pix e Boletos sem precisar acessar seu banco",
             "Conecte seu banco Mercado Pago",
             "Melhorado a interface de configurações",
-            "Redirecionamentos de links melhorados"
+            "Redirecionamentos de links melhorados",
+            "Adicionado atualização de tela em tempo real",
         ]
     },
     {
