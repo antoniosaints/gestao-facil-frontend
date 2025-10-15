@@ -2,7 +2,16 @@ import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { Usuarios } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Ban, CircleCheck, CircleX, SquareArrowRight } from 'lucide-vue-next'
+import {
+  ArrowUpDown,
+  Ban,
+  BellOff,
+  BellRing,
+  CircleCheck,
+  MailCheck,
+  MailX,
+  SquareArrowRight,
+} from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from './Actions.vue'
 
@@ -91,7 +100,7 @@ export const columnsUsuarios: ColumnDef<Usuarios>[] = [
     cell: ({ row }) => render('div', { class: 'text-left' }, row.original.email || '-'),
   },
   {
-    accessorKey: 'superAdmin',
+    accessorKey: 'pushReceiver',
     header: ({ column }) =>
       render(
         Button,
@@ -99,13 +108,31 @@ export const columnsUsuarios: ColumnDef<Usuarios>[] = [
           variant: 'ghost',
           onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
         },
-        () => ['Super ADM', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+        () => ['Push', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
       render(BadgeCell, {
-        label: row.original.superAdmin ? 'Sim' : 'Nao',
-        color: row.original.superAdmin ? 'green' : 'red',
-        icon: row.original.superAdmin ? CircleCheck : CircleX,
+        label: row.original.pushReceiver ? 'Sim' : 'Nao',
+        color: row.original.pushReceiver ? 'green' : 'red',
+        icon: row.original.pushReceiver ? BellRing : BellOff,
+      }),
+  },
+  {
+    accessorKey: 'emailReceiver',
+    header: ({ column }) =>
+      render(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['E-mail', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
+    cell: ({ row }) =>
+      render(BadgeCell, {
+        label: row.original.emailReceiver ? 'Sim' : 'Nao',
+        color: row.original.emailReceiver ? 'green' : 'red',
+        icon: row.original.emailReceiver ? MailCheck : MailX,
       }),
   },
   {

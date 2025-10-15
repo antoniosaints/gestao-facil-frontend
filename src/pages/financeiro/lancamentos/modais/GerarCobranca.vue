@@ -164,7 +164,12 @@ function acessarLink() {
                                 class="text-blue-500 px-2 cursor-pointer">+ Novo</a>
                         </label>
                         <Select2Ajax id="clienteIdLancamento" v-model="clienteId" url="/clientes/select2" allowClear />
-                        <p class="text-xs text-gray-500 ml-2">Na cobrança em boleto, o cliente deve ser informado</p>
+                    </div>
+                    <div class="md:col-span-12 -my-2">
+                        <hr class="mb-2">
+                        <p class="text-xs text-muted-foreground text-center">Consulte as taxas de cobrança em cada
+                            gateway, elas
+                            variam e são diferentes para cada método de pagamento.</p>
                     </div>
                 </div>
                 <div class="md:col-span-12" v-else>

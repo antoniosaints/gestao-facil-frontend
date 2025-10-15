@@ -1,3 +1,4 @@
+import { hasPermission } from '@/hooks/authorize'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import type { RouteLocationNormalizedGeneric } from 'vue-router'
@@ -19,6 +20,8 @@ type typed = RouteLocationNormalizedGeneric
 export async function handleRouteGuard(to: typed, from: typed) {
   const storeUi = useUiStore()
   const toast = useToast()
+
+  await storeUi.getDataUsuario()
 
   const home = { name: 'home' }
   const login = { name: 'login' }
@@ -51,7 +54,7 @@ export async function handleRouteGuard(to: typed, from: typed) {
 
   // Verificação de permissão
   if (to.meta?.permissao) {
-    if (Number(to.meta?.permissao) > 6) {
+    if (!hasPermission(storeUi.usuarioLogged, Number(to.meta?.permissao))) {
       toast.info('Você não tem permissão para acessar essa rota!')
       return from.name ? { name: from.name as string } : home
     }

@@ -69,7 +69,6 @@ window.addEventListener('resize', () => {
 async function initialize() {
     loading.value = true
     try {
-        await store.getDataUsuario()
         if (store.usuarioLogged.contaId) entrarNaConta(store.usuarioLogged.contaId) // socket IO para conectar no websocket da conta
     } finally {
         loading.value = false

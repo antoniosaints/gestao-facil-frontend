@@ -49,6 +49,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/usuarios/Home.vue'),
         meta: {
           layout: 'main',
+          permissao: 4,
         },
       },
     ],
@@ -64,6 +65,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/configs/ChangelogPage.vue'),
         meta: {
           layout: 'main',
+          permissao: 1,
         },
       },
     ],
@@ -78,6 +80,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/vendas/VendasHome.vue'),
         meta: {
           layout: 'main',
+          permissao: 2,
         },
       },
       {
@@ -86,6 +89,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/vendas/dashboard/DashboardVendas.vue'),
         meta: {
           layout: 'main',
+          permissao: 3,
         },
       },
       {
@@ -94,6 +98,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/vendas/formulario/PDV.vue'),
         meta: {
           layout: 'main',
+          permissao: 2,
         },
       },
     ],
@@ -109,6 +114,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/financeiro/lancamentos/Home.vue'),
         meta: {
           layout: 'main',
+          permissao: 3,
         },
       },
       {
@@ -117,6 +123,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/financeiro/lancamentos/Detalhes.vue'),
         meta: {
           layout: 'main',
+          permissao: 3,
         },
       },
       {
@@ -125,6 +132,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/financeiro/lancamentos/Dashboard.vue'),
         meta: {
           layout: 'main',
+          permissao: 3,
         },
       },
     ],
@@ -139,6 +147,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/produtos/Home.vue'),
         meta: {
           layout: 'main',
+          permissao: 2,
         },
       },
       {
@@ -147,6 +156,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/produtos/others/DetalhesProduto.vue'),
         meta: {
           layout: 'main',
+          permissao: 2,
         },
       },
       {
@@ -155,6 +165,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/produtos/dashboard/DashboardProdutos.vue'),
         meta: {
           layout: 'main',
+          permissao: 3,
         },
       },
     ],
@@ -170,6 +181,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/assinatura/AssinaturaPage.vue'),
         meta: {
           layout: 'main',
+          permissao: 3,
         },
       },
       {
@@ -178,6 +190,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/assinatura/ResumoAssinatura.vue'),
         meta: {
           layout: 'main',
+          permissao: 3,
         },
       },
     ],
@@ -193,6 +206,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/servicos/Dashboard.vue'),
         meta: {
           layout: 'main',
+          permissao: 2,
         },
       },
     ],
@@ -208,6 +222,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/perfil/PerfilUsuario.vue'),
         meta: {
           layout: 'main',
+          permissao: 4,
         },
       },
     ],
@@ -222,7 +237,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/clientes/Home.vue'),
         meta: {
           layout: 'main',
-          permissao: 3,
+          permissao: 2,
         },
       },
     ],
@@ -237,7 +252,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/configs/ConfiguracaoPage.vue'),
         meta: {
           layout: 'main',
-          permissao: 6,
+          permissao: 5,
         },
       },
     ],

@@ -8,7 +8,7 @@
           {{ nameSistemaGestaoFacil }}
         </h1>
         <p class="text-xs overflow-hidden text-ellipsis whitespace-nowrap truncate text-gray-700 dark:text-gray-300">
-          {{ infoSistemaGestaoFacil }}
+          {{ store.usuarioLogged.email || "Login necessário" }}
         </p>
       </div>
     </div>
@@ -17,17 +17,17 @@
 
 <script setup lang="ts">
 import { ContaRepository } from '@/repositories/conta-repository'
+import { useUiStore } from '@/stores/ui/uiStore'
 import { onMounted, ref } from 'vue'
 const logoSistemaGestaoFacil = ref('imgs/logo.png')
 const nameSistemaGestaoFacil = ref('Gestão Fácil')
-const infoSistemaGestaoFacil = ref('Gestão inteligente')
+const store = useUiStore()
 async function atualizarLogoSistema() {
   try {
     const data = await ContaRepository.info()
-    const url_backend = import.meta.env.VITE_API_URL
-    logoSistemaGestaoFacil.value = url_backend.replace('/api', '/') + data.profile + '?_t=' + Date.now()
+    const url_backend = import.meta.env.VITE_BACKEND_URL
+    logoSistemaGestaoFacil.value = url_backend + '/' + data.profile + '?_t=' + Date.now()
     nameSistemaGestaoFacil.value = data.nome
-    infoSistemaGestaoFacil.value = data?.Usuarios[0]?.email
   } catch (error) {
     console.log(error)
   }

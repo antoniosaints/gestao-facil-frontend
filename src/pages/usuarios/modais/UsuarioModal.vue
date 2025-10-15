@@ -88,67 +88,41 @@ async function submit() {
                         </SelectContent>
                     </Select>
                 </div>
-                <div class="w-full gap-2 flex flex-col">
+                <div class="w-full gap-2 flex flex-col col-span-2">
                     <label for="entrada" class="block text-sm font-medium mb-0 md:col-span-12">
                         Notificações
                     </label>
                     <div class="grid grid-cols-12 md:space-x-2 gap-2 items-center md:col-span-12">
                         <div class="col-span-12 md:col-span-6">
-                            <div class="border bg-card border-border px-3 py-[8px] rounded-lg">
+                            <label for="emailreceiver"
+                                class="border bg-card border-border px-3 py-[8px] rounded-lg flex items-center cursor-pointer">
                                 <div class="flex items-center">
                                     <label class="relative inline-flex items-center cursor-pointer">
-                                        <Switch v-model:model-value="store.form.emailReceiver" />
-                                        <span
-                                            class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">E-mails</span>
+                                        <Switch id="emailreceiver" v-model:model-value="store.form.emailReceiver" />
+                                        <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">E-mails
+                                            de aviso</span>
                                     </label>
                                 </div>
-                            </div>
+                            </label>
                         </div>
                         <div class="col-span-12 md:col-span-6">
-                            <div class="border bg-card border-border px-3 py-[8px] rounded-lg">
+                            <label for="pushreceiver"
+                                class="border bg-card border-border px-3 py-[8px] rounded-lg flex items-center cursor-pointer">
                                 <div class="flex items-center">
                                     <label class="relative inline-flex items-center cursor-pointer">
-                                        <Switch v-model:model-value="store.form.pushReceiver" />
+                                        <Switch id="pushreceiver" v-model:model-value="store.form.pushReceiver" />
                                         <span
-                                            class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Push</span>
+                                            class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Notificações
+                                            Push</span>
                                     </label>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="w-full gap-2 flex flex-col">
-                    <label for="entrada" class="block text-sm font-medium mb-0 md:col-span-12">
-                        Autorização
-                    </label>
-                    <div class="grid grid-cols-12 md:space-x-2 gap-2 items-center md:col-span-12">
-                        <div class="col-span-12 md:col-span-6">
-                            <div class="border bg-card border-border px-3 py-[8px] rounded-lg">
-                                <div class="flex items-center">
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <Switch v-model:model-value="store.form.superAdmin" />
-                                        <span
-                                            class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">SAdmin</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-span-12 md:col-span-6">
-                            <div class="border bg-card border-border px-3 py-[8px] rounded-lg">
-                                <div class="flex items-center">
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <Switch v-model:model-value="store.form.gerencialMode" />
-                                        <span
-                                            class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Gerencial</span>
-                                    </label>
-                                </div>
-                            </div>
+                            </label>
                         </div>
                     </div>
                 </div>
                 <div class="w-full gap-2 flex flex-col col-span-2">
                     <Label for="biografia">Biografia</Label>
-                    <Textarea id="biografia" v-model="store.form.biografia" placeholder="Biografia"></Textarea>
+                    <Textarea id="biografia" rows="4" v-model="store.form.biografia" placeholder="Biografia"></Textarea>
                 </div>
             </div>
             <div class="flex justify-end gap-2 mt-4">
