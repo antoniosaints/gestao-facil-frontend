@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import BarChart from '@/components/graficos/BarChart.vue';
-import PieChart from '@/components/graficos/PieChart.vue';
-import { optionsChartBarStack, optionsChartPie } from '@/composables/useChartOptions';
+import { optionsChartBarStack } from '@/composables/useChartOptions';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { endOfMonth, startOfMonth } from 'date-fns';
 import { Landmark } from 'lucide-vue-next';
@@ -222,7 +221,7 @@ onMounted(() => {
                     <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
                         Plano de contas
                     </h2>
-                    <PieChart class="max-h-64" :data="contasData" :options="optionsChartPie" />
+                    <BarChart class="max-h-64" :data="contasData" :options="optionsChartBarStack" />
                 </div>
 
                 <div

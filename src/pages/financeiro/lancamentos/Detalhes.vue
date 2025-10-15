@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, HandCoins, RotateCw, ToggleLeft, Trash2, Undo2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, FileClock, HandCoins, RotateCw, ToggleLeft, Trash, Trash2, Undo2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { useRoute } from "vue-router"
 import type { LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
@@ -189,7 +189,7 @@ onMounted(loadLancamento);
         <Card class="shadow-md rounded-md" v-if="lancamento?.parcelas.length">
             <CardHeader>
                 <CardTitle class="flex items-center gap-2 font-normal">
-                    <HandCoins class="w-5 h-5" /> Parcelas
+                    <HandCoins class="w-5 h-5" /> Fatura da lançamento
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -229,7 +229,7 @@ onMounted(loadLancamento);
                                 </TableCell>
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
-                                        <Button v-if="!p.pago" :disabled="true" variant="default"
+                                        <Button v-if="!p.pago" @click="store.openModalCobranca = true" variant="default"
                                             class="w-8 h-8 p-0 bg-success hover:bg-success/80 text-white">
                                             <CircleDollarSign class="w-4 h-4" />
                                         </Button>
@@ -242,6 +242,56 @@ onMounted(loadLancamento);
                                             @click="estornarParcela(p.id!)" variant="default"
                                             class="w-8 h-8 p-0 bg-warning hover:bg-warning/80 text-white">
                                             <Undo2 class="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+        <Card class="shadow-md rounded-md" v-if="false">
+            <CardHeader>
+                <CardTitle class="flex items-center gap-2 font-normal">
+                    <FileClock class="w-5 h-5" /> Cobranças geradas
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div class="relative overflow-x-auto shadow-md sm:rounded-lg border border-border">
+                    <Table>
+                        <TableHeader class="text-sm bg-body">
+                            <TableRow>
+                                <TableHead>Gateway</TableHead>
+                                <TableHead>Vencimento</TableHead>
+                                <TableHead>Valor</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Pagamento</TableHead>
+                                <TableHead class="text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody class="bg-body/30">
+                            <TableRow v-for="p in lancamento?.parcelas" :key="p.numero">
+                                <TableCell>
+                                    <span
+                                        class="font-normal px-2 py-1.5 text-nowrap bg-warning hover:bg-warning/80 text-sm text-white rounded-lg">
+                                        Mercado Pago
+                                    </span>
+                                </TableCell>
+                                <TableCell>{{ p.vencimento ? formatDate(p.vencimento, "dd/MM/yyyy") : "-" }}</TableCell>
+                                <TableCell>{{ formatCurrencyBR(p.valor) }}</TableCell>
+                                <TableCell>{{ p.pago ? "Pago" : "Pendente" }}</TableCell>
+                                <TableCell>PIX
+                                </TableCell>
+                                <TableCell class="flex justify-end">
+                                    <div class="flex items-center gap-2">
+                                        <Button v-if="!p.pago" :disabled="true" variant="default"
+                                            class="w-8 h-8 p-0 bg-success hover:bg-success/80 text-white">
+                                            <CircleDollarSign class="w-4 h-4" />
+                                        </Button>
+                                        <Button variant="destructive"
+                                            class="w-8 h-8 p-0 bg-red-500 hover:bg-red-500/80 text-white">
+                                            <Trash class="w-4 h-4" />
                                         </Button>
                                     </div>
                                 </TableCell>
