@@ -11,7 +11,7 @@
     <div class="flex items-center justify-center gap-2">
       <ColorToggle class="mr-2" v-if="!uiStore.isMobile" />
       <div class="flex justify-between flex-col text-sm text-left">
-        <div>{{ useStore.user }}</div>
+        <div>Olá, {{ uiStore.usuarioLogged.nome }}</div>
         <p class="text-xs">{{ horarioSistemaAtual }}</p>
       </div>
     </div>
@@ -19,13 +19,11 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/login/useAuthStore'
 import { onMounted, onUnmounted, ref } from 'vue'
 import Breadcrumb from './breadcrumb.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import { PanelLeftOpen, PanelRightOpen } from 'lucide-vue-next';
 import ColorToggle from './colorToggle.vue';
-const useStore = useAuthStore();
 const uiStore = useUiStore()
 const horarioSistemaAtual = ref('')
 

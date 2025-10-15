@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { Usuarios } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Ban, CircleCheck } from 'lucide-vue-next'
+import { ArrowUpDown, Ban, CircleCheck, CircleX, SquareArrowRight } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from './Actions.vue'
 
@@ -52,7 +52,30 @@ export const columnsUsuarios: ColumnDef<Usuarios>[] = [
         },
         () => ['Permissão', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
-    cell: ({ row }) => render('div', { class: 'text-left' }, row.original.permissao || '-'),
+    cell: ({ row }) => {
+      let color: any = 'gray'
+      switch (row.original.permissao) {
+        case 'root':
+        case 'admin':
+          color = 'purple'
+          break
+        case 'gerente':
+          color = 'green'
+          break
+        case 'vendedor':
+        case 'tecnico':
+          color = 'blue'
+          break
+        case 'usuario':
+          color = 'gray'
+          break
+      }
+      return render(BadgeCell, {
+        label: row.getValue('permissao') as string,
+        color: color,
+        icon: SquareArrowRight,
+      })
+    },
   },
   {
     accessorKey: 'email',
@@ -66,6 +89,24 @@ export const columnsUsuarios: ColumnDef<Usuarios>[] = [
         () => ['E-mail', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) => render('div', { class: 'text-left' }, row.original.email || '-'),
+  },
+  {
+    accessorKey: 'superAdmin',
+    header: ({ column }) =>
+      render(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['Super ADM', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
+    cell: ({ row }) =>
+      render(BadgeCell, {
+        label: row.original.superAdmin ? 'Sim' : 'Nao',
+        color: row.original.superAdmin ? 'green' : 'red',
+        icon: row.original.superAdmin ? CircleCheck : CircleX,
+      }),
   },
   {
     accessorKey: 'acoes',

@@ -144,6 +144,10 @@ export interface Usuarios {
   emailReceiver?: boolean
   contaId?: number
   status: Status
+  telefone?: string
+  profile?: string
+  biografia?: string
+  endereco?: string
 }
 
 export interface ClientesFornecedores {

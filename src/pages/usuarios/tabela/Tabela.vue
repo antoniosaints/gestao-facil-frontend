@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import DataTable from '@/components/tabela/DataTable.vue';
-import { useClientesStore } from '@/stores/clientes/useClientes';
 import { columnsUsuarios } from './columnDef';
-const store = useClientesStore()
+import { useUsuarioStore } from '@/stores/usuarios/useUsuarios';
+const store = useUsuarioStore()
 
 </script>
 

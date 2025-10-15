@@ -3,11 +3,22 @@
         <Card class="bg-background">
             <div class="flex items-center flex-col justify-center md:flex-row gap-4 py-4 text-center md:text-left px-6">
                 <Avatar class="w-16 h-16">
-                    <img :src="user.avatar || defaultAvatar" alt="avatar" />
+                    <img :src="storeUi.usuarioLogged.profile || defaultAvatar" alt="avatar" />
                 </Avatar>
                 <div class="flex-1">
-                    <h2 class="text-2xl font-semibold">{{ user.name }}</h2>
-                    <p class="text-sm text-muted-foreground">{{ user.email }} — {{ user.company }}</p>
+                    <h2 class="text-2xl font-semibold flex items-center gap-3">{{ storeUi.usuarioLogged.nome }}
+                        <BadgeCell color="emerald" :label="(storeUi.usuarioLogged.permissao as string)"
+                            class="h-6 text-sm p-3 " />
+                    </h2>
+                    <p class="text-sm text-muted-foreground">
+                        {{ storeUi.usuarioLogged.email }} — {{ storeUi.usuarioLogged.telefone || 'Sem telefone' }}
+                    </p>
+                    <p class="text-sm text-muted-foreground">Super admin:
+                        {{ storeUi.usuarioLogged.superAdmin ? '✅' : '❌' }}
+                    </p>
+                    <p class="text-sm text-muted-foreground">Modo gerencial:
+                        {{ storeUi.usuarioLogged.gerencialMode ? '✅' : '❌' }}
+                    </p>
                 </div>
                 <div class="space-x-2">
                     <Button variant="outline" size="sm" @click="openAvatarInput">
@@ -20,30 +31,31 @@
                 <form @submit.prevent="saveProfile" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <Label>Nome</Label>
-                        <Input v-model="user.name" required class="bg-card" />
+                        <Input v-model="usuarioProfile.nome" required class="bg-card" />
                     </div>
 
                     <div>
                         <Label>Email</Label>
                         <div class="relative">
-                            <Input v-model="user.email" type="email" required class="bg-card" />
+                            <Input v-model="usuarioProfile.email" type="email" disabled required class="bg-card" />
                             <MailIcon class="absolute right-3 top-3 w-4 h-4 text-muted-foreground" />
                         </div>
                     </div>
 
                     <div>
-                        <Label>Empresa</Label>
-                        <Input v-model="user.company" class="bg-card" />
+                        <Label>Endereço</Label>
+                        <Input v-model="usuarioProfile.endereco" placeholder="Endereço completo" class="bg-card" />
                     </div>
 
                     <div>
                         <Label>Telefone</Label>
-                        <Input v-model="user.fone" placeholder="Ex: (99) 99999-9999" class="bg-card" />
+                        <Input v-model="usuarioProfile.telefone" placeholder="Ex: (99) 99999-9999" class="bg-card" />
                     </div>
 
                     <div class="md:col-span-2">
                         <Label>Biografia</Label>
-                        <Textarea v-model="user.bio" rows="4" class="bg-card" placeholder="Adicione uma biografia" />
+                        <Textarea v-model="usuarioProfile.biografia" rows="4" class="bg-card"
+                            placeholder="Adicione uma biografia" />
                     </div>
 
                     <div class="md:col-span-2 flex items-center justify-end space-x-2">
@@ -86,17 +98,18 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import type { Usuarios } from '@/types/schemas'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { UsuarioRepository } from '@/repositories/usuario-repository'
+import { useToast } from 'vue-toastification'
+import BadgeCell from '@/components/tabela/BadgeCell.vue'
 
+const storeUi = useUiStore()
+const toast = useToast()
 const defaultAvatar = '/imgs/logo.png'
 
-const user = reactive({
-    id: 1,
-    name: 'Antônio Costa',
-    email: 'antonio@example.com',
-    company: 'Minha Empresa',
-    fone: '(99) 99999-9999',
-    bio: '',
-    avatar: ''
+const usuarioProfile = ref<Partial<Usuarios>>({
+    ...storeUi.usuarioLogged
 })
 
 const avatarInput = ref<HTMLInputElement | null>(null)
@@ -114,10 +127,11 @@ async function onAvatarChange(e: Event) {
     // simples preview antes do upload
     const reader = new FileReader()
     reader.onload = () => {
-        user.avatar = String(reader.result)
+        usuarioProfile.value.profile = String(reader.result)
     }
     reader.readAsDataURL(file)
-    // TODO: enviar para o backend
+
+    // TODO: upload do avatar
 }
 
 function openChangePassword() {
@@ -137,13 +151,19 @@ async function changePassword() {
 }
 
 async function saveProfile() {
-    // validações importantes
-    if (!user.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(user.email)) {
-        alert('Email inválido')
-        return
+    try {
+        await UsuarioRepository.updateProfile({
+            biografia: usuarioProfile.value.biografia,
+            endereco: usuarioProfile.value.endereco,
+            telefone: usuarioProfile.value.telefone,
+            nome: usuarioProfile.value.nome
+        })
+        await storeUi.getDataUsuario();
+        toast.success('Perfil atualizado com sucesso')
+    } catch (error) {
+        console.error(error)
+        toast.error('Erro ao atualizar perfil, tente novamente')
     }
-    // TODO: chamada ao backend (fetch/axios)
-    alert('Perfil salvo')
 }
 </script>
 

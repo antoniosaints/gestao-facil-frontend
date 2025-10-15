@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import Tabela from './tabela/Tabela.vue';
 import Mobile from './tabela/Mobile.vue';
-import { useClientesStore } from '@/stores/clientes/useClientes';
-import ClientesModal from './modais/ClientesModal.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import { UserCog } from 'lucide-vue-next';
-const store = useClientesStore();
+import UsuarioModal from './modais/UsuarioModal.vue';
+import { useUsuarioStore } from '@/stores/usuarios/useUsuarios';
+const store = useUsuarioStore();
 const uiStore = useUiStore()
 </script>
 
@@ -35,6 +35,6 @@ const uiStore = useUiStore()
         <div v-else class="overflow-x-auto rounded-lg">
             <Mobile @openModalProduto="store.openSave" />
         </div>
-        <ClientesModal />
+        <UsuarioModal />
     </div>
 </template>

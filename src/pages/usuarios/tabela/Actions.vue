@@ -5,11 +5,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import type { Usuarios } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import { ref } from 'vue';
-import { useClientesStore } from '@/stores/clientes/useClientes';
-import { ClienteRepository } from '@/repositories/cliente-repository';
 import { useConfirm } from '@/composables/useConfirm';
+import { useUsuarioStore } from '@/stores/usuarios/useUsuarios';
+import { UsuarioRepository } from '@/repositories/usuario-repository';
 
-const store = useClientesStore()
+const store = useUsuarioStore()
 const openDelete = ref(false)
 
 const { data } = defineProps<{
@@ -21,19 +21,19 @@ const toast = useToast()
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     const confirm = await useConfirm().confirm({
-        title: 'Excluir cliente',
-        message: 'Tem certeza que deseja excluir este cliente?',
+        title: 'Excluir usuário',
+        message: 'Tem certeza que deseja excluir este usuário?',
         confirmText: 'Sim, excluir!',
     })
     if (!confirm) return
     try {
-        await ClienteRepository.remove(id)
+        await UsuarioRepository.delete(id)
         store.updateTable()
-        toast.success('Cliente deletado com sucesso')
+        toast.success('Usuário deletado com sucesso')
         openDelete.value = false
     } catch (error) {
         console.log(error)
-        toast.error('Erro ao deletar o cliente')
+        toast.error('Erro ao deletar o usuário')
         openDelete.value = false
     }
 }
