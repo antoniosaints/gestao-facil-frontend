@@ -14,7 +14,7 @@
                         class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
                         <i class="fa-solid fa-filter-circle-xmark"></i>
                     </button>
-                    <Calendarpicker :range="true" v-model="filtroPeriodo" />
+                    <Calendarpicker :range="true" v-model="filtroPeriodo" @update:model-value="atualizarIndicadores" />
                 </div>
             </div>
 
@@ -132,8 +132,9 @@
                 <div
                     class="border-border bg-card shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
                     <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-lg font-semibold px-0 py-1">
-                            <i class="fa-solid fa-chart-simple text-green-600"></i> Vendas Mensais
+                        <h2 class="text-lg font-semibold px-0 py-1 flex items-center">
+                            <Tag class="mr-2 w-5 h-5" />
+                            Vendas Mensais
                         </h2>
                         <button type="button" @click="goTo('/vendas')"
                             class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
@@ -150,8 +151,9 @@
                 <div
                     class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
                     <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-lg font-semibold px-0 py-1">
-                            <i class="fa-solid fa-chart-simple text-green-600"></i> Saldo mensal
+                        <h2 class="text-lg font-semibold px-0 py-1 flex items-center">
+                            <HandCoins class="mr-2 w-5 h-5" />
+                            Saldo mensal
                         </h2>
                         <button @click="goTo('/lancamentos/resumo')" type="button"
                             class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
@@ -168,8 +170,9 @@
                 <div
                     class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
                     <div class="flex justify-between items-center mb-2">
-                        <h2 class="text-lg font-semibold px-0 py-1">
-                            <i class="fa-solid fa-boxes-packing text-blue-600"></i> Últimos Produtos
+                        <h2 class="text-lg font-semibold px-0 py-1 flex items-center">
+                            <TrendingUpDown class="mr-2 w-5 h-5" />
+                            Tícket médio mensal
                         </h2>
                         <button @click="goTo('/produtos')" type="button"
                             class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-color">
@@ -177,21 +180,16 @@
                             Ver mais
                         </button>
                     </div>
-                    <div class="overflow-x-auto max-h-96 relative sm:rounded-xl">
-                        <div id="produtos_tabela_dashboard_sem_produtos"
-                            class="p-2 text-sm h-80 text-gray-500 dark:text-gray-400 flex justify-center items-center flex-col">
-                            <i class="fa-solid fa-boxes-stacked text-5xl"></i>
-                            Nenhum produto cadastrado
-                        </div>
-                        <div id="lista_produtos_dashboard_cards" class="py-2 px-1 flex flex-col gap-2"></div>
+                    <div>
+                        <BarChart class="max-h-64" :data="dataTicket" :options="optionsChartBarDefault" />
                     </div>
                 </div>
                 <div
                     class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
                     <div class="flex justify-between items-center mb-2">
-                        <h2 class="text-lg font-semibold px-0 py-1">
-                            <i class="fa-solid fa-box-open text-red-600"></i>
-                            Estoques baixos
+                        <h2 class="text-lg font-semibold px-0 py-1 flex items-center">
+                            <Star class="mr-2 w-5 h-5" />
+                            Top Produtos
                         </h2>
                         <button @click="goTo('/produtos')" type="button"
                             class="border-2 border-gray-300 text-gray-950 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-color">
@@ -199,13 +197,8 @@
                             Ver mais
                         </button>
                     </div>
-                    <div class="overflow-x-auto max-h-96 relative sm:rounded-xl">
-                        <div id="produtos_em_baixa_dashboard_sem_produtos"
-                            class="p-2 text-sm h-80 text-gray-500 dark:text-gray-400 flex justify-center items-center flex-col">
-                            <i class="fa-solid fa-box-open text-5xl"></i>
-                            Nenhum produto em baixa
-                        </div>
-                        <div id="lista_produtos_em_baixa_cards" class="py-2 px-1 flex flex-col gap-2"></div>
+                    <div>
+                        <BarChart class="max-h-64" :data="dataTopProdutos" :options="optionsChartBarDefault" />
                     </div>
                 </div>
             </div>
@@ -221,34 +214,21 @@ import { onMounted, ref } from 'vue';
 import { VendaRepository } from '@/repositories/venda-repository';
 import { goTo } from '@/hooks/links';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
-import { optionsChartBar, optionsChartLine } from '@/composables/useChartOptions';
+import { optionsChartBar, optionsChartBarDefault, optionsChartLine } from '@/composables/useChartOptions';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
-import { ChartPie } from 'lucide-vue-next';
+import { ChartPie, HandCoins, Star, Tag, TrendingUpDown } from 'lucide-vue-next';
+import { endOfMonth, startOfMonth } from 'date-fns';
+import { useToast } from 'vue-toastification';
+import { ProdutoRepository } from '@/repositories/produto-repository';
 
 const store = useDashboardStore();
-const filtroPeriodo = ref([new Date(), new Date()]);
+const toast = useToast();
+const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())]);
 
 const dataVendas: any = ref({ labels: [], datasets: [] });
 const dataSaldo: any = ref({ labels: [], datasets: [] });
-
-async function getResumoVendas() {
-    try {
-        const { data } = await VendaRepository.getResumoMensal();
-        dataVendas.value = { labels: [...data.labels], datasets: [...data.datasets] };
-    } catch (error) {
-        console.log(error);
-    }
-}
-
-async function getSaldoMensal() {
-    try {
-        const data = await LancamentosRepository.getSaldoMensal();
-        dataSaldo.value = { labels: [...data.labels], datasets: [...data.datasets] };
-    } catch (error) {
-        console.log(error);
-    }
-}
-
+const dataTicket: any = ref({ labels: [], datasets: [] });
+const dataTopProdutos: any = ref({ labels: [], datasets: [] });
 const data = ref({
     totalClientes: 0,
     totalProdutos: 0,
@@ -256,17 +236,38 @@ const data = ref({
     totalVendas: 'R$ 0,00',
 });
 
-const getDataDashboard = async () => {
-    const resultado = await store.getResumo();
-    data.value.totalClientes = resultado.data.clientes;
-    data.value.totalProdutos = resultado.data.produtos.length;
-    data.value.produtosEmBaixa = resultado.data.estoquesBaixos.length;
-    data.value.totalVendas = resultado.data.vendasCount;
+async function getDataDashboard() {
+    try {
+        const inicio = filtroPeriodo.value === null ? startOfMonth(new Date()).toISOString() : filtroPeriodo.value[0].toISOString();
+        const fim = filtroPeriodo.value === null ? endOfMonth(new Date()).toISOString() : filtroPeriodo.value[1].toISOString();
+        const [vendas, saldo, ticket, topProdutos, resultado] = await Promise.all([
+            VendaRepository.getResumoMensal(),
+            LancamentosRepository.getSaldoMensal(),
+            ProdutoRepository.getTicketMedioMensal(),
+            VendaRepository.getTopProdutos(inicio, fim),
+            store.getResumo()
+        ])
+
+        dataVendas.value = { labels: [...vendas.data.labels], datasets: [...vendas.data.datasets] };
+        dataSaldo.value = { labels: [...saldo.labels], datasets: [...saldo.datasets] };
+        dataTicket.value = { labels: [...ticket.labels], datasets: [...ticket.datasets] };
+        dataTopProdutos.value = { labels: [...topProdutos.labels], datasets: [...topProdutos.datasets] };
+        data.value.totalClientes = resultado.data.clientes;
+        data.value.totalProdutos = resultado.data.produtos.length;
+        data.value.produtosEmBaixa = resultado.data.estoquesBaixos.length;
+        data.value.totalVendas = resultado.data.vendasCount;
+    } catch (error) {
+        console.log(error);
+        toast.warning('Erro ao buscar os dados do dashboard, recarregue a página!');
+    }
+}
+
+async function atualizarIndicadores() {
+    await getDataDashboard()
+    toast.info('Indicadores atualizados!')
 }
 
 onMounted(() => {
     getDataDashboard();
-    getResumoVendas();
-    getSaldoMensal();
 });
 </script>
