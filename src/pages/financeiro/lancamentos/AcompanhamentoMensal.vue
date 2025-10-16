@@ -3,12 +3,13 @@ import { ref, onMounted } from "vue"
 import { addMonths, format, subMonths } from "date-fns"
 import { Card, CardContent } from "@/components/ui/card"
 import { LancamentosRepository } from "@/repositories/lancamento-repository"
-import { Input } from "@/components/ui/input"
 import { formatToCapitalize } from "@/utils/formatters"
 import { ptBR } from "date-fns/locale"
-import { ArrowBigLeft, ArrowBigRight, CalendarClock } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight, BadgeCheck, CalendarClock, Dot, Trash, Undo2 } from "lucide-vue-next"
 import { Button } from "@/components/ui/button"
+import { useToast } from "vue-toastification"
 
+const toast = useToast()
 const currentMonth = ref(new Date())
 const navigateMonth = (direction: "prev" | "next") => {
     currentMonth.value =
@@ -22,6 +23,7 @@ const navigateMonth = (direction: "prev" | "next") => {
 interface Lancamento {
     id: number
     descricao: string
+    parcelaId: number
     valor: number
     status: string
     categoria: string
@@ -50,6 +52,26 @@ async function carregarLancamentos() {
     }
 }
 
+async function efetivarParcela(id: number) {
+    try {
+        await LancamentosRepository.pagarParcela(id);
+        toast.success("Parcela efetivada com sucesso");
+        carregarLancamentos();
+    } catch (error: any) {
+        console.error(error);
+        toast.error(error.response.data.message || "Erro ao efetivar a parcela");
+    }
+}
+async function estornarParcela(id: number) {
+    try {
+        await LancamentosRepository.estornarParcela(id);
+        toast.success("Parcela estornada com sucesso");
+        carregarLancamentos();
+    } catch (error: any) {
+        console.error(error);
+        toast.error(error.response.data.message || "Erro ao estornar a parcela");
+    }
+}
 onMounted(carregarLancamentos)
 </script>
 
@@ -92,28 +114,48 @@ onMounted(carregarLancamentos)
                             <div v-if="item.tipo === 'RECEITA'"
                                 class="absolute left-0 top-0 w-2 h-full rounded-l-md bg-success/90"></div>
                             <div v-else class="absolute left-0 top-0 w-2 h-full rounded-l-md bg-danger/90"></div>
-                            <div>
-                                <div class="font-medium text-md">{{ item.descricao }}</div>
+                            <div class="flex flex-col justify-center">
+                                <div class="font-medium text-md">
+                                    <RouterLink :to="`/financeiro/detalhes?id=${item.id}`"
+                                        class="hover:underline hover:cursor-pointer hover:text-primary">
+                                        {{ item.descricao }}
+                                    </RouterLink>
+                                    <Dot class="inline" :size="16" absoluteStrokeWidth />
+                                    <span :class="[
+                                        'text-xs',
+                                        item.status === 'PENDENTE' ? 'text-red-600' : 'text-green-600'
+                                    ]">
+                                        {{ item.status === 'PENDENTE' ? 'Pendente' : 'Paga' }}
+                                    </span>
+                                </div>
                                 <div class="text-xs text-muted-foreground">
                                     {{ item.categoria }}
                                 </div>
                                 <div class="text-xs text-muted-foreground">
-                                    {{ item.tipo === 'RECEITA' ? 'Receita' : 'Despesa' }} · {{ item.status }}
+                                    {{ item.tipo === 'RECEITA' ? 'Receita' : 'Despesa' }}
                                 </div>
                             </div>
                             <div>
                                 <div :class="[
-                                    'text-right',
-                                    item.tipo === 'RECEITA' ? 'text-green-600' : 'text-red-600'
+                                    'flex items-center text-right justify-end',
+                                    item.tipo === 'RECEITA' ? 'text-green-500' : 'text-red-500'
                                 ]">
                                     R$ {{ item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}
                                 </div>
-                                <!-- <div class="flex gap-2 mt-2">
-                                    <Button variant="default" class="bg-danger hover:bg-danger"
-                                        size="sm">Excluir</Button>
-                                    <Button variant="default" class="bg-success hover:bg-success"
-                                        size="sm">Efetivar</Button>
-                                </div> -->
+                                <div class="flex gap-2 mt-2 justify-end">
+                                    <!-- <Button variant="outline" class="bg-transparent text-red-500" size="sm">
+                                        <Trash :size="16" absoluteStrokeWidth />
+                                    </Button> -->
+                                    <Button @click="estornarParcela(item.parcelaId)" v-if="item.status === 'PAGO'"
+                                        variant="outline" class="bg-transparent text-yellow-700 dark:text-yellow-500"
+                                        size="sm">
+                                        <Undo2 :size="16" absoluteStrokeWidth />
+                                    </Button>
+                                    <Button @click="efetivarParcela(item.parcelaId)" v-else variant="outline"
+                                        class="bg-transparent text-green-500" size="sm">
+                                        <BadgeCheck :size="16" absoluteStrokeWidth />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>

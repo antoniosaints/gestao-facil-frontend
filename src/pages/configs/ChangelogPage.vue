@@ -65,6 +65,18 @@ interface ChangelogItem {
 const changelog: ChangelogItem[] = [
     {
         title: "Melhorias e Novidades",
+        version: "v1.6.0",
+        date: "16/10/2025",
+        changes: [
+            "Adicionado acompanhamento mensal de pagamentos",
+            "Acesse rapidamente a parcela vigente",
+            "Efetive e Estorne pagamentos",
+            "Adicionado criação de Categorias e Contas",
+            "Melhorado a interface de acompanhamento",
+        ]
+    },
+    {
+        title: "Melhorias e Novidades",
         version: "v1.5.0",
         date: "10/10/2025",
         changes: [
