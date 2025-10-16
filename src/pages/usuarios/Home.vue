@@ -6,6 +6,7 @@ import { UserCog } from 'lucide-vue-next';
 import UsuarioModal from './modais/UsuarioModal.vue';
 import { useUsuarioStore } from '@/stores/usuarios/useUsuarios';
 import ChecklistModal from '../servicos/modais/ChecklistModal.vue';
+import OrdemServicoModal from '../servicos/modais/OrdemServicoModal.vue';
 const store = useUsuarioStore();
 const uiStore = useUiStore()
 </script>
@@ -37,6 +38,5 @@ const uiStore = useUiStore()
             <Mobile @openModalProduto="store.openSave" />
         </div>
         <UsuarioModal />
-        <ChecklistModal v-if="false" />
     </div>
 </template>
