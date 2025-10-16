@@ -57,7 +57,7 @@
                     {{ store.venda?.observacoes || '-' }}
                 </p>
             </div>
-            <div class="col-span-2 flex flex-col gap-2">
+            <div v-if="false" class="col-span-2 flex flex-col gap-2">
                 <hr class="col-span-2">
                 <label class="text-md">Cobranças</label>
                 <div
@@ -104,7 +104,8 @@
                 <hr class="col-span-2">
                 <label class="text-md">Itens da venda</label>
                 <div class="space-y-2">
-                    <div class="grid grid-cols-1 gap-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 px-4 rounded-lg shadow-sm">
+                    <div
+                        class="grid grid-cols-1 gap-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 px-4 rounded-lg shadow-sm">
                         <div class="grid grid-cols-4 gap-2">
                             <div class="flex flex-col col-span-2">
                                 <span class="text-sm font-medium text-gray-800 dark:text-gray-200">Produto</span>
@@ -116,7 +117,8 @@
                                 <span class="text-sm font-medium text-gray-800 dark:text-gray-200">Total</span>
                             </div>
                         </div>
-                        <div v-for="item in store.venda?.ItensVendas" class="grid grid-cols-4 gap-2 border-t pt-0.5 border-gray-300 dark:border-gray-600">
+                        <div v-for="item in store.venda?.ItensVendas"
+                            class="grid grid-cols-4 gap-2 border-t pt-0.5 border-gray-300 dark:border-gray-600">
                             <div class="flex flex-col col-span-2">
                                 <span class="text-gray-600 text-xs md:text-sm dark:text-gray-400">
                                     {{ item.produto.nome }}
@@ -136,7 +138,8 @@
                     </div>
                 </div>
                 <div class="space-y-2">
-                    <div class="grid grid-cols-4 gap-2 bg-gray-200 dark:bg-gray-900 border border-gray-300 dark:border-gray-800 p-2 px-4 rounded-lg shadow-sm">
+                    <div
+                        class="grid grid-cols-4 gap-2 bg-gray-200 dark:bg-gray-900 border border-gray-300 dark:border-gray-800 p-2 px-4 rounded-lg shadow-sm">
                         <div class="flex flex-col col-span-2">
                             <span class="text-sm font-medium text-gray-800 dark:text-gray-200">Subtotal</span>
                             <span class="text-gray-600 text-xs md:text-sm dark:text-gray-400">
