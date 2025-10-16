@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import ModalView from '@/components/formulario/ModalView.vue';
 import { useVendasStore } from '@/stores/vendas/useVenda';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ref } from 'vue';
@@ -12,6 +11,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import { Switch } from '@/components/ui/switch';
+import FormularioCategorias from '@/pages/financeiro/lancamentos/modais/FormularioCategorias.vue';
+import FormularioContas from '@/pages/financeiro/lancamentos/modais/FormularioContas.vue';
 
 const store = useVendasStore();
 const toast = useToast();
@@ -77,12 +78,17 @@ async function submit() {
                         v-model="(faturarVenda.dataPagamento as Date)" />
                 </div>
                 <div class="w-full gap-2 flex flex-col">
-                    <Label for="contaPagamento">Conta de pagamento</Label>
+                    <Label for="contaPagamento">Conta <FormularioContas class="text-blue-500 px-2 cursor-pointer">
+                            + Nova
+                        </FormularioContas>
+                    </Label>
                     <Select2Ajax id="contaPagamento" required v-model="faturarVenda.conta" class="w-full"
                         url="lancamentos/contas/select2" />
                 </div>
                 <div class="w-full gap-2 flex flex-col">
-                    <Label for="categoriaFinanceira">Categoria financeira</Label>
+                    <Label for="categoriaFinanceira">Categoria <FormularioCategorias
+                            class="text-blue-500 px-2 cursor-pointer">+ Nova
+                        </FormularioCategorias></Label>
                     <Select2Ajax id="categoriaFinanceira" required v-model="faturarVenda.categoria" class="w-full"
                         url="lancamentos/categorias/select2" />
                 </div>

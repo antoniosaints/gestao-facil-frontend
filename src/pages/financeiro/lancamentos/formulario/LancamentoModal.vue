@@ -15,6 +15,8 @@ import { LancamentosRepository } from "@/repositories/lancamento-repository";
 import { useToast } from "vue-toastification";
 import { formatToNumberValue } from "@/utils/formatters";
 import { useClientesStore } from "@/stores/clientes/useClientes";
+import FormularioContas from "../modais/FormularioContas.vue";
+import FormularioCategorias from "../modais/FormularioCategorias.vue";
 
 const description = ref('Preencha os campos abaixo')
 const store = useLancamentosStore()
@@ -159,7 +161,8 @@ async function submit() {
                         </div>
                     </div>
 
-                    <div v-if="params.metodo === 'PARCELADO'" class="grid grid-cols-1 md:grid-cols-3 gap-3 md:col-span-12">
+                    <div v-if="params.metodo === 'PARCELADO'"
+                        class="grid grid-cols-1 md:grid-cols-3 gap-3 md:col-span-12">
                         <!-- Parcelas -->
                         <div>
                             <label for="parcelas" class="block text-sm font-medium mb-1">
@@ -176,7 +179,7 @@ async function submit() {
                             <Input type="text" v-maska="moneyMaskOptions" v-model="store.form.valorEntrada"
                                 id="valorEntradaLancamento" name="valorEntrada" placeholder="0,00" />
                         </div>
-    
+
                         <!-- Data Entrada -->
                         <div>
                             <label for="dataEntradaLancamento" class="block text-sm font-medium mb-1">
@@ -230,8 +233,8 @@ async function submit() {
                     <div class="md:col-span-6">
                         <label for="categoriaIdLancamento" class="block text-sm font-medium mb-1">
                             Categoria *
-                            <a onclick="openModalCategoriaFinanceira()" class="text-blue-500 px-2 cursor-pointer">+
-                                Nova</a>
+                            <FormularioCategorias class="text-blue-500 px-2 cursor-pointer">+ Nova
+                            </FormularioCategorias>
                         </label>
                         <Select2Ajax id="categoriaIdLancamento" v-model="store.form.categoriaId" required
                             url="lancamentos/categorias/select2" />
@@ -240,8 +243,7 @@ async function submit() {
                     <div class="md:col-span-6">
                         <label for="contasFinanceiroId" class="block text-sm font-medium mb-1">
                             Conta Financeira *
-                            <a onclick="openModalContasFinanceiras()" class="text-blue-500 px-2 cursor-pointer">+
-                                Nova</a>
+                            <FormularioContas class="text-blue-500 px-2 cursor-pointer">+ Nova</FormularioContas>
                         </label>
                         <Select2Ajax id="contasFinanceiroId" v-model="store.form.contasFinanceiroId" required
                             url="lancamentos/contas/select2" />
