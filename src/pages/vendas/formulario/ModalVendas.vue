@@ -9,18 +9,21 @@ import { ProdutoRepository } from "@/repositories/produto-repository";
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import type { FormularioVenda } from "@/types/schemas";
 import http from "@/utils/axios";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { POSITION, useToast } from "vue-toastification";
 import { vMaska } from "maska/vue"
 import { moneyMaskOptions } from "@/lib/imaska";
 import { HandCoins, Trash } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 import { useClientesStore } from "@/stores/clientes/useClientes";
+import { useUiStore } from "@/stores/ui/uiStore";
+import { hasPermission } from "@/hooks/authorize";
 
 const title = ref('Cadastro de venda')
 const description = ref('Preencha os campos abaixo')
 const toast = useToast()
 const store = useVendasStore()
+const storeUi = useUiStore()
 const storeCliente = useClientesStore()
 
 const labelProdutoInsert = ref<string>('')
@@ -199,6 +202,9 @@ const resumoCarrinho = computed(() => {
 });
 
 clearCartVendas();
+onMounted(() => {
+    store.form.vendedorId = storeUi.usuarioLogged.id || null
+})
 </script>
 
 <template>
@@ -248,7 +254,8 @@ clearCartVendas();
 
                 <div class="md:col-span-6">
                     <label class="block text-sm mb-1">Vendedor <span class="text-red-500">*</span></label>
-                    <Select2Ajax required v-model="store.form.vendedorId" class="w-full" url="/usuarios/select2" />
+                    <Select2Ajax :disabled="(hasPermission(storeUi.usuarioLogged, 3) ? false : true)" required
+                        v-model="store.form.vendedorId" class="w-full" url="/usuarios/select2" />
                 </div>
 
 
@@ -370,7 +377,7 @@ clearCartVendas();
                                     <div class="flex flex-col text-right text-sm">
                                         <span class="text-gray-800 text-md dark:text-gray-200">R$ {{
                                             String(item.subtotal.toFixed(2)).replace('.', ',')
-                                            }}</span>
+                                        }}</span>
                                         <span class="font-medium text-xs text-gray-600 dark:text-gray-400">R$ {{
                                             String(item.preco.toFixed(2)).replace('.', ',') }} x {{ item.quantidade
                                             }}</span>
@@ -403,7 +410,7 @@ clearCartVendas();
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </div>

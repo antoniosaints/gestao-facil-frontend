@@ -141,11 +141,11 @@ export const useUiStore = defineStore('uiStore', () => {
         painel: hasPermission(usuarioLogged.value, 3),
       },
       configuracoes: {
-        editar: hasPermission(usuarioLogged.value, 4),
-        visualizar: hasPermission(usuarioLogged.value, 4),
-        criar: hasPermission(usuarioLogged.value, 4),
-        excluir: hasPermission(usuarioLogged.value, 4),
-        painel: hasPermission(usuarioLogged.value, 3),
+        editar: hasPermission(usuarioLogged.value, 5),
+        visualizar: hasPermission(usuarioLogged.value, 5),
+        criar: hasPermission(usuarioLogged.value, 5),
+        excluir: hasPermission(usuarioLogged.value, 5),
+        painel: hasPermission(usuarioLogged.value, 5),
       },
       usuarios: {
         editar: hasPermission(usuarioLogged.value, 4),

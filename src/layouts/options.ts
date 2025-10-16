@@ -1,4 +1,4 @@
-import { useUiStore, type Permissoes } from '@/stores/ui/uiStore'
+import { type Permissoes } from '@/stores/ui/uiStore'
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
   Boxes,
@@ -172,17 +172,19 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
     {
       nome: 'Configurações',
       icone: Cog,
-      show: permissions.admin,
+      show: permissions.configuracoes.visualizar,
       color: 'indigo',
       link: '/configuracoes',
     },
     {
       nome: 'Assinatura',
       divisor: true,
+      show: permissions.financeiro.visualizar,
     },
     {
       nome: 'Assinatura',
       color: 'orange',
+      show: permissions.financeiro.visualizar,
       icone: Sparkles,
       link: '/assinatura/resumo',
     },
@@ -196,6 +198,7 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
     {
       nome: 'Atualizações',
       color: 'blue',
+      show: true,
       icone: GitBranchPlus,
       link: '/changelog',
     },

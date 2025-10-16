@@ -1,7 +1,17 @@
 import { handleRouteGuard } from '@/composables/useRouterControl'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
-const routes: RouteRecordRaw[] = [
+type RouteMeta = {
+  meta?: {
+    isPublic?: boolean
+    layout?: 'main' | 'default'
+    permissao?: number
+  }
+}
+
+type RouteInterface = RouteRecordRaw & RouteMeta
+
+const routes: RouteInterface[] = [
   {
     path: '/',
     name: 'home',
@@ -222,7 +232,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/perfil/PerfilUsuario.vue'),
         meta: {
           layout: 'main',
-          permissao: 4,
+          permissao: 1,
         },
       },
     ],
