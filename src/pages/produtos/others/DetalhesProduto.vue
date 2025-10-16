@@ -15,6 +15,7 @@ import GerarEtiquetas from "./GerarEtiquetas.vue"
 import { useConfirm } from "@/composables/useConfirm"
 import ModalRelatorio from "../formulario/ModalRelatorio.vue"
 import router from "@/router"
+import { formatCurrencyBR } from "@/utils/formatters"
 
 const route = useRoute()
 const store = useProdutoStore()
@@ -168,7 +169,8 @@ const status = computed(() => {
                 <HandCoins class="w-7 h-7 mr-2" />
                 <div class="text-left rtl:text-right">
                     <div class="mb-1 text-sm">Valor gasto</div>
-                    <div class="-mt-1 font-sans text-lg font-semibold">R$ {{ resumo?.totalGasto.replace(".", ",") }}
+                    <div class="-mt-1 font-sans text-lg font-semibold">{{ formatCurrencyBR((Number(resumo?.totalGasto
+                        || 0))) }}
                     </div>
                 </div>
             </span>
@@ -177,7 +179,8 @@ const status = computed(() => {
                 <CircleDollarSign class="w-7 h-7 mr-2" />
                 <div class="text-left rtl:text-right">
                     <div class="mb-1 text-sm">Lucro líquido</div>
-                    <div class="-mt-1 font-sans text-lg font-semibold">R$ {{ resumo?.lucroLiquido.replace(".", ",") }}
+                    <div class="-mt-1 font-sans text-lg font-semibold">
+                        {{ formatCurrencyBR((Number(resumo?.lucroLiquido || 0))) }}
                     </div>
                 </div>
             </span>
@@ -207,7 +210,7 @@ const status = computed(() => {
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Preço de compra:</span> {{ Number(produto?.precoCompra).toFixed(2).replace('.', ',') || 'N/A'
-                }}</div>
+                    }}</div>
                 <div><span>Estoque:</span> {{ produto?.estoque }} {{ produto?.unidade }}</div>
                 <div><span>Mínimo:</span> {{ produto?.minimo }} {{ produto?.unidade }}</div>
                 <div><span>Permite entradas:</span>
@@ -233,15 +236,15 @@ const status = computed(() => {
             </CardHeader>
             <CardContent class="grid grid-cols-4 gap-2">
                 <div><span>Custo médio:</span>
-                    <BadgeCell color="yellow" :label="`R$ ${(resumo?.custoMedio.replace('.', ','))}`"
+                    <BadgeCell color="yellow" :label="`${formatCurrencyBR((Number(resumo?.custoMedio || 0)))}`"
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Tícket médio:</span>
-                    <BadgeCell color="emerald" :label="`R$ ${(resumo?.ticketMedio.replace('.', ','))}`"
+                    <BadgeCell color="emerald" :label="`${formatCurrencyBR((Number(resumo?.ticketMedio || 0)))}`"
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Valor em estoque:</span>
-                    <BadgeCell color="gray" :label="`R$ ${(resumo?.valorEstoque.replace('.', ','))}`"
+                    <BadgeCell color="gray" :label="`${formatCurrencyBR((Number(resumo?.valorEstoque || 0)))}`"
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Margem de lucro:</span>

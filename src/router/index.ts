@@ -128,6 +128,15 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'acompanhamento',
+        name: 'lancamentos-acompanhamento',
+        component: () => import('@/pages/financeiro/lancamentos/AcompanhamentoMensal.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
         path: 'detalhes',
         name: 'lancamentos-financeiro-detalhes',
         component: () => import('@/pages/financeiro/lancamentos/Detalhes.vue'),

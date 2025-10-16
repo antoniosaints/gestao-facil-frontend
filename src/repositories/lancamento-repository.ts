@@ -57,6 +57,14 @@ export class LancamentosRepository {
       },
     })
   }
+  static async getLancamentosMensais(month: string) {
+    const data = await http.get(`/lancamentos/lancamentosMes`, {
+      params: {
+        mes: month,
+      },
+    })
+    return data.data
+  }
   static async gerarDREPDF(inicio: string, fim: string) {
     const data = await http.get(`/lancamentos/relatorios/dre-pdf`, {
       responseType: 'blob',
