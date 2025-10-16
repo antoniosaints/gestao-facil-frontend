@@ -83,8 +83,9 @@ onMounted(carregarLancamentos)
         <div v-else class="space-y-4">
             <Card v-for="dia in lancamentos" :key="dia.dia" class="bg-transparent border-none shadow-none">
                 <CardContent class="p-0 border-none">
-                    <p class="text-sm px-3 bg-card border py-1 mb-1 rounded-md">{{ format(new Date(dia.dia),
-                        "dd/MM/yyyy") }}</p>
+                    <p class="text-sm px-3 bg-card border py-1 mb-1 rounded-md">
+                        {{ format(new Date(dia.dia), "dd/MM/yyyy") }}
+                    </p>
                     <div class="flex flex-col gap-2">
                         <div v-for="item in dia.lancamentos" :key="item.id"
                             class="flex flex-col sm:flex-row justify-between py-1 pl-6 gap-2 bg-background border px-3 rounded-md relative">
