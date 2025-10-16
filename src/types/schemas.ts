@@ -76,6 +76,17 @@ export enum MetodoPagamento {
   OUTRO = 'OUTRO',
 }
 
+export type MetodoPagamentoFinanceiro =
+  | 'DINHEIRO'
+  | 'DEBITO'
+  | 'CREDITO'
+  | 'BOLETO'
+  | 'PIX'
+  | 'TRANSFERENCIA'
+  | 'CHEQUE'
+  | 'GATEWAY'
+  | 'OUTRO'
+
 export enum TipoLancamentoFinanceiro {
   RECEITA = 'RECEITA',
   DESPESA = 'DESPESA',

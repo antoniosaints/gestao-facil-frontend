@@ -19,6 +19,7 @@ import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos"
 import router from "@/router"
 import GerarCobranca from "./modais/GerarCobranca.vue"
 import ClientesModal from "@/pages/clientes/modais/ClientesModal.vue"
+import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
 
 const route = useRoute()
 const toast = useToast()
@@ -93,14 +94,8 @@ async function deletar(id: number) {
     }
 }
 async function efetivarParcela(id: number) {
-    try {
-        await LancamentosRepository.pagarParcela(id);
-        toast.success("Parcela efetivada com sucesso");
-        loadLancamento();
-    } catch (error) {
-        console.error(error);
-        toast.error("Erro ao efetivar a parcela");
-    }
+    store.idMutation = id
+    store.openModalEfetivar = true
 }
 async function estornarParcela(id: number) {
     try {
@@ -200,8 +195,8 @@ onMounted(loadLancamento);
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>Vencimento</TableHead>
                                 <TableHead>Valor</TableHead>
-                                <TableHead>Valor Pago</TableHead>
                                 <TableHead>Pagamento</TableHead>
+                                <TableHead>Forma Pg.</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead class="text-right">Ações</TableHead>
                             </TableRow>
@@ -217,8 +212,10 @@ onMounted(loadLancamento);
                                 </TableCell>
                                 <TableCell>{{ p.vencimento ? formatDate(p.vencimento, "dd/MM/yyyy") : "-" }}</TableCell>
                                 <TableCell>{{ formatCurrencyBR(p.valor) }}</TableCell>
-                                <TableCell>{{ p.valorPago ? formatCurrencyBR(p.valorPago || 0) : "-" }}</TableCell>
                                 <TableCell>{{ p.dataPagamento ? formatDate(p.dataPagamento, "dd/MM/yyyy") : "-" }}
+                                </TableCell>
+                                <TableCell>
+                                    <BadgeCell color="gray" :label="p.formaPagamento || '-'" class="text-sm" />
                                 </TableCell>
                                 <TableCell>
                                     <Badge class="text-white px-2 py-1 rounded-lg text-sm font-normal"
@@ -303,5 +300,6 @@ onMounted(loadLancamento);
         </Card>
         <GerarCobranca />
         <ClientesModal />
+        <FormularioEfertivar @success="loadLancamento" />
     </div>
 </template>

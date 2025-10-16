@@ -12,6 +12,7 @@ interface filtro {
 export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const openModal = ref(false)
   const openModalDelete = ref(false)
+  const openModalEfetivar = ref(false)
   const openModalPropor = ref(false)
   const openModalFaturar = ref(false)
   const openModalCobranca = ref(false)
@@ -120,6 +121,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     openModalPropor,
     openModalFaturar,
     openModalDelete,
+    openModalEfetivar,
     openModalCobranca,
     selectedIds,
     addSelectedId,

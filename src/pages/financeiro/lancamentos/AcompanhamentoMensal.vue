@@ -8,8 +8,11 @@ import { ptBR } from "date-fns/locale"
 import { ArrowBigLeft, ArrowBigRight, BadgeCheck, CalendarClock, Dot, Trash, Undo2 } from "lucide-vue-next"
 import { Button } from "@/components/ui/button"
 import { useToast } from "vue-toastification"
+import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
+import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos"
 
 const toast = useToast()
+const store = useLancamentosStore()
 const currentMonth = ref(new Date())
 const navigateMonth = (direction: "prev" | "next") => {
     currentMonth.value =
@@ -53,14 +56,8 @@ async function carregarLancamentos() {
 }
 
 async function efetivarParcela(id: number) {
-    try {
-        await LancamentosRepository.pagarParcela(id);
-        toast.success("Parcela efetivada com sucesso");
-        carregarLancamentos();
-    } catch (error: any) {
-        console.error(error);
-        toast.error(error.response.data.message || "Erro ao efetivar a parcela");
-    }
+    store.idMutation = id
+    store.openModalEfetivar = true
 }
 async function estornarParcela(id: number) {
     try {
@@ -166,6 +163,7 @@ onMounted(carregarLancamentos)
                 Nenhum lançamento encontrado.
             </div>
         </div>
+        <FormularioEfertivar @success="carregarLancamentos" />
     </div>
 </template>
 

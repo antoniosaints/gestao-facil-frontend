@@ -1,4 +1,10 @@
-import type { CategoriaFinanceiro, ContasFinanceiro, FormularioLancamento } from '@/types/schemas'
+import type {
+  CategoriaFinanceiro,
+  ContasFinanceiro,
+  FormularioLancamento,
+  MetodoPagamento,
+  MetodoPagamentoFinanceiro,
+} from '@/types/schemas'
 import http from '@/utils/axios'
 export class LancamentosRepository {
   static async get(id: number) {
@@ -15,8 +21,14 @@ export class LancamentosRepository {
     const recibo = await http.post(`/lancamentos/parcelas/${idParcela}/recibo`)
     return recibo
   }
-  static async pagarParcela(idParcela: number) {
-    await http.post(`/lancamentos/parcelas/${idParcela}/pagar`)
+  static async pagarParcela(
+    idParcela: number,
+    data: {
+      dataPagamento: string
+      metodoPagamento: MetodoPagamentoFinanceiro
+    },
+  ) {
+    await http.post(`/lancamentos/parcelas/${idParcela}/pagar`, data)
   }
   static async pagarMultiplasParcelas(parcelas: number[]) {
     await http.post(`/lancamentos/parcelas/pagar-multiplas`, { parcelas })
