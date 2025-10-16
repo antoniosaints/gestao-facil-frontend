@@ -6,7 +6,7 @@ import { LancamentosRepository } from "@/repositories/lancamento-repository"
 import { Input } from "@/components/ui/input"
 import { formatToCapitalize } from "@/utils/formatters"
 import { ptBR } from "date-fns/locale"
-import { ArrowBigLeft, ArrowBigRight } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight, CalendarClock } from "lucide-vue-next"
 import { Button } from "@/components/ui/button"
 
 const currentMonth = ref(new Date())
@@ -55,6 +55,15 @@ onMounted(carregarLancamentos)
 
 <template>
     <div class="space-y-4">
+        <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <CalendarClock class="h-6 w-6" :stroke-width="2.5" />
+                    Acompanhamento
+                </h2>
+                <p class="text-sm text-muted-foreground">Lançamentos financeiros por mês</p>
+            </div>
+        </div>
         <div class="flex justify-between items-center mb-2 bg-background border px-4 rounded-xl py-4">
             <button @click="navigateMonth('prev')">
                 <ArrowBigLeft class="w-5 h-5" />
