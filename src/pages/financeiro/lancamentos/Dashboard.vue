@@ -6,7 +6,7 @@ import { goBack, goTo } from '@/hooks/links';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { useUiStore } from '@/stores/ui/uiStore';
 import { endOfMonth, startOfMonth } from 'date-fns';
-import { CircleDollarSign, Landmark, Undo2 } from 'lucide-vue-next';
+import { ChartLine, CircleDollarSign, Landmark, Tags, ToggleLeft, Undo2, Wallet } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { useToast } from 'vue-toastification';
 const toast = useToast();
@@ -204,7 +204,8 @@ onMounted(() => {
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div
                     class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-                    <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <ChartLine class="w-5 h-5" />
                         Balanço mensal
                     </h2>
                     <BarChart class="max-h-64" :data="balancoData" :options="optionsChartBarStack" />
@@ -212,16 +213,17 @@ onMounted(() => {
 
                 <div
                     class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-                    <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
-                        Resumo por
-                        status
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <ToggleLeft class="w-5 h-5" />
+                        Resumo por status
                     </h2>
                     <BarChart class="max-h-64" :data="statusData" :options="optionsChartBarStack" />
                 </div>
 
                 <div
                     class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-                    <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-simple text-emerald-600"></i>
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Wallet class="w-5 h-5" />
                         Plano de contas
                     </h2>
                     <BarChart class="max-h-64" :data="contasData" :options="optionsChartBarStack" />
@@ -229,9 +231,9 @@ onMounted(() => {
 
                 <div
                     class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-                    <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-chart-pie text-emerald-600"></i> Resumo
-                        por
-                        categoria
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Tags class="w-5 h-5" />
+                        Resumo categorias
                     </h2>
                     <BarChart class="max-h-64" :data="categoriasData" :options="optionsChartBarStack" />
                 </div>
