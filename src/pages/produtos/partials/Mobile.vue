@@ -175,11 +175,11 @@ function renderMobile(page: number = 1) {
         dataMobile.value = response.data.data;
         currentPage.value = response.data.pagination.page;
         totalPages.value = response.data.pagination.totalPages;
-        loading.value = false;
         showModalBuscarVendas.value = false;
     }).catch(err => {
         console.error("mobile_produtos:", err);
         dataMobile.value = [];
+    }).finally(() => {
         loading.value = false;
     });
 }
