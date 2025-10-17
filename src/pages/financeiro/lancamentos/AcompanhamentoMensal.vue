@@ -49,7 +49,6 @@ async function carregarLancamentos() {
     try {
         carregando.value = true
         const { data } = await LancamentosRepository.getLancamentosMensais(currentMonth.value.toISOString().slice(0, 7))
-        console.log(data)
         lancamentos.value = data
     } catch (e) {
         console.error(e)
