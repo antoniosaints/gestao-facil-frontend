@@ -47,14 +47,24 @@
                 </div>
             </div>
         </div>
+        <nav v-if="uiStore.isMobile"
+            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
+            <button type="button" @click="uiStore.openSidebar = true"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Menu />
+                <span class="text-xs">Menu</span>
+            </button>
+        </nav>
     </div>
 </template>
 
 <script setup lang="ts">
 import BadgeCell from "@/components/tabela/BadgeCell.vue";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Binoculars, Milestone } from "lucide-vue-next";
+import { useUiStore } from "@/stores/ui/uiStore";
+import { Binoculars, Menu, Milestone } from "lucide-vue-next";
 
+const uiStore = useUiStore();
 interface ChangelogItem {
     title: string;
     version: string;

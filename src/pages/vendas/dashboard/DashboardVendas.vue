@@ -10,10 +10,12 @@ import { useToast } from "vue-toastification"
 import { VendaRepository } from "@/repositories/venda-repository"
 import { endOfMonth, startOfMonth } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tags } from "lucide-vue-next"
+import { Tag, Tags, Undo2 } from "lucide-vue-next"
+import { useUiStore } from "@/stores/ui/uiStore"
+import { goBack, goTo } from "@/hooks/links"
 
 const toast = useToast()
-
+const uiStore = useUiStore()
 const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
 const loading = ref(true);
 const indicadores = ref<any[]>([])
@@ -147,5 +149,18 @@ onMounted(() => {
         <BarChart class="max-h-64" :data="statusVendas" :options="optionsChartBarDefault" />
       </div>
     </div>
+    <nav v-if="uiStore.isMobile"
+      class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
+      <button type="button" @click="goTo('/vendas')"
+        class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+        <Tag />
+        <span class="text-xs">Vendas</span>
+      </button>
+      <button type="button" @click="goBack"
+        class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+        <Undo2 />
+        <span class="text-xs">Voltar</span>
+      </button>
+    </nav>
   </div>
 </template>

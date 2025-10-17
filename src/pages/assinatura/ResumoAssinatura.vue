@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Clock, BadgeDollarSign, CreditCard, RotateCw, Sparkles, FileCheck2, CircleDollarSign } from "lucide-vue-next"
+import { CheckCircle, XCircle, Clock, BadgeDollarSign, CreditCard, RotateCw, Sparkles, FileCheck2, CircleDollarSign, Menu } from "lucide-vue-next"
 import { onMounted, ref } from "vue"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { ContaRepository, type StatusConta } from "@/repositories/conta-repository"
@@ -130,7 +130,7 @@ onMounted(() => {
                     class="flex justify-between items-center p-4">
                     <div>
                         <p class="text-lg font-semibold">{{ formatCurrencyBR(parseFloat(fatura.valor.replace(',', '.')))
-                            }}</p>
+                        }}</p>
                         <p class="text-sm text-muted-foreground">Vencimento: {{ fatura.vencimento }}</p>
                     </div>
 
@@ -161,5 +161,13 @@ onMounted(() => {
                 </Card>
             </div>
         </div>
+        <nav v-if="storeUi.isMobile"
+            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
+            <button type="button" @click="storeUi.openSidebar = true"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Menu />
+                <span class="text-xs">Menu</span>
+            </button>
+        </nav>
     </div>
 </template>

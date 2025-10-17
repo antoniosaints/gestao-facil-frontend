@@ -203,6 +203,14 @@
                 </div>
             </div>
         </div>
+        <nav v-if="uiStore.isMobile"
+            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
+            <button type="button" @click="uiStore.openSidebar = true"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Menu />
+                <span class="text-xs">Menu</span>
+            </button>
+        </nav>
     </div>
 </template>
 
@@ -216,12 +224,14 @@ import { goTo } from '@/hooks/links';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import { optionsChartBar, optionsChartBarDefault, optionsChartLine } from '@/composables/useChartOptions';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
-import { ChartPie, HandCoins, Star, Tag, TrendingUpDown } from 'lucide-vue-next';
+import { ChartPie, HandCoins, Menu, Star, Tag, TrendingUpDown } from 'lucide-vue-next';
 import { endOfMonth, startOfMonth } from 'date-fns';
 import { useToast } from 'vue-toastification';
 import { ProdutoRepository } from '@/repositories/produto-repository';
+import { useUiStore } from '@/stores/ui/uiStore';
 
 const store = useDashboardStore();
+const uiStore = useUiStore();
 const toast = useToast();
 const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())]);
 

@@ -6,18 +6,13 @@
                     <img :src="storeUi.usuarioLogged.profile || defaultAvatar" alt="avatar" />
                 </Avatar>
                 <div class="flex-1">
-                    <h2 class="text-2xl font-semibold flex items-center gap-3">{{ storeUi.usuarioLogged.nome }}
+                    <h2 class="text-2xl flex-col md:flex-row font-semibold flex items-center md:gap-3">
+                        {{ storeUi.usuarioLogged.nome }}
                         <BadgeCell color="emerald" :label="(storeUi.usuarioLogged.permissao as string)"
                             class="h-6 text-sm p-3 " />
                     </h2>
                     <p class="text-sm text-muted-foreground">
                         {{ storeUi.usuarioLogged.email }} — {{ storeUi.usuarioLogged.telefone || 'Sem telefone' }}
-                    </p>
-                    <p class="text-sm text-muted-foreground">Super admin:
-                        {{ storeUi.usuarioLogged.superAdmin ? '✅' : '❌' }}
-                    </p>
-                    <p class="text-sm text-muted-foreground">Modo gerencial:
-                        {{ storeUi.usuarioLogged.gerencialMode ? '✅' : '❌' }}
                     </p>
                 </div>
                 <div class="space-x-2">
@@ -85,12 +80,21 @@
                 </div>
             </DialogContent>
         </Dialog>
+
+        <nav v-if="storeUi.isMobile"
+            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
+            <button type="button" @click="storeUi.openSidebar = true"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Menu />
+                <span class="text-xs">Menu</span>
+            </button>
+        </nav>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { User as UserIcon, Mail as MailIcon, Save as SaveIcon } from 'lucide-vue-next'
+import { User as UserIcon, Mail as MailIcon, Save as SaveIcon, Menu } from 'lucide-vue-next'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
