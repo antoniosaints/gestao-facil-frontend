@@ -96,7 +96,7 @@ onMounted(() => {
             <Tabela />
         </div>
         <div v-else class="overflow-x-auto rounded-lg">
-            <Mobile @openModalProduto="store.openSave" />
+            <Mobile />
         </div>
         <LancamentoModal />
         <ClientesModal />

@@ -5,41 +5,52 @@
             <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark"></div>
         </div>
         <div v-else class="flex flex-col gap-2">
-            <div v-if="produtos.length === 0"
+            <div v-if="dataMobile.length === 0"
                 class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-13rem)]">
                 <div class="text-center">
                     <i class="fa-solid fa-box-open text-4xl text-gray-500 dark:text-gray-300 mb-4"></i>
                     <p class="text-gray-500 dark:text-gray-300">Nenhum ítem encontrado.</p>
                 </div>
             </div>
-            <div v-for="venda in produtos" :key="venda.id"
+            <div v-for="row in dataMobile" :key="row.id"
                 class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
-                    <div class="text-sm font-semibold dark:text-white">{{ venda.nome }}</div>
+                    <div class="text-sm font-semibold dark:text-white">{{ row.nome }}</div>
                     <div class="text-sm text-green-500 dark:text-green-400">R$ {{
-                        Number(venda.preco).toFixed(2).replace('.', ',') }}</div>
+                        Number(row.preco).toFixed(2).replace('.', ',') }}</div>
                 </div>
                 <div class="flex justify-between">
                     <div class="text-xs"
-                        :class="{ 'text-green-500': venda.status === 'ATIVO', 'text-red-500': venda.status === 'INATIVO' }">
-                        {{ venda.status }}</div>
+                        :class="{ 'text-green-500': row.status === 'ATIVO', 'text-red-500': row.status === 'INATIVO' }">
+                        {{ row.status }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">{{
-                        venda.codigo || '-' }}</div>
+                        row.codigo || '-' }}</div>
                 </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">{{ venda.descricao || '-' }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.descricao || '-' }}</div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-2">
-                        <button @click="visualizarVenda(venda.id!)"
-                            class="bg-secondary text-white px-3 py-1 rounded-md text-sm">
-                            <i class="fa-solid fa-eye"></i>
+                        <RouterLink class="inline-flex" :to="`/produtos/detalhes?id=${row.id}`">
+                            <button
+                                class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-2 py-1 rounded-md text-sm">
+                                <Eye class="w-5 h-5" />
+                            </button>
+                        </RouterLink>
+                        <button @click="openModalReposicao(row.id!)"
+                            class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-2 py-1 rounded-md text-sm">
+                            <ArchiveRestore class="w-5 h-5" />
                         </button>
-                        <button @click="gerarCupomPorVendaId(venda.id!)"
-                            class="bg-warning text-white px-3 py-1 rounded-md text-sm">
-                            <i class="fa-solid fa-file-pdf"></i>
+                        <button @click="gerarRelatorio(row.id!)"
+                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
+                            <FileChartLine class="w-5 h-5" />
+                        </button>
+                        <button @click="store.openUpdate(row.id!)"
+                            class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
+                            <PenLineIcon class="w-5 h-5" />
                         </button>
                     </div>
-                    <button @click="excluirVenda(venda.id!)" class="bg-danger text-white px-3 py-1 rounded-md text-sm">
-                        <i class="fa-solid fa-trash-can"></i>
+                    <button @click="deletar(row.id!)"
+                        class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
+                        <Trash class="w-5 h-5" />
                     </button>
                 </div>
             </div>
@@ -64,7 +75,7 @@
                 </button>
                 <button type="button"
                     class="bg-primary text-sm dark:bg-primary-dark hover:opacity-90 text-white px-3 py-1.5 rounded-md"
-                    @click="renderListaVendas(1)">
+                    @click="renderMobile(1)">
                     <i class="fa-solid fa-magnifying-glass"></i> Buscar
                 </button>
             </div>
@@ -77,7 +88,7 @@
                 <DrawerTitle>Produtos</DrawerTitle>
             </DrawerHeader>
             <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
-                <div @click="emit('openModalProduto', true)"
+                <div @click="openSave"
                     class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
                     <div
                         class="flex justify-center items-center p-2 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
@@ -129,8 +140,16 @@ import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import type { Produto } from "@/types/schemas";
+import { ArchiveRestore, Eye, FileChartLine, PenLineIcon, Trash } from "lucide-vue-next";
+import { useProdutoStore } from "@/stores/produtos/useProduto";
+import { useToast } from "vue-toastification";
+import { useConfirm } from "@/composables/useConfirm";
+import { ProdutoRepository } from "@/repositories/produto-repository";
+import { watch } from "vue";
 
-const produtos = ref<Produto[]>([]);
+const store = useProdutoStore();
+const toast = useToast();
+const dataMobile = ref<Produto[]>([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const loading = ref(false);
@@ -138,43 +157,72 @@ const searchQuery = ref("");
 const showModalBuscarVendas = ref(false);
 const showDrawerFinanceiro = ref(false);
 
-const emit = defineEmits(["openModalProduto"]);
-
-function renderListaVendas(page: number = 1) {
+function renderMobile(page: number = 1) {
     loading.value = true;
-    const token = localStorage.getItem("gestao_facil:token");
     http.get(`/produtos/mobile/data`, {
-        headers: { Authorization: `Bearer ${token}` },
         params: {
             search: searchQuery.value,
             limit: 10,
             page
         }
     }).then(response => {
-        produtos.value = response.data.data;
+        dataMobile.value = response.data.data;
         currentPage.value = response.data.pagination.page;
         totalPages.value = response.data.pagination.totalPages;
         loading.value = false;
         showModalBuscarVendas.value = false;
     }).catch(err => {
-        console.error("mobile_vendas:", err);
-        produtos.value = [];
+        console.error("mobile_produtos:", err);
+        dataMobile.value = [];
         loading.value = false;
     });
 }
 
+function openSave() {
+    // showDrawer.value = false;
+    store.openSave();
+}
+
+
 function previousPage() {
-    if (currentPage.value > 1) renderListaVendas(currentPage.value - 1);
+    if (currentPage.value > 1) renderMobile(currentPage.value - 1);
 }
 
 function nextPage() {
-    if (currentPage.value < totalPages.value) renderListaVendas(currentPage.value + 1);
+    if (currentPage.value < totalPages.value) renderMobile(currentPage.value + 1);
 }
 
-// Funções placeholder
-function visualizarVenda(id: number) { console.log("Visualizar", id); }
-function gerarCupomPorVendaId(id: number) { console.log("Gerar cupom", id); }
-function excluirVenda(id: number) { console.log("Excluir", id); }
+async function deletar(id: number) {
+    if (!id) return toast.error('ID não informado!')
+    const confirm = await useConfirm().confirm({
+        title: 'Excluir produto',
+        message: 'Tem certeza que deseja excluir este produto?',
+        confirmText: 'Sim, excluir!',
+    })
+    if (!confirm) return
+    try {
+        await ProdutoRepository.remove(id)
+        store.updateTable()
+        toast.success('Produto deletado com sucesso')
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao deletar o produto')
+    }
+}
 
-onMounted(() => renderListaVendas());
+function openModalReposicao(number: number) {
+    store.idMutation = number
+    store.openModalReposicao = true
+}
+
+async function gerarRelatorio(id: number) {
+    store.idMutation = id;
+    store.openModalRelatorio = true
+}
+
+watch(() => store.filters.update, () => {
+    renderMobile();
+})
+
+onMounted(() => renderMobile());
 </script>

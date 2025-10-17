@@ -46,7 +46,6 @@ export const useClientesStore = defineStore('clientesStore', () => {
   }
   const openUpdate = async (id: number) => {
     const cliente = await ClienteRepository.get(id)
-    console.log(cliente)
     form.value = {
       ...cliente.data,
     }

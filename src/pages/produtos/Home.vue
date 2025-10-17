@@ -7,7 +7,7 @@ import { useToast } from 'vue-toastification';
 import ModalProdutos from './formulario/ModalProdutos.vue';
 import ModalCriarLote from './others/ModalCriarLote.vue';
 import { ProdutoRepository } from '@/repositories/produto-repository';
-import { Boxes, CircleChevronDown, Package, Trash } from 'lucide-vue-next';
+import { CircleChevronDown, Package, Trash } from 'lucide-vue-next';
 import ModalReposicao from './formulario/ModalReposicao.vue';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -92,7 +92,7 @@ async function excluirEmLote() {
             <Tabela />
         </div>
         <div class="overflow-x-auto block md:hidden rounded-lg">
-            <Mobile @openModalProduto="store.openSave" />
+            <Mobile />
         </div>
         <ModalProdutos />
         <ModalCriarLote />

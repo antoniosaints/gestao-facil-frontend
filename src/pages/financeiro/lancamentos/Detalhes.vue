@@ -20,11 +20,14 @@ import router from "@/router"
 import GerarCobranca from "./modais/GerarCobranca.vue"
 import ClientesModal from "@/pages/clientes/modais/ClientesModal.vue"
 import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
+import { useUiStore } from "@/stores/ui/uiStore"
+import { goBack } from "@/hooks/links"
 
 const route = useRoute()
 const toast = useToast()
 const lancamento = ref<LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro> }>()
 const store = useLancamentosStore()
+const uiStore = useUiStore()
 const loading = ref(false)
 
 interface DataLancamento {
@@ -145,7 +148,7 @@ onMounted(loadLancamento);
                     <BadgeDollarSign class="w-5 h-5" /> Informações do lançamento
                 </CardTitle>
             </CardHeader>
-            <CardContent class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <CardContent class="flex flex-col md:grid md:grid-cols-2 gap-2">
                 <div class="flex items-center gap-2"><span>Código:</span>
                     <div class="flex items-center gap-2">
                         <BadgeCell color="gray" :label="lancamento?.Uid || 'N/A'" class="text-sm" :capitalize="false" />
@@ -298,6 +301,15 @@ onMounted(loadLancamento);
                 </div>
             </CardContent>
         </Card>
+
+        <nav v-if="uiStore.isMobile"
+            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
+            <button type="button" @click="goBack"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Undo2 />
+                <span class="text-xs">Voltar</span>
+            </button>
+        </nav>
         <GerarCobranca />
         <ClientesModal />
         <FormularioEfertivar @success="loadLancamento" />

@@ -33,7 +33,7 @@ const uiStore = useUiStore()
             <Tabela />
         </div>
         <div v-else class="overflow-x-auto block md:hidden rounded-lg">
-            <Mobile @openModalProduto="store.openSave" />
+            <Mobile />
         </div>
         <ClientesModal />
     </div>

@@ -30,29 +30,29 @@
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-1">
                         <button @click="store.openDetalhes(venda.id!)"
-                            class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-3 py-1 rounded-md text-sm">
-                            <i class="fa-solid fa-eye"></i>
+                            class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-2 py-1 rounded-md text-sm">
+                            <Eye class="w-5 h-5" />
                         </button>
                         <button @click="gerarCupomVenda(venda.id!)"
-                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-3 py-1 rounded-md text-sm">
-                            <i class="fa-solid fa-file-pdf"></i>
+                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
+                            <FileChartLine class="w-5 h-5" />
                         </button>
                         <button v-if="!venda.faturado" @click="openModalFaturarVenda(venda.id!)"
-                            class="bg-emerald-200 text-emerald-900 dark:text-emerald-100 dark:bg-emerald-800 px-3 py-1 rounded-md text-sm">
-                            <i class="fa-solid fa-circle-check"></i>
+                            class="bg-emerald-200 text-emerald-900 dark:text-emerald-100 dark:bg-emerald-800 px-2 py-1 rounded-md text-sm">
+                            <BadgeCheck class="w-5 h-5" />
                         </button>
                         <button v-else @click="estornarVenda(venda.id!)"
-                            class="bg-yellow-200 text-yellow-900 dark:text-yellow-100 dark:bg-yellow-800 px-3 py-1 rounded-md text-sm">
-                            <i class="fa-solid fa-undo"></i>
+                            class="bg-yellow-200 text-yellow-900 dark:text-yellow-100 dark:bg-yellow-800 px-2 py-1 rounded-md text-sm">
+                            <Undo2 class="w-5 h-5" />
                         </button>
                         <button v-if="!venda.faturado" @click="store.openUpdate(venda.id!)"
-                            class="bg-slate-200 text-slate-900 dark:text-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md text-sm">
-                            <i class="fa-solid fa-pencil"></i>
+                            class="bg-slate-200 text-slate-900 dark:text-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-sm">
+                            <PenLine class="w-5 h-5" />
                         </button>
                     </div>
                     <button @click="deletarVenda(venda.id!)"
-                        class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-3 py-1 rounded-md text-sm">
-                        <i class="fa-solid fa-trash-can"></i>
+                        class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
+                        <Trash class="w-5 h-5" />
                     </button>
                 </div>
             </div>
@@ -146,6 +146,7 @@ import { deletarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } f
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
+import { BadgeCheck, Eye, FileChartLine, PenLine, Trash, Undo2 } from "lucide-vue-next";
 const store = useVendasStore();
 const vendas = ref<Vendas[]>([]);
 const currentPage = ref(1);
@@ -156,7 +157,7 @@ const showModalBuscarVendas = ref(false);
 const showDrawerVendas = ref(false);
 
 function openSaveVenda() {
-    showDrawerVendas.value = false;
+    // showDrawerVendas.value = false;
     store.openSave();
 }
 function renderListaVendas(page: number = 1) {

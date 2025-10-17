@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, FileText, Edit, Trash2, Box, TrendingDown, TrendingUp, HandCoins, CircleDollarSign, Tag } from "lucide-vue-next"
+import { ArrowLeft, FileText, Edit, Trash2, Box, TrendingDown, TrendingUp, HandCoins, CircleDollarSign, Tag, Undo2, PencilLine } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { computed, onMounted, ref, watch } from "vue"
 import { type Produto } from "@/types/schemas"
@@ -16,9 +16,12 @@ import { useConfirm } from "@/composables/useConfirm"
 import ModalRelatorio from "../formulario/ModalRelatorio.vue"
 import router from "@/router"
 import { formatCurrencyBR } from "@/utils/formatters"
+import { goBack } from "@/hooks/links"
+import { useUiStore } from "@/stores/ui/uiStore"
 
 const route = useRoute()
 const store = useProdutoStore()
+const uiStore = useUiStore()
 
 interface Resumoproduto {
     totalGasto: string,
@@ -193,7 +196,7 @@ const status = computed(() => {
                     <Box class="w-5 h-5" /> Informações do Produto
                 </CardTitle>
             </CardHeader>
-            <CardContent class="grid grid-cols-2 gap-2">
+            <CardContent class="flex flex-col md:grid md:grid-cols-2 gap-2">
                 <div class="flex items-center gap-2"><span>Código:</span>
                     <div class="flex items-center gap-2">
                         <BadgeCell color="gray" :label="produto?.Uid || 'N/A'" class="text-sm" :capitalize="false" />
@@ -210,7 +213,7 @@ const status = computed(() => {
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Preço de compra:</span> {{ Number(produto?.precoCompra).toFixed(2).replace('.', ',') || 'N/A'
-                    }}</div>
+                }}</div>
                 <div><span>Estoque:</span> {{ produto?.estoque }} {{ produto?.unidade }}</div>
                 <div><span>Mínimo:</span> {{ produto?.minimo }} {{ produto?.unidade }}</div>
                 <div><span>Permite entradas:</span>
@@ -234,7 +237,7 @@ const status = computed(() => {
                     <CircleDollarSign class="w-5 h-5" /> Financeiro
                 </CardTitle>
             </CardHeader>
-            <CardContent class="grid grid-cols-4 gap-2">
+            <CardContent class="grid grid-cols-1 md:grid-cols-4 gap-2">
                 <div><span>Custo médio:</span>
                     <BadgeCell color="yellow" :label="`${formatCurrencyBR((Number(resumo?.custoMedio || 0)))}`"
                         class="ml-2 text-sm" />
@@ -264,6 +267,29 @@ const status = computed(() => {
                 <div class="col-span-4">Em breve...</div>
             </CardContent>
         </Card>
+        <nav v-if="uiStore.isMobile"
+            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
+            <button type="button" @click="store.openUpdate(produto?.id!)"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <PencilLine />
+                <span class="text-xs">Editar</span>
+            </button>
+            <button type="button" @click="gerarEtiquetas"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Tag />
+                <span class="text-xs">Etiquetas</span>
+            </button>
+            <button type="button" @click="gerarRelatorio"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <FileText />
+                <span class="text-xs">Relatório</span>
+            </button>
+            <button type="button" @click="goBack"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Undo2 />
+                <span class="text-xs">Voltar</span>
+            </button>
+        </nav>
         <ModalProdutos />
         <GerarEtiquetas />
         <ModalRelatorio />
