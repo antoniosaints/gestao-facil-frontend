@@ -146,6 +146,14 @@
                 </Card>
             </TabsContent>
         </Tabs>
+        <nav v-if="storeUi.isMobile"
+            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
+            <button type="button" @click="storeUi.openSidebar = true"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Menu />
+                <span class="text-xs">Menu</span>
+            </button>
+        </nav>
     </div>
 </template>
 
@@ -162,12 +170,14 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Cog } from 'lucide-vue-next'
+import { Cog, Menu } from 'lucide-vue-next'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { ContaRepository } from '@/repositories/conta-repository'
+import { useUiStore } from '@/stores/ui/uiStore'
 
 const tab = ref<'empresa' | 'notificacoes' | 'integracoes'>('empresa')
 const toast = useToast()
+const storeUi = useUiStore()
 
 const formularioIntegracoes = reactive<UpdateParametrosConta>({
     AsaasApiKey: '',

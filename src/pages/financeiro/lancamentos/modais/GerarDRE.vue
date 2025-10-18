@@ -37,6 +37,9 @@ async function generateDre(type: "01" | "02") {
         <div class="grid grid-cols-2 gap-6 px-4">
             <Calendarpicker class="col-span-2" v-model="filtroPeriodo" :teleport="true" :range="true" />
             <div class="col-span-2 flex gap-2 justify-end">
+                <Button variant="secondary" @click="store.openModalDre = false">
+                    Fechar
+                </Button>
                 <Button @click="generateDre('01')"
                     class="bg-orange-500 dark:bg-orange-900 hover:bg-orange-700 dark:text-white">
                     <i class="fa-solid fa-file-pdf"></i>

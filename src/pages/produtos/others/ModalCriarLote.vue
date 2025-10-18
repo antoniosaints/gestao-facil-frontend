@@ -1,5 +1,5 @@
 <template>
-    <ModalView v-model:open="openModal" :title="title" :description="description" size="md">
+    <ModalView v-model:open="store.openModalLote" :title="title" :description="description" size="md">
         <form @submit.prevent="submit" class="grid items-start gap-4 px-4 ">
             <div class="bg-background dark:bg-background-dark rounded-md w-full h-full">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -18,7 +18,7 @@
                 </div>
             </div>
             <div class="flex justify-end gap-2 mt-4">
-                <Button type="button" variant="secondary" @click="openModal = false">
+                <Button type="button" variant="secondary" @click="store.openModalLote = false">
                     Fechar
                 </Button>
                 <Button class="text-white" type="submit">
@@ -33,7 +33,7 @@
 import { Button } from "@/components/ui/button"
 import { useProdutoStore } from "@/stores/produtos/useProduto"
 import { useToast } from "vue-toastification"
-import { inject, ref } from "vue"
+import { ref } from "vue"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import ModalView from "@/components/formulario/ModalView.vue"
@@ -44,8 +44,6 @@ const description = ref('Faça o Upload do arquivo CSV baixado e preenchido')
 
 const store = useProdutoStore()
 const toast = useToast()
-
-const openModal = inject('modalCsv', ref(false))
 
 const downloadCSV = async () => {
     try {
@@ -77,7 +75,7 @@ async function submit() {
         await ProdutoRepository.sendCsvUpload(file.value)
         toast.success('Remessa de produtos criada com sucesso')
         store.updateTable()
-        openModal.value = false
+        store.openModalLote = false
     } catch (error: any) {
         console.log(error)
         toast.error('Erro ao criar a remessa de produtos')

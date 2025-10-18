@@ -97,10 +97,26 @@
                 <div @click="openSave"
                     class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
                     <div
-                        class="flex justify-center items-center p-2 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
-                        <i class="fa-solid fa-circle-plus text-2xl text-gray-500 dark:text-gray-400"></i>
+                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                        <BadgePlus class="w-10 h-10 text-gray-500 dark:text-gray-400" />
                     </div>
                     <div class="font-medium text-center text-gray-500 dark:text-gray-400">Cadastrar</div>
+                </div>
+                <div @click="store.openModalRelatorioGeral = true"
+                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                    <div
+                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                        <FileSpreadsheet class="w-10 h-10 text-gray-500 dark:text-gray-400" />
+                    </div>
+                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Relatório</div>
+                </div>
+                <div @click="store.openModalLote = true"
+                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                    <div
+                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                        <FileUp class="w-10 h-10 text-gray-500 dark:text-gray-400" />
+                    </div>
+                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Lote</div>
                 </div>
                 <!-- Outros itens iguais -->
             </div>
@@ -146,7 +162,7 @@ import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import type { Produto } from "@/types/schemas";
-import { ArchiveRestore, Eye, FileChartLine, PenLineIcon, Trash } from "lucide-vue-next";
+import { ArchiveRestore, BadgePlus, Eye, FileChartLine, FileSpreadsheet, FileUp, PenLineIcon, Trash } from "lucide-vue-next";
 import { useProdutoStore } from "@/stores/produtos/useProduto";
 import { useToast } from "vue-toastification";
 import { useConfirm } from "@/composables/useConfirm";

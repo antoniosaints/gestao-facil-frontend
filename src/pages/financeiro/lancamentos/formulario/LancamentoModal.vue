@@ -81,7 +81,7 @@ async function submit() {
                         <label for="dataFinanceiroLancamento" class="block text-sm font-medium mb-1">
                             Data Lançamento *
                         </label>
-                        <Calendarpicker id="dataFinanceiroLancamento" name="dataLancamento"
+                        <Calendarpicker :teleport="true" id="dataFinanceiroLancamento" name="dataLancamento"
                             v-model="store.form.dataLancamento" />
                     </div>
                     <!-- Tipo -->
@@ -185,8 +185,8 @@ async function submit() {
                             <label for="dataEntradaLancamento" class="block text-sm font-medium mb-1">
                                 Data Entrada
                             </label>
-                            <Calendarpicker :required="store.form.valorEntrada != ''" id="dataEntradaLancamento"
-                                name="dataEntrada" v-model="store.form.dataEntrada" />
+                            <Calendarpicker :teleport="true" :required="store.form.valorEntrada != ''"
+                                id="dataEntradaLancamento" name="dataEntrada" v-model="store.form.dataEntrada" />
                         </div>
                     </div>
                     <!-- Forma de Pagamento -->

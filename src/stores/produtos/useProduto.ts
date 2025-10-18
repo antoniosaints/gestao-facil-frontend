@@ -8,6 +8,7 @@ const toast = useToast()
 
 export const useProdutoStore = defineStore('produtoStore', () => {
   const openModal = ref(false)
+  const openModalLote = ref(false)
   const openModalReposicao = ref(false)
   const openModalEtiquetas = ref(false)
   const openModalRelatorio = ref(false)
@@ -108,6 +109,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     openModalEtiquetas,
     openModalRelatorio,
     openModalRelatorioGeral,
+    openModalLote,
     openSave,
     openUpdate,
     updateTable,

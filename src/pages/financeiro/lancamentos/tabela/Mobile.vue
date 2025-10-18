@@ -81,13 +81,29 @@
                 <DrawerTitle>Lançamentos</DrawerTitle>
             </DrawerHeader>
             <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
-                <div @click="openSave"
+                <div @click="openSave('RECEITA')"
                     class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
                     <div
-                        class="flex justify-center items-center p-2 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
-                        <i class="fa-solid fa-circle-plus text-2xl text-gray-500 dark:text-gray-400"></i>
+                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                        <TrendingUp class="w-10 h-10 text-green-500 dark:text-green-400" />
                     </div>
-                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Cadastrar</div>
+                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Receita</div>
+                </div>
+                <div @click="openSave('DESPESA')"
+                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                    <div
+                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                        <TrendingDown class="w-10 h-10 text-red-500 dark:text-red-400" />
+                    </div>
+                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Despesa</div>
+                </div>
+                <div @click="store.openModalDre = true"
+                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                    <div
+                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                        <FileChartLine class="w-10 h-10 text-gray-500 dark:text-gray-400" />
+                    </div>
+                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">DRE</div>
                 </div>
                 <!-- Outros itens iguais -->
             </div>
@@ -132,7 +148,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Dot, Eye, Trash } from "lucide-vue-next";
+import { Dot, Eye, FileChartLine, Trash, TrendingDown, TrendingUp } from "lucide-vue-next";
 import type { LancamentoFinanceiro } from "@/types/schemas";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { watch } from "vue";
@@ -151,8 +167,8 @@ const searchQuery = ref("");
 const showModalBuscar = ref(false);
 const showDrawer = ref(false);
 
-function openSave() {
-    // showDrawer.value = false;
+function openSave(tipo: 'RECEITA' | 'DESPESA') {
+    store.form.tipo = tipo
     store.openSave();
 }
 function renderListaVendas(page: number = 1) {

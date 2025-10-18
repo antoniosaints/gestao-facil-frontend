@@ -18,9 +18,6 @@ import GerarRelatorioGeral from './others/GerarRelatorioGeral.vue';
 const toast = useToast();
 const store = useProdutoStore();
 
-const modalCsv = ref(false);
-provide('modalCsv', modalCsv)
-
 const relatorioGeral = async () => {
     store.openModalRelatorioGeral = true
 }
@@ -76,7 +73,8 @@ async function excluirEmLote() {
                 <button @click="relatorioGeral()" class="bg-orange-600 text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-regular fa-file-pdf"></i>
                 </button>
-                <button @click="modalCsv = true" class="bg-green-600 text-white px-3 py-1.5 text-sm rounded-md">
+                <button @click="store.openModalLote = true"
+                    class="bg-green-600 text-white px-3 py-1.5 text-sm rounded-md">
                     <i class="fa-solid fa-arrow-up-from-bracket"></i>
                 </button>
                 <button @click="store.openSave" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">

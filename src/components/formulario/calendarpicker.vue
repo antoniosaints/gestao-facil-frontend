@@ -1,8 +1,8 @@
 <template>
-    <DatePicker v-model="data" :placeholder="placeholder" :teleport-center="teleport" :range="range"
-        v-bind="range ? { presetDates } : {}" @range-end="emitRangeEnd" :required="required" cancel-text="Cancelar"
-        select-text="Selecionar" :format-locale="ptBR" format="dd/MM/yyyy" :enable-time-picker="false"
-        :transitions="false" :auto-apply="autoApply">
+    <DatePicker v-model="data" :placeholder="placeholder" :auto-position="true" :teleport-center="teleport"
+        :range="range" v-bind="range ? { presetDates } : {}" @range-end="emitRangeEnd" :required="required"
+        cancel-text="Cancelar" select-text="Selecionar" :format-locale="ptBR" format="dd/MM/yyyy"
+        :enable-time-picker="false" :transitions="false" :auto-apply="autoApply">
         <template v-if="range" #preset-date-range-button="{ label, value, presetDate }">
             <span role="button" :tabindex="0" @click="presetDate(value)" @keyup.enter.prevent="presetDate(value)"
                 @keyup.space.prevent="presetDate(value)">
