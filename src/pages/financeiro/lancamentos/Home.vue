@@ -4,7 +4,7 @@ import Mobile from './tabela/Mobile.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import LancamentoModal from './formulario/LancamentoModal.vue';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
-import { CircleChevronDown, CirclePlus, FileText, Trash, Wallet } from 'lucide-vue-next';
+import { BadgePlus, CircleChevronDown, CirclePlus, FileText, RotateCw, Trash, Wallet } from 'lucide-vue-next';
 import GerarDRE from './modais/GerarDRE.vue';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -80,15 +80,15 @@ onMounted(() => {
                 </button>
                 <button @click="openByTipo('RECEITA')"
                     class="bg-success text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-2">
-                    <CirclePlus class="h-5 w-5" /> <span class="hidden md:inline">Receita</span>
+                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Receita</span>
                 </button>
                 <button @click="openByTipo('DESPESA')"
                     class="bg-danger text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-2">
-                    <CirclePlus class="h-5 w-5" /> <span class="hidden md:inline">Despesa</span>
+                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Despesa</span>
                 </button>
                 <button @click="store.updateTable"
-                    class="bg-background border border-border px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                    class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
+                    <RotateCw class="w-5 h-5" />
                 </button>
             </div>
         </div>

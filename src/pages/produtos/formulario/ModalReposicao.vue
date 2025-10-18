@@ -63,7 +63,7 @@ async function submit() {
 
                 <!-- Custo -->
                 <div class="md:col-span-6">
-                    <label class="block text-sm font-medium mb-1">Custo (R$)</label>
+                    <label class="block text-sm font-medium mb-1">Custo unitário (R$)</label>
                     <Input type="text" v-maska="moneyMaskOptions" v-model="formulario.custo" placeholder="Ex: 12.50" />
                 </div>
 
@@ -79,20 +79,20 @@ async function submit() {
 
                 <!-- Data -->
                 <div class="md:col-span-6">
-                    <label class="block text-sm font-medium mb-1">Data</label>
+                    <label class="block text-sm font-medium mb-1">Data reposição</label>
                     <Calendarpicker v-model="formulario.data" :teleport="true" />
                 </div>
 
                 <!-- Desconto -->
                 <div class="md:col-span-6">
-                    <label class="block text-sm font-medium mb-1">Desconto (R$)</label>
+                    <label class="block text-sm font-medium mb-1">Desconto total (R$)</label>
                     <Input type="text" v-maska="moneyMaskOptions" v-model="formulario.desconto"
                         placeholder="Ex: 5.00" />
                 </div>
 
                 <!-- Frete -->
                 <div class="md:col-span-6">
-                    <label class="block text-sm font-medium mb-1">Frete (R$)</label>
+                    <label class="block text-sm font-medium mb-1">Frete total (R$)</label>
                     <Input type="text" v-maska="moneyMaskOptions" v-model="formulario.frete" placeholder="Ex: 10.00" />
                 </div>
 

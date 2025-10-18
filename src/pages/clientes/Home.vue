@@ -4,7 +4,7 @@ import Mobile from './tabela/Mobile.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
 import ClientesModal from './modais/ClientesModal.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
-import { UserStar } from 'lucide-vue-next';
+import { BadgePlus, RotateCw, UserStar } from 'lucide-vue-next';
 const store = useClientesStore();
 const uiStore = useUiStore()
 </script>
@@ -20,12 +20,12 @@ const uiStore = useUiStore()
                 <p class="text-sm text-muted-foreground">Clientes cadastrados no sistema</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <button @click="store.openSave" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-user-tag"></i> <span class="hidden md:inline">Novo cliente</span>
+                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md">
+                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo cliente</span>
                 </button>
                 <button @click="store.updateTable"
-                    class="bg-background border border-border px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                    class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
+                    <RotateCw class="w-5 h-5" />
                 </button>
             </div>
         </div>

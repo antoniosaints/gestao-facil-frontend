@@ -7,7 +7,7 @@ import { useToast } from 'vue-toastification';
 import ModalProdutos from './formulario/ModalProdutos.vue';
 import ModalCriarLote from './others/ModalCriarLote.vue';
 import { ProdutoRepository } from '@/repositories/produto-repository';
-import { CircleChevronDown, Package, Trash } from 'lucide-vue-next';
+import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, Package, RotateCw, Trash } from 'lucide-vue-next';
 import ModalReposicao from './formulario/ModalReposicao.vue';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -70,19 +70,19 @@ async function excluirEmLote() {
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <button @click="relatorioGeral()" class="bg-orange-600 text-white px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-regular fa-file-pdf"></i>
+                <button @click="relatorioGeral()" class="bg-orange-600 text-white px-2 py-1.5 text-sm rounded-md">
+                    <FileChartLine class="w-5 h-5" />
                 </button>
                 <button @click="store.openModalLote = true"
-                    class="bg-green-600 text-white px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                    class="bg-green-600 text-white px-2 py-1.5 text-sm rounded-md">
+                    <FileUp class="w-5 h-5" />
                 </button>
-                <button @click="store.openSave" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-circle-plus"></i> <span class="hidden md:inline">Novo Produto</span>
+                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md">
+                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo Produto</span>
                 </button>
                 <button @click="store.updateTable"
-                    class="bg-background border border-border px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                    class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
+                    <RotateCw class="w-5 h-5" />
                 </button>
             </div>
         </div>

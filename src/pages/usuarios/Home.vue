@@ -2,7 +2,7 @@
 import Tabela from './tabela/Tabela.vue';
 import Mobile from './tabela/Mobile.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
-import { UserCog } from 'lucide-vue-next';
+import { BadgePlus, RotateCw, UserCog } from 'lucide-vue-next';
 import UsuarioModal from './modais/UsuarioModal.vue';
 import { useUsuarioStore } from '@/stores/usuarios/useUsuarios';
 const store = useUsuarioStore();
@@ -20,12 +20,12 @@ const uiStore = useUiStore()
                 <p class="text-sm text-muted-foreground">Usuários cadastrados no sistema</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <button @click="store.openSave" class="bg-primary text-white px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-user-tag"></i> <span class="hidden md:inline">Novo usuário</span>
+                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md">
+                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo usuário</span>
                 </button>
                 <button @click="store.updateTable"
-                    class="bg-background border border-border px-3 py-1.5 text-sm rounded-md">
-                    <i class="fa-solid fa-arrow-rotate-right"></i>
+                    class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
+                    <RotateCw class="w-5 h-5" />
                 </button>
             </div>
         </div>

@@ -5,8 +5,8 @@
         <div class="flex-1 flex flex-col">
             <!-- Header -->
             <div class="mb-6 flex flex-col gap-2">
-                <h2 class="text-xl md:text-2xl font-bold text-black dark:text-white"><i
-                        class="fa-solid fa-tags text-green-600"></i>
+                <h2 class="text-xl md:text-2xl font-bold text-black dark:text-white flex items-center gap-2">
+                    <ShoppingCart class="w-6 h-6 inline-flex" :stroke-width="2.5" />
                     Ponto de vendas
                 </h2>
                 <!-- Barra de Busca -->
@@ -45,8 +45,8 @@
             <!-- Header do Carrinho -->
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold">
-                        <i class="fas fa-shopping-cart text-green-600 mr-2"></i>
+                    <h2 class="text-xl font-semibold flex items-center gap-2">
+                        <ShoppingCart class="w-6 h-6 inline-flex" />
                         Carrinho
                     </h2>
                     <button @click="clearCart" :title="cart.length ? 'Limpar carrinho' : 'Carrinho vazio'"
@@ -66,7 +66,7 @@
             </div>
 
             <!-- Lista de Itens do Carrinho -->
-            <div class="flex-1 min-h-48 overflow-y-auto scrollbar-thin p-4">
+            <div class="min-h-48 overflow-y-auto scrollbar-thin p-4">
                 <div>
                     <div v-if="!cart.length" class="text-center text-gray-500 dark:text-gray-400 py-8">
                         <i class="fas fa-shopping-cart text-4xl mb-3 opacity-50"></i>
@@ -103,28 +103,8 @@
             </div>
 
             <!-- Footer do Carrinho -->
-            <div class="p-4 border-border dark:border-border-dark bg-background dark:bg-background-dark rounded-lg">
-                <!-- Desconto -->
-                <div class="mb-4">
-                    <div class="flex items-center gap-2 mb-2">
-                        <Select v-model="discountType">
-                            <SelectTrigger>
-                                <SelectValue placeholder="Tipo de desconto" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="percentage">
-                                    Desconto %
-                                </SelectItem>
-                                <SelectItem value="value">
-                                    Desconto R$
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Input type="text" v-model="discountValue!" placeholder="0,00"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
-                    </div>
-                </div>
-
+            <div
+                class="p-4 border-border dark:border-border-dark bg-background dark:bg-background-dark rounded-lg border-t">
                 <!-- Totais -->
                 <div class="space-y-2 mb-4">
                     <div class="flex justify-between text-sm">
@@ -143,27 +123,34 @@
                 </div>
 
                 <!-- Forma de Pagamento -->
-                <div class="mb-4 flex flex-col gap-2">
+                <div class="mb-4 flex flex-col">
                     <label class="block text-sm font-medium text-gray-700 dark:text-white mb-2">Pagamento</label>
-                    <Select v-model="paymentMethod">
-                        <SelectTrigger>
-                            <SelectValue placeholder="Pagamento" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="DINHEIRO">
-                                Dinheiro
-                            </SelectItem>
-                            <SelectItem value="CARTAO">
-                                Cartão
-                            </SelectItem>
-                            <SelectItem value="PIX">
-                                PIX
-                            </SelectItem>
-                            <SelectItem value="BOLETO">
-                                Boleto
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                        <div class="col-span-5">
+                            <Select v-model="paymentMethod">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pagamento" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="DINHEIRO">
+                                        Dinheiro
+                                    </SelectItem>
+                                    <SelectItem value="CARTAO">
+                                        Cartão
+                                    </SelectItem>
+                                    <SelectItem value="PIX">
+                                        PIX
+                                    </SelectItem>
+                                    <SelectItem value="BOLETO">
+                                        Boleto
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <Button type="button" class="text-white" @click="openModalDesconto = true">
+                            <CirclePercent />
+                        </Button>
+                    </div>
 
                     <div class="space-y-2" v-if="paymentMethod === 'DINHEIRO'">
                         <Input :required="paymentMethod === 'DINHEIRO'" v-model="(receivedAmount as string)" type="text"
@@ -199,6 +186,36 @@
             </button>
         </div>
     </div>
+    <ModalView v-model:open="openModalDesconto" title="Aplicar desconto" description="Informe o desconto a ser aplicado"
+        size="lg">
+        <!-- Desconto -->
+        <div class="px-4 gap-4 flex flex-col">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-white">Tipo</label>
+                    <Select v-model="discountType">
+                        <SelectTrigger>
+                            <SelectValue placeholder="Tipo de desconto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="percentage">
+                                Desconto %
+                            </SelectItem>
+                            <SelectItem value="value">
+                                Desconto R$
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-white">Valor</label>
+                    <Input type="text" v-model="discountValue!" placeholder="0,00"
+                        class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                </div>
+            </div>
+            <Button type="button" @click="aplicarDesconto" class="w-full">Aplicar desconto</Button>
+        </div>
+    </ModalView>
     <ClientesModal />
     <nav
         class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20">
@@ -223,11 +240,23 @@ import { POSITION, useToast } from 'vue-toastification';
 import { useUiStore } from '@/stores/ui/uiStore';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
+import { CirclePercent, ShoppingCart } from 'lucide-vue-next';
+import ModalView from '@/components/formulario/ModalView.vue';
+import { Button } from '@/components/ui/button';
 
 const toast = useToast()
 const uiStore = useUiStore()
 const storeCliente = useClientesStore()
 const canFinalizeSale = ref(false)
+const openModalDesconto = ref(false)
+
+function aplicarDesconto() {
+    if (discountValue.value === null) return toast.error('Informe o desconto a ser aplicado')
+    openModalDesconto.value = false
+    toast.success('Desconto aplicado com sucesso')
+}
+
+const descontoLabel = computed(() => discountType.value === "percentage" ? `${discountValue.value}%` : `R$ ${discountValue.value}`)
 
 interface Product {
     id: number
@@ -246,7 +275,7 @@ const cart = ref<CartItem[]>(JSON.parse(localStorage.getItem("gestao_facil:cartP
 const searchTerm = ref("")
 const discountType = ref<"percentage" | "value">("percentage")
 const discountValue = ref<number | null>(null)
-const paymentMethod = ref("DINHEIRO")
+const paymentMethod = ref("PIX")
 const receivedAmount = ref<string | null>(null)
 const cliente = ref(null)
 
