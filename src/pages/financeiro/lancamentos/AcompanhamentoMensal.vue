@@ -109,7 +109,7 @@ onMounted(carregarLancamentos)
                     </p>
                     <div class="flex flex-col gap-2">
                         <div v-for="item in dia.lancamentos" :key="item.id"
-                            class="flex flex-col sm:flex-row justify-between py-1 pl-6 gap-2 bg-background border px-3 rounded-md relative">
+                            class="flex justify-between py-1 pl-6 gap-2 bg-background border px-3 rounded-md relative">
                             <div v-if="item.tipo === 'RECEITA'"
                                 class="absolute left-0 top-0 w-2 h-full rounded-l-md bg-success/90"></div>
                             <div v-else class="absolute left-0 top-0 w-2 h-full rounded-l-md bg-danger/90"></div>
