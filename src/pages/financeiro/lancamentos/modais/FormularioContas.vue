@@ -35,7 +35,7 @@ async function submit() {
             size="md">
             <form @submit.prevent="submit">
                 <div class="grid grid-cols-2 gap-6 px-4">
-                    <div class="md:col-span-2">
+                    <div class="col-span-2">
                         <label class="block text-sm font-medium mb-1">
                             Nome da conta *
                         </label>
