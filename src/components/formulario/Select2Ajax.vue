@@ -119,7 +119,8 @@ onMounted(fetchItems)
 
 <template>
     <div class="flex items-center w-full max-w-full gap-2">
-        <Select v-model="selectedId" :disabled="disabled" :required="required" @update:open="(open) => open && fetchItems()">
+        <Select v-model="selectedId" :disabled="disabled" :required="required"
+            @update:open="(open) => open && fetchItems()">
             <SelectTrigger class="bg-card dark:bg-card-dark"
                 :class="{ 'w-[calc(100%-2.5rem)]': allowClear && selectedId }">
                 <SelectValue :value="selectedId" :placeholder="'Selecione...'">

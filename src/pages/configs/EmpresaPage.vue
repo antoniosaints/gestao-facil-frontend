@@ -83,8 +83,9 @@ import { CircleCheck } from 'lucide-vue-next'
 import { vMaska } from 'maska/vue'
 import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useUiStore } from '@/stores/ui/uiStore'
 const toast = useToast()
-
+const storeUi = useUiStore()
 const form = ref<Partial<UpdateConta & { email: string, cep: string }>>({
     documento: "",
     endereco: "",
@@ -99,6 +100,7 @@ const form = ref<Partial<UpdateConta & { email: string, cep: string }>>({
 const submitForm = async () => {
     try {
         await ContaRepository.update(form.value)
+        await storeUi.getDataUsuario()
         toast.success("Dados atualizados com sucesso")
     } catch (error) {
         console.error(error)

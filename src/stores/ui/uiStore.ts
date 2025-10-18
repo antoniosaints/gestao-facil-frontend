@@ -2,7 +2,7 @@ import { onMounted, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
-import type { Usuarios } from '@/types/schemas'
+import type { Contas, Usuarios } from '@/types/schemas'
 import { hasPermission } from '@/hooks/authorize'
 interface TipoPermissao {
   editar: boolean
@@ -28,6 +28,7 @@ export const useUiStore = defineStore('uiStore', () => {
   const openSidebar = ref(true)
   const isMobile = ref(window.innerWidth < 768)
   const usuarioLogged = ref<Usuarios>({} as Usuarios)
+  const contaInfo = ref<Contas>({} as Contas)
   const status = ref(localStorage.getItem('gestao_facil:status') || 'INATIVO')
   const diasParaVencer = ref<number>(
     Number(localStorage.getItem('gestao_facil:diasParaVencer')) || 0,
@@ -168,7 +169,9 @@ export const useUiStore = defineStore('uiStore', () => {
   async function getDataUsuario() {
     try {
       const data = await UsuarioRepository.whoami()
+      const conta = await ContaRepository.info()
       usuarioLogged.value = data.data
+      contaInfo.value = conta
       populatePermissoes()
       return data
     } catch (error) {
@@ -202,6 +205,7 @@ export const useUiStore = defineStore('uiStore', () => {
     status,
     permissoes,
     usuarioLogged,
+    contaInfo,
     getDataUsuario,
     diasParaVencer,
     getStatus,
