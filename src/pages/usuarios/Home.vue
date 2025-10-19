@@ -20,7 +20,7 @@ const uiStore = useUiStore()
                 <p class="text-sm text-muted-foreground">Usuários cadastrados no sistema</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md">
+                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo usuário</span>
                 </button>
                 <button @click="store.updateTable"

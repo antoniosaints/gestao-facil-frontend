@@ -48,11 +48,11 @@ provide('openModalFiltroVendas', openFilter);
                     class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
                     <Funnel class="w-4 h-4 inline-flex" />
                 </button>
-                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md">
+                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova Venda</span>
                 </button>
                 <RouterLink to="/vendas/pdv"
-                    class="border border-body bg-secondary hover:border-secondary px-2 py-1.5 text-sm rounded-lg">
+                    class="border border-body bg-secondary hover:border-secondary px-2 py-1.5 text-sm rounded-lg flex items-center gap-1">
                     <ShoppingCart class="w-5 h-5 inline-flex" /> PDV
                 </RouterLink>
                 <button @click="store.updateTable"

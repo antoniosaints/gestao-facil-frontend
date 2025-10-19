@@ -77,7 +77,7 @@ async function excluirEmLote() {
                     class="bg-green-600 text-white px-2 py-1.5 text-sm rounded-md">
                     <FileUp class="w-5 h-5" />
                 </button>
-                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md">
+                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo Produto</span>
                 </button>
                 <button @click="store.updateTable"
