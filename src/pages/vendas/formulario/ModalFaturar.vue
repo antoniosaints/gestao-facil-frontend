@@ -97,7 +97,7 @@ async function submit() {
                         <Label>Lançamento manual</Label>
                         <p class="text-sm text-muted-foreground">Não criar financeiro para essa venda.</p>
                     </div>
-                    <Switch v-model:checked="faturarVenda.lancamentoManual" />
+                    <Switch v-model="faturarVenda.lancamentoManual" />
                 </div>
             </div>
             <div class="flex justify-end gap-2 mt-4">
