@@ -74,6 +74,18 @@ interface ChangelogItem {
 
 const changelog: ChangelogItem[] = [
     {
+        title: "Serviços E OS's",
+        version: "v1.7.0",
+        date: "20/10/2025",
+        changes: [
+            "Adicionado serviços",
+            "Cadastre seus serviços e venda-os junto aos produtos",
+            "Adicione serviços em OS's e monitore",
+            "Crie Ordens de serviços e Realize checklists",
+            "Faça orçamentos e controle tudo em um lugar",
+        ]
+    },
+    {
         title: "Melhorias e Novidades",
         version: "v1.6.0",
         date: "16/10/2025",

@@ -10,7 +10,7 @@ export const useServicoStore = defineStore('servicoStore', () => {
   const form = ref<Servicos>({
     nome: '',
     status: true,
-    preco: 0,
+    preco: '',
     descricao: '',
     id: undefined,
   })
@@ -19,7 +19,7 @@ export const useServicoStore = defineStore('servicoStore', () => {
     form.value = {
       nome: '',
       status: true,
-      preco: 0,
+      preco: '',
       descricao: '',
       id: undefined,
     }

@@ -213,7 +213,7 @@ export interface Servicos {
   id?: number
   Uid?: string
   nome: string
-  preco: number
+  preco: number | string
   status: boolean
   descricao?: string
 }

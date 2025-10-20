@@ -217,8 +217,17 @@ const routes: RouteInterface[] = [
   {
     path: '/servicos',
     name: 'servicos',
-    redirect: { name: 'perfil-usuario' },
+    redirect: { name: 'servicos-listagem' },
     children: [
+      {
+        path: '',
+        name: 'servicos-listagem',
+        component: () => import('@/pages/servicos/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 2,
+        },
+      },
       {
         path: 'painel',
         name: 'perfil-servicos',
