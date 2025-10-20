@@ -137,6 +137,15 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'cobrancas',
+        name: 'lancamentos-cobrancas',
+        component: () => import('@/pages/financeiro/cobrancas/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
         path: 'detalhes',
         name: 'lancamentos-financeiro-detalhes',
         component: () => import('@/pages/financeiro/lancamentos/Detalhes.vue'),

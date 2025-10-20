@@ -63,6 +63,8 @@ export enum StatusPagamento {
   CANCELADO = 'CANCELADO',
 }
 
+export type StatusPagamentoType = 'PENDENTE' | 'EFETIVADO' | 'ESTORNADO' | 'CANCELADO'
+
 export enum MetodoPagamento {
   PIX = 'PIX',
   DINHEIRO = 'DINHEIRO',
@@ -106,6 +108,26 @@ export interface Subscription {
   endpoint: string
   p256dh: string
   auth: string
+}
+
+export type CobrancaFinanceira = {
+  id?: number
+  contaId?: number
+  idCobranca: string
+  Uid?: string
+  externalLink?: string | null
+  valor: number
+  gateway: string
+  dataVencimento?: Date
+  dataCadastro?: Date
+  status: StatusPagamentoType
+  observacao?: string | null
+  lancamentoId?: number | null
+  vendaId?: number | null
+  ordemServicoId?: number | null
+  LancamentoParcela?: ParcelaFinanceiro | null
+  Venda?: Vendas | null
+  Ordemservico?: OrdensServico | null
 }
 
 export interface FaturasContas {
