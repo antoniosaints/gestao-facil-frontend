@@ -1,6 +1,7 @@
 import { type Permissoes } from '@/stores/ui/uiStore'
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
+  Box,
   Boxes,
   CalendarCheck,
   CalendarCheck2,
@@ -8,6 +9,7 @@ import {
   ChartPie,
   CircleDollarSign,
   Cog,
+  FileBox,
   FileCheck2,
   GitBranchPlus,
   Lock,
@@ -83,27 +85,6 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
       ],
     },
     {
-      nome: 'Produtos',
-      icone: Boxes,
-      color: 'blue',
-      show: permissions.produtos.visualizar,
-      children: [
-        {
-          nome: 'Painel',
-          link: '/produtos/dashboard',
-          show: permissions.produtos.painel,
-          icone: ChartPie,
-          color: 'blue',
-        },
-        {
-          nome: 'Produtos',
-          link: '/produtos',
-          icone: Boxes,
-          color: 'blue',
-        },
-      ],
-    },
-    {
       nome: 'Financeiro',
       icone: CircleDollarSign,
       color: 'emerald',
@@ -131,11 +112,25 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
       ],
     },
     {
-      nome: 'Clientes',
-      icone: UserStar,
-      show: permissions.clientes.visualizar,
-      color: 'violet',
-      link: '/clientes',
+      nome: 'Produtos',
+      icone: Box,
+      color: 'blue',
+      show: permissions.produtos.visualizar,
+      children: [
+        {
+          nome: 'Painel',
+          link: '/produtos/dashboard',
+          show: permissions.produtos.painel,
+          icone: ChartPie,
+          color: 'blue',
+        },
+        {
+          nome: 'Produtos',
+          link: '/produtos',
+          icone: Boxes,
+          color: 'blue',
+        },
+      ],
     },
     {
       nome: 'Desenvolvimento',
@@ -144,12 +139,12 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
     },
     {
       nome: 'Serviços',
-      icone: Wrench,
+      icone: FileBox,
       show: permissions.servicos.visualizar && permissions.superadmin,
       color: 'yellow',
       children: [
         { nome: 'Painel', link: '/servicos/painel', color: 'yellow', icone: ChartPie },
-        { nome: 'Ordens', link: '/servicos/ordens', color: 'yellow', icone: ScrollText },
+        { nome: 'Ordens de serviço', link: '/servicos/ordens', color: 'yellow', icone: ScrollText },
         { nome: 'Serviços', link: '/servicos', color: 'yellow', icone: Wrench },
       ],
     },
@@ -163,6 +158,13 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
         // { nome: "Painel", link: "/financeiro/painel", icone: "fa-solid fa-chart-pie" },
         // { nome: "Lançamentos", link: "/financeiro/lancamentos", icone: "fa-solid fa-coins" },
       ],
+    },
+    {
+      nome: 'Clientes',
+      icone: UserStar,
+      show: permissions.clientes.visualizar,
+      color: 'violet',
+      link: '/clientes',
     },
     {
       nome: 'Administração',
