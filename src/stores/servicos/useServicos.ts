@@ -6,6 +6,24 @@ import { ServicoRepository } from '@/repositories/servico-repository'
 export const useServicoStore = defineStore('servicoStore', () => {
   const openModal = ref(false)
   const idMutation = ref<number | null>(null)
+  const selectedIds = ref<number[]>([])
+
+  function resetSelectedIds() {
+    selectedIds.value = []
+  }
+
+  function addSelectedId(id: number) {
+    if (!selectedIds.value.includes(id)) {
+      selectedIds.value.push(id)
+    }
+  }
+
+  function removeSelectedId(id: number) {
+    const index = selectedIds.value.indexOf(id)
+    if (index !== -1) {
+      selectedIds.value.splice(index, 1)
+    }
+  }
 
   const form = ref<Servicos>({
     nome: '',
@@ -43,6 +61,7 @@ export const useServicoStore = defineStore('servicoStore', () => {
 
   const updateTable = () => {
     filters.value.update = !filters.value.update
+    resetSelectedIds()
   }
 
   return {
@@ -54,5 +73,9 @@ export const useServicoStore = defineStore('servicoStore', () => {
     filters,
     reset,
     form,
+    selectedIds,
+    addSelectedId,
+    resetSelectedIds,
+    removeSelectedId,
   }
 })

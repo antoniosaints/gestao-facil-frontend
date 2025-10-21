@@ -54,6 +54,9 @@ function limparFiltro() {
                             <SelectItem value="ORCAMENTO">
                                 Orçamento
                             </SelectItem>
+                            <SelectItem value="FATURADO">
+                                Faturado
+                            </SelectItem>
                             <SelectItem value="ANDAMENTO">
                                 Em andamento
                             </SelectItem>

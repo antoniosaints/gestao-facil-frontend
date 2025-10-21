@@ -1,11 +1,8 @@
-// composables/useServerTable.ts
 import { ref, watchEffect } from 'vue'
 import type { ColumnDef, SortingState, VisibilityState } from '@tanstack/vue-table'
 import { getCoreRowModel, useVueTable } from '@tanstack/vue-table'
 import { valueUpdater } from '@/lib/utils'
 import http from '@/utils/axios'
-import { useToast } from 'vue-toastification'
-const toast = useToast()
 export function useServerTable<T>(
   url: string,
   columns: ColumnDef<T>[],

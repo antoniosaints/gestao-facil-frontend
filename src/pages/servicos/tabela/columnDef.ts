@@ -6,8 +6,27 @@ import { ArrowUpDown, Ban, CircleCheck, FileBox } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from './Actions.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
+import { Checkbox } from '@/components/ui/checkbox'
+import { useServicoStore } from '@/stores/servicos/useServicos'
+const store = useServicoStore()
 
 export const columnsServicos: ColumnDef<Servicos>[] = [
+  {
+    id: 'select',
+    header: ({ table }) => render('div', {}, ''),
+    cell: ({ row }) =>
+      render(Checkbox, {
+        modelValue: store.selectedIds.includes(row.original.id!),
+        'onUpdate:modelValue': (value: boolean | string) => {
+          row.toggleSelected(!!value)
+          if (value) store.addSelectedId(row.original.id!)
+          else store.removeSelectedId(row.original.id!)
+        },
+        ariaLabel: 'Select row',
+      }),
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: 'Uid',
     header: ({ column }) =>

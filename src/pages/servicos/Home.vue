@@ -2,11 +2,33 @@
 import Tabela from './tabela/Tabela.vue';
 import Mobile from './tabela/Mobile.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
-import { BadgePlus, FileBox, RotateCw } from 'lucide-vue-next';
+import { BadgePlus, CircleChevronDown, FileBox, RotateCw, Trash } from 'lucide-vue-next';
 import { useServicoStore } from '@/stores/servicos/useServicos';
 import ModalServicos from './modais/ModalServicos.vue';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { useToast } from 'vue-toastification';
+import { useConfirm } from '@/composables/useConfirm';
+import { ServicoRepository } from '@/repositories/servico-repository';
 const store = useServicoStore();
 const uiStore = useUiStore()
+const toast = useToast()
+async function excluirEmLote() {
+    try {
+        if (!store.selectedIds.length) return toast.error('Nenhum serviço selecionado')
+        const confirm = await useConfirm().confirm({
+            title: 'Excluir em lote',
+            message: 'Tem certeza que deseja excluir esses serviços?'
+        });
+        if (!confirm) return
+        await Promise.all(store.selectedIds.map(id => ServicoRepository.remove(id)))
+        store.updateTable()
+        toast.success('Serviços excluidos com sucesso')
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao excluir os serviços')
+    }
+}
 </script>
 
 <template>
@@ -20,6 +42,24 @@ const uiStore = useUiStore()
                 <p class="text-sm text-muted-foreground">Serviços cadastrados no sistema</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
+                <DropdownMenu v-if="store.selectedIds.length">
+                    <DropdownMenuTrigger as-child>
+                        <Button variant="outline">
+                            <CircleChevronDown />
+                            Ações
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem @click="excluirEmLote" class="cursor-pointer">
+                                <Trash />
+                                <span>
+                                    Excluir em lote
+                                </span>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <button @click="store.openSave"
                     class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo serviço</span>
