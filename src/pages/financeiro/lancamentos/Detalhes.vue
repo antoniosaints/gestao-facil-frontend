@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, FileClock, HandCoins, RotateCw, ToggleLeft, Trash, Trash2, Undo2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, ExternalLink, FileClock, HandCoins, RotateCw, ToggleLeft, Trash, Trash2, Undo2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { useRoute } from "vue-router"
 import type { LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
@@ -77,6 +77,9 @@ function gerarCobrancaParcela(idParcela: number) {
         tipo: 'parcela'
     })
 }
+function openLinkCobranca(link: string) {
+    window.open(link, '_blank')
+}
 
 function copiarUid() {
     navigator.clipboard.writeText(lancamento.value?.Uid ?? "");
@@ -125,6 +128,7 @@ async function estornarParcela(id: number) {
 }
 
 onMounted(loadLancamento);
+watch(() => storeCobranca.filters.update, loadLancamento);
 </script>
 
 <template>
@@ -185,11 +189,13 @@ onMounted(loadLancamento);
                 <div><span>Total pendente:</span>
                     <BadgeCell color="yellow" :label="formatCurrencyBR(totalPendente!)" class="ml-2 text-sm" />
                 </div>
-                <div><span>Data cadastro:</span> {{ lancamento?.dataLancamento ?
-                    formatDateToPtBR(lancamento?.dataLancamento,
-                        false) :
-                    'N/A'
-                }}</div>
+                <div><span>Data cadastro:</span>
+                    {{ lancamento?.dataLancamento ?
+                        formatDateToPtBR(lancamento?.dataLancamento,
+                            false) :
+                        'N/A'
+                    }}
+                </div>
                 <div><span>Parcelas:</span> {{lancamento?.parcelas.length === 1 && !lancamento.recorrente ? 'À vista' :
                     `${lancamento?.parcelas.filter((p) => p.numero != 0).length} parcelas`}}</div>
                 <Separator class="col-span-2" />
@@ -242,9 +248,15 @@ onMounted(loadLancamento);
                                 </TableCell>
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
-                                        <Button v-if="!p.pago" @click="gerarCobrancaParcela(p.id!)" variant="default"
-                                            class="w-8 h-8 p-0 bg-success hover:bg-success/80 text-white">
+                                        <Button v-if="!p.pago && !p.CobrancasFinanceiras?.length"
+                                            @click="gerarCobrancaParcela(p.id!)" variant="default"
+                                            class="h-8 p-0 px-2 bg-success hover:bg-success/80 text-white">
                                             <CircleDollarSign class="w-4 h-4" />
+                                        </Button>
+                                        <Button v-if="p.CobrancasFinanceiras?.length"
+                                            @click="openLinkCobranca(p.CobrancasFinanceiras[0].externalLink!)"
+                                            variant="outline" class="h-8 p-0 px-2 bg-secondary hover:bg-secondary/80">
+                                            <ExternalLink class="w-4 h-4" />
                                         </Button>
                                         <Button v-if="!p.pago" :disabled="lancamento.vendaId"
                                             @click="efetivarParcela(p.id!)" variant="default"

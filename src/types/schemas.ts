@@ -417,4 +417,5 @@ export interface ParcelaFinanceiro {
   formaPagamento?: MetodoPagamento
   dataPagamento?: Date
   lancamentoId: number
+  CobrancasFinanceiras?: CobrancaFinanceira[]
 }
