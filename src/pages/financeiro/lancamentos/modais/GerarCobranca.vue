@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { Copy, ExternalLink, FilePlus, Receipt } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useToast } from 'vue-toastification'
@@ -17,7 +16,6 @@ import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { useClientesStore } from '@/stores/clientes/useClientes'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 
-const store = useLancamentosStore()
 const storeCobranca = useCobrancasFinanceirasStore()
 const storeClientes = useClientesStore()
 const toast = useToast()
@@ -63,12 +61,13 @@ async function gerarCobrancaLancamento() {
         }
         loading.value = true
         submitText.value = 'Gerando cobrança...'
-        const response = await LancamentosRepository.gerarCobranca(tipo.value, Number(valorAvulso.value), gateway.value, clienteId.value)
+        const response = await LancamentosRepository.gerarCobranca(tipo.value, Number(valorAvulso.value), gateway.value, clienteId.value, storeCobranca.vinculoCobranca)
         linkPayment.value = response.message
         linkExists.value = true
         toast.success('Cobrança gerada com sucesso.', {
             timeout: 5000
         })
+        storeCobranca.vinculoCobranca = undefined;
         loading.value = false
         submitText.value = 'Gerar cobrança'
         storeCobranca.updateTable()
@@ -93,7 +92,7 @@ function acessarLink() {
 </script>
 
 <template>
-    <ModalView v-model:open="store.openModalCobranca" title="Gerar cobrança" size="lg"
+    <ModalView v-model:open="storeCobranca.openModal" title="Gerar cobrança" size="lg"
         description="Gerar uma cobrança de pagamento">
         <div class="grid gap-4 px-4">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -204,7 +203,7 @@ function acessarLink() {
             </div>
 
             <div class="flex justify-end gap-2 mt-4">
-                <Button type="button" variant="secondary" @click="store.openModalCobranca = false">
+                <Button type="button" variant="secondary" @click="storeCobranca.openModal = false">
                     Fechar
                 </Button>
                 <Button v-if="!linkExists" :disabled="loading" @click="gerarCobrancaLancamento" class="text-white"

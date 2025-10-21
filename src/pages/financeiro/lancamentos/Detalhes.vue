@@ -22,11 +22,13 @@ import ClientesModal from "@/pages/clientes/modais/ClientesModal.vue"
 import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { goBack } from "@/hooks/links"
+import { useCobrancasFinanceirasStore } from "@/stores/lancamentos/useCobrancas"
 
 const route = useRoute()
 const toast = useToast()
 const lancamento = ref<LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro> }>()
 const store = useLancamentosStore()
+const storeCobranca = useCobrancasFinanceirasStore()
 const uiStore = useUiStore()
 const loading = ref(false)
 
@@ -62,7 +64,18 @@ function gerarCobrancaFatura() {
         toast.error("ID de produto inválido");
         return;
     }
-    store.openModalCobranca = true
+    storeCobranca.openSave()
+}
+function gerarCobrancaParcela(idParcela: number) {
+    const id = Number(route.query.id);
+    if (!id || isNaN(id)) {
+        toast.error("ID de lançamento inválido");
+        return;
+    }
+    storeCobranca.openSave({
+        id: idParcela,
+        tipo: 'parcela'
+    })
 }
 
 function copiarUid() {
@@ -229,7 +242,7 @@ onMounted(loadLancamento);
                                 </TableCell>
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
-                                        <Button v-if="!p.pago" @click="store.openModalCobranca = true" variant="default"
+                                        <Button v-if="!p.pago" @click="gerarCobrancaParcela(p.id!)" variant="default"
                                             class="w-8 h-8 p-0 bg-success hover:bg-success/80 text-white">
                                             <CircleDollarSign class="w-4 h-4" />
                                         </Button>

@@ -165,12 +165,17 @@ export class LancamentosRepository {
     value: number,
     gateway: 'mercadopago' | 'pagseguro' | 'asaas',
     clienteId?: number | null,
+    vinculo?: {
+      id: number
+      tipo: 'parcela' | 'venda' | 'os'
+    } | null,
   ) {
     const data = await http.post(`/lancamentos/cobrancas/cobrar`, {
       type,
       value,
       gateway,
       clienteId,
+      vinculo,
     })
     return data.data
   }
