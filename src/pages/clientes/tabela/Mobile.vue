@@ -6,7 +6,7 @@
         </div>
         <div v-else class="flex flex-col gap-2">
             <div v-if="mobileData.length === 0"
-                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-12rem)]">
+                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-13rem)]">
                 <div class="text-center">
                     <i class="fa-solid fa-box-open text-4xl text-gray-500 dark:text-gray-300 mb-4"></i>
                     <p class="text-gray-500 dark:text-gray-300">Nenhum ítem encontrado.</p>

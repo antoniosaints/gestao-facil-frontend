@@ -1,12 +1,12 @@
 <template>
-    <div class="flex flex-col gap-2 mt-2 overflow-auto max-h-[calc(100vh-12rem)] md:max-h-full">
+    <div class="flex flex-col gap-2 mt-2 overflow-auto max-h-[calc(100vh-13rem)] md:max-h-full">
         <!-- Lista de Vendas -->
-        <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-12rem)]">
+        <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-13rem)]">
             <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark"></div>
         </div>
         <div v-else class="flex flex-col gap-2">
             <div v-if="dataMobile.length === 0"
-                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-12rem)]">
+                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-13rem)]">
                 <div class="text-center">
                     <i class="fa-solid fa-box-open text-4xl text-gray-500 dark:text-gray-300 mb-4"></i>
                     <p class="text-gray-500 dark:text-gray-300">Nenhum ítem encontrado.</p>

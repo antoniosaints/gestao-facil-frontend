@@ -1,12 +1,12 @@
 <template>
-    <div class="flex flex-col gap-2 mt-2 overflow-auto max-h-[calc(100vh-12rem)] md:max-h-full">
+    <div class="flex flex-col gap-2 mt-2 overflow-auto max-h-[calc(100vh-13rem)] md:max-h-full">
         <!-- Lista de Vendas -->
-        <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-12rem)]">
+        <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-13rem)]">
             <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark"></div>
         </div>
         <div v-else class="flex flex-col gap-2">
             <div v-if="dataMobile.length === 0"
-                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-12rem)]">
+                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-13rem)]">
                 <div class="text-center">
                     <i class="fa-solid fa-box-open text-4xl text-gray-500 dark:text-gray-300 mb-4"></i>
                     <p class="text-gray-500 dark:text-gray-300">Nenhum ítem encontrado.</p>
@@ -15,26 +15,30 @@
             <div v-for="row in dataMobile" :key="row.id"
                 class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
-                    <div class="text-sm font-semibold dark:text-white">{{ row.nome }}</div>
-                    <div
-                        :class="['text-sm', row.status ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
-                        {{ row.status ? 'Ativo' : 'Inativo' }}
+                    <div class="text-sm font-semibold dark:text-white">{{ row.Uid }}</div>
+                    <div :class="['text-sm', 'text-green-500 dark:text-green-400']">
+                        {{ formatCurrencyBR(row.valor as number) }}
                     </div>
                 </div>
                 <div class="flex justify-between">
                     <div :class="`text-xs`">
-                        {{ formatCurrencyBR(row.preco as number) }}</div>
+                        {{ row.status }}
+                    </div>
                 </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.descricao || '-' }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.observacao || '-' }}</div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-2">
-                        <button @click="store.openUpdate(row.id!)"
+                        <button v-if="row.externalLink" @click="accessLink(row.externalLink)"
                             class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
-                            <PenLine class="w-5 h-5" />
+                            <Eye class="w-5 h-5" />
+                        </button>
+                        <button v-if="row.status === 'PENDENTE'" @click="cancelar(row.id!)"
+                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
+                            <Ban class="w-5 h-5" />
                         </button>
                     </div>
-                    <button @click="deletar(row.id!)"
-                        class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
+                    <button :disabled="row.status !== 'CANCELADO'" @click="deletar(row.id!)"
+                        class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 disabled:opacity-50 px-2 py-1 rounded-md text-sm">
                         <Trash class="w-5 h-5" />
                     </button>
                 </div>
@@ -69,7 +73,7 @@
     <Drawer v-model:open="showDrawer">
         <DrawerContent>
             <DrawerHeader class="text-left">
-                <DrawerTitle>Serviços</DrawerTitle>
+                <DrawerTitle>Cobranças</DrawerTitle>
             </DrawerHeader>
             <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
                 <div @click="openSave"
@@ -123,19 +127,18 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import type { Servicos } from "@/types/schemas";
-import { PenLine, Trash } from "lucide-vue-next";
+import type { CobrancaFinanceira } from "@/types/schemas";
+import { Ban, Eye, Trash } from "lucide-vue-next";
 import { useConfirm } from "@/composables/useConfirm";
-import { UsuarioRepository } from "@/repositories/usuario-repository";
 import { useToast } from "vue-toastification";
 import { watch } from "vue";
-import { useServicoStore } from "@/stores/servicos/useServicos";
 import { formatCurrencyBR } from "@/utils/formatters";
-import { ServicoRepository } from "@/repositories/servico-repository";
+import { LancamentosRepository } from "@/repositories/lancamento-repository";
+import { useCobrancasFinanceirasStore } from "@/stores/lancamentos/useCobrancas";
 
-const store = useServicoStore();
+const store = useCobrancasFinanceirasStore();
 const toast = useToast();
-const dataMobile = ref<Servicos[]>([]);
+const dataMobile = ref<CobrancaFinanceira[]>([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const loading = ref(false);
@@ -145,7 +148,7 @@ const showDrawer = ref(false);
 
 function renderMobile(page: number = 1) {
     loading.value = true;
-    http.get(`/servicos/lista/mobile`, {
+    http.get(`/lancamentos/cobrancas/lista/mobile`, {
         params: {
             search: searchQuery.value,
             limit: 10,
@@ -158,7 +161,7 @@ function renderMobile(page: number = 1) {
         loading.value = false;
         showModalBuscar.value = false;
     }).catch(err => {
-        console.error("mobile_vendas:", err);
+        console.error("mobile_cobrancas:", err);
         dataMobile.value = [];
         loading.value = false;
     });
@@ -182,22 +185,43 @@ watch(() => store.filters.update, () => {
     renderMobile();
 })
 
+async function cancelar(id: number) {
+    if (!id) return toast.error('ID não informado!')
+    const confirm = await useConfirm().confirm({
+        title: 'Cancelar cobrança',
+        message: 'Tem certeza que deseja cancelar esta cobrança?',
+        confirmText: 'Sim, cancelar!',
+    })
+    if (!confirm) return
+    try {
+        await LancamentosRepository.cancelarCobranca(id)
+        store.updateTable()
+        toast.success('Cobrança cancelada com sucesso')
+    } catch (error: any) {
+        console.log(error)
+        toast.error(error.message || 'Erro ao cancelar a cobrança')
+    }
+}
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     const confirm = await useConfirm().confirm({
-        title: 'Excluir serviço',
-        message: 'Tem certeza que deseja excluir este serviço?',
+        title: 'Excluir cobrança',
+        message: 'Tem certeza que deseja excluir esta cobrança?',
         confirmText: 'Sim, excluir!',
     })
     if (!confirm) return
     try {
-        await ServicoRepository.remove(id)
+        await LancamentosRepository.deletarCobranca(id)
         store.updateTable()
-        toast.success('Serviço deletado com sucesso')
-    } catch (error) {
+        toast.success('Cobrança deletada com sucesso')
+    } catch (error: any) {
         console.log(error)
-        toast.error('Erro ao deletar o serviço')
+        toast.error(error.message || 'Erro ao deletar a cobrança')
     }
+}
+
+function accessLink(link: string) {
+    window.open(link, '_blank')
 }
 
 onMounted(() => renderMobile());
