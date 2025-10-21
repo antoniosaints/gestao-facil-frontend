@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { Ban, Eye, Menu, Undo2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { CobrancaFinanceira } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import { useConfirm } from '@/composables/useConfirm';
-import { useServicoStore } from '@/stores/servicos/useServicos';
-import { ServicoRepository } from '@/repositories/servico-repository';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
+import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas';
 
-const store = useServicoStore()
+const store = useCobrancasFinanceirasStore()
 
 const { data } = defineProps<{
     data: CobrancaFinanceira,
@@ -17,6 +16,23 @@ const { data } = defineProps<{
 
 const toast = useToast()
 
+async function cancelar(id: number) {
+    if (!id) return toast.error('ID não informado!')
+    const confirm = await useConfirm().confirm({
+        title: 'Cancelar cobrança',
+        message: 'Tem certeza que deseja cancelar esta cobrança?',
+        confirmText: 'Sim, cancelar!',
+    })
+    if (!confirm) return
+    try {
+        await LancamentosRepository.cancelarCobranca(id)
+        store.updateTable()
+        toast.success('Cobrança cancelada com sucesso')
+    } catch (error: any) {
+        console.log(error)
+        toast.error(error.message || 'Erro ao cancelar a cobrança')
+    }
+}
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     const confirm = await useConfirm().confirm({
@@ -26,11 +42,12 @@ async function deletar(id: number) {
     })
     if (!confirm) return
     try {
+        await LancamentosRepository.deletarCobranca(id)
         store.updateTable()
         toast.success('Cobrança deletada com sucesso')
-    } catch (error) {
+    } catch (error: any) {
         console.log(error)
-        toast.error('Erro ao deletar a cobrança')
+        toast.error(error.message || 'Erro ao deletar a cobrança')
     }
 }
 
@@ -52,14 +69,14 @@ function accessLink(link: string) {
                 <Eye />
                 Visualizar
             </DropdownMenuItem>
-            <DropdownMenuItem v-if="data.status === 'PENDENTE'" @click="store.openUpdate(data.id!)">
+            <DropdownMenuItem v-if="data.status === 'PENDENTE'" @click="cancelar(data.id!)">
                 <Ban />
                 Cancelar
             </DropdownMenuItem>
-            <DropdownMenuItem v-if="data.status === 'EFETIVADO'" @click="store.openUpdate(data.id!)">
+            <!-- <DropdownMenuItem v-if="data.status === 'EFETIVADO'" @click="store.openUpdate(data.id!)">
                 <Undo2 />
                 Estornar
-            </DropdownMenuItem>
+            </DropdownMenuItem> -->
             <DropdownMenuItem :disabled="data.status !== 'CANCELADO'" class="text-danger" @click="deletar(data.id!)">
                 <i class="fa-regular fa-trash-can mr-1"></i>
                 Excluir

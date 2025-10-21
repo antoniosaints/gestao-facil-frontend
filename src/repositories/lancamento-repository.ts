@@ -150,6 +150,16 @@ export class LancamentosRepository {
     const data = await http.get(`/lancamentos/graficos/receita-despesa-mensal`)
     return data.data
   }
+  static async cancelarCobranca(id: number | string) {
+    const data = await http.post(`/lancamentos/cobrancas/cancelar`, {
+      cobrancaId: id,
+    })
+    return data.data
+  }
+  static async deletarCobranca(id: number) {
+    const data = await http.delete(`/lancamentos/cobrancas/deletar/${id}`)
+    return data.data
+  }
   static async gerarCobranca(
     type: 'BOLETO' | 'LINK' | 'PIX',
     value: number,

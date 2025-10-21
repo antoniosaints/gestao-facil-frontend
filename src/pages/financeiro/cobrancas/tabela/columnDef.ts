@@ -2,12 +2,32 @@ import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { CobrancaFinanceira } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Ban, Calendar, CircleCheck, FileBox, Link2, Loader } from 'lucide-vue-next'
+import { ArrowUpDown, Ban, Calendar, CircleCheck, HandCoins, Link2, Loader } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from './Actions.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
 
 export const columnsCobrancas: ColumnDef<CobrancaFinanceira>[] = [
+  {
+    accessorKey: 'idCobranca',
+    header: ({ column }) =>
+      render(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
+    cell: ({ row }) => {
+      return render(BadgeCell, {
+        label: row.original.idCobranca,
+        color: 'gray',
+        icon: HandCoins,
+        capitalize: false,
+      })
+    },
+  },
   {
     accessorKey: 'status',
     header: ({ column }) =>

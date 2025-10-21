@@ -142,7 +142,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/financeiro/cobrancas/Home.vue'),
         meta: {
           layout: 'main',
-          permissao: 3,
+          permissao: 4,
         },
       },
       {

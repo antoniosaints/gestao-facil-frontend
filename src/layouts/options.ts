@@ -114,6 +114,7 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
           nome: 'Cobranças',
           link: '/financeiro/cobrancas',
           icone: HandCoins,
+          show: permissions.admin,
           color: 'emerald',
         },
       ],

@@ -15,8 +15,10 @@ import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { useClientesStore } from '@/stores/clientes/useClientes'
+import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 
 const store = useLancamentosStore()
+const storeCobranca = useCobrancasFinanceirasStore()
 const storeClientes = useClientesStore()
 const toast = useToast()
 const gateway = ref<'mercadopago' | 'pagseguro' | 'asaas' | undefined>()
@@ -69,6 +71,7 @@ async function gerarCobrancaLancamento() {
         })
         loading.value = false
         submitText.value = 'Gerar cobrança'
+        storeCobranca.updateTable()
     } catch (error: any) {
         console.log(error)
         toast.error(error.response?.data?.message || 'Erro ao gerar cobrança', {
