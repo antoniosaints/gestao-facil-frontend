@@ -32,12 +32,16 @@
                             class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
                             <Eye class="w-5 h-5" />
                         </button>
+                        <button v-if="row.status === 'EFETIVADO'" @click="estornar(row.id!)"
+                            class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-2 py-1 rounded-md text-sm">
+                            <Undo2 class="w-5 h-5" />
+                        </button>
                         <button v-if="row.status === 'PENDENTE'" @click="cancelar(row.id!)"
                             class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
                             <Ban class="w-5 h-5" />
                         </button>
                     </div>
-                    <button :disabled="row.status !== 'CANCELADO'" @click="deletar(row.id!)"
+                    <button :disabled="!['ESTORNADO', 'CANCELADO'].includes(row.status)" @click="deletar(row.id!)"
                         class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 disabled:opacity-50 px-2 py-1 rounded-md text-sm">
                         <Trash class="w-5 h-5" />
                     </button>
@@ -128,7 +132,7 @@ import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import type { CobrancaFinanceira } from "@/types/schemas";
-import { Ban, Eye, Trash } from "lucide-vue-next";
+import { Ban, Eye, Trash, Undo2 } from "lucide-vue-next";
 import { useConfirm } from "@/composables/useConfirm";
 import { useToast } from "vue-toastification";
 import { watch } from "vue";
@@ -217,6 +221,24 @@ async function deletar(id: number) {
     } catch (error: any) {
         console.log(error)
         toast.error(error.message || 'Erro ao deletar a cobrança')
+    }
+}
+
+async function estornar(id: number) {
+    if (!id) return toast.error('ID não informado!')
+    const confirm = await useConfirm().confirm({
+        title: 'Estornar cobrança',
+        message: 'Tem certeza que deseja estornar esta cobrança?',
+        confirmText: 'Sim, prosseguir!',
+    })
+    if (!confirm) return
+    try {
+        await LancamentosRepository.estornarCobranca(id)
+        store.updateTable()
+        toast.success('Cobrança estornada com sucesso')
+    } catch (error: any) {
+        console.log(error)
+        toast.error(error.message || 'Erro ao estornar a cobrança')
     }
 }
 

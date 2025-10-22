@@ -33,6 +33,23 @@ async function cancelar(id: number) {
         toast.error(error.message || 'Erro ao cancelar a cobrança')
     }
 }
+async function estornar(id: number) {
+    if (!id) return toast.error('ID não informado!')
+    const confirm = await useConfirm().confirm({
+        title: 'Estornar cobrança',
+        message: 'Tem certeza que deseja estornar esta cobrança?',
+        confirmText: 'Sim, prosseguir!',
+    })
+    if (!confirm) return
+    try {
+        await LancamentosRepository.estornarCobranca(id)
+        store.updateTable()
+        toast.success('Cobrança estornada com sucesso')
+    } catch (error: any) {
+        console.log(error)
+        toast.error(error.message || 'Erro ao estornar a cobrança')
+    }
+}
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     const confirm = await useConfirm().confirm({
@@ -73,11 +90,12 @@ function accessLink(link: string) {
                 <Ban />
                 Cancelar
             </DropdownMenuItem>
-            <!-- <DropdownMenuItem v-if="data.status === 'EFETIVADO'" @click="store.openUpdate(data.id!)">
+            <DropdownMenuItem v-if="data.status === 'EFETIVADO'" @click="estornar(data.id!)">
                 <Undo2 />
                 Estornar
-            </DropdownMenuItem> -->
-            <DropdownMenuItem :disabled="data.status !== 'CANCELADO'" class="text-danger" @click="deletar(data.id!)">
+            </DropdownMenuItem>
+            <DropdownMenuItem :disabled="!['ESTORNADO', 'CANCELADO'].includes(data.status)" class="text-danger"
+                @click="deletar(data.id!)">
                 <i class="fa-regular fa-trash-can mr-1"></i>
                 Excluir
             </DropdownMenuItem>

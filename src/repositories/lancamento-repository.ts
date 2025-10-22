@@ -156,6 +156,12 @@ export class LancamentosRepository {
     })
     return data.data
   }
+  static async estornarCobranca(id: number | string) {
+    const data = await http.post(`/lancamentos/cobrancas/estornar`, {
+      cobrancaId: id,
+    })
+    return data.data
+  }
   static async deletarCobranca(id: number) {
     const data = await http.delete(`/lancamentos/cobrancas/deletar/${id}`)
     return data.data
