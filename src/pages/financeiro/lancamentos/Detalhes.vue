@@ -66,7 +66,7 @@ function gerarCobrancaFatura() {
     }
     storeCobranca.openSave()
 }
-function gerarCobrancaParcela(idParcela: number) {
+function gerarCobrancaParcela(idParcela: number, valor?: number) {
     const id = Number(route.query.id);
     if (!id || isNaN(id)) {
         toast.error("ID de lançamento inválido");
@@ -74,7 +74,8 @@ function gerarCobrancaParcela(idParcela: number) {
     }
     storeCobranca.openSave({
         id: idParcela,
-        tipo: 'parcela'
+        tipo: 'parcela',
+        valor
     })
 }
 function openLinkCobranca(link: string) {
@@ -249,7 +250,7 @@ watch(() => storeCobranca.filters.update, loadLancamento);
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
                                         <Button v-if="!p.pago && !p.CobrancasFinanceiras?.length"
-                                            @click="gerarCobrancaParcela(p.id!)" variant="default"
+                                            @click="gerarCobrancaParcela(p.id!, p.valor)" variant="default"
                                             class="h-8 p-0 px-2 bg-success hover:bg-success/80 text-white">
                                             <CircleDollarSign class="w-4 h-4" />
                                         </Button>
