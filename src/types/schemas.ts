@@ -297,6 +297,7 @@ export interface Vendas {
   desconto: number
   cliente?: ClientesFornecedores
   vendedor?: Usuarios
+  CobrancasFinanceiras?: CobrancaFinanceira[]
 }
 
 export interface CarrinhoItem {

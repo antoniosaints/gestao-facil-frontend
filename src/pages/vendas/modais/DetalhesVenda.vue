@@ -57,7 +57,25 @@
                     {{ store.venda?.observacoes || '-' }}
                 </p>
             </div>
-            <div v-if="false" class="col-span-2 flex flex-col gap-2">
+            <div v-if="!store.venda?.CobrancasFinanceiras?.length" class="col-span-2 flex flex-col gap-2">
+                <hr class="col-span-2">
+                <label class="text-md">Cobranças</label>
+                <div
+                    class="grid grid-cols-1 gap-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 px-4 rounded-lg shadow-sm col-span-2">
+                    <div class="flex gap-2 items-center justify-between">
+                        <span class="text-sm font-medium text-gray-800 dark:text-gray-200">Nenhuma cobrança
+                            encontrada</span>
+                        <p @click="storeCobranca.openSave({
+                            id: store.venda?.id!,
+                            tipo: 'venda'
+                        })"
+                            class="text-sm font-medium cursor-pointer bg-green-100 rounded-md border dark:bg-green-900 px-3 py-1 text-green-800 dark:text-green-200">
+                            Gerar cobrança
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div v-if="store.venda?.CobrancasFinanceiras?.length" class="col-span-2 flex flex-col gap-2">
                 <hr class="col-span-2">
                 <label class="text-md">Cobranças</label>
                 <div
@@ -76,25 +94,27 @@
                             <span class="text-sm font-medium text-gray-800 dark:text-gray-200">Ação</span>
                         </div>
                     </div>
-                    <div class="grid grid-cols-4 gap-2 border-t border-gray-200 dark:border-gray-700">
+                    <div v-for="row in store.venda?.CobrancasFinanceiras"
+                        class="grid grid-cols-4 gap-2 border-t border-gray-200 dark:border-gray-700">
                         <div class="flex flex-col">
                             <span class="text-gray-600 text-xs md:text-sm dark:text-gray-400">
-                                {{ formatCurrencyBR(subtotal!) }}
+                                {{ formatCurrencyBR(row.valor!) }}
                             </span>
                         </div>
                         <div class="flex flex-col">
                             <span class="text-gray-600 text-xs md:text-sm dark:text-gray-400">
-                                Mercado Pago
+                                {{ row.gateway }}
                             </span>
                         </div>
                         <div class="flex flex-col">
                             <span class="text-gray-600 text-xs md:text-sm dark:text-gray-400">
-                                Pendente
+                                {{ row.status }}
                             </span>
                         </div>
                         <div class="flex flex-col text-right">
                             <span class="text-gray-600 text-xs md:text-sm dark:text-gray-400">
-                                <a href="javascript:void(0)" class="text-blue-600 dark:text-blue-400">Visualizar</a>
+                                <a :href="row.externalLink!" target="_blank"
+                                    class="text-blue-600 dark:text-blue-400">Visualizar</a>
                             </span>
                         </div>
                     </div>
@@ -182,10 +202,11 @@ import { useVendasStore } from '@/stores/vendas/useVenda';
 import { formatCurrencyBR } from '@/utils/formatters';
 import { addDays } from 'date-fns';
 import { FileText } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { gerarCupomVenda } from '../ActionsVendas';
+import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas';
 const store = useVendasStore()
-
+const storeCobranca = useCobrancasFinanceirasStore()
 const subtotal = computed(() => {
     return store.venda?.ItensVendas.reduce((acc, item) => acc + item.quantidade * item.valor, 0)
 })
@@ -193,5 +214,7 @@ const subtotal = computed(() => {
 const total = computed(() => {
     return subtotal.value! - store.venda?.desconto!
 })
+
+watch(() => storeCobranca.filters.update, () => store.openDetalhes(store.idMutation!));
 
 </script>

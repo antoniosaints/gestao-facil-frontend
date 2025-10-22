@@ -13,6 +13,7 @@ import { BadgePlus, Funnel, RotateCw, ShoppingCart, Tags } from 'lucide-vue-next
 import DetalhesVenda from './modais/DetalhesVenda.vue';
 import { getSocket } from '@/pluguins/socket';
 import type { Socket } from 'socket.io-client';
+import GerarCobranca from '../financeiro/lancamentos/modais/GerarCobranca.vue';
 const store = useVendasStore();
 const storeUi = useUiStore();
 const openFilter = ref(false);
@@ -48,7 +49,8 @@ provide('openModalFiltroVendas', openFilter);
                     class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
                     <Funnel class="w-4 h-4 inline-flex" />
                 </button>
-                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
+                <button @click="store.openSave"
+                    class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova Venda</span>
                 </button>
                 <RouterLink to="/vendas/pdv"
@@ -71,5 +73,6 @@ provide('openModalFiltroVendas', openFilter);
         <ModalFiltro />
         <ClientesModal />
         <DetalhesVenda />
+        <GerarCobranca />
     </div>
 </template>

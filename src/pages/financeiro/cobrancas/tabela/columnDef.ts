@@ -2,7 +2,17 @@ import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { CobrancaFinanceira } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Ban, Calendar, CircleCheck, HandCoins, Link2, Loader } from 'lucide-vue-next'
+import {
+  ArrowUpDown,
+  Ban,
+  Calendar,
+  CircleCheck,
+  FileBox,
+  HandCoins,
+  Link2,
+  Loader,
+  Tag,
+} from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from './Actions.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -79,6 +89,25 @@ export const columnsCobrancas: ColumnDef<CobrancaFinanceira>[] = [
         },
         () => ['Observação', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
+    cell: ({ row }) => {
+      let observacao = row.original.observacao
+      let Icon = HandCoins
+      if (row.original.lancamentoId) {
+        observacao = `Parcela financeira`
+      } else if (row.original.vendaId) {
+        observacao = `Venda: (${row.original.Venda?.Uid})`
+        Icon = Tag
+      } else if (row.original.ordemServicoId) {
+        observacao = `OS: ${row.original.Ordemservico?.Uid}`
+        Icon = FileBox
+      }
+      return render(BadgeCell, {
+        label: observacao as string,
+        color: 'gray',
+        icon: Icon,
+        capitalize: false,
+      })
+    },
   },
   {
     accessorKey: 'dataVencimento',
