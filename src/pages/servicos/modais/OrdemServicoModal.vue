@@ -1,39 +1,22 @@
 <template>
-  <Dialog v-model="open">
-    <DialogTrigger as-child>
-      <Button @click="open = true">Nova OS</Button>
-    </DialogTrigger>
-
-    <DialogContent class="max-w-5xl">
-      <DialogHeader>
-        <DialogTitle>Ordem de Serviço</DialogTitle>
-      </DialogHeader>
-
+  <ModalView v-model:open="open" title="Formulario de Ordem de Servico" description="Preencha os campos abaixo">
+    <div class="flex flex-col gap-4 px-4">
       <!-- STEPPER -->
       <div class="flex items-center justify-between mt-4 mb-6">
-        <div
-          v-for="(label, index) in steps"
-          :key="index"
-          class="flex-1 flex flex-col items-center relative"
-        >
-          <div
-            :class="[
-              'rounded-full w-10 h-10 flex items-center justify-center text-white transition-colors',
-              currentStep > index
-                ? 'bg-green-600'
-                : currentStep === index
+        <div v-for="(label, index) in steps" :key="index" class="flex-1 flex flex-col items-center relative">
+          <div :class="[
+            'rounded-full w-10 h-10 flex items-center justify-center text-white transition-colors',
+            currentStep > index
+              ? 'bg-green-600'
+              : currentStep === index
                 ? 'bg-blue-600'
                 : 'bg-gray-400'
-            ]"
-          >
+          ]">
             <span v-if="currentStep > index">✔</span>
             <span v-else>{{ index + 1 }}</span>
           </div>
           <span class="text-sm mt-2">{{ label }}</span>
-          <div
-            v-if="index < steps.length - 1"
-            class="absolute top-5 left-1/2 w-full h-0.5 bg-gray-300 z-[-1]"
-          ></div>
+          <div v-if="index < steps.length - 1" class="absolute top-5 left-1/2 w-full h-0.5 bg-gray-300 z-[-1]"></div>
         </div>
       </div>
 
@@ -93,7 +76,7 @@
       </div>
 
       <!-- STEP 2 - ITENS -->
-      <div v-if="currentStep === 1" class="space-y-4 max-h-[60vh] overflow-auto pr-2">
+      <div v-if="currentStep === 1" class="space-y-4 max-h-[60vh] overflow-auto px-1">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
           <div>
             <Label>Descrição do Item</Label>
@@ -116,11 +99,8 @@
 
         <!-- Lista de Itens -->
         <div v-if="itens.length" class="border rounded-lg divide-y">
-          <div
-            v-for="(item, index) in itens"
-            :key="index"
-            class="flex justify-between items-center p-2 hover:bg-gray-50"
-          >
+          <div v-for="(item, index) in itens" :key="index"
+            class="flex justify-between items-center p-2 hover:bg-gray-50">
             <div>
               <p class="font-medium">{{ item.descricao }}</p>
               <p class="text-sm text-gray-500">{{ item.qtd }} x R$ {{ item.valor.toFixed(2) }}</p>
@@ -195,26 +175,20 @@
           <Button @click="finalizar">Finalizar OS</Button>
         </div>
       </div>
-    </DialogContent>
-  </Dialog>
+    </div>
+  </ModalView>
 </template>
 
 <script setup lang="ts">
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { ref, computed } from "vue"
+import ModalView from "@/components/formulario/ModalView.vue"
 
-const open = ref(false)
+const open = ref(true)
 const currentStep = ref(0)
 const steps = ["Dados da OS", "Itens e Descontos", "Resumo"]
 

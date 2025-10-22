@@ -238,6 +238,15 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'os',
+        name: 'servicos-ordens-servicos',
+        component: () => import('@/pages/servicos/os/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 2,
+        },
+      },
+      {
         path: 'painel',
         name: 'perfil-servicos',
         component: () => import('@/pages/servicos/Dashboard.vue'),

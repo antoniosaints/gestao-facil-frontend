@@ -152,7 +152,7 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
       color: 'yellow',
       children: [
         { nome: 'Painel', link: '/servicos/painel', color: 'yellow', icone: ChartPie },
-        { nome: 'Ordens de serviço', link: '/servicos/ordens', color: 'yellow', icone: FileDigit },
+        { nome: 'Ordens de serviço', link: '/servicos/os', color: 'yellow', icone: FileDigit },
         { nome: 'Serviços', link: '/servicos', color: 'yellow', icone: Wrench },
       ],
     },
