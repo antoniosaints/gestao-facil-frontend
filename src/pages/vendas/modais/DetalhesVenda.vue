@@ -67,7 +67,8 @@
                             encontrada</span>
                         <p @click="storeCobranca.openSave({
                             id: store.venda?.id!,
-                            tipo: 'venda'
+                            tipo: 'venda',
+                            valor: store.venda?.valor
                         })"
                             class="text-sm font-medium cursor-pointer bg-green-100 rounded-md border dark:bg-green-900 px-3 py-1 text-green-800 dark:text-green-200">
                             Gerar cobrança
