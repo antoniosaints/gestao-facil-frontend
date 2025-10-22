@@ -22,7 +22,8 @@
                 </div>
                 <div class="flex justify-between">
                     <div :class="`text-xs`">
-                        {{ row.status }}
+                        <span :class="[getColorStatus(row.status)]">{{
+                            formatToCapitalize(row.status) }}</span> - {{ formatToCapitalize(row.gateway) }}
                     </div>
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.observacao || '-' }}</div>
@@ -136,7 +137,7 @@ import { Ban, Eye, Trash, Undo2 } from "lucide-vue-next";
 import { useConfirm } from "@/composables/useConfirm";
 import { useToast } from "vue-toastification";
 import { watch } from "vue";
-import { formatCurrencyBR } from "@/utils/formatters";
+import { formatCurrencyBR, formatToCapitalize } from "@/utils/formatters";
 import { LancamentosRepository } from "@/repositories/lancamento-repository";
 import { useCobrancasFinanceirasStore } from "@/stores/lancamentos/useCobrancas";
 
@@ -188,6 +189,13 @@ function openSave() {
 watch(() => store.filters.update, () => {
     renderMobile();
 })
+
+const getColorStatus = (status: string) => {
+    if (status === 'EFETIVADO') return 'text-green-500';
+    if (status === 'PENDENTE') return 'text-yellow-500';
+    if (status === 'ESTORNADO') return 'text-blue-500';
+    return 'text-red-500';
+}
 
 async function cancelar(id: number) {
     if (!id) return toast.error('ID não informado!')
