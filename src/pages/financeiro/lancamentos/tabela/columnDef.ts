@@ -68,44 +68,42 @@ export const columnsLancamentos: ColumnDef<
         () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) => {
-      let cor: any = 'gray'
-      let icon = BadgeCheck
-      let label = row.getValue('status') as string
-      switch (row.original.status) {
-        case 'PAGO':
-          cor = 'green'
-          icon = BadgeCheck
-          break
-        case 'PARCIAL':
-          cor = 'blue'
-          icon = Ungroup
-          break
-        case 'PENDENTE':
-          cor = 'yellow'
-          icon = Loader
-          break
-        case 'ATRASADO':
-          cor = 'red'
-          icon = ClockAlert
-          break
-      }
+      const status = row.original.status as string
       const parcelas = row.original.parcelas.filter((p) => p.numero !== 0)
       const efetivadas = parcelas.filter((p) => p.pago).length
-      const pendentes = parcelas.filter((p) => !p.pago).length
-      const idOverdue = row.original.parcelas.some(
+      const pendentes = parcelas.length - efetivadas
+      const hasOverdue = parcelas.some(
         (p) => !p.pago && isAfter(new Date(), new Date(p.vencimento)),
       )
-      if (pendentes > 0 && row.original.recorrente) {
-        label = `${efetivadas}/${parcelas.length} ${Math.round((efetivadas / parcelas.length) * 100)}%`
+
+      // Mapeamento direto de cores e ícones
+      const statusConfig: Record<
+        string,
+        { color: 'green' | 'blue' | 'yellow' | 'red'; icon: any }
+      > = {
+        PAGO: { color: 'green', icon: BadgeCheck },
+        PARCIAL: { color: 'blue', icon: Ungroup },
+        PENDENTE: { color: 'yellow', icon: Loader },
+        ATRASADO: { color: 'red', icon: ClockAlert },
       }
-      if (idOverdue) {
-        cor = 'red'
+
+      let { color, icon } = statusConfig[status] || { color: 'gray', icon: BadgeCheck }
+      let label = status
+
+      if (pendentes > 0 && row.original.recorrente) {
+        const percentual = Math.round((efetivadas / parcelas.length) * 100)
+        label = `${efetivadas}/${parcelas.length} ${percentual}%`
+      }
+
+      if (hasOverdue) {
+        color = 'red'
         icon = ClockAlert
       }
+
       return render(BadgeCell, {
         label,
-        color: cor,
-        icon: icon,
+        color,
+        icon,
         capitalize: false,
       })
     },
@@ -145,7 +143,7 @@ export const columnsLancamentos: ColumnDef<
       ),
     cell: ({ row }) => {
       return render(BadgeCell, {
-        label: formatCurrencyBR(row.original.valorTotal),
+        label: formatCurrencyBR(row.original.parcelas.reduce((acc, p) => acc + Number(p.valor), 0)),
         color: row.original.tipo === 'RECEITA' ? 'green' : 'red',
         capitalize: false,
       })

@@ -73,10 +73,10 @@ onMounted(() => {
                 <Calendarpicker :range="true" v-model="filtroPeriodo" @update:model-value="atualizarIndicadores" />
             </div>
         </div>
-        <div class="flex flex-col gap-4" id="dashboard_financeiro_container_main">
+        <div class="flex flex-col gap-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
                 <!-- Metric Item Start -->
-                <div class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
+                <div class="rounded-2xl border border-border shadow-md bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-arrow-up h-8 w-8 bg-emerald-500/10 p-2 rounded-md text-emerald-500"></i>
 
@@ -106,7 +106,7 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <div class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
+                <div class="rounded-2xl border shadow-md border-border bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i class="fa-solid fa-arrow-down w-8 h-8 bg-red-500/10 p-2 rounded-md text-red-500"></i>
 
@@ -136,7 +136,7 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <div class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
+                <div class="rounded-2xl border shadow-md border-border bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i
                             class="fa-solid fa-money-bill-trend-up w-8 h-8 bg-blue-500/10 p-2 rounded-md text-blue-500"></i>
@@ -167,7 +167,7 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <div class="rounded-2xl cursor-pointer border shadow-md border-border bg-card px-6 pb-5 pt-6">
+                <div class="rounded-2xl border shadow-md border-border bg-card px-6 pb-5 pt-6">
                     <div class="mb-6 flex items-center gap-3">
                         <i
                             class="fa-solid fa-hourglass-end h-8 w-8 bg-yellow-500/10 p-2 rounded-md text-yellow-400"></i>

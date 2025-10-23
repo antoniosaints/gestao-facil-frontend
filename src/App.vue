@@ -14,7 +14,7 @@ const layouts = {
 
 <template>
   <component :is="route.meta.layout ? layouts.main : layouts.default">
-    <transition :name="store.isMobile ? 'fase' : 'slide'" mode="out-in">
+    <transition :name="store.isMobile ? 'fade' : 'slide'" mode="out-in">
       <RouterView />
     </transition>
   </component>

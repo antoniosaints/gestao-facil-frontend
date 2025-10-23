@@ -155,7 +155,7 @@
                             <HandCoins class="mr-2 w-5 h-5" />
                             Saldo mensal
                         </h2>
-                        <button @click="goTo('/lancamentos/resumo')" type="button"
+                        <button @click="goTo('/financeiro/lancamentos')" type="button"
                             class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
                             <i class="fa-solid fa-square-arrow-up-right"></i>
                             Ver mais

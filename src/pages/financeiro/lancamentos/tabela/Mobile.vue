@@ -15,22 +15,31 @@
             <div v-for="row in dataMobile" :key="row.id"
                 class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
-                    <div class="text-sm font-semibold dark:text-white">{{ row.descricao }}</div>
-                    <div class="text-sm text-green-500 dark:text-green-400">
-                        {{ formatCurrencyBR(Number(row.valorTotal)) }}</div>
-                </div>
-                <div class="flex justify-between">
-                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ new Date(row.dataLancamento).toLocaleDateString('pt-BR') }}
+                    <div class="text-sm font-semibold dark:text-white">
+                        {{ row.descricao }}
+                    </div>
+                    <div
+                        :class="['text-sm flex items-center justify-center', row.tipo === 'RECEITA' ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
+                        <ArrowDown v-if="row.tipo === 'DESPESA'" class="w-4 h-4 inline-flex" />
+                        <ArrowUp v-else class="w-4 h-4 inline-flex" />
+                        {{ formatCurrencyBR(Number(row.valorTotal)) }}
                     </div>
                 </div>
+                <div class="flex justify-between">
+
+                </div>
                 <div
-                    :class="['text-xs flex items-center', row.tipo === 'RECEITA' ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
-                    {{ row.tipo || '-' }}
-                    <Dot class="w-5 h-5 inline-flex" />
-                    <div
-                        :class="`text-xs text-${row.status === 'PAGO' ? 'green' : 'red'}-500 dark:text-${row.status === 'PAGO' ? 'green' : 'gray'}-400`">
-                        {{ row.status }}
+                    :class="['text-xs flex items-center justify-between', row.tipo === 'RECEITA' ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
+                    <span class="flex items-center">
+                        {{ row.tipo || '-' }}
+                        <Dot class="w-5 h-5 inline-flex" />
+                        <div
+                            :class="`text-xs text-${row.status === 'PAGO' ? 'green' : 'red'}-500 dark:text-${row.status === 'PAGO' ? 'green' : 'gray'}-400`">
+                            {{ row.status }}
+                        </div>
+                    </span>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ new Date(row.dataLancamento).toLocaleDateString('pt-BR') }}
                     </div>
                 </div>
                 <div class="mt-2 flex justify-between gap-2">
@@ -148,7 +157,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Dot, Eye, FileChartLine, Trash, TrendingDown, TrendingUp } from "lucide-vue-next";
+import { ArrowDown, ArrowUp, Dot, Eye, FileChartLine, Trash, TrendingDown, TrendingUp } from "lucide-vue-next";
 import type { LancamentoFinanceiro } from "@/types/schemas";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { watch } from "vue";
