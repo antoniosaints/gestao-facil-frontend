@@ -29,14 +29,13 @@ export enum StatusMovimentacao {
   CANCELADO = 'CANCELADO',
 }
 
-export enum StatusOrdemServico {
-  ABERTA = 'ABERTA',
-  ORCAMENTO = 'ORCAMENTO',
-  APROVADA = 'APROVADA',
-  ANDAMENTO = 'ANDAMENTO',
-  FATURADA = 'FATURADA',
-  CANCELADA = 'CANCELADA',
-}
+export type StatusOrdemServico =
+  | 'ABERTA'
+  | 'ORCAMENTO'
+  | 'APROVADA'
+  | 'ANDAMENTO'
+  | 'FATURADA'
+  | 'CANCELADA'
 
 export enum TipoItemOrdemServico {
   SERVICO = 'SERVICO',
@@ -244,8 +243,8 @@ export interface OrdensServico {
   id?: number
   Uid?: string
   descricao?: string
-  clienteId?: number
-  operadorId?: number
+  clienteId: number | null
+  operadorId: number | null
   Operador?: Usuarios
   Cliente?: ClientesFornecedores
   descricaoCliente?: string
@@ -316,6 +315,12 @@ export interface ItemVenda {
   quantidade: number
   preco: number
 }
+export interface ItemOrdemServico {
+  id: number
+  quantidade: number
+  preco: number
+  tipo: 'PRODUTO' | 'SERVICO'
+}
 
 export interface FormularioVenda {
   clienteId: number | null
@@ -326,6 +331,18 @@ export interface FormularioVenda {
   observacoes: string | null
   desconto: number | string | null
   id: number | null
+}
+export interface FormularioOrdemServico {
+  clienteId: number | null
+  data: Date | null
+  operadorId: number | null
+  status: 'ORCAMENTO' | 'ANDAMENTO' | 'FINALIZADO' | 'PENDENTE' | 'CANCELADO'
+  garantia: number | null
+  observacoes: string | undefined
+  observacoesInternas: string | undefined
+  desconto: number | string | undefined
+  itens: ItemOrdemServico[]
+  id: number | undefined | null
 }
 export interface FormularioLancamento {
   id: number | null

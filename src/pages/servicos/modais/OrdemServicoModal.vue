@@ -20,6 +20,7 @@ import { useOrdemServicoStore, type CarrinhoOS } from "@/stores/servicos/useOrde
 import { ServicoRepository } from "@/repositories/servico-repository";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { addDays, format } from "date-fns";
+import type { FormularioOrdemServico } from "@/types/schemas";
 
 const title = ref('Cadastro de OS')
 const description = ref('Preencha os campos abaixo')
@@ -29,6 +30,7 @@ const storeUi = useUiStore()
 const storeCliente = useClientesStore()
 const garantia = ref<number>(0)
 const adicionarTipo = ref<'PRODUTO' | 'SERVICO'>('PRODUTO')
+const erros = ref<Record<string, string>>({})
 
 const labelProdutoInsert = ref<string>('')
 const addItemForm = ref<{ id: number | null, preco: number | string | null, quantidade: number }>({
@@ -37,7 +39,8 @@ const addItemForm = ref<{ id: number | null, preco: number | string | null, quan
   quantidade: 1
 })
 
-async function submitFormularioVenda() {
+
+async function submit() {
   if (store.carrinho.length === 0) {
     toast.error('Adicione pelo menos um item ao carrinho', { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
     return;
@@ -51,9 +54,17 @@ async function submitFormularioVenda() {
   }
 
   try {
-    const data: any & { itens: { id: number, quantidade: number, preco: number }[] } = {
-      ...store.form,
-      itens: store.carrinho.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco }))
+    const data: FormularioOrdemServico = {
+      id: store.form.id,
+      observacoes: store.form.descricaoCliente,
+      observacoesInternas: store.form.descricao,
+      clienteId: store.form.clienteId,
+      operadorId: store.form.operadorId,
+      data: store.form.data!,
+      garantia: garantia.value,
+      desconto: store.form.desconto ? getValorDesconto.value : 0,
+      status: store.form.status as any,
+      itens: store.carrinho.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco, tipo: item.tipoItem }))
     };
     await http.post(`vendas/criar${hasId ? `?id=${hasId}` : ''}`, data);
 
@@ -70,6 +81,23 @@ async function submitFormularioVenda() {
     const msg = error?.response?.data?.message || 'Ocorreu um erro ao registrar a OS';
     toast.error(msg, { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
   }
+}
+
+const validar = () => {
+  erros.value = {}
+
+  if (!store.form.clienteId) erros.value.clienteId = 'O cliente é obrigatório.'
+  if (!store.form.data) erros.value.data = 'A data é obrigatório.'
+  if (!store.form.status) erros.value.status = 'O status é obrigatório.'
+  if (!store.form.operadorId) erros.value.operadorId = 'O responsável é obrigatório.'
+}
+
+const formularioValido = computed(() => Object.keys(erros.value).length === 0)
+
+const submitFormularioVenda = async () => {
+  validar()
+  if (!formularioValido.value) return
+  await submit()
 }
 
 function clearCart() {
@@ -221,7 +249,7 @@ const resumoCarrinho = computed(() => {
 
 clearCartOrdemServico();
 onMounted(() => {
-  store.form.operadorId = storeUi.usuarioLogged.id || undefined
+  store.form.operadorId = storeUi.usuarioLogged.id || null
 })
 </script>
 
@@ -232,48 +260,48 @@ onMounted(() => {
         <div class="md:col-span-6">
           <label class="block text-sm mb-1">Cliente <span class="text-red-500">*</span></label>
           <div class="flex items-center justify-center gap-2">
-            <Select2Ajax :required="true" v-model="store.form.clienteId" class="w-full" url="/clientes/select2"
-              :allow-clear="true" />
+            <Select2Ajax v-model="store.form.clienteId" class="w-full" url="/clientes/select2" />
             <button type="button" @click="storeCliente.openSave"
               class="bg-primary px-4 py-1.5 text-white rounded-md border border-border dark:border-border-dark flex justify-center items-center">+</button>
           </div>
+          <p v-if="erros.clienteId" class="text-red-600 text-sm">{{ erros.clienteId }}</p>
         </div>
 
         <div class="md:col-span-3">
           <label class="block text-sm mb-1">Data da OS <span class="text-red-500">*</span></label>
-          <Calendarpicker v-model="store.form.data" :range="false" />
+          <Calendarpicker :required="false" v-model="store.form.data" :range="false" />
+          <p v-if="erros.data" class="text-red-600 text-sm">{{ erros.data }}</p>
         </div>
 
         <div class="md:col-span-3">
           <label class="block text-sm mb-1">Status <span class="text-red-500">*</span></label>
-          <Select v-model="store.form.status" default-value="ORCAMENTO">
+          <Select v-model="store.form.status" default-value="ABERTA">
             <SelectTrigger class="w-full bg-card dark:bg-card-dark">
               <SelectValue placeholder="Selecione o status" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="ABERTA">
+                Aberta
+              </SelectItem>
               <SelectItem value="ORCAMENTO">
                 Orçamento
               </SelectItem>
+              <SelectItem value="APROVADA">
+                Aprovada
+              </SelectItem>
               <SelectItem value="ANDAMENTO">
-                Em andamento
-              </SelectItem>
-              <SelectItem value="FINALIZADO">
-                Finalizado
-              </SelectItem>
-              <SelectItem value="PENDENTE">
-                Pendente
-              </SelectItem>
-              <SelectItem value="CANCELADO">
-                Cancelado
+                Andamento
               </SelectItem>
             </SelectContent>
           </Select>
+          <p v-if="erros.status" class="text-red-600 text-sm">{{ erros.status }}</p>
         </div>
 
         <div class="md:col-span-6">
           <label class="block text-sm mb-1">Responsável <span class="text-red-500">*</span></label>
-          <Select2Ajax :disabled="(hasPermission(storeUi.usuarioLogged, 3) ? false : true)" required
+          <Select2Ajax :disabled="(hasPermission(storeUi.usuarioLogged, 3) ? false : true)"
             v-model="store.form.operadorId" class="w-full" url="/usuarios/select2" />
+          <p v-if="erros.operadorId" class="text-red-600 text-sm">{{ erros.operadorId }}</p>
         </div>
 
 

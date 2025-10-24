@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { StatusOrdemServico, type CarrinhoItem, type OrdensServico } from '@/types/schemas'
+import { type CarrinhoItem, type OrdensServico } from '@/types/schemas'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 export interface CarrinhoOS extends CarrinhoItem {
   tipoItem: 'PRODUTO' | 'SERVICO'
@@ -32,25 +32,26 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   }
 
   const form = ref<OrdensServico>({
-    status: StatusOrdemServico.ABERTA,
+    status: 'ABERTA',
     data: new Date(),
     desconto: 0,
     garantia: '',
     descricao: '',
     descricaoCliente: '',
-    clienteId: undefined,
+    clienteId: null,
+    operadorId: null,
   })
 
   const reset = () => {
     form.value = {
-      status: StatusOrdemServico.ABERTA,
+      status: 'ABERTA',
       data: new Date(),
       desconto: 0,
       garantia: '',
       descricao: '',
       descricaoCliente: '',
-      clienteId: undefined,
-      operadorId: undefined,
+      clienteId: null,
+      operadorId: null,
     }
   }
 
