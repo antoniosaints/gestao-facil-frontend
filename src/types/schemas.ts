@@ -244,6 +244,10 @@ export interface OrdensServico {
   id?: number
   Uid?: string
   descricao?: string
+  clienteId?: number
+  operadorId?: number
+  Operador?: Usuarios
+  Cliente?: ClientesFornecedores
   descricaoCliente?: string
   status: StatusOrdemServico
   garantia: string

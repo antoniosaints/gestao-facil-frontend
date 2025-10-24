@@ -1,265 +1,450 @@
+<script setup lang="ts">
+import ModalView from "@/components/formulario/ModalView.vue";
+import Select2Ajax from "@/components/formulario/Select2Ajax.vue";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ProdutoRepository } from "@/repositories/produto-repository";
+import http from "@/utils/axios";
+import { computed, onMounted, ref, watch } from "vue";
+import { POSITION, useToast } from "vue-toastification";
+import { vMaska } from "maska/vue"
+import { moneyMaskOptions } from "@/lib/imaska";
+import { FilePlus, HandCoins, PackagePlus, Trash } from "lucide-vue-next";
+import Calendarpicker from "@/components/formulario/calendarpicker.vue";
+import { useClientesStore } from "@/stores/clientes/useClientes";
+import { useUiStore } from "@/stores/ui/uiStore";
+import { hasPermission } from "@/hooks/authorize";
+import { useOrdemServicoStore, type CarrinhoOS } from "@/stores/servicos/useOrdensServicos";
+
+const title = ref('Cadastro de OS')
+const description = ref('Preencha os campos abaixo')
+const toast = useToast()
+const store = useOrdemServicoStore()
+const storeUi = useUiStore()
+const storeCliente = useClientesStore()
+const garantia = ref<number>(0)
+const adicionarTipo = ref<'PRODUTO' | 'SERVICO'>('PRODUTO')
+
+const labelProdutoInsert = ref<string>('')
+const addItemForm = ref<{ id: number | null, preco: number | string | null, quantidade: number }>({
+  id: null,
+  preco: null,
+  quantidade: 1
+})
+
+async function submitFormularioVenda() {
+  if (store.carrinho.length === 0) {
+    toast.error('Adicione pelo menos um item ao carrinho', { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
+    return;
+  }
+
+  const hasId = store.form.id;
+
+  if (resumoCarrinho.value.total <= 0) {
+    toast.error('O valor total da os deve ser maior que zero', { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
+    return;
+  }
+
+  try {
+    const data: any & { itens: { id: number, quantidade: number, preco: number }[] } = {
+      ...store.form,
+      itens: store.carrinho.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco }))
+    };
+    await http.post(`vendas/criar${hasId ? `?id=${hasId}` : ''}`, data);
+
+    if (hasId) {
+      toast.success('OS atualizada com sucesso!');
+    } else {
+      toast.success('OS criada com sucesso!');
+    }
+
+    store.updateTable();
+    store.openModal = false;
+  } catch (error: any) {
+    console.log(error);
+    const msg = error?.response?.data?.message || 'Ocorreu um erro ao registrar a venda';
+    toast.error(msg, { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
+  }
+}
+
+function clearCart() {
+  store.carrinho = [];
+  localStorage.setItem('gestao_facil:carrinho_ordem_servico', JSON.stringify(store.carrinho));
+}
+
+function clearFormularioAddItem() {
+  addItemForm.value.id = null;
+  addItemForm.value.preco = null;
+  addItemForm.value.quantidade = 1;
+}
+
+function addToCartVendas() {
+  if (!addItemForm.value.id || !addItemForm.value.quantidade || !addItemForm.value.preco) {
+    return toast.error('Preencha todos os campos (Produto, Quantidade e Preço)');
+  }
+
+  // Verifica se o produto já foi adicionado
+  const exists = store.carrinho.some(item => item.id === addItemForm.value.id);
+  if (exists) {
+    return toast.error('Este produto já está na lista.');
+  }
+
+  const newItem: CarrinhoOS = {
+    id: addItemForm.value.id,
+    tipoItem: adicionarTipo.value,
+    produto: labelProdutoInsert.value,
+    quantidade: addItemForm.value.quantidade,
+    preco: parseFloat(String(addItemForm.value.preco).replace(',', '.')),
+    subtotal: +(parseFloat(String(addItemForm.value.preco).replace(',', '.')) * addItemForm.value.quantidade)
+  };
+
+  store.carrinho.push(newItem);
+  localStorage.setItem('gestao_facil:carrinho_ordem_servico', JSON.stringify(store.carrinho));
+
+  clearFormularioAddItem();
+}
+
+
+function removeFromCartVendas(produtoId: number) {
+  const novoCarrinho = store.carrinho.filter(item => Number(item.id) !== Number(produtoId));
+
+  store.carrinho = novoCarrinho;
+  localStorage.setItem('gestao_facil:carrinho_ordem_servico', JSON.stringify(novoCarrinho));
+}
+
+function calculateTotalCartVendas() {
+  const total = store.carrinho.reduce((sum, item) => {
+    return sum + item.subtotal;
+  }, 0);
+
+  return total.toFixed(2);
+}
+
+function clearCartVendas() {
+  localStorage.removeItem('gestao_facil:carrinho_ordem_servico');
+  store.carrinho = [];
+}
+
+const getValorDesconto = computed(() => {
+  if (store.carrinho.length === 0) return 0;
+
+  const subtotalValue = store.carrinho.reduce((total, item) => {
+    // substitui vírgula por ponto para parseFloat funcionar corretamente
+    const preco = item.preco;
+    return total + preco * item.quantidade;
+  }, 0);
+
+  const descontoRaw = parseFloat(String(store.form.desconto).replace(',', '.')) || 0;
+
+  if (store.tipoDesconto === 'PORCENTAGEM') {
+    return subtotalValue * (descontoRaw / 100);
+  } else {
+    return descontoRaw;
+  }
+});
+
+const maxQuantidadeAdd = ref(999999999999999);
+const ableAdd = ref(true);
+async function getValorProduto(id: number) {
+  try {
+    ableAdd.value = true
+    const { data } = await ProdutoRepository.get(id);
+    if (data.estoque <= 0) {
+      addItemForm.value.preco = null;
+      addItemForm.value.id = null;
+      maxQuantidadeAdd.value = 1
+      ableAdd.value = false
+      return toast.error('Produto sem estoque disponível', {
+        timeout: 3000,
+        position: POSITION.BOTTOM_RIGHT
+      });
+    }
+
+    if (data.estoque <= data.minimo) {
+      toast.warning('Produto com estoque baixo, por favor, verificar o estoque antes de adicionar ao carrinho', { timeout: 3000 });
+    }
+
+    addItemForm.value.quantidade = 1
+    maxQuantidadeAdd.value = data.estoque
+
+    addItemForm.value.preco = data.preco;
+  } catch (error) {
+    addItemForm.value.preco = null;
+    toast.warning('Erro ao buscar o produto, informe o preço manualmente', {
+      timeout: 3000
+    });
+  }
+}
+
+watch(() => addItemForm.value.id, (id) => {
+  if (id) {
+    getValorProduto(id);
+  } else {
+    addItemForm.value.preco = null
+  }
+})
+
+const resumoCarrinho = computed(() => {
+  const subtotal = store.carrinho.reduce((total, item) => total + item.subtotal, 0);
+  const desconto = getValorDesconto.value;
+  return {
+    subtotal,
+    desconto,
+    total: (subtotal - desconto)
+  };
+});
+
+clearCartVendas();
+onMounted(() => {
+  store.form.operadorId = storeUi.usuarioLogged.id || undefined
+})
+</script>
+
 <template>
-  <ModalView v-model:open="open" title="Formulario de Ordem de Servico" description="Preencha os campos abaixo">
-    <div class="flex flex-col gap-4 px-4">
-      <!-- STEPPER -->
-      <div class="flex items-center justify-between mt-4 mb-6">
-        <div v-for="(label, index) in steps" :key="index" class="flex-1 flex flex-col items-center relative">
-          <div :class="[
-            'rounded-full w-10 h-10 flex items-center justify-center text-white transition-colors',
-            currentStep > index
-              ? 'bg-green-600'
-              : currentStep === index
-                ? 'bg-blue-600'
-                : 'bg-gray-400'
-          ]">
-            <span v-if="currentStep > index">✔</span>
-            <span v-else>{{ index + 1 }}</span>
+  <ModalView v-model:open="store.openModal" :title="title" :description="description" size="5xl">
+    <form @submit.prevent="submitFormularioVenda" class="space-y-4 px-4">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div class="md:col-span-6">
+          <label class="block text-sm mb-1">Cliente <span class="text-red-500">*</span></label>
+          <div class="flex items-center justify-center gap-2">
+            <Select2Ajax :required="true" v-model="store.form.clienteId" class="w-full" url="/clientes/select2"
+              :allow-clear="true" />
+            <button type="button" @click="storeCliente.openSave"
+              class="bg-primary px-4 py-1.5 text-white rounded-md border border-border dark:border-border-dark flex justify-center items-center">+</button>
           </div>
-          <span class="text-sm mt-2">{{ label }}</span>
-          <div v-if="index < steps.length - 1" class="absolute top-5 left-1/2 w-full h-0.5 bg-gray-300 z-[-1]"></div>
-        </div>
-      </div>
-
-      <!-- STEP 1 - DADOS DA OS -->
-      <div v-if="currentStep === 0" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label>Cliente</Label>
-          <Input v-model="os.cliente" placeholder="Nome do cliente" />
-        </div>
-        <div>
-          <Label>Responsável</Label>
-          <Input v-model="os.responsavel" placeholder="Responsável técnico" />
         </div>
 
-        <div>
-          <Label>Status</Label>
-          <Select v-model="os.status">
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione" />
+        <div class="md:col-span-3">
+          <label class="block text-sm mb-1">Data da OS <span class="text-red-500">*</span></label>
+          <Calendarpicker v-model="store.form.data" :range="false" />
+        </div>
+
+        <div class="md:col-span-3">
+          <label class="block text-sm mb-1">Status <span class="text-red-500">*</span></label>
+          <Select v-model="store.form.status" default-value="ORCAMENTO">
+            <SelectTrigger class="w-full bg-card dark:bg-card-dark">
+              <SelectValue placeholder="Selecione o status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="aberta">Aberta</SelectItem>
-              <SelectItem value="em_andamento">Em andamento</SelectItem>
-              <SelectItem value="finalizada">Finalizada</SelectItem>
-              <SelectItem value="cancelada">Cancelada</SelectItem>
+              <SelectItem value="ORCAMENTO">
+                Orçamento
+              </SelectItem>
+              <SelectItem value="ANDAMENTO">
+                Em andamento
+              </SelectItem>
+              <SelectItem value="FINALIZADO">
+                Finalizado
+              </SelectItem>
+              <SelectItem value="PENDENTE">
+                Pendente
+              </SelectItem>
+              <SelectItem value="CANCELADO">
+                Cancelado
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        <div>
-          <Label>Garantia (em dias)</Label>
-          <Input type="number" v-model.number="os.garantia" min="0" />
+        <div class="md:col-span-6">
+          <label class="block text-sm mb-1">Responsável <span class="text-red-500">*</span></label>
+          <Select2Ajax :disabled="(hasPermission(storeUi.usuarioLogged, 3) ? false : true)" required
+            v-model="store.form.operadorId" class="w-full" url="/usuarios/select2" />
         </div>
 
-        <div>
-          <Label>Data de Início</Label>
-          <Input type="date" v-model="os.dataInicio" />
-        </div>
-        <div>
-          <Label>Data Final</Label>
-          <Input type="date" v-model="os.dataFinal" />
+
+        <div class="md:col-span-2">
+          <label for="garantia" class="block text-sm mb-1">Garantia (dias)</label>
+          <NumberField v-model="garantia" class="bg-card dark:bg-card-dark" id="garantia" :default-value="0" :min="0">
+            <NumberFieldContent>
+              <NumberFieldDecrement />
+              <NumberFieldInput />
+              <NumberFieldIncrement />
+            </NumberFieldContent>
+          </NumberField>
         </div>
 
-        <div class="sm:col-span-2">
-          <Label>Termo de Garantia (opcional)</Label>
-          <Textarea v-model="os.termoGarantia" placeholder="Informe o termo (opcional)" />
+        <div class="md:col-span-2">
+          <label for="tipo_desconto" class="block text-sm mb-1">Tipo desconto <span
+              class="text-red-500">*</span></label>
+          <Select required v-model="store.tipoDesconto">
+            <SelectTrigger class="w-full bg-card dark:bg-card-dark">
+              <SelectValue placeholder="Desconto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="PORCENTAGEM">
+                Porcentagem
+              </SelectItem>
+              <SelectItem value="VALOR">
+                Valor
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-
-        <div class="sm:col-span-2">
-          <Label>Descrição da OS</Label>
-          <Textarea v-model="os.descricao" placeholder="Descreva o problema/serviço..." />
+        <div class="md:col-span-2">
+          <label for="input_desconto_venda_formulario" class="block text-sm mb-1">Valor desconto</label>
+          <Input v-model="(store.form.desconto)" type="text" id="input_desconto_venda_formulario" name="desconto"
+            v-maska="moneyMaskOptions"
+            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
+            placeholder="Ex: 1,99" />
         </div>
-
-        <div class="col-span-2 text-right mt-4">
-          <Button @click="nextStep" :disabled="!canNextStep">Próximo</Button>
+        <!-- Observações -->
+        <div class="md:col-span-6">
+          <label for="descricao_os" class="block text-sm mb-1">Descrição</label>
+          <textarea v-model="store.form.descricao" name="observacoes" id="descricao_os"
+            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
+            rows="3" placeholder="Descrição da OS..."></textarea>
+        </div>
+        <div class="md:col-span-6">
+          <label for="observacoes_internas_os" class="block text-sm mb-1">Observações Internas</label>
+          <textarea v-model="store.form.descricao" name="observacoes" id="observacoes_internas_os"
+            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
+            rows="3" placeholder="Observações para a equipe..."></textarea>
         </div>
       </div>
 
-      <!-- STEP 2 - ITENS -->
-      <div v-if="currentStep === 1" class="space-y-4 max-h-[60vh] overflow-auto px-1">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-          <div>
-            <Label>Descrição do Item</Label>
-            <Input v-model="novoItem.descricao" placeholder="Produto ou serviço" />
-          </div>
-          <div>
-            <Label>Quantidade</Label>
-            <Input type="number" v-model.number="novoItem.qtd" min="1" />
-          </div>
-          <div>
-            <Label>Valor Unitário</Label>
-            <Input type="number" v-model.number="novoItem.valor" step="0.01" />
-          </div>
+
+      <hr class="border-border dark:border-border-dark">
+
+      <!-- Adição de produtos -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">Tipo item <span class="text-red-500">*</span></label>
+          <Select required v-model="adicionarTipo">
+            <SelectTrigger class="w-full bg-card dark:bg-card-dark">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="PRODUTO">
+                Produto
+              </SelectItem>
+              <SelectItem value="SERVICO">
+                Serviço
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <div class="flex justify-end">
-          <Button @click="adicionarItem" :disabled="!novoItem.descricao || !novoItem.qtd || !novoItem.valor">
-            Adicionar Item
+        <div v-if="adicionarTipo === 'PRODUTO'" class="md:col-span-5">
+          <label class="block text-sm mb-1">Produto <span class="text-red-500">*</span></label>
+          <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
+            url="/produtos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
+        </div>
+        <div v-else class="md:col-span-5">
+          <label class="block text-sm mb-1">Serviço <span class="text-red-500">*</span></label>
+          <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
+            url="/produtos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
+        </div>
+
+        <div class="md:col-span-2">
+          <label for="quantidade_carrinho_adicionar" class="block text-sm mb-1">Quantidade <span
+              class="text-red-500">*</span></label>
+          <NumberField v-model="addItemForm.quantidade" class="bg-card dark:bg-card-dark"
+            id="quantidade_carrinho_adicionar" :default-value="1" :min="1" :max="maxQuantidadeAdd">
+            <NumberFieldContent>
+              <NumberFieldDecrement />
+              <NumberFieldInput />
+              <NumberFieldIncrement />
+            </NumberFieldContent>
+          </NumberField>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">Preço <span class="text-red-500">*</span></label>
+          <Input v-model="(addItemForm.preco as number)" :disabled="!ableAdd" type="text" placeholder="R$ 0,00"
+            v-maska="moneyMaskOptions" id="input_preco_venda_formulario"
+            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+        </div>
+
+        <div class="md:col-span-1">
+          <Button type="button" :disabled="!ableAdd" @click="addToCartVendas" class="text-white w-full">
+            <PackagePlus v-if="adicionarTipo === 'PRODUTO'" />
+            <FilePlus v-else />
           </Button>
         </div>
-
-        <!-- Lista de Itens -->
-        <div v-if="itens.length" class="border rounded-lg divide-y">
-          <div v-for="(item, index) in itens" :key="index"
-            class="flex justify-between items-center p-2 hover:bg-gray-50">
-            <div>
-              <p class="font-medium">{{ item.descricao }}</p>
-              <p class="text-sm text-gray-500">{{ item.qtd }} x R$ {{ item.valor.toFixed(2) }}</p>
-            </div>
-            <div class="flex items-center gap-3">
-              <span class="font-semibold">R$ {{ (item.qtd * item.valor).toFixed(2) }}</span>
-              <Button variant="destructive" size="sm" @click="removerItem(index)">Remover</Button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Descontos -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <div>
-            <Label>Desconto (%)</Label>
-            <Input type="number" v-model.number="descontoPercentual" min="0" max="100" />
-          </div>
-          <div>
-            <Label>Desconto (R$)</Label>
-            <Input type="number" v-model.number="descontoValor" step="0.01" />
-          </div>
-        </div>
-
-        <div class="flex justify-between items-center mt-6 border-t pt-4">
-          <span class="text-lg font-medium">Total:</span>
-          <span class="text-2xl font-bold text-green-700">R$ {{ totalFinal.toFixed(2) }}</span>
-        </div>
-
-        <div class="flex justify-between mt-4">
-          <Button variant="secondary" @click="prevStep">Voltar</Button>
-          <Button @click="nextStep" :disabled="itens.length === 0">Próximo</Button>
-        </div>
       </div>
 
-      <!-- STEP 3 - RESUMO -->
-      <div v-if="currentStep === 2" class="space-y-6">
-        <div class="bg-gray-50 border p-4 rounded-lg">
-          <p><strong>Cliente:</strong> {{ os.cliente }}</p>
-          <p><strong>Responsável:</strong> {{ os.responsavel }}</p>
-          <p><strong>Status:</strong> {{ os.status }}</p>
-          <p><strong>Data:</strong> {{ os.dataInicio }} - {{ os.dataFinal }}</p>
-          <p><strong>Garantia:</strong> {{ os.garantia }} dias</p>
-          <p v-if="os.termoGarantia"><strong>Termo de Garantia:</strong> {{ os.termoGarantia }}</p>
-          <p><strong>Descrição:</strong> {{ os.descricao }}</p>
-        </div>
-
-        <div class="border rounded-lg overflow-hidden">
-          <div v-for="(item, i) in itens" :key="i" class="flex justify-between p-2 border-b last:border-0">
-            <div>
-              <p class="font-medium">{{ item.descricao }}</p>
-              <p class="text-sm text-gray-500">{{ item.qtd }} x R$ {{ item.valor.toFixed(2) }}</p>
-            </div>
-            <p class="font-semibold">R$ {{ (item.qtd * item.valor).toFixed(2) }}</p>
+      <!-- Tabela de itens -->
+      <div>
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-medium mb-2">Produtos/Serviços</h3>
+          <div class="flex gap-2">
+            <button :disabled="store.carrinho.length === 0" @click="store.openModalPropor = true" type="button"
+              class="text-sm text-white py-1 px-2 mb-2 rounded bg-emerald-500 dark:bg-emerald-800 dark:text-gray-200 disabled:opacity-50 flex items-center">
+              <HandCoins class="mr-1 w-4 h-4" /> Propor
+            </button>
+            <button :disabled="store.carrinho.length === 0" @click="clearCart" type="button"
+              class="text-sm text-white py-1 px-2 mb-2 rounded bg-red-500 dark:bg-red-800 disabled:opacity-50 dark:text-gray-200 flex items-center">
+              <Trash class="mr-1 w-4 h-4" /> Limpar
+            </button>
           </div>
         </div>
+        <div class="relative overflow-x-auto rounded-sm">
+          <div class="grid grid-cols-12 gap-4">
+            <!-- Lista do carrinho -->
+            <div id="lista-carrinho-vendas" class="col-span-12 lg:col-span-8 space-y-2">
+              <div v-if="store.carrinho.length === 0"
+                class="p-3 text-center text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-md">
+                Nenhum item adicionado
+              </div>
+              <div v-else v-for="item in store.carrinho" :key="item.id"
+                class="flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-2 shadow-sm">
+                <div class="flex flex-col text-sm">
+                  <span class="font-medium text-gray-800 dark:text-gray-200">({{ item.tipoItem }}){{ item.produto
+                    }}</span>
+                  <span class="text-gray-500 dark:text-gray-400">Qtd: {{ item.quantidade }}</span>
+                </div>
+                <div class="flex items-center">
+                  <div class="flex flex-col text-right text-sm">
+                    <span class="text-gray-800 text-md dark:text-gray-200">R$ {{
+                      String(item.subtotal.toFixed(2)).replace('.', ',')
+                      }}</span>
+                    <span class="font-medium text-xs text-gray-600 dark:text-gray-400">R$ {{
+                      String(item.preco.toFixed(2)).replace('.', ',') }} x {{ item.quantidade
+                      }}</span>
+                  </div>
+                  <button type="button" @click="removeFromCartVendas(item.id)"
+                    class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 p-2 rounded-sm">
+                    <Trash class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
 
-        <div class="flex justify-between items-center mt-4 text-lg">
-          <span>Subtotal</span>
-          <span>R$ {{ subtotal.toFixed(2) }}</span>
-        </div>
-        <div v-if="descontoPercentual || descontoValor" class="flex justify-between items-center text-lg">
-          <span>Desconto</span>
-          <span>- R$ {{ descontoAplicado.toFixed(2) }}</span>
-        </div>
-        <div class="flex justify-between items-center text-2xl font-bold border-t pt-3">
-          <span>Total</span>
-          <span class="text-green-700">R$ {{ totalFinal.toFixed(2) }}</span>
-        </div>
-
-        <div class="flex justify-between mt-4">
-          <Button variant="secondary" @click="prevStep">Voltar</Button>
-          <Button @click="finalizar">Finalizar OS</Button>
+            <!-- Total do carrinho -->
+            <div id="resumo-carrinho-vendas"
+              class="col-span-12 lg:col-span-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-4 shadow-sm">
+              <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Resumo da OS</h3>
+              <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                <span>Desconto:</span>
+                <span id="desconto-total-carrinho">R$ {{
+                  String(resumoCarrinho.desconto.toFixed(2)).replace('.',
+                    ',') }}</span>
+              </div>
+              <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                <span>Subtotal:</span>
+                <span id="subtotal-carrinho-vendas">R$ {{
+                  String(resumoCarrinho.subtotal.toFixed(2)).replace('.',
+                    ',') }}</span>
+              </div>
+              <div class="flex justify-between font-semibold text-md text-gray-700 dark:text-gray-300">
+                <span>Total:</span>
+                <span id="total-carrinho-vendas">R$ {{
+                  String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
+                  }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+      <div class="flex justify-end gap-2">
+        <Button type="button" variant="secondary" @click="store.openModal = false">
+          Fechar
+        </Button>
+        <Button :disabled="store.carrinho.length === 0" class="text-white" type="submit">
+          Registrar
+        </Button>
+      </div>
+    </form>
   </ModalView>
 </template>
-
-<script setup lang="ts">
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { ref, computed } from "vue"
-import ModalView from "@/components/formulario/ModalView.vue"
-
-const open = ref(true)
-const currentStep = ref(0)
-const steps = ["Dados da OS", "Itens e Descontos", "Resumo"]
-
-const os = ref({
-  cliente: "",
-  responsavel: "",
-  status: "",
-  garantia: 0,
-  termoGarantia: "",
-  descricao: "",
-  dataInicio: "",
-  dataFinal: "",
-})
-
-const canNextStep = computed(() =>
-  os.value.cliente &&
-  os.value.responsavel &&
-  os.value.status &&
-  os.value.dataInicio &&
-  os.value.dataFinal
-)
-
-function nextStep() {
-  if (currentStep.value < steps.length - 1) currentStep.value++
-}
-function prevStep() {
-  if (currentStep.value > 0) currentStep.value--
-}
-
-// ITENS
-const itens = ref<{ descricao: string; qtd: number; valor: number }[]>([])
-const novoItem = ref({ descricao: "", qtd: 1, valor: 0 })
-const descontoPercentual = ref(0)
-const descontoValor = ref(0)
-
-function adicionarItem() {
-  itens.value.push({ ...novoItem.value })
-  novoItem.value = { descricao: "", qtd: 1, valor: 0 }
-}
-
-function removerItem(index: number) {
-  itens.value.splice(index, 1)
-}
-
-const subtotal = computed(() =>
-  itens.value.reduce((acc, item) => acc + item.qtd * item.valor, 0)
-)
-
-const descontoAplicado = computed(() => {
-  let desc = 0
-  if (descontoPercentual.value) desc = (subtotal.value * descontoPercentual.value) / 100
-  if (descontoValor.value) desc += descontoValor.value
-  return desc
-})
-
-const totalFinal = computed(() => subtotal.value - descontoAplicado.value)
-
-function finalizar() {
-  const dadosOS = {
-    ...os.value,
-    itens: itens.value,
-    subtotal: subtotal.value,
-    desconto: descontoAplicado.value,
-    total: totalFinal.value,
-  }
-  console.log("✅ OS Finalizada", dadosOS)
-  // Aqui você pode fazer POST via axios
-  open.value = false
-  currentStep.value = 0
-  itens.value = []
-  descontoPercentual.value = 0
-  descontoValor.value = 0
-}
-</script>

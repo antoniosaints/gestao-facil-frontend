@@ -1,12 +1,35 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { StatusOrdemServico, type OrdensServico, type Servicos } from '@/types/schemas'
-import { ServicoRepository } from '@/repositories/servico-repository'
+import { StatusOrdemServico, type CarrinhoItem, type OrdensServico } from '@/types/schemas'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
-
+export interface CarrinhoOS extends CarrinhoItem {
+  tipoItem: 'PRODUTO' | 'SERVICO'
+}
 export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   const openModal = ref(false)
+  const openModalPropor = ref(false)
+  const carrinho = ref<CarrinhoOS[]>([])
   const idMutation = ref<number | null>(null)
+  const tipoDesconto = ref<'VALOR' | 'PORCENTAGEM'>('VALOR')
+
+  const selectedIds = ref<number[]>([])
+
+  function resetSelectedIds() {
+    selectedIds.value = []
+  }
+
+  function addSelectedId(id: number) {
+    if (!selectedIds.value.includes(id)) {
+      selectedIds.value.push(id)
+    }
+  }
+
+  function removeSelectedId(id: number) {
+    const index = selectedIds.value.indexOf(id)
+    if (index !== -1) {
+      selectedIds.value.splice(index, 1)
+    }
+  }
 
   const form = ref<OrdensServico>({
     status: StatusOrdemServico.ABERTA,
@@ -15,6 +38,7 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
     garantia: '',
     descricao: '',
     descricaoCliente: '',
+    clienteId: undefined,
   })
 
   const reset = () => {
@@ -25,6 +49,8 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
       garantia: '',
       descricao: '',
       descricaoCliente: '',
+      clienteId: undefined,
+      operadorId: undefined,
     }
   }
 
@@ -50,7 +76,14 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
 
   return {
     openModal,
+    openModalPropor,
     idMutation,
+    carrinho,
+    tipoDesconto,
+    selectedIds,
+    addSelectedId,
+    resetSelectedIds,
+    removeSelectedId,
     openSave,
     openUpdate,
     updateTable,

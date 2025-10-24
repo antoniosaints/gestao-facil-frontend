@@ -44,7 +44,7 @@ const layout = computed(() => {
 
 .slide-enter-active,
 .slide-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.1s ease;
 }
 
 .slide-enter-from {
