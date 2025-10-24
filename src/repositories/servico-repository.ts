@@ -1,8 +1,8 @@
 import type { Servicos } from '@/types/schemas'
 import http from '@/utils/axios'
 export class ServicoRepository {
-  static async get(id: number) {
-    const data = await http.get(`/servicos/${id}`)
+  static async get(id: number): Promise<Servicos> {
+    const { data } = await http.get(`/servicos/${id}`)
     return data.data
   }
   static async getMobile(search: string, page: number = 1, limit: number = 10) {

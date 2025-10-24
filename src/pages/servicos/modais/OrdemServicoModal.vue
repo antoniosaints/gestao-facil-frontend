@@ -17,6 +17,9 @@ import { useClientesStore } from "@/stores/clientes/useClientes";
 import { useUiStore } from "@/stores/ui/uiStore";
 import { hasPermission } from "@/hooks/authorize";
 import { useOrdemServicoStore, type CarrinhoOS } from "@/stores/servicos/useOrdensServicos";
+import { ServicoRepository } from "@/repositories/servico-repository";
+import { formatCurrencyBR } from "@/utils/formatters";
+import { addDays, format } from "date-fns";
 
 const title = ref('Cadastro de OS')
 const description = ref('Preencha os campos abaixo')
@@ -64,7 +67,7 @@ async function submitFormularioVenda() {
     store.openModal = false;
   } catch (error: any) {
     console.log(error);
-    const msg = error?.response?.data?.message || 'Ocorreu um erro ao registrar a venda';
+    const msg = error?.response?.data?.message || 'Ocorreu um erro ao registrar a OS';
     toast.error(msg, { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
   }
 }
@@ -82,13 +85,13 @@ function clearFormularioAddItem() {
 
 function addToCartVendas() {
   if (!addItemForm.value.id || !addItemForm.value.quantidade || !addItemForm.value.preco) {
-    return toast.error('Preencha todos os campos (Produto, Quantidade e Preço)');
+    return toast.error('Preencha todos os campos (Produto/Serviço, Quantidade e Preço)');
   }
 
   // Verifica se o produto já foi adicionado
-  const exists = store.carrinho.some(item => item.id === addItemForm.value.id);
+  const exists = store.carrinho.some(item => item.id === addItemForm.value.id && item.tipoItem === adicionarTipo.value);
   if (exists) {
-    return toast.error('Este produto já está na lista.');
+    return toast.error('Este ítem já está na lista.');
   }
 
   const newItem: CarrinhoOS = {
@@ -122,7 +125,7 @@ function calculateTotalCartVendas() {
   return total.toFixed(2);
 }
 
-function clearCartVendas() {
+function clearCartOrdemServico() {
   localStorage.removeItem('gestao_facil:carrinho_ordem_servico');
   store.carrinho = [];
 }
@@ -168,8 +171,8 @@ async function getValorProduto(id: number) {
 
     addItemForm.value.quantidade = 1
     maxQuantidadeAdd.value = data.estoque
-
     addItemForm.value.preco = data.preco;
+
   } catch (error) {
     addItemForm.value.preco = null;
     toast.warning('Erro ao buscar o produto, informe o preço manualmente', {
@@ -177,11 +180,31 @@ async function getValorProduto(id: number) {
     });
   }
 }
+async function getValorServico(id: number) {
+  try {
+    ableAdd.value = true
+    const data = await ServicoRepository.get(id);
+
+    addItemForm.value.quantidade = 1
+    maxQuantidadeAdd.value = 999999999999
+    addItemForm.value.preco = data.preco;
+
+  } catch (error) {
+    addItemForm.value.preco = null;
+    toast.warning('Erro ao buscar o serviço, informe o preço manualmente', {
+      timeout: 3000
+    });
+  }
+}
 
 watch(() => addItemForm.value.id, (id) => {
-  if (id) {
+  if (id && adicionarTipo.value === 'PRODUTO') {
     getValorProduto(id);
-  } else {
+  }
+  else if (id && adicionarTipo.value === 'SERVICO') {
+    getValorServico(id);
+  }
+  else {
     addItemForm.value.preco = null
   }
 })
@@ -196,7 +219,7 @@ const resumoCarrinho = computed(() => {
   };
 });
 
-clearCartVendas();
+clearCartOrdemServico();
 onMounted(() => {
   store.form.operadorId = storeUi.usuarioLogged.id || undefined
 })
@@ -333,7 +356,7 @@ onMounted(() => {
         <div v-else class="md:col-span-5">
           <label class="block text-sm mb-1">Serviço <span class="text-red-500">*</span></label>
           <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
-            url="/produtos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
+            url="/servicos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
         </div>
 
         <div class="md:col-span-2">
@@ -390,18 +413,18 @@ onMounted(() => {
               <div v-else v-for="item in store.carrinho" :key="item.id"
                 class="flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-2 shadow-sm">
                 <div class="flex flex-col text-sm">
-                  <span class="font-medium text-gray-800 dark:text-gray-200">({{ item.tipoItem }}){{ item.produto
-                    }}</span>
+                  <span class="font-medium text-gray-800 dark:text-gray-200">({{ item.tipoItem }}) {{ item.produto
+                  }}</span>
                   <span class="text-gray-500 dark:text-gray-400">Qtd: {{ item.quantidade }}</span>
                 </div>
                 <div class="flex items-center">
                   <div class="flex flex-col text-right text-sm">
-                    <span class="text-gray-800 text-md dark:text-gray-200">R$ {{
-                      String(item.subtotal.toFixed(2)).replace('.', ',')
-                      }}</span>
-                    <span class="font-medium text-xs text-gray-600 dark:text-gray-400">R$ {{
-                      String(item.preco.toFixed(2)).replace('.', ',') }} x {{ item.quantidade
-                      }}</span>
+                    <span class="text-gray-800 text-md dark:text-gray-200">
+                      {{ formatCurrencyBR(item.subtotal || 0) }}
+                    </span>
+                    <span class="font-medium text-xs text-gray-600 dark:text-gray-400">
+                      {{ formatCurrencyBR(item.preco || 0) }} x {{ item.quantidade }}
+                    </span>
                   </div>
                   <button type="button" @click="removeFromCartVendas(item.id)"
                     class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 p-2 rounded-sm">
@@ -417,21 +440,40 @@ onMounted(() => {
               <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Resumo da OS</h3>
               <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                 <span>Desconto:</span>
-                <span id="desconto-total-carrinho">R$ {{
-                  String(resumoCarrinho.desconto.toFixed(2)).replace('.',
-                    ',') }}</span>
+                <span id="desconto-total-carrinho">
+                  {{ formatCurrencyBR(resumoCarrinho.desconto || 0) }}
+                </span>
               </div>
               <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                 <span>Subtotal:</span>
-                <span id="subtotal-carrinho-vendas">R$ {{
-                  String(resumoCarrinho.subtotal.toFixed(2)).replace('.',
-                    ',') }}</span>
+                <span id="subtotal-carrinho-vendas">
+                  {{ formatCurrencyBR(resumoCarrinho.subtotal || 0) }}
+                </span>
               </div>
               <div class="flex justify-between font-semibold text-md text-gray-700 dark:text-gray-300">
                 <span>Total:</span>
-                <span id="total-carrinho-vendas">R$ {{
-                  String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                  }}</span>
+                <span id="total-carrinho-vendas">
+                  {{ formatCurrencyBR(resumoCarrinho.total || 0) }}
+                </span>
+              </div>
+              <hr class="my-1">
+              <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                <span>Produtos:</span>
+                <span id="subtotal-carrinho-vendas">
+                  {{store.carrinho.filter(item => item.tipoItem === 'PRODUTO').length}}
+                </span>
+              </div>
+              <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                <span>Serviços:</span>
+                <span id="subtotal-carrinho-vendas">
+                  {{store.carrinho.filter(item => item.tipoItem === 'SERVICO').length}}
+                </span>
+              </div>
+              <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                <span>Garantia:</span>
+                <span id="subtotal-carrinho-vendas">
+                  {{ garantia ? format(addDays(new Date(), garantia), 'dd/MM/yyyy') : 'N/A' }}
+                </span>
               </div>
             </div>
           </div>
