@@ -7,6 +7,7 @@ export interface CarrinhoOS extends CarrinhoItem {
 }
 export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   const openModal = ref(false)
+  const openModalChecklist = ref(false)
   const openModalPropor = ref(false)
   const carrinho = ref<CarrinhoOS[]>([])
   const idMutation = ref<number | null>(null)
@@ -77,6 +78,7 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
 
   return {
     openModal,
+    openModalChecklist,
     openModalPropor,
     idMutation,
     carrinho,

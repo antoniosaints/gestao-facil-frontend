@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useUiStore } from '@/stores/ui/uiStore';
-import { BadgePlus, CircleChevronDown, FileDigit, RotateCw, Trash } from 'lucide-vue-next';
-import { useServicoStore } from '@/stores/servicos/useServicos';
+import { BadgePlus, CircleChevronDown, FileCheck, FileDigit, RotateCw, Trash } from 'lucide-vue-next';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useToast } from 'vue-toastification';
@@ -11,6 +10,7 @@ import Tabela from './tabela/Tabela.vue';
 import Mobile from './tabela/Mobile.vue';
 import OrdemServicoModal from '../modais/OrdemServicoModal.vue';
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos';
+import ModalChecklist from '../modais/ModalChecklist.vue';
 const store = useOrdemServicoStore();
 const uiStore = useUiStore()
 const toast = useToast()
@@ -65,6 +65,10 @@ async function excluirEmLote() {
                     class="bg-primary text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova OS</span>
                 </button>
+                <button @click="store.openModalChecklist = true"
+                    class="bg-success text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-1">
+                    <FileCheck class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo checklist</span>
+                </button>
                 <button @click="store.updateTable"
                     class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
                     <RotateCw class="w-5 h-5" />
@@ -78,5 +82,6 @@ async function excluirEmLote() {
             <Mobile />
         </div>
         <OrdemServicoModal />
+        <ModalChecklist />
     </div>
 </template>
