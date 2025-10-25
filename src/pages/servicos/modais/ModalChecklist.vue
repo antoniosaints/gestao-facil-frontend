@@ -23,7 +23,18 @@ interface ChecklistItem {
 }
 
 const inputAdicionarItem = ref<string>('');
-const tipoEquipamento = ref<string>('');
+const identificacao = ref({
+    tipoEquipamento: '',
+    marca: '',
+    modelo: '',
+    numeroSerie: '',
+    patrimonio: '',
+    dataChecklist: new Date(),
+    responsavel: '',
+    localizacao: '',
+    observacoesIniciais: ''
+})
+
 const progressoTexto = ref<string>('0 de 0 itens verificados');
 const progresso = ref<number>(0);
 const tab = ref<'identify' | 'checklist' | 'report'>('identify');
@@ -171,8 +182,8 @@ function adicionarItem() {
 }
 
 function adicionarItemPersonalizado() {
-    if (tipoEquipamento.value && checklistTemplates[tipoEquipamento.value]) {
-        checklistItens.value = checklistTemplates[tipoEquipamento.value].map((item: string, index: number) => ({
+    if (identificacao.value.tipoEquipamento && checklistTemplates[identificacao.value.tipoEquipamento]) {
+        checklistItens.value = checklistTemplates[identificacao.value.tipoEquipamento].map((item: string, index: number) => ({
             id: index,
             texto: item,
             status: null,
@@ -200,7 +211,24 @@ const totalVerificados = computed(() => checklistItens.value.filter(i => i.statu
 const percentualOk = computed(() => totalVerificados.value > 0 ? Math.round((totalOk.value / totalVerificados.value) * 100) : 0);
 const itensProblematicos = computed(() => checklistItens.value.filter(i => i.status === 'problema' || i.status === 'atencao'));
 
-watch(tipoEquipamento, () => {
+async function submitFormulario() {
+    const checklistData = {
+        identificacao: {
+            ...identificacao.value,
+        },
+        checklist: checklistItens,
+        observacoesFinais: null,
+        resumo: {
+            totalItens: checklistItens.value.length,
+            itensOk: totalOk.value,
+            itensAtencao: totalAtencao.value,
+            itensProblema: totalProblemas.value,
+            percentualOk: percentualOk.value
+        }
+    };
+}
+
+watch(() => identificacao.value.tipoEquipamento, () => {
     adicionarItemPersonalizado();
     updateProgresso();
 })
@@ -232,7 +260,7 @@ watch(tipoEquipamento, () => {
                                 <label class="block text-sm font-medium mb-2">
                                     Tipo de Equipamento <span class="text-red-500">*</span>
                                 </label>
-                                <Select v-model="tipoEquipamento">
+                                <Select v-model="identificacao.tipoEquipamento">
                                     <SelectTrigger class="w-full">
                                         <SelectValue placeholder="Selecione o tipo" />
                                     </SelectTrigger>
@@ -254,13 +282,15 @@ watch(tipoEquipamento, () => {
                                 <label class="block text-sm font-medium mb-2">
                                     Marca <span class="text-red-500">*</span>
                                 </label>
-                                <Input type="text" name="marca" placeholder="Ex: Dell, HP, Samsung..." />
+                                <Input v-model="identificacao.marca" type="text" name="marca"
+                                    placeholder="Ex: Dell, HP, Samsung..." />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">
                                     Modelo <span class="text-red-500">*</span>
                                 </label>
-                                <Input type="text" name="modelo" placeholder="Ex: Inspiron 15 3000" />
+                                <Input v-model="identificacao.modelo" type="text" name="modelo"
+                                    placeholder="Ex: Inspiron 15 3000" />
                             </div>
                         </div>
 
@@ -269,19 +299,21 @@ watch(tipoEquipamento, () => {
                                 <label class="block text-sm font-medium mb-2">
                                     Número de Série
                                 </label>
-                                <Input type="text" name="numeroSerie" placeholder="Ex: ABC123456789" />
+                                <Input v-model="identificacao.numeroSerie" type="text" name="numeroSerie"
+                                    placeholder="Ex: ABC123456789" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">
                                     Patrimônio
                                 </label>
-                                <Input type="text" name="patrimonio" placeholder="Ex: PAT001234" />
+                                <Input v-model="identificacao.patrimonio" type="text" name="patrimonio"
+                                    placeholder="Ex: PAT001234" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">
                                     Data do Checklist <span class="text-red-500">*</span>
                                 </label>
-                                <Calendarpicker />
+                                <Calendarpicker :required="true" v-model="identificacao.dataChecklist" />
                             </div>
                         </div>
 
@@ -290,13 +322,15 @@ watch(tipoEquipamento, () => {
                                 <label class="block text-sm font-medium mb-2">
                                     Responsável pelo Checklist <span class="text-red-500">*</span>
                                 </label>
-                                <Input type="text" name="responsavel" placeholder="Nome do técnico" />
+                                <Input v-model="identificacao.responsavel" type="text" name="responsavel"
+                                    placeholder="Nome do técnico" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-2">
                                     Localização
                                 </label>
-                                <Input type="text" name="localizacao" placeholder="Ex: Sala 101, Andar 2" />
+                                <Input v-model="identificacao.localizacao" type="text" name="localizacao"
+                                    placeholder="Ex: Sala 101, Andar 2" />
                             </div>
                         </div>
 
@@ -304,7 +338,7 @@ watch(tipoEquipamento, () => {
                             <label class="block text-sm font-medium mb-2">
                                 Observações Iniciais
                             </label>
-                            <Textarea name="observacoesIniciais" rows="3"
+                            <Textarea v-model="identificacao.observacoesIniciais" name="observacoesIniciais" rows="3"
                                 placeholder="Descreva o estado inicial do equipamento..."></Textarea>
                         </div>
 
@@ -476,30 +510,33 @@ watch(tipoEquipamento, () => {
                                     <div class="space-y-2">
                                         <div class="flex justify-between">
                                             <span class="text-gray-500">Tipo:</span>
-                                            <span class="" id="relTipo">{{ formatToCapitalize(tipoEquipamento) || '-'
-                                                }}</span>
+                                            <span class="" id="relTipo">{{
+                                                formatToCapitalize(identificacao.tipoEquipamento) || '-'
+                                            }}</span>
                                         </div>
                                         <div class="flex justify-between">
                                             <span class="text-gray-500">Marca:</span>
-                                            <span class="" id="relMarca">-</span>
+                                            <span class="" id="relMarca">{{ identificacao.marca || '-' }}</span>
                                         </div>
                                         <div class="flex justify-between">
                                             <span class="text-gray-500">Modelo:</span>
-                                            <span class="" id="relModelo">-</span>
+                                            <span class="" id="relModelo">{{ identificacao.modelo || '-' }}</span>
                                         </div>
                                     </div>
                                     <div class="space-y-2">
                                         <div class="flex justify-between">
                                             <span class="text-gray-500">Série:</span>
-                                            <span class="" id="relSerie">-</span>
+                                            <span class="" id="relSerie">{{ identificacao.numeroSerie || '-' }}</span>
                                         </div>
                                         <div class="flex justify-between">
                                             <span class="text-gray-500">Patrimônio:</span>
-                                            <span class="" id="relPatrimonio">-</span>
+                                            <span class="" id="relPatrimonio">{{ identificacao.patrimonio || '-'
+                                            }}</span>
                                         </div>
                                         <div class="flex justify-between">
                                             <span class="text-gray-500">Data:</span>
-                                            <span class="" id="relData">-</span>
+                                            <span class="" id="relData">{{
+                                                identificacao.dataChecklist.toLocaleDateString('pt-BR') || '-' }}</span>
                                         </div>
                                     </div>
                                 </div>
