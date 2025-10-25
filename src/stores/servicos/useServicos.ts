@@ -50,7 +50,7 @@ export const useServicoStore = defineStore('servicoStore', () => {
   const openUpdate = async (id: number) => {
     const response = await ServicoRepository.get(id)
     form.value = {
-      ...response.data,
+      ...response,
     }
     openModal.value = true
   }

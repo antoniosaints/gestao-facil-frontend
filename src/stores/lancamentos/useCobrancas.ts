@@ -57,9 +57,6 @@ export const useCobrancasFinanceirasStore = defineStore('cobrancasFinanceirasSto
   }
   const openUpdate = async (id: number) => {
     const response = await ServicoRepository.get(id)
-    form.value = {
-      ...response.data,
-    }
     openModal.value = true
   }
 
