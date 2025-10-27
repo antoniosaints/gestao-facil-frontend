@@ -127,23 +127,23 @@ const status = computed(() => {
             </h1>
             <div class="hidden md:flex gap-2">
                 <RouterLink to="/produtos" as-child>
-                    <Button variant="outline">
+                    <Button class="rounded-lg" variant="outline">
                         <ArrowLeft class="w-4 h-4 mr-1" /> Voltar
                     </Button>
                 </RouterLink>
-                <Button class="bg-success text-white hover:bg-success/80" @click="gerarEtiquetas">
+                <Button class="bg-success text-white hover:bg-success/80 rounded-lg" @click="gerarEtiquetas">
                     <Tag class="w-4 h-4 mr-1" /> Etiquetas
                 </Button>
-                <Button class="bg-warning text-white hover:bg-warning/80" @click="gerarRelatorio">
+                <Button class="bg-warning text-white hover:bg-warning/80 rounded-lg" @click="gerarRelatorio">
                     <FileText class="w-4 h-4" />
                 </Button>
-                <Button @click="store.openUpdate(produto?.id!)" variant="default" class="text-white">
+                <Button @click="store.openUpdate(produto?.id!)" variant="default" class="text-white rounded-lg">
                     <Edit class="w-4 h-4" />
                 </Button>
-                <Button @click="deletar(produto?.id!)" class="text-white" variant="destructive">
+                <Button @click="deletar(produto?.id!)" class="text-white rounded-lg" variant="destructive">
                     <Trash2 class="w-4 h-4" />
                 </Button>
-                <Button @click="atualizarDetalhes" variant="outline">
+                <Button @click="atualizarDetalhes" class="rounded-lg" variant="outline">
                     <i class="fa-solid fa-sync "></i>
                 </Button>
             </div>
@@ -213,7 +213,7 @@ const status = computed(() => {
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Preço de compra:</span> {{ Number(produto?.precoCompra).toFixed(2).replace('.', ',') || 'N/A'
-                }}</div>
+                    }}</div>
                 <div><span>Estoque:</span> {{ produto?.estoque }} {{ produto?.unidade }}</div>
                 <div><span>Mínimo:</span> {{ produto?.minimo }} {{ produto?.unidade }}</div>
                 <div><span>Permite entradas:</span>

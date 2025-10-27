@@ -11,6 +11,7 @@ interface filtro {
 
 export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const openModal = ref(false)
+  const openModalParcela = ref(false)
   const openModalDelete = ref(false)
   const openModalEfetivar = ref(false)
   const openModalPropor = ref(false)
@@ -37,6 +38,11 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
       selectedIds.value.splice(index, 1)
     }
   }
+
+  const formParcela = ref<{ vencimento: Date; valor: number | string | null }>({
+    vencimento: new Date(),
+    valor: null,
+  })
 
   const form = ref<FormularioLancamento>({
     id: null,
@@ -124,6 +130,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     openModalDelete,
     openModalEfetivar,
     openModalCobranca,
+    openModalParcela,
     currentMonth,
     selectedIds,
     addSelectedId,
@@ -136,5 +143,6 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     filters,
     reset,
     form,
+    formParcela,
   }
 })

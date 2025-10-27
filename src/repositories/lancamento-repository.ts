@@ -156,6 +156,12 @@ export class LancamentosRepository {
     })
     return data.data
   }
+  static async atualizarParcela(id: number, body: { vencimento: string; valor: number }) {
+    const data = await http.post(`/lancamentos/parcelas/${id}/atualizar`, {
+      ...body,
+    })
+    return data.data
+  }
   static async estornarCobranca(id: number | string) {
     const data = await http.post(`/lancamentos/cobrancas/estornar`, {
       cobrancaId: id,

@@ -23,6 +23,7 @@ import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { goBack } from "@/hooks/links"
 import { useCobrancasFinanceirasStore } from "@/stores/lancamentos/useCobrancas"
+import ModalParcela from "./modais/ModalParcela.vue"
 
 const route = useRoute()
 const toast = useToast()
@@ -57,6 +58,15 @@ const totalPago = computed(() => {
 const totalPendente = computed(() => {
     return lancamento.value?.parcelas.filter((parcela) => !parcela.pago).reduce((acc, parcela) => acc + Number(parcela.valor), 0);
 })
+
+function editarParcela(parcela: ParcelaFinanceiro) {
+    store.idMutation = parcela.id!
+    store.formParcela = {
+        valor: parcela.valor,
+        vencimento: new Date(parcela.vencimento)
+    }
+    store.openModalParcela = true
+}
 
 function gerarCobrancaFatura() {
     const id = Number(route.query.id);
@@ -130,6 +140,7 @@ async function estornarParcela(id: number) {
 
 onMounted(loadLancamento);
 watch(() => storeCobranca.filters.update, loadLancamento);
+watch(() => store.filters.update, loadLancamento);
 
 const valorTotal = computed(() => {
     return lancamento.value?.parcelas.reduce((acc, parcela) => acc + Number(parcela.valor), 0);
@@ -147,17 +158,17 @@ const valorTotal = computed(() => {
                 <p class="text-sm text-muted-foreground">{{ lancamento?.vendaId ? ' (Lançamento automático)' : '' }}</p>
             </h1>
             <div class="hidden md:flex gap-2">
-                <Button @click="goBack" variant="outline">
+                <Button class="rounded-lg" @click="goBack" variant="outline">
                     <ArrowLeft class="w-4 h-4 mr-1" /> Voltar
                 </Button>
                 <Button :disabled="false" @click="gerarCobrancaFatura" variant="default"
-                    class="text-white bg-success hover:bg-success/80">
+                    class="text-white bg-success hover:bg-success/80 rounded-lg">
                     <CircleDollarSign /> Gerar cobrança
                 </Button>
-                <Button @click="deletar(lancamento?.id!)" variant="destructive">
+                <Button class="rounded-lg" @click="deletar(lancamento?.id!)" variant="destructive">
                     <Trash2 class="w-4 h-4" />
                 </Button>
-                <Button @click="loadLancamento" variant="outline">
+                <Button class="rounded-lg" @click="loadLancamento" variant="outline">
                     <RotateCw :class="{ 'animate-spin': loading }" />
                 </Button>
             </div>
@@ -267,7 +278,7 @@ const valorTotal = computed(() => {
                                 </TableCell>
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
-                                        <Button disabled variant="outline"
+                                        <Button @click="editarParcela(p)" variant="outline"
                                             class="h-8 p-0 px-2 bg-secondary hover:bg-secondary/80">
                                             <PenLine class="w-4 h-4" />
                                         </Button>
@@ -319,6 +330,7 @@ const valorTotal = computed(() => {
         </nav>
         <GerarCobranca />
         <ClientesModal />
+        <ModalParcela />
         <FormularioEfertivar @success="loadLancamento" />
     </div>
 </template>
