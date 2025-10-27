@@ -4,16 +4,18 @@
             <!-- Área Principal - Produtos -->
             <div class="flex-1 flex flex-col">
                 <!-- Header -->
-                <div class="mb-6 flex flex-col gap-2">
+                <div class="mb-6 flex flex-col">
                     <h2 class="text-xl md:text-2xl font-bold text-black dark:text-white flex items-center gap-2">
                         <ShoppingCart class="w-6 h-6 inline-flex" :stroke-width="2.5" />
                         Ponto de vendas
                     </h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Caixa PDV - <span
+                            class="text-green-600 dark:text-green-400">Aberto</span></p>
                     <!-- Barra de Busca -->
                     <div class="relative">
                         <input ref="searchInputField" v-model="searchTerm" @keyup.enter="quickAddCard" type="text"
                             placeholder="Buscar por nome ou código..."
-                            class="w-full px-3 py-2 rounded-lg border bg-background focus:outline outline-primary" />
+                            class="w-full px-3 py-2 mt-2 rounded-lg border bg-background focus:outline outline-primary" />
                     </div>
                 </div>
 
