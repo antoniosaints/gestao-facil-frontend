@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, ExternalLink, FileClock, HandCoins, PenLine, Plus, RotateCw, ToggleLeft, Trash, Trash2, Undo2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, Component, ExternalLink, FileClock, HandCoins, PenLine, Plus, RotateCw, ToggleLeft, Trash, Trash2, Undo2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { useRoute } from "vue-router"
 import type { CategoriaFinanceiro, ClientesFornecedores, LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
@@ -188,8 +188,8 @@ const valorTotal = computed(() => {
                     </div>
                 </div>
                 <div><span class="text-muted-foreground">Recorrência:</span>
-                    <BadgeCell :color="lancamento?.recorrente ? 'purple' : 'green'"
-                        :label="lancamento?.recorrente ? 'Recorrente' : 'Único'" class="ml-2 text-sm"
+                    <BadgeCell :color="lancamento?.recorrente ? 'purple' : 'green'" :icon="Component"
+                        :label="lancamento?.recorrente ? 'Recorrente' : 'Único'" class="ml-2 text-xs"
                         :capitalize="false" />
                 </div>
                 <div><span class="text-muted-foreground">Categoria:</span>
@@ -235,7 +235,7 @@ const valorTotal = computed(() => {
                         <HandCoins class="w-5 h-5" /> Fatura da lançamento
                     </div>
                     <Button disabled size="xs" class="rounded-md">
-                        <Plus class="w-5 h-5" />
+                        <Plus class="w-5 h-5 text-white" />
                     </Button>
                 </CardTitle>
             </CardHeader>

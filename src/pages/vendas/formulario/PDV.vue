@@ -1,7 +1,6 @@
 <template>
     <div>
-        <div
-            class="flex flex-col xl:flex-row gap-4 xl:max-h-[calc(100vh-8rem)] border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-lg p-4 border">
+        <div class="flex flex-col xl:flex-row gap-4 xl:max-h-[calc(100vh-8rem)] rounded-lg">
             <!-- Área Principal - Produtos -->
             <div class="flex-1 flex flex-col">
                 <!-- Header -->
@@ -12,14 +11,15 @@
                     </h2>
                     <!-- Barra de Busca -->
                     <div class="relative">
-                        <Input v-model="searchTerm" autofocus type="text" placeholder="Buscar por nome ou código..."
+                        <Input v-model="searchTerm" @keyup.enter="quickAddCard" autofocus type="text"
+                            placeholder="Buscar por nome ou código..."
                             class="w-full p-2 rounded-md border bg-background border-border outline-none" />
                     </div>
                 </div>
 
                 <!-- Grid de Produtos -->
                 <div class="flex-1 overflow-y-auto scrollbar-thin">
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 px-2 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         <div v-for="p in products" :key="p.id"
                             class="border border-border bg-background shadow-md rounded-lg p-4 card-hover cursor-pointer product-card flex flex-col justify-between"
                             data-product-id="${product.id}">
@@ -31,7 +31,7 @@
                                 <p class="text-xs text-gray-500 dark:text-gray-400">Estoque: {{ p.stock }}</p>
                             </div>
                             <button @click="addToCart(p)"
-                                class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-lg transition-colors">
+                                class="w-full bg-primary hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-lg transition-colors">
                                 <i class="fas fa-plus mr-1"></i>
                                 Adicionar
                             </button>
@@ -42,9 +42,9 @@
 
             <!-- Carrinho Lateral -->
             <div
-                class="overflow-auto max-w-full xl:max-w-md min-w-md w-full border-border dark:border-border-dark bg-background dark:bg-background-dark shadow-md rounded-lg p-4 border flex flex-col">
+                class="overflow-auto max-w-full md:mt-4 xl:max-w-md min-w-md w-full border-border bg-background shadow-md rounded-lg p-4 border flex flex-col">
                 <!-- Header do Carrinho -->
-                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="md:p-4 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-xl font-semibold flex items-center gap-2">
                             <ShoppingCart class="w-6 h-6 inline-flex" />
@@ -67,7 +67,7 @@
                 </div>
 
                 <!-- Lista de Itens do Carrinho -->
-                <div class="min-h-48 overflow-y-auto scrollbar-thin p-4">
+                <div class="min-h-52 overflow-y-auto scrollbar-thin p-4">
                     <div>
                         <div v-if="!cart.length" class="text-center text-gray-500 dark:text-gray-400 py-8">
                             <i class="fas fa-shopping-cart text-4xl mb-3 opacity-50"></i>
@@ -75,7 +75,7 @@
                             <p class="text-sm">Adicione produtos para começar</p>
                         </div>
                         <div v-for="item in cart" :key="item.id"
-                            class="border-border bg-card dark:bg-gray-800 shadow-md rounded-lg p-3 mb-3">
+                            class="border bg-card dark:bg-gray-800 shadow-md rounded-lg p-3 mb-3">
                             <div class="flex justify-between items-start mb-2">
                                 <h4 class="text-xs text-gray-800 dark:text-white truncate">{{ item.name }}</h4>
                                 <button type="button" title="Remover item" @click="updateQuantity(item.id, 0)"
@@ -98,7 +98,7 @@
                                     </p>
                                     <p class="font-bold text-sm">R$ {{ (item.price *
                                         item.quantity).toFixed(2).replace('.',
-                                        ',') }}</p>
+                                            ',') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -118,17 +118,16 @@
                             <span>Desconto:</span>
                             <span id="discount">R$ {{ resumoVenda.discount.toFixed(2).replace('.', ',') }}</span>
                         </div>
-                        <div
-                            class="flex justify-between text-lg font-semibold border-t border-border dark:border-border-dark pt-2">
+                        <div class="flex justify-between text-lg font-semibold">
                             <span>Total:</span>
                             <span id="total">R$ {{ total.toFixed(2).replace('.', ',') }}</span>
                         </div>
                     </div>
 
                     <!-- Forma de Pagamento -->
-                    <div class="mb-4 flex flex-col">
+                    <div class="mb-4 flex flex-col gap-2">
                         <label class="block text-sm font-medium text-gray-700 dark:text-white mb-2">Pagamento</label>
-                        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                        <div class="grid grid-cols-6 md:grid-cols-6 gap-4">
                             <div class="col-span-5">
                                 <Select v-model="paymentMethod">
                                     <SelectTrigger>
@@ -166,29 +165,31 @@
                     </div>
 
                     <!-- Botão Finalizar Venda -->
-                    <button @click="finalizeSale"
-                        class="w-full bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
+                    <Button @click="finalizeSale"
+                        class="w-full text-white py-3 px-4 h-12 text-lg rounded-lg transition-colors"
                         :disabled="!canFinalizeSale">
-                        <i class="fas fa-check mr-2"></i>
+                        <ShoppingBasket />
                         Finalizar Venda
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>
-        <div class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 items-center justify-center min-h-screen">
-            <div
-                class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4 text-center transform scale-90 opacity-0 transition duration-300 ease-out">
+        <ModalView v-model:open="openModalVendaFinalizada" title="Venda finalizada"
+            description="Venda finalizada com sucesso" size="sm">
+            <div class="p-4 flex flex-col items-center">
                 <div
                     class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-check text-2xl text-green-600 dark:text-green-300"></i>
                 </div>
-                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Venda Finalizada!</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-6">A venda foi processada com sucesso.</p>
-                <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Você finalizou a venda!</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6 text-center">clique em "Nova Venda" para lançar outra.
+                </p>
+                <button @click="openModalVendaFinalizada = false"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
                     Nova Venda
                 </button>
             </div>
-        </div>
+        </ModalView>
         <ModalView v-model:open="openModalDesconto" title="Aplicar desconto"
             description="Informe o desconto a ser aplicado" size="lg">
             <!-- Desconto -->
@@ -242,7 +243,7 @@ import { POSITION, useToast } from 'vue-toastification';
 import { useUiStore } from '@/stores/ui/uiStore';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
-import { CirclePercent, ShoppingCart } from 'lucide-vue-next';
+import { CirclePercent, ShoppingBasket, ShoppingCart } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import { Button } from '@/components/ui/button';
 
@@ -251,6 +252,7 @@ const uiStore = useUiStore()
 const storeCliente = useClientesStore()
 const canFinalizeSale = ref(false)
 const openModalDesconto = ref(false)
+const openModalVendaFinalizada = ref(false)
 
 function aplicarDesconto() {
     if (discountValue.value === null) return toast.error('Informe o desconto a ser aplicado')
@@ -292,6 +294,15 @@ watch(() => searchTerm.value, () => {
 watch(() => cart.value, () => {
     searchTerm.value = ""
 }, { deep: true })
+
+function quickAddCard() {
+    const search = searchTerm.value.toLowerCase();
+    if (!search) return toast.error('Informe o produto a ser adicionado')
+    const itemProduto = products.value.find(item => item.name.toLowerCase().includes(search) || item.code.toLowerCase().includes(search))
+    if (itemProduto?.name) {
+        addToCart(itemProduto)
+    }
+}
 
 const discount = computed(() => {
     const value = parseFloat(String(discountValue.value).replace(",", ".")) || 0
@@ -396,6 +407,7 @@ async function finalizeSale() {
         clearCart()
         await fetchProducts()
         toast.success("Venda realizada com sucesso!")
+        openModalVendaFinalizada.value = true
     } catch (err: any) {
         toast.error(err.response?.data?.message || "Erro inesperado")
     }

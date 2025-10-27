@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue"
+import { ref, onMounted, watch } from "vue"
 import { addMonths, format, subMonths } from "date-fns"
 import { Card, CardContent } from "@/components/ui/card"
 import { LancamentosRepository } from "@/repositories/lancamento-repository"
@@ -12,6 +12,8 @@ import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
 import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos"
 import { goBack, goTo } from "@/hooks/links"
 import { useUiStore } from "@/stores/ui/uiStore"
+import ModalParcela from "./modais/ModalParcela.vue"
+import type { ParcelaFinanceiro } from "@/types/schemas"
 
 const toast = useToast()
 const store = useLancamentosStore()
@@ -71,7 +73,17 @@ async function estornarParcela(id: number) {
         toast.error(error.response.data.message || "Erro ao estornar a parcela");
     }
 }
+
+function editarParcela(parcela: Lancamento, data: string) {
+    store.idMutation = parcela.parcelaId!
+    store.formParcela = {
+        valor: parcela.valor,
+        vencimento: new Date(data)
+    }
+    store.openModalParcela = true
+}
 onMounted(carregarLancamentos)
+watch(() => store.filters.update, carregarLancamentos)
 </script>
 
 <template>
@@ -143,16 +155,18 @@ onMounted(carregarLancamentos)
                                     {{ formatCurrencyBR(item.valor) }}
                                 </div>
                                 <div class="flex gap-2 mt-2 justify-end">
-                                    <Button variant="outline" class="bg-transparent w-9 text-blue-500" size="sm">
+                                    <Button @click="editarParcela(item, dia.dia)" variant="outline"
+                                        class="bg-transparent w-9 text-blue-500 rounded-lg" size="sm">
                                         <PenLine :size="16" absoluteStrokeWidth />
                                     </Button>
                                     <Button @click="estornarParcela(item.parcelaId)" v-if="item.status === 'PAGO'"
                                         variant="outline"
-                                        class="bg-transparent w-9 text-yellow-700 dark:text-yellow-500" size="sm">
+                                        class="bg-transparent w-9 text-yellow-700 rounded-lg dark:text-yellow-500"
+                                        size="sm">
                                         <Undo2 :size="16" absoluteStrokeWidth />
                                     </Button>
                                     <Button @click="efetivarParcela(item.parcelaId)" v-else variant="outline"
-                                        class="bg-transparent w-9 text-green-500" size="sm">
+                                        class="bg-transparent w-9 text-green-500 rounded-lg" size="sm">
                                         <BadgeCheck :size="16" absoluteStrokeWidth />
                                     </Button>
                                 </div>
@@ -180,6 +194,7 @@ onMounted(carregarLancamentos)
             </button>
         </nav>
         <FormularioEfertivar @success="carregarLancamentos" />
+        <ModalParcela />
     </div>
 </template>
 
