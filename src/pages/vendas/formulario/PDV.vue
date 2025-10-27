@@ -11,9 +11,9 @@
                     </h2>
                     <!-- Barra de Busca -->
                     <div class="relative">
-                        <Input v-model="searchTerm" @keyup.enter="quickAddCard" autofocus type="text"
+                        <input ref="searchInputField" v-model="searchTerm" @keyup.enter="quickAddCard" type="text"
                             placeholder="Buscar por nome ou código..."
-                            class="w-full p-2 rounded-md border bg-background border-border outline-none" />
+                            class="w-full px-3 py-2 rounded-lg border bg-background focus:outline outline-primary" />
                     </div>
                 </div>
 
@@ -26,8 +26,9 @@
                             <div class="text-center mb-3">
                                 <h3 class="text-gray-800 dark:text-white text-xs mb-1">{{ p.name }}</h3>
                                 <p class="text-gray-500 dark:text-gray-400 text-xs mb-2">Cód: {{ p.code }}</p>
-                                <p class="text-md font-bold text-green-600 dark:text-green-400">R$ {{
-                                    p.price.toFixed(2).replace('.', ',') }}</p>
+                                <p class="text-md font-bold text-green-600 dark:text-green-400">
+                                    R$ {{ p.price.toFixed(2).replace('.', ',') }}
+                                </p>
                                 <p class="text-xs text-gray-500 dark:text-gray-400">Estoque: {{ p.stock }}</p>
                             </div>
                             <button @click="addToCart(p)"
@@ -253,13 +254,12 @@ const storeCliente = useClientesStore()
 const canFinalizeSale = ref(false)
 const openModalDesconto = ref(false)
 const openModalVendaFinalizada = ref(false)
-
+const searchInputField = ref<HTMLInputElement | null>(null)
 function aplicarDesconto() {
     if (discountValue.value === null) return toast.error('Informe o desconto a ser aplicado')
     openModalDesconto.value = false
     toast.success('Desconto aplicado com sucesso')
 }
-
 const descontoLabel = computed(() => discountType.value === "percentage" ? `${discountValue.value}%` : `R$ ${discountValue.value}`)
 
 interface Product {
@@ -301,6 +301,7 @@ function quickAddCard() {
     const itemProduto = products.value.find(item => item.name.toLowerCase().includes(search) || item.code.toLowerCase().includes(search))
     if (itemProduto?.name) {
         addToCart(itemProduto)
+        searchInputField.value?.focus()
     }
 }
 
@@ -344,6 +345,7 @@ async function fetchProducts() {
 function saveCart() {
     localStorage.setItem("gestao_facil:cartPDV", JSON.stringify(cart.value))
     if (cart.value.length > 0) canFinalizeSale.value = true
+    searchInputField.value?.focus()
 }
 
 function addToCart(product: Product) {
@@ -408,6 +410,7 @@ async function finalizeSale() {
         await fetchProducts()
         toast.success("Venda realizada com sucesso!")
         openModalVendaFinalizada.value = true
+        searchInputField.value?.focus()
     } catch (err: any) {
         toast.error(err.response?.data?.message || "Erro inesperado")
     }
@@ -425,5 +428,6 @@ onMounted(() => {
     cart.value = [];
     saveCart();
     uiStore.openSidebar = false
+    searchInputField.value?.focus()
 })
 </script>
