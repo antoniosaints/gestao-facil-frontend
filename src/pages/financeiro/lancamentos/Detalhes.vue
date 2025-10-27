@@ -4,10 +4,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, ExternalLink, FileClock, HandCoins, RotateCw, ToggleLeft, Trash, Trash2, Undo2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, ExternalLink, FileClock, HandCoins, PenLine, RotateCw, ToggleLeft, Trash, Trash2, Undo2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { useRoute } from "vue-router"
-import type { LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
+import type { CategoriaFinanceiro, ClientesFornecedores, LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
 import http from "@/utils/axios"
 import { useToast } from "vue-toastification"
 import { formatDate } from "date-fns"
@@ -26,7 +26,7 @@ import { useCobrancasFinanceirasStore } from "@/stores/lancamentos/useCobrancas"
 
 const route = useRoute()
 const toast = useToast()
-const lancamento = ref<LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro> }>()
+const lancamento = ref<LancamentoFinanceiro & { categoria?: CategoriaFinanceiro, cliente?: ClientesFornecedores, parcelas: Array<ParcelaFinanceiro> }>()
 const store = useLancamentosStore()
 const storeCobranca = useCobrancasFinanceirasStore()
 const uiStore = useUiStore()
@@ -130,6 +130,10 @@ async function estornarParcela(id: number) {
 
 onMounted(loadLancamento);
 watch(() => storeCobranca.filters.update, loadLancamento);
+
+const valorTotal = computed(() => {
+    return lancamento.value?.parcelas.reduce((acc, parcela) => acc + Number(parcela.valor), 0);
+})
 </script>
 
 <template>
@@ -143,11 +147,9 @@ watch(() => storeCobranca.filters.update, loadLancamento);
                 <p class="text-sm text-muted-foreground">{{ lancamento?.vendaId ? ' (Lançamento automático)' : '' }}</p>
             </h1>
             <div class="hidden md:flex gap-2">
-                <RouterLink to="/financeiro/lancamentos" as-child>
-                    <Button variant="outline">
-                        <ArrowLeft class="w-4 h-4 mr-1" /> Voltar
-                    </Button>
-                </RouterLink>
+                <Button @click="goBack" variant="outline">
+                    <ArrowLeft class="w-4 h-4 mr-1" /> Voltar
+                </Button>
                 <Button :disabled="false" @click="gerarCobrancaFatura" variant="default"
                     class="text-white bg-success hover:bg-success/80">
                     <CircleDollarSign /> Gerar cobrança
@@ -167,40 +169,51 @@ watch(() => storeCobranca.filters.update, loadLancamento);
                 </CardTitle>
             </CardHeader>
             <CardContent class="flex flex-col md:grid md:grid-cols-2 gap-2">
-                <div class="flex items-center gap-2"><span>Código:</span>
+                <div class="flex items-center gap-2"><span class="text-muted-foreground">Código:</span>
                     <div class="flex items-center gap-2">
-                        <BadgeCell color="gray" :label="lancamento?.Uid || 'N/A'" class="text-sm" :capitalize="false" />
+                        {{ lancamento?.Uid || 'N/A' }}
                         <Button @click="copiarUid" variant="outline" size="xs"><i
                                 class="fa-solid fa-copy fa-xs"></i></Button>
                     </div>
                 </div>
-                <div><span>Recorrência:</span>
+                <div><span class="text-muted-foreground">Recorrência:</span>
                     <BadgeCell :color="lancamento?.recorrente ? 'purple' : 'green'"
                         :label="lancamento?.recorrente ? 'Recorrente' : 'Único'" class="ml-2 text-sm"
                         :capitalize="false" />
                 </div>
-                <div><span>Valor líquido:</span>
-                    <BadgeCell color="green" :label="formatCurrencyBR(lancamento?.valorTotal || 0)"
-                        class="ml-2 text-sm" />
+                <div><span class="text-muted-foreground">Categoria:</span>
+                    {{ lancamento?.categoria?.nome || 'N/A' }}
                 </div>
-                <div><span>Desconto:</span> {{ formatCurrencyBR(lancamento?.desconto || 0) }}</div>
-                <div><span>Total pago:</span>
-                    <BadgeCell color="emerald" :label="formatCurrencyBR(totalPago!)" class="ml-2 text-sm" />
+                <div><span class="text-muted-foreground">Categoria:</span>
+                    {{ lancamento?.cliente?.nome || 'N/A' }}
                 </div>
-                <div><span>Total pendente:</span>
-                    <BadgeCell color="yellow" :label="formatCurrencyBR(totalPendente!)" class="ml-2 text-sm" />
+                <div><span class="text-muted-foreground">Valor Total:</span>
+                    {{ formatCurrencyBR(valorTotal || 0) }}
                 </div>
-                <div><span>Data cadastro:</span>
+                <div><span class="text-muted-foreground">Desconto:</span>
+                    {{ formatCurrencyBR(lancamento?.desconto || 0) }}
+                </div>
+                <div><span class="text-muted-foreground">Total pago:</span>
+                    {{ formatCurrencyBR(totalPago!) }}
+                </div>
+                <div><span class="text-yellow-foreground">Total pendente:</span>
+                    {{ formatCurrencyBR(totalPendente!) }}
+                </div>
+                <div><span class="text-muted-foreground">Data cadastro:</span>
                     {{ lancamento?.dataLancamento ?
                         formatDateToPtBR(lancamento?.dataLancamento,
                             false) :
                         'N/A'
                     }}
                 </div>
-                <div><span>Parcelas:</span> {{lancamento?.parcelas.length === 1 && !lancamento.recorrente ? 'À vista' :
-                    `${lancamento?.parcelas.filter((p) => p.numero != 0).length} parcelas`}}</div>
+                <div><span class="text-muted-foreground">Parcelas:</span>
+                    {{lancamento?.parcelas.length === 1 && !lancamento.recorrente ? 'À vista' :
+                        `${lancamento?.parcelas.filter((p) => p.numero != 0).length} parcelas`}}
+                </div>
                 <Separator class="col-span-2" />
-                <div class="col-span-2"><span>Descrição:</span> {{ lancamento?.descricao || 'N/A' }}</div>
+                <div class="col-span-2"><span class="text-muted-foreground">Descrição:</span>
+                    {{ lancamento?.descricao || 'N/A' }}
+                </div>
             </CardContent>
         </Card>
         <!-- Tabela de Parcelas -->
@@ -249,6 +262,10 @@ watch(() => storeCobranca.filters.update, loadLancamento);
                                 </TableCell>
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
+                                        <Button variant="outline"
+                                            class="h-8 p-0 px-2 bg-secondary hover:bg-secondary/80">
+                                            <PenLine class="w-4 h-4" />
+                                        </Button>
                                         <Button v-if="!p.pago && !p.CobrancasFinanceiras?.length"
                                             @click="gerarCobrancaParcela(p.id!, p.valor)" variant="default"
                                             class="h-8 p-0 px-2 bg-success hover:bg-success/80 text-white">

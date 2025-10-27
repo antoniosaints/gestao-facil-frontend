@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
-import type { LancamentoFinanceiro, ParcelaFinanceiro } from '@/types/schemas'
+import type { CategoriaFinanceiro, LancamentoFinanceiro, ParcelaFinanceiro } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
   ArrowUpDown,
@@ -8,6 +8,7 @@ import {
   Calendar,
   CircleDollarSign,
   ClockAlert,
+  FlagTriangleRight,
   Loader,
   Tag,
   TrendingDown,
@@ -23,7 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 const store = useLancamentosStore()
 export const columnsLancamentos: ColumnDef<
-  LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro> }
+  LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro>; categoria: CategoriaFinanceiro }
 >[] = [
   {
     id: 'select',
@@ -54,6 +55,26 @@ export const columnsLancamentos: ColumnDef<
           capitalize: false,
         }),
       )
+    },
+  },
+  {
+    accessorKey: 'tipo',
+    header: ({ column }) =>
+      render(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['Tipo', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
+    cell: ({ row }) => {
+      return render(BadgeCell, {
+        label: row.getValue('tipo') as string,
+        color: row.original.tipo === 'RECEITA' ? 'green' : 'red',
+        icon: row.original.tipo === 'RECEITA' ? TrendingUp : TrendingDown,
+        capitalize: false,
+      })
     },
   },
   {
@@ -150,26 +171,6 @@ export const columnsLancamentos: ColumnDef<
     },
   },
   {
-    accessorKey: 'tipo',
-    header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Tipo', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
-    cell: ({ row }) => {
-      return render(BadgeCell, {
-        label: row.getValue('tipo') as string,
-        color: row.original.tipo === 'RECEITA' ? 'green' : 'red',
-        icon: row.original.tipo === 'RECEITA' ? TrendingUp : TrendingDown,
-        capitalize: false,
-      })
-    },
-  },
-  {
     accessorKey: 'dataLancamento',
     header: ({ column }) =>
       render(
@@ -185,6 +186,27 @@ export const columnsLancamentos: ColumnDef<
         label: formatDate(row.getValue('dataLancamento') as string, 'dd/MM/yyyy'),
         color: 'gray',
         icon: Calendar,
+        capitalize: false,
+      })
+    },
+  },
+  {
+    accessorKey: 'categoriaId',
+    enableColumnFilter: false,
+    header: ({ column }) =>
+      render(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['Categoria', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
+    cell: ({ row }) => {
+      return render(BadgeCell, {
+        label: row.original.categoria.nome,
+        color: 'blue',
+        icon: FlagTriangleRight,
         capitalize: false,
       })
     },

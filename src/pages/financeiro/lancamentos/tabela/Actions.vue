@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CircleDollarSign, FileText, Menu, Nfc } from 'lucide-vue-next'
+import { ChevronsLeftRightEllipsis, CircleDollarSign, FileText, Menu, Nfc } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { LancamentoFinanceiro } from '@/types/schemas';
@@ -47,10 +47,9 @@ async function deletar(id: number) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem disabled>
-                    <CircleDollarSign />
-                    Gerar Cobrança
+                    <ChevronsLeftRightEllipsis class="w-4 h-4 mr-1" />
+                    Converter
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">
                     <i class="fa-regular fa-trash-can mr-1"></i>
                     Excluir

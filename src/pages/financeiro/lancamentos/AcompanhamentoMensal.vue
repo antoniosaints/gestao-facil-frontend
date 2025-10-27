@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { LancamentosRepository } from "@/repositories/lancamento-repository"
 import { formatToCapitalize } from "@/utils/formatters"
 import { ptBR } from "date-fns/locale"
-import { ArrowBigLeft, ArrowBigRight, BadgeCheck, CalendarClock, CircleDollarSign, Dot, Trash, Undo2 } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight, BadgeCheck, CalendarClock, CircleDollarSign, Dot, PenLine, Trash, Undo2 } from "lucide-vue-next"
 import { Button } from "@/components/ui/button"
 import { useToast } from "vue-toastification"
 import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
@@ -142,16 +142,16 @@ onMounted(carregarLancamentos)
                                     R$ {{ item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}
                                 </div>
                                 <div class="flex gap-2 mt-2 justify-end">
-                                    <!-- <Button variant="outline" class="bg-transparent text-red-500" size="sm">
-                                        <Trash :size="16" absoluteStrokeWidth />
-                                    </Button> -->
+                                    <Button variant="outline" class="bg-transparent w-9 text-blue-500" size="sm">
+                                        <PenLine :size="16" absoluteStrokeWidth />
+                                    </Button>
                                     <Button @click="estornarParcela(item.parcelaId)" v-if="item.status === 'PAGO'"
-                                        variant="outline" class="bg-transparent text-yellow-700 dark:text-yellow-500"
-                                        size="sm">
+                                        variant="outline"
+                                        class="bg-transparent w-9 text-yellow-700 dark:text-yellow-500" size="sm">
                                         <Undo2 :size="16" absoluteStrokeWidth />
                                     </Button>
                                     <Button @click="efetivarParcela(item.parcelaId)" v-else variant="outline"
-                                        class="bg-transparent text-green-500" size="sm">
+                                        class="bg-transparent w-9 text-green-500" size="sm">
                                         <BadgeCheck :size="16" absoluteStrokeWidth />
                                     </Button>
                                 </div>
