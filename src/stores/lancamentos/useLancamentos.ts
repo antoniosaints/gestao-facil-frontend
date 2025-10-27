@@ -18,6 +18,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const openModalCobranca = ref(false)
   const openModalDre = ref(false)
   const idMutation = ref<number | null>(null)
+  const currentMonth = ref(new Date())
   const selectedIds = ref<number[]>([])
 
   function resetSelectedIds() {
@@ -123,6 +124,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     openModalDelete,
     openModalEfetivar,
     openModalCobranca,
+    currentMonth,
     selectedIds,
     addSelectedId,
     resetSelectedIds,

@@ -22,6 +22,7 @@ const description = ref('Preencha os campos abaixo')
 const store = useLancamentosStore()
 const storeCliente = useClientesStore()
 const toast = useToast()
+const erros = ref<{ [key: string]: string }>({})
 
 const params = ref<{ metodo: "AVISTA" | "PARCELADO", lancamentoEfetivado: boolean }>({
     metodo: "AVISTA",
@@ -32,7 +33,7 @@ const title = computed(() => {
     return params.value.metodo === "AVISTA" ? `Lançamento de ${tipo}` : `Lançamento parcelado (${tipo})`
 })
 
-async function submit() {
+async function submitFormulario() {
     try {
         const data = {
             categoriaId: store.form.categoriaId,
@@ -63,6 +64,22 @@ async function submit() {
     }
 }
 
+const validar = () => {
+    erros.value = {}
+
+    if (!store.form.dataLancamento) erros.value.dataLancamento = 'A data é obrigatória.'
+    if (!store.form.categoriaId) erros.value.categoriaId = 'A categoria é obrigatória.'
+    if (!store.form.contasFinanceiroId) erros.value.contasFinanceiroId = 'A conta financeira é obrigatória.'
+}
+
+const formularioValido = computed(() => Object.keys(erros.value).length === 0)
+
+const submit = async () => {
+    validar()
+    if (!formularioValido.value) return
+    await submitFormulario()
+}
+
 </script>
 
 <template>
@@ -81,8 +98,9 @@ async function submit() {
                         <label for="dataFinanceiroLancamento" class="block text-sm font-medium mb-1">
                             Data Lançamento *
                         </label>
-                        <Calendarpicker :teleport="true" id="dataFinanceiroLancamento" name="dataLancamento"
-                            v-model="store.form.dataLancamento" />
+                        <Calendarpicker :teleport="true" id="dataFinanceiroLancamento" :required="false"
+                            name="dataLancamento" v-model="store.form.dataLancamento" />
+                        <p v-if="erros.dataLancamento" class="text-red-600 text-sm">{{ erros.dataLancamento }}</p>
                     </div>
                     <!-- Tipo -->
                     <div class="md:col-span-4">
@@ -236,8 +254,9 @@ async function submit() {
                             <FormularioCategorias class="text-blue-500 px-2 cursor-pointer">+ Nova
                             </FormularioCategorias>
                         </label>
-                        <Select2Ajax id="categoriaIdLancamento" v-model="store.form.categoriaId" required
+                        <Select2Ajax id="categoriaIdLancamento" v-model="store.form.categoriaId"
                             url="lancamentos/categorias/select2" />
+                        <p v-if="erros.categoriaId" class="text-red-600 text-sm">{{ erros.categoriaId }}</p>
                     </div>
                     <!-- Conta Financeiro -->
                     <div class="md:col-span-6">
@@ -245,8 +264,10 @@ async function submit() {
                             Conta Financeira *
                             <FormularioContas class="text-blue-500 px-2 cursor-pointer">+ Nova</FormularioContas>
                         </label>
-                        <Select2Ajax id="contasFinanceiroId" v-model="store.form.contasFinanceiroId" required
+                        <Select2Ajax id="contasFinanceiroId" v-model="store.form.contasFinanceiroId"
                             url="lancamentos/contas/select2" />
+                        <p v-if="erros.contasFinanceiroId" class="text-red-600 text-sm">{{ erros.contasFinanceiroId }}
+                        </p>
                     </div>
                 </div>
 

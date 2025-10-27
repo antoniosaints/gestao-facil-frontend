@@ -5,6 +5,7 @@ import { optionsChartBarStack } from '@/composables/useChartOptions';
 import { goBack, goTo } from '@/hooks/links';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { useUiStore } from '@/stores/ui/uiStore';
+import { formatCurrencyBR } from '@/utils/formatters';
 import { endOfMonth, startOfMonth } from 'date-fns';
 import { ChartLine, CircleDollarSign, Landmark, Tags, ToggleLeft, Undo2, Wallet } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
@@ -22,8 +23,8 @@ const dataResumo = ref<{ despesas: string, receitas: string, saldo: string }>({
     saldo: 'R$ 0,00'
 })
 const dataResumoStatus = ref<{ pendente: string, pago: string }>({
-    pendente: 'R$ 0,00',
-    pago: 'R$ 0,00'
+    pendente: '0',
+    pago: '0'
 })
 async function getDataDashboard() {
     try {
@@ -186,7 +187,7 @@ onMounted(() => {
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
                                 id="resumo_pendentes_total">
-                                {{ dataResumoStatus.pendente }}
+                                {{ formatCurrencyBR(Number(dataResumoStatus.pendente)) }}
                             </h4>
                         </div>
 

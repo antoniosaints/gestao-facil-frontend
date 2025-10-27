@@ -3,9 +3,9 @@ import { ref, onMounted } from "vue"
 import { addMonths, format, subMonths } from "date-fns"
 import { Card, CardContent } from "@/components/ui/card"
 import { LancamentosRepository } from "@/repositories/lancamento-repository"
-import { formatToCapitalize } from "@/utils/formatters"
+import { formatCurrencyBR, formatToCapitalize } from "@/utils/formatters"
 import { ptBR } from "date-fns/locale"
-import { ArrowBigLeft, ArrowBigRight, BadgeCheck, CalendarClock, CircleDollarSign, Dot, PenLine, Trash, Undo2 } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight, BadgeCheck, CalendarClock, CircleDollarSign, Dot, PenLine, Pin, Trash, Undo2 } from "lucide-vue-next"
 import { Button } from "@/components/ui/button"
 import { useToast } from "vue-toastification"
 import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
@@ -18,10 +18,10 @@ const store = useLancamentosStore()
 const uiStore = useUiStore()
 const currentMonth = ref(new Date())
 const navigateMonth = (direction: "prev" | "next") => {
-    currentMonth.value =
+    store.currentMonth =
         direction === "prev"
-            ? subMonths(currentMonth.value, 1)
-            : addMonths(currentMonth.value, 1)
+            ? subMonths(store.currentMonth, 1)
+            : addMonths(store.currentMonth, 1)
 
     carregarLancamentos()
 };
@@ -48,7 +48,7 @@ const lancamentos = ref<DiaLancamento[]>([])
 async function carregarLancamentos() {
     try {
         carregando.value = true
-        const { data } = await LancamentosRepository.getLancamentosMensais(currentMonth.value.toISOString().slice(0, 7))
+        const { data } = await LancamentosRepository.getLancamentosMensais(store.currentMonth.toISOString().slice(0, 7))
         lancamentos.value = data
     } catch (e) {
         console.error(e)
@@ -89,7 +89,7 @@ onMounted(carregarLancamentos)
             <button @click="navigateMonth('prev')">
                 <ArrowBigLeft class="w-5 h-5" />
             </button>
-            <h2 class="text-xl">{{ formatToCapitalize(format(currentMonth, "MMMM yyyy", { locale: ptBR })) }}</h2>
+            <h2 class="text-xl">{{ formatToCapitalize(format(store.currentMonth, "MMMM yyyy", { locale: ptBR })) }}</h2>
             <button @click="navigateMonth('next')">
                 <ArrowBigRight class="w-5 h-5" />
             </button>
@@ -109,12 +109,13 @@ onMounted(carregarLancamentos)
                     </p>
                     <div class="flex flex-col gap-2">
                         <div v-for="item in dia.lancamentos" :key="item.id"
-                            class="flex justify-between py-1 pl-6 gap-2 bg-background border px-3 rounded-md relative">
+                            class="flex justify-between py-1 pl-6 gap-2 bg-background border px-3 rounded-lg relative">
                             <div v-if="item.tipo === 'RECEITA'"
                                 class="absolute left-0 top-0 w-2 h-full rounded-l-md bg-success/90"></div>
                             <div v-else class="absolute left-0 top-0 w-2 h-full rounded-l-md bg-danger/90"></div>
                             <div class="flex flex-col justify-center">
                                 <div class="font-medium text-md">
+                                    <Pin class="inline mr-1" :size="16" />
                                     <RouterLink :to="`/financeiro/detalhes?id=${item.id}`"
                                         class="hover:underline hover:cursor-pointer hover:text-primary">
                                         {{ item.descricao }}
@@ -130,16 +131,16 @@ onMounted(carregarLancamentos)
                                 <div class="text-xs text-muted-foreground">
                                     {{ item.categoria }}
                                 </div>
-                                <div class="text-xs text-muted-foreground">
+                                <div :class="['text-xs', item.tipo === 'RECEITA' ? 'text-green-600' : 'text-red-600']">
                                     {{ item.tipo === 'RECEITA' ? 'Receita' : 'Despesa' }}
                                 </div>
                             </div>
                             <div>
                                 <div :class="[
                                     'flex items-center text-right justify-end',
-                                    item.tipo === 'RECEITA' ? 'text-green-500' : 'text-red-500'
+                                    item.tipo === 'RECEITA' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                                 ]">
-                                    R$ {{ item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}
+                                    {{ formatCurrencyBR(item.valor) }}
                                 </div>
                                 <div class="flex gap-2 mt-2 justify-end">
                                     <Button variant="outline" class="bg-transparent w-9 text-blue-500" size="sm">

@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, ExternalLink, FileClock, HandCoins, PenLine, RotateCw, ToggleLeft, Trash, Trash2, Undo2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, ExternalLink, FileClock, HandCoins, PenLine, Plus, RotateCw, ToggleLeft, Trash, Trash2, Undo2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { useRoute } from "vue-router"
 import type { CategoriaFinanceiro, ClientesFornecedores, LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
@@ -184,7 +184,7 @@ const valorTotal = computed(() => {
                 <div><span class="text-muted-foreground">Categoria:</span>
                     {{ lancamento?.categoria?.nome || 'N/A' }}
                 </div>
-                <div><span class="text-muted-foreground">Categoria:</span>
+                <div><span class="text-muted-foreground">Cliente:</span>
                     {{ lancamento?.cliente?.nome || 'N/A' }}
                 </div>
                 <div><span class="text-muted-foreground">Valor Total:</span>
@@ -196,7 +196,7 @@ const valorTotal = computed(() => {
                 <div><span class="text-muted-foreground">Total pago:</span>
                     {{ formatCurrencyBR(totalPago!) }}
                 </div>
-                <div><span class="text-yellow-foreground">Total pendente:</span>
+                <div><span class="text-muted-foreground">Total pendente:</span>
                     {{ formatCurrencyBR(totalPendente!) }}
                 </div>
                 <div><span class="text-muted-foreground">Data cadastro:</span>
@@ -219,8 +219,13 @@ const valorTotal = computed(() => {
         <!-- Tabela de Parcelas -->
         <Card class="shadow-md rounded-md" v-if="lancamento?.parcelas.length">
             <CardHeader>
-                <CardTitle class="flex items-center gap-2 font-normal">
-                    <HandCoins class="w-5 h-5" /> Fatura da lançamento
+                <CardTitle class="flex items-center gap-2 font-normal justify-between">
+                    <div class="flex items-center gap-2">
+                        <HandCoins class="w-5 h-5" /> Fatura da lançamento
+                    </div>
+                    <Button disabled size="xs" class="rounded-md">
+                        <Plus class="w-5 h-5" />
+                    </Button>
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -262,7 +267,7 @@ const valorTotal = computed(() => {
                                 </TableCell>
                                 <TableCell class="flex justify-end">
                                     <div class="flex items-center gap-2">
-                                        <Button variant="outline"
+                                        <Button disabled variant="outline"
                                             class="h-8 p-0 px-2 bg-secondary hover:bg-secondary/80">
                                             <PenLine class="w-4 h-4" />
                                         </Button>
@@ -286,54 +291,9 @@ const valorTotal = computed(() => {
                                             class="w-8 h-8 p-0 bg-warning hover:bg-warning/80 text-white">
                                             <Undo2 class="w-4 h-4" />
                                         </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-        <Card class="shadow-md rounded-md" v-if="false">
-            <CardHeader>
-                <CardTitle class="flex items-center gap-2 font-normal">
-                    <FileClock class="w-5 h-5" /> Cobranças geradas
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div class="relative overflow-x-auto shadow-md sm:rounded-lg border border-border">
-                    <Table>
-                        <TableHeader class="text-sm bg-body">
-                            <TableRow>
-                                <TableHead>Gateway</TableHead>
-                                <TableHead>Vencimento</TableHead>
-                                <TableHead>Valor</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Pagamento</TableHead>
-                                <TableHead class="text-right">Ações</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody class="bg-body/30">
-                            <TableRow v-for="p in lancamento?.parcelas" :key="p.numero">
-                                <TableCell>
-                                    <span
-                                        class="font-normal px-2 py-1.5 text-nowrap bg-warning hover:bg-warning/80 text-sm text-white rounded-lg">
-                                        Mercado Pago
-                                    </span>
-                                </TableCell>
-                                <TableCell>{{ p.vencimento ? formatDate(p.vencimento, "dd/MM/yyyy") : "-" }}</TableCell>
-                                <TableCell>{{ formatCurrencyBR(p.valor) }}</TableCell>
-                                <TableCell>{{ p.pago ? "Pago" : "Pendente" }}</TableCell>
-                                <TableCell>PIX
-                                </TableCell>
-                                <TableCell class="flex justify-end">
-                                    <div class="flex items-center gap-2">
-                                        <Button v-if="!p.pago" :disabled="true" variant="default"
-                                            class="w-8 h-8 p-0 bg-success hover:bg-success/80 text-white">
-                                            <CircleDollarSign class="w-4 h-4" />
-                                        </Button>
-                                        <Button variant="destructive"
-                                            class="w-8 h-8 p-0 bg-red-500 hover:bg-red-500/80 text-white">
+                                        <Button v-if="!p.pago" disabled @click="estornarParcela(p.id!)"
+                                            variant="default"
+                                            class="w-8 h-8 p-0 bg-danger hover:bg-danger/80 text-white">
                                             <Trash class="w-4 h-4" />
                                         </Button>
                                     </div>
@@ -344,7 +304,6 @@ const valorTotal = computed(() => {
                 </div>
             </CardContent>
         </Card>
-
         <nav v-if="uiStore.isMobile"
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
             <button type="button" @click="gerarCobrancaFatura"
