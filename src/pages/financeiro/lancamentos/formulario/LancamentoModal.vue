@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { vMaska } from "maska/vue"
 import { moneyMaskOptions } from "@/lib/imaska";
 import type { FormularioLancamento } from "@/types/schemas";
 import { LancamentosRepository } from "@/repositories/lancamento-repository";
-import { useToast } from "vue-toastification";
-import { formatToNumberValue } from "@/utils/formatters";
+import { POSITION, useToast } from "vue-toastification";
+import { formatDateToPtBR, formatToNumberValue } from "@/utils/formatters";
 import { useClientesStore } from "@/stores/clientes/useClientes";
 import FormularioContas from "../modais/FormularioContas.vue";
 import FormularioCategorias from "../modais/FormularioCategorias.vue";
@@ -24,16 +24,33 @@ const storeCliente = useClientesStore()
 const toast = useToast()
 const erros = ref<{ [key: string]: string }>({})
 
-const params = ref<{ metodo: "AVISTA" | "PARCELADO", lancamentoEfetivado: boolean }>({
+const params = ref<{ metodo: "AVISTA" | "PARCELADO", lancamentoEfetivado: boolean, hasEntrada: boolean }>({
     metodo: "AVISTA",
-    lancamentoEfetivado: false
+    lancamentoEfetivado: false,
+    hasEntrada: false
 })
 const title = computed(() => {
     const tipo = store.form.tipo === "RECEITA" ? "receita" : "despesa"
     return params.value.metodo === "AVISTA" ? `Lançamento de ${tipo}` : `Lançamento parcelado (${tipo})`
 })
 
+const formatStringToNumber = (value: string) => Number(value.replace(',', '.'))
+
 async function submitFormulario() {
+    if (params.value.hasEntrada && formatStringToNumber(store.form.valorEntrada as string) >= formatStringToNumber(store.form.valorTotal as string)) {
+        toast.error('O valor de entrada deve ser menor que o valor total', {
+            timeout: 3000,
+            position: POSITION.BOTTOM_RIGHT
+        })
+        return
+    }
+    if (formatStringToNumber(store.form.desconto as string) >= formatStringToNumber(store.form.valorTotal as string)) {
+        toast.error('O desconto não pode ser maior que o valor total', {
+            timeout: 3000,
+            position: POSITION.BOTTOM_RIGHT
+        })
+        return
+    }
     try {
         const data = {
             categoriaId: store.form.categoriaId,
@@ -56,7 +73,7 @@ async function submitFormulario() {
         store.openModal = false
         store.updateTable()
         store.reset()
-        params.value = { metodo: "AVISTA", lancamentoEfetivado: false }
+        params.value = { metodo: "AVISTA", lancamentoEfetivado: false, hasEntrada: false }
         toast.success('Lançamento cadastrado com sucesso')
     } catch (error: any) {
         console.log(error)
@@ -80,6 +97,13 @@ const submit = async () => {
     await submitFormulario()
 }
 
+watch(() => params.value.hasEntrada, () => {
+    if (!params.value.hasEntrada) {
+        store.form.valorEntrada = ''
+        store.form.dataEntrada = ''
+    }
+})
+
 </script>
 
 <template>
@@ -96,7 +120,7 @@ const submit = async () => {
                     </div>
                     <div class="md:col-span-4">
                         <label for="dataFinanceiroLancamento" class="block text-sm font-medium mb-1">
-                            Data Lançamento *
+                            {{ params.metodo === "AVISTA" ? "Data vencimento" : "Data primeira parcela" }} *
                         </label>
                         <Calendarpicker :teleport="true" id="dataFinanceiroLancamento" :required="false"
                             name="dataLancamento" v-model="store.form.dataLancamento" />
@@ -139,7 +163,7 @@ const submit = async () => {
                             id="descontoFormularioLancamento" name="desconto" placeholder="0,00" />
                     </div>
                     <!-- Valor Total -->
-                    <div class="md:col-span-6">
+                    <div :class="[params.metodo === 'AVISTA' ? 'md:col-span-6' : 'md:col-span-3']">
                         <label for="metodoLancamentoModoLancamento" class="block text-sm font-medium mb-1">
                             Método *
                         </label>
@@ -157,8 +181,16 @@ const submit = async () => {
                             </SelectContent>
                         </Select>
                     </div>
+                    <div :class="['md:col-span-3', params.metodo === 'AVISTA' ? 'hidden' : 'block']">
+                        <label for="parcelas" class="block text-sm font-medium mb-1">
+                            Parcelas *
+                        </label>
+                        <Input type="number" id="parcelas" name="parcelas" placeholder="1" required min="1"
+                            v-model="store.form.parcelas" />
+                    </div>
 
-                    <div class="block text-sm font-medium mb-1 md:col-span-6">
+                    <div
+                        :class="['block text-sm font-medium mb-1', params.metodo === 'AVISTA' ? 'md:col-span-6' : 'md:col-span-3']">
                         <span class="block text-sm font-medium mb-0">
                             Efetivado
                         </span>
@@ -178,24 +210,38 @@ const submit = async () => {
                             </div>
                         </div>
                     </div>
-
-                    <div v-if="params.metodo === 'PARCELADO'"
-                        class="grid grid-cols-1 md:grid-cols-3 gap-3 md:col-span-12">
-                        <!-- Parcelas -->
-                        <div>
-                            <label for="parcelas" class="block text-sm font-medium mb-1">
-                                Parcelas *
-                            </label>
-                            <Input type="number" id="parcelas" name="parcelas" placeholder="1" required min="1"
-                                v-model="store.form.parcelas" />
+                    <div
+                        :class="['block text-sm font-medium mb-1 md:col-span-3', params.metodo === 'AVISTA' ? 'hidden' : 'block']">
+                        <span class="block text-sm font-medium mb-0">
+                            Entrada
+                        </span>
+                        <div class="gap-2 mt-1 items-center">
+                            <div>
+                                <label for="temEntradaLancamento"
+                                    class="border cursor-pointer bg-card dark:bg-card-dark border-border px-3 h-[36px] flex rounded-lg">
+                                    <div class="flex items-center">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <Switch id="temEntradaLancamento" v-model="params.hasEntrada" />
+                                            <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                                {{ params.hasEntrada ? "Sim" : "Não" }}
+                                            </span>
+                                        </label>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
+                    </div>
+
+                    <div v-if="params.metodo === 'PARCELADO' && params.hasEntrada"
+                        class="grid grid-cols-1 md:grid-cols-2 gap-3 md:col-span-12">
                         <!-- Valor Entrada -->
                         <div>
                             <label for="valorEntradaLancamento" class="block text-sm font-medium mb-1">
                                 Valor Entrada
                             </label>
-                            <Input type="text" v-maska="moneyMaskOptions" v-model="store.form.valorEntrada"
-                                id="valorEntradaLancamento" name="valorEntrada" placeholder="0,00" />
+                            <Input type="text" :required="params.hasEntrada" v-maska="moneyMaskOptions"
+                                v-model="store.form.valorEntrada" id="valorEntradaLancamento" name="valorEntrada"
+                                placeholder="0,00" />
                         </div>
 
                         <!-- Data Entrada -->
@@ -203,7 +249,8 @@ const submit = async () => {
                             <label for="dataEntradaLancamento" class="block text-sm font-medium mb-1">
                                 Data Entrada
                             </label>
-                            <Calendarpicker :teleport="true" :required="store.form.valorEntrada != ''"
+                            <Calendarpicker :teleport="true"
+                                :required="store.form.valorEntrada != '' && params.hasEntrada"
                                 id="dataEntradaLancamento" name="dataEntrada" v-model="store.form.dataEntrada" />
                         </div>
                     </div>
@@ -269,6 +316,37 @@ const submit = async () => {
                         <p v-if="erros.contasFinanceiroId" class="text-red-600 text-sm">{{ erros.contasFinanceiroId }}
                         </p>
                     </div>
+                </div>
+
+                <div class="flex flex-col bg-gray-50 border rounded-md px-4 py-2">
+                    <span class="text-muted-foreground">Resumo do lançamento</span>
+                    <span class="text-sm">Valor total:
+                        {{ Number(store.form.valorTotal).toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }) }}
+                    </span>
+                    <span v-if="params.metodo === 'PARCELADO' && params.hasEntrada" class="text-sm">Entrada de:
+                        {{ Number(store.form.valorEntrada).toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }) }}
+                    </span>
+                    <span v-if="params.metodo === 'PARCELADO'" class="text-sm">{{ params.hasEntrada ? 'E + ' : 'Em '
+                        }}{{
+                            store.form.parcelas }} parcela(s)
+                        de:
+                        {{ Number((Number((store.form.valorTotal as string).replace(',', '.')) -
+                            Number((store.form.valorEntrada as
+                                string).replace(',', '.'))) /
+                            store.form.parcelas!).toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            }) }}
+                    </span>
+                    <span class="text-sm">{{ params.metodo === 'AVISTA' ? 'Vencimento' : 'Primeira parcela' }}:
+                        {{ formatDateToPtBR(store.form.dataLancamento as string) }}
+                    </span>
                 </div>
 
                 <div class="flex justify-end gap-2 mt-4">
