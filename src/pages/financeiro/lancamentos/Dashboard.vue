@@ -187,7 +187,7 @@ onMounted(() => {
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
                                 id="resumo_pendentes_total">
-                                {{ formatCurrencyBR(Number(dataResumoStatus.pendente)) }}
+                                {{ formatCurrencyBR(dataResumoStatus.pendente) }}
                             </h4>
                         </div>
 

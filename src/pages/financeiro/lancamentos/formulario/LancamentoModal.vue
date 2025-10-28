@@ -13,7 +13,7 @@ import { moneyMaskOptions } from "@/lib/imaska";
 import type { FormularioLancamento } from "@/types/schemas";
 import { LancamentosRepository } from "@/repositories/lancamento-repository";
 import { POSITION, useToast } from "vue-toastification";
-import { formatDateToPtBR, formatToNumberValue } from "@/utils/formatters";
+import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from "@/utils/formatters";
 import { useClientesStore } from "@/stores/clientes/useClientes";
 import FormularioContas from "../modais/FormularioContas.vue";
 import FormularioCategorias from "../modais/FormularioCategorias.vue";
@@ -34,17 +34,15 @@ const title = computed(() => {
     return params.value.metodo === "AVISTA" ? `Lançamento de ${tipo}` : `Lançamento parcelado (${tipo})`
 })
 
-const formatStringToNumber = (value: string) => Number(value.replace(',', '.'))
-
 async function submitFormulario() {
-    if (params.value.hasEntrada && formatStringToNumber(store.form.valorEntrada as string) >= formatStringToNumber(store.form.valorTotal as string)) {
+    if (params.value.hasEntrada && formatToNumberValue(store.form.valorEntrada as string) >= formatToNumberValue(store.form.valorTotal as string)) {
         toast.error('O valor de entrada deve ser menor que o valor total', {
             timeout: 3000,
             position: POSITION.BOTTOM_RIGHT
         })
         return
     }
-    if (formatStringToNumber(store.form.desconto as string) >= formatStringToNumber(store.form.valorTotal as string)) {
+    if (formatToNumberValue(store.form.desconto as string) >= formatToNumberValue(store.form.valorTotal as string)) {
         toast.error('O desconto não pode ser maior que o valor total', {
             timeout: 3000,
             position: POSITION.BOTTOM_RIGHT
@@ -321,28 +319,17 @@ watch(() => params.value.hasEntrada, () => {
                 <div class="flex flex-col bg-gray-50 border rounded-md px-4 py-2">
                     <span class="text-muted-foreground">Resumo do lançamento</span>
                     <span class="text-sm">Valor total:
-                        {{ Number(store.form.valorTotal).toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL'
-                        }) }}
+                        {{ formatCurrencyBR(store.form.valorTotal) }}
                     </span>
                     <span v-if="params.metodo === 'PARCELADO' && params.hasEntrada" class="text-sm">Entrada de:
-                        {{ Number(store.form.valorEntrada).toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL'
-                        }) }}
+                        {{ formatCurrencyBR(store.form.valorEntrada) }}
                     </span>
-                    <span v-if="params.metodo === 'PARCELADO'" class="text-sm">{{ params.hasEntrada ? 'E + ' : 'Em '
-                    }}{{
-                            store.form.parcelas }} parcela(s)
-                        de:
-                        {{ Number((Number((store.form.valorTotal as string).replace(',', '.')) -
-                            Number((store.form.valorEntrada as
-                                string).replace(',', '.'))) /
-                            store.form.parcelas!).toLocaleString('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL'
-                            }) }}
+                    <span v-if="params.metodo === 'PARCELADO'" class="text-sm">
+                        {{ params.hasEntrada ? 'E + ' : 'Em ' }}
+                        {{ store.form.parcelas }} parcela(s) de:
+                        {{ formatCurrencyBR(Number((formatToNumberValue(store.form.valorTotal) -
+                            formatToNumberValue(store.form.valorEntrada)) /
+                            store.form.parcelas!)) }}
                     </span>
                     <span class="text-sm">{{ params.metodo === 'AVISTA' ? 'Vencimento' : 'Primeira parcela' }}:
                         {{ formatDateToPtBR(store.form.dataLancamento as string) }}

@@ -34,11 +34,12 @@ export const formatToNumberValue = (value: string | number): number => {
 export const formatToMoneyDecimalValue = (valor: Decimal | number): string => {
   return `R$ ${new Decimal(valor).toFixed(2)}`
 }
-export function formatCurrencyBR(value: number): string {
+export function formatCurrencyBR(value: number | string): string {
+  const valueFormated = typeof value === 'string' ? formatToNumberValue(value) : value
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  }).format(value)
+  }).format(valueFormated)
 }
 
 export const formatLabel = (
