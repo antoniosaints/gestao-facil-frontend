@@ -57,14 +57,14 @@ async function submitFormulario() {
             clienteId: store.form.clienteId,
             descricao: store.form.descricao,
             contasFinanceiroId: store.form.contasFinanceiroId,
-            dataEntrada: store.form.dataEntrada,
+            dataEntrada: params.value.hasEntrada ? store.form.dataEntrada : null,
             dataLancamento: store.form.dataLancamento,
             desconto: formatToNumberValue(store.form.desconto),
             lancamentoEfetivado: params.value.lancamentoEfetivado,
             tipoLancamentoModo: params.value.metodo,
             formaPagamento: store.form.formaPagamento,
             parcelas: store.form.parcelas,
-            valorEntrada: formatToNumberValue(store.form.valorEntrada),
+            valorEntrada: params.value.hasEntrada ? formatToNumberValue(store.form.valorEntrada) : 0,
             tipo: store.form.tipo,
             valorTotal: formatToNumberValue(store.form.valorTotal),
         } as FormularioLancamento & { lancamentoEfetivado: boolean, tipoLancamentoModo: "AVISTA" | "PARCELADO" }
@@ -333,7 +333,7 @@ watch(() => params.value.hasEntrada, () => {
                         }) }}
                     </span>
                     <span v-if="params.metodo === 'PARCELADO'" class="text-sm">{{ params.hasEntrada ? 'E + ' : 'Em '
-                        }}{{
+                    }}{{
                             store.form.parcelas }} parcela(s)
                         de:
                         {{ Number((Number((store.form.valorTotal as string).replace(',', '.')) -
