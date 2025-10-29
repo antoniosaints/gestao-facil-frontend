@@ -64,4 +64,13 @@ export class ContaRepository {
     const data = await http.get(`/contas/assinatura/mercadopago`)
     return data.data
   }
+  static async uploadPerfil(file: File) {
+    const data = new FormData()
+    data.append('profileImage', file)
+    await http.post('/uploads/profile', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  }
 }

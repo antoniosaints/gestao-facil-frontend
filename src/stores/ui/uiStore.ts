@@ -26,6 +26,7 @@ export interface Permissoes {
 
 export const useUiStore = defineStore('uiStore', () => {
   const openSidebar = ref(true)
+  const openModalProfile = ref(false)
   const isMobile = ref(window.innerWidth < 768)
   const usuarioLogged = ref<Usuarios>({} as Usuarios)
   const contaInfo = ref<Contas>({} as Contas)
@@ -202,6 +203,7 @@ export const useUiStore = defineStore('uiStore', () => {
 
   return {
     openSidebar,
+    openModalProfile,
     status,
     permissoes,
     usuarioLogged,
