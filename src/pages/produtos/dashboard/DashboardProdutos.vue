@@ -30,7 +30,7 @@ const getIndicadores = async (inicio?: string, fim?: string) => {
     const data: any = await ProdutoRepository.getResumoGeral(inicio, fim)
     indicadores.value = [
       { titulo: "Ticket Médio", valor: data.ticketMedioGeral ? formatCurrencyBR(data.ticketMedioGeral) : null, icone: "fa-solid fa-chart-line text-green-600" },
-      { titulo: "Estoques Baixos", valor: data.estoqueBaixo ? `${data.estoqueBaixo} produto(s)` : null, icone: "fa-solid fa-angles-down text-red-600" },
+      { titulo: "Estoques Baixos", valor: data.estoqueBaixo ? `${data.estoqueBaixo} produto(s)` : 'Nenhum', icone: "fa-solid fa-angles-down text-red-600" },
       { titulo: "Lucro Mensal", valor: data.lucroMensal ? formatCurrencyBR(data.lucroMensal) : null, icone: "fa-solid fa-chart-line text-blue-600" },
       { titulo: "Custo Reposições", valor: data.custoReposicoes ? formatCurrencyBR(data.custoReposicoes) : null, icone: "fa-solid fa-money-bill-trend-up text-purple-600" },
     ]

@@ -5,11 +5,22 @@ import { optionsChartBarStack } from '@/composables/useChartOptions';
 import { goBack, goTo } from '@/hooks/links';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { useUiStore } from '@/stores/ui/uiStore';
-import { formatCurrencyBR } from '@/utils/formatters';
+import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
 import { endOfMonth, startOfMonth } from 'date-fns';
-import { ChartLine, CircleDollarSign, Landmark, Tags, ToggleLeft, Undo2, Wallet } from 'lucide-vue-next';
+import { ChartLine, CircleDollarSign, Dot, Landmark, Tags, ToggleLeft, Undo2, Wallet, WalletMinimal } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { useToast } from 'vue-toastification';
+
+interface ResumoConta {
+    conta: string,
+    saldoInicial: string,
+    receitas: string,
+    despesas: string,
+    receitasPago: string,
+    despesasPago: string,
+    saldoAtual: string
+}
+
 const toast = useToast();
 const uiStore = useUiStore()
 const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
@@ -17,6 +28,7 @@ const balancoData: any = ref({ labels: [], datasets: [] });
 const statusData: any = ref({ labels: [], datasets: [] });
 const contasData: any = ref({ labels: [], datasets: [] });
 const categoriasData: any = ref({ labels: [], datasets: [] });
+const contasFinanceiras = ref<ResumoConta[]>([])
 const dataResumo = ref<{ despesas: string, receitas: string, saldo: string }>({
     despesas: 'R$ 0,00',
     receitas: 'R$ 0,00',
@@ -36,11 +48,11 @@ async function getDataDashboard() {
             LancamentosRepository.graficoBalanco(),
             LancamentosRepository.graficoStatus(inicio, fim),
             LancamentosRepository.graficoCategorias(inicio, fim),
-            LancamentosRepository.graficoContas(inicio, fim),
+            LancamentosRepository.resumoContasFinanceiras()
         ])
         balancoData.value = { labels: [...balanco.labels], datasets: [...balanco.datasets] };
         statusData.value = { labels: [...status.labels], datasets: [...status.datasets] };
-        contasData.value = { labels: [...contas.labels], datasets: [...contas.datasets] };
+        contasFinanceiras.value = contas;
         categoriasData.value = { labels: [...categorias.labels], datasets: [...categorias.datasets] };
         dataResumo.value = resumo
         dataResumoStatus.value = resumoStatus
@@ -227,7 +239,24 @@ onMounted(() => {
                         <Wallet class="w-5 h-5" />
                         Plano de contas
                     </h2>
-                    <BarChart class="max-h-64" :data="contasData" :options="optionsChartBarStack" />
+                    <!-- <BarChart class="max-h-64" :data="contasData" :options="optionsChartBarStack" /> -->
+                    <div class="flex flex-col gap-3">
+                        <div v-for="row in contasFinanceiras"
+                            class="flex flex-row items-center justify-between bg-body rounded-md px-4 py-3 border-2">
+                            <div class="flex flex-row items-center gap-2">
+                                <WalletMinimal />
+                                <div class="flex items-center">
+                                    <h1>{{ row.conta }}</h1>
+                                    <Dot />
+                                    <a class="text-xs text-blue-600 dark:text-blue-400" href="">Ajustar</a>
+                                </div>
+                            </div>
+                            <p
+                                :class="[formatToNumberValue(row.saldoAtual) > 0 ? 'text-blue-700 dark:text-blue-300' : 'text-gray-600 dark:text-gray-400']">
+                                {{ formatCurrencyBR(row.saldoAtual) }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <div

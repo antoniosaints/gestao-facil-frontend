@@ -44,6 +44,10 @@ export class LancamentosRepository {
     const data = await http.get(`/lancamentos/relatorios/valor-status`)
     return data.data
   }
+  static async resumoContasFinanceiras() {
+    const data = await http.get(`/lancamentos/relatorios/valor-conta`)
+    return data.data
+  }
   static async criarConta(data: Omit<ContasFinanceiro, 'id'>) {
     await http.post(`/lancamentos/contas`, data)
   }
