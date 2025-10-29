@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import ModalView from '@/components/formulario/ModalView.vue';
+import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
@@ -14,12 +15,14 @@ const toast = useToast()
 
 interface pagarParcela {
     dataPagamento: Date,
-    metodoPagamento: MetodoPagamentoFinanceiro
+    metodoPagamento: MetodoPagamentoFinanceiro,
+    contaPagamento: number | null
 }
 
 const data = ref<pagarParcela>({
     dataPagamento: new Date(),
-    metodoPagamento: 'PIX'
+    metodoPagamento: 'PIX',
+    contaPagamento: null
 })
 
 const emit = defineEmits(['success'])
@@ -27,9 +30,11 @@ const emit = defineEmits(['success'])
 async function submit() {
     try {
         if (!store.idMutation) return toast.error("Nenhuma parcela selecionada")
+        if (!data.value.contaPagamento) return toast.error("Selecione uma conta de pagamento")
         await LancamentosRepository.pagarParcela(store.idMutation, {
             dataPagamento: data.value.dataPagamento.toISOString(),
             metodoPagamento: data.value.metodoPagamento,
+            contaPagamento: data.value.contaPagamento
         })
         toast.success("Parcela efetivada com sucesso!")
         store.openModalEfetivar = false
@@ -55,9 +60,16 @@ function closeModal() {
             <div class="grid grid-cols-1 gap-2 px-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">
-                        Data Pagamento
+                        Data efetivação
                     </label>
                     <Calendarpicker :required="true" :teleport="true" v-model="data.dataPagamento" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Conta
+                    </label>
+                    <Select2Ajax id="contasFinanceiroId" v-model="data.contaPagamento"
+                        url="lancamentos/contas/select2" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">

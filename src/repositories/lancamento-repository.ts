@@ -26,6 +26,7 @@ export class LancamentosRepository {
     data: {
       dataPagamento: string
       metodoPagamento: MetodoPagamentoFinanceiro
+      contaPagamento: number
     },
   ) {
     await http.post(`/lancamentos/parcelas/${idParcela}/pagar`, data)
