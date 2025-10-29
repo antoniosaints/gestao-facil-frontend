@@ -347,7 +347,6 @@ async function fetchProducts() {
 function saveCart() {
     localStorage.setItem("gestao_facil:cartPDV", JSON.stringify(cart.value))
     if (cart.value.length > 0) canFinalizeSale.value = true
-    searchInputField.value?.focus()
 }
 
 function addToCart(product: Product) {
