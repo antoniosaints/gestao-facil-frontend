@@ -156,7 +156,7 @@
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Nome *
                                         </label>
-                                        <input type="text" v-model="form.firstName" required
+                                        <input type="text" v-model="store.form.firstName" required
                                             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                                             placeholder="Seu nome">
                                         <span v-if="errors.firstName" class="text-red-500 text-sm">Campo
@@ -166,7 +166,7 @@
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Sobrenome *
                                         </label>
-                                        <input type="text" v-model="form.lastName" required
+                                        <input type="text" v-model="store.form.lastName" required
                                             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                                             placeholder="Seu sobrenome">
                                         <span v-if="errors.lastName" class="text-red-500 text-sm">Campo
@@ -178,7 +178,7 @@
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         E-mail *
                                     </label>
-                                    <input type="email" v-model="form.email" required
+                                    <input type="email" v-model="store.form.email" required
                                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                                         placeholder="seu@email.com">
                                     <span v-if="errors.email" class="text-red-500 text-sm">E-mail inválido</span>
@@ -188,7 +188,7 @@
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Telefone *
                                     </label>
-                                    <input type="text" v-maska="phoneMaskOptions" v-model="form.phone" required
+                                    <input type="text" v-maska="phoneMaskOptions" v-model="store.form.phone" required
                                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                                         placeholder="(11) 99999-9999">
                                     <span v-if="errors.phone" class="text-red-500 text-sm">Campo obrigatório</span>
@@ -199,7 +199,7 @@
                                         Senha *
                                     </label>
                                     <div class="relative">
-                                        <input type="password" v-model="form.password" required
+                                        <input type="password" v-model="store.form.password" required
                                             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 pr-12"
                                             placeholder="Mínimo 6 caracteres">
                                         <span v-if="errors.password" class="text-red-500 text-sm">Mínimo 6
@@ -232,7 +232,7 @@
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Nome da Loja *
                                     </label>
-                                    <input type="text" v-model="form.storeName" required
+                                    <input type="text" v-model="store.form.storeName" required
                                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                                         placeholder="Ex: Boutique Fashion">
                                     <span v-if="errors.storeName" class="text-red-500 text-sm">Campo obrigatório</span>
@@ -242,7 +242,7 @@
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Segmento *
                                     </label>
-                                    <select id="segment" v-model="form.segment" required
+                                    <select id="segment" v-model="store.form.segment" required
                                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200">
                                         <option value="">Selecione o segmento</option>
                                         <option value="moda">Moda e Vestuário</option>
@@ -265,7 +265,7 @@
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             CPF/CNPJ
                                         </label>
-                                        <input type="text" v-maska="cpfCnpjMaskOptions" v-model="form.cnpj"
+                                        <input type="text" v-maska="cpfCnpjMaskOptions" v-model="store.form.cnpj"
                                             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
                                             placeholder="CPF ou CNPJ">
                                     </div>
@@ -273,7 +273,7 @@
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                             Funcionários *
                                         </label>
-                                        <select id="employees" v-model="form.employees" required
+                                        <select id="employees" v-model="store.form.employees" required
                                             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200">
                                             <option value="">Selecione</option>
                                             <option value="1">Apenas eu</option>
@@ -318,25 +318,25 @@
                                     <div class="flex justify-between">
                                         <span class="text-gray-600 dark:text-gray-300">Nome:</span>
                                         <span id="summaryName" class="text-gray-800 dark:text-white">
-                                            {{ form.firstName }} {{ form.lastName }}
+                                            {{ store.form.firstName }} {{ store.form.lastName }}
                                         </span>
                                     </div>
                                     <div class="flex justify-between">
                                         <span class="text-gray-600 dark:text-gray-300">E-mail:</span>
                                         <span id="summaryEmail" class="text-gray-800 dark:text-white">
-                                            {{ form.email }}
+                                            {{ store.form.email }}
                                         </span>
                                     </div>
                                     <div class="flex justify-between">
                                         <span class="text-gray-600 dark:text-gray-300">Loja:</span>
                                         <span id="summaryStore" class="text-gray-800 dark:text-white">
-                                            {{ form.storeName }}
+                                            {{ store.form.storeName }}
                                         </span>
                                     </div>
                                     <div class="flex justify-between">
                                         <span class="text-gray-600 dark:text-gray-300">Segmento:</span>
                                         <span id="summarySegment" class="text-gray-800 dark:text-white">
-                                            {{ form.segment }}
+                                            {{ store.form.segment }}
                                         </span>
                                     </div>
                                 </div>
@@ -344,7 +344,7 @@
                                 <!-- Terms -->
                                 <div class="space-y-4">
                                     <label class="flex items-start space-x-3">
-                                        <input type="checkbox" v-model="form.terms" required
+                                        <input type="checkbox" v-model="store.form.terms" required
                                             class="mt-1 w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500">
                                         <span class="text-sm text-gray-600 dark:text-gray-300">
                                             Aceito os <RouterLink to="/site/termos-politica"
@@ -399,30 +399,17 @@
 
 <script setup lang="ts">
 import { ContaRepository } from '@/repositories/conta-repository';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { vMaska } from 'maska/vue';
 import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska';
+import { useAccountCreateStore } from '@/stores/login/useCreateAccount';
 const router = useRouter();
 const toast = useToast();
+const store = useAccountCreateStore();
 // Step atual
 const step = ref(1);
-
-// Campos do formulário
-const form = ref({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    storeName: '',
-    segment: '',
-    cnpj: '',
-    employees: '',
-    terms: false,
-    newsletter: false
-});
 
 // Validação simples
 const errors = ref({
@@ -438,25 +425,25 @@ const errors = ref({
 });
 
 const validateStep1 = () => {
-    errors.value.firstName = !form.value.firstName;
-    errors.value.lastName = !form.value.lastName;
-    errors.value.email = !form.value.email || !/^\S+@\S+\.\S+$/.test(form.value.email);
-    errors.value.phone = !form.value.phone;
-    errors.value.password = !form.value.password || form.value.password.length < 6;
+    errors.value.firstName = !store.form.firstName;
+    errors.value.lastName = !store.form.lastName;
+    errors.value.email = !store.form.email || !/^\S+@\S+\.\S+$/.test(store.form.email);
+    errors.value.phone = !store.form.phone;
+    errors.value.password = !store.form.password || store.form.password.length < 6;
 
     return !Object.values(errors.value).some((e, idx) => idx < 5 && e);
 };
 
 const validateStep2 = () => {
-    errors.value.storeName = !form.value.storeName;
-    errors.value.segment = !form.value.segment;
-    errors.value.employees = !form.value.employees;
+    errors.value.storeName = !store.form.storeName;
+    errors.value.segment = !store.form.segment;
+    errors.value.employees = !store.form.employees;
 
     return !errors.value.storeName && !errors.value.segment && !errors.value.employees;
 };
 
 const validateStep3 = () => {
-    errors.value.terms = !form.value.terms;
+    errors.value.terms = !store.form.terms;
     return !errors.value.terms;
 };
 
@@ -472,10 +459,10 @@ const prevStep = () => {
 
 const strength = computed(() => {
     let score = 0
-    if (form.value.password.length >= 6) score++
-    if (/[A-Z]/.test(form.value.password)) score++
-    if (/[0-9]/.test(form.value.password)) score++
-    if (/[^A-Za-z0-9]/.test(form.value.password)) score++
+    if (store.form.password.length >= 6) score++
+    if (/[A-Z]/.test(store.form.password)) score++
+    if (/[0-9]/.test(store.form.password)) score++
+    if (/[^A-Za-z0-9]/.test(store.form.password)) score++
     return score
 })
 
@@ -507,15 +494,15 @@ const submitForm = async () => {
     if (validateStep3()) {
         try {
             await ContaRepository.create({
-                nome: form.value.firstName + " " + form.value.lastName,
-                cpfCnpj: form.value.cnpj,
-                conta: form.value.storeName,
-                telefone: form.value.phone,
-                dicasNovidades: form.value.newsletter,
-                email: form.value.email,
-                senha: form.value.password,
-                funcionarios: Number(form.value.employees),
-                tipo: form.value.segment
+                nome: store.form.firstName + " " + store.form.lastName,
+                cpfCnpj: store.form.cnpj,
+                conta: store.form.storeName,
+                telefone: store.form.phone,
+                dicasNovidades: store.form.newsletter,
+                email: store.form.email,
+                senha: store.form.password,
+                funcionarios: Number(store.form.employees),
+                tipo: store.form.segment
             });
             toast.success("Conta criada com sucesso!");
             router.push("/login");
@@ -525,4 +512,8 @@ const submitForm = async () => {
         }
     }
 };
+
+onMounted(() => {
+    store.form.employees ? step.value = 3 : step.value = 1
+});
 </script>
