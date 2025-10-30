@@ -227,7 +227,7 @@
         <nav
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20">
 
-            <button type="button" onclick="openSideBarMobile()"
+            <button type="button" @click="uiStore.openSidebar = true"
                 class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
                 <i class="fa-solid fa-bars text-lg"></i>
                 <span class="text-xs">Menu</span>

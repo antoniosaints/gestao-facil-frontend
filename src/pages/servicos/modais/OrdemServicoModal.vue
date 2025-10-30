@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProdutoRepository } from "@/repositories/produto-repository";
-import http from "@/utils/axios";
 import { computed, onMounted, ref, watch } from "vue";
 import { POSITION, useToast } from "vue-toastification";
 import { vMaska } from "maska/vue"
@@ -444,7 +443,7 @@ onMounted(() => {
                 class="flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-2 shadow-sm">
                 <div class="flex flex-col text-sm">
                   <span class="font-medium text-gray-800 dark:text-gray-200">({{ item.tipoItem }}) {{ item.produto
-                    }}</span>
+                  }}</span>
                   <span class="text-gray-500 dark:text-gray-400">Qtd: {{ item.quantidade }}</span>
                 </div>
                 <div class="flex items-center">
