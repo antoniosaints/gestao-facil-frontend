@@ -183,7 +183,7 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
           row.original.ItensOrdensServico.reduce(
             (acc, item) => acc + formatToNumberValue(item.valor) * item.quantidade,
             0,
-          ),
+          ) - formatToNumberValue(row.original.desconto || 0),
         ),
         color: 'green',
         capitalize: false,
