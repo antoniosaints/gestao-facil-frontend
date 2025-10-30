@@ -14,16 +14,18 @@ import DetalhesVenda from './modais/DetalhesVenda.vue';
 import { getSocket } from '@/pluguins/socket';
 import type { Socket } from 'socket.io-client';
 import GerarCobranca from '../financeiro/lancamentos/modais/GerarCobranca.vue';
+import { useToast } from 'vue-toastification';
 const store = useVendasStore();
 const storeUi = useUiStore();
 const openFilter = ref(false);
+const toast = useToast();
 
 let socket: Socket;
 
 onMounted(() => {
     socket = getSocket();
     socket.on("vendas:updatetable", (dados) => {
-
+        toast.info(dados.message)
     });
 
     onUnmounted(() => {
