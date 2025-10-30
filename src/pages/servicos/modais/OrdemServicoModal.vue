@@ -20,7 +20,8 @@ import { useOrdemServicoStore, type CarrinhoOS } from "@/stores/servicos/useOrde
 import { ServicoRepository } from "@/repositories/servico-repository";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { addDays, format } from "date-fns";
-import type { FormularioOrdemServico } from "@/types/schemas";
+import type { SaveOrdemServico } from "@/types/schemas";
+import { OrdensServicoRepository } from "@/repositories/os-repository";
 
 const title = ref('Cadastro de OS')
 const description = ref('Preencha os campos abaixo')
@@ -54,23 +55,24 @@ async function submit() {
   }
 
   try {
-    const data: FormularioOrdemServico = {
+    const data: SaveOrdemServico = {
       id: store.form.id,
-      observacoes: store.form.descricaoCliente,
-      observacoesInternas: store.form.descricao,
+      descricao: store.form.descricao,
+      descricaoCliente: store.form.descricaoCliente,
       clienteId: store.form.clienteId,
-      operadorId: store.form.operadorId,
-      data: store.form.data!,
+      vendedorId: store.form.vendedorId,
+      data: store.form.data,
       garantia: garantia.value,
       desconto: store.form.desconto ? getValorDesconto.value : 0,
       status: store.form.status as any,
-      itens: store.carrinho.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco, tipo: item.tipoItem }))
+      itens: store.carrinho.map(item => ({ id: item.id, quantidade: item.quantidade, valor: item.preco, tipo: item.tipoItem, nome: item.produto }))
     };
-    await http.post(`vendas/criar${hasId ? `?id=${hasId}` : ''}`, data);
 
     if (hasId) {
+      await OrdensServicoRepository.update(data, hasId);
       toast.success('OS atualizada com sucesso!');
     } else {
+      await OrdensServicoRepository.save(data);
       toast.success('OS criada com sucesso!');
     }
 
@@ -89,7 +91,7 @@ const validar = () => {
   if (!store.form.clienteId) erros.value.clienteId = 'O cliente é obrigatório.'
   if (!store.form.data) erros.value.data = 'A data é obrigatório.'
   if (!store.form.status) erros.value.status = 'O status é obrigatório.'
-  if (!store.form.operadorId) erros.value.operadorId = 'O responsável é obrigatório.'
+  if (!store.form.vendedorId) erros.value.operadorId = 'O responsável é obrigatório.'
 }
 
 const formularioValido = computed(() => Object.keys(erros.value).length === 0)
@@ -249,7 +251,7 @@ const resumoCarrinho = computed(() => {
 
 clearCartOrdemServico();
 onMounted(() => {
-  store.form.operadorId = storeUi.usuarioLogged.id || null
+  store.form.vendedorId = storeUi.usuarioLogged.id || null
 })
 </script>
 
@@ -300,7 +302,7 @@ onMounted(() => {
         <div class="md:col-span-6">
           <label class="block text-sm mb-1">Responsável <span class="text-red-500">*</span></label>
           <Select2Ajax :disabled="(hasPermission(storeUi.usuarioLogged, 3) ? false : true)"
-            v-model="store.form.operadorId" class="w-full" url="/usuarios/select2" />
+            v-model="store.form.vendedorId" class="w-full" url="/usuarios/select2" />
           <p v-if="erros.operadorId" class="text-red-600 text-sm">{{ erros.operadorId }}</p>
         </div>
 
@@ -335,8 +337,8 @@ onMounted(() => {
         </div>
         <div class="md:col-span-2">
           <label for="input_desconto_venda_formulario" class="block text-sm mb-1">Valor desconto</label>
-          <Input v-model="(store.form.desconto)" type="text" id="input_desconto_venda_formulario" name="desconto"
-            v-maska="moneyMaskOptions"
+          <Input v-model="(store.form.desconto as number)" type="text" id="input_desconto_venda_formulario"
+            name="desconto" v-maska="moneyMaskOptions"
             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
             placeholder="Ex: 1,99" />
         </div>
@@ -348,8 +350,8 @@ onMounted(() => {
             rows="3" placeholder="Descrição da OS..."></textarea>
         </div>
         <div class="md:col-span-6">
-          <label for="observacoes_internas_os" class="block text-sm mb-1">Observações Internas</label>
-          <textarea v-model="store.form.descricao" name="observacoes" id="observacoes_internas_os"
+          <label for="observacoes_internas_os" class="block text-sm mb-1">Observações cliente</label>
+          <textarea v-model="store.form.descricaoCliente" name="observacoes" id="observacoes_internas_os"
             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
             rows="3" placeholder="Observações para a equipe..."></textarea>
         </div>
@@ -442,7 +444,7 @@ onMounted(() => {
                 class="flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-2 shadow-sm">
                 <div class="flex flex-col text-sm">
                   <span class="font-medium text-gray-800 dark:text-gray-200">({{ item.tipoItem }}) {{ item.produto
-                  }}</span>
+                    }}</span>
                   <span class="text-gray-500 dark:text-gray-400">Qtd: {{ item.quantidade }}</span>
                 </div>
                 <div class="flex items-center">

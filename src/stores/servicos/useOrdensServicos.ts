@@ -1,7 +1,8 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { type CarrinhoItem, type OrdensServico } from '@/types/schemas'
+import { type CarrinhoItem, type OrdensServico, type SaveOrdemServico } from '@/types/schemas'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
+import { formatToNumberValue } from '@/utils/formatters'
 export interface CarrinhoOS extends CarrinhoItem {
   tipoItem: 'PRODUTO' | 'SERVICO'
 }
@@ -32,28 +33,34 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
     }
   }
 
-  const form = ref<OrdensServico>({
+  const form = ref<SaveOrdemServico>({
     status: 'ABERTA',
     data: new Date(),
     desconto: 0,
-    garantia: '',
+    id: null,
     descricao: '',
-    descricaoCliente: '',
     clienteId: null,
-    operadorId: null,
+    vendedorId: null,
+    descricaoCliente: '',
+    garantia: null,
+    itens: [],
   })
 
   const reset = () => {
     form.value = {
       status: 'ABERTA',
       data: new Date(),
+      id: null,
       desconto: 0,
-      garantia: '',
       descricao: '',
-      descricaoCliente: '',
       clienteId: null,
-      operadorId: null,
+      vendedorId: null,
+      descricaoCliente: '',
+      garantia: null,
+      itens: [],
     }
+    carrinho.value = []
+    localStorage.setItem('gestao_facil:carrinho_ordem_servico', JSON.stringify(carrinho.value))
   }
 
   const openSave = () => {
@@ -62,9 +69,38 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   }
   const openUpdate = async (id: number) => {
     const response = await OrdensServicoRepository.get(id)
+    carrinho.value = []
     form.value = {
-      ...response.data,
+      id: response.id,
+      clienteId: response.clienteId,
+      data: response.data,
+      itens: response.ItensOrdensServico.map((item) => ({
+        id: item.tipo === 'PRODUTO' ? item.produtoId! : item.servicoId!,
+        quantidade: item.quantidade,
+        valor: item.valor,
+        tipo: item.tipo,
+        nome: item.itemName,
+      })),
+      descricao: response.descricao,
+      descricaoCliente: response.descricaoCliente,
+      garantia: Number(response.garantia),
+      status: response.status,
+      vendedorId: response.operadorId,
+      desconto: response.desconto,
     }
+
+    response.ItensOrdensServico.forEach((item) => {
+      const newItem = {
+        id: item.tipo === 'PRODUTO' ? item.produtoId! : item.servicoId!,
+        produto: item.itemName,
+        quantidade: item.quantidade,
+        preco: formatToNumberValue(item.valor),
+        subtotal: item.quantidade * formatToNumberValue(item.valor),
+        tipoItem: item.tipo,
+      }
+      carrinho.value.push(newItem)
+    })
+    localStorage.setItem('gestao_facil:carrinho_ordem_servico', JSON.stringify(carrinho.value))
     openModal.value = true
   }
 

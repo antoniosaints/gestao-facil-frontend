@@ -2,16 +2,16 @@
 import { Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import type { Servicos } from '@/types/schemas';
+import type { OrdensServico } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import { useConfirm } from '@/composables/useConfirm';
-import { useServicoStore } from '@/stores/servicos/useServicos';
-import { ServicoRepository } from '@/repositories/servico-repository';
+import { OrdensServicoRepository } from '@/repositories/os-repository';
+import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos';
 
-const store = useServicoStore()
+const store = useOrdemServicoStore()
 
 const { data } = defineProps<{
-    data: Servicos,
+    data: OrdensServico,
 }>()
 
 const toast = useToast()
@@ -19,18 +19,18 @@ const toast = useToast()
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     const confirm = await useConfirm().confirm({
-        title: 'Excluir serviço',
-        message: 'Tem certeza que deseja excluir este serviço?',
+        title: 'Excluir OS',
+        message: 'Tem certeza que deseja excluir esta OS?',
         confirmText: 'Sim, excluir!',
     })
     if (!confirm) return
     try {
-        await ServicoRepository.remove(id)
+        await OrdensServicoRepository.remove(id)
         store.updateTable()
-        toast.success('Serviço deletado com sucesso')
+        toast.success('OS deletada com sucesso')
     } catch (error) {
         console.log(error)
-        toast.error('Erro ao deletar o serviço')
+        toast.error('Erro ao deletar a OS')
     }
 }
 </script>

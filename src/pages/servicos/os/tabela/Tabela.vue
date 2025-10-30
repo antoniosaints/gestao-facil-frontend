@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import DataTable from '@/components/tabela/DataTable.vue';
 import { columnsServicos } from './columnDef';
-import { useServicoStore } from '@/stores/servicos/useServicos';
-const store = useServicoStore()
+import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos';
+const store = useOrdemServicoStore()
 
 </script>
 
 <template>
-    <DataTable :columns="columnsServicos" api="/servicos/lista/tabela" :filters="store.filters" />
+    <DataTable :columns="columnsServicos" api="/servicos/lista/ordens/tabela" :filters="store.filters" />
 </template>

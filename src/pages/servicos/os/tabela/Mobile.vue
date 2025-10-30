@@ -15,7 +15,7 @@
             <div v-for="row in dataMobile" :key="row.id"
                 class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
-                    <div class="text-sm font-semibold dark:text-white">{{ row.nome }}</div>
+                    <div class="text-sm font-semibold dark:text-white">{{ row.descricao }}</div>
                     <div
                         :class="['text-sm', row.status ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
                         {{ row.status ? 'Ativo' : 'Inativo' }}
@@ -23,9 +23,10 @@
                 </div>
                 <div class="flex justify-between">
                     <div :class="`text-xs`">
-                        {{ formatCurrencyBR(row.preco as number) }}</div>
+                        {{formatCurrencyBR(row.ItensOrdensServico?.reduce((total, item) => total + item.valor, 0))}}
+                    </div>
                 </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.descricao || '-' }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Cliente: {{ row.Cliente?.nome || '-' }}</div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-2">
                         <button @click="store.openUpdate(row.id!)"
@@ -69,7 +70,7 @@
     <Drawer v-model:open="showDrawer">
         <DrawerContent>
             <DrawerHeader class="text-left">
-                <DrawerTitle>Serviços</DrawerTitle>
+                <DrawerTitle>Ordens de serviço</DrawerTitle>
             </DrawerHeader>
             <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
                 <div @click="openSave"
@@ -123,19 +124,21 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import type { Servicos } from "@/types/schemas";
+import type { ItensOrdensServico, OrdensServico } from "@/types/schemas";
 import { PenLine, Trash } from "lucide-vue-next";
 import { useConfirm } from "@/composables/useConfirm";
-import { UsuarioRepository } from "@/repositories/usuario-repository";
 import { useToast } from "vue-toastification";
 import { watch } from "vue";
-import { useServicoStore } from "@/stores/servicos/useServicos";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { ServicoRepository } from "@/repositories/servico-repository";
+import { useOrdemServicoStore } from "@/stores/servicos/useOrdensServicos";
 
-const store = useServicoStore();
+type OrdemRecebida = OrdensServico & {
+    ItensOrdensServico: ItensOrdensServico[]
+}
+const store = useOrdemServicoStore();
 const toast = useToast();
-const dataMobile = ref<Servicos[]>([]);
+const dataMobile = ref<OrdemRecebida[]>([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const loading = ref(false);
@@ -145,7 +148,7 @@ const showDrawer = ref(false);
 
 function renderMobile(page: number = 1) {
     loading.value = true;
-    http.get(`/servicos/lista/mobile`, {
+    http.get(`/servicos/lista/ordens/mobile`, {
         params: {
             search: searchQuery.value,
             limit: 10,
@@ -185,18 +188,18 @@ watch(() => store.filters.update, () => {
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
     const confirm = await useConfirm().confirm({
-        title: 'Excluir serviço',
-        message: 'Tem certeza que deseja excluir este serviço?',
+        title: 'Excluir OS',
+        message: 'Tem certeza que deseja excluir esta OS?',
         confirmText: 'Sim, excluir!',
     })
     if (!confirm) return
     try {
         await ServicoRepository.remove(id)
         store.updateTable()
-        toast.success('Serviço deletado com sucesso')
+        toast.success('OS deletada com sucesso')
     } catch (error) {
         console.log(error)
-        toast.error('Erro ao deletar o serviço')
+        toast.error('Erro ao deletar a OS')
     }
 }
 

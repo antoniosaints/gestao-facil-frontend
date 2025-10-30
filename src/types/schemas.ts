@@ -203,6 +203,7 @@ export interface MovimentacoesEstoque {
   id?: number
   tipo: TipoMovimentacao
   vendaId?: number
+  ordemId?: number
   data: Date
   notaFiscal?: string
   frete?: number
@@ -434,10 +435,31 @@ export interface ParcelaFinanceiro {
   numero: number
   valor: number
   vencimento: Date
+  contaFinanceira?: number | null
+  descricao?: string | null
   pago: boolean
   valorPago?: number
   formaPagamento?: MetodoPagamento
   dataPagamento?: Date
   lancamentoId: number
   CobrancasFinanceiras?: CobrancaFinanceira[]
+}
+
+export interface SaveOrdemServico {
+  id?: number | null
+  data: Date | string
+  clienteId: number | null
+  status?: 'ABERTA' | 'ORCAMENTO' | 'APROVADA' | 'ANDAMENTO' | 'FATURADA' | 'CANCELADA'
+  descricao?: string
+  descricaoCliente?: string
+  vendedorId: number | null
+  desconto?: number | null
+  garantia?: number | null
+  itens: {
+    id: number
+    tipo: 'PRODUTO' | 'SERVICO'
+    nome: string
+    valor: number
+    quantidade: number
+  }[]
 }
