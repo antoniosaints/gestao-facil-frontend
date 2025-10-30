@@ -5,10 +5,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                     <!-- Nome -->
                     <div class="md:col-span-12">
-                        <Label for="profile_account"> Nova foto de perfil<span class="text-danger">*</span>
-                        </Label>
-                        <Input ref="file" id="profile_account" @change="onFileChange" required accept="image/*"
-                            type="file" class="w-full dark:file:text-white bg-card py-2 h-auto" />
+                        <!-- <Label for="profile_account"> Nova foto de perfil<span class="text-danger">*</span>
+                        </Label> -->
+                        <!-- <Input ref="file" id="profile_account" @change="onFileChange" required accept="image/*"
+                            type="file" class="w-full dark:file:text-white bg-card py-2 h-auto" /> -->
+                        <FileUpload accept="image/*" @update:file="onFileSelected" />
                     </div>
                 </div>
             </div>
@@ -28,11 +29,10 @@
 import { Button } from "@/components/ui/button"
 import { useToast } from "vue-toastification"
 import { ref } from "vue"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import ModalView from "@/components/formulario/ModalView.vue"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { ContaRepository } from "@/repositories/conta-repository"
+import FileUpload from "@/components/formulario/fileUpload.vue"
 
 const title = ref('Alterar foto da conta')
 const description = ref('Selecione uma imagem')
@@ -49,6 +49,9 @@ const onFileChange = (event: Event) => {
     }
 }
 
+function onFileSelected(archive: File | null) {
+  file.value = archive
+}
 
 async function submit() {
     if (!file.value) {
