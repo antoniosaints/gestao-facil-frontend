@@ -16,7 +16,8 @@
     />
 
     <div v-if="!preview">
-      <p class="text-gray-600">Clique ou arraste o arquivo aqui</p>
+      <p v-show="!dragOver" class="text-gray-600">Clique ou arraste o arquivo aqui</p>
+      <p v-show="dragOver" class="text-gray-600">Solte o arquivo aqui</p>
       <p v-if="accept" class="text-sm text-gray-400 mt-1">
         (Tipos permitidos: {{ accept }})
       </p>
