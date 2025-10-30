@@ -208,7 +208,8 @@ onMounted(() => {
 </script>
 
 <template>
-    <ModalView v-model:open="store.openModal" :title="title" :description="description" size="5xl">
+    <ModalView v-model:open="store.openModal" :title="store.form.id ? 'Editar Venda' : 'Criar Venda'"
+        :description="description" size="5xl">
         <form @submit.prevent="submitFormularioVenda" class="space-y-4 px-4">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div class="md:col-span-6">
@@ -377,7 +378,7 @@ onMounted(() => {
                                     <div class="flex flex-col text-right text-sm">
                                         <span class="text-gray-800 text-md dark:text-gray-200">R$ {{
                                             String(item.subtotal.toFixed(2)).replace('.', ',')
-                                        }}</span>
+                                            }}</span>
                                         <span class="font-medium text-xs text-gray-600 dark:text-gray-400">R$ {{
                                             String(item.preco.toFixed(2)).replace('.', ',') }} x {{ item.quantidade
                                             }}</span>
@@ -410,7 +411,7 @@ onMounted(() => {
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                     </div>

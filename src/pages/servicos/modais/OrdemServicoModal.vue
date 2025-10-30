@@ -28,7 +28,6 @@ const toast = useToast()
 const store = useOrdemServicoStore()
 const storeUi = useUiStore()
 const storeCliente = useClientesStore()
-const garantia = ref<number>(0)
 const adicionarTipo = ref<'PRODUTO' | 'SERVICO'>('PRODUTO')
 const erros = ref<Record<string, string>>({})
 
@@ -61,7 +60,7 @@ async function submit() {
       clienteId: store.form.clienteId,
       vendedorId: store.form.vendedorId,
       data: store.form.data,
-      garantia: garantia.value,
+      garantia: store.form.garantia,
       desconto: store.form.desconto ? getValorDesconto.value : 0,
       status: store.form.status as any,
       itens: store.carrinho.map(item => ({ id: item.id, quantidade: item.quantidade, valor: item.preco, tipo: item.tipoItem, nome: item.produto }))
@@ -255,7 +254,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <ModalView v-model:open="store.openModal" :title="title" :description="description" size="5xl">
+  <ModalView v-model:open="store.openModal"
+    :title="store.form.id ? 'Editar Ordem de serviço' : 'Criar Ordem de serviço'" :description="description" size="5xl">
     <form @submit.prevent="submitFormularioVenda" class="space-y-4 px-4">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
         <div class="md:col-span-6">
@@ -308,7 +308,8 @@ onMounted(() => {
 
         <div class="md:col-span-2">
           <label for="garantia" class="block text-sm mb-1">Garantia (dias)</label>
-          <NumberField v-model="garantia" class="bg-card dark:bg-card-dark" id="garantia" :default-value="0" :min="0">
+          <NumberField v-model="store.form.garantia" class="bg-card dark:bg-card-dark" id="garantia" :default-value="0"
+            :min="0">
             <NumberFieldContent>
               <NumberFieldDecrement />
               <NumberFieldInput />
@@ -443,7 +444,7 @@ onMounted(() => {
                 class="flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-2 shadow-sm">
                 <div class="flex flex-col text-sm">
                   <span class="font-medium text-gray-800 dark:text-gray-200">({{ item.tipoItem }}) {{ item.produto
-                  }}</span>
+                    }}</span>
                   <span class="text-gray-500 dark:text-gray-400">Qtd: {{ item.quantidade }}</span>
                 </div>
                 <div class="flex items-center">
@@ -501,7 +502,7 @@ onMounted(() => {
               <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                 <span>Garantia:</span>
                 <span id="subtotal-carrinho-vendas">
-                  {{ garantia ? format(addDays(new Date(), garantia), 'dd/MM/yyyy') : 'N/A' }}
+                  {{ store.form.garantia ? format(addDays(new Date(), store.form.garantia), 'dd/MM/yyyy') : 'N/A' }}
                 </span>
               </div>
             </div>
@@ -511,6 +512,9 @@ onMounted(() => {
       <div class="flex justify-end gap-2">
         <Button type="button" variant="secondary" @click="store.openModal = false">
           Fechar
+        </Button>
+        <Button type="button" class="bg-warning hover:bg-warning/80 text-white" @click="store.reset">
+          Resetar
         </Button>
         <Button :disabled="store.carrinho.length === 0" class="text-white" type="submit">
           Registrar

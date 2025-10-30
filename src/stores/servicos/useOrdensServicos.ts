@@ -36,13 +36,13 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   const form = ref<SaveOrdemServico>({
     status: 'ABERTA',
     data: new Date(),
-    desconto: 0,
+    desconto: null,
     id: null,
     descricao: '',
     clienteId: null,
     vendedorId: null,
     descricaoCliente: '',
-    garantia: null,
+    garantia: 0,
     itens: [],
   })
 
@@ -51,12 +51,12 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
       status: 'ABERTA',
       data: new Date(),
       id: null,
-      desconto: 0,
+      desconto: null,
       descricao: '',
       clienteId: null,
       vendedorId: null,
       descricaoCliente: '',
-      garantia: null,
+      garantia: 0,
       itens: [],
     }
     carrinho.value = []
