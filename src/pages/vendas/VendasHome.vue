@@ -25,7 +25,6 @@ let socket: Socket;
 onMounted(() => {
     socket = getSocket();
     socket.on("vendas:updatetable", (dados) => {
-        toast.info(dados.message)
     });
 
     onUnmounted(() => {
