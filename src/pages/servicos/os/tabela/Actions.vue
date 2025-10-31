@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Menu } from 'lucide-vue-next'
+import { FileArchive, Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { OrdensServico } from '@/types/schemas';
@@ -33,6 +33,16 @@ async function deletar(id: number) {
         toast.error('Erro ao deletar a OS')
     }
 }
+
+async function getPDFOs(id: number, Uid: string) {
+    try {
+        await OrdensServicoRepository.getOsPdf(id, Uid)
+        toast.success('PDF gerado com sucesso')
+    } catch (error: any) {
+        console.log(error)
+        toast.error(error?.response?.data?.message || 'Erro ao gerar PDF')
+    }
+}
 </script>
 
 <template>
@@ -47,6 +57,10 @@ async function deletar(id: number) {
             <DropdownMenuItem @click="store.openUpdate(data.id!)">
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="getPDFOs(data.id!, data.Uid!)">
+                <FileArchive class="mr-1" />
+                PDF A4
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">

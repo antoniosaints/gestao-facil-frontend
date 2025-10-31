@@ -252,7 +252,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/servicos/Dashboard.vue'),
         meta: {
           layout: 'main',
-          permissao: 2,
+          permissao: 5,
         },
       },
     ],

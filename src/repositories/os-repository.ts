@@ -12,6 +12,22 @@ export class OrdensServicoRepository {
     const { data } = await http.get(`/servicos/ordens/${id}`)
     return data.data
   }
+  static async getOsPdf(id: number, UID: string): Promise<any> {
+    const data = await http.get(`/servicos/ordens/relatorio/${id}`, {
+      responseType: 'blob',
+      headers: {
+        'Content-Type': 'application/pdf',
+      },
+    })
+
+    const url = window.URL.createObjectURL(data.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${UID}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }
   static async getAll() {
     const data = await http.get(`/servicos/ordens`)
     return data.data

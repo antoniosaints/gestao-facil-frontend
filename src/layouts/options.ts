@@ -148,10 +148,16 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
     {
       nome: 'Serviços',
       icone: FileBox,
-      show: permissions.servicos.visualizar && permissions.superadmin,
+      show: permissions.servicos.visualizar,
       color: 'yellow',
       children: [
-        { nome: 'Painel', link: '/servicos/painel', color: 'yellow', icone: ChartPie },
+        {
+          nome: 'Painel',
+          show: permissions.superadmin,
+          link: '/servicos/painel',
+          color: 'yellow',
+          icone: ChartPie,
+        },
         { nome: 'Ordens de serviço', link: '/servicos/os', color: 'yellow', icone: FileDigit },
         { nome: 'Serviços', link: '/servicos', color: 'yellow', icone: Wrench },
       ],
