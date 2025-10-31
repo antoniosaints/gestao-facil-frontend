@@ -8,7 +8,7 @@
         </button>
         <!-- Sidebar -->
         <aside id="sidebar-content-sistema"
-            class="fixed overflow-auto top-0 hidden_scrollbar left-0 h-full w-full md:w-64 bg-sidebar p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
+            class="fixed overflow-auto top-0 hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-sidebar p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
             :class="{ '-translate-x-full': !store.openSidebar }">
 
             <TopMenu />

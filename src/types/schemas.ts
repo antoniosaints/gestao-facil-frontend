@@ -229,6 +229,9 @@ export interface Produto {
   estoque: number
   minimo: number
   codigo?: string
+  controlaEstoque?: boolean
+  producaoLocal?: boolean
+  custoMedioProducao?: number
 }
 
 export interface Servicos {

@@ -46,6 +46,8 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     saidas: true,
     unidade: '',
     status: 'ATIVO',
+    controlaEstoque: false,
+    producaoLocal: false,
   })
 
   const reset = () => {
@@ -62,6 +64,9 @@ export const useProdutoStore = defineStore('produtoStore', () => {
       saidas: true,
       unidade: 'un',
       status: 'ATIVO',
+      controlaEstoque: false,
+      producaoLocal: false,
+      custoMedioProducao: undefined,
     }
   }
 
@@ -95,6 +100,9 @@ export const useProdutoStore = defineStore('produtoStore', () => {
         entradas: data?.entradas,
         saidas: data?.saidas,
         unidade: data?.unidade,
+        controlaEstoque: data?.controlaEstoque,
+        producaoLocal: data?.producaoLocal,
+        custoMedioProducao: data?.custoMedioProducao || undefined,
       }
       openModal.value = true
     } catch (error) {

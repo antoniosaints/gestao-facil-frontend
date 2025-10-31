@@ -11,6 +11,8 @@ import { ProdutoRepository } from "@/repositories/produto-repository"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { BadgeInfo } from "lucide-vue-next"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const store = useProdutoStore()
 const toast = useToast()
@@ -39,12 +41,12 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
 </script>
 
 <template>
-    <ModalView v-model:open="store.openModal" :title="title" description="Preencha os campos abaixo">
+    <ModalView v-model:open="store.openModal" :title="title" description="Preencha os campos abaixo" size="3xl">
         <form @submit.prevent="submit" class="grid items-start gap-4 px-4">
             <div class="bg-background dark:bg-background-dark rounded-md w-full h-full space-y-2">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div class="grid grid-cols-12 gap-4">
                     <!-- Nome -->
-                    <div class="md:col-span-12 lg:col-span-8">
+                    <div class="col-span-12 lg:col-span-12">
                         <label for="nome" class="block text-sm font-medium mb-1">
                             Produto <span class="text-red-500">*</span>
                         </label>
@@ -52,46 +54,138 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                             v-model="store.form.nome" />
                     </div>
 
-                    <!-- Permitir Entrada e Saída de Estoque -->
-                    <div class="md:col-span-12 lg:col-span-4 grid grid-cols-1 md:grid-cols-12 items-center">
-                        <label for="entrada" class="block text-sm font-medium mb-0 md:col-span-12">
-                            Permitir Controle
+                    <div class="col-span-6 lg:col-span-3 flex flex-col w-full">
+                        <label for="saidas" class="text-sm font-medium mb-0 flex items-center gap-2">
+                            Permite saídas
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <BadgeInfo class="inline-flex w-4 cursor-pointer text-blue-600" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p class="max-w-xs text-white">Informa se o produto pode realizar saídas
+                                            (Vendas, Devoluções e etc).
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </label>
-                        <div class="grid grid-cols-12 space-x-2 mt-[3px] items-center md:col-span-12">
-                            <div class="col-span-6">
-                                <div class="border bg-card border-border px-3 py-[8px] rounded-lg">
-                                    <div class="flex items-center">
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <Switch v-model:model-value="store.form.entradas" />
-                                            <span
-                                                class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Entradas</span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-span-6">
+                        <div class="flex mt-[3px]">
+                            <div class="w-full">
                                 <div class="border bg-card border-border px-3 py-[8px] rounded-lg">
                                     <div class="flex items-center">
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <Switch v-model:model-value="store.form.saidas" />
-                                            <span
-                                                class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Saídas</span>
+                                            <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{
+                                                store.form.saidas ? 'Sim' : 'Nao' }}</span>
                                         </label>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
+                    </div>
+                    <div class="col-span-6 lg:col-span-3 flex flex-col w-full">
+                        <label for="entrada" class="text-sm font-medium mb-0 flex items-center gap-2">
+                            Permite entrada
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <BadgeInfo class="inline-flex w-4 cursor-pointer text-blue-600" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p class="max-w-xs text-white">Informa se o produto pode receber reposições de
+                                            estoque.
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </label>
+                        <div class="flex mt-[3px]">
+                            <div class="w-full">
+                                <div class="border bg-card border-border px-3 py-[8px] rounded-lg">
+                                    <div class="flex items-center">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <Switch v-model:model-value="store.form.entradas" />
+                                            <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{
+                                                store.form.entradas ? 'Sim' : 'Nao' }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-span-6 lg:col-span-3 flex flex-col w-full">
+                        <label for="producao" class="text-sm font-medium mb-0 flex items-center gap-2">
+                            Produção local
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <BadgeInfo class="inline-flex w-4 cursor-pointer text-blue-600" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p class="max-w-xs text-white">Selecione caso o produto seja produzido no local,
+                                            serve para casos
+                                            de lanchonetes, restaurantes, etc.
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </label>
+                        <div class="flex mt-[3px]">
+                            <div class="w-full">
+                                <div class="border bg-card border-border px-3 py-[8px] rounded-lg">
+                                    <div class="flex items-center">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <Switch v-model:model-value="store.form.producaoLocal" />
+                                            <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{
+                                                store.form.producaoLocal ? 'Sim' : 'Nao' }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-span-6 lg:col-span-3 flex flex-col w-full">
+                        <label for="controle" class="text-sm font-medium mb-0 flex items-center gap-2">
+                            Controla estoque
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger as-child>
+                                        <BadgeInfo class="inline-flex w-4 cursor-pointer text-blue-600" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p class="max-w-xs text-white">O estoque será debitado de acordo com o uso em
+                                            outros locais do sistema,
+                                            caso esteja desmarcado, o estoque não será contabilizado em saídas de
+                                            estoque.
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </label>
+                        <div class="flex mt-[3px]">
+                            <div class="w-full">
+                                <div class="border bg-card border-border px-3 py-[8px] rounded-lg">
+                                    <div class="flex items-center">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <Switch v-model:model-value="store.form.controlaEstoque" />
+                                            <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{
+                                                store.form.controlaEstoque ? 'Sim' : 'Nao' }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <!-- Código -->
-                    <div class="md:col-span-4">
+                    <div class="col-span-6">
                         <label for="codigo" class="block text-sm font-medium mb-1">Código</label>
                         <Input v-model="store.form.codigo" type="text" id="codigo" name="codigo"
                             placeholder="Código do produto" />
                     </div>
 
                     <!-- Preço -->
-                    <div class="md:col-span-4">
+                    <div class="col-span-6">
                         <label for="precoProdutoCompra" class="block text-sm font-medium mb-1">
                             Preço Compra
                         </label>
@@ -99,7 +193,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                             ref="precoProdutoCompra" name="precoCompra" placeholder="Ex: 79,90" />
                     </div>
 
-                    <div class="md:col-span-4">
+                    <div class="col-span-6">
                         <label for="precoProdutoVenda" class="block text-sm font-medium mb-1">
                             Preço <span class="text-red-500">*</span>
                         </label>
@@ -108,7 +202,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                     </div>
 
                     <!-- Estoque Inicial -->
-                    <div class="md:col-span-4">
+                    <div class="col-span-6">
                         <label for="estoque" class="block text-sm font-medium mb-1">
                             Estoque Inicial <span class="text-red-500">*</span>
                         </label>
@@ -118,7 +212,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                     </div>
 
                     <!-- Estoque Mínimo -->
-                    <div class="md:col-span-4">
+                    <div class="col-span-6">
                         <label for="minimo" class="block text-sm font-medium mb-1">
                             Estoque Mínimo <span class="text-red-500">*</span>
                         </label>
@@ -127,7 +221,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                     </div>
 
                     <!-- Unidade de medida -->
-                    <div class="md:col-span-4">
+                    <div class="col-span-6">
                         <label for="unidade_select_produto" class="block text-sm font-medium mb-1">
                             Unidade <span class="text-red-500">*</span>
                         </label>
@@ -153,7 +247,7 @@ const title = computed(() => store.form.id ? 'Editar produto' : 'Novo produto')
                     </div>
 
                     <!-- Observação -->
-                    <div class="md:col-span-12">
+                    <div class="col-span-12">
                         <label for="descricao" class="block text-sm font-medium mb-1">Observação</label>
                         <Textarea v-model="store.form.descricao" id="descricao" name="descricao" rows="4"
                             placeholder="Adicione observações sobre o produto"></Textarea>
