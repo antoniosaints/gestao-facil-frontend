@@ -15,6 +15,11 @@ export default {
           dark: 'hsl(var(--body))',
           hover: 'hsl(var(--background))',
         },
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar))',
+          dark: 'hsl(var(--sidebar))',
+          hover: 'hsl(var(--background))',
+        },
         card: {
           DEFAULT: 'hsl(var(--card))',
           dark: 'hsl(var(--card))',

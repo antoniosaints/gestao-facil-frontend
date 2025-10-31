@@ -3,18 +3,18 @@
         <div v-for="(item, index) in menu" :key="index" class="space-y-4">
             <!-- Divisor -->
             <div v-if="item.divisor" v-show="item.show !== false" class="flex items-center mt-2">
-                <div class="flex-grow border-t border-border"></div>
-                <span class="mx-4 text-gray-500 dark:text-gray-200 text-xs uppercase">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="mx-4 text-gray-200 text-xs uppercase">
                     {{ item.nome }}
                 </span>
-                <div class="flex-grow border-t border-border"></div>
+                <div class="flex-grow border-t border-gray-200"></div>
             </div>
 
             <!-- Dropdown -->
             <div v-else-if="item.children && item.children.length" v-show="item.show !== false"
-                class="mb-1 cursor-pointer mt-2 rounded-xl border border-border/70 transition-all">
+                class="mb-1 cursor-pointer mt-2 rounded-lg border bg-card border-border/70 transition-all">
                 <button @click="toggleDropdown(item.nome)"
-                    class="dropdown-toggle w-full flex items-center bg-background hover:bg-gray-200 dark:hover:bg-gray-800 justify-between px-4 py-2 text-left cursor-pointer rounded-xl transition-colors group">
+                    class="dropdown-toggle w-full flex items-center bg-background hover:bg-gray-200 dark:hover:bg-gray-800 justify-between px-4 py-2 text-left cursor-pointer rounded-lg transition-colors group">
                     <div class="flex items-center space-x-3">
                         <i v-if="typeof item.icone === 'string'"
                             :class="[item.icone, 'text-blue-800 dark:text-blue-400']"></i>
@@ -30,10 +30,10 @@
                 </button>
 
                 <div v-show="openDropdowns.includes(item.nome)"
-                    class="dropdown-content flex flex-col p-1 gap-1 transition-all">
+                    class="dropdown-content flex flex-col p-1 gap-1 bg-card rounded-b-3xl transition-all">
                     <router-link v-for="(child, i) in item.children" :key="i" :to="child.link || 'javascript:void(0)'"
                         v-show="child.show !== false" :class="[
-                            'flex items-center p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 pl-4 dark:hover:bg-gray-800 cursor-pointer rounded-xl transition-colors',
+                            'flex items-center p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 pl-4 dark:hover:bg-gray-800 cursor-pointer rounded-lg transition-colors',
                             route.path === child.link && 'bg-gray-200 dark:bg-gray-800'
                         ]">
                         <i v-if="typeof child.icone === 'string'"
@@ -50,7 +50,7 @@
 
             <!-- Link normal -->
             <router-link v-else :to="item.link || 'javascript:void(0)'" v-show="item.show !== false" :class="[
-                'cursor-pointer border bg-background border-border/70 mt-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 p-2 rounded-xl transition flex items-center',
+                'cursor-pointer border bg-background border-border/70 mt-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 p-2 rounded-lg transition flex items-center',
                 route.path === item.link && 'bg-gray-200 dark:bg-gray-800'
             ]">
                 <i v-if="typeof item.icone === 'string'"
