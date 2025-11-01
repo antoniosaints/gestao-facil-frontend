@@ -40,7 +40,7 @@
                         <i v-if="typeof child.icone === 'string'"
                             :class="[child.icone, 'mr-2', 'text-blue-600 dark:text-blue-600']"></i>
                         <component v-else :is="child.icone"
-                            :class="['mr-2 w-5 h-5', 'text-gray-200 dark:text-gray-200']">
+                            :class="['mr-2 w-5 h-5', 'text-gray-200 dark:text-gray-300']">
                         </component>
                         <span class="truncate">
                             {{ child.nome }}
@@ -51,12 +51,12 @@
 
             <!-- Link normal -->
             <router-link
-                class="cursor-pointer dark:border-gray-500 mt-2 hover:bg-blue-900/50 text-gray-100 p-2 rounded-xl flex items-center"
+                class="cursor-pointer dark:border-gray-500 mt-2 hover:bg-blue-900/50 text-gray-200 dark:text-gray-300 p-2 rounded-xl flex items-center"
                 :class="[route.path === item.link ? 'bg-blue-900/80' : 'bg-blue-900/30']" v-else
                 v-show="item.show !== false" :to="item.link || 'javascript:void(0)'">
                 <i v-if="typeof item.icone === 'string'"
                     :class="[item.icone, 'px-2', 'text-gray-200 dark:text-gray-100']"></i>
-                <component v-else :is="item.icone" :class="['ml-2 mr-3 w-5 h-5', 'text-gray-200 dark:text-gray-100']">
+                <component v-else :is="item.icone" :class="['ml-2 mr-3 w-5 h-5', 'text-gray-200 dark:text-gray-300']">
                 </component>
                 {{ item.nome }}
             </router-link>
