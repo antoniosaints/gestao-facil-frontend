@@ -211,8 +211,8 @@ onMounted(() => {
     <ModalView v-model:open="store.openModal" :title="store.form.id ? 'Editar Venda' : 'Criar Venda'"
         :description="description" size="5xl">
         <form @submit.prevent="submitFormularioVenda" class="space-y-4 px-4">
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div class="md:col-span-6">
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12 md:col-span-6">
                     <label class="block text-sm mb-1">Cliente</label>
                     <div class="flex items-center justify-center gap-2">
                         <Select2Ajax v-model="store.form.clienteId" class="w-full" url="/clientes/select2"
@@ -222,12 +222,12 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <div class="md:col-span-3">
+                <div class="col-span-6 md:col-span-3">
                     <label class="block text-sm mb-1">Data da Venda <span class="text-red-500">*</span></label>
                     <Calendarpicker v-model="store.form.data" :range="false" />
                 </div>
 
-                <div class="md:col-span-3">
+                <div class="col-span-6 md:col-span-3">
                     <label class="block text-sm mb-1">Status <span class="text-red-500">*</span></label>
                     <Select v-model="store.form.status" default-value="ORCAMENTO">
                         <SelectTrigger class="w-full bg-card dark:bg-card-dark">
@@ -253,14 +253,14 @@ onMounted(() => {
                     </Select>
                 </div>
 
-                <div class="md:col-span-6">
+                <div class="col-span-6">
                     <label class="block text-sm mb-1">Vendedor <span class="text-red-500">*</span></label>
                     <Select2Ajax :disabled="(hasPermission(storeUi.usuarioLogged, 3) ? false : true)" required
                         v-model="store.form.vendedorId" class="w-full" url="/usuarios/select2" />
                 </div>
 
 
-                <div class="md:col-span-2">
+                <div class="col-span-6 md:col-span-2">
                     <label for="garantia" class="block text-sm mb-1">Garantia (dias)</label>
                     <NumberField v-model="store.form.garantia" class="bg-card dark:bg-card-dark" id="garantia"
                         :default-value="0" :min="0">
@@ -272,7 +272,7 @@ onMounted(() => {
                     </NumberField>
                 </div>
 
-                <div class="md:col-span-2">
+                <div class="col-span-6 md:col-span-2">
                     <label for="tipo_desconto" class="block text-sm mb-1">Tipo <span
                             class="text-red-500">*</span></label>
                     <Select required v-model="store.tipoDesconto">
@@ -289,7 +289,7 @@ onMounted(() => {
                         </SelectContent>
                     </Select>
                 </div>
-                <div class="md:col-span-2">
+                <div class="col-span-6 md:col-span-2">
                     <label for="input_desconto_venda_formulario" class="block text-sm mb-1">Desconto</label>
                     <Input v-model="(store.form.desconto as string)" type="text" id="input_desconto_venda_formulario"
                         name="desconto" v-maska="moneyMaskOptions"
@@ -309,14 +309,14 @@ onMounted(() => {
             <hr class="border-border dark:border-border-dark">
 
             <!-- Adição de produtos -->
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                <div class="md:col-span-6">
+            <div class="grid grid-cols-12 gap-4 items-end">
+                <div class="col-span-8 md:col-span-6">
                     <label class="block text-sm mb-1">Produto <span class="text-red-500">*</span></label>
                     <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
                         url="/produtos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
                 </div>
 
-                <div class="md:col-span-2">
+                <div class="col-span-4 md:col-span-2">
                     <label for="quantidade_carrinho_adicionar" class="block text-sm mb-1">Quantidade <span
                             class="text-red-500">*</span></label>
                     <NumberField v-model="addItemForm.quantidade" class="bg-card dark:bg-card-dark"
@@ -329,14 +329,14 @@ onMounted(() => {
                     </NumberField>
                 </div>
 
-                <div class="md:col-span-2">
+                <div class="col-span-8 md:col-span-2">
                     <label class="block text-sm mb-1">Preço <span class="text-red-500">*</span></label>
                     <Input v-model="(addItemForm.preco as number)" :disabled="!ableAdd" type="text"
                         placeholder="R$ 0,00" v-maska="moneyMaskOptions" id="input_preco_venda_formulario"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
                 </div>
 
-                <div class="md:col-span-2">
+                <div class="col-span-4 md:col-span-2">
                     <Button type="button" :disabled="!ableAdd" @click="addToCartVendas" class="text-white w-full">
                         <i class="fa-solid fa-cart-plus"></i>
                         Adicionar
@@ -378,7 +378,7 @@ onMounted(() => {
                                     <div class="flex flex-col text-right text-sm">
                                         <span class="text-gray-800 text-md dark:text-gray-200">R$ {{
                                             String(item.subtotal.toFixed(2)).replace('.', ',')
-                                            }}</span>
+                                        }}</span>
                                         <span class="font-medium text-xs text-gray-600 dark:text-gray-400">R$ {{
                                             String(item.preco.toFixed(2)).replace('.', ',') }} x {{ item.quantidade
                                             }}</span>
@@ -411,7 +411,7 @@ onMounted(() => {
                                 <span>Total:</span>
                                 <span id="total-carrinho-vendas">R$ {{
                                     String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </div>

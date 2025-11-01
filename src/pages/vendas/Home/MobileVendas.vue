@@ -88,25 +88,25 @@
         <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
             <router-link to="/vendas/pdv">
                 <div
-                    class="p-4 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:hover:bg-gray-600 dark:bg-gray-700">
+                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
                     <div
-                        class="flex justify-center items-center p-2 mx-auto mb-2 bg-gray-200 dark:bg-gray-600 rounded-full w-[48px] h-[48px] max-w-[48px] max-h-[48px]">
-                        <i class="fa-solid fa-cart-plus text-2xl text-gray-500 dark:text-gray-400"></i>
+                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                        <ShoppingBasket class="w-10 h-10 text-gray-500 dark:text-gray-400" />
                     </div>
                     <div class="font-medium text-center text-gray-500 dark:text-gray-400">PDV</div>
                 </div>
             </router-link>
             <div @click="openSaveVenda"
-                class="p-4 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:hover:bg-gray-600 dark:bg-gray-700">
+                class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
                 <div
-                    class="flex justify-center items-center p-2 mx-auto mb-2 bg-gray-200 dark:bg-gray-600 rounded-full w-[48px] h-[48px] max-w-[48px] max-h-[48px]">
-                    <i class="fa-solid fa-plus text-2xl text-gray-500 dark:text-gray-400"></i>
+                    class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                    <BadgePlus class="w-10 h-10 text-gray-500 dark:text-gray-400" />
                 </div>
                 <div class="font-medium text-center text-gray-500 dark:text-gray-400">Cadastrar</div>
             </div>
         </div>
-        <div class="px-8 flex justify-end">
-            <Button @click="showDrawerVendas = false" variant="outline">
+        <div class="flex px-4 w-full">
+            <Button @click="showDrawerVendas = false" variant="outline" class="w-full">
                 Fechar
             </Button>
         </div>
@@ -146,7 +146,7 @@ import { deletarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } f
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgeCheck, Eye, FileChartLine, PenLine, Trash, Undo2 } from "lucide-vue-next";
+import { BadgeCheck, BadgePlus, Eye, FileChartLine, PenLine, ShoppingBasket, Trash, Undo2 } from "lucide-vue-next";
 const store = useVendasStore();
 const vendas = ref<Vendas[]>([]);
 const currentPage = ref(1);
