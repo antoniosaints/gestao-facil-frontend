@@ -437,11 +437,11 @@ onMounted(() => {
             <!-- Lista do carrinho -->
             <div id="lista-carrinho-vendas" class="col-span-12 lg:col-span-8 space-y-2">
               <div v-if="store.carrinho.length === 0"
-                class="p-3 text-center text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-md">
+                class="p-3 text-center text-gray-500 bg-white dark:bg-gray-900 border rounded-md">
                 Nenhum item adicionado
               </div>
               <div v-else v-for="item in store.carrinho" :key="item.id"
-                class="flex justify-between items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-2 shadow-sm">
+                class="flex justify-between items-center bg-white dark:bg-gray-900 border rounded-md p-2 shadow-sm">
                 <div class="flex flex-col text-sm">
                   <span class="font-medium text-gray-800 dark:text-gray-200">({{ item.tipoItem }}) {{ item.produto
                     }}</span>
@@ -466,7 +466,7 @@ onMounted(() => {
 
             <!-- Total do carrinho -->
             <div id="resumo-carrinho-vendas"
-              class="col-span-12 lg:col-span-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-4 shadow-sm">
+              class="col-span-12 lg:col-span-4 bg-white dark:bg-gray-900 border rounded-md p-4 shadow-sm">
               <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Resumo da OS</h3>
               <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                 <span>Desconto:</span>

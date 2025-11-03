@@ -18,6 +18,7 @@ import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 import { useClientesStore } from "@/stores/clientes/useClientes";
 import { useUiStore } from "@/stores/ui/uiStore";
 import { hasPermission } from "@/hooks/authorize";
+import { formatCurrencyBR } from "@/utils/formatters";
 
 const title = ref('Cadastro de venda')
 const description = ref('Preencha os campos abaixo')
@@ -365,7 +366,7 @@ onMounted(() => {
                         <!-- Lista do carrinho -->
                         <div id="lista-carrinho-vendas" class="col-span-12 lg:col-span-8 space-y-2">
                             <div v-if="store.carrinho.length === 0"
-                                class="p-3 text-center text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-md">
+                                class="p-3 text-center border text-gray-500 bg-white dark:bg-gray-900 rounded-md">
                                 Nenhum item adicionado
                             </div>
                             <div v-else v-for="item in store.carrinho" :key="item.id"
@@ -376,12 +377,10 @@ onMounted(() => {
                                 </div>
                                 <div class="flex items-center">
                                     <div class="flex flex-col text-right text-sm">
-                                        <span class="text-gray-800 text-md dark:text-gray-200">R$ {{
-                                            String(item.subtotal.toFixed(2)).replace('.', ',')
-                                        }}</span>
-                                        <span class="font-medium text-xs text-gray-600 dark:text-gray-400">R$ {{
-                                            String(item.preco.toFixed(2)).replace('.', ',') }} x {{ item.quantidade
-                                            }}</span>
+                                        <span class="text-gray-800 text-md dark:text-gray-200">
+                                            {{ formatCurrencyBR(item.subtotal) }}</span>
+                                        <span class="font-medium text-xs text-gray-600 dark:text-gray-400">
+                                            {{ formatCurrencyBR(item.preco) }}</span>
                                     </div>
                                     <button type="button" @click="removeFromCartVendas(item.id)"
                                         class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 p-2 rounded-sm">
@@ -393,25 +392,25 @@ onMounted(() => {
 
                         <!-- Total do carrinho -->
                         <div id="resumo-carrinho-vendas"
-                            class="col-span-12 lg:col-span-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-4 shadow-sm">
+                            class="col-span-12 lg:col-span-4 bg-white dark:bg-gray-900 border rounded-md p-4 shadow-sm">
                             <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Resumo da venda</h3>
                             <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                                 <span>Desconto:</span>
-                                <span id="desconto-total-carrinho">R$ {{
-                                    String(resumoCarrinho.desconto.toFixed(2)).replace('.',
-                                        ',') }}</span>
+                                <span id="desconto-total-carrinho">
+                                    {{ formatCurrencyBR(resumoCarrinho.desconto || 0) }}
+                                </span>
                             </div>
                             <div class="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                                 <span>Subtotal:</span>
-                                <span id="subtotal-carrinho-vendas">R$ {{
-                                    String(resumoCarrinho.subtotal.toFixed(2)).replace('.',
-                                        ',') }}</span>
+                                <span id="subtotal-carrinho-vendas">
+                                    {{ formatCurrencyBR(resumoCarrinho.subtotal || 0) }}
+                                </span>
                             </div>
                             <div class="flex justify-between font-semibold text-md text-gray-700 dark:text-gray-300">
                                 <span>Total:</span>
-                                <span id="total-carrinho-vendas">R$ {{
-                                    String(resumoCarrinho.total.toFixed(2)).replace('.', ',')
-                                }}</span>
+                                <span id="total-carrinho-vendas">
+                                    {{ formatCurrencyBR(resumoCarrinho.total || 0) }}
+                                </span>
                             </div>
                         </div>
                     </div>
