@@ -272,7 +272,7 @@ import { POSITION, useToast } from 'vue-toastification';
 import { useUiStore } from '@/stores/ui/uiStore';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
-import { CirclePercent, HandCoins, HandGrab, ShoppingBasket, ShoppingCart, SquareX } from 'lucide-vue-next';
+import { CirclePercent, HandCoins, HandGrab, Infinity, ShoppingBasket, ShoppingCart, SquareX } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import { Button } from '@/components/ui/button';
 import type { Produto } from '@/types/schemas';
