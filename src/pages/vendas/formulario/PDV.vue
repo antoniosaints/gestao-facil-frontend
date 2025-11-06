@@ -5,11 +5,60 @@
             <div class="flex-1 flex flex-col">
                 <!-- Header -->
                 <div class="mb-6 flex flex-col">
-                    <h2 class="text-xl md:text-2xl font-bold text-black dark:text-white flex items-center gap-2">
-                        <ShoppingCart class="w-6 h-6 inline-flex" :stroke-width="2.5" />
-                        Ponto de venda
-                    </h2>
-                    <span class="text-green-600 dark:text-green-400">Aberto</span>
+                    <div class="flex items-center justify-between">
+                        <h2
+                            class="text-xl md:text-2xl font-bold text-black dark:text-white flex items-center justify-between gap-2">
+                            <div class="flex items-center">
+                                <MonitorDown class="w-6 h-6 mr-2 inline-flex" :stroke-width="2.5" />
+                                <span class="uppercase">
+                                    PONTO DE VENDA
+                                </span>
+                                <!-- <span class="text-xs ml-2 bg-card rounded-xl px-2 flex items-center uppercase">
+                                    {{ route.query.caixa ? `CAIXA #${route.query.caixa}` : 'SEM CAIXA' }}
+                                    <Dot class="w-8 h-7 inline-flex" :class="[
+                                        caixaAberto
+                                            ? 'text-green-600 dark:text-green-400'
+                                            : 'text-red-600 dark:text-red-400']" />
+                                    <span>
+                                        {{ caixaSelecionado ? caixaSelecionado.status : 'Sem status' }}
+                                    </span>
+                                </span> -->
+                            </div>
+                        </h2>
+                        <!-- <div class="flex items-center gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger class="rounded-xl" as-child>
+                                    <Button variant="outline" class="h-8 px-4 text-blue-600 dark:text-blue-200">
+                                        <span class="hidden md:inline">Opções</span>
+                                        <Menu class="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                        v-show="mock.mockCaixas.find(caixa => caixa.id === Number(caixaId))?.status === 'ABERTO'"
+                                        @click="fecharCaixa">
+                                        <MonitorX />
+                                        Fechar o caixa
+                                    </DropdownMenuItem>
+                                    <RouterLink
+                                        :to="`/vendas/pontos?caixa=${HashGenerator.encodeHash(Number(caixaId))}`">
+                                        <DropdownMenuItem>
+                                            <ArrowLeftRight />
+                                            Mudar o PDV
+                                        </DropdownMenuItem>
+                                    </RouterLink>
+                                    <DropdownMenuItem>
+                                        <TrendingUp />
+                                        Movimentações
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem @click="sairCaixa">
+                                        <LogOut />
+                                        Sair
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div> -->
+                    </div>
                     <!-- Barra de Busca -->
                     <div class="relative">
                         <input ref="searchInputField" v-model="searchTerm" @keyup.enter="quickAddCard" type="text"
@@ -20,28 +69,66 @@
 
                 <!-- Grid de Produtos -->
                 <div class="flex-1 overflow-y-auto scrollbar-thin">
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    <!-- <div v-if="!Number(pdvId)"
+                        class="text-center text-gray-500 dark:text-gray-400 h-[calc(100vh-24rem)] py-8 gap-2 flex flex-col justify-center items-center">
+                        <MonitorCog class="w-16 h-16 inline-flex" />
+                        <h1>Selecione um PDV para listar os produtos</h1>
+                        <RouterLink :to="`/vendas/pontos`">
+                            <span
+                                class="text-sm text-blue-600 dark:text-blue-200 cursor-pointer p-2 bg-blue-100 dark:bg-blue-900 rounded border">
+                                <Pointer class="w-4 inline-flex" />
+                                Escolher
+                                PDV
+                            </span>
+                        </RouterLink>
+                    </div> -->
+                    <!-- <div v-if="!Number(caixaId)"
+                        class="text-center text-gray-500 dark:text-gray-400 h-[calc(100vh-24rem)] py-8 gap-2 flex flex-col justify-center items-center">
+                        <MonitorCog class="w-16 h-16 inline-flex" />
+                        <h1>Selecione um caixa para listar os produtos</h1>
+                        <RouterLink :to="`/vendas/pontos/caixas?pdv=${HashGenerator.encodeHash(Number(pdvId))}`">
+                            <span
+                                class="text-sm text-blue-600 dark:text-blue-200 cursor-pointer p-2 bg-blue-100 dark:bg-blue-900 rounded border">
+                                <Pointer class="w-4 inline-flex" />
+                                Escolher
+                                caixa
+                            </span>
+                        </RouterLink>
+                    </div>
+                    <div v-if="caixaId && mock.mockCaixas.find(caixa => caixa.id === Number(caixaId))?.status === 'FECHADO'"
+                        class="text-center text-gray-500 dark:text-gray-400 h-[calc(100vh-24rem)] py-8 gap-2 flex flex-col justify-center items-center">
+                        <MonitorCog class="w-16 h-16 inline-flex" />
+                        <h1>Abra o caixa para começar a vender</h1>
+                        <RouterLink :to="`/vendas/pontos/caixas?pdv=${HashGenerator.encodeHash(Number(pdvId))}`">
+                            <span
+                                class="text-sm flex items-center gap-2 text-blue-600 dark:text-blue-200 cursor-pointer px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded border">
+                                <MonitorPlay class="w-4 inline-flex" />
+                                Abrir Caixa
+                            </span>
+                        </RouterLink>
+                    </div> -->
+                    <div v-if="products.length"
+                        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                         <div v-for="p in products" :key="p.id"
                             class="border border-border bg-background shadow-md rounded p-3 card-hover cursor-pointer product-card flex flex-col justify-between"
                             data-product-id="${product.id}">
                             <div class="text-center">
                                 <img src="/imgs/logo.png" alt="logopng"
                                     class="w-16 h-16 object-cover mx-auto mb-2 rounded-md">
-                                <div class="text-center">
+                                <div class="text-center flex flex-col">
                                     <h3 class="text-gray-800 dark:text-white text-xs">{{ p.name }}</h3>
-                                    <p class="text-gray-500 dark:text-gray-400 text-xs">Cód: {{ p.code }}</p>
+                                    <!-- <p class="text-gray-500 dark:text-gray-400 text-xs">Cód: {{ p.code }}</p> -->
+                                    <p v-if="p.manage" class="text-xs"
+                                        :class="[p.stock === 0 ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400']">
+                                        Estoque: {{ p.stock }}</p>
+                                    <p v-else class="text-xs text-gray-500 dark:text-gray-400">Estoque livre
+                                    </p>
                                     <p class="text-md font-bold text-green-600 dark:text-green-400">
                                         {{ formatCurrencyBR(p.price) }}
                                     </p>
-                                    <p v-if="p.manage" class="text-xs"
-                                        :class="[p.stock === 0 ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400']">
-                                        Estoque: {{ p.stock }}</p>
-                                    <p v-else class="text-xs text-gray-500 dark:text-gray-400">Estoque:
-                                        <Infinity class="w-4 inline-flex" />
-                                    </p>
                                 </div>
                             </div>
-                            <button @click="addToCart(p)"
+                            <button @click="adicionarAoCarrinho(p)"
                                 class="w-full bg-primary hover:bg-blue-700 text-white text-sm py-2 px-3 rounded transition-colors">
                                 <i class="fas fa-plus mr-1"></i>
                                 Adicionar
@@ -53,63 +140,67 @@
 
             <!-- Carrinho Lateral -->
             <div
-                class="overflow-auto max-w-full md:mt-4 xl:max-w-md min-w-md w-full border-border bg-background shadow-md rounded p-4 border flex flex-col">
+                class="overflow-auto max-w-full md:mt-0 xl:max-w-md min-w-md w-full justify-between border-border bg-background shadow-md rounded p-4 border flex flex-col">
                 <!-- Header do Carrinho -->
-                <div class="md:p-2 md:border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-semibold flex items-center gap-2">
-                            <ShoppingCart class="w-6 h-6 inline-flex" />
-                            Carrinho
-                        </h2>
-                        <button @click="clearCart" :title="cart.length ? 'Limpar carrinho' : 'Carrinho vazio'"
-                            class="text-red-500 dark:text-red-300 bg-red-100 px-3 py-1 rounded-md bg-red-10 dark:bg-red-900">
-                            <i class="fas fa-trash text-sm"></i>
-                        </button>
-                    </div>
-
-                    <!-- Seleção de Cliente -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-white mb-1">
-                            Cliente
-                            <a @click="storeCliente.openSave" class="text-blue-500 px-2 cursor-pointer">+ Novo</a>
-                        </label>
-                        <Select2Ajax :url="'/clientes/select2'" v-model:model-value="cliente" :allowClear="true" />
-                    </div>
-                </div>
-
-                <!-- Lista de Itens do Carrinho -->
-                <div class="min-h-52 overflow-y-auto scrollbar-thin md:p-2">
-                    <div class="mt-1">
-                        <div v-if="!cart.length" class="text-center text-gray-500 dark:text-gray-400 py-8">
-                            <i class="fas fa-shopping-cart text-4xl mb-3 opacity-50"></i>
-                            <p>Carrinho vazio</p>
-                            <p class="text-sm">Adicione produtos para começar</p>
+                <div>
+                    <div class="md:p-2 md:border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-semibold flex items-center gap-2">
+                                <ShoppingCart class="w-6 h-6 inline-flex" />
+                                Carrinho
+                            </h2>
+                            <button @click="limparCarrinho" :title="cart.length ? 'Limpar carrinho' : 'Carrinho vazio'"
+                                class="text-red-500 dark:text-red-300 bg-red-100 px-3 py-1 rounded-md bg-red-10 dark:bg-red-900">
+                                <i class="fas fa-trash text-sm"></i>
+                            </button>
                         </div>
-                        <div v-for="item in cart" :key="item.id"
-                            class="border bg-card dark:bg-gray-800 shadow-md rounded p-1 mb-3">
-                            <div class="flex justify-between items-start">
-                                <h4 class="text-xs text-gray-800 dark:text-white p-1 truncate">{{ item.name }}</h4>
-                                <button type="button" title="Remover item" @click="updateQuantity(item.id, 0)"
-                                    class="text-red-500 hover:text-red-700 text-sm">
-                                    <SquareX />
-                                </button>
+
+                        <!-- Seleção de Cliente -->
+                        <div class="grid grid-cols-7 gap-2">
+                            <Select2Ajax class="col-span-6" placeholder="Selecione o cliente" :url="'/clientes/select2'"
+                                v-model:model-value="cliente" :allowClear="true" />
+                            <button type="button" @click="storeCliente.openSave"
+                                class="bg-primary px-2 text-white rounded border border-border dark:border-border-dark flex justify-center items-center">
+                                <UserPlus class="w-5 inline-flex" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Itens do Carrinho -->
+                    <div class="min-h-52 overflow-y-auto scrollbar-thin md:p-2">
+                        <div class="mt-1">
+                            <div v-if="!cart.length" class="text-center text-gray-500 dark:text-gray-400 py-8">
+                                <i class="fas fa-shopping-cart text-4xl mb-3 opacity-50"></i>
+                                <p>Carrinho vazio</p>
+                                <p class="text-sm">Adicione produtos para começar</p>
                             </div>
-                            <div class="flex items-center justify-between px-2">
-                                <div class="flex items-center space-x-2">
-                                    <button type="button" title="Diminuir quantidade"
-                                        @click="updateQuantity(item.id, item.quantity - 1)"
-                                        class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">-</button>
-                                    <span class="text-sm font-medium">{{ item.quantity }}</span>
-                                    <button type="button" title="Aumentar quantidade"
-                                        @click="updateQuantity(item.id, item.quantity + 1)"
-                                        class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">+</button>
+                            <div v-for="item in cart" :key="item.id"
+                                class="border bg-card dark:bg-gray-800 shadow-md rounded p-1 mb-3">
+                                <div class="flex justify-between items-start">
+                                    <h4 class="text-xs text-gray-800 dark:text-white p-1 truncate">{{ item.name }}</h4>
+                                    <button type="button" title="Remover item" @click="atualizarQuantidade(item.id, 0)"
+                                        class="text-red-500 hover:text-red-700 text-sm">
+                                        <SquareX />
+                                    </button>
                                 </div>
-                                <div class="text-right">
-                                    <p class="text-xs text-gray-500">R$ {{ item.price.toFixed(2).replace('.', ',') }}
-                                    </p>
-                                    <p class="font-bold text-sm">R$ {{ (item.price *
-                                        item.quantity).toFixed(2).replace('.',
-                                            ',') }}</p>
+                                <div class="flex items-center justify-between px-2">
+                                    <div class="flex items-center space-x-2">
+                                        <button type="button" title="Diminuir quantidade"
+                                            @click="atualizarQuantidade(item.id, item.quantity - 1)"
+                                            class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">-</button>
+                                        <span class="text-sm font-medium">{{ item.quantity }}</span>
+                                        <button type="button" title="Aumentar quantidade"
+                                            @click="atualizarQuantidade(item.id, item.quantity + 1)"
+                                            class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">+</button>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-gray-500">R$ {{ item.price.toFixed(2).replace('.', ',')
+                                            }}
+                                        </p>
+                                        <p class="font-bold text-sm">R$ {{ (item.price *
+                                            item.quantity).toFixed(2).replace('.',
+                                                ',') }}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -137,8 +228,8 @@
                     <!-- Forma de Pagamento -->
                     <div class="mb-4 flex flex-col gap-2">
                         <label class="block text-sm font-medium text-gray-700 dark:text-white">Pagamento</label>
-                        <div class="grid grid-cols-6 gap-2">
-                            <div class="col-span-5">
+                        <div class="grid grid-cols-7 md:grid-cols-7 gap-2">
+                            <div class="col-span-6">
                                 <Select v-model="paymentMethod">
                                     <SelectTrigger>
                                         <SelectValue placeholder="Pagamento" />
@@ -159,7 +250,9 @@
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <!-- <Button type="button" variant="outline" class="bg-success hover:bg-success text-white hover:text-white" @click="openModalAcoes = true">
+                            <!-- <Button type="button" variant="outline"
+                                class="bg-success hover:bg-success text-white hover:text-white"
+                                @click="openModalAcoes = true">
                                 <Cog />
                             </Button> -->
                             <Button type="button" class="text-white" @click="openModalDesconto = true">
@@ -178,9 +271,9 @@
                     </div>
 
                     <!-- Botão Finalizar Venda -->
-                    <Button @click="finalizeSale"
+                    <Button @click="finalizarVendaPDV"
                         class="w-full text-white py-3 px-4 h-12 text-lg rounded transition-colors"
-                        :disabled="!canFinalizeSale">
+                        :disabled="!podeFinalizarPDV">
                         <ShoppingBasket />
                         Finalizar Venda
                     </Button>
@@ -250,6 +343,7 @@
             </div>
         </ModalView>
         <ClientesModal />
+        <ModalFechamento v-model:open="openModalFechamento" />
         <nav
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20">
 
@@ -272,16 +366,23 @@ import { POSITION, useToast } from 'vue-toastification';
 import { useUiStore } from '@/stores/ui/uiStore';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
-import { CirclePercent, HandCoins, HandGrab, Infinity, ShoppingBasket, ShoppingCart, SquareX } from 'lucide-vue-next';
+import { ArrowLeftRight, CirclePercent, Cog, Dot, HandCoins, HandGrab, LogOut, Menu, MonitorCog, MonitorDown, MonitorPlay, MonitorX, Pointer, ShoppingBasket, ShoppingCart, SquareX, TrendingUp, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import { Button } from '@/components/ui/button';
 import type { Produto } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
+import { useRoute } from 'vue-router';
+import router from '@/router';
+import { useConfirm } from '@/composables/useConfirm';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const toast = useToast()
+const route = useRoute()
+const useConf = useConfirm()
 const uiStore = useUiStore()
+const openModalFechamento = ref(false)
 const storeCliente = useClientesStore()
-const canFinalizeSale = ref(false)
+const podeFinalizarPDV = ref(false)
 const openModalDesconto = ref(false)
 const openModalAcoes = ref(false)
 const openModalVendaFinalizada = ref(false)
@@ -291,6 +392,7 @@ function aplicarDesconto() {
     openModalDesconto.value = false
     toast.success('Desconto aplicado com sucesso')
 }
+
 interface Product {
     id: number
     name: string
@@ -313,13 +415,36 @@ const discountValue = ref<number | null>(null)
 const paymentMethod = ref("PIX")
 const receivedAmount = ref<string | null>(null)
 const cliente = ref(null)
-const timeout = ref<ReturnType<typeof setTimeout> | null>(null)
 const subtotal = computed(() =>
     cart.value.reduce((t, item) => t + item.price * item.quantity, 0)
 )
-onUnmounted(() => {
-    if (timeout.value) clearTimeout(timeout.value)
-})
+
+async function sairCaixa() {
+    const result = await useConf.confirm({
+        cancelText: 'Cancelar',
+        confirmText: 'Sim, sair do caixa!',
+        colorButton: 'success',
+        message: 'Deseja sair do caixa e voltar para o menu principal?',
+        title: 'Sair do caixa'
+    })
+    if (!result) return
+    router.push(`/vendas/pontos/caixas?pdv=`)
+}
+
+async function fecharCaixa() {
+    const result = await useConf.confirm({
+        cancelText: 'Cancelar',
+        confirmText: 'Sim, fechar caixa!',
+        colorButton: 'primary',
+        message: 'Deseja fechar o caixa?',
+        title: 'Fechar caixa'
+    })
+    if (!result) return
+    openModalFechamento.value = true
+    // mock.mockCaixas.find(caixa => caixa.id === Number(caixaId.value))!.status = 'FECHADO'
+    // toast.error('Caixa fechado com sucesso!')
+    // router.push(`/vendas/pontos/caixas?pdv=${HashGenerator.encode(Number(pdvId.value))}`)
+}
 
 watch(() => searchTerm.value, () => {
     fetchProducts()
@@ -334,7 +459,13 @@ function quickAddCard() {
     if (!search) return toast.error('Informe o produto a ser adicionado')
     const itemProduto = products.value.find(item => item.name.toLowerCase().includes(search) || item.code.toLowerCase().includes(search))
     if (itemProduto?.name) {
-        addToCart(itemProduto)
+        adicionarAoCarrinho(itemProduto)
+        searchInputField.value?.focus()
+    }
+}
+
+function onKey(e: KeyboardEvent) {
+    if (e.key === 'Control' && e.code === 'ControlLeft') {
         searchInputField.value?.focus()
     }
 }
@@ -370,7 +501,7 @@ async function fetchProducts() {
             factory: p.producaoLocal!
         }))
         if (cart.value.length > 0) {
-            canFinalizeSale.value = true
+            podeFinalizarPDV.value = true
         }
     } catch {
         alert("Erro ao buscar produtos")
@@ -380,10 +511,10 @@ async function fetchProducts() {
 // ---- Carrinho ----
 function saveCart() {
     localStorage.setItem("gestao_facil:cartPDV", JSON.stringify(cart.value))
-    if (cart.value.length > 0) canFinalizeSale.value = true
+    if (cart.value.length > 0) podeFinalizarPDV.value = true
 }
 
-function addToCart(product: Product) {
+function adicionarAoCarrinho(product: Product) {
     const existing = cart.value.find((i) => i.id === product.id)
     if (existing) {
         if (product.manage && !product.factory) {
@@ -402,7 +533,7 @@ function addToCart(product: Product) {
     saveCart()
 }
 
-function updateQuantity(id: number, qty: number) {
+function atualizarQuantidade(id: number, qty: number) {
     const item = cart.value.find((i) => i.id === id)
     if (!item) return
     if (qty <= 0) {
@@ -416,14 +547,14 @@ function updateQuantity(id: number, qty: number) {
     saveCart()
 }
 
-function clearCart() {
+function limparCarrinho() {
     cart.value = []
-    canFinalizeSale.value = false
+    podeFinalizarPDV.value = false
     saveCart()
 }
 
 // ---- Venda ----
-async function finalizeSale() {
+async function finalizarVendaPDV() {
     if (!cart.value.length) {
         toast.error("Carrinho vazio!")
         return
@@ -446,7 +577,7 @@ async function finalizeSale() {
 
     try {
         await http.post("/vendas/criar", data)
-        clearCart()
+        limparCarrinho()
         await fetchProducts()
         toast.success("Venda realizada com sucesso!")
         openModalVendaFinalizada.value = true
@@ -469,5 +600,8 @@ onMounted(() => {
     saveCart();
     uiStore.openSidebar = false
     searchInputField.value?.focus()
+    window.addEventListener('keydown', onKey)
 })
+
+onUnmounted(() => window.removeEventListener('keydown', onKey))
 </script>
