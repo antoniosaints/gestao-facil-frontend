@@ -13,16 +13,13 @@
                                 <span class="uppercase">
                                     PONTO DE VENDA
                                 </span>
-                                <!-- <span class="text-xs ml-2 bg-card rounded-xl px-2 flex items-center uppercase">
-                                    {{ route.query.caixa ? `CAIXA #${route.query.caixa}` : 'SEM CAIXA' }}
-                                    <Dot class="w-8 h-7 inline-flex" :class="[
-                                        caixaAberto
-                                            ? 'text-green-600 dark:text-green-400'
-                                            : 'text-red-600 dark:text-red-400']" />
+                                <span class="text-xs ml-2 bg-card rounded-xl px-2 flex items-center uppercase">
+                                    {{ `CAIXA 01` }}
+                                    <Dot class="w-8 h-7 inline-flex" :class="['text-green-600 dark:text-green-400']" />
                                     <span>
-                                        {{ caixaSelecionado ? caixaSelecionado.status : 'Sem status' }}
+                                        {{ "ABERTO" }}
                                     </span>
-                                </span> -->
+                                </span>
                             </div>
                         </h2>
                         <!-- <div class="flex items-center gap-2">
@@ -167,7 +164,7 @@
                     </div>
 
                     <!-- Lista de Itens do Carrinho -->
-                    <div class="min-h-52 overflow-y-auto scrollbar-thin md:p-2">
+                    <div class="min-h-52 max-h-[calc(100vh-31rem)] overflow-y-auto scrollbar-thin md:p-2">
                         <div class="mt-1">
                             <div v-if="!cart.length" class="text-center text-gray-500 dark:text-gray-400 py-8">
                                 <i class="fas fa-shopping-cart text-4xl mb-3 opacity-50"></i>
@@ -343,7 +340,7 @@
             </div>
         </ModalView>
         <ClientesModal />
-        <ModalFechamento v-model:open="openModalFechamento" />
+        <!-- <ModalFechamento v-model:open="openModalFechamento" /> -->
         <nav
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20">
 
