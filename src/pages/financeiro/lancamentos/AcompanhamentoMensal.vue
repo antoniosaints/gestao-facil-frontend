@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { LancamentosRepository } from "@/repositories/lancamento-repository"
 import { formatCurrencyBR, formatToCapitalize } from "@/utils/formatters"
 import { ptBR } from "date-fns/locale"
-import { ArrowBigLeft, ArrowBigRight, BadgeCheck, CalendarClock, CircleDollarSign, Dot, PenLine, Pin, Trash, Undo2 } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight, BadgeCheck, CalendarClock, CircleDollarSign, Dot, PenLine, Pin, ReceiptText, Trash, Undo2 } from "lucide-vue-next"
 import { Button } from "@/components/ui/button"
 import { useToast } from "vue-toastification"
 import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
@@ -13,12 +13,10 @@ import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos"
 import { goBack, goTo } from "@/hooks/links"
 import { useUiStore } from "@/stores/ui/uiStore"
 import ModalParcela from "./modais/ModalParcela.vue"
-import type { ParcelaFinanceiro } from "@/types/schemas"
 
 const toast = useToast()
 const store = useLancamentosStore()
 const uiStore = useUiStore()
-const currentMonth = ref(new Date())
 const navigateMonth = (direction: "prev" | "next") => {
     store.currentMonth =
         direction === "prev"
@@ -87,7 +85,7 @@ watch(() => store.filters.update, carregarLancamentos)
 </script>
 
 <template>
-    <div class="space-y-4">
+    <div>
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
             <div>
                 <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -97,12 +95,12 @@ watch(() => store.filters.update, carregarLancamentos)
                 <p class="text-sm text-muted-foreground">Lançamentos financeiros por mês</p>
             </div>
         </div>
-        <div class="flex justify-between items-center mb-2 bg-background border px-4 rounded-xl py-4">
-            <button @click="navigateMonth('prev')">
+        <div class="flex justify-between items-center mb-4 px-1 rounded-xl text-gray-800 dark:text-gray-200">
+            <button class="bg-card px-4 py-2 rounded-l-xl border" @click="navigateMonth('prev')">
                 <ArrowBigLeft class="w-5 h-5" />
             </button>
             <h2 class="text-xl">{{ formatToCapitalize(format(store.currentMonth, "MMMM yyyy", { locale: ptBR })) }}</h2>
-            <button @click="navigateMonth('next')">
+            <button class="bg-card px-4 py-2 rounded-r-xl border" @click="navigateMonth('next')">
                 <ArrowBigRight class="w-5 h-5" />
             </button>
         </div>
@@ -113,10 +111,10 @@ watch(() => store.filters.update, carregarLancamentos)
         </div>
 
         <!-- Lista de Lançamentos -->
-        <div v-else class="space-y-4">
+        <div v-else class="space-y-4 min-h-40 px-1 overflow-auto max-h-[calc(100vh-15.6rem)]">
             <Card v-for="dia in lancamentos" :key="dia.dia" class="bg-transparent border-none shadow-none">
                 <CardContent class="p-0 border-none">
-                    <p class="text-sm px-3 bg-card border py-1 mb-1 rounded-md">
+                    <p class="text-sm px-3 bg-card/40 border py-1 mb-1 rounded-md">
                         {{ format(new Date(dia.dia), "dd/MM/yyyy") }}
                     </p>
                     <div class="flex flex-col gap-2">
@@ -176,8 +174,16 @@ watch(() => store.filters.update, carregarLancamentos)
                 </CardContent>
             </Card>
 
-            <div v-if="lancamentos.length === 0" class="text-center text-gray-400 py-6">
+            <div v-if="lancamentos.length === 0" class="text-center text-gray-600 dark:text-gray-400 py-6 flex flex-col h-full justify-center items-center
+                min-h-[calc(100vh-15.6rem)]">
+                <ReceiptText class="w-12 h-12 mx-auto mb-2" />
                 Nenhum lançamento encontrado.
+                <RouterLink :to="`/financeiro/lancamentos`">
+                    <Button class="mt-4">
+                        <CircleDollarSign />
+                        Adicionar Lançamentos
+                    </Button>
+                </RouterLink>
             </div>
         </div>
         <nav v-if="uiStore.isMobile"

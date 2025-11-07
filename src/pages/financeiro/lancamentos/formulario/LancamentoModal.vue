@@ -108,15 +108,15 @@ watch(() => params.value.hasEntrada, () => {
     <ModalView v-model:open="store.openModal" :title="title" :description="description" size="3xl">
         <form class="space-y-4 px-4" @submit.prevent="submit">
             <div class="grid grid-cols-1 gap-3">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                    <div class="md:col-span-8">
+                <div class="grid grid-cols-12 gap-3">
+                    <div class="col-span-12 md:col-span-8">
                         <label for="descricao" class="block text-sm font-medium mb-1">
                             Descrição *
                         </label>
                         <Input v-model="store.form.descricao" type="text" id="descricao" name="descricao" required
                             placeholder="Ex: Venda de 1 notebook" />
                     </div>
-                    <div class="md:col-span-4">
+                    <div class="col-span-6 md:col-span-4">
                         <label for="dataFinanceiroLancamento" class="block text-sm font-medium mb-1">
                             {{ params.metodo === "AVISTA" ? "Data vencimento" : "Data primeira parcela" }} *
                         </label>
@@ -125,7 +125,7 @@ watch(() => params.value.hasEntrada, () => {
                         <p v-if="erros.dataLancamento" class="text-red-600 text-sm">{{ erros.dataLancamento }}</p>
                     </div>
                     <!-- Tipo -->
-                    <div class="md:col-span-4">
+                    <div class="col-span-6 md:col-span-4">
                         <label for="tipoLancamentoFinanceiro" class="block text-sm font-medium mb-1">
                             Tipo/Natureza *
                         </label>
@@ -145,7 +145,7 @@ watch(() => params.value.hasEntrada, () => {
                     </div>
 
                     <!-- Valor Total -->
-                    <div class="md:col-span-4">
+                    <div class="col-span-6 md:col-span-4">
                         <label for="valorTotalLancamento" class="block text-sm font-medium mb-1">
                             Valor Total *
                         </label>
@@ -153,7 +153,7 @@ watch(() => params.value.hasEntrada, () => {
                             v-model="store.form.valorTotal" name="valorTotal" required placeholder="0,00" />
                     </div>
 
-                    <div class="md:col-span-4">
+                    <div class="col-span-6 md:col-span-4">
                         <label for="descontoFormularioLancamento" class="block text-sm font-medium mb-1">
                             Desconto
                         </label>
@@ -161,7 +161,8 @@ watch(() => params.value.hasEntrada, () => {
                             id="descontoFormularioLancamento" name="desconto" placeholder="0,00" />
                     </div>
                     <!-- Valor Total -->
-                    <div :class="[params.metodo === 'AVISTA' ? 'md:col-span-6' : 'md:col-span-3']">
+                    <div
+                        :class="[params.metodo === 'AVISTA' ? 'col-span-6 md:col-span-6' : 'col-span-6 md:col-span-3']">
                         <label for="metodoLancamentoModoLancamento" class="block text-sm font-medium mb-1">
                             Método *
                         </label>
@@ -179,7 +180,7 @@ watch(() => params.value.hasEntrada, () => {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div :class="['md:col-span-3', params.metodo === 'AVISTA' ? 'hidden' : 'block']">
+                    <div :class="['col-span-6 md:col-span-3', params.metodo === 'AVISTA' ? 'hidden' : 'block']">
                         <label for="parcelas" class="block text-sm font-medium mb-1">
                             Parcelas *
                         </label>
@@ -188,7 +189,7 @@ watch(() => params.value.hasEntrada, () => {
                     </div>
 
                     <div
-                        :class="['block text-sm font-medium mb-1', params.metodo === 'AVISTA' ? 'md:col-span-6' : 'md:col-span-3']">
+                        :class="['block text-sm font-medium mb-1', params.metodo === 'AVISTA' ? 'col-span-6' : 'col-span-6 md:col-span-3']">
                         <span class="block text-sm font-medium mb-0">
                             Efetivado
                         </span>
@@ -209,7 +210,7 @@ watch(() => params.value.hasEntrada, () => {
                         </div>
                     </div>
                     <div
-                        :class="['block text-sm font-medium mb-1 md:col-span-3', params.metodo === 'AVISTA' ? 'hidden' : 'block']">
+                        :class="['block text-sm font-medium mb-1 col-span-6 md:col-span-3', params.metodo === 'AVISTA' ? 'hidden' : 'block']">
                         <span class="block text-sm font-medium mb-0">
                             Entrada
                         </span>
@@ -231,7 +232,7 @@ watch(() => params.value.hasEntrada, () => {
                     </div>
 
                     <div v-if="params.metodo === 'PARCELADO' && params.hasEntrada"
-                        class="grid grid-cols-1 md:grid-cols-2 gap-3 md:col-span-12">
+                        class="grid grid-cols-2 gap-3 col-span-12">
                         <!-- Valor Entrada -->
                         <div>
                             <label for="valorEntradaLancamento" class="block text-sm font-medium mb-1">
@@ -253,7 +254,7 @@ watch(() => params.value.hasEntrada, () => {
                         </div>
                     </div>
                     <!-- Forma de Pagamento -->
-                    <div class="md:col-span-6">
+                    <div class="col-span-6">
                         <label for="formaPagamentoLancamento" class="block text-sm font-medium mb-1">
                             Forma de Pagamento *
                         </label>
@@ -284,7 +285,7 @@ watch(() => params.value.hasEntrada, () => {
                         </Select>
                     </div>
                     <!-- Cliente -->
-                    <div class="md:col-span-6">
+                    <div class="col-span-6">
                         <label for="clienteIdLancamento" class="block text-sm font-medium mb-1">
                             {{ store.form.tipo === 'RECEITA' ? 'Cliente' : 'Fornecedor' }}
                             <a @click="storeCliente.openSave" class="text-blue-500 px-2 cursor-pointer">+ Novo</a>
@@ -293,7 +294,7 @@ watch(() => params.value.hasEntrada, () => {
                             allowClear />
                     </div>
                     <!-- Categoria -->
-                    <div class="md:col-span-6">
+                    <div class="col-span-6">
                         <label for="categoriaIdLancamento" class="block text-sm font-medium mb-1">
                             Categoria *
                             <FormularioCategorias class="text-blue-500 px-2 cursor-pointer">+ Nova
@@ -304,7 +305,7 @@ watch(() => params.value.hasEntrada, () => {
                         <p v-if="erros.categoriaId" class="text-red-600 text-sm">{{ erros.categoriaId }}</p>
                     </div>
                     <!-- Conta Financeiro -->
-                    <div class="md:col-span-6">
+                    <div class="col-span-6">
                         <label for="contasFinanceiroId" class="block text-sm font-medium mb-1">
                             Conta Financeira *
                             <FormularioContas class="text-blue-500 px-2 cursor-pointer">+ Nova</FormularioContas>
