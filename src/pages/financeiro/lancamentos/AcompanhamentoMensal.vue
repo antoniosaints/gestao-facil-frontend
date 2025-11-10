@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { LancamentosRepository } from "@/repositories/lancamento-repository"
 import { formatCurrencyBR, formatToCapitalize } from "@/utils/formatters"
 import { ptBR } from "date-fns/locale"
-import { ArrowBigLeft, ArrowBigRight, BadgeCheck, CalendarClock, CircleDollarSign, Dot, PenLine, Pin, ReceiptText, Trash, Undo2 } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight, BadgeCheck, BadgePlus, CalendarClock, CircleDollarSign, Dot, PenLine, Pin, Plus, ReceiptText, Trash, TrendingDown, TrendingUp, Undo2 } from "lucide-vue-next"
 import { Button } from "@/components/ui/button"
 import { useToast } from "vue-toastification"
 import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
@@ -13,10 +13,13 @@ import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos"
 import { goBack, goTo } from "@/hooks/links"
 import { useUiStore } from "@/stores/ui/uiStore"
 import ModalParcela from "./modais/ModalParcela.vue"
+import LancamentoModal from "./formulario/LancamentoModal.vue"
+import ModalView from "@/components/formulario/ModalView.vue"
 
 const toast = useToast()
 const store = useLancamentosStore()
 const uiStore = useUiStore()
+const openModalLancar = ref(false)
 const navigateMonth = (direction: "prev" | "next") => {
     store.currentMonth =
         direction === "prev"
@@ -25,6 +28,12 @@ const navigateMonth = (direction: "prev" | "next") => {
 
     carregarLancamentos()
 };
+
+const openByTipo = (tipo: 'RECEITA' | 'DESPESA') => {
+    store.form.tipo = tipo
+    store.openSave()
+}
+
 // Dados
 interface Lancamento {
     id: number
@@ -81,7 +90,7 @@ function editarParcela(parcela: Lancamento, data: string) {
     store.openModalParcela = true
 }
 onMounted(carregarLancamentos)
-watch(() => store.filters.update, carregarLancamentos)
+watch(() => [store.filters.update], carregarLancamentos)
 </script>
 
 <template>
@@ -93,6 +102,16 @@ watch(() => store.filters.update, carregarLancamentos)
                     Acompanhamento
                 </h2>
                 <p class="text-sm text-muted-foreground">Lançamentos financeiros por mês</p>
+            </div>
+            <div class="gap-2 py-2 hidden md:flex">
+                <button @click="openByTipo('RECEITA')"
+                    class="bg-success text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-2">
+                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Receita</span>
+                </button>
+                <button @click="openByTipo('DESPESA')"
+                    class="bg-danger text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-2">
+                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Despesa</span>
+                </button>
             </div>
         </div>
         <div class="flex justify-between items-center mb-4 px-1 rounded-xl text-gray-800 dark:text-gray-200">
@@ -114,20 +133,21 @@ watch(() => store.filters.update, carregarLancamentos)
         <div v-else class="space-y-4 min-h-40 px-1 overflow-auto max-h-[calc(100vh-15.6rem)]">
             <Card v-for="dia in lancamentos" :key="dia.dia" class="bg-transparent border-none shadow-none">
                 <CardContent class="p-0 border-none">
-                    <p class="text-sm px-3 bg-card/40 border py-1 mb-1 rounded-md">
+                    <p class="text-sm px-3 bg-card/40 border py-1 rounded-t-md">
                         {{ format(new Date(dia.dia), "dd/MM/yyyy") }}
                     </p>
-                    <div class="flex flex-col gap-2">
+                    <div class="flex flex-col">
                         <div v-for="item in dia.lancamentos" :key="item.id"
-                            class="flex justify-between py-1 pl-6 gap-2 bg-background border px-3 rounded-lg relative">
+                            class="flex justify-between py-1 group pl-5 gap-2 bg-background border border-t-0 px-3 first:rounded-t-none rounded-none last:rounded-b-lg relative">
                             <div v-if="item.tipo === 'RECEITA'"
-                                class="absolute left-0 top-0 w-2 h-full rounded-l-md bg-success/90"></div>
-                            <div v-else class="absolute left-0 top-0 w-2 h-full rounded-l-md bg-danger/90"></div>
+                                class="absolute left-0 top-0 w-2 h-full group-last:rounded-bl-md bg-success/90"></div>
+                            <div v-else class="absolute left-0 top-0 w-2 h-full group-last:rounded-bl-md bg-danger/90">
+                            </div>
                             <div class="flex flex-col justify-center">
                                 <div class="font-medium text-md">
                                     <Pin class="inline mr-1" :size="16" />
                                     <RouterLink :to="`/financeiro/detalhes?id=${item.id}`"
-                                        class="hover:underline hover:cursor-pointer hover:text-primary">
+                                        class="hover:underline hover:cursor-pointer hover:text-primary text-sm md:text-md">
                                         {{ item.descricao }}
                                     </RouterLink>
                                     <Dot class="inline" :size="16" absoluteStrokeWidth />
@@ -186,12 +206,40 @@ watch(() => store.filters.update, carregarLancamentos)
                 </RouterLink>
             </div>
         </div>
+        <ModalView v-model:open="openModalLancar" title="Selecione o tipo de lançamento" size="md"
+            description="Adicionar transação financeira">
+            <div class="grid grid-cols-2 gap-4 p-4">
+                <div @click="openByTipo('RECEITA')"
+                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                    <div
+                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                        <TrendingUp class="w-10 h-10 text-green-500 dark:text-green-400" />
+                    </div>
+                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Receita</div>
+                </div>
+                <div @click="openByTipo('DESPESA')"
+                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                    <div
+                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                        <TrendingDown class="w-10 h-10 text-red-500 dark:text-red-400" />
+                    </div>
+                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Despesa</div>
+                </div>
+                <Button type="button" variant="outline" class="col-span-2 pt-2 -mb-2"
+                    @click="openModalLancar = false">Fechar</Button>
+            </div>
+        </ModalView>
         <nav v-if="uiStore.isMobile"
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
             <button type="button" @click="goTo('/financeiro/lancamentos')"
                 class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
                 <CircleDollarSign />
-                <span class="text-xs">Lançamentos</span>
+                <span class="text-xs">Geral</span>
+            </button>
+            <button type="button" @click="openModalLancar = true"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Plus />
+                <span class="text-xs">Novo</span>
             </button>
             <button type="button" @click="goBack"
                 class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
@@ -201,6 +249,7 @@ watch(() => store.filters.update, carregarLancamentos)
         </nav>
         <FormularioEfertivar @success="carregarLancamentos" />
         <ModalParcela />
+        <LancamentoModal />
     </div>
 </template>
 
