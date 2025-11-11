@@ -14,6 +14,7 @@
   "compilerOptions": {
     "skipLibCheck": true,
     "noImplicitAny": false,
+    "moduleResolution": "node",
     "typeRoots": ["./src/@types", "./node_modules/@types"],
     "baseUrl": ".",
     "paths": {
