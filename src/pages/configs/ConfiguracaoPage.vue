@@ -12,10 +12,11 @@
 
         <Tabs v-model="tab" class="w-auto">
             <div class="overflow-auto max-w-full">
-                <TabsList class="grid w-max grid-cols-3">
+                <TabsList class="grid w-max grid-cols-4">
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger value="integracoes"><i class="fa-solid fa-link mr-2"></i> Integrações</TabsTrigger>
+                    <TabsTrigger value="impressao"><i class="fa-solid fa-print mr-2"></i> Impressão</TabsTrigger>
                 </TabsList>
             </div>
 
@@ -145,6 +146,9 @@
                     </form>
                 </Card>
             </TabsContent>
+            <TabsContent value="impressao">
+                <ImpressaoPage />
+            </TabsContent>
         </Tabs>
         <nav v-if="storeUi.isMobile"
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
@@ -174,8 +178,9 @@ import { Cog, Menu } from 'lucide-vue-next'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
+import ImpressaoPage from './ImpressaoPage.vue'
 
-const tab = ref<'empresa' | 'notificacoes' | 'integracoes'>('empresa')
+const tab = ref<'empresa' | 'notificacoes' | 'integracoes' | 'impressao'>('empresa')
 const toast = useToast()
 const storeUi = useUiStore()
 
