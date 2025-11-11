@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Produto } from '@/types/schemas'
+import type { Produto } from '@/@types/schemas'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -26,13 +26,13 @@ export const useBaseStore = defineStore('baseStore', () => {
   }
 
   const openUpdate = async (id: number) => {
-     try {
-        // const { data } = await Repository.get(id)
-        // form.value = {} // passa os valores
-        openModal.value = true
+    try {
+      // const { data } = await Repository.get(id)
+      // form.value = {} // passa os valores
+      openModal.value = true
     } catch (error) {
-        console.log(error)
-        toast.error('Erro')
+      console.log(error)
+      toast.error('Erro')
     }
   }
 

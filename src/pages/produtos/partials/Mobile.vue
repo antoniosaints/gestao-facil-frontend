@@ -164,7 +164,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import type { Produto } from "@/types/schemas";
+import type { Produto } from "@/@types/schemas";
 import { ArchiveRestore, BadgePlus, Eye, FileChartLine, FileSpreadsheet, FileUp, PenLineIcon, Trash } from "lucide-vue-next";
 import { useProdutoStore } from "@/stores/produtos/useProduto";
 import { useToast } from "vue-toastification";

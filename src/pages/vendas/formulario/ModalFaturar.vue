@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ref } from 'vue';
 import { useToast } from 'vue-toastification';
 import { VendaRepository, type VendaEfetivar } from '@/repositories/venda-repository';
-import { MetodoPagamento } from '@/types/schemas';
+import { MetodoPagamento } from '@/@types/schemas';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';

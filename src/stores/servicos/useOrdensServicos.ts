@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { type CarrinhoItem, type OrdensServico, type SaveOrdemServico } from '@/types/schemas'
+import { type CarrinhoItem, type OrdensServico, type SaveOrdemServico } from '@/@types/schemas'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { formatToNumberValue } from '@/utils/formatters'
 export interface CarrinhoOS extends CarrinhoItem {

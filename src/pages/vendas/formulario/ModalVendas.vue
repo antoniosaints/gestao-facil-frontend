@@ -7,7 +7,7 @@ import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncre
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProdutoRepository } from "@/repositories/produto-repository";
 import { useVendasStore } from "@/stores/vendas/useVenda";
-import type { FormularioVenda } from "@/types/schemas";
+import type { FormularioVenda } from "@/@types/schemas";
 import http from "@/utils/axios";
 import { computed, onMounted, ref, watch } from "vue";
 import { POSITION, useToast } from "vue-toastification";

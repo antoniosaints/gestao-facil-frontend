@@ -131,7 +131,7 @@ import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerT
 import { Button } from "@/components/ui/button";
 import { PenLine, Trash } from "lucide-vue-next";
 import { useClientesStore } from "@/stores/clientes/useClientes";
-import type { ClientesFornecedores } from "@/types/schemas";
+import type { ClientesFornecedores } from "@/@types/schemas";
 import { useConfirm } from "@/composables/useConfirm";
 import { ClienteRepository } from "@/repositories/cliente-repository";
 import { useToast } from "vue-toastification";

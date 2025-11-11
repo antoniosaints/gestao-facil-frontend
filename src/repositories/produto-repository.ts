@@ -1,4 +1,4 @@
-import type { Produto } from '@/types/schemas'
+import type { Produto } from '@/@types/schemas'
 import http from '@/utils/axios'
 
 type ReposicaoEstoque = {

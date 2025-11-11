@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import type { SidebarMenuType } from '@/types/sidebar'
+import type { SidebarMenuType } from '@/@types/sidebar'
 import { ref } from 'vue'
 import { useRoute } from 'vue-router';
 

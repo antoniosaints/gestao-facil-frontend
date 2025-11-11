@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
-import type { Produto } from '@/types/schemas'
+import type { Produto } from '@/@types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { ArrowUpDown, Package, ScanQrCode } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'

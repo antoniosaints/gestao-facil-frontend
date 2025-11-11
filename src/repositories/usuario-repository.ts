@@ -1,4 +1,4 @@
-import type { Usuarios } from '@/types/schemas'
+import type { Usuarios } from '@/@types/schemas'
 import http from '@/utils/axios'
 
 interface updateProfile {

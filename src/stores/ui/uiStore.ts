@@ -2,7 +2,7 @@ import { onMounted, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
-import type { Contas, Usuarios } from '@/types/schemas'
+import type { Contas, Usuarios } from '@/@types/schemas'
 import { hasPermission } from '@/hooks/authorize'
 interface TipoPermissao {
   editar: boolean

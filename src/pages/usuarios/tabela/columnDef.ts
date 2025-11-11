@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
-import type { Usuarios } from '@/types/schemas'
+import type { Usuarios } from '@/@types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
   ArrowUpDown,

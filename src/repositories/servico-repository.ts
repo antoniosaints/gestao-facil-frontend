@@ -1,4 +1,4 @@
-import type { Servicos } from '@/types/schemas'
+import type { Servicos } from '@/@types/schemas'
 import http from '@/utils/axios'
 export class ServicoRepository {
   static async get(id: number): Promise<Servicos> {

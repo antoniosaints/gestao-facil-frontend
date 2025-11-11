@@ -141,7 +141,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import http from "@/utils/axios";
-import type { Vendas } from "@/types/schemas";
+import type { Vendas } from "@/@types/schemas";
 import { deletarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from "../ActionsVendas";
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import ModalView from "@/components/formulario/ModalView.vue";

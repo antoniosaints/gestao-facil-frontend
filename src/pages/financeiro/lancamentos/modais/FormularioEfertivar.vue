@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
-import type { MetodoPagamentoFinanceiro } from '@/types/schemas';
+import type { MetodoPagamentoFinanceiro } from '@/@types/schemas';
 import { ref } from 'vue';
 import { useToast } from 'vue-toastification';
 

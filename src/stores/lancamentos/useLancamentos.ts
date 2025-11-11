@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { type FormularioLancamento, type LancamentoFinanceiro } from '@/types/schemas'
+import { type FormularioLancamento, type LancamentoFinanceiro } from '@/@types/schemas'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 
 interface filtro {

@@ -1,4 +1,4 @@
-import type { MetodoPagamento, Vendas } from '@/types/schemas'
+import type { MetodoPagamento, Vendas } from '@/@types/schemas'
 import http from '@/utils/axios'
 
 export interface VendaEfetivar {

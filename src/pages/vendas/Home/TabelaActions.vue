@@ -2,7 +2,7 @@
 import { Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import type { Vendas } from '@/types/schemas';
+import type { Vendas } from '@/@types/schemas';
 import type { Table } from '@tanstack/vue-table';
 import { deletarVenda, editarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from '../ActionsVendas';
 const { data } = defineProps<{

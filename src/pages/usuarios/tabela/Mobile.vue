@@ -129,7 +129,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import type { Usuarios } from "@/types/schemas";
+import type { Usuarios } from "@/@types/schemas";
 import { Eye, PenLine, Trash } from "lucide-vue-next";
 import { useUsuarioStore } from "@/stores/usuarios/useUsuarios";
 import { useConfirm } from "@/composables/useConfirm";

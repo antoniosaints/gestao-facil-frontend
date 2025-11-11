@@ -2,7 +2,7 @@
 import { ChevronsLeftRightEllipsis, CircleDollarSign, FileText, Menu, Nfc } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import type { LancamentoFinanceiro } from '@/types/schemas';
+import type { LancamentoFinanceiro } from '@/@types/schemas';
 import { useToast } from 'vue-toastification';
 import { ref } from 'vue';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';

@@ -2,7 +2,7 @@
 import { Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import type { ClientesFornecedores } from '@/types/schemas';
+import type { ClientesFornecedores } from '@/@types/schemas';
 import { useToast } from 'vue-toastification';
 import { useClientesStore } from '@/stores/clientes/useClientes';
 import { ClienteRepository } from '@/repositories/cliente-repository';

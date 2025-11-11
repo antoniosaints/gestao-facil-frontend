@@ -3,7 +3,7 @@ import type {
   ItensOrdensServico,
   OrdensServico,
   SaveOrdemServico,
-} from '@/types/schemas'
+} from '@/@types/schemas'
 import http from '@/utils/axios'
 export class OrdensServicoRepository {
   static async get(

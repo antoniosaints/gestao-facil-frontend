@@ -4,7 +4,7 @@ import type {
   FormularioLancamento,
   MetodoPagamento,
   MetodoPagamentoFinanceiro,
-} from '@/types/schemas'
+} from '@/@types/schemas'
 import http from '@/utils/axios'
 export class LancamentosRepository {
   static async get(id: number) {
