@@ -1,4 +1,4 @@
-import qz from 'qz-tray'
+import qz, { type PrintData } from 'qz-tray'
 import http from './axios'
 const sizeMap: any = {
   A4: { width: 8.27, height: 11.69 }, // polegadas
@@ -107,11 +107,11 @@ class QZService {
       units: 'in',
       jobName: 'Impressao - Gestao Facil',
     })
-    const data = [
+    const data: PrintData[] = [
       {
         type: 'pdf',
         format: 'base64',
-        data: base64,
+        data: base64 as string,
       },
     ]
 
