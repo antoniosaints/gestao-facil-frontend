@@ -1,8 +1,31 @@
 import qz from 'qz-tray'
-
+import http from './axios'
+const sizeMap: any = {
+  A4: { width: 8.27, height: 11.69 }, // polegadas
+  A5: { width: 5.83, height: 8.27 },
+  Letter: { width: 8.5, height: 11 },
+  '80mm': { width: 3.15, height: 11.69 }, // 80mm térmica
+}
 class QZService {
   async connect() {
     if (!qz.websocket.isActive()) {
+      await qz.security.setCertificatePromise(async () => {
+        return http.get('/printer/cert/getCert').then((res) => {
+          return String(res.data)
+        })
+      })
+      await qz.security.setSignatureAlgorithm('SHA512')
+      await qz.security.setSignaturePromise(async (toSign: any) => {
+        return http
+          .post('/printer/cert/signature', toSign, {
+            headers: {
+              'Content-Type': 'text/plain',
+            },
+          })
+          .then((res) => {
+            return String(res.data)
+          })
+      })
       await qz.websocket.connect()
     }
   }
@@ -29,13 +52,20 @@ class QZService {
   getSavedPrinter() {
     return localStorage.getItem('qz_printer')
   }
+  getSavedSize() {
+    return localStorage.getItem('qz_size_paper') || 'A4'
+  }
 
   async printTermal(content: any) {
     await this.connect()
     const printer = this.getSavedPrinter()
+
     if (!printer) throw new Error('Nenhuma impressora salva.')
 
-    const config = qz.configs.create(printer)
+    const config = qz.configs.create(printer, {
+      size: { width: 3.15, height: 11.69 },
+      units: 'in',
+    })
     const data = [{ type: 'raw', format: 'plain', data: content }]
 
     return qz.print(config, data)
@@ -43,9 +73,16 @@ class QZService {
   async printNormal(content: any) {
     await this.connect()
     const printer = this.getSavedPrinter()
+    const paper = this.getSavedSize()
+
     if (!printer) throw new Error('Nenhuma impressora salva.')
 
-    const config = qz.configs.create(printer, { copies: 1, jobName: 'Impressao - Gestao Facil' })
+    const config = qz.configs.create(printer, {
+      copies: 1,
+      size: sizeMap[paper],
+      units: 'in',
+      jobName: 'Impressao - Gestao Facil',
+    })
     const data = [{ type: 'pixel', format: 'html', flavor: 'plain', data: content }]
 
     return qz.print(config, data)
@@ -65,7 +102,11 @@ class QZService {
 
     const base64 = await blobToBase64(blob)
 
-    const config = qz.configs.create(printer)
+    const config = qz.configs.create(printer, {
+      size: sizeMap[this.getSavedSize()],
+      units: 'in',
+      jobName: 'Impressao - Gestao Facil',
+    })
     const data = [
       {
         type: 'pdf',

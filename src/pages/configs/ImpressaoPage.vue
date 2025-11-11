@@ -3,22 +3,39 @@
     <CardHeader>
       <div class="flex items-center justify-between gap-4">
         <div>
-          <CardTitle>Selecionar impressora</CardTitle>
+          <CardTitle>Configurar impressora</CardTitle>
           <p class="text-sm text-muted-foreground">Escolha a impressora usada pelo PDV, verifique se o QZTray está
             instalado corretamente.</p>
         </div>
 
         <div class="flex items-center gap-2">
-          <Badge v-if="connected" class="px-3 py-1 text-white">Conectado</Badge>
-          <Badge v-else variant="destructive" class="px-3 py-1 text-white">Desconectado</Badge>
+          <Badge v-if="isConected" class="px-3 py-1 text-white bg-success hover:bg-success/80">
+            <Link2 class="mr-2 w-5 h-5" /> Conectado
+          </Badge>
+          <Badge v-else variant="destructive" class="px-3 py-1 text-white">
+            <Link2Off class="mr-2 w-5 h-5" /> Desconectado
+          </Badge>
         </div>
       </div>
     </CardHeader>
 
     <CardContent class="space-y-4">
       <div class="flex gap-2">
+        <Select v-model="paperSize" @update:modelValue="saveSizePaper">
+          <SelectTrigger class="max-w-36">
+            <SelectValue placeholder="Selecione" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="A4">A4</SelectItem>
+            <SelectItem value="A5">A5</SelectItem>
+            <SelectItem value="Letter">Carta (US Letter)</SelectItem>
+            <SelectItem value="80mm">Térmica 80mm</SelectItem>
+          </SelectContent>
+        </Select>
         <Input v-model="filter" placeholder="Filtrar impressoras..." @input="filterPrinters" class="flex-1" />
-        <Button class="text-white" :loading="loading" @click="loadPrinters">Buscar</Button>
+        <Button class="text-white" :loading="loading" @click="loadPrinters">
+          <Search /> Buscar
+        </Button>
       </div>
 
       <div v-if="printers.length" class="grid gap-2">
@@ -48,16 +65,21 @@
       <p v-else class="text-sm text-muted-foreground">Nenhuma impressora encontrada. Tente buscar.</p>
 
       <div class="flex items-center justify-between gap-2">
-        <div class="text-sm text-muted-foreground">
+        <div class="text-sm text-foreground border p-3 rounded-lg">
           Impressora salva:
-          <span class="font-medium" v-if="saved">{{ saved }}</span>
+          <span class="font-medium text-primary dark:text-blue-400" v-if="saved">{{ saved }}</span>
           <span v-else class="italic">Nenhuma</span>
         </div>
 
         <div class="flex gap-2">
           <Button variant="outline" @click="clearSaved" v-if="saved">Limpar</Button>
-          <Button variant="secondary" @click="testarImpressao" v-if="saved">Testar</Button>
-          <Button class="text-white" :disabled="!selected" @click="saveSelected">Salvar</Button>
+          <Button variant="outline" class="bg-success hover:bg-success/80 text-white hover:text-white"
+            @click="testarImpressao" v-if="saved">
+            <PrinterCheck /> Testar conexão
+          </Button>
+          <Button class="text-white" :disabled="!selected" @click="saveSelected">
+            <Save /> Salvar
+          </Button>
         </div>
       </div>
     </CardContent>
@@ -71,8 +93,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useConfirm } from '@/composables/useConfirm';
 import qzTray from '@/utils/qzTray';
-import { ref, onMounted } from 'vue';
+import { Link2, Link2Off, PrinterCheck, Save, Search } from 'lucide-vue-next';
+import { ref, onMounted, computed } from 'vue';
 import { POSITION, useToast } from 'vue-toastification';
+import { getTemplateImpressao, imgBase64 } from './partials/templateImpressao';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const printers = ref<string[]>([]);
 const filtered = ref<string[]>([]);
@@ -83,7 +108,13 @@ const filter = ref('');
 const loading = ref(false);
 const connected = ref(false);
 
-onMounted(loadPrinters);
+const paperSize = ref("A4");
+
+const isConected = computed(() => qzTray.isConnected() || connected.value);
+
+function saveSizePaper() {
+  localStorage.setItem("qz_size_paper", paperSize.value);
+}
 
 function shortName(name: string) {
   // versão curta para visual
@@ -100,18 +131,39 @@ function buttonClass(p: string) {
 async function testarImpressao() {
   try {
     const cfn = useConfirm().confirm({
-      title: 'Testar impressão',
-      message: 'Tem certeza que deseja testar a impressão?',
+      title: `Testar impressão ${selected.value}`,
+      message: 'Tem certeza que deseja testar a impressão? O documento será enviado para a fila.',
       confirmText: 'Sim, testar!',
       cancelText: 'Cancelar',
       colorButton: 'primary'
     })
     if (!await cfn) return
-    await qzTray.printNormal("<h2>TESTE DE IMPRESSÃO</h2><p>Operação concluída</p>");
+    const example = getTemplateImpressao({
+      cliente: "Cliente teste",
+      cnpj: "00.000.000/0001-00",
+      data: '01/01/2023',
+      empresa: "Empresa teste",
+      endereco: "Endereço de teste",
+      itens: [
+        {
+          precoUnitario: "R$ 10,00",
+          produto: "Produto",
+          qtd: "1",
+          subtotal: "R$ 10,00"
+        }
+      ],
+      logoBase64: imgBase64,
+      mensagemRodape: "Volte sempre",
+      operador: "Operador teste",
+      telefone: "Telefone",
+      total: "R$ 10,00",
+      venda: "00002"
+    });
+    await qzTray.printNormal(example);
     toast.info('Impressão enviada para a fila.');
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
-    toast.error('Erro ao testar impressão.');
+    toast.error(err.message || 'Erro ao testar impressão.');
   }
 }
 
@@ -162,8 +214,8 @@ function clearSaved() {
 
 // tenta recuperar lista salva ao montar
 onMounted(() => {
+  loadPrinters();
   if (saved.value) selected.value = saved.value;
-  // opcional: autoload
-  // loadPrinters();
+  paperSize.value = localStorage.getItem("qz_size_paper") || "A4";
 });
 </script>
