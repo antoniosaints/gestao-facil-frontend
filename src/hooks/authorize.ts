@@ -1,4 +1,4 @@
-import type { Usuarios } from '@/@types/schemas'
+import type { Usuarios } from '@/types/schemas'
 
 export const hasPermission = (usuario: Usuarios, permission: number) => {
   let levelPermission = 0

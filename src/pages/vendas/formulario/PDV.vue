@@ -192,7 +192,7 @@
                                     </div>
                                     <div class="text-right">
                                         <p class="text-xs text-gray-500">R$ {{ item.price.toFixed(2).replace('.', ',')
-                                        }}
+                                            }}
                                         </p>
                                         <p class="font-bold text-sm">R$ {{ (item.price *
                                             item.quantity).toFixed(2).replace('.',
@@ -366,7 +366,7 @@ import { useClientesStore } from '@/stores/clientes/useClientes';
 import { ArrowLeftRight, CirclePercent, Cog, Dot, HandCoins, HandGrab, LogOut, Menu, MonitorCog, MonitorDown, MonitorPlay, MonitorX, Pointer, ShoppingBasket, ShoppingCart, SquareX, TrendingUp, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import { Button } from '@/components/ui/button';
-import type { Produto } from '@/@types/schemas';
+import type { Produto } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
 import { useRoute } from 'vue-router';
 import router from '@/router';

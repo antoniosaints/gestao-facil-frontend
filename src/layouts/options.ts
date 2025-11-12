@@ -1,5 +1,5 @@
 import { type Permissoes } from '@/stores/ui/uiStore'
-import type { SidebarMenuType } from '@/@types/sidebar'
+import type { SidebarMenuType } from '@/types/sidebar'
 import {
   Box,
   Boxes,

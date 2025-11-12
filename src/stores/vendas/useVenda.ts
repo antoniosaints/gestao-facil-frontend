@@ -6,7 +6,7 @@ import {
   type ItensVendas,
   type PagamentoVendas,
   type Vendas,
-} from '@/@types/schemas'
+} from '@/types/schemas'
 import { VendaRepository } from '@/repositories/venda-repository'
 import { useToast } from 'vue-toastification'
 const toast = useToast()

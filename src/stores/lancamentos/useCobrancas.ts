@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { type CobrancaFinanceira } from '@/@types/schemas'
+import { type CobrancaFinanceira } from '@/types/schemas'
 import { ServicoRepository } from '@/repositories/servico-repository'
 
 export interface CobrancaOperacao {

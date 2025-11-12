@@ -2,7 +2,7 @@
 import { Ban, Eye, Menu, Undo2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import type { CobrancaFinanceira } from '@/@types/schemas';
+import type { CobrancaFinanceira } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import { useConfirm } from '@/composables/useConfirm';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';

@@ -1,4 +1,4 @@
-import type { ClientesFornecedores } from '@/@types/schemas'
+import type { ClientesFornecedores } from '@/types/schemas'
 import http from '@/utils/axios'
 export class ClienteRepository {
   static async get(id: number) {

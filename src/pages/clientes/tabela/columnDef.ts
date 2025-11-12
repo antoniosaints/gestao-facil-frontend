@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
-import type { ClientesFornecedores } from '@/@types/schemas'
+import type { ClientesFornecedores } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { ArrowUpDown, Ban, Building, CircleCheck, UserSearch } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'

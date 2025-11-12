@@ -2,7 +2,7 @@
 import { FileArchive, Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import type { OrdensServico } from '@/@types/schemas';
+import type { OrdensServico } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import { useConfirm } from '@/composables/useConfirm';
 import { OrdensServicoRepository } from '@/repositories/os-repository';

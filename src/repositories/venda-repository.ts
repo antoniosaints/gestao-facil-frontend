@@ -1,5 +1,6 @@
-import type { MetodoPagamento, Vendas } from '@/@types/schemas'
+import type { MetodoPagamento, Vendas } from '@/types/schemas'
 import http from '@/utils/axios'
+import qzTray from '@/utils/qzTray'
 
 export interface VendaEfetivar {
   pagamento: MetodoPagamento
@@ -104,5 +105,59 @@ export class VendaRepository {
     document.body.appendChild(a)
     a.click()
     a.remove()
+  }
+  static async printCupomPDF(id: number) {
+    const data = await http.get(`/vendas/cupom-pdf/${id}`, {
+      responseType: 'blob',
+      headers: { 'Content-Type': 'application/pdf' },
+    })
+    await qzTray.printPDF(data.data)
+  }
+
+  static async abrirCaixa(data: { pdvId: number; valorInicial: number }) {
+    const resp = await http.post(`/vendas/pdv/abrirCaixa`, data)
+    return resp.data
+  }
+  static async movimentarCaixa(data: {
+    caixaId: number
+    tipoMovimento: 'ENTRADA' | 'SAIDA'
+    categoria: 'AJUSTE' | 'DEVOLUCAO' | 'REFORCO' | 'SANGRIA' | 'OUTROS'
+    descricao: string
+    valor: number
+  }) {
+    const resp = await http.post(`/vendas/pdv/movimentarCaixa`, data)
+    return resp.data
+  }
+  static async fecharCaixa(data: { caixaId: number; valorFechamento: number; descricao: string }) {
+    const resp = await http.put(`/vendas/pdv/fecharCaixa`, data)
+    return resp.data
+  }
+  static async criarPdv(data: { nome: string; localizacao: string; descricao: string }) {
+    const resp = await http.post(`/vendas/pdv/criarPdv`, data)
+    return resp.data
+  }
+  static async buscarPdv(id?: number) {
+    const resp = await http.get(`/vendas/pdv/buscarPdv`, {
+      params: {
+        id: id,
+      },
+    })
+    return resp.data
+  }
+  static async buscarCaixa(id?: number) {
+    const resp = await http.get(`/vendas/pdv/buscarCaixa`, {
+      params: {
+        id: id,
+      },
+    })
+    return resp.data
+  }
+  static async resumoCaixa(id: number) {
+    const resp = await http.get(`/vendas/pdv/resumoCaixa`, {
+      params: {
+        id: id,
+      },
+    })
+    return resp.data
   }
 }

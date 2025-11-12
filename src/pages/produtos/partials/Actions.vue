@@ -2,7 +2,7 @@
 import { Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import type { Produto } from '@/@types/schemas';
+import type { Produto } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import { useProdutoStore } from '@/stores/produtos/useProduto';
 import type { Table } from '@tanstack/vue-table';

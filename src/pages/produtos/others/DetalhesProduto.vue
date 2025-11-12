@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, FileText, Edit, Trash2, Box, TrendingDown, TrendingUp, HandCoins, CircleDollarSign, Tag, Undo2, PencilLine } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { computed, onMounted, ref, watch } from "vue"
-import { type Produto } from "@/@types/schemas"
+import { type Produto } from "@/types/schemas"
 import { useToast } from "vue-toastification"
 import { ProdutoRepository } from "@/repositories/produto-repository"
 import Separator from "@/components/ui/separator/Separator.vue"
@@ -213,7 +213,7 @@ const status = computed(() => {
                         class="ml-2 text-sm" />
                 </div>
                 <div><span>Preço de compra:</span> {{ Number(produto?.precoCompra).toFixed(2).replace('.', ',') || 'N/A'
-                }}</div>
+                    }}</div>
                 <div><span>Estoque:</span> {{ produto?.estoque }} {{ produto?.unidade }}</div>
                 <div><span>Mínimo:</span> {{ produto?.minimo }} {{ produto?.unidade }}</div>
                 <div><span>Permite entradas:</span>

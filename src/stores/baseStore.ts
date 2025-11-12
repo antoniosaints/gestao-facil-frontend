@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Produto } from '@/@types/schemas'
+import type { Produto } from '@/types/schemas'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()

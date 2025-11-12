@@ -161,7 +161,7 @@ import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowUp, Dot, Eye, FileChartLine, Trash, TrendingDown, TrendingUp } from "lucide-vue-next";
-import type { LancamentoFinanceiro } from "@/@types/schemas";
+import type { LancamentoFinanceiro } from "@/types/schemas";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { watch } from "vue";
 import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos";

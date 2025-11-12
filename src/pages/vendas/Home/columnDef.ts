@@ -1,7 +1,7 @@
 import BadgeInfo from '@/components/tabela/BadgeInfo.vue'
 import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
-import type { Vendas } from '@/@types/schemas'
+import type { Vendas } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
   ArrowUpDown,

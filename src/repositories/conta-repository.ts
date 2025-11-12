@@ -1,4 +1,4 @@
-import type { Contas, FaturasContas, UpdateParametrosConta, Usuarios } from '@/@types/schemas'
+import type { Contas, FaturasContas, UpdateParametrosConta, Usuarios } from '@/types/schemas'
 import http from '@/utils/axios'
 export interface StatusConta {
   status: string

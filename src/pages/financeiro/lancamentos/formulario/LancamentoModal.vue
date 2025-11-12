@@ -10,7 +10,7 @@ import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos";
 import { computed, ref, watch } from "vue";
 import { vMaska } from "maska/vue"
 import { moneyMaskOptions } from "@/lib/imaska";
-import type { FormularioLancamento } from "@/@types/schemas";
+import type { FormularioLancamento } from "@/types/schemas";
 import { LancamentosRepository } from "@/repositories/lancamento-repository";
 import { POSITION, useToast } from "vue-toastification";
 import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from "@/utils/formatters";

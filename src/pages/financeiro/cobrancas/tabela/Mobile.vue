@@ -135,7 +135,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import type { CobrancaFinanceira } from "@/@types/schemas";
+import type { CobrancaFinanceira } from "@/types/schemas";
 import { Ban, Eye, Trash, Undo2 } from "lucide-vue-next";
 import { useConfirm } from "@/composables/useConfirm";
 import { useToast } from "vue-toastification";
