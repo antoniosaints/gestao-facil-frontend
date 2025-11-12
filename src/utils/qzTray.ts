@@ -1,31 +1,32 @@
 import qz, { type PrintData } from 'qz-tray'
-import http from './axios'
+import { ImpressaoRepository } from '@/repositories/impressao-repository'
 const sizeMap: any = {
   A4: { width: 8.27, height: 11.69 }, // polegadas
   A5: { width: 5.83, height: 8.27 },
   Letter: { width: 8.5, height: 11 },
   '80mm': { width: 3.15, height: 11.69 }, // 80mm térmica
 }
+const typeMap: Record<string, any> = {
+  pdf: { type: 'pdf', format: 'base64', flavor: null },
+  html: { type: 'pixel', format: 'html', flavor: 'plain' },
+  raw: { type: 'raw', format: 'plain', flavor: 'plain' },
+  image: { type: 'image', format: 'base64', flavor: 'plain' },
+}
+
+interface Printer {
+  content: any
+  arquivo: 'pdf' | 'html' | 'raw' | 'image'
+}
 class QZService {
   async connect() {
     if (!qz.websocket.isActive()) {
-      await qz.security.setCertificatePromise(async () => {
-        return http.get('/printer/cert/getCert').then((res) => {
-          return String(res.data)
-        })
-      })
+      await qz.security.setCertificatePromise(
+        async () => await ImpressaoRepository.getCertificado(),
+      )
       await qz.security.setSignatureAlgorithm('SHA512')
-      await qz.security.setSignaturePromise(async (toSign: any) => {
-        return http
-          .post('/printer/cert/signature', toSign, {
-            headers: {
-              'Content-Type': 'text/plain',
-            },
-          })
-          .then((res) => {
-            return String(res.data)
-          })
-      })
+      await qz.security.setSignaturePromise(
+        async (toSign: any) => await ImpressaoRepository.getSignature(toSign),
+      )
       await qz.websocket.connect()
     }
   }
@@ -54,6 +55,27 @@ class QZService {
   }
   getSavedSize() {
     return localStorage.getItem('qz_size_paper') || 'A4'
+  }
+
+  async print(data: Printer) {
+    await this.connect()
+    const printer = this.getSavedPrinter()
+    const paper = this.getSavedSize()
+
+    if (!printer) throw new Error('Nenhuma impressora salva.')
+
+    const config = qz.configs.create(printer, {
+      copies: 1,
+      size: sizeMap[paper],
+      units: 'in',
+      jobName: 'Impressao - Gestao Facil',
+    })
+    const mapper = typeMap[data.arquivo]
+    const pr = [
+      { type: mapper.type, format: mapper.format, flavor: mapper.flavor, data: data.content },
+    ]
+
+    return qz.print(config, pr)
   }
 
   async printTermal(content: any) {

@@ -9,6 +9,8 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <span class="text-xs text-blue-500 dark:text-blue-400 px-2 py-1.5 border rounded-lg cursor-pointer"
+            @click="baixarCeriticado">Baixar Certificado</span>
           <Badge v-if="isConected" class="px-3 py-1 text-white bg-success hover:bg-success/80">
             <Link2 class="mr-2 w-5 h-5" /> Conectado
           </Badge>
@@ -96,8 +98,9 @@ import qzTray from '@/utils/qzTray';
 import { Link2, Link2Off, PrinterCheck, Save, Search } from 'lucide-vue-next';
 import { ref, onMounted, computed } from 'vue';
 import { POSITION, useToast } from 'vue-toastification';
-import { getTemplateImpressao, imgBase64 } from './partials/templateImpressao';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ImpressaoRepository } from '@/repositories/impressao-repository';
+import { getTemplateTesteImpressao } from './partials/templateTesteImpressao';
 
 const printers = ref<string[]>([]);
 const filtered = ref<string[]>([]);
@@ -110,12 +113,29 @@ const connected = ref(false);
 
 const paperSize = ref("A4");
 
-const isConected = computed(() => qzTray.isConnected() || connected.value);
+const isConected = computed(() => connected.value);
 
 function saveSizePaper() {
   localStorage.setItem("qz_size_paper", paperSize.value);
 }
 
+async function baixarCeriticado() {
+  try {
+    const cfn = useConfirm().confirm({
+      title: 'Certificado QzTray',
+      message: 'Após o download, faça a instalação do certificado no pluguin QzTray.',
+      confirmText: 'Baixar!',
+      cancelText: 'Cancelar',
+      colorButton: 'primary'
+    })
+    if (!await cfn) return
+    await ImpressaoRepository.downloadCertificado();
+    toast.success('Certificado baixado, instale no QzTray.');
+  } catch (err: any) {
+    console.error(err);
+    toast.error('Erro ao baixar certificado');
+  }
+}
 function shortName(name: string) {
   // versão curta para visual
   if (name.length > 36) return name.slice(0, 33) + '...';
@@ -131,34 +151,14 @@ function buttonClass(p: string) {
 async function testarImpressao() {
   try {
     const cfn = useConfirm().confirm({
-      title: `Testar impressão ${selected.value}`,
+      title: `Testar impressão ${saved.value}`,
       message: 'Tem certeza que deseja testar a impressão? O documento será enviado para a fila.',
       confirmText: 'Sim, testar!',
       cancelText: 'Cancelar',
       colorButton: 'primary'
     })
     if (!await cfn) return
-    const example = getTemplateImpressao({
-      cliente: "Cliente teste",
-      cnpj: "00.000.000/0001-00",
-      data: '01/01/2023',
-      empresa: "Empresa teste",
-      endereco: "Endereço de teste",
-      itens: [
-        {
-          precoUnitario: "R$ 10,00",
-          produto: "Produto",
-          qtd: "1",
-          subtotal: "R$ 10,00"
-        }
-      ],
-      logoBase64: imgBase64,
-      mensagemRodape: "Volte sempre",
-      operador: "Operador teste",
-      telefone: "Telefone",
-      total: "R$ 10,00",
-      venda: "00002"
-    });
+    const example = getTemplateTesteImpressao(qzTray.getSavedSize(), qzTray.getSavedPrinter());
     await qzTray.printNormal(example);
     toast.info('Impressão enviada para a fila.');
   } catch (err: any) {
@@ -212,7 +212,6 @@ function clearSaved() {
   toast.success('Impressora removida!');
 }
 
-// tenta recuperar lista salva ao montar
 onMounted(() => {
   loadPrinters();
   if (saved.value) selected.value = saved.value;
