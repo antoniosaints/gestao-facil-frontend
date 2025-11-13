@@ -1,11 +1,8 @@
 <template>
   <div
-    class="w-screen mx-auto h-screen flex items-center bg-gradient-to-br from-primary to-primary/80 justify-center py-6"
-  >
-    <Card
-      v-if="!conta && !notAcceptId"
-      class="p-6 flex flex-col rounded-none md:rounded-xl h-screen md:h-max w-screen md:w-2/3 lg:w-2/4 xl:w-2/6"
-    >
+    class="w-screen mx-auto h-screen flex items-center bg-gradient-to-br from-primary to-primary/80 justify-center py-6">
+    <Card v-if="!conta && !notAcceptId"
+      class="p-6 flex flex-col rounded-none md:rounded-xl h-screen md:h-max w-screen md:w-2/3 lg:w-2/4 xl:w-2/6">
       <div class="flex flex-col items-center justify-center gap-3 h-screen md:h-full">
         <FileSymlink class="h-12 w-12 text-primary animate-pulse" />
         <h1 class="text-3xl font-bold text-center text-primary">
@@ -15,10 +12,8 @@
         <p>Logo o formulário estará disponível para preencher 🎉🔥...</p>
       </div>
     </Card>
-    <Card
-      v-if="contaId && notAcceptId"
-      class="p-6 flex flex-col rounded-none md:rounded-xl h-screen md:h-max w-screen md:w-2/3 lg:w-2/4 xl:w-2/6"
-    >
+    <Card v-if="contaId && notAcceptId"
+      class="p-6 flex flex-col rounded-none md:rounded-xl h-screen md:h-max w-screen md:w-2/3 lg:w-2/4 xl:w-2/6">
       <div class="flex flex-col items-center justify-center gap-4 h-screen md:h-full">
         <ShieldX class="h-12 w-12 text-danger animate-ping mb-4" />
         <h1 class="text-3xl font-bold text-center text-danger">
@@ -28,10 +23,8 @@
       </div>
     </Card>
 
-    <Card
-      v-else-if="conta && !cadastroEfetuado"
-      class="p-6 flex flex-col rounded-none md:rounded-xl h-screen md:h-max w-screen md:w-2/3 lg:w-2/4 xl:w-2/6"
-    >
+    <Card v-else-if="conta && !cadastroEfetuado"
+      class="p-6 flex flex-col rounded-none md:rounded-xl h-screen md:h-max w-screen md:w-2/3 lg:w-2/4 xl:w-2/6">
       <CardHeader class="px-0 py-4 pt-0">
         <div class="flex items-center gap-4">
           <img class="rounded-full w-12 h-12 bg-gray-500" :src="logo" alt="logo.png" />
@@ -52,35 +45,19 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <Label for="email">Email *</Label>
-            <Input
-              id="email"
-              v-model="form.email"
-              type="email"
-              placeholder="Digite seu email"
-              required
-            />
+            <Input id="email" v-model="form.email" type="email" placeholder="Digite seu email" required />
             <p v-if="errors.email" class="text-sm text-red-500 mt-1">{{ errors.email }}</p>
           </div>
           <div>
             <Label for="telefone">Telefone</Label>
-            <Input
-              id="telefone"
-              v-model="form.telefone"
-              placeholder="Digite seu telefone"
-              inputmode="tel"
-            />
+            <Input id="telefone" v-model="form.telefone" placeholder="Digite seu telefone" inputmode="tel" />
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
             <Label for="whatsapp">WhatsApp</Label>
-            <Input
-              id="whatsapp"
-              v-model="form.whatsapp"
-              placeholder="Digite seu WhatsApp"
-              inputmode="tel"
-            />
+            <Input id="whatsapp" v-model="form.whatsapp" placeholder="Digite seu WhatsApp" inputmode="tel" />
           </div>
           <div>
             <Label for="cep">CEP</Label>
@@ -113,12 +90,7 @@
 
         <div>
           <Label for="observacao">Observação</Label>
-          <Textarea
-            id="observacao"
-            v-model="form.observacao"
-            rows="4"
-            placeholder="Digite suas observações"
-          />
+          <Textarea id="observacao" v-model="form.observacao" rows="4" placeholder="Digite suas observações" />
         </div>
 
         <div class="flex items-center justify-between pt-2">
@@ -126,7 +98,7 @@
             <Eraser />
             Limpar
           </Button>
-          <Button type="submit" :disabled="submitting || canSubmit">
+          <Button type="submit" class="text-white" :disabled="submitting || canSubmit">
             <Save />
             {{ submitting ? 'Enviando...' : 'Cadastrar' }}
           </Button>
@@ -134,16 +106,13 @@
       </form>
     </Card>
 
-    <Card
-      v-else-if="conta && cadastroEfetuado && yourId"
-      class="p-6 flex flex-col rounded-none md:rounded-xl h-screen md:h-max w-screen md:w-2/3 lg:w-2/4 xl:w-2/6"
-    >
+    <Card v-else-if="conta && cadastroEfetuado && yourId"
+      class="p-6 flex flex-col rounded-none md:rounded-xl h-screen md:h-max w-screen md:w-2/3 lg:w-2/4 xl:w-2/6">
       <div class="flex flex-col items-center justify-center text-center gap-3 h-screen md:h-full">
         <BadgeCheck class="h-12 w-12 text-primary animate-pulse" />
         <h1 class="text-3xl font-bold text-center text-primary">Seu cadastro foi finalizado</h1>
         <p>
-          Seu id é <span class="italic text-blue-700">{{ yourId }}</span
-          >, informe para o responsável do link 🎉🔥...
+          Seu id é <span class="italic text-blue-700">{{ yourId }}</span>, informe para o responsável do link 🎉🔥...
         </p>
         <Button type="button" @click="copiarMeuId(yourId)" class="text-white">
           <Copy />
@@ -261,7 +230,6 @@ async function fetchConta() {
         'O link tem algum problema, recarregue a página ou peça outro para o dono do sistema.',
       )
     const muted = HashGenerator.decode(String(contaId.value))[0]
-    console.log(muted)
     if (!muted) {
       canSubmit.value = true
       notAcceptId.value = true
@@ -297,9 +265,9 @@ async function onSubmit() {
     cadastroEfetuado.value = true
     yourId.value = res.data.data.id
     reset(false)
-  } catch {
+  } catch (error: any) {
     resultOk.value = false
-    toast.error('Falha ao enviar. Tente novamente.')
+    toast.error(error.response.data.message || 'Falha ao enviar. Tente novamente.')
   } finally {
     submitting.value = false
   }
