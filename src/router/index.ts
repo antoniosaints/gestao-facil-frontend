@@ -21,14 +21,14 @@ const routes: RouteInterface[] = [
     },
   },
   {
-    path: '/publico/:contaId',
+    path: '/publico',
     name: 'publico',
     meta: {
       isPublic: true,
     },
     children: [
       {
-        path: 'cadastro',
+        path: ':contaId/cadastro',
         name: 'publico-cadastro',
         component: () => import('@/pages/clientes/publico/CadastroCliente.vue'),
         meta: {

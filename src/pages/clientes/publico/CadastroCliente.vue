@@ -36,7 +36,7 @@
         <div class="flex items-center gap-4">
           <img class="rounded-full w-12 h-12 bg-gray-500" :src="logo" alt="logo.png" />
           <div>
-            <CardTitle class="text-2xl">Cadastre-se na {{ conta.nome }}</CardTitle>
+            <CardTitle class="text-2xl">Cadastre-se</CardTitle>
             <CardDescription>Preencha os campos abaixo</CardDescription>
           </div>
         </div>
