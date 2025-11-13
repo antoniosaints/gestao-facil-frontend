@@ -4,7 +4,7 @@ import Mobile from './tabela/Mobile.vue'
 import { useClientesStore } from '@/stores/clientes/useClientes'
 import ClientesModal from './modais/ClientesModal.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { BadgePlus, RotateCw, UserStar } from 'lucide-vue-next'
+import { BadgePlus, Link, RotateCw, UserStar } from 'lucide-vue-next'
 import { ref } from 'vue'
 import ModalFormularioPublico from './publico/ModalFormularioPublico.vue'
 const store = useClientesStore()
