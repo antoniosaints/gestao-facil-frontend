@@ -21,6 +21,23 @@ const routes: RouteInterface[] = [
     },
   },
   {
+    path: '/publico/:contaId',
+    name: 'publico',
+    meta: {
+      isPublic: true,
+    },
+    children: [
+      {
+        path: 'cadastro',
+        name: 'publico-cadastro',
+        component: () => import('@/pages/clientes/publico/CadastroCliente.vue'),
+        meta: {
+          isPublic: true,
+        },
+      },
+    ],
+  },
+  {
     path: '/site',
     name: 'site-page',
     meta: {
