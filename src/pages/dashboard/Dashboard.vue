@@ -27,7 +27,7 @@
 
                         <div>
                             <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Clientes</h3>
-                            <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
+                            <span class="hidden md:block text-theme-xs text-gray-500 dark:text-gray-400">
                                 Registrados
                             </span>
                         </div>
@@ -49,7 +49,7 @@
 
                         <div>
                             <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Produtos</h3>
-                            <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
+                            <span class="hidden md:block text-theme-xs text-gray-500 dark:text-gray-400">
                                 Cadastrados
                             </span>
                         </div>
