@@ -23,7 +23,7 @@ const config = ref({
 })
 
 function copiarLink() {
-  const texto = `${link}`
+  const texto = `${link.value}`
   navigator.clipboard.writeText(texto)
   toast.success('Link copiado com sucesso!')
 }
