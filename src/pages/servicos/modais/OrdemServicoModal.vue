@@ -257,8 +257,8 @@ onMounted(() => {
   <ModalView v-model:open="store.openModal"
     :title="store.form.id ? 'Editar Ordem de serviço' : 'Criar Ordem de serviço'" :description="description" size="5xl">
     <form @submit.prevent="submitFormularioVenda" class="space-y-4 px-4">
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div class="md:col-span-6">
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12 md:col-span-6">
           <label class="block text-sm mb-1">Cliente <span class="text-red-500">*</span></label>
           <div class="flex items-center justify-center gap-2">
             <Select2Ajax v-model="store.form.clienteId" class="w-full" url="/clientes/select2" />
@@ -268,13 +268,13 @@ onMounted(() => {
           <p v-if="erros.clienteId" class="text-red-600 text-sm">{{ erros.clienteId }}</p>
         </div>
 
-        <div class="md:col-span-3">
+        <div class="col-span-6 md:col-span-3">
           <label class="block text-sm mb-1">Data da OS <span class="text-red-500">*</span></label>
           <Calendarpicker :required="false" v-model="store.form.data" :range="false" />
           <p v-if="erros.data" class="text-red-600 text-sm">{{ erros.data }}</p>
         </div>
 
-        <div class="md:col-span-3">
+        <div class="col-span-6 md:col-span-3">
           <label class="block text-sm mb-1">Status <span class="text-red-500">*</span></label>
           <Select v-model="store.form.status" default-value="ABERTA">
             <SelectTrigger class="w-full bg-card dark:bg-card-dark">
@@ -298,7 +298,7 @@ onMounted(() => {
           <p v-if="erros.status" class="text-red-600 text-sm">{{ erros.status }}</p>
         </div>
 
-        <div class="md:col-span-6">
+        <div class="col-span-6 md:col-span-6">
           <label class="block text-sm mb-1">Responsável <span class="text-red-500">*</span></label>
           <Select2Ajax :disabled="(hasPermission(storeUi.usuarioLogged, 3) ? false : true)"
             v-model="store.form.vendedorId" class="w-full" url="/usuarios/select2" />
@@ -306,7 +306,7 @@ onMounted(() => {
         </div>
 
 
-        <div class="md:col-span-2">
+        <div class="col-span-6 md:col-span-2">
           <label for="garantia" class="block text-sm mb-1">Garantia (dias)</label>
           <NumberField v-model="store.form.garantia" class="bg-card dark:bg-card-dark" id="garantia" :default-value="0"
             :min="0">
@@ -318,7 +318,7 @@ onMounted(() => {
           </NumberField>
         </div>
 
-        <div class="md:col-span-2">
+        <div class="col-span-6 md:col-span-2">
           <label for="tipo_desconto" class="block text-sm mb-1">Tipo desconto <span
               class="text-red-500">*</span></label>
           <Select required v-model="store.tipoDesconto">
@@ -335,7 +335,7 @@ onMounted(() => {
             </SelectContent>
           </Select>
         </div>
-        <div class="md:col-span-2">
+        <div class="col-span-6 md:col-span-2">
           <label for="input_desconto_venda_formulario" class="block text-sm mb-1">Valor desconto</label>
           <Input v-model="(store.form.desconto as number)" type="text" id="input_desconto_venda_formulario"
             name="desconto" v-maska="moneyMaskOptions"
@@ -343,13 +343,13 @@ onMounted(() => {
             placeholder="Ex: 1,99" />
         </div>
         <!-- Observações -->
-        <div class="md:col-span-6">
+        <div class="col-span-12 md:col-span-6">
           <label for="descricao_os" class="block text-sm mb-1">Descrição</label>
           <textarea v-model="store.form.descricao" name="observacoes" id="descricao_os"
             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
             rows="3" placeholder="Descrição da OS..."></textarea>
         </div>
-        <div class="md:col-span-6">
+        <div class="col-span-12 md:col-span-6">
           <label for="observacoes_internas_os" class="block text-sm mb-1">Observações cliente</label>
           <textarea v-model="store.form.descricaoCliente" name="observacoes" id="observacoes_internas_os"
             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
@@ -361,8 +361,8 @@ onMounted(() => {
       <hr class="border-border dark:border-border-dark">
 
       <!-- Adição de produtos -->
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-        <div class="md:col-span-2">
+      <div class="grid grid-cols-12 gap-4 items-end">
+        <div class="col-span-4 md:col-span-2">
           <label class="block text-sm mb-1">Tipo item <span class="text-red-500">*</span></label>
           <Select required v-model="adicionarTipo">
             <SelectTrigger class="w-full bg-card dark:bg-card-dark">
@@ -378,18 +378,18 @@ onMounted(() => {
             </SelectContent>
           </Select>
         </div>
-        <div v-if="adicionarTipo === 'PRODUTO'" class="md:col-span-5">
+        <div v-if="adicionarTipo === 'PRODUTO'" class="col-span-8 md:col-span-5">
           <label class="block text-sm mb-1">Produto <span class="text-red-500">*</span></label>
           <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
             url="/produtos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
         </div>
-        <div v-else class="md:col-span-5">
+        <div v-else class="col-span-8 md:col-span-5">
           <label class="block text-sm mb-1">Serviço <span class="text-red-500">*</span></label>
           <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
             url="/servicos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
         </div>
 
-        <div class="md:col-span-2">
+        <div class="col-span-4 md:col-span-2">
           <label for="quantidade_carrinho_adicionar" class="block text-sm mb-1">Quantidade <span
               class="text-red-500">*</span></label>
           <NumberField v-model="addItemForm.quantidade" class="bg-card dark:bg-card-dark"
@@ -402,14 +402,14 @@ onMounted(() => {
           </NumberField>
         </div>
 
-        <div class="md:col-span-2">
+        <div class="col-span-6 md:col-span-2">
           <label class="block text-sm mb-1">Preço <span class="text-red-500">*</span></label>
           <Input v-model="(addItemForm.preco as number)" :disabled="!ableAdd" type="text" placeholder="R$ 0,00"
             v-maska="moneyMaskOptions" id="input_preco_venda_formulario"
             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
         </div>
 
-        <div class="md:col-span-1">
+        <div class="col-span-2 md:col-span-1">
           <Button type="button" :disabled="!ableAdd" @click="addToCartVendas" class="text-white w-full">
             <PackagePlus v-if="adicionarTipo === 'PRODUTO'" />
             <FilePlus v-else />

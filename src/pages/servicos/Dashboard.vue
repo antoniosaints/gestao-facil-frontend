@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Clock, Wrench, Undo2 } from "lucide-vue-next"
+import { PlusCircle, Clock, Wrench, Undo2, BadgePlus, PlusSquare } from "lucide-vue-next"
 import Calendario from "@/components/calendario/Calendario.vue"
 import { onMounted, ref } from "vue"
 import type { OrdensServico } from "@/types/schemas"
@@ -11,7 +11,10 @@ import { watch } from "vue"
 import { endOfMonth, startOfMonth } from "date-fns"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { goBack, goTo } from "@/hooks/links"
+import { useOrdemServicoStore } from "@/stores/servicos/useOrdensServicos"
+import OrdemServicoModal from "./modais/OrdemServicoModal.vue"
 
+const osStore = useOrdemServicoStore();
 const dataSelecionada = ref(new Date())
 const uiStore = useUiStore()
 
@@ -36,7 +39,6 @@ const getDataDashboard = async () => {
             OrdensServicoRepository.getResumo(),
             OrdensServicoRepository.getEventos(inicio, fim),
         ])
-        console.log(r, e)
         resumo.value = r.data
         eventos.value = e.data
     } catch (error) {
@@ -45,6 +47,10 @@ const getDataDashboard = async () => {
 }
 
 watch(dataSelecionada, () => {
+    getDataDashboard()
+})
+
+watch(() => osStore.filters.update, () => {
     getDataDashboard()
 })
 
@@ -64,9 +70,10 @@ onMounted(() => {
                 </h2>
                 <p class="text-sm text-muted-foreground">Acompanhamento e controle de serviços</p>
             </div>
-            <Button class="text-white">
-                <PlusCircle class="w-4 h-4 mr-2" /> Nova OS
-            </Button>
+            <button @click="osStore.openSave"
+                class="bg-primary text-white px-3 py-2 text-sm rounded-md items-center gap-1 hidden md:flex">
+                <BadgePlus class="h-5 w-5 inline-flex" /> <span>Novo serviço</span>
+            </button>
         </div>
 
         <!-- Estatísticas -->
@@ -79,7 +86,7 @@ onMounted(() => {
                 <CardContent>
                     <div class="text-xl md:text-2xl font-bold text-primary dark:text-blue-500">{{
                         formatCurrencyBR(resumo?.aberta!)
-                    }}</div>
+                        }}</div>
                     <div class="text-sm">Quantidade: {{ resumo?.qtdAberta }}</div>
                 </CardContent>
             </Card>
@@ -91,7 +98,7 @@ onMounted(() => {
                 <CardContent>
                     <div class="text-xl md:text-2xl font-bold text-info dark:text-cyan-500">{{
                         formatCurrencyBR(resumo?.andamento!)
-                        }}</div>
+                    }}</div>
                     <div class="text-sm">Quantidade: {{ resumo?.qtdAndamento }}</div>
                 </CardContent>
             </Card>
@@ -103,7 +110,7 @@ onMounted(() => {
                 <CardContent>
                     <div class="text-xl md:text-2xl font-bold text-success dark:text-green-500">{{
                         formatCurrencyBR(resumo?.faturado!)
-                        }}</div>
+                    }}</div>
                     <div class="text-sm">Quantidade: {{ resumo?.faturado }}</div>
                 </CardContent>
             </Card>
@@ -115,7 +122,7 @@ onMounted(() => {
                 <CardContent>
                     <div class="text-xl md:text-2xl font-bold text-muted-foreground dark:text-gray-400">{{
                         formatCurrencyBR(resumo?.total!)
-                        }}</div>
+                    }}</div>
                     <div class="text-sm">Quantidade: {{ resumo?.quantidade }}</div>
                 </CardContent>
             </Card>
@@ -131,11 +138,17 @@ onMounted(() => {
                 <Wrench />
                 <span class="text-xs">Serviços</span>
             </button>
+            <button type="button" @click="osStore.openSave"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <PlusSquare />
+                <span class="text-xs">Nova OS</span>
+            </button>
             <button type="button" @click="goBack"
                 class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
                 <Undo2 />
                 <span class="text-xs">Voltar</span>
             </button>
         </nav>
+        <OrdemServicoModal />
     </div>
 </template>

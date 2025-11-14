@@ -10,11 +10,11 @@ const hoje = selectedDate.value
 const inicioDia = startOfDay(hoje)
 
 // gera lista de horas (08h às 18h por exemplo)
-const horas = Array.from({ length: 11 }, (_, i) => addHours(inicioDia, i + 8))
+const horas = Array.from({ length: 18 }, (_, i) => addHours(inicioDia, i + 6))
 
 function eventosNaHora(hora: Date) {
     return props.eventos.filter(e => {
-        const dataEv = e.data
+        const dataEv = new Date(e.data)
         return isEqual(
             new Date(dataEv.getFullYear(), dataEv.getMonth(), dataEv.getDate(), dataEv.getHours(), 0),
             hora

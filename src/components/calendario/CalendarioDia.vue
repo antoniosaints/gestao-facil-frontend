@@ -16,7 +16,7 @@ const eventosHoje = computed(() =>
 )
 const inicioDia = computed(() => startOfDay(selectedDate.value))
 const horas = computed(() =>
-    Array.from({ length: 11 }, (_, i) => addHours(inicioDia.value, i + 8))
+    Array.from({ length: 18 }, (_, i) => addHours(inicioDia.value, i + 6))
 )
 const changeDay = (type: "prev" | "next") => {
     selectedDate.value = type === "prev" ? subDays(selectedDate.value, 1) : addDays(selectedDate.value, 1)
