@@ -20,24 +20,48 @@ const config = ref({
   ativo: true,
 })
 
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    return false
+  }
+}
+
 async function createLinkCadastroPublico() {
   try {
-    const atualizarLink = await http.post('/contas/parametros/linkpublico', {
+    await http.post('/contas/parametros/linkpublico', {
       quantidade: config.value.quantidade_usos,
       ativo: config.value.ativo,
     })
-    console.log(atualizarLink)
+
     const idConta = HashGenerator.encode(uiStore.contaInfo.id!)
-    const link = window.location.origin + `/publico/${idConta}/cadastro`
-    const texto = `${link}`
-    navigator.clipboard.writeText(texto)
+    const link = `${window.location.origin}/publico/${idConta}/cadastro`
+
+    const ok = await copyToClipboard(link)
+
+    if (!ok) {
+      // fallback sem execCommand — exibe input para o usuário tocar e copiar
+      const input = document.createElement('input')
+      input.value = link
+      input.style.position = 'fixed'
+      input.style.opacity = '0'
+      document.body.appendChild(input)
+      input.focus()
+      input.select()
+      // O usuário deve clicar e copiar manualmente
+      toast.info('Toque e copie o link na barra de seleção.')
+      return
+    }
+
     toast.success('Link copiado com sucesso!')
     open.value = false
   } catch (error: any) {
-    console.log(error)
-    toast.error(error.response.data.message || 'Erro ao copiar o link!')
+    toast.error('Erro ao copiar o link!')
   }
 }
+
 </script>
 
 <template>
