@@ -10,6 +10,8 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   const openModal = ref(false)
   const openModalChecklist = ref(false)
   const openModalPropor = ref(false)
+  const openModalDetalheOs = ref(false)
+  const ordemDetalhe = ref<OrdensServico>()
   const carrinho = ref<CarrinhoOS[]>([])
   const idMutation = ref<number | null>(null)
   const tipoDesconto = ref<'VALOR' | 'PORCENTAGEM'>('VALOR')
@@ -67,6 +69,12 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
     if (form.value.id) reset()
     openModal.value = true
   }
+  const openDetalhes = async (id: number) => {
+    const response = await OrdensServicoRepository.get(id)
+    console.log(response)
+    ordemDetalhe.value = response
+    openModalDetalheOs.value = true
+  }
   const openUpdate = async (id: number) => {
     const response = await OrdensServicoRepository.get(id)
     carrinho.value = []
@@ -117,6 +125,9 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
     openModal,
     openModalChecklist,
     openModalPropor,
+    openModalDetalheOs,
+    openDetalhes,
+    ordemDetalhe,
     idMutation,
     carrinho,
     tipoDesconto,

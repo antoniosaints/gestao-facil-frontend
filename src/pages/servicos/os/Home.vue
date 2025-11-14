@@ -12,6 +12,7 @@ import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos';
 import ModalChecklist from '../modais/ModalChecklist.vue';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 import { OrdensServicoRepository } from '@/repositories/os-repository';
+import ModalDetalhesOrdem from './ModalDetalhesOrdem.vue';
 const store = useOrdemServicoStore();
 const uiStore = useUiStore()
 const toast = useToast()
@@ -85,5 +86,6 @@ async function excluirEmLote() {
         <OrdemServicoModal />
         <ModalChecklist />
         <ClientesModal />
+        <ModalDetalhesOrdem />
     </div>
 </template>

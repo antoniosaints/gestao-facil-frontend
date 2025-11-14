@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileArchive, Menu } from 'lucide-vue-next'
+import { FileArchive, Info, Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { OrdensServico } from '@/types/schemas';
@@ -54,6 +54,10 @@ async function getPDFOs(id: number, Uid: string) {
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+            <DropdownMenuItem @click="store.openDetalhes(data.id!)">
+                <Info />
+                Detalhes
+            </DropdownMenuItem>
             <DropdownMenuItem @click="store.openUpdate(data.id!)">
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
