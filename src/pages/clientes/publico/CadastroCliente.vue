@@ -50,25 +50,31 @@
           </div>
           <div>
             <Label for="telefone">Telefone</Label>
-            <Input id="telefone" v-model="form.telefone" placeholder="Digite seu telefone" inputmode="tel" />
+            <Input id="telefone" v-model="form.telefone" v-maska="phoneMaskOptions" placeholder="Digite seu telefone"
+              inputmode="tel" />
+            <p v-if="errors.telefone" class="text-sm text-red-500 mt-1">{{ errors.telefone }}</p>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
             <Label for="whatsapp">WhatsApp</Label>
-            <Input id="whatsapp" v-model="form.whatsapp" placeholder="Digite seu WhatsApp" inputmode="tel" />
+            <Input id="whatsapp" v-model="form.whatsapp" v-maska="phoneMaskOptions" placeholder="Digite seu WhatsApp"
+              inputmode="tel" />
           </div>
           <div>
             <Label for="cep">CEP</Label>
-            <Input id="cep" v-model="form.cep" placeholder="Digite seu CEP" maxlength="9" />
+            <Input id="cep" v-model="form.cep" v-maska="cepMaskOptions" inputmode="numeric" placeholder="Digite seu CEP"
+              maxlength="9" />
+            <p v-if="errors.cep" class="text-sm text-red-500 mt-1">{{ errors.cep }}</p>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
             <Label for="cidade">Cidade</Label>
-            <Input id="cidade" v-model="form.cidade" placeholder="Digite sua cidade" />
+            <Input id="cidade" v-model="form.cidade" required placeholder="Digite sua cidade" />
+            <p v-if="errors.cidade" class="text-sm text-red-500 mt-1">{{ errors.cidade }}</p>
           </div>
           <div>
             <Label for="estado">Estado</Label>
@@ -80,6 +86,7 @@
                 <SelectItem v-for="uf in estados" :key="uf" :value="uf">{{ uf }}</SelectItem>
               </SelectContent>
             </Select>
+            <p v-if="errors.estado" class="text-sm text-red-500 mt-1">{{ errors.estado }}</p>
           </div>
         </div>
 
@@ -141,6 +148,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { cepMaskOptions, phoneMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import { type Contas } from '@/types/schemas'
 import http from '@/utils/axios'
 import { HashGenerator } from '@/utils/generators'
@@ -211,7 +220,11 @@ const logo = computed(() => {
 function validate() {
   errors.name = form.name.trim() ? '' : 'Nome é obrigatório.'
   errors.email = /^\S+@\S+\.\S+$/.test(form.email || '') ? '' : 'Email inválido.'
-  return !errors.name && !errors.email
+  errors.telefone = /^\d{11}$/.test(form.telefone || '') ? '' : 'Telefone inválido.'
+  errors.cidade = form.cidade.trim() ? '' : 'Cidade é obrigatório.'
+  errors.estado = form.estado.trim() ? '' : 'Estado é obrigatório.'
+  errors.cep = /^\d{5}(-\d{3})?$/.test(form.cep || '') ? '' : 'CEP inválido.'
+  return !errors.name && !errors.email && !errors.telefone && !errors.cidade && !errors.cep && !errors.estado
 }
 
 function copiarMeuId(id: string) {
