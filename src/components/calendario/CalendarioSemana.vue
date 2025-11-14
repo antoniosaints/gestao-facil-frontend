@@ -44,13 +44,18 @@ function changeWeek(type: "prev" | "next") {
         <ArrowBigRight class="cursor-pointer p-2" :size="35" @click="changeWeek('next')" />
     </div>
     <div class="grid grid-cols-7 gap-2">
+
         <div v-for="dia in diasSemana" :key="dia.toISOString()" class="border rounded p-2 text-sm"
             :class="{ 'bg-slate-200 dark:bg-slate-800': isSameDay(dia, new Date()) }">
             <div>{{ formatToCapitalize(format(dia, "EEE dd/MM", { locale: ptBR })) }}</div>
             <div v-for="ev in eventosDoDia(dia)" :key="ev.id"
-                class="mt-1 bg-primary text-xs truncate text-white px-1 rounded">
+                class="mt-1 bg-primary text-xs truncate text-white px-1 py-1 rounded">
                 {{ format(new Date(ev.data), "HH:mm") }}
                 {{ ev.descricao || "Sem descrição" }}
+            </div>
+            <div v-show="!eventosDoDia(dia).length"
+                class="mt-1 bg-gray-100 dark:bg-gray-800 text-xs truncate px-1 py-1 rounded">
+                Sem informação
             </div>
         </div>
     </div>
