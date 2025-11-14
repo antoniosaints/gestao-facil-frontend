@@ -140,7 +140,7 @@
                             <div class="grid grid-cols-1 gap-3">
                                 <div v-for="p in store.ordemDetalhe.ItensOrdensServico.filter(p => p.tipo === 'PRODUTO')"
                                     :key="p.id"
-                                    class="flex items-center gap-3 border rounded-lg p-3 hover:bg-muted/40 transition">
+                                    class="flex items-center gap-3 border rounded-lg px-4 py-2 hover:bg-muted/40 transition">
                                     <div class="w-14 h-14 rounded-full overflow-hidden shadow-sm">
                                         <img :src="'/imgs/logo.png'" :alt="'IMG'" class="w-full h-full object-cover" />
                                     </div>
@@ -180,10 +180,7 @@
                             <div class="grid grid-cols-1 gap-3">
                                 <div v-for="p in store.ordemDetalhe.ItensOrdensServico.filter(p => p.tipo === 'SERVICO')"
                                     :key="p.id"
-                                    class="flex items-center gap-3 border rounded-lg p-3 hover:bg-muted/40 transition">
-                                    <div class="w-14 h-14 rounded-full overflow-hidden shadow-sm">
-                                        <img :src="'/imgs/logo.png'" :alt="'IMG'" class="w-full h-full object-cover" />
-                                    </div>
+                                    class="flex items-center gap-3 border rounded-lg px-4 py-2 hover:bg-muted/40 transition">
 
                                     <div class="flex-1 flex flex-col">
                                         <div class="font-semibold text-sm">{{ p.itemName }}</div>
@@ -204,7 +201,7 @@
                                     </div>
                                 </div>
 
-                                <div v-if="!servicos.length"
+                                <div v-if="!store.ordemDetalhe.ItensOrdensServico.filter(p => p.tipo === 'SERVICO').length"
                                     class="py-6 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
                                     <FileDigit class="h-10 w-10" />
                                     Sem serviços.
