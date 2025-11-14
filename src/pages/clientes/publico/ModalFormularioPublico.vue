@@ -28,12 +28,13 @@ function copiarLink() {
   toast.success('Link copiado com sucesso!')
 }
 
-async function createLinkCadastroPublico() {
+async function salvarConfiguracaoLink() {
   try {
     await http.post('/contas/parametros/linkpublico', {
       quantidade: config.value.quantidade_usos,
       ativo: config.value.ativo,
     })
+    toast.success('Configurações salvas com sucesso')
   } catch (error: any) {
     console.log(error)
     toast.error(error.response.data.message || 'Erro ao copiar o link!')
@@ -67,7 +68,7 @@ async function createLinkCadastroPublico() {
           <Button @click="open = false" variant="outline">
             <CircleX /> Fechar
           </Button>
-          <Button class="text-white" @click="createLinkCadastroPublico">
+          <Button class="text-white" @click="salvarConfiguracaoLink">
             <Save /> Salvar
           </Button>
         </div>
