@@ -110,6 +110,7 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
 
   const updateTable = () => {
     filters.value.update = !filters.value.update
+    resetSelectedIds()
   }
 
   return {
