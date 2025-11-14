@@ -14,19 +14,18 @@ import { useToast } from 'vue-toastification'
 const uiStore = useUiStore()
 const toast = useToast()
 const open = defineModel<boolean>('open', { default: false })
+const idConta = HashGenerator.encode(uiStore.contaInfo.id!)
+const link = ref(window.location.origin + `/publico/${idConta}/cadastro`)
 
 const config = ref({
   quantidade_usos: 1,
   ativo: true,
 })
 
-async function copyToClipboard(text: string) {
-  try {
-    await navigator.clipboard.writeText(text)
-    return true
-  } catch {
-    return false
-  }
+function copiarLink() {
+  const texto = `${link}`
+  navigator.clipboard.writeText(texto)
+  toast.success('Link copiado com sucesso!')
 }
 
 async function createLinkCadastroPublico() {
@@ -35,33 +34,11 @@ async function createLinkCadastroPublico() {
       quantidade: config.value.quantidade_usos,
       ativo: config.value.ativo,
     })
-
-    const idConta = HashGenerator.encode(uiStore.contaInfo.id!)
-    const link = `${window.location.origin}/publico/${idConta}/cadastro`
-
-    const ok = await copyToClipboard(link)
-
-    if (!ok) {
-      // fallback sem execCommand — exibe input para o usuário tocar e copiar
-      const input = document.createElement('input')
-      input.value = link
-      input.style.position = 'fixed'
-      input.style.opacity = '0'
-      document.body.appendChild(input)
-      input.focus()
-      input.select()
-      // O usuário deve clicar e copiar manualmente
-      toast.info('Toque e copie o link na barra de seleção.')
-      return
-    }
-
-    toast.success('Link copiado com sucesso!')
-    open.value = false
   } catch (error: any) {
-    toast.error('Erro ao copiar o link!')
+    console.log(error)
+    toast.error(error.response.data.message || 'Erro ao copiar o link!')
   }
 }
-
 </script>
 
 <template>
@@ -78,12 +55,20 @@ async function createLinkCadastroPublico() {
           <span>Permitir Cadastro</span>
           <Switch v-model="config.ativo" id="permitir_cadastro" />
         </Label>
+        <div class="grid grid-cols-12 items-center col-span-2 gap-2 bg-card border border-border px-3 py-2 rounded-lg">
+          <span class="text-muted-foreground truncate text-xs col-span-9">{{ link }}</span>
+          <button
+            class="text-blue-700 dark:text-blue-200 py-1 px-3 rounded-md bg-blue-200 dark:bg-blue-800 flex justify-center col-span-3"
+            @click="copiarLink">
+            <span class="text-xs">Copiar</span>
+          </button>
+        </div>
         <div class="flex justify-end col-span-2 gap-2">
           <Button @click="open = false" variant="outline">
             <CircleX /> Fechar
           </Button>
           <Button class="text-white" @click="createLinkCadastroPublico">
-            <Save /> Salvar e copiar
+            <Save /> Salvar
           </Button>
         </div>
       </div>
