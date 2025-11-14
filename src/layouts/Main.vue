@@ -15,11 +15,10 @@
             <SidebarMenu :menu="sidebarMenuOptions(store.permissoes)" />
             <div class="grid grid-cols-12 gap-2 items-center justify-center">
                 <LogoutButton class="col-span-10 md:col-span-12" />
-                <ColorToggle class="col-span-2 h-full w-full border border-gray-200 dark:border-gray-700"
-                    v-if="store.isMobile" />
+                <ColorToggle class="col-span-2 h-full w-full" v-if="store.isMobile" />
             </div>
             <button @click="store.toggleSidebar"
-                class="md:hidden mt-4 flex items-center border border-border gap-2 px-4 py-3 rounded-lg transition bg-secondary w-full justify-center">
+                class="md:hidden mt-4 flex items-center border border-gray-400 dark:border-gray-500 gap-2 px-4 py-3 rounded-lg transition bg-sidebar text-white w-full justify-center">
                 <i class="fa-solid fa-circle-xmark mr-1"></i> Fechar
             </button>
         </aside>

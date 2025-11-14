@@ -4,9 +4,10 @@ import { ArrowBigLeft, ArrowBigRight } from "lucide-vue-next"
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatToCapitalize } from "@/utils/formatters";
+import type { OrdensServico } from "@/types/schemas";
 
 const visualizacao = ref<"mes" | "semana" | "dia" | "agenda">(inject("visualizacao", 'mes'))
-const props = defineProps<{ eventos: { id: number; titulo: string; data: string, fim: string }[] }>()
+const props = defineProps<{ eventos: OrdensServico[] }>()
 const hoje = new Date()
 
 const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
@@ -68,7 +69,7 @@ const navigateToDay = (dia: Date) => {
                 <div v-for="ev in eventosDoDia(dia).slice(0, 2)" :key="ev.id"
                     class="mt-1 bg-primary text-white truncate px-1 rounded">
                     {{ format(new Date(ev.data), "HH:mm") }}
-                    {{ ev.titulo }}
+                    {{ ev.descricao || "Sem descrição" }}
                 </div>
                 <div v-if="eventosDoDia(dia).length > 2" class="text-xs text-gray-500 dark:text-gray-300 ">
                     {{ eventosDoDia(dia).length - 2 }} mais ...

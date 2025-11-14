@@ -101,11 +101,11 @@ export const useUiStore = defineStore('uiStore', () => {
       superadmin: usuarioLogged.value.superAdmin,
       admin: hasPermission(usuarioLogged.value, 4),
       produtos: {
-        editar: hasPermission(usuarioLogged.value, 2),
-        visualizar: hasPermission(usuarioLogged.value, 1),
-        criar: hasPermission(usuarioLogged.value, 3),
+        editar: hasPermission(usuarioLogged.value, 4),
+        visualizar: hasPermission(usuarioLogged.value, 4),
+        criar: hasPermission(usuarioLogged.value, 4),
         excluir: hasPermission(usuarioLogged.value, 4),
-        painel: hasPermission(usuarioLogged.value, 3),
+        painel: hasPermission(usuarioLogged.value, 4),
       },
       clientes: {
         editar: hasPermission(usuarioLogged.value, 2),

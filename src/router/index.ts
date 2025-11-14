@@ -192,7 +192,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/produtos/Home.vue'),
         meta: {
           layout: 'main',
-          permissao: 2,
+          permissao: 4,
         },
       },
       {
@@ -201,7 +201,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/produtos/others/DetalhesProduto.vue'),
         meta: {
           layout: 'main',
-          permissao: 2,
+          permissao: 4,
         },
       },
       {
@@ -210,7 +210,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/produtos/dashboard/DashboardProdutos.vue'),
         meta: {
           layout: 'main',
-          permissao: 3,
+          permissao: 4,
         },
       },
     ],

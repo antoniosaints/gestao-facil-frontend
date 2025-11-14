@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { OrdensServico } from "@/types/schemas";
 import { formatToCapitalize } from "@/utils/formatters";
 import { startOfWeek, addDays, format, isSameDay } from "date-fns"
 import { ptBR } from "date-fns/locale";
@@ -6,7 +7,7 @@ import { ArrowBigLeft, ArrowBigRight } from "lucide-vue-next";
 import { computed, inject, ref } from "vue";
 
 const selectedDate = ref(inject("selectedDate", new Date()))
-const props = defineProps<{ eventos: { id: number; titulo: string; data: string, fim: string }[] }>()
+const props = defineProps<{ eventos: OrdensServico[] }>()
 
 // início da semana reativo
 const inicioSemana = computed(() =>
@@ -49,7 +50,7 @@ function changeWeek(type: "prev" | "next") {
             <div v-for="ev in eventosDoDia(dia)" :key="ev.id"
                 class="mt-1 bg-primary text-xs truncate text-white px-1 rounded">
                 {{ format(new Date(ev.data), "HH:mm") }}
-                {{ ev.titulo }}
+                {{ ev.descricao || "Sem descrição" }}
             </div>
         </div>
     </div>

@@ -5,6 +5,7 @@ import { ClienteRepository } from '@/repositories/cliente-repository'
 
 export const useClientesStore = defineStore('clientesStore', () => {
   const openModal = ref(false)
+  const openModalLink = ref(false)
   const idMutation = ref<number | null>(null)
 
   const form = ref<ClientesFornecedores>({
@@ -62,6 +63,7 @@ export const useClientesStore = defineStore('clientesStore', () => {
 
   return {
     openModal,
+    openModalLink,
     idMutation,
     openSave,
     openUpdate,

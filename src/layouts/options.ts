@@ -153,7 +153,7 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
       children: [
         {
           nome: 'Painel',
-          show: permissions.superadmin,
+          show: permissions.admin,
           link: '/servicos/painel',
           color: 'yellow',
           icone: ChartPie,

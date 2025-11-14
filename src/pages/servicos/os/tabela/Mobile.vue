@@ -15,7 +15,7 @@
             <div v-for="row in dataMobile" :key="row.id"
                 class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
-                    <div class="text-sm font-semibold dark:text-white">{{ row.descricao }}</div>
+                    <div class="text-sm font-semibold dark:text-white">{{ row.descricao || 'Sem descrição' }}</div>
                     <div
                         :class="['text-sm', row.status ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
                         {{ row.status ? 'Ativo' : 'Inativo' }}

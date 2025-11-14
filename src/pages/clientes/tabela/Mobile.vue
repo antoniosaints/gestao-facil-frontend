@@ -80,10 +80,19 @@
                     <div @click="openSave"
                         class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
                         <div
-                            class="flex justify-center items-center p-2 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
-                            <i class="fa-solid fa-circle-plus text-2xl text-gray-500 dark:text-gray-400"></i>
+                            class="flex justify-center items-center mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                            <UserPlus class="w-6 h-6" />
                         </div>
                         <div class="font-medium text-center text-gray-500 dark:text-gray-400">Cadastrar</div>
+                    </div>
+
+                    <div @click="store.openModalLink = true"
+                        class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                        <div
+                            class="flex justify-center items-center mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                            <Link class="w-6 h-6" />
+                        </div>
+                        <div class="font-medium text-center text-gray-500 dark:text-gray-400">Link</div>
                     </div>
                     <!-- Outros itens iguais -->
                 </div>
@@ -129,7 +138,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { PenLine, Trash } from "lucide-vue-next";
+import { Link, PenLine, Trash, UserPlus } from "lucide-vue-next";
 import { useClientesStore } from "@/stores/clientes/useClientes";
 import type { ClientesFornecedores } from "@/types/schemas";
 import { useConfirm } from "@/composables/useConfirm";

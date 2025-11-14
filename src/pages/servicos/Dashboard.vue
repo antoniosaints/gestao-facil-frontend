@@ -1,32 +1,56 @@
 <script setup lang="ts">
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { PlusCircle, ClipboardList, CheckCircle2, Clock, DollarSign, Wrench } from "lucide-vue-next"
+import { PlusCircle, Clock, Wrench, Undo2 } from "lucide-vue-next"
 import Calendario from "@/components/calendario/Calendario.vue"
+import { onMounted, ref } from "vue"
+import type { OrdensServico } from "@/types/schemas"
+import { OrdensServicoRepository } from "@/repositories/os-repository"
+import { formatCurrencyBR } from "@/utils/formatters"
+import { watch } from "vue"
+import { endOfMonth, startOfMonth } from "date-fns"
+import { useUiStore } from "@/stores/ui/uiStore"
+import { goBack, goTo } from "@/hooks/links"
 
-const estatisticas = [
-    { titulo: "Abertas", valor: 12, icone: ClipboardList, cor: "text-blue-500" },
-    { titulo: "Em andamento", valor: 8, icone: Clock, cor: "text-yellow-500" },
-    { titulo: "Concluídas", valor: 25, icone: CheckCircle2, cor: "text-green-500" },
-    { titulo: "Faturamento", valor: "R$ 15.000", icone: DollarSign, cor: "text-blue-500" },
-]
+const dataSelecionada = ref(new Date())
+const uiStore = useUiStore()
 
-const ultimasOrdens = [
-    { id: "OS-001", cliente: "Empresa X", status: "Aberta", data: "07/09/2025" },
-    { id: "OS-002", cliente: "João Silva", status: "Em andamento", data: "06/09/2025" },
-    { id: "OS-003", cliente: "Maria Souza", status: "Concluída", data: "05/09/2025" },
-]
+interface ResumoOrdens {
+    total: string
+    faturado: string
+    aberta: string
+    andamento: string
+    quantidade: number
+    qtdAberta: number
+    qtdAndamento: number
+    qtdFaturada: number
+}
 
-const eventos = [
-    { id: 1, titulo: "Troca de tela - Cliente X", data: "2025-09-08T09:30", fim: "2025-09-08T11:00", status: "concluida" },
-    { id: 2, titulo: "Manutenção impressora - Cliente Y", data: "2025-09-08T11:00", fim: "2025-09-08T13:00", status: "concluida" },
-    { id: 3, titulo: "Notebook - Cliente Z", data: "2025-09-08T14:30", fim: "2025-09-08T16:00", status: "concluida" },
-    { id: 4, titulo: "Backup servidor", data: "2025-09-08T16:00", fim: "2025-09-08T18:00", status: "concluida" },
-    { id: 5, titulo: "Pegar o celular", data: "2025-09-09T16:00", fim: "2025-09-09T17:00", status: "concluida" },
-    { id: 6, titulo: "Ajuste no FPC da placa", data: "2025-09-09T14:30", fim: "2025-09-08T16:00", status: "concluida" },
-]
+const resumo = ref<ResumoOrdens>()
+const eventos = ref<OrdensServico[]>([])
+const getDataDashboard = async () => {
+    try {
+        const inicio = startOfMonth(dataSelecionada.value).toISOString();
+        const fim = endOfMonth(dataSelecionada.value).toISOString();
+        const [r, e] = await Promise.all([
+            OrdensServicoRepository.getResumo(),
+            OrdensServicoRepository.getEventos(inicio, fim),
+        ])
+        console.log(r, e)
+        resumo.value = r.data
+        eventos.value = e.data
+    } catch (error) {
+        console.error(error)
+    }
+}
 
+watch(dataSelecionada, () => {
+    getDataDashboard()
+})
+
+onMounted(() => {
+    getDataDashboard()
+})
 </script>
 
 <template>
@@ -46,54 +70,72 @@ const eventos = [
         </div>
 
         <!-- Estatísticas -->
-        <div class="grid gap-4 md:grid-cols-4">
-            <Card v-for="item in estatisticas" :key="item.titulo" class="shadow-md rounded-lg">
-                <CardHeader class="flex flex-row items-center justify-between pb-2">
-                    <CardTitle class="text-sm font-medium">{{ item.titulo }}</CardTitle>
-                    <component :is="item.icone" class="w-5 h-5" :class="item.cor" />
+        <div class="grid gap-4 grid-cols-2 md:grid-cols-4">
+            <Card class="shadow-md rounded-lg">
+                <CardHeader class="flex flex-row items-center justify-between pb-1">
+                    <CardTitle class="text-sm font-medium">Abertas</CardTitle>
+                    <Clock class="h-6 w-6 text-primary dark:text-blue-500" />
                 </CardHeader>
                 <CardContent>
-                    <div class="text-2xl font-bold">{{ item.valor }}</div>
+                    <div class="text-xl md:text-2xl font-bold text-primary dark:text-blue-500">{{
+                        formatCurrencyBR(resumo?.aberta!)
+                    }}</div>
+                    <div class="text-sm">Quantidade: {{ resumo?.qtdAberta }}</div>
+                </CardContent>
+            </Card>
+            <Card class="shadow-md rounded-lg">
+                <CardHeader class="flex flex-row items-center justify-between pb-1">
+                    <CardTitle class="text-sm font-medium">Em andamento</CardTitle>
+                    <Clock class="h-6 w-6 text-info dark:text-cyan-500" />
+                </CardHeader>
+                <CardContent>
+                    <div class="text-xl md:text-2xl font-bold text-info dark:text-cyan-500">{{
+                        formatCurrencyBR(resumo?.andamento!)
+                        }}</div>
+                    <div class="text-sm">Quantidade: {{ resumo?.qtdAndamento }}</div>
+                </CardContent>
+            </Card>
+            <Card class="shadow-md rounded-lg">
+                <CardHeader class="flex flex-row items-center justify-between pb-1">
+                    <CardTitle class="text-sm font-medium">Faturadas</CardTitle>
+                    <Clock class="h-6 w-6 text-success dark:text-green-500" />
+                </CardHeader>
+                <CardContent>
+                    <div class="text-xl md:text-2xl font-bold text-success dark:text-green-500">{{
+                        formatCurrencyBR(resumo?.faturado!)
+                        }}</div>
+                    <div class="text-sm">Quantidade: {{ resumo?.faturado }}</div>
+                </CardContent>
+            </Card>
+            <Card class="shadow-md rounded-lg">
+                <CardHeader class="flex flex-row items-center justify-between pb-1">
+                    <CardTitle class="text-sm font-medium">Resumo geral</CardTitle>
+                    <Clock class="h-6 w-6 text-muted-foreground dark:text-gray-400" />
+                </CardHeader>
+                <CardContent>
+                    <div class="text-xl md:text-2xl font-bold text-muted-foreground dark:text-gray-400">{{
+                        formatCurrencyBR(resumo?.total!)
+                        }}</div>
+                    <div class="text-sm">Quantidade: {{ resumo?.quantidade }}</div>
                 </CardContent>
             </Card>
         </div>
 
-        <Calendario :eventos="eventos" title="Calendário de Serviços"
+        <Calendario v-model:selected-date="dataSelecionada" :eventos="eventos" title="Calendário de Serviços"
             description="Visualização de eventos de serviços" />
 
-        <!-- Últimas Ordens -->
-        <Card class="shadow-md rounded-lg">
-            <CardHeader>
-                <CardTitle>Últimas Ordens de Serviço</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>ID</TableHead>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Data</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow v-for="ordem in ultimasOrdens" :key="ordem.id">
-                            <TableCell>{{ ordem.id }}</TableCell>
-                            <TableCell>{{ ordem.cliente }}</TableCell>
-                            <TableCell>
-                                <span :class="{
-                                    'text-blue-600 font-semibold': ordem.status === 'Aberta',
-                                    'text-yellow-600 font-semibold': ordem.status === 'Em andamento',
-                                    'text-green-600 font-semibold': ordem.status === 'Concluída'
-                                }">
-                                    {{ ordem.status }}
-                                </span>
-                            </TableCell>
-                            <TableCell>{{ ordem.data }}</TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+        <nav v-if="uiStore.isMobile"
+            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
+            <button type="button" @click="goTo('/servicos')"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Wrench />
+                <span class="text-xs">Serviços</span>
+            </button>
+            <button type="button" @click="goBack"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Undo2 />
+                <span class="text-xs">Voltar</span>
+            </button>
+        </nav>
     </div>
 </template>

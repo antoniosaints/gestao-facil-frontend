@@ -32,6 +32,7 @@ async function createLinkCadastroPublico() {
     const texto = `${link}`
     navigator.clipboard.writeText(texto)
     toast.success('Link copiado com sucesso!')
+    open.value = false
   } catch (error: any) {
     console.log(error)
     toast.error(error.response.data.message || 'Erro ao copiar o link!')

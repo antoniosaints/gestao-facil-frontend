@@ -5,9 +5,10 @@ import Button from "../ui/button/Button.vue";
 import { computed, inject, ref } from "vue";
 import { ptBR } from "date-fns/locale";
 import { formatToCapitalize } from "@/utils/formatters";
+import type { OrdensServico } from "@/types/schemas";
 
 const selectedDate = ref(inject("selectedDate", new Date()))
-const props = defineProps<{ eventos: { id: number; titulo: string; data: string, fim: string }[] }>()
+const props = defineProps<{ eventos: OrdensServico[] }>()
 const eventosHoje = computed(() =>
     props.eventos.filter(e =>
         format(new Date(e.data), "yyyy-MM-dd") === format(selectedDate.value, "yyyy-MM-dd")
@@ -59,11 +60,10 @@ const sameHour = (hour: any) => {
                 <div v-for="ev in eventosHoje.filter(e => isSameHour(new Date(e.data), hora))" :key="ev.id"
                     class="px-3 py-2 rounded-sm bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
                     <div class="font-medium truncate">
-                        {{ ev.titulo }}
+                        {{ ev.descricao || "Sem descrição" }}
                     </div>
                     <div class="text-xs">
-                        {{ format(new Date(ev.data), "HH:mm") }} -
-                        {{ format(new Date(ev.fim), "HH:mm") }}
+                        {{ format(new Date(ev.data), "HH:mm") }}
                     </div>
                 </div>
             </div>

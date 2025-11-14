@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { OrdensServico } from "@/types/schemas";
 import { format, startOfDay, addHours, isEqual, parseISO } from "date-fns"
 import { inject, ref } from "vue";
 
 const selectedDate = ref(inject("selectedDate", new Date()))
-const props = defineProps<{ eventos: { id: number; titulo: string; data: string }[] }>()
+const props = defineProps<{ eventos: OrdensServico[] }>()
 
 const hoje = selectedDate.value
 const inicioDia = startOfDay(hoje)
@@ -13,7 +14,7 @@ const horas = Array.from({ length: 11 }, (_, i) => addHours(inicioDia, i + 8))
 
 function eventosNaHora(hora: Date) {
     return props.eventos.filter(e => {
-        const dataEv = parseISO(e.data)
+        const dataEv = e.data
         return isEqual(
             new Date(dataEv.getFullYear(), dataEv.getMonth(), dataEv.getDate(), dataEv.getHours(), 0),
             hora
@@ -37,7 +38,7 @@ function eventosNaHora(hora: Date) {
                     <div v-for="ev in eventosNaHora(hora)" :key="ev.id"
                         class="p-1 text-xs bg-primary text-white rounded-sm">
                         {{ format(new Date(ev.data), "HH:mm") }} -
-                        {{ ev.titulo }}
+                        {{ ev.descricao || "Sem descrição" }}
                     </div>
                 </div>
             </div>

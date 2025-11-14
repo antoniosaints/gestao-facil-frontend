@@ -32,6 +32,19 @@ export class OrdensServicoRepository {
     const data = await http.get(`/servicos/ordens`)
     return data.data
   }
+  static async getEventos(inicio?: string, fim?: string) {
+    const data = await http.get(`/servicos/ordens/dashboard/eventos`, {
+      params: {
+        inicio,
+        fim,
+      },
+    })
+    return data.data
+  }
+  static async getResumo() {
+    const data = await http.get(`/servicos/ordens/dashboard/resumo`)
+    return data.data
+  }
   static async remove(id: number) {
     await http.delete(`/servicos/ordens/${id}`)
   }

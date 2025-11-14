@@ -9,7 +9,6 @@ import { ref } from 'vue'
 import ModalFormularioPublico from './publico/ModalFormularioPublico.vue'
 const store = useClientesStore()
 const uiStore = useUiStore()
-const openModalLink = ref(false)
 </script>
 
 <template>
@@ -23,24 +22,17 @@ const openModalLink = ref(false)
         <p class="text-sm text-muted-foreground">Clientes cadastrados no sistema</p>
       </div>
       <div class="justify-between gap-2 items-center hidden md:flex">
-        <button
-          @click="openModalLink = true"
-          class="bg-success text-white border border-border px-2 py-1.5 text-sm rounded-md flex gap-2 items-center"
-        >
+        <button @click="store.openModalLink = true"
+          class="bg-success text-white border border-border px-2 py-1.5 text-sm rounded-md flex gap-2 items-center">
           <Link class="w-5 h-5 inline-flex" />
           <span class="hidden md:inline">Link público</span>
         </button>
-        <button
-          @click="store.openSave"
-          class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1"
-        >
+        <button @click="store.openSave"
+          class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
           <BadgePlus class="h-5 w-5 inline-flex" />
           <span class="hidden md:inline">Novo cliente</span>
         </button>
-        <button
-          @click="store.updateTable"
-          class="bg-background border border-border px-2 py-1.5 text-sm rounded-md"
-        >
+        <button @click="store.updateTable" class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
           <RotateCw class="w-5 h-5" />
         </button>
       </div>
@@ -52,6 +44,6 @@ const openModalLink = ref(false)
       <Mobile />
     </div>
     <ClientesModal />
-    <ModalFormularioPublico v-model:open="openModalLink" />
+    <ModalFormularioPublico v-model:open="store.openModalLink" />
   </div>
 </template>

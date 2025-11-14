@@ -7,20 +7,23 @@ import CalendarioMes from "@/components/calendario/CalendarioMes.vue"
 import CalendarioSemana from "@/components/calendario/CalendarioSemana.vue"
 import CalendarioDia from "@/components/calendario/CalendarioDia.vue"
 import CalendarioAgenda from "@/components/calendario/CalendarioAgenda.vue"
+import type { OrdensServico } from "@/types/schemas"
 
 const visualizacao = ref<"mes" | "semana" | "dia" | "agenda">("mes")
-const selectedDate = ref(new Date())
+const selectedDate = defineModel("selectedDate", {
+    default: new Date(),
+})
 
 provide("visualizacao", visualizacao);
 provide("selectedDate", selectedDate);
 
 interface Props {
-    eventos: { id: number; titulo: string; data: string, fim: string }[]
+    eventos: OrdensServico[]
     title: string
     description?: string
 }
-
 defineProps<Props>()
+
 </script>
 
 <template>
