@@ -1,5 +1,6 @@
 <template>
-  <Button @click="toggleColorMode" variant="ghost" class="rounded-xl w-10 bg-primary hover:bg-primary/80 text-white">
+  <Button @click="toggleColorMode" variant="ghost"
+    class="rounded-xl w-10 bg-primary md:border md:bg-card md:hover:bg-card/80 hover:bg-primary/80 text-white md:text-gray-700 md:dark:text-gray-200">
     <Sun v-show="showSun" />
     <Moon v-show="!showSun" />
   </Button>
