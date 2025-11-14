@@ -56,6 +56,10 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
       ),
     cell: ({ row }) => {
       return render(BadgeCell, {
+        onClick: () => {
+          store.openDetalhes(row.original.id!)
+        },
+        class: 'cursor-pointer',
         label: row.original.Uid!,
         color: 'gray',
         icon: FileBox,

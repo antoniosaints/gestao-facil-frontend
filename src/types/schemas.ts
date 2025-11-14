@@ -258,6 +258,16 @@ export interface OrdensServico {
   data: Date
 }
 
+export interface MensagensInteracoesOrdemServico {
+  id?: number
+  ordemId: number
+  mensagem: string
+  tipo: 'ABERTURA' | 'MENSAGEM' | 'ENCERRAMENTO'
+  autorId: number
+  Autor?: Usuarios
+  data: string
+}
+
 export interface ItensOrdensServico {
   id?: number
   itemName: string
@@ -465,4 +475,11 @@ export interface SaveOrdemServico {
     valor: number
     quantidade: number
   }[]
+}
+
+export type IDetalheOrdemServico = OrdensServico & {
+  ItensOrdensServico: ItensOrdensServico[]
+  Cliente: ClientesFornecedores
+  MensagensInteracoesOrdemServico: MensagensInteracoesOrdemServico[]
+  Operador: Usuarios
 }

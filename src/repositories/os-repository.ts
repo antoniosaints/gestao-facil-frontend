@@ -1,5 +1,5 @@
 import type {
-  ClientesFornecedores,
+  IDetalheOrdemServico,
   ItensOrdensServico,
   OrdensServico,
   SaveOrdemServico,
@@ -10,6 +10,10 @@ export class OrdensServicoRepository {
     id: number,
   ): Promise<OrdensServico & { ItensOrdensServico: ItensOrdensServico[] }> {
     const { data } = await http.get(`/servicos/ordens/${id}`)
+    return data.data
+  }
+  static async getDetalhes(id: number): Promise<IDetalheOrdemServico> {
+    const { data } = await http.get(`/servicos/ordem-detalhe/${id}`)
     return data.data
   }
   static async getOsPdf(id: number, UID: string): Promise<any> {

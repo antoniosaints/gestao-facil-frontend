@@ -29,6 +29,10 @@
                 <div class="text-xs text-gray-500 dark:text-gray-400">Cliente: {{ row.Cliente?.nome || '-' }}</div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-2">
+                        <button @click="store.openDetalhes(row.id!)"
+                            class="bg-cyan-200 text-cyan-900 dark:text-cyan-100 dark:bg-cyan-800 px-2 py-1 rounded-md text-sm">
+                            <Eye class="w-5 h-5" />
+                        </button>
                         <button @click="store.openUpdate(row.id!)"
                             class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
                             <PenLine class="w-5 h-5" />
@@ -125,7 +129,7 @@ import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import type { ItensOrdensServico, OrdensServico } from "@/types/schemas";
-import { PenLine, Trash } from "lucide-vue-next";
+import { Eye, PenLine, Trash } from "lucide-vue-next";
 import { useConfirm } from "@/composables/useConfirm";
 import { useToast } from "vue-toastification";
 import { watch } from "vue";

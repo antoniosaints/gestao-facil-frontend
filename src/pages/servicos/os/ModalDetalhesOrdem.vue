@@ -8,13 +8,13 @@
         <div v-if="store.ordemDetalhe" class="flex flex-col gap-3 px-4">
             <Tabs v-model:default-value="activeTab">
                 <div class="overflow-auto max-w-full">
-                    <TabsList class="bg-gray-200 dark:bg-gray-700 rounded-lg grid w-max grid-cols-5">
+                    <TabsList class="bg-gray-200 dark:bg-gray-700 rounded-lg grid w-max grid-cols-4">
                         <TabsTrigger value="geral">
                             <Info class="inline-flex mr-1 w-4 h-4" /> Geral
                         </TabsTrigger>
-                        <TabsTrigger value="arquivos">
+                        <!-- <TabsTrigger value="arquivos">
                             <FileSymlink class="inline-flex mr-1 w-4 h-4" /> Arquivos
-                        </TabsTrigger>
+                        </TabsTrigger> -->
                         <TabsTrigger value="mensagens">
                             <MessageCircleMore class="inline-flex mr-1 w-4 h-4" />Mensagens
                         </TabsTrigger>
@@ -27,21 +27,38 @@
                     </TabsList>
                 </div>
                 <TabsContent value="geral" class="mt-3">
-                    <div class="grid grid-cols-2 gap-4 text-sm px-2">
+                    <div class="grid grid-cols-2 gap-4 px-2">
                         <div>
-                            <p><strong>Cliente:</strong> {{ store.ordemDetalhe.clienteId || '—' }}</p>
-                            <p><strong>Telefone:</strong> {{ store.ordemDetalhe.clienteId || '—' }}</p>
-                            <p><strong>Data de abertura:</strong> {{ store.ordemDetalhe.data || '—' }}</p>
-                            <p><strong>Desconto:</strong> {{ store.ordemDetalhe.desconto || '—' }}</p>
+                            <p><strong class="text-muted-foreground font-normal">Cliente:</strong>
+                                {{ store.ordemDetalhe.Cliente.nome }}</p>
+                            <p><strong class="text-muted-foreground font-normal">Telefone:</strong>
+                                {{ store.ordemDetalhe.Cliente.telefone || '—' }}</p>
+                            <p><strong class="text-muted-foreground font-normal">Data de abertura:</strong>
+                                {{ format(store.ordemDetalhe.data, 'dd/MM/yyyy') || '—' }}
+                            </p>
+                            <p><strong class="text-muted-foreground font-normal">Desconto:</strong>
+                                {{ store.ordemDetalhe.desconto || '—' }}</p>
                         </div>
                         <div>
-                            <p><strong>Total:</strong> {{ formatMoney(store.ordemDetalhe.desconto || 0) }}</p>
-                            <p><strong>Desconto:</strong> {{ formatMoney(store.ordemDetalhe.desconto || 0) }}</p>
-                            <p><strong>Total Final:</strong> {{ formatMoney((store.ordemDetalhe.desconto || 0) -
-                                (store.ordemDetalhe.desconto || 0))
-                            }}</p>
-                            <p><strong>Responsável:</strong> {{ store.ordemDetalhe.operadorId || '—' }}</p>
+                            <p><strong class="text-muted-foreground font-normal">Total:</strong>
+                                {{formatMoney(store.ordemDetalhe.ItensOrdensServico.reduce((a,
+                                    b) => a + b.quantidade * b.valor, 0) || 0)}}</p>
+                            <p><strong class="text-muted-foreground font-normal">Desconto:</strong> {{
+                                formatMoney(store.ordemDetalhe.desconto || 0) }}</p>
+                            <p><strong class="text-muted-foreground font-normal">Total Final:</strong>
+                                {{formatMoney(store.ordemDetalhe.ItensOrdensServico.reduce((a, b) => a + b.quantidade *
+                                    b.valor, 0) - store.ordemDetalhe.desconto || 0)}}
+                            </p>
+                            <p><strong class="text-muted-foreground font-normal">Responsável:</strong>
+                                {{ store.ordemDetalhe.Operador.nome || '—' }}</p>
                         </div>
+                    </div>
+                    <hr class="mx-2 mt-2">
+                    <div class="mt-3 px-2">
+                        <p><strong class="text-muted-foreground font-normal">Descrição técnica:</strong>
+                            {{ store.ordemDetalhe.descricao || '—' }}</p>
+                        <p><strong class="text-muted-foreground font-normal">Descrição cliente:</strong>
+                            {{ store.ordemDetalhe.descricaoCliente || '—' }}</p>
                     </div>
                 </TabsContent>
                 <TabsContent value="arquivos" class="mt-3">
@@ -63,8 +80,10 @@
                                         <input type="checkbox" v-model="selectedFiles" :value="file.id" />
                                         <div>
                                             <div class="font-medium">{{ file.nome }}</div>
-                                            <div class="text-xs text-muted-foreground">{{ file.tamanhoFormatado }} • {{
-                                                file.uploadedAt }}</div>
+                                            <div class="text-xs text-muted-foreground">
+                                                {{ file.tamanhoFormatado }} •
+                                                {{ file.uploadedAt }}
+                                            </div>
                                         </div>
                                     </label>
                                     <div class="flex items-center gap-2">
@@ -82,13 +101,26 @@
                 <TabsContent value="mensagens" class="mt-3">
                     <div class="flex flex-col gap-3">
                         <div class="overflow-auto max-h-60 border rounded-md p-3">
-                            <ul class="flex flex-col-reverse divide-y">
-                                <li v-for="msg in mensagens" :key="msg.id" class="py-2">
-                                    <div class="text-sm"><strong>{{ msg.autor }}</strong> <span
-                                            class="text-xs text-muted-foreground">• {{ msg.criadoEm }}</span></div>
-                                    <div class="mt-1 text-sm">{{ msg.texto }}</div>
+                            <ul class="flex flex-col-reverse">
+                                <li v-for="msg in store.ordemDetalhe.MensagensInteracoesOrdemServico" :key="msg.id"
+                                    class="px-4 bg-gray-100 dark:bg-gray-800 py-2 rounded-lg border">
+                                    <div class="text-sm flex items-center justify-between">
+                                        <span class="flex gap-2 items-center">
+                                            <strong>{{ msg.Autor?.nome }}</strong>
+                                            <span class="text-xs text-muted-foreground">•
+                                                {{ formatToCapitalize(msg.tipo) }}
+                                            </span>
+                                        </span>
+                                        <span class="text-xs text-muted-foreground">
+                                            {{ format(msg.data, 'dd/MM/yyyy HH:mm') }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-1 text-sm">
+                                        {{ msg.mensagem }}
+                                    </div>
                                 </li>
-                                <li v-if="!mensagens.length" class="py-6 text-center text-sm text-muted-foreground">Sem
+                                <li v-if="!store.ordemDetalhe.MensagensInteracoesOrdemServico.length"
+                                    class="py-6 text-center text-sm text-muted-foreground">Sem
                                     mensagens.</li>
                             </ul>
                         </div>
@@ -96,7 +128,8 @@
                         <div class="flex gap-2">
                             <Input v-model="novaMensagem" placeholder="Escreva uma mensagem..." class="flex-1"
                                 rows="3" />
-                            <Button @click="enviarMensagem" :disabled="!novaMensagem.trim()">Enviar</Button>
+                            <Button class="text-white" @click="enviarMensagem"
+                                :disabled="!novaMensagem.trim()">Enviar</Button>
                         </div>
                     </div>
                 </TabsContent>
@@ -105,16 +138,17 @@
                     <div class="flex flex-col gap-3">
                         <div class="overflow-auto max-h-64 border rounded-md p-3">
                             <div class="grid grid-cols-1 gap-3">
-                                <div v-for="p in produtos" :key="p.id"
+                                <div v-for="p in store.ordemDetalhe.ItensOrdensServico.filter(p => p.tipo === 'PRODUTO')"
+                                    :key="p.id"
                                     class="flex items-center gap-3 border rounded-lg p-3 hover:bg-muted/40 transition">
                                     <div class="w-14 h-14 rounded-full overflow-hidden shadow-sm">
                                         <img :src="'/imgs/logo.png'" :alt="'IMG'" class="w-full h-full object-cover" />
                                     </div>
 
                                     <div class="flex-1 flex flex-col">
-                                        <div class="font-semibold text-sm">{{ p.titulo }}</div>
-                                        <div class="text-xs text-muted-foreground">Qtd: {{ p.quantidade }}</div>
-                                        <div class="text-xs text-muted-foreground">Valor: {{ formatMoney(p.valor) }}
+                                        <div class="font-semibold text-sm">{{ p.itemName }}</div>
+                                        <div class="text-xs text-muted-foreground">Valor: {{ formatMoney(p.valor) }} x
+                                            {{ p.quantidade }}
                                         </div>
                                         <div class="text-sm font-medium mt-1">
                                             Subtotal: {{ formatMoney(p.quantidade * p.valor) }}
@@ -130,7 +164,7 @@
                                     </div>
                                 </div>
 
-                                <div v-if="!produtos.length"
+                                <div v-if="!store.ordemDetalhe.ItensOrdensServico.filter(p => p.tipo === 'PRODUTO').length"
                                     class="py-6 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
                                     <Box class="h-10 w-10" />
                                     Sem produtos.
@@ -144,16 +178,17 @@
                     <div class="flex flex-col gap-3">
                         <div class="overflow-auto max-h-64 border rounded-md p-3">
                             <div class="grid grid-cols-1 gap-3">
-                                <div v-for="p in servicos" :key="p.id"
+                                <div v-for="p in store.ordemDetalhe.ItensOrdensServico.filter(p => p.tipo === 'SERVICO')"
+                                    :key="p.id"
                                     class="flex items-center gap-3 border rounded-lg p-3 hover:bg-muted/40 transition">
                                     <div class="w-14 h-14 rounded-full overflow-hidden shadow-sm">
                                         <img :src="'/imgs/logo.png'" :alt="'IMG'" class="w-full h-full object-cover" />
                                     </div>
 
                                     <div class="flex-1 flex flex-col">
-                                        <div class="font-semibold text-sm">{{ p.titulo }}</div>
-                                        <div class="text-xs text-muted-foreground">Qtd: {{ p.quantidade }}</div>
-                                        <div class="text-xs text-muted-foreground">Valor: {{ formatMoney(p.valor) }}
+                                        <div class="font-semibold text-sm">{{ p.itemName }}</div>
+                                        <div class="text-xs text-muted-foreground">Valor: {{ formatMoney(p.valor) }} x
+                                            {{ p.quantidade }}
                                         </div>
                                         <div class="text-sm font-medium mt-1">
                                             Subtotal: {{ formatMoney(p.quantidade * p.valor) }}
@@ -195,6 +230,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos';
+import { formatToCapitalize } from '@/utils/formatters';
+import { format } from 'date-fns';
 import { Box, Eye, FileDigit, FilePlus, FileSymlink, Info, MessageCircleMore, OctagonX } from 'lucide-vue-next';
 import { ref } from 'vue'
 

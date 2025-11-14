@@ -1,6 +1,11 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { type CarrinhoItem, type OrdensServico, type SaveOrdemServico } from '@/types/schemas'
+import {
+  type CarrinhoItem,
+  type IDetalheOrdemServico,
+  type OrdensServico,
+  type SaveOrdemServico,
+} from '@/types/schemas'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { formatToNumberValue } from '@/utils/formatters'
 export interface CarrinhoOS extends CarrinhoItem {
@@ -11,7 +16,7 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   const openModalChecklist = ref(false)
   const openModalPropor = ref(false)
   const openModalDetalheOs = ref(false)
-  const ordemDetalhe = ref<OrdensServico>()
+  const ordemDetalhe = ref<IDetalheOrdemServico>()
   const carrinho = ref<CarrinhoOS[]>([])
   const idMutation = ref<number | null>(null)
   const tipoDesconto = ref<'VALOR' | 'PORCENTAGEM'>('VALOR')
@@ -70,7 +75,7 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
     openModal.value = true
   }
   const openDetalhes = async (id: number) => {
-    const response = await OrdensServicoRepository.get(id)
+    const response = await OrdensServicoRepository.getDetalhes(id)
     console.log(response)
     ordemDetalhe.value = response
     openModalDetalheOs.value = true
