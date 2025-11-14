@@ -1,7 +1,7 @@
 <template>
   <Card class="w-full mx-auto rounded-none rounded-b-xl">
     <CardHeader>
-      <div class="flex items-center justify-between gap-4">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
           <CardTitle>Configurar impressora</CardTitle>
           <p class="text-sm text-muted-foreground">
@@ -10,11 +10,8 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <span
-            class="text-xs text-blue-500 dark:text-blue-400 px-2 py-1.5 border rounded-lg cursor-pointer"
-            @click="baixarCeriticado"
-            >Baixar Certificado</span
-          >
+          <span class="text-xs text-blue-500 dark:text-blue-400 px-2 py-1.5 border rounded-lg cursor-pointer"
+            @click="baixarCeriticado">Baixar Certificado</span>
           <Badge v-if="isConected" class="px-3 py-1 text-white bg-success hover:bg-success/80">
             <Link2 class="mr-2 w-5 h-5" /> Conectado
           </Badge>
@@ -28,7 +25,7 @@
     <CardContent class="space-y-4">
       <div class="flex gap-2">
         <Select v-model="paperSize" @update:modelValue="saveSizePaper">
-          <SelectTrigger class="max-w-36">
+          <SelectTrigger class="w-16 md:w-36 max-w-36">
             <SelectValue placeholder="Selecione" />
           </SelectTrigger>
           <SelectContent>
@@ -38,14 +35,9 @@
             <SelectItem value="80mm">Térmica 80mm</SelectItem>
           </SelectContent>
         </Select>
-        <Input
-          v-model="filter"
-          placeholder="Filtrar impressoras..."
-          @input="filterPrinters"
-          class="flex-1"
-        />
+        <Input v-model="filter" placeholder="Filtrar impressoras..." @input="filterPrinters" class="flex-1" />
         <Button class="text-white" :loading="loading" @click="loadPrinters">
-          <Search /> Buscar
+          <Search /> <span class="hidden md:inline">Buscar</span>
         </Button>
       </div>
 
@@ -53,31 +45,19 @@
         <label class="text-sm font-medium text-muted-foreground">Impressoras encontradas</label>
 
         <div class="grid gap-2">
-          <button
-            v-for="p in filtered"
-            :key="p"
-            @click="selectPrinter(p)"
-            :class="buttonClass(p)"
-            class="text-left p-3 rounded-lg border hover:shadow-sm transition"
-          >
+          <button v-for="p in filtered" :key="p" @click="selectPrinter(p)" :class="buttonClass(p)"
+            class="text-left p-3 rounded-lg border hover:shadow-sm transition">
             <div class="flex items-center justify-between">
               <div class="truncate">
                 <div class="font-semibold">{{ p }}</div>
                 <div class="text-xs truncate">{{ shortName(p) }}</div>
               </div>
               <div class="ml-3">
-                <svg
-                  v-if="p === selected"
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fill-rule="evenodd"
+                <svg v-if="p === selected" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                  fill="currentColor">
+                  <path fill-rule="evenodd"
                     d="M16.707 5.293a1 1 0 010 1.414L8.414 15 5 11.586a1 1 0 011.414-1.414L8.414 12.172 15.293 5.293a1 1 0 011.414 0z"
-                    clip-rule="evenodd"
-                  />
+                    clip-rule="evenodd" />
                 </svg>
               </div>
             </div>
@@ -89,7 +69,7 @@
         Nenhuma impressora encontrada. Tente buscar.
       </p>
 
-      <div class="flex items-center justify-between gap-2">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-2">
         <div class="text-sm text-foreground border p-3 rounded-lg">
           Impressora salva:
           <span class="font-medium text-primary dark:text-blue-400" v-if="saved">{{ saved }}</span>
@@ -98,13 +78,9 @@
 
         <div class="flex gap-2">
           <Button variant="outline" @click="clearSaved" v-if="saved">Limpar</Button>
-          <Button
-            variant="outline"
-            class="bg-success hover:bg-success/80 text-white hover:text-white"
-            @click="testarImpressao"
-            v-if="saved"
-          >
-            <PrinterCheck /> Testar conexão
+          <Button variant="outline" class="bg-success hover:bg-success/80 text-white hover:text-white"
+            @click="testarImpressao" v-if="saved">
+            <PrinterCheck /> <span class="hidden md:inline">Testar conexão</span>
           </Button>
           <Button class="text-white" :disabled="!selected" @click="saveSelected">
             <Save /> Salvar
