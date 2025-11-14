@@ -5,30 +5,30 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { Button } from '@/components/ui/button';
 import { useToast } from 'vue-toastification';
 import { useConfirm } from '@/composables/useConfirm';
-import { ServicoRepository } from '@/repositories/servico-repository';
 import Tabela from './tabela/Tabela.vue';
 import Mobile from './tabela/Mobile.vue';
 import OrdemServicoModal from '../modais/OrdemServicoModal.vue';
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos';
 import ModalChecklist from '../modais/ModalChecklist.vue';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
+import { OrdensServicoRepository } from '@/repositories/os-repository';
 const store = useOrdemServicoStore();
 const uiStore = useUiStore()
 const toast = useToast()
 async function excluirEmLote() {
     try {
-        if (!store.selectedIds.length) return toast.error('Nenhum serviço selecionado')
+        if (!store.selectedIds.length) return toast.error('Nenhua ordem selecionada')
         const confirm = await useConfirm().confirm({
             title: 'Excluir em lote',
-            message: 'Tem certeza que deseja excluir esses serviços?'
+            message: 'Tem certeza que deseja excluir essas Ordens?'
         });
         if (!confirm) return
-        await Promise.all(store.selectedIds.map(id => ServicoRepository.remove(id)))
+        await Promise.all(store.selectedIds.map(id => OrdensServicoRepository.remove(id)))
         store.updateTable()
-        toast.success('Serviços excluidos com sucesso')
+        toast.success('Os excluida(s) com sucesso')
     } catch (error) {
         console.log(error)
-        toast.error('Erro ao excluir os serviços')
+        toast.error('Erro ao excluir as OS')
     }
 }
 </script>
