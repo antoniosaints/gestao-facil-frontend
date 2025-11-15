@@ -14,16 +14,19 @@
             </div>
             <div v-for="row in dataMobile" :key="row.id"
                 class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
-                <div class="flex justify-between">
-                    <div class="text-sm font-semibold dark:text-white">{{ row.descricao || 'Sem descrição' }}</div>
+                <div class="flex justify-between items-center gap-2">
+                    <div class="text-xs font-semibold dark:text-white">{{ row.descricao || 'Sem descrição' }}</div>
                     <div
-                        :class="['text-sm', row.status ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
-                        {{ row.status ? 'Ativo' : 'Inativo' }}
+                        :class="['text-xs', row.status ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
+                        {{ formatToCapitalize(row.status) }}
                     </div>
                 </div>
                 <div class="flex justify-between">
                     <div :class="`text-xs`">
-                        {{formatCurrencyBR(row.ItensOrdensServico?.reduce((total, item) => total + item.valor, 0))}}
+                        {{formatCurrencyBR(row.ItensOrdensServico.reduce(
+                            (acc, item) => acc + formatToNumberValue(item.valor) * item.quantidade,
+                            0,
+                        ) - formatToNumberValue(row.desconto || 0) || 0)}}
                     </div>
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">Cliente: {{ row.Cliente?.nome || '-' }}</div>
@@ -133,7 +136,7 @@ import { Eye, PenLine, Trash } from "lucide-vue-next";
 import { useConfirm } from "@/composables/useConfirm";
 import { useToast } from "vue-toastification";
 import { watch } from "vue";
-import { formatCurrencyBR } from "@/utils/formatters";
+import { formatCurrencyBR, formatToCapitalize, formatToNumberValue } from "@/utils/formatters";
 import { ServicoRepository } from "@/repositories/servico-repository";
 import { useOrdemServicoStore } from "@/stores/servicos/useOrdensServicos";
 

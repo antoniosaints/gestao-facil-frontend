@@ -2,7 +2,7 @@
   <div v-if="isOpen"
     class="fixed inset-0 bg-black/70 flex items-center animate-in fade-in duration-300 justify-center z-50"
     @click="onNo">
-    <div class="bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-6 w-full max-w-sm">
+    <div class="bg-white dark:bg-gray-900 border rounded-lg shadow-lg p-6 w-[90%] md:w-full max-w-sm">
       <div class="flex items-center mb-4 space-x-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24"
           stroke="currentColor">
