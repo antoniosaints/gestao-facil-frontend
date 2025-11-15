@@ -239,7 +239,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos';
 import { formatToCapitalize } from '@/utils/formatters';
 import { addDays, format } from 'date-fns';
-import { Box, Eye, FileDigit, FilePlus, FileSymlink, Info, MessageCircleMore, OctagonX } from 'lucide-vue-next';
+import { Box, Eye, FileDigit, FilePlus, FileSymlink, Info, LoaderIcon, MessageCircleMore, OctagonX } from 'lucide-vue-next';
 import { ref } from 'vue'
 
 const store = useOrdemServicoStore()
