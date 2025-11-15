@@ -32,12 +32,18 @@
                             <p><strong class="text-muted-foreground font-normal">Cliente:</strong>
                                 {{ store.ordemDetalhe.Cliente.nome }}</p>
                             <p><strong class="text-muted-foreground font-normal">Telefone:</strong>
-                                {{ store.ordemDetalhe.Cliente.telefone || '—' }}</p>
+                                {{ store.ordemDetalhe.Cliente.telefone || 'Não informado' }}</p>
+                            <p><strong class="text-muted-foreground font-normal">E-mail:</strong>
+                                {{ store.ordemDetalhe.Cliente.email || 'Não informado' }}
+                            </p>
                             <p><strong class="text-muted-foreground font-normal">Data de abertura:</strong>
                                 {{ format(store.ordemDetalhe.data, 'dd/MM/yyyy') || '—' }}
                             </p>
-                            <p><strong class="text-muted-foreground font-normal">Desconto:</strong>
-                                {{ store.ordemDetalhe.desconto || '—' }}</p>
+                            <p><strong class="text-muted-foreground font-normal">Garantia:</strong>
+                                {{ store.ordemDetalhe.garantia ? `${store.ordemDetalhe.garantia} dias -
+                                ${addDays(store.ordemDetalhe.data,
+                                    Number(store.ordemDetalhe.garantia)).toLocaleDateString('pt-BR')}` : 'N/A' }}
+                            </p>
                         </div>
                         <div>
                             <p><strong class="text-muted-foreground font-normal">Total:</strong>
@@ -50,7 +56,11 @@
                                     b.valor, 0) - store.ordemDetalhe.desconto || 0)}}
                             </p>
                             <p><strong class="text-muted-foreground font-normal">Responsável:</strong>
-                                {{ store.ordemDetalhe.Operador.nome || '—' }}</p>
+                                {{ store.ordemDetalhe.Operador.nome || '—' }}
+                            </p>
+                            <p><strong class="text-muted-foreground font-normal">Status:</strong>
+                                {{ store.ordemDetalhe.status || '—' }}
+                            </p>
                         </div>
                     </div>
                     <hr class="mx-2 mt-2">
@@ -228,7 +238,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos';
 import { formatToCapitalize } from '@/utils/formatters';
-import { format } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import { Box, Eye, FileDigit, FilePlus, FileSymlink, Info, MessageCircleMore, OctagonX } from 'lucide-vue-next';
 import { ref } from 'vue'
 
