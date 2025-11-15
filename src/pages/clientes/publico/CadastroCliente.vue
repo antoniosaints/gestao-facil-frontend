@@ -116,10 +116,10 @@
     <Card v-else-if="conta && cadastroEfetuado && yourId"
       class="p-6 flex flex-col rounded-none md:rounded-xl h-screen md:h-max w-screen md:w-2/3 lg:w-2/4 xl:w-2/6">
       <div class="flex flex-col items-center justify-center text-center gap-3 h-screen md:h-full">
-        <BadgeCheck class="h-12 w-12 text-primary animate-pulse" />
-        <h1 class="text-3xl font-bold text-center text-primary">Seu cadastro foi finalizado</h1>
+        <BadgeCheck class="h-12 w-12 text-primary dark:text-blue-400 animate-pulse" />
+        <h1 class="text-3xl font-bold text-center text-primary dark:text-blue-400">Seu cadastro foi finalizado</h1>
         <p>
-          Seu id é <span class="italic text-blue-700">{{ yourId }}</span>, informe para o responsável do link 🎉🔥...
+          Seu id é <span class="italic text-blue-700 dark:text-blue-400">{{ yourId }}</span>, informe para o responsável do link 🎉🔥...
         </p>
         <Button type="button" @click="copiarMeuId(yourId)" class="text-white">
           <Copy />
@@ -128,7 +128,7 @@
         <p class="text-muted-foreground text-xs">
           Está buscando um sistema ERP em núvem para gerenciar seu negócio?, faça sua conta no
           Gestão fácil ERP e teste sem compromisso.
-          <RouterLink class="text-blue-700" to="/site/cadastro"> Acesse aqui </RouterLink>
+          <RouterLink class="text-blue-700 dark:text-blue-400" to="/site/cadastro"> Acesse aqui </RouterLink>
         </p>
       </div>
     </Card>
@@ -217,14 +217,53 @@ const logo = computed(() => {
   return url + '/' + conta.value?.profile + '?_t=' + Date.now()
 })
 
+function validateField(value: any, config: string | any) {
+  if (config.required && (!value || String(value).trim() === '')) {
+    return config.message || 'Campo obrigatório.';
+  }
+
+  if (config.regex && !config.regex.test(String(value || '').trim())) {
+    return config.message || 'Valor inválido.';
+  }
+
+  return '';
+}
+
 function validate() {
-  errors.name = form.name.trim() ? '' : 'Nome é obrigatório.'
-  errors.email = /^\S+@\S+\.\S+$/.test(form.email || '') ? '' : 'Email inválido.'
-  errors.telefone = /^\d{11}$/.test(form.telefone || '') ? '' : 'Telefone inválido.'
-  errors.cidade = form.cidade.trim() ? '' : 'Cidade é obrigatório.'
-  errors.estado = form.estado.trim() ? '' : 'Estado é obrigatório.'
-  errors.cep = /^\d{5}(-\d{3})?$/.test(form.cep || '') ? '' : 'CEP inválido.'
-  return !errors.name && !errors.email && !errors.telefone && !errors.cidade && !errors.cep && !errors.estado
+  errors.name = validateField(form.name, {
+    required: true,
+    message: 'Nome é obrigatório.'
+  });
+
+  errors.email = validateField(form.email, {
+    required: true,
+    regex: /^\S+@\S+\.\S+$/,
+    message: 'Email inválido.'
+  });
+
+  errors.telefone = validateField(form.telefone, {
+    required: true,
+    regex: /^(\(?\d{2}\)?\s?)?\d{4,5}-?\d{4}$/,
+    message: 'Telefone inválido.'
+  });
+
+  errors.cidade = validateField(form.cidade, {
+    required: true,
+    message: 'Cidade é obrigatório.'
+  });
+
+  errors.estado = validateField(form.estado, {
+    required: true,
+    message: 'Estado é obrigatório.'
+  });
+
+  errors.cep = validateField(form.cep, {
+    required: true,
+    regex: /^\d{5}(-\d{3})?$/,
+    message: 'CEP inválido.'
+  });
+
+  return Object.values(errors).every(e => e === '');
 }
 
 function copiarMeuId(id: string) {

@@ -1,6 +1,6 @@
 import Hashids from 'hashids'
 import type { NumberLike } from 'hashids/util'
-const secret = import.meta.env.VITE_SECRET_KEY
+const secret = import.meta.env.VITE_SECRET_KEY || 'secret4324'
 const hashBase62Generator = new Hashids(secret, 7)
 export class HashGenerator {
   static encodeHash(id: number): string {
