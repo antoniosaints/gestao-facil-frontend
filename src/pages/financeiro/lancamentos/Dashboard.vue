@@ -243,12 +243,12 @@ onMounted(() => {
                     <div class="flex flex-col gap-3">
                         <div v-for="row in contasFinanceiras"
                             class="flex flex-row items-center justify-between bg-body rounded-md px-4 py-3 border-2">
-                            <div class="flex flex-row items-center gap-2">
+                            <div class="flex flex-row items-center">
                                 <WalletMinimal />
+                                <Dot class="w-5 h-5 inline-flex text-success" />
                                 <div class="flex items-center">
                                     <h1>{{ row.conta }}</h1>
-                                    <Dot />
-                                    <a class="text-xs text-blue-600 dark:text-blue-400" href="">Ajustar</a>
+                                    <!-- <a class="text-xs text-blue-600 dark:text-blue-400" href="javascript:void(0)">Ajustar</a> -->
                                 </div>
                             </div>
                             <p

@@ -16,7 +16,7 @@
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger value="integracoes"><i class="fa-solid fa-link mr-2"></i> Integrações</TabsTrigger>
-                    <TabsTrigger value="impressao"><i class="fa-solid fa-print mr-2"></i> Impressão</TabsTrigger>
+                    <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i> Impressão</TabsTrigger>
                 </TabsList>
             </div>
 
@@ -48,27 +48,27 @@
                                     <Label class="text-md">Eventos</Label>
                                     <div class="grid grid-cols-2 gap-3">
                                         <label for="vendaConcluida"
-                                            class="flex items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                            class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
                                             <span>Venda concluída <p class="text-xs text-muted-foreground">(Quando
                                                     realizar uma venda)</p></span>
                                             <Switch id="vendaConcluida"
                                                 v-model="formularioNotificacoes.eventoVendaConcluida" />
                                         </label>
                                         <label for="sangriaEvento"
-                                            class="flex items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                            class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
                                             <span>Sangria registrada <p class="text-xs text-muted-foreground">(Retiradas
                                                     de valor em caixa PDV)</p></span>
                                             <Switch id="sangriaEvento" v-model="formularioNotificacoes.eventoSangria" />
                                         </label>
                                         <label for="estoqueBaixo"
-                                            class="flex items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                            class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
                                             <span>Estoque baixo <p class="text-xs text-muted-foreground">(classificado
                                                     em vermelho)</p></span>
                                             <Switch id="estoqueBaixo"
                                                 v-model="formularioNotificacoes.eventoEstoqueBaixo" />
                                         </label>
                                         <label for="produtoEditadoReposicao"
-                                            class="flex items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                            class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
                                             <span>Alteração de produto <p class="text-xs text-muted-foreground">
                                                     (reposição, edição)</p></span>
                                             <Switch id="produtoEditadoReposicao" />
@@ -157,6 +157,11 @@
                 <Menu />
                 <span class="text-xs">Menu</span>
             </button>
+            <button type="button" @click="goBack"
+                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
+                <Undo2 />
+                <span class="text-xs">Voltar</span>
+            </button>
         </nav>
     </div>
 </template>
@@ -174,11 +179,12 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Cog, Menu } from 'lucide-vue-next'
+import { Cog, Menu, Undo2 } from 'lucide-vue-next'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import ImpressaoPage from './ImpressaoPage.vue'
+import { goBack } from '@/hooks/links'
 
 const tab = ref<'empresa' | 'notificacoes' | 'integracoes' | 'impressao'>('empresa')
 const toast = useToast()
