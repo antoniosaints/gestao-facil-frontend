@@ -1,5 +1,5 @@
 <template>
-  <Card class="w-full mx-auto rounded-none rounded-b-xl">
+  <Card class="w-full bg-background mx-auto rounded-none rounded-b-xl">
     <CardHeader>
       <div class="flex flex-col md:flex-row items-center justify-between gap-4">
         <div>

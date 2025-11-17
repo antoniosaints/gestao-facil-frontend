@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { useUiStore } from '@/stores/ui/uiStore'
 import http from '@/utils/axios'
 import { HashGenerator } from '@/utils/generators'
-import { CircleX, Save } from 'lucide-vue-next'
+import { CircleX, Link, Save } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useToast } from 'vue-toastification'
 
@@ -45,8 +45,8 @@ async function salvarConfiguracaoLink() {
 
 <template>
   <div>
-    <ModalView v-model:open="open" description="Formulário publico de cadastro" title="Configurar formulário público"
-      size="sm">
+    <ModalView v-model:open="open" description="Formulário publico de cadastro" title="Configurar formulário"
+      :icon="Link" size="sm">
       <div class="px-4 flex flex-col gap-2 gap-y-4">
         <div>
           <Label for="quantidade_usos">Quantidade de usos</Label>

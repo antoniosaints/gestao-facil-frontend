@@ -16,7 +16,8 @@
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger value="integracoes"><i class="fa-solid fa-link mr-2"></i> Integrações</TabsTrigger>
-                    <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i> Impressão</TabsTrigger>
+                    <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i>
+                        Impressão</TabsTrigger>
                 </TabsList>
             </div>
 
@@ -93,56 +94,33 @@
                             <CardDescription>Conecte serviços externos (Mercado Pago, Asaas).</CardDescription>
                         </CardHeader>
                         <CardContent class="space-y-3">
-                            <div class="grid md:grid-cols-2 gap-6">
-                                <div class="space-y-2">
-                                    <Label for="mercadoPagoKey">Mercado Pago API Key</Label>
-                                    <Input id="mercadoPagoKey" autocomplete="off" autocapitalize="off"
-                                        spellcheck="false" v-model="(formularioIntegracoes.MercadoPagoApiKey as string)"
-                                        type="password" name="mercadoPagoKey" placeholder="Sua chave de acesso" />
+                            <div class="grid md:grid-cols-4 gap-6">
+                                <div class="p-6 bg-body/70 border rounded-lg flex flex-col justify-between">
+                                    <h1>
+                                        <Link class="inline w-4"
+                                            :class="[formularioIntegracoesMercadoPago.MercadoPagoApiKey ? 'text-green-500' : 'text-red-500']" />
+                                        Mercado Pago
+                                    </h1>
                                     <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
                                         clientes.</p>
+                                    <Button class="mt-2" variant="outline" type="button"
+                                        @click="openModalMercadoPago = true">Configurar</Button>
                                 </div>
-                                <div class="space-y-2">
-                                    <Label for="mercadoPagoEnv">Ambiente</Label>
-                                    <Select v-model="(formularioIntegracoes.MercadoPagoEnv as string)">
-                                        <SelectTrigger id="mercadoPagoEnv">
-                                            <SelectValue placeholder="Selecione" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="sandbox">Sandbox</SelectItem>
-                                            <SelectItem value="production">Produção</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            <Separator />
-                            <div class="grid md:grid-cols-2 gap-6">
-                                <div class="space-y-2">
-                                    <Label for="asaasKey">Asaas API Key</Label>
-                                    <Input id="asaasKey" placeholder="Sua chave de acesso" autocomplete="off"
-                                        autocapitalize="off" spellcheck="false" name="asaasKey"
-                                        v-model="(formularioIntegracoes.AsaasApiKey as string)" type="password" />
+                                <div class="p-6 bg-body/70 border rounded-lg flex flex-col justify-between">
+                                    <h1>Asaas</h1>
                                     <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
                                         clientes.</p>
+                                    <Button class="mt-2" type="button" disabled variant="outline">Em breve...</Button>
                                 </div>
-                                <div class="space-y-2">
-                                    <Label for="asaasAmb">Ambiente</Label>
-                                    <Select v-model="(formularioIntegracoes.AsaasEnv as string)">
-                                        <SelectTrigger id="asaasAmb">
-                                            <SelectValue placeholder="Selecione" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="sandbox">Sandbox</SelectItem>
-                                            <SelectItem value="production">Produção</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                <div class="p-6 bg-body/70 border rounded-lg flex flex-col justify-between">
+                                    <h1>WhatsApp</h1>
+                                    <p class="text-sm text-muted-foreground">
+                                        Usado para notificações de pedidos, links de pagamento e clientes.
+                                    </p>
+                                    <Button class="mt-2" type="button" disabled variant="outline">Em breve...</Button>
                                 </div>
                             </div>
                         </CardContent>
-                        <CardFooter class="justify-end">
-                            <Button type="submit" class="ml-2 text-white">Salvar</Button>
-                        </CardFooter>
                     </form>
                 </Card>
             </TabsContent>
@@ -150,6 +128,19 @@
                 <ImpressaoPage />
             </TabsContent>
         </Tabs>
+        <ModalView v-model:open="openModalMercadoPago" description="Configuração do mercado pago"
+            title="Configurar Mercado Pago" size="md">
+            <div class="space-y-2 px-4">
+                <Label for="mercadoPagoKey">Mercado Pago API Key</Label>
+                <Input id="mercadoPagoKey" autocomplete="off" autocapitalize="off" spellcheck="false"
+                    v-model="(formularioIntegracoesMercadoPago.MercadoPagoApiKey as string)" type="password"
+                    name="mercadoPagoKey" placeholder="Sua chave de acesso" />
+                <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
+                    clientes.</p>
+            </div>
+            <Button class="mt-2 mx-4 text-white" type="button" @click="submit(formularioIntegracoesMercadoPago)"
+                variant="default">Salvar</Button>
+        </ModalView>
         <nav v-if="storeUi.isMobile"
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
             <button type="button" @click="storeUi.openSidebar = true"
@@ -174,25 +165,28 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Cog, Menu, Undo2 } from 'lucide-vue-next'
+import { Cog, Link, Menu, Undo2 } from 'lucide-vue-next'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import ImpressaoPage from './ImpressaoPage.vue'
 import { goBack } from '@/hooks/links'
+import ModalView from '@/components/formulario/ModalView.vue'
 
 const tab = ref<'empresa' | 'notificacoes' | 'integracoes' | 'impressao'>('empresa')
 const toast = useToast()
 const storeUi = useUiStore()
+const openModalMercadoPago = ref(false)
 
 const formularioIntegracoes = reactive<UpdateParametrosConta>({
     AsaasApiKey: '',
     AsaasEnv: '',
+})
+const formularioIntegracoesMercadoPago = reactive<UpdateParametrosConta>({
     MercadoPagoApiKey: '',
     MercadoPagoEnv: '',
 })
@@ -220,6 +214,8 @@ async function getParametros() {
             Object.assign(formularioIntegracoes, {
                 AsaasApiKey: response.data.AsaasApiKey,
                 AsaasEnv: response.data.AsaasEnv,
+            })
+            Object.assign(formularioIntegracoesMercadoPago, {
                 MercadoPagoApiKey: response.data.MercadoPagoApiKey,
                 MercadoPagoEnv: response.data.MercadoPagoEnv,
             })
