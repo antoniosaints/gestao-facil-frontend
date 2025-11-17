@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue"
-import { addMonths, format, subMonths } from "date-fns"
+import { addMonths, format, isSameDay, subMonths } from "date-fns"
 import { Card, CardContent } from "@/components/ui/card"
 import { LancamentosRepository } from "@/repositories/lancamento-repository"
 import { formatCurrencyBR, formatToCapitalize } from "@/utils/formatters"
@@ -95,7 +95,7 @@ watch(() => [store.filters.update], carregarLancamentos)
 
 <template>
     <div>
-        <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
+        <div class="flex flex-col md:flex-row gap-2 justify-between mb-2">
             <div>
                 <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                     <CalendarClock class="h-6 w-6" :stroke-width="2.5" />
@@ -114,12 +114,15 @@ watch(() => [store.filters.update], carregarLancamentos)
                 </button>
             </div>
         </div>
-        <div class="flex justify-between items-center mb-4 px-1 rounded-xl text-gray-800 dark:text-gray-200">
-            <button class="bg-card px-4 py-2 rounded-l-xl border" @click="navigateMonth('prev')">
+        <div class="flex justify-between items-center mb-2 px-1 rounded-xl text-gray-800 dark:text-gray-200">
+            <button class="bg-card px-4 py-1 rounded-xl border flex items-center gap-2" @click="navigateMonth('prev')">
                 <ArrowBigLeft class="w-5 h-5" />
+                <span class="hidden md:inline">Anterior</span>
             </button>
-            <h2 class="text-xl">{{ formatToCapitalize(format(store.currentMonth, "MMMM yyyy", { locale: ptBR })) }}</h2>
-            <button class="bg-card px-4 py-2 rounded-r-xl border" @click="navigateMonth('next')">
+            <h2 class="text-xl">{{ formatToCapitalize(format(store.currentMonth, "MMMM 'de' yyyy", { locale: ptBR })) }}
+            </h2>
+            <button class="bg-card px-4 py-1 rounded-xl border flex items-center gap-2" @click="navigateMonth('next')">
+                <span class="hidden md:inline">Proximo</span>
                 <ArrowBigRight class="w-5 h-5" />
             </button>
         </div>
@@ -130,22 +133,26 @@ watch(() => [store.filters.update], carregarLancamentos)
         </div>
 
         <!-- Lista de Lançamentos -->
-        <div v-else class="space-y-4 min-h-40 px-1 overflow-auto max-h-[calc(100vh-15.6rem)]">
+        <div v-else
+            class="space-y-4 min-h-40 px-1 overflow-auto max-h-[calc(100vh-14.1rem)] md:max-h-[calc(100vh-13.7rem)]">
             <Card v-for="dia in lancamentos" :key="dia.dia" class="bg-transparent border-none shadow-none">
                 <CardContent class="p-0 border-none">
-                    <p class="text-sm px-3 bg-card/40 border py-1 rounded-t-md">
-                        {{ format(new Date(dia.dia), "dd/MM/yyyy") }}
+                    <p class="text-xs px-3 bg-card/40 capitalize py-0.5 rounded-t-sm">
+                        {{ format(new Date(dia.dia), isSameDay(dia.dia, new Date()) ? "'Hoje,' dd/MM" : "EEEE',' dd/MM",
+                            {
+                                locale: ptBR
+                            }) }}
                     </p>
                     <div class="flex flex-col">
                         <div v-for="item in dia.lancamentos" :key="item.id"
-                            class="flex justify-between py-1 group pl-5 gap-2 bg-background border border-t-0 px-3 first:rounded-t-none rounded-none last:rounded-b-lg relative">
+                            class="flex justify-between py-1 group pl-5 gap-2 bg-background border border-t-0 px-3 first:rounded-t-none rounded-none last:rounded-b-sm relative">
                             <div v-if="item.tipo === 'RECEITA'"
-                                class="absolute left-0 top-0 w-2 h-full group-last:rounded-bl-md bg-success/90"></div>
-                            <div v-else class="absolute left-0 top-0 w-2 h-full group-last:rounded-bl-md bg-danger/90">
+                                class="absolute left-0 top-0 w-2 h-full group-last:rounded-bl-sm bg-success/90"></div>
+                            <div v-else class="absolute left-0 top-0 w-2 h-full group-last:rounded-bl-sm bg-danger/90">
                             </div>
                             <div class="flex flex-col justify-center">
                                 <div class="font-medium text-md">
-                                    <Pin class="inline mr-1" :size="16" />
+                                    <Pin class="inline mr-1" :size="12" />
                                     <RouterLink :to="`/financeiro/detalhes?id=${item.id}`"
                                         class="hover:underline hover:cursor-pointer hover:text-primary text-sm md:text-md">
                                         {{ item.descricao }}
