@@ -35,6 +35,14 @@ const routes: RouteInterface[] = [
           isPublic: true,
         },
       },
+      {
+        path: ':contaId/ordem-servico/:ordemId',
+        name: 'publico-ordem-servico-assinatura',
+        component: () => import('@/pages/servicos/os/publico/OrdemServicoCliente.vue'),
+        meta: {
+          isPublic: true,
+        },
+      },
     ],
   },
   {
