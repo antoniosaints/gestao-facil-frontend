@@ -67,10 +67,10 @@ async function excluirEmLote() {
                     class="bg-primary text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova OS</span>
                 </button>
-                <button @click="store.openModalChecklist = true"
+                <!-- <button @click="store.openModalChecklist = true"
                     class="bg-success text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <FileCheck class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo checklist</span>
-                </button>
+                </button> -->
                 <button @click="store.updateTable"
                     class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
                     <RotateCw class="w-5 h-5" />

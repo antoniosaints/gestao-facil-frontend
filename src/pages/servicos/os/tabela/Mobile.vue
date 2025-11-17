@@ -36,6 +36,10 @@
                             class="bg-cyan-200 text-cyan-900 dark:text-cyan-100 dark:bg-cyan-800 px-2 py-1 rounded-md text-sm">
                             <Eye class="w-5 h-5" />
                         </button>
+                        <button @click="getPDFOs(row.id!, row.Uid!)"
+                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
+                            <FileDigit class="w-5 h-5" />
+                        </button>
                         <button @click="store.openUpdate(row.id!)"
                             class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
                             <PenLine class="w-5 h-5" />
@@ -132,13 +136,14 @@ import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import type { ItensOrdensServico, OrdensServico } from "@/types/schemas";
-import { Eye, PenLine, Trash } from "lucide-vue-next";
+import { Eye, FileDigit, PenLine, Trash } from "lucide-vue-next";
 import { useConfirm } from "@/composables/useConfirm";
 import { useToast } from "vue-toastification";
 import { watch } from "vue";
 import { formatCurrencyBR, formatToCapitalize, formatToNumberValue } from "@/utils/formatters";
 import { ServicoRepository } from "@/repositories/servico-repository";
 import { useOrdemServicoStore } from "@/stores/servicos/useOrdensServicos";
+import { OrdensServicoRepository } from "@/repositories/os-repository";
 
 type OrdemRecebida = OrdensServico & {
     ItensOrdensServico: ItensOrdensServico[]
@@ -209,6 +214,25 @@ async function deletar(id: number) {
         toast.error('Erro ao deletar a OS')
     }
 }
+
+async function getPDFOs(id: number, Uid: string) {
+    try {
+        const ok = await useConfirm().confirm({
+            title: 'Gerar PDF',
+            message: 'Tem certeza que deseja gerar o PDF desta OS?',
+            confirmText: 'Sim, gerar!',
+            cancelText: 'Cancelar',
+            colorButton: 'primary'
+        });
+        if (!ok) return
+        await OrdensServicoRepository.getOsPdf(id, Uid)
+        toast.success('PDF gerado com sucesso')
+    } catch (error: any) {
+        console.log(error)
+        toast.error(error?.response?.data?.message || 'Erro ao gerar PDF')
+    }
+}
+
 
 onMounted(() => renderMobile());
 </script>

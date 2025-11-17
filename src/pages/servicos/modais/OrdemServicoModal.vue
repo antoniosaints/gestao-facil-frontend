@@ -300,7 +300,7 @@ onMounted(() => {
 
         <div class="col-span-6 md:col-span-6">
           <label class="block text-sm mb-1">Responsável <span class="text-red-500">*</span></label>
-          <Select2Ajax :disabled="(hasPermission(storeUi.usuarioLogged, 3) ? false : true)"
+          <Select2Ajax :disabled="(hasPermission(storeUi.usuarioLogged, 3) ? false : true) || !!store.form.id"
             v-model="store.form.vendedorId" class="w-full" url="/usuarios/select2" />
           <p v-if="erros.operadorId" class="text-red-600 text-sm">{{ erros.operadorId }}</p>
         </div>
@@ -411,8 +411,8 @@ onMounted(() => {
 
         <div class="col-span-2 md:col-span-1">
           <Button type="button" :disabled="!ableAdd" @click="addToCartVendas" class="text-white w-full">
-            <PackagePlus v-if="adicionarTipo === 'PRODUTO'" />
-            <FilePlus v-else />
+            <PackagePlus class="w-8 h-8" v-if="adicionarTipo === 'PRODUTO'" />
+            <FilePlus class="w-8 h-8" v-else />
           </Button>
         </div>
       </div>
@@ -422,10 +422,10 @@ onMounted(() => {
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-medium mb-2">Produtos/Serviços</h3>
           <div class="flex gap-2">
-            <button :disabled="store.carrinho.length === 0" @click="store.openModalPropor = true" type="button"
+            <!-- <button :disabled="store.carrinho.length === 0" @click="store.openModalPropor = true" type="button"
               class="text-sm text-white py-1 px-2 mb-2 rounded bg-emerald-500 dark:bg-emerald-800 dark:text-gray-200 disabled:opacity-50 flex items-center">
               <HandCoins class="mr-1 w-4 h-4" /> Propor
-            </button>
+            </button> -->
             <button :disabled="store.carrinho.length === 0" @click="clearCart" type="button"
               class="text-sm text-white py-1 px-2 mb-2 rounded bg-red-500 dark:bg-red-800 disabled:opacity-50 dark:text-gray-200 flex items-center">
               <Trash class="mr-1 w-4 h-4" /> Limpar
@@ -444,7 +444,7 @@ onMounted(() => {
                 class="flex justify-between items-center bg-white dark:bg-gray-900 border rounded-md p-2 shadow-sm">
                 <div class="flex flex-col text-sm">
                   <span class="font-medium text-gray-800 dark:text-gray-200">({{ item.tipoItem }}) {{ item.produto
-                    }}</span>
+                  }}</span>
                   <span class="text-gray-500 dark:text-gray-400">Qtd: {{ item.quantidade }}</span>
                 </div>
                 <div class="flex items-center">

@@ -15,12 +15,14 @@ import {
     DrawerTitle,
 } from "@/components/ui/drawer"
 import { computed } from "vue";
+import { type LucideIcon } from "lucide-vue-next";
 
 // Reativo vindo de fora (pode ter vários na mesma página)
 const isOpen = defineModel<boolean>("open", { default: false })
 
 // Propriedades fixas do componente
 const { size } = defineProps<{
+    icon?: LucideIcon
     title: string
     description?: string,
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
@@ -49,7 +51,10 @@ const isDesktop = useMediaQuery("(min-width: 768px)")
             <DialogContent class="p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
                 :disable-outside-pointer-events="true" :class="[sizeModal, 'mx-auto']">
                 <DialogHeader class="p-6 pb-0">
-                    <DialogTitle class="font-normal text-xl -mb-2">{{ title }}</DialogTitle>
+                    <DialogTitle class="font-normal text-xl -mb-1 flex items-center gap-1">
+                        <component v-if="icon" :is="icon" class="h-5 w-5 inline-flex" />
+                        {{ title }}
+                    </DialogTitle>
                     <DialogDescription v-if="description">
                         {{ description }}
                     </DialogDescription>

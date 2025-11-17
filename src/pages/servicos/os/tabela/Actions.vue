@@ -36,6 +36,14 @@ async function deletar(id: number) {
 
 async function getPDFOs(id: number, Uid: string) {
     try {
+        const ok = await useConfirm().confirm({
+            title: 'Gerar PDF',
+            message: 'Tem certeza que deseja gerar o PDF desta OS?',
+            confirmText: 'Sim, gerar!',
+            cancelText: 'Cancelar',
+            colorButton: 'primary'
+        });
+        if (!ok) return
         await OrdensServicoRepository.getOsPdf(id, Uid)
         toast.success('PDF gerado com sucesso')
     } catch (error: any) {
