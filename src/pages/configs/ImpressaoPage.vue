@@ -220,9 +220,9 @@ function clearSaved() {
   toast.success('Impressora removida!')
 }
 
-// onMounted(() => {
-//   loadPrinters();
-//   if (saved.value) selected.value = saved.value;
-//   paperSize.value = localStorage.getItem("qz_size_paper") || "A4";
-// });
+onMounted(() => {
+  loadPrinters();
+  if (saved.value) selected.value = saved.value;
+  paperSize.value = localStorage.getItem("qz_size_paper") || "A4";
+});
 </script>

@@ -223,12 +223,6 @@
             </Tabs>
         </div>
         <div class="flex justify-end gap-2 mt-4 px-4">
-            <Button v-if="store.ordemDetalhe?.id && store.ordemDetalhe?.Uid" type="button"
-                class="bg-warning hover:bg-warning/80 text-white"
-                @click="getPDFOs(store.ordemDetalhe?.id, store.ordemDetalhe?.Uid)">
-                <FileDigit />
-                PDF
-            </Button>
             <Button type="button" variant="secondary" @click="store.openModalDetalheOs = false">
                 <OctagonX />
                 Fechar
@@ -242,18 +236,13 @@ import ModalView from '@/components/formulario/ModalView.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useConfirm } from '@/composables/useConfirm';
-import { OrdensServicoRepository } from '@/repositories/os-repository';
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos';
 import { formatToCapitalize } from '@/utils/formatters';
 import { addDays, format } from 'date-fns';
 import { Box, Eye, FileDigit, FilePlus, Info, LoaderIcon, MessageCircleMore, OctagonX } from 'lucide-vue-next';
-import { ref } from 'vue'
-import { useToast } from 'vue-toastification';
+import { ref } from 'vue';
 
 const store = useOrdemServicoStore()
-const emit = defineEmits(['update:visible', 'close', 'save'])
-const toast = useToast()
 const activeTab = ref('geral')
 
 // Arquivos
@@ -261,23 +250,6 @@ const arquivos = ref<Array<any>>([])
 const selectedFiles = ref<Array<string>>([])
 const fileInput = ref<HTMLInputElement | null>(null)
 
-async function getPDFOs(id: number, Uid: string) {
-    try {
-        const ok = await useConfirm().confirm({
-            title: 'Gerar PDF',
-            message: 'Tem certeza que deseja gerar o PDF desta OS?',
-            confirmText: 'Sim, gerar!',
-            cancelText: 'Cancelar',
-            colorButton: 'primary'
-        });
-        if (!ok) return
-        await OrdensServicoRepository.getOsPdf(id, Uid)
-        toast.success('PDF gerado com sucesso')
-    } catch (error: any) {
-        console.log(error)
-        toast.error(error?.response?.data?.message || 'Erro ao gerar PDF')
-    }
-}
 
 function handleFiles(e: Event) {
     const input = e.target as HTMLInputElement
@@ -353,10 +325,6 @@ function enviarMensagem() {
     })
     novaMensagem.value = ''
 }
-
-// Produtos e serviços
-const produtos = ref<Array<any>>([])
-const servicos = ref<Array<any>>([])
 
 function formatMoney(v: number) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0)
