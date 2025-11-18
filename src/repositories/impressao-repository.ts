@@ -15,6 +15,17 @@ export class ImpressaoRepository {
     a.click()
     window.URL.revokeObjectURL(url)
   }
+  static async downloadPluguin() {
+    const res = await http.get('/printer/cert/downloadQztray', {
+      responseType: 'blob',
+    })
+    const url = window.URL.createObjectURL(res.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'qztray.exe'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
   static async getSignature(signature: any) {
     const res = await http.post('/printer/cert/signature', signature, {
       headers: {

@@ -10,8 +10,10 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <span class="text-xs text-blue-500 dark:text-blue-400 px-2 py-1.5 border rounded-lg cursor-pointer"
-            @click="baixarCeriticado">Baixar Certificado</span>
+          <Badge class="px-3 py-1 cursor-pointer text-white bg-primary hover:bg-primary/80" @click="isOpen = true">
+            <Download class="w-5 h-5 mr-2 inline-flex" />
+            Dowloads
+          </Badge>
           <Badge v-if="isConected" class="px-3 py-1 text-white bg-success hover:bg-success/80">
             <Link2 class="mr-2 w-5 h-5" /> Conectado
           </Badge>
@@ -94,6 +96,44 @@
         </div>
       </div>
     </CardContent>
+    <ModalView v-model:open="isOpen" title="QZ Tray — Instalação"
+      description="Siga os passos abaixo para habilitar a impressão direta." :icon="CircleFadingPlus" size="md">
+      <div class="px-4 py-2 space-y-4">
+
+        <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+          Para configurar a impressora, instale o QZ Tray e adicione o certificado de segurança.
+          Esse processo é rápido e necessário para que a impressão funcione corretamente.
+        </p>
+
+        <!-- Card de instruções -->
+        <div
+          class="bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+          <p class="font-medium text-gray-800 dark:text-gray-200 text-sm">
+            Passos da instalação:
+          </p>
+
+          <ul class="list-disc pl-5 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+            <li>Baixe e instale o QZ Tray em seu computador.</li>
+            <li>Baixe o certificado de impressão.</li>
+            <li>Abra o QZ Tray e clique em Advanced -> Site Manager.</li>
+            <li>Na tela que abrir, clique no "+" e adicione o certificado baixado.</li>
+            <li>Concorde com as opções, recarregue a página e pronto, comece a imprimir 🎉.</li>
+          </ul>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex gap-3 pt-2">
+          <Button class="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-2" @click="baixarPluguin">
+            <Download />
+            Baixar QZ Tray
+          </Button>
+          <Button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2" @click="baixarCertificado">
+            <Download />
+            Baixar Certificado
+          </Button>
+        </div>
+      </div>
+    </ModalView>
   </Card>
 </template>
 
@@ -104,7 +144,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useConfirm } from '@/composables/useConfirm'
 import qzTray from '@/utils/qzTray'
-import { Link2, Link2Off, LoaderIcon, Printer, PrinterCheck, Save, Search } from 'lucide-vue-next'
+import { CircleFadingPlus, Download, Link2, Link2Off, Printer, PrinterCheck, Save, Search } from 'lucide-vue-next'
 import { ref, onMounted, computed } from 'vue'
 import { POSITION, useToast } from 'vue-toastification'
 import {
@@ -116,10 +156,12 @@ import {
 } from '@/components/ui/select'
 import { ImpressaoRepository } from '@/repositories/impressao-repository'
 import { getTemplateTesteImpressao } from './partials/templateTesteImpressao'
+import ModalView from '@/components/formulario/ModalView.vue'
 
 const printers = ref<string[]>([])
 const filtered = ref<string[]>([])
 const selected = ref<string>('')
+const isOpen = ref(false)
 const toast = useToast()
 const saved = ref<string | null>(localStorage.getItem('qz_printer'))
 const filter = ref('')
@@ -134,21 +176,40 @@ function saveSizePaper() {
   localStorage.setItem('qz_size_paper', paperSize.value)
 }
 
-async function baixarCeriticado() {
+async function baixarCertificado() {
   try {
-    const cfn = useConfirm().confirm({
-      title: 'Certificado QzTray',
-      message: 'Após o download, faça a instalação do certificado no pluguin QzTray.',
-      confirmText: 'Baixar!',
-      cancelText: 'Cancelar',
-      colorButton: 'primary',
-    })
-    if (!(await cfn)) return
+    // const cfn = useConfirm().confirm({
+    //   title: 'Certificado QzTray',
+    //   message: 'Após o download, faça a instalação do certificado no pluguin QzTray.',
+    //   confirmText: 'Baixar!',
+    //   cancelText: 'Cancelar',
+    //   colorButton: 'primary',
+    // })
+    // if (!(await cfn)) return
+    toast.info('Iniciando download.')
     await ImpressaoRepository.downloadCertificado()
     toast.success('Certificado baixado, instale no QzTray.')
   } catch (err: any) {
     console.error(err)
     toast.error('Erro ao baixar certificado')
+  }
+}
+async function baixarPluguin() {
+  try {
+    // const cfn = useConfirm().confirm({
+    //   title: 'Download QzTray',
+    //   message: 'Após o download, faça a instalação do pluguin QzTray.',
+    //   confirmText: 'Baixar!',
+    //   cancelText: 'Cancelar',
+    //   colorButton: 'primary',
+    // })
+    // if (!(await cfn)) return
+    toast.info('Download inciado, aguarde...')
+    await ImpressaoRepository.downloadPluguin()
+    toast.success('Download concluído, instale no QzTray.')
+  } catch (err: any) {
+    console.error(err)
+    toast.error('Erro ao baixar o qztray')
   }
 }
 function shortName(name: string) {
