@@ -41,6 +41,11 @@
         </Button>
       </div>
 
+      <div v-if="loading" class="text-center py-4 space-y-2 text-gray-500">
+        <Printer class="h-10 w-10 text-primary animate-bounce mx-auto" />
+        Buscando impressoras...
+      </div>
+
       <div v-if="printers.length" class="grid gap-2">
         <label class="text-sm font-medium text-muted-foreground">Impressoras encontradas</label>
 
@@ -65,7 +70,8 @@
         </div>
       </div>
 
-      <p v-else class="text-sm text-muted-foreground">
+      <p v-if="!printers.length && !loading" class="text-sm text-muted-foreground">
+        <Printer class="h-10 w-10 text-danger animate-bounce mx-auto" />
         Nenhuma impressora encontrada. Tente buscar.
       </p>
 
@@ -98,7 +104,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useConfirm } from '@/composables/useConfirm'
 import qzTray from '@/utils/qzTray'
-import { Link2, Link2Off, PrinterCheck, Save, Search } from 'lucide-vue-next'
+import { Link2, Link2Off, LoaderIcon, Printer, PrinterCheck, Save, Search } from 'lucide-vue-next'
 import { ref, onMounted, computed } from 'vue'
 import { POSITION, useToast } from 'vue-toastification'
 import {
