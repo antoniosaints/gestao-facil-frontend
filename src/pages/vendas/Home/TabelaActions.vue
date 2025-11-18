@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import { Menu } from 'lucide-vue-next'
+import { Menu, Printer } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { Vendas } from '@/types/schemas';
 import type { Table } from '@tanstack/vue-table';
 import { deletarVenda, editarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from '../ActionsVendas';
+import { VendaRepository } from '@/repositories/venda-repository';
 const { data } = defineProps<{
     data: Vendas,
     table: Table<Vendas>
 }>()
+
+async function printCupom(id: number) {
+    try {
+        await VendaRepository.printCupom(id)
+    } catch (error) {
+        console.log(error)
+    }
+}
 </script>
 
 <template>
@@ -28,6 +37,10 @@ const { data } = defineProps<{
                 <DropdownMenuItem @click="gerarCupomVenda(data.id!)">
                     <i class="fa-regular fa-file-pdf mr-1"></i>
                     Cupom PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="printCupom(data.id!)">
+                    <Printer />
+                    Imprimir
                 </DropdownMenuItem>
                 <DropdownMenuItem @click="openModalFaturarVenda(data.id!)" v-if="data.status !== 'FATURADO'">
                     <i class="fa-solid fa-dollar-sign mr-1"></i>

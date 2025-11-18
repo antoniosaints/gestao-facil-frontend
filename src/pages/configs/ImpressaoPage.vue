@@ -160,6 +160,7 @@ import {
 import { ImpressaoRepository } from '@/repositories/impressao-repository'
 import { getTemplateTesteImpressao } from './partials/templateTesteImpressao'
 import ModalView from '@/components/formulario/ModalView.vue'
+import { getTemplateTesteEscPos } from './partials/templateEscpos'
 
 const printers = ref<string[]>([])
 const filtered = ref<string[]>([])
@@ -235,8 +236,8 @@ async function testarImpressao() {
       colorButton: 'primary',
     })
     if (!(await cfn)) return
-    const example = getTemplateTesteImpressao(qzTray.getSavedSize(), qzTray.getSavedPrinter())
-    await qzTray.printNormal(example)
+    const example = getTemplateTesteEscPos(qzTray.getSavedSize(), qzTray.getSavedPrinter())
+    await qzTray.printTermal(example)
     toast.info('Impressão enviada para a fila.')
   } catch (err: any) {
     console.error(err)

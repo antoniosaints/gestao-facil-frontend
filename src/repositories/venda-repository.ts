@@ -113,6 +113,12 @@ export class VendaRepository {
     })
     await qzTray.printPDF(data.data)
   }
+  static async printCupom(id: number) {
+    const data = await http.get(`/vendas/cupom/${id}`, {
+      headers: { 'Content-Type': 'application/text' },
+    })
+    await qzTray.printTermal(data.data)
+  }
 
   static async abrirCaixa(data: { pdvId: number; valorInicial: number }) {
     const resp = await http.post(`/vendas/pdv/abrirCaixa`, data)
