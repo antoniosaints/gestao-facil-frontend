@@ -9,6 +9,7 @@ import Actions from './Actions.vue'
 import { RouterLink } from 'vue-router'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
+import { Switch } from '@/components/ui/switch'
 const store = useProdutoStore()
 
 export const columnsProdutos: ColumnDef<Produto>[] = [
@@ -126,6 +127,39 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
     cell: ({ row }) => {
       const valor = formatCurrencyBR(row.original.preco as number)
       return render(BadgeCell, { label: valor, color: 'green' })
+    },
+  },
+  {
+    accessorKey: 'controlaEstoque',
+    header: ({ column }) =>
+      render(
+        'div',
+        { class: 'flex items-center gap-2 cursor-pointer select-none' },
+        render(
+          Button,
+          {
+            variant: 'ghost',
+            class: 'flex items-center gap-2 p-0 h-auto text-sm',
+            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+          },
+          () => [
+            'Controlado',
+            render(ArrowUpDown, { class: 'h-4 w-4 opacity-70 hover:opacity-100 transition' }),
+          ],
+        ),
+      ),
+    cell: ({ row }) => {
+      return render(
+        'div',
+        {
+          class: 'flex items-center justify-center py-1',
+        },
+        render(Switch, {
+          class: 'mx-auto',
+          readOnly: true,
+          modelValue: row.original.controlaEstoque,
+        }),
+      )
     },
   },
   {

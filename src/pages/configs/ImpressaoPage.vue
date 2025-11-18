@@ -116,7 +116,10 @@
             <li>Baixe e instale o QZ Tray em seu computador.</li>
             <li>Baixe o certificado de impressão.</li>
             <li>Abra o QZ Tray e clique em Advanced -> Site Manager.</li>
-            <li>Na tela que abrir, clique no "+" e adicione o certificado baixado.</li>
+            <li>Na tela que abrir, clique no "<strong class="text-info dark:text-cyan-400">+</strong>", depois em
+              "Browse..." e adicione o
+              certificado baixado.
+            </li>
             <li>Concorde com as opções, recarregue a página e pronto, comece a imprimir 🎉.</li>
           </ul>
         </div>

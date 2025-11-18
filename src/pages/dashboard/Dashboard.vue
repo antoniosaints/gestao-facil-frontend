@@ -20,110 +20,116 @@
 
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
                 <!-- Metric Item Start -->
-                <div @click="goTo('/clientes')"
-                    class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
-                    <div class="mb-6 flex items-center gap-3">
-                        <i class="fa-solid fa-user-tag h-8 w-8 bg-violet-500/10 p-2 rounded-md text-violet-500"></i>
+                <RouterLink to="/clientes">
+                    <div class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
+                        <div class="mb-6 flex items-center gap-3">
+                            <i class="fa-solid fa-user-tag h-8 w-8 bg-violet-500/10 p-2 rounded-md text-violet-500"></i>
 
-                        <div>
-                            <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Clientes</h3>
-                            <span class="hidden md:block text-theme-xs text-gray-500 dark:text-gray-400">
-                                Registrados
+                            <div>
+                                <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Clientes</h3>
+                                <span class="hidden md:block text-theme-xs text-gray-500 dark:text-gray-400">
+                                    Registrados
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-end justify-between">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+                                    {{ data.totalClientes }}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </RouterLink>
+
+                <RouterLink to="/produtos">
+                    <div class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
+                        <div class="mb-6 flex items-center gap-3">
+                            <i
+                                class="fa-solid fa-boxes-packing w-8 h-8 bg-blue-500/10 p-2 rounded-md text-blue-500"></i>
+
+                            <div>
+                                <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Produtos</h3>
+                                <span class="hidden md:block text-theme-xs text-gray-500 dark:text-gray-400">
+                                    Cadastrados
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-end justify-between">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+                                    {{ data.totalProdutos }}
+                                </h4>
+                            </div>
+
+                            <span
+                                class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-blue-600 dark:text-blue-500">
+                                <i class="fa-solid fa-boxes-packing"></i>
+                                Total
                             </span>
                         </div>
                     </div>
+                </RouterLink>
 
-                    <div class="flex items-end justify-between">
-                        <div>
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-                                {{ data.totalClientes }}
-                            </h4>
+                <RouterLink to="/produtos">
+                    <div class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
+                        <div class="mb-6 flex items-center gap-3">
+                            <i class="fa-solid fa-cubes w-8 h-8 bg-red-500/10 p-2 rounded-md text-red-500"></i>
+
+                            <div>
+                                <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Produtos</h3>
+                                <span class="block text-theme-xs text-gray-500 dark:text-gray-400"> Em baixa </span>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <div @click="goTo('/produtos')"
-                    class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
-                    <div class="mb-6 flex items-center gap-3">
-                        <i class="fa-solid fa-boxes-packing w-8 h-8 bg-blue-500/10 p-2 rounded-md text-blue-500"></i>
+                        <div class="flex items-end justify-between">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
+                                    id="produtos_em_baixa_dashboard">
+                                    {{ data.produtosEmBaixa }}
+                                </h4>
+                            </div>
 
-                        <div>
-                            <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Produtos</h3>
-                            <span class="hidden md:block text-theme-xs text-gray-500 dark:text-gray-400">
-                                Cadastrados
+                            <span id="produtos_em_baixa_dashboard_alerta"
+                                class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-red-600 dark:text-red-500">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                Atenção!
                             </span>
                         </div>
                     </div>
+                </RouterLink>
 
-                    <div class="flex items-end justify-between">
-                        <div>
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-                                {{ data.totalProdutos }}
-                            </h4>
+                <RouterLink to="/vendas">
+                    <div class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
+                        <div class="mb-6 flex items-center gap-3">
+                            <i
+                                class="fa-solid fa-dollar-sign h-8 w-8 bg-green-500/10 p-2 rounded-md text-green-400"></i>
+
+                            <div>
+                                <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Vendas</h3>
+                                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
+                                    Resumo
+                                </span>
+                            </div>
                         </div>
 
-                        <span
-                            class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-blue-600 dark:text-blue-500">
-                            <i class="fa-solid fa-boxes-packing"></i>
-                            Total
-                        </span>
-                    </div>
-                </div>
+                        <div class="flex items-end justify-between">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+                                    {{ data.totalVendas }}
+                                </h4>
+                            </div>
 
-                <div @click="goTo('/produtos')"
-                    class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
-                    <div class="mb-6 flex items-center gap-3">
-                        <i class="fa-solid fa-cubes w-8 h-8 bg-red-500/10 p-2 rounded-md text-red-500"></i>
-
-                        <div>
-                            <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Produtos</h3>
-                            <span class="block text-theme-xs text-gray-500 dark:text-gray-400"> Em baixa </span>
-                        </div>
-                    </div>
-
-                    <div class="flex items-end justify-between">
-                        <div>
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
-                                id="produtos_em_baixa_dashboard">
-                                {{ data.produtosEmBaixa }}
-                            </h4>
-                        </div>
-
-                        <span id="produtos_em_baixa_dashboard_alerta"
-                            class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-red-600 dark:text-red-500">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            Atenção!
-                        </span>
-                    </div>
-                </div>
-
-                <div @click="goTo('/vendas')"
-                    class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
-                    <div class="mb-6 flex items-center gap-3">
-                        <i class="fa-solid fa-dollar-sign h-8 w-8 bg-green-500/10 p-2 rounded-md text-green-400"></i>
-
-                        <div>
-                            <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Vendas</h3>
-                            <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
-                                Resumo
+                            <span id="porcentagem_vendas_dashboard_alerta"
+                                class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-green-600 dark:text-green-500">
+                                <i class="fa-solid fa-dollar-sign"></i>
+                                <span id="porcentagem_vendas_dashboard">0%</span>
                             </span>
                         </div>
                     </div>
-
-                    <div class="flex items-end justify-between">
-                        <div>
-                            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-                                {{ data.totalVendas }}
-                            </h4>
-                        </div>
-
-                        <span id="porcentagem_vendas_dashboard_alerta"
-                            class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-green-600 dark:text-green-500">
-                            <i class="fa-solid fa-dollar-sign"></i>
-                            <span id="porcentagem_vendas_dashboard">0%</span>
-                        </span>
-                    </div>
-                </div>
+                </RouterLink>
                 <!-- Metric Item End -->
             </div>
 
@@ -136,11 +142,13 @@
                             <Tag class="mr-2 w-5 h-5" />
                             Vendas Mensais
                         </h2>
-                        <button type="button" @click="goTo('/vendas')"
-                            class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
-                            <i class="fa-solid fa-square-arrow-up-right"></i>
-                            Ver mais
-                        </button>
+                        <RouterLink to="/vendas">
+                            <button type="button"
+                                class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
+                                <i class="fa-solid fa-square-arrow-up-right"></i>
+                                Ver mais
+                            </button>
+                        </RouterLink>
                     </div>
                     <div>
                         <BarChart class="max-h-64" :data="dataVendas" :options="optionsChartBar" />
@@ -155,11 +163,13 @@
                             <HandCoins class="mr-2 w-5 h-5" />
                             Saldo mensal
                         </h2>
-                        <button @click="goTo('/financeiro/lancamentos')" type="button"
-                            class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
-                            <i class="fa-solid fa-square-arrow-up-right"></i>
-                            Ver mais
-                        </button>
+                        <RouterLink to="/financeiro/lancamentos">
+                            <button type="button"
+                                class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
+                                <i class="fa-solid fa-square-arrow-up-right"></i>
+                                Ver mais
+                            </button>
+                        </RouterLink>
                     </div>
                     <div>
                         <LineChart class="max-h-64" :data="dataSaldo" :options="optionsChartLine" />
@@ -174,11 +184,13 @@
                             <TrendingUpDown class="mr-2 w-5 h-5" />
                             Tícket médio mensal
                         </h2>
-                        <button @click="goTo('/produtos')" type="button"
-                            class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-color">
-                            <i class="fa-solid fa-square-arrow-up-right"></i>
-                            Ver mais
-                        </button>
+                        <RouterLink to="/produtos">
+                            <button type="button"
+                                class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-color">
+                                <i class="fa-solid fa-square-arrow-up-right"></i>
+                                Ver mais
+                            </button>
+                        </RouterLink>
                     </div>
                     <div>
                         <BarChart class="max-h-64" :data="dataTicket" :options="optionsChartBarDefault" />
@@ -191,11 +203,13 @@
                             <Star class="mr-2 w-5 h-5" />
                             Top Produtos
                         </h2>
-                        <button @click="goTo('/produtos')" type="button"
-                            class="border-2 border-gray-300 text-gray-950 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-color">
-                            <i class="fa-solid fa-square-arrow-up-right"></i>
-                            Ver mais
-                        </button>
+                        <RouterLink to="/produtos">
+                            <button type="button"
+                                class="border-2 border-gray-300 text-gray-950 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-color">
+                                <i class="fa-solid fa-square-arrow-up-right"></i>
+                                Ver mais
+                            </button>
+                        </RouterLink>
                     </div>
                     <div>
                         <BarChart class="max-h-64" :data="dataTopProdutos" :options="optionsChartBarDefault" />

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Box, Package, Undo2 } from "lucide-vue-next"
+import { Box, CalendarPlus, Coins, Download, Package, PackageOpen, Undo2 } from "lucide-vue-next"
 
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
 import { optionsChartBarDefault, optionsChartBarStack } from "@/composables/useChartOptions"
@@ -119,7 +119,8 @@ onMounted(() => {
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
         <div class="flex flex-row items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold">
+          <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Coins class="w-5 h-5" />
             Tícket Médio Mensal
           </h2>
         </div>
@@ -128,7 +129,8 @@ onMounted(() => {
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <CalendarPlus class="w-5 h-5" />
           Reposições Mensais
         </h2>
         <BarChart class="max-h-64" :data="reposicoesMensaisChart" :options="optionsChartBarStack" />
@@ -136,7 +138,8 @@ onMounted(() => {
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <PackageOpen class="w-5 h-5" />
           Menos Saídas
         </h2>
         <BarChart class="max-h-64" :data="menosSaidasChart" :options="optionsChartBarDefault" />
@@ -144,7 +147,8 @@ onMounted(() => {
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Download class="w-5 h-5" />
           Mais Reposições
         </h2>
         <BarChart class="max-h-64" :data="maisSaidasChart" :options="optionsChartBarDefault" />

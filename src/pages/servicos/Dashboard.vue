@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Clock, Wrench, Undo2, BadgePlus, PlusSquare } from "lucide-vue-next"
+import { PlusCircle, Clock, Wrench, Undo2, BadgePlus, PlusSquare, SquareArrowOutUpRight, CircleDollarSign, FileSpreadsheet } from "lucide-vue-next"
 import Calendario from "@/components/calendario/Calendario.vue"
 import { onMounted, ref } from "vue"
 import type { OrdensServico } from "@/types/schemas"
@@ -81,12 +81,12 @@ onMounted(() => {
             <Card class="shadow-md rounded-lg">
                 <CardHeader class="flex flex-row items-center justify-between pb-1">
                     <CardTitle class="text-sm font-medium">Abertas</CardTitle>
-                    <Clock class="h-6 w-6 text-primary dark:text-blue-500" />
+                    <SquareArrowOutUpRight class="h-6 w-6 text-primary dark:text-blue-500" />
                 </CardHeader>
                 <CardContent>
                     <div class="text-xl md:text-2xl font-bold text-primary dark:text-blue-500">{{
                         formatCurrencyBR(resumo?.aberta!)
-                        }}</div>
+                    }}</div>
                     <div class="text-sm">Quantidade: {{ resumo?.qtdAberta }}</div>
                 </CardContent>
             </Card>
@@ -98,31 +98,31 @@ onMounted(() => {
                 <CardContent>
                     <div class="text-xl md:text-2xl font-bold text-info dark:text-cyan-500">{{
                         formatCurrencyBR(resumo?.andamento!)
-                    }}</div>
+                        }}</div>
                     <div class="text-sm">Quantidade: {{ resumo?.qtdAndamento }}</div>
                 </CardContent>
             </Card>
             <Card class="shadow-md rounded-lg">
                 <CardHeader class="flex flex-row items-center justify-between pb-1">
                     <CardTitle class="text-sm font-medium">Faturadas</CardTitle>
-                    <Clock class="h-6 w-6 text-success dark:text-green-500" />
+                    <CircleDollarSign class="h-6 w-6 text-success dark:text-green-500" />
                 </CardHeader>
                 <CardContent>
                     <div class="text-xl md:text-2xl font-bold text-success dark:text-green-500">{{
                         formatCurrencyBR(resumo?.faturado!)
-                    }}</div>
+                        }}</div>
                     <div class="text-sm">Quantidade: {{ resumo?.faturado }}</div>
                 </CardContent>
             </Card>
             <Card class="shadow-md rounded-lg">
                 <CardHeader class="flex flex-row items-center justify-between pb-1">
                     <CardTitle class="text-sm font-medium">Resumo geral</CardTitle>
-                    <Clock class="h-6 w-6 text-muted-foreground dark:text-gray-400" />
+                    <FileSpreadsheet class="h-6 w-6 text-muted-foreground dark:text-gray-400" />
                 </CardHeader>
                 <CardContent>
                     <div class="text-xl md:text-2xl font-bold text-muted-foreground dark:text-gray-400">{{
                         formatCurrencyBR(resumo?.total!)
-                    }}</div>
+                        }}</div>
                     <div class="text-sm">Quantidade: {{ resumo?.quantidade }}</div>
                 </CardContent>
             </Card>

@@ -113,15 +113,15 @@
                                 <img src="/imgs/logo.png" alt="logopng"
                                     class="w-16 h-16 object-cover mx-auto mb-2 rounded-md">
                                 <div class="text-center flex flex-col">
-                                    <h3 class="text-gray-800 dark:text-white text-xs">{{ p.name }}</h3>
+                                    <h3 class="text-gray-800 dark:text-white text-xs">{{ p.nome }}</h3>
                                     <!-- <p class="text-gray-500 dark:text-gray-400 text-xs">Cód: {{ p.code }}</p> -->
-                                    <p v-if="p.manage" class="text-xs"
-                                        :class="[p.stock === 0 ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400']">
-                                        Estoque: {{ p.stock }}</p>
+                                    <p v-if="p.controlaEstoque" class="text-xs"
+                                        :class="[p.estoque === 0 ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400']">
+                                        Estoque: {{ p.estoque }} {{ p.unidade }}</p>
                                     <p v-else class="text-xs text-gray-500 dark:text-gray-400">Estoque livre
                                     </p>
                                     <p class="text-md font-bold text-green-600 dark:text-green-400">
-                                        {{ formatCurrencyBR(p.price) }}
+                                        {{ formatCurrencyBR(p.preco) }}
                                     </p>
                                 </div>
                             </div>
@@ -174,8 +174,8 @@
                             <div v-for="item in cart" :key="item.id"
                                 class="border bg-card dark:bg-gray-800 shadow-md rounded p-1 mb-3">
                                 <div class="flex justify-between items-start">
-                                    <h4 class="text-xs text-gray-800 dark:text-white p-1 truncate">{{ item.name }}</h4>
-                                    <button type="button" title="Remover item" @click="atualizarQuantidade(item.id, 0)"
+                                    <h4 class="text-xs text-gray-800 dark:text-white p-1 truncate">{{ item.nome }}</h4>
+                                    <button type="button" title="Remover item" @click="atualizarQuantidade(item.id!, 0)"
                                         class="text-red-500 hover:text-red-700 text-sm">
                                         <SquareX />
                                     </button>
@@ -183,20 +183,19 @@
                                 <div class="flex items-center justify-between px-2">
                                     <div class="flex items-center space-x-2">
                                         <button type="button" title="Diminuir quantidade"
-                                            @click="atualizarQuantidade(item.id, item.quantity - 1)"
+                                            @click="atualizarQuantidade(item.id!, item.quantity - 1)"
                                             class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">-</button>
                                         <span class="text-sm font-medium">{{ item.quantity }}</span>
                                         <button type="button" title="Aumentar quantidade"
-                                            @click="atualizarQuantidade(item.id, item.quantity + 1)"
+                                            @click="atualizarQuantidade(item.id!, item.quantity + 1)"
                                             class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">+</button>
                                     </div>
                                     <div class="text-right">
-                                        <p class="text-xs text-gray-500">R$ {{ item.price.toFixed(2).replace('.', ',')
-                                            }}
+                                        <p class="text-xs text-gray-500">
+                                            {{ formatCurrencyBR(item.preco) }}
                                         </p>
-                                        <p class="font-bold text-sm">R$ {{ (item.price *
-                                            item.quantity).toFixed(2).replace('.',
-                                                ',') }}</p>
+                                        <p class="font-bold text-sm">
+                                            {{ formatCurrencyBR((Number(item.preco) * item.quantity)) }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -363,18 +362,15 @@ import { POSITION, useToast } from 'vue-toastification';
 import { useUiStore } from '@/stores/ui/uiStore';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
-import { ArrowLeftRight, CirclePercent, Cog, Dot, HandCoins, HandGrab, LogOut, Menu, MonitorCog, MonitorDown, MonitorPlay, MonitorX, Pointer, ShoppingBasket, ShoppingCart, SquareX, TrendingUp, UserPlus } from 'lucide-vue-next';
+import { CirclePercent, Dot, HandCoins, HandGrab, MonitorDown, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import { Button } from '@/components/ui/button';
 import type { Produto } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
-import { useRoute } from 'vue-router';
 import router from '@/router';
 import { useConfirm } from '@/composables/useConfirm';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const toast = useToast()
-const route = useRoute()
 const useConf = useConfirm()
 const uiStore = useUiStore()
 const openModalFechamento = ref(false)
@@ -389,22 +385,11 @@ function aplicarDesconto() {
     openModalDesconto.value = false
     toast.success('Desconto aplicado com sucesso')
 }
-
-interface Product {
-    id: number
-    name: string
-    code: string
-    price: number
-    stock: number
-    manage: boolean
-    factory: boolean
-}
-
-interface CartItem extends Product {
+interface CartItem extends Produto {
     quantity: number
 }
 
-const products = ref<Product[]>([])
+const products = ref<Produto[]>([])
 const cart = ref<CartItem[]>(JSON.parse(localStorage.getItem("gestao_facil:cartPDV") || "[]"))
 const searchTerm = ref("")
 const discountType = ref<"percentage" | "value">("percentage")
@@ -413,7 +398,7 @@ const paymentMethod = ref("PIX")
 const receivedAmount = ref<string | null>(null)
 const cliente = ref(null)
 const subtotal = computed(() =>
-    cart.value.reduce((t, item) => t + item.price * item.quantity, 0)
+    cart.value.reduce((t, item) => t + Number(item.preco) * item.quantity, 0)
 )
 
 async function sairCaixa() {
@@ -454,8 +439,8 @@ watch(() => cart.value, () => {
 function quickAddCard() {
     const search = searchTerm.value.toLowerCase();
     if (!search) return toast.error('Informe o produto a ser adicionado')
-    const itemProduto = products.value.find(item => item.name.toLowerCase().includes(search) || item.code.toLowerCase().includes(search))
-    if (itemProduto?.name) {
+    const itemProduto = products.value.find(item => item.nome.toLowerCase().includes(search) || (item.codigo || '').toLowerCase().includes(search))
+    if (itemProduto?.nome) {
         adicionarAoCarrinho(itemProduto)
         searchInputField.value?.focus()
     }
@@ -488,15 +473,7 @@ async function fetchProducts() {
         const { data } = await http.get("/produtos/lista/geral", {
             params: { search: searchTerm.value, limit: 12 },
         })
-        products.value = data.data.map((p: Produto) => ({
-            id: p.id,
-            name: p.nome,
-            code: p.codigo || "",
-            price: formatToNumberValue(p.preco),
-            stock: p.estoque,
-            manage: p.controlaEstoque!,
-            factory: p.producaoLocal!
-        }))
+        products.value = data.data;
         if (cart.value.length > 0) {
             podeFinalizarPDV.value = true
         }
@@ -511,17 +488,17 @@ function saveCart() {
     if (cart.value.length > 0) podeFinalizarPDV.value = true
 }
 
-function adicionarAoCarrinho(product: Product) {
+function adicionarAoCarrinho(product: Produto) {
     const existing = cart.value.find((i) => i.id === product.id)
     if (existing) {
-        if (product.manage && !product.factory) {
-            existing.quantity < product.stock ? existing.quantity++ : toast.error("Estoque insuficiente!")
+        if (product.controlaEstoque && !product.producaoLocal) {
+            existing.quantity < product.estoque ? existing.quantity++ : toast.error("Estoque insuficiente!")
         } else {
             existing.quantity++
         }
     } else {
-        if (!product.stock && product.manage && !product.factory) return toast.error("Produto sem estoque!", { timeout: 3000, position: POSITION.BOTTOM_CENTER })
-        if (!product.stock && product.manage && product.factory) {
+        if (!product.estoque && product.controlaEstoque && !product.producaoLocal) return toast.error("Produto sem estoque!", { timeout: 3000, position: POSITION.BOTTOM_CENTER })
+        if (!product.estoque && product.controlaEstoque && product.producaoLocal) {
             cart.value.push({ ...product, quantity: 1 })
             return toast.warning("Produto adicionado sem estoque, recomendado revisar posteriormente!", { timeout: 3000, position: POSITION.BOTTOM_CENTER })
         }
@@ -536,8 +513,8 @@ function atualizarQuantidade(id: number, qty: number) {
     if (qty <= 0) {
         cart.value = cart.value.filter((i) => i.id !== id)
     }
-    if (item.manage && !item.factory) {
-        qty <= item.stock ? item.quantity = qty : toast.error("Estoque insuficiente!")
+    if (item.controlaEstoque && !item.producaoLocal) {
+        qty <= item.estoque ? item.quantity = qty : toast.error("Estoque insuficiente!")
     } else {
         item.quantity = qty
     }
@@ -568,7 +545,7 @@ async function finalizarVendaPDV() {
         itens: cart.value.map((i) => ({
             id: i.id,
             quantidade: i.quantity,
-            preco: i.price,
+            preco: i.preco,
         })),
     }
 
