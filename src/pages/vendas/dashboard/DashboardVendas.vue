@@ -10,7 +10,7 @@ import { useToast } from "vue-toastification"
 import { VendaRepository } from "@/repositories/venda-repository"
 import { endOfMonth, startOfMonth } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tag, Tags, Undo2 } from "lucide-vue-next"
+import { Tag, Tags, Undo2, TrendingUp, DollarSign, CreditCard, CheckCircle2 } from "lucide-vue-next"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { goBack, goTo } from "@/hooks/links"
 
@@ -119,7 +119,8 @@ onMounted(() => {
       <!-- Gráfico de Barras -->
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <TrendingUp class="h-5 w-5 text-blue-600 dark:text-blue-400" />
           Top Produtos
         </h2>
         <BarChart class="max-h-64" :data="topProdutos" :options="optionsChartBarDefault" />
@@ -127,7 +128,8 @@ onMounted(() => {
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <DollarSign class="h-5 w-5 text-green-600 dark:text-green-400" />
           Faturamento Mensal
         </h2>
         <BarChart class="max-h-64" :data="faturamentoMensal" :options="optionsChartBarDefault" />
@@ -135,7 +137,8 @@ onMounted(() => {
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <CreditCard class="h-5 w-5 text-purple-600 dark:text-purple-400" />
           Forma de pagamento
         </h2>
         <BarChart class="max-h-64" :data="tipoPagamento" :options="optionsChartBarDefault" />
@@ -143,7 +146,8 @@ onMounted(() => {
 
       <div
         class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-        <h2 class="text-lg font-semibold mb-4">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <CheckCircle2 class="h-5 w-5 text-orange-600 dark:text-orange-400" />
           Por Status
         </h2>
         <BarChart class="max-h-64" :data="statusVendas" :options="optionsChartBarDefault" />
