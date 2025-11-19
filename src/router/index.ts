@@ -4,7 +4,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 type RouteMeta = {
   meta?: {
     isPublic?: boolean
-    layout?: 'main' | 'default'
+    layout?: 'main' | 'default' | 'admin'
     permissao?: number
   }
 }
@@ -66,6 +66,22 @@ const routes: RouteInterface[] = [
         path: 'termos-politica',
         name: 'site-termos-politica',
         component: () => import('@/pages/site/TermosPolitica.vue'),
+      },
+    ],
+  },
+  {
+    path: '/admin',
+    name: 'admin-page',
+    redirect: { name: 'admin-home' },
+    meta: {
+      permissao: 100,
+      layout: 'admin',
+    },
+    children: [
+      {
+        path: '',
+        name: 'admin-home',
+        component: () => import('@/pages/admin/dashboard/DashboardAdmin.vue'),
       },
     ],
   },

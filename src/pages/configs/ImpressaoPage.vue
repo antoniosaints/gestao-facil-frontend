@@ -10,14 +10,15 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <Badge class="px-3 py-1 cursor-pointer text-white bg-primary hover:bg-primary/80" @click="isOpen = true">
+          <Badge class="px-3 py-1 font-normal cursor-pointer text-white bg-primary hover:bg-primary/80"
+            @click="isOpen = true">
             <Download class="w-5 h-5 mr-2 inline-flex" />
             Dowloads
           </Badge>
-          <Badge v-if="isConected" class="px-3 py-1 text-white bg-success hover:bg-success/80">
+          <Badge v-if="isConected" class="px-3 py-1 text-white font-normal bg-success hover:bg-success/80">
             <Link2 class="mr-2 w-5 h-5" /> Conectado
           </Badge>
-          <Badge v-else variant="destructive" class="px-3 py-1 text-white">
+          <Badge v-else variant="destructive" class="px-3 py-1 text-white font-normal">
             <Link2Off class="mr-2 w-5 h-5" /> Desconectado
           </Badge>
         </div>
@@ -43,8 +44,8 @@
         </Button>
       </div>
 
-      <div v-if="loading" class="text-center py-4 space-y-2 text-gray-500">
-        <Printer class="h-10 w-10 text-primary animate-bounce mx-auto" />
+      <div v-if="loading" class="text-center py-4 space-y-2 text-muted-foreground">
+        <Printer class="h-10 w-10 text-primary dark:text-blue-500 animate-bounce mx-auto" />
         Buscando impressoras...
       </div>
 
@@ -72,8 +73,8 @@
         </div>
       </div>
 
-      <p v-if="!printers.length && !loading" class="text-sm text-muted-foreground">
-        <Printer class="h-10 w-10 text-danger animate-bounce mx-auto" />
+      <p v-if="!printers.length && !loading" class="text-center py-4 space-y-2 text-muted-foreground">
+        <CircleOff class="h-10 w-10 text-danger text-red-500 animate-fade-in mx-auto" />
         Nenhuma impressora encontrada. Tente buscar.
       </p>
 
@@ -87,10 +88,10 @@
         <div class="flex gap-2">
           <Button variant="outline" @click="clearSaved" v-if="saved">Limpar</Button>
           <Button variant="outline" class="bg-success hover:bg-success/80 text-white hover:text-white"
-            @click="testarImpressao" v-if="saved">
+            @click="testarImpressao" v-if="saved && isConected">
             <PrinterCheck /> <span class="hidden md:inline">Testar conexão</span>
           </Button>
-          <Button class="text-white" :disabled="!selected" @click="saveSelected">
+          <Button class="text-white" v-if="isConected" :disabled="!selected" @click="saveSelected">
             <Save /> Salvar
           </Button>
         </div>
@@ -103,6 +104,7 @@
         <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
           Para configurar a impressora, instale o QZ Tray e adicione o certificado de segurança.
           Esse processo é rápido e necessário para que a impressão funcione corretamente.
+          <strong>(Disponível apenas para Windows)</strong>
         </p>
 
         <!-- Card de instruções -->
@@ -147,7 +149,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useConfirm } from '@/composables/useConfirm'
 import qzTray from '@/utils/qzTray'
-import { CircleFadingPlus, Download, Link2, Link2Off, Printer, PrinterCheck, Save, Search } from 'lucide-vue-next'
+import { CircleFadingPlus, CircleOff, Download, Link2, Link2Off, Printer, PrinterCheck, Save, Search } from 'lucide-vue-next'
 import { ref, onMounted, computed } from 'vue'
 import { POSITION, useToast } from 'vue-toastification'
 import {
@@ -158,7 +160,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ImpressaoRepository } from '@/repositories/impressao-repository'
-import { getTemplateTesteImpressao } from './partials/templateTesteImpressao'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { getTemplateTesteEscPos } from './partials/templateEscpos'
 

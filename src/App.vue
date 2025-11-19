@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import Main from './layouts/Main.vue'
 import Default from './layouts/Default.vue'
 import { useUiStore } from './stores/ui/uiStore'
+import Admin from './layouts/Admin.vue'
 
 const store = useUiStore()
 const route = useRoute()
@@ -12,6 +13,7 @@ const route = useRoute()
 const layouts = {
   default: Default,
   main: Main,
+  admin: Admin
 }
 
 // Seleciona o layout de acordo com a meta da rota
