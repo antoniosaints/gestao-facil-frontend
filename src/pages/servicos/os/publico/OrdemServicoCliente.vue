@@ -1,15 +1,15 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-blue-800 via-blue-900 to-blue-800 p-0 md:p-6">
+    <div class="min-h-screen bg-gradient-to-br from-blue-800 to-blue-900 p-0 md:p-6">
         <div class="max-w-3xl mx-auto">
-            <Card class="shadow-2xl border-0 overflow-hidden">
-                <CardHeader class="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 p-6 text-white">
+            <Card v-if="show" class="shadow-2xl rounded-none rounded-b-xl border-0 overflow-hidden">
+                <CardHeader class="bg-gradient-to-br from-blue-900 to-blue-800 p-6 text-white">
                     <div class="flex items-center justify-between">
                         <div>
-                            <CardTitle class="text-3xl mb-2">Ordem de Serviço #12345</CardTitle>
-                            <CardDescription class="text-blue-100 text-base">Consulta pública da OS</CardDescription>
+                            <CardTitle class="text-3xl mb-2">#{{ ordemServico?.Uid }}</CardTitle>
+                            <CardDescription class="text-blue-100 text-base">Assinatura pública da OS</CardDescription>
                         </div>
                         <div class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
-                            <span class="text-sm font-semibold">Status</span>
+                            <span class="text-sm">Status</span>
                             <p class="text-xs mt-1">Aguardando assinatura</p>
                         </div>
                     </div>
@@ -25,39 +25,39 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                             <div class="bg-white px-4 py-2 rounded-lg shadow-sm">
                                 <p class="text-sm text-gray-500 mb-1">Cliente</p>
-                                <p class="font-semibold text-gray-800">João da Silva</p>
+                                <p class="text-gray-800">{{ ordemServico?.Cliente.nome }}</p>
                             </div>
                             <div class="bg-white px-4 py-2 rounded-lg shadow-sm">
                                 <p class="text-sm text-gray-500 mb-1">Garantia</p>
-                                <p class="font-semibold text-gray-800">90 dias</p>
+                                <p class="text-gray-800">{{ ordemServico?.garantia }} dias</p>
                             </div>
                             <div class="bg-white px-4 py-2 rounded-lg shadow-sm">
                                 <p class="text-sm text-gray-500 mb-1">Status</p>
-                                <p class="font-semibold text-amber-600">Aguardando assinatura</p>
+                                <p class="text-amber-600">Aguardando assinatura</p>
                             </div>
                             <div class="bg-white px-4 py-2 rounded-lg shadow-sm md:col-span-3">
                                 <p class="text-sm text-gray-500 mb-1">Descrição</p>
-                                <p class="font-semibold text-gray-800">Manutenção eletrica</p>
+                                <p class="text-gray-800">{{ ordemServico?.descricao || 'Sem descrição' }}
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Serviços -->
-                    <div class="bg-blue-50 p-4 rounded-md border border-blue-100">
+                    <div v-show="ordemServico?.ItensOrdensServico.filter(p => p.tipo === 'SERVICO').length"
+                        class="bg-blue-50 p-4 rounded-md border border-blue-100">
                         <h2 class=" text-xl text-gray-800 mb-4 flex items-center">
                             <span class="w-2 h-8 bg-purple-600 rounded-full mr-3"></span>
                             Serviços
                         </h2>
                         <ul class="space-y-2">
-                            <li
+                            <li v-for="row in ordemServico?.ItensOrdensServico.filter(p => p.tipo === 'SERVICO')"
+                                :key="row.id!"
                                 class="flex justify-between items-center bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                <span class="text-gray-700">Manutenção elétrica</span>
-                                <span class=" text-blue-600">R$ 150,00</span>
-                            </li>
-                            <li
-                                class="flex justify-between items-center bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                <span class="text-gray-700">Instalação do módulo</span>
-                                <span class=" text-blue-600">R$ 80,00</span>
+                                <span class="text-gray-700">{{ row.itemName }}</span>
+                                <span class=" text-blue-600">
+                                    {{ formatCurrencyBR(Number(row.valor) * row.quantidade) }}
+                                </span>
                             </li>
                         </ul>
                     </div>
@@ -69,15 +69,13 @@
                             Produtos
                         </h2>
                         <ul class="space-y-2">
-                            <li
+                            <li v-for="row in ordemServico?.ItensOrdensServico.filter(p => p.tipo === 'PRODUTO')"
+                                :key="row.id!"
                                 class="flex justify-between items-center bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                <span class="text-gray-700">Sensor X</span>
-                                <span class=" text-blue-600">R$ 120,00</span>
-                            </li>
-                            <li
-                                class="flex justify-between items-center bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                <span class="text-gray-700">Cabo reforçado</span>
-                                <span class=" text-blue-600">R$ 35,00</span>
+                                <span class="text-gray-700">{{ row.itemName }}</span>
+                                <span class=" text-blue-600">
+                                    {{ formatCurrencyBR(Number(row.valor) * row.quantidade) }}
+                                </span>
                             </li>
                         </ul>
                     </div>
@@ -91,16 +89,20 @@
                         <div class="space-y-3">
                             <div class="flex justify-between items-center text-gray-700">
                                 <span>Subtotal</span>
-                                <span class="font-semibold">R$ 385,00</span>
+                                <span class="">{{ formatCurrencyBR(subtotalOrdem) }}</span>
                             </div>
                             <div class="flex justify-between items-center text-green-600">
                                 <span>Desconto</span>
-                                <span class="font-semibold">- R$ 20,00</span>
+                                <span class="">
+                                    - {{ formatCurrencyBR(ordemServico?.desconto!) }}
+                                </span>
                             </div>
                             <div class="border-t-2 border-green-300 pt-3 mt-3"></div>
                             <div class="flex justify-between items-center text-2xl  text-gray-900">
                                 <span>Total</span>
-                                <span class="text-green-600">R$ 365,00</span>
+                                <span class="text-green-600">
+                                    {{ formatCurrencyBR(subtotalOrdem - Number(ordemServico?.desconto)) }}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -161,141 +163,227 @@
                     </Dialog>
                 </CardContent>
             </Card>
+            <Card v-show="loading || !show" class="shadow-2xl border-0 overflow-hidden">
+                <CardHeader class="bg-gradient-to-br from-blue-900 to-blue-800 p-6 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <CardTitle class="text-3xl mb-2">Assinatura digital</CardTitle>
+                            <CardDescription class="text-blue-100 text-base">Aguardando carregamento das informações...
+                            </CardDescription>
+                        </div>
+                        <div class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                            <span class="text-sm">Em análise</span>
+                            <p class="text-xs mt-1">Lendo informações</p>
+                        </div>
+                    </div>
+                </CardHeader>
+
+                <CardContent class="p-4 space-y-4 bg-white">
+                    <Empty class="border border-dashed">
+                        <EmptyHeader>
+                            <EmptyMedia variant="icon">
+                                <Cloud />
+                            </EmptyMedia>
+                            <EmptyTitle>Nada para assinar aqui.</EmptyTitle>
+                            <EmptyDescription>
+                                Você pode verificar com o emissor da OS, peça o link novamente ou tente recarregar a
+                                página.
+                            </EmptyDescription>
+                        </EmptyHeader>
+                        <EmptyContent>
+                            <Button @click="reloadPage" variant="outline" size="sm">
+                                Recarregar a página.
+                            </Button>
+                        </EmptyContent>
+                    </Empty>
+                </CardContent>
+            </Card>
         </div>
     </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from "vue";
-import {
-    Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-    CardContent,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CreditCard, ImageDown, Signature, Trash } from "lucide-vue-next";
+<script setup lang="ts">
+import { ref, onMounted, nextTick, computed } from "vue";
 import { OrdensServicoRepository } from "@/repositories/os-repository";
 import { useRoute } from "vue-router";
 import { useToast } from "vue-toastification";
 import { HashGenerator } from "@/utils/generators";
+import type { IDetalheOrdemServico } from "@/types/schemas";
+import { formatCurrencyBR } from "@/utils/formatters";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Cloud, CreditCard, ImageDown, Signature, Trash } from "lucide-vue-next";
 
 const route = useRoute();
 const toast = useToast();
-let signaturePad = ref(null);
-let ctx = null;
+
+const signaturePad = ref<HTMLCanvasElement | null>(null);
+let ctx: CanvasRenderingContext2D | null = null;
 let drawing = false;
 const signed = ref(false);
-const assinaturaBase64 = ref(null); (false);
+const assinaturaBase64 = ref<string | null>(null);
 const showPaymentModal = ref(false);
-const ordemServico = ref(null);
+const ordemServico = ref<IDetalheOrdemServico | null>(null);
 const ordemId = ref(route.params.ordemId);
 const contaId = ref(route.params.contaId);
+const loading = ref(true);
+const show = ref(true);
+
+const subtotalOrdem = computed(() => {
+    if (!ordemServico.value) return 0;
+    return ordemServico.value.ItensOrdensServico.reduce(
+        (acc, item) => acc + item.valor * item.quantidade,
+        0
+    );
+});
+
+function reloadPage() {
+    window.location.reload();
+}
 
 const getOrdemServico = async () => {
     try {
-        if (isNaN(HashGenerator.decode(String(contaId.value))[0])) return toast.error("Conta não encontrada");
-        if (isNaN(HashGenerator.decode(String(ordemId.value))[1])) return toast.error("Ordem de Serviço não encontrada");
+        const conta = HashGenerator.decode(String(contaId.value))[0];
+        const ordem = HashGenerator.decode(String(ordemId.value))[0];
+        if (isNaN(Number(conta))) {
+            show.value = false;
+            return toast.error("Dados não encontrados")
+        };
+        if (isNaN(Number(ordem))) {
+            show.value = false;
+            return toast.error("Dados não encontrados")
+        };
         const id = HashGenerator.decode(String(ordemId.value))[0];
-        const response = await OrdensServicoRepository.get(Number(id));
+        const response = await OrdensServicoRepository.getDetalhes(Number(id));
         ordemServico.value = response;
     } catch (error) {
-        console.log(error);
+        console.error(error);
+    } finally {
+        loading.value = false;
     }
+};
+
+function getPosFromEvent(e: PointerEvent) {
+    const canvas = signaturePad.value!;
+    const rect = canvas.getBoundingClientRect();
+    // Use CSS pixels because ctx was scaled for DPR
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    return { x, y };
 }
 
-onMounted(() => {
-    const canvas = signaturePad.value;
-    ctx = canvas.getContext("2d");
-
-    canvas.addEventListener("mousedown", start);
-    canvas.addEventListener("mousemove", draw);
-    canvas.addEventListener("mouseup", stop);
-    canvas.addEventListener("mouseleave", stop);
-
-    canvas.addEventListener("touchstart", start);
-    canvas.addEventListener("touchmove", draw);
-    canvas.addEventListener("touchend", stop);
-
-    getOrdemServico();
-});
-
-function getPos(e) {
-    const rect = signaturePad.value.getBoundingClientRect();
-    const scaleX = signaturePad.value.width / rect.width;
-    const scaleY = signaturePad.value.height / rect.height;
-
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-    return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY,
-    };
-}
-
-function start(e) {
+function start(e: PointerEvent) {
+    if (!ctx || !signaturePad.value) return;
+    // se já assinou, não permite desenhar
+    if (signed.value) return;
     drawing = true;
-    const { x, y } = getPos(e);
+    signaturePad.value.setPointerCapture(e.pointerId);
+    const { x, y } = getPosFromEvent(e);
     ctx.beginPath();
     ctx.moveTo(x, y);
 }
 
-function draw(e) {
-    if (!drawing) return;
-    const { x, y } = getPos(e);
+function draw(e: PointerEvent) {
+    if (!drawing || !ctx) return;
+    e.preventDefault();
+    const { x, y } = getPosFromEvent(e);
     ctx.lineTo(x, y);
     ctx.stroke();
 }
 
-function stop() {
+function stop(e?: PointerEvent) {
+    if (!signaturePad.value) return;
     drawing = false;
+    try {
+        if (e && (e as PointerEvent).pointerId != null) {
+            signaturePad.value.releasePointerCapture((e as PointerEvent).pointerId);
+        }
+    } catch (err) {
+        // ignore
+    }
 }
+
 function clearSignature() {
+    if (!ctx || !signaturePad.value) return;
     ctx.clearRect(0, 0, signaturePad.value.width, signaturePad.value.height);
     signed.value = false;
-    signaturePad.value.style.pointerEvents = "auto";
 }
 
 function saveSignature() {
+    if (!signaturePad.value) return;
     const dataURL = signaturePad.value.toDataURL("image/png");
     assinaturaBase64.value = dataURL;
     drawing = false;
     signed.value = true;
-    signaturePad.value.style.pointerEvents = "none";
 }
-function base64ToFile(base64, filename) {
-    const arr = base64.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
+
+function base64ToFile(base64: string, filename: string): File {
+    const arr = base64.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
     const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    const u8arr = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
     return new File([u8arr], filename, { type: mime });
 }
 
 function baixarAssinatura() {
     if (!assinaturaBase64.value) return;
-
     const a = document.createElement("a");
-    a.href = assinaturaBase64.value; // dataURL
+    a.href = assinaturaBase64.value;
     a.download = "assinatura.png";
     a.click();
 }
 
-
 async function enviarAssinatura() {
+    if (!assinaturaBase64.value) return;
     const file = base64ToFile(assinaturaBase64.value, "assinatura.png");
     const form = new FormData();
-    form.append("os_id", 12345);
     form.append("assinatura", file);
-    await axios.post("/api/os/assinatura", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-    });
+    // enviar para sua API aqui
 }
+
+// Setup do canvas (espera o DOM e ajusta DPR)
+onMounted(async () => {
+    await nextTick();
+    const canvas = signaturePad.value;
+    if (!canvas) {
+        console.error("Canvas não encontrado (ref não vinculada). Confira o template: <canvas ref=\"signaturePad\">");
+        return;
+    }
+
+    // Ajuste de resolução para ficar nítido em telas HiDPI
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+
+    ctx = canvas.getContext("2d");
+    if (!ctx) {
+        console.error("Não foi possível obter 2D context do canvas");
+        return;
+    }
+
+    // Escala o contexto para considerar o DPR (usaremos coordenadas em CSS pixels)
+    ctx.scale(dpr, dpr);
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#000";
+
+    // Usar pointer events unifica touch e mouse
+    canvas.addEventListener("pointerdown", start);
+    canvas.addEventListener("pointermove", draw);
+    canvas.addEventListener("pointerup", stop);
+    canvas.addEventListener("pointerleave", stop);
+
+    // Opcional: carregar ordem ao montar
+    getOrdemServico();
+});
 </script>
+
 
 <style scoped>
 canvas {

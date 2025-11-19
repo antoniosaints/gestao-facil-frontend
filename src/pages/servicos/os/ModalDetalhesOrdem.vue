@@ -70,6 +70,16 @@
                         <p><strong class="text-muted-foreground font-normal">Descrição cliente:</strong>
                             {{ store.ordemDetalhe.descricaoCliente || '—' }}</p>
                     </div>
+                    <!-- <hr class="mx-2 mt-2">
+                    <div class="mt-3 px-2">
+                        <p>
+                            <strong class="text-muted-foreground font-normal">
+                                Assinatura digital:
+                            </strong>
+                            {{ store.ordemDetalhe.descricao || 'Não assinada' }}
+                        </p>
+                    </div> -->
+
                 </TabsContent>
                 <TabsContent value="arquivos" class="mt-3">
                     <div class="flex flex-col gap-3">
