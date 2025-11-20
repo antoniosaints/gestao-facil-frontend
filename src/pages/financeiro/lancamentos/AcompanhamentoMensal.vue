@@ -1,12 +1,35 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue"
-import { addMonths, format, isSameDay, subMonths } from "date-fns"
-import { Card, CardContent } from "@/components/ui/card"
+import { ref, onMounted, watch, computed } from "vue"
+import { addMonths, format, isSameDay, subMonths, isToday, isYesterday } from "date-fns"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LancamentosRepository } from "@/repositories/lancamento-repository"
 import { formatCurrencyBR, formatToCapitalize } from "@/utils/formatters"
 import { ptBR } from "date-fns/locale"
-import { ArrowBigLeft, ArrowBigRight, BadgeCheck, BadgePlus, CalendarClock, CircleDollarSign, Dot, PenLine, Pin, Plus, ReceiptText, Trash, TrendingDown, TrendingUp, Undo2 } from "lucide-vue-next"
+import {
+    ArrowLeft,
+    ArrowRight,
+    TrendingUp,
+    TrendingDown,
+    MoreVertical,
+    Edit,
+    Trash2,
+    CheckCircle2,
+    Undo2,
+    Plus,
+    Home,
+    Wallet,
+    Calendar as CalendarIcon,
+    Search,
+    Filter
+} from "lucide-vue-next"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useToast } from "vue-toastification"
 import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
 import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos"
@@ -20,21 +43,22 @@ const toast = useToast()
 const store = useLancamentosStore()
 const uiStore = useUiStore()
 const openModalLancar = ref(false)
-const navigateMonth = (direction: "prev" | "next") => {
-    store.currentMonth =
-        direction === "prev"
-            ? subMonths(store.currentMonth, 1)
-            : addMonths(store.currentMonth, 1)
 
+// Navigation
+const navigateMonth = (direction: "prev" | "next") => {
+    store.currentMonth = direction === "prev"
+        ? subMonths(store.currentMonth, 1)
+        : addMonths(store.currentMonth, 1)
     carregarLancamentos()
-};
+}
 
 const openByTipo = (tipo: 'RECEITA' | 'DESPESA') => {
     store.form.tipo = tipo
     store.openSave()
+    openModalLancar.value = false
 }
 
-// Dados
+// Interfaces
 interface Lancamento {
     id: number
     descricao: string
@@ -51,9 +75,11 @@ interface DiaLancamento {
     saldo: number
 }
 
+// State
 const carregando = ref<boolean>(false)
 const lancamentos = ref<DiaLancamento[]>([])
 
+// Actions
 async function carregarLancamentos() {
     try {
         carregando.value = true
@@ -70,6 +96,7 @@ async function efetivarParcela(id: number) {
     store.idMutation = id
     store.openModalEfetivar = true
 }
+
 async function estornarParcela(id: number) {
     try {
         await LancamentosRepository.estornarParcela(id);
@@ -77,7 +104,7 @@ async function estornarParcela(id: number) {
         carregarLancamentos();
     } catch (error: any) {
         console.error(error);
-        toast.error(error.response.data.message || "Erro ao estornar a parcela");
+        toast.error(error.response?.data?.message || "Erro ao estornar a parcela");
     }
 }
 
@@ -89,171 +116,286 @@ function editarParcela(parcela: Lancamento, data: string) {
     }
     store.openModalParcela = true
 }
+
+// Helpers
+const getDayLabel = (dateStr: string) => {
+    const date = new Date(dateStr)
+    if (isToday(date)) return 'Hoje'
+    if (isYesterday(date)) return 'Ontem'
+    return format(date, "EEEE", { locale: ptBR })
+}
+
+const getDayNumber = (dateStr: string) => {
+    return format(new Date(dateStr), "dd")
+}
+
+// Totals Calculation
+const totalReceitas = computed(() => {
+    return lancamentos.value.reduce((acc, dia) => {
+        return acc + dia.lancamentos
+            .filter(l => l.tipo === 'RECEITA')
+            .reduce((sum, l) => sum + l.valor, 0)
+    }, 0)
+})
+
+const totalDespesas = computed(() => {
+    return lancamentos.value.reduce((acc, dia) => {
+        return acc + dia.lancamentos
+            .filter(l => l.tipo === 'DESPESA')
+            .reduce((sum, l) => sum + l.valor, 0)
+    }, 0)
+})
+
+const saldoMensal = computed(() => totalReceitas.value - totalDespesas.value)
+
 onMounted(carregarLancamentos)
 watch(() => [store.filters.update], carregarLancamentos)
 </script>
 
 <template>
-    <div>
-        <div class="flex flex-col md:flex-row gap-2 justify-between mb-2">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                    <CalendarClock class="h-6 w-6" :stroke-width="2.5" />
-                    Acompanhamento
-                </h2>
-                <p class="text-sm text-muted-foreground">Lançamentos financeiros por mês</p>
+    <div class="overflow-auto rounded-lg md:pb-0 min-h-[calc(100vh-13rem)]">
+        <!-- Header Section -->
+        <div class="top-0 z-10 bg-card backdrop-blur-md rounded-lg border-b px-4 py-3 space-y-4">
+            <!-- Month Navigation -->
+            <div class="flex items-center justify-between max-w-7xl mx-auto w-full">
+                <Button variant="ghost" size="icon" @click="navigateMonth('prev')"
+                    class="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <ArrowLeft class="w-5 h-5" />
+                </Button>
+
+                <div class="flex flex-col items-center">
+                    <h2 class="text-lg font-semibold capitalize">
+                        {{ format(store.currentMonth, "MMMM yyyy", { locale: ptBR }) }}
+                    </h2>
+                    <div class="flex items-center gap-2 text-xs font-medium">
+                        <span :class="saldoMensal >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+                            {{ formatCurrencyBR(saldoMensal) }}
+                        </span>
+                    </div>
+                </div>
+
+                <Button variant="ghost" size="icon" @click="navigateMonth('next')"
+                    class="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <ArrowRight class="w-5 h-5" />
+                </Button>
             </div>
-            <div class="gap-2 py-2 hidden md:flex">
-                <button @click="openByTipo('RECEITA')"
-                    class="bg-success text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-2">
-                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Receita</span>
-                </button>
-                <button @click="openByTipo('DESPESA')"
-                    class="bg-danger text-white px-3 py-1.5 text-sm rounded-md flex items-center gap-2">
-                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Despesa</span>
-                </button>
+
+            <!-- Quick Stats (Desktop only) -->
+            <div class="hidden md:grid grid-cols-3 gap-4 max-w-7xl mx-auto w-full">
+                <Card
+                    class="bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/50 shadow-sm">
+                    <CardContent class="px-4 py-2 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Receitas</p>
+                            <p class="text-lg font-bold text-emerald-700 dark:text-emerald-300">{{
+                                formatCurrencyBR(totalReceitas) }}</p>
+                        </div>
+                        <div class="p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-full">
+                            <TrendingUp class="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card class="bg-red-50/50 dark:bg-red-950/20 border-red-100 dark:border-red-900/50 shadow-sm">
+                    <CardContent class="px-4 py-2 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-red-600 dark:text-red-400 font-medium">Despesas</p>
+                            <p class="text-lg font-bold text-red-700 dark:text-red-300">{{
+                                formatCurrencyBR(totalDespesas) }}</p>
+                        </div>
+                        <div class="p-2 bg-red-100 dark:bg-red-900/50 rounded-full">
+                            <TrendingDown class="w-5 h-5 text-red-600 dark:text-red-400" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div class="flex gap-2 items-center justify-end">
+                    <Button @click="openByTipo('RECEITA')"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
+                        <Plus class="w-4 h-4 mr-2" /> Receita
+                    </Button>
+                    <Button @click="openByTipo('DESPESA')" class="bg-red-600 hover:bg-red-700 text-white shadow-sm">
+                        <Plus class="w-4 h-4 mr-2" /> Despesa
+                    </Button>
+                </div>
             </div>
-        </div>
-        <div class="flex justify-between items-center mb-2 px-1 rounded-xl text-gray-800 dark:text-gray-200">
-            <button class="bg-card px-4 py-1 rounded-xl border flex items-center gap-2" @click="navigateMonth('prev')">
-                <ArrowBigLeft class="w-5 h-5" />
-                <span class="hidden md:inline">Anterior</span>
-            </button>
-            <h2 class="text-xl">{{ formatToCapitalize(format(store.currentMonth, "MMMM 'de' yyyy", { locale: ptBR })) }}
-            </h2>
-            <button class="bg-card px-4 py-1 rounded-xl border flex items-center gap-2" @click="navigateMonth('next')">
-                <span class="hidden md:inline">Proximo</span>
-                <ArrowBigRight class="w-5 h-5" />
-            </button>
         </div>
 
-        <!-- Loading -->
-        <div v-if="carregando" class="text-center py-4 text-gray-500">
-            Carregando lançamentos...
-        </div>
+        <!-- Main Content -->
+        <div class="max-w-6xl mx-auto p-4 space-y-6">
+            <!-- Loading State -->
+            <div v-if="carregando" class="flex flex-col items-center justify-center py-12 space-y-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p class="text-sm text-muted-foreground">Carregando lançamentos...</p>
+            </div>
 
-        <!-- Lista de Lançamentos -->
-        <div v-else
-            class="space-y-4 min-h-40 px-1 overflow-auto max-h-[calc(100vh-14.1rem)] md:max-h-[calc(100vh-13.7rem)]">
-            <Card v-for="dia in lancamentos" :key="dia.dia" class="bg-transparent border-none shadow-none">
-                <CardContent class="p-0 border-none">
-                    <p class="text-xs px-3 bg-card/40 capitalize py-0.5 rounded-t-sm">
-                        {{ format(new Date(dia.dia), isSameDay(dia.dia, new Date()) ? "'Hoje,' dd/MM" : "EEEE',' dd/MM",
-                            {
-                                locale: ptBR
-                            }) }}
-                    </p>
-                    <div class="flex flex-col">
+            <!-- Empty State -->
+            <div v-else-if="lancamentos.length === 0"
+                class="flex flex-col items-center justify-center py-16 text-center space-y-4">
+                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-full">
+                    <CalendarIcon class="w-8 h-8 text-gray-400" />
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Nenhum lançamento</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Não há registros para este mês.</p>
+                </div>
+                <Button @click="openModalLancar = true" variant="outline" class="mt-4">
+                    Adicionar Lançamento
+                </Button>
+            </div>
+
+            <!-- Transactions List -->
+            <div v-else class="space-y-3">
+                <div v-for="dia in lancamentos" :key="dia.dia" class="space-y-3">
+                    <!-- Day Header -->
+                    <div class="flex items-center gap-3 top-[120px] md:top-[180px] z-0">
+                        <div
+                            class="flex flex-col items-center justify-center bg-white dark:bg-card border rounded-lg w-10 h-10 shadow-sm">
+                            <span class="text-md font-bold leading-none">{{ getDayNumber(dia.dia) }}</span>
+                            <span class="text-[9px] text-muted-foreground uppercase font-medium">{{ format(new
+                                Date(dia.dia), "MMM", { locale: ptBR }) }}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium capitalize text-gray-900 dark:text-gray-100">
+                                {{ getDayLabel(dia.dia) }}
+                            </span>
+                            <span class="text-xs text-muted-foreground">
+                                Saldo do dia: {{ formatCurrencyBR(dia.saldo) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Transactions Cards -->
+                    <div class="grid gap-1 pl-0 md:pl-14">
                         <div v-for="item in dia.lancamentos" :key="item.id"
-                            class="flex justify-between py-1 group pl-5 gap-2 bg-background border border-t-0 px-3 first:rounded-t-none rounded-none last:rounded-b-sm relative">
-                            <div v-if="item.tipo === 'RECEITA'"
-                                class="absolute left-0 top-0 w-2 h-full group-last:rounded-bl-sm bg-success/90"></div>
-                            <div v-else class="absolute left-0 top-0 w-2 h-full group-last:rounded-bl-sm bg-danger/90">
-                            </div>
-                            <div class="flex flex-col justify-center">
-                                <div class="font-medium text-md">
-                                    <Pin class="inline mr-1" :size="12" />
-                                    <RouterLink :to="`/financeiro/detalhes?id=${item.id}`"
-                                        class="hover:underline hover:cursor-pointer hover:text-primary text-sm md:text-md">
+                            class="group relative bg-white dark:bg-card border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between overflow-hidden">
+
+                            <!-- Left Border Indicator -->
+                            <div :class="[
+                                'absolute left-0 top-0 bottom-0 w-1',
+                                item.tipo === 'RECEITA' ? 'bg-emerald-500' : 'bg-rose-500'
+                            ]"></div>
+
+                            <div class="flex items-center gap-4 overflow-hidden">
+                                <!-- Icon/Category -->
+                                <div :class="[
+                                    'flex-shrink-0 w-10 h-10 rounded-full items-center justify-center hidden md:flex',
+                                    item.tipo === 'RECEITA' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600'
+                                ]">
+                                    <TrendingUp v-if="item.tipo === 'RECEITA'" class="w-5 h-5" />
+                                    <TrendingDown v-else class="w-5 h-5" />
+                                </div>
+
+                                <!-- Details -->
+                                <div class="flex flex-col min-w-0">
+                                    <span class="font-medium text-sm truncate text-gray-900 dark:text-gray-100">
                                         {{ item.descricao }}
-                                    </RouterLink>
-                                    <Dot class="inline" :size="16" absoluteStrokeWidth />
-                                    <span :class="[
-                                        'text-xs',
-                                        item.status === 'PENDENTE' ? 'text-red-600' : 'text-green-600'
-                                    ]">
-                                        {{ item.status === 'PENDENTE' ? 'Pendente' : 'Paga' }}
+                                    </span>
+                                    <span class="text-xs text-muted-foreground truncate">
+                                        {{ item.categoria }}
                                     </span>
                                 </div>
-                                <div class="text-xs text-muted-foreground">
-                                    {{ item.categoria }}
-                                </div>
-                                <div :class="['text-xs', item.tipo === 'RECEITA' ? 'text-green-600' : 'text-red-600']">
-                                    {{ item.tipo === 'RECEITA' ? 'Receita' : 'Despesa' }}
-                                </div>
                             </div>
-                            <div>
-                                <div :class="[
-                                    'flex items-center text-right justify-end',
-                                    item.tipo === 'RECEITA' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                                ]">
-                                    {{ formatCurrencyBR(item.valor) }}
+
+                            <!-- Right Side -->
+                            <div class="flex items-center gap-3 md:gap-6 flex-shrink-0 ml-4">
+                                <div class="flex flex-col items-end">
+                                    <span :class="[
+                                        'text-xs',
+                                        item.tipo === 'RECEITA' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                                    ]">
+                                        {{ item.tipo === 'DESPESA' ? '-' : '+' }}{{ formatCurrencyBR(item.valor) }}
+                                    </span>
+                                    <Badge :variant="item.status === 'PAGO' ? 'default' : 'outline'" :class="[
+                                        'text-[10px] px-1.5 py-0 h-5 text-normal border-none',
+                                        item.status === 'PAGO'
+                                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
+                                            : 'text-yellow-600 border-yellow-200 dark:text-yellow-500'
+                                    ]">
+                                        {{ item.status === 'PAGO' ? 'Pago' : 'Pendente' }}
+                                    </Badge>
                                 </div>
-                                <div class="flex gap-2 mt-2 justify-end">
-                                    <Button @click="editarParcela(item, dia.dia)" variant="outline"
-                                        class="bg-transparent w-9 text-blue-500 rounded-lg" size="sm">
-                                        <PenLine :size="16" absoluteStrokeWidth />
-                                    </Button>
-                                    <Button @click="estornarParcela(item.parcelaId)" v-if="item.status === 'PAGO'"
-                                        variant="outline"
-                                        class="bg-transparent w-9 text-yellow-700 rounded-lg dark:text-yellow-500"
-                                        size="sm">
-                                        <Undo2 :size="16" absoluteStrokeWidth />
-                                    </Button>
-                                    <Button @click="efetivarParcela(item.parcelaId)" v-else variant="outline"
-                                        class="bg-transparent w-9 text-green-500 rounded-lg" size="sm">
-                                        <BadgeCheck :size="16" absoluteStrokeWidth />
-                                    </Button>
-                                </div>
+
+                                <!-- Actions Menu -->
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger as-child>
+                                        <Button variant="outline" size="icon"
+                                            class="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                                            <MoreVertical class="w-4 h-4 text-gray-500" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" class="w-40">
+                                        <DropdownMenuItem @click="editarParcela(item, dia.dia)">
+                                            <Edit class="w-4 h-4 mr-2" />
+                                            Editar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem v-if="item.status !== 'PAGO'"
+                                            @click="efetivarParcela(item.parcelaId)">
+                                            <CheckCircle2 class="w-4 h-4 mr-2 text-emerald-600" />
+                                            Efetivar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem v-else @click="estornarParcela(item.parcelaId)">
+                                            <Undo2 class="w-4 h-4 mr-2 text-yellow-600" />
+                                            Estornar
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
-
-            <div v-if="lancamentos.length === 0" class="text-center text-gray-600 dark:text-gray-400 py-6 flex flex-col h-full justify-center items-center
-                min-h-[calc(100vh-15.6rem)]">
-                <ReceiptText class="w-12 h-12 mx-auto mb-2" />
-                Nenhum lançamento encontrado.
-                <RouterLink :to="`/financeiro/lancamentos`">
-                    <Button class="mt-4">
-                        <CircleDollarSign />
-                        Adicionar Lançamentos
-                    </Button>
-                </RouterLink>
+                </div>
             </div>
         </div>
-        <ModalView v-model:open="openModalLancar" title="Selecione o tipo de lançamento" size="md"
-            description="Adicionar transação financeira">
+
+        <!-- Mobile Bottom Navigation -->
+        <div v-if="uiStore.isMobile"
+            class="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t border-border z-10 pb-safe">
+            <div class="flex items-center justify-around h-16 px-2">
+                <button @click="goTo('/financeiro/lancamentos')"
+                    class="flex flex-col items-center justify-center w-full h-full space-y-1 text-muted-foreground hover:text-primary transition-colors">
+                    <Home class="w-5 h-5" />
+                    <span class="text-[10px] font-medium">Início</span>
+                </button>
+
+                <button @click="openModalLancar = true" class="flex flex-col items-center justify-center -mt-6">
+                    <div
+                        class="w-12 h-12 bg-primary rounded-full shadow-lg flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform">
+                        <Plus class="w-6 h-6 text-white" />
+                    </div>
+                    <span class="text-[10px] font-medium mt-1 text-primary">Novo</span>
+                </button>
+
+                <button @click="goBack"
+                    class="flex flex-col items-center justify-center w-full h-full space-y-1 text-muted-foreground hover:text-primary transition-colors">
+                    <Undo2 class="w-5 h-5" />
+                    <span class="text-[10px] font-medium">Voltar</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <ModalView v-model:open="openModalLancar" title="Novo Lançamento" size="sm">
             <div class="grid grid-cols-2 gap-4 p-4">
-                <div @click="openByTipo('RECEITA')"
-                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                <button @click="openByTipo('RECEITA')"
+                    class="flex flex-col items-center justify-center p-4 rounded-xl border bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-200 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 transition-all group">
                     <div
-                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
-                        <TrendingUp class="w-10 h-10 text-green-500 dark:text-green-400" />
+                        class="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <TrendingUp class="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Receita</div>
-                </div>
-                <div @click="openByTipo('DESPESA')"
-                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                    <span class="font-medium text-emerald-900 dark:text-emerald-100">Receita</span>
+                </button>
+
+                <button @click="openByTipo('DESPESA')"
+                    class="flex flex-col items-center justify-center p-4 rounded-xl border bg-rose-50 hover:bg-rose-100 hover:border-rose-200 dark:bg-rose-950/30 dark:hover:bg-rose-900/50 transition-all group">
                     <div
-                        class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
-                        <TrendingDown class="w-10 h-10 text-red-500 dark:text-red-400" />
+                        class="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <TrendingDown class="w-6 h-6 text-rose-600 dark:text-rose-400" />
                     </div>
-                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Despesa</div>
-                </div>
-                <Button type="button" variant="outline" class="col-span-2 pt-2 -mb-2"
-                    @click="openModalLancar = false">Fechar</Button>
+                    <span class="font-medium text-rose-900 dark:text-rose-100">Despesa</span>
+                </button>
             </div>
         </ModalView>
-        <nav v-if="uiStore.isMobile"
-            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
-            <button type="button" @click="goTo('/financeiro/lancamentos')"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <CircleDollarSign />
-                <span class="text-xs">Geral</span>
-            </button>
-            <button type="button" @click="openModalLancar = true"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <Plus />
-                <span class="text-xs">Novo</span>
-            </button>
-            <button type="button" @click="goBack"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <Undo2 />
-                <span class="text-xs">Voltar</span>
-            </button>
-        </nav>
+
         <FormularioEfertivar @success="carregarLancamentos" />
         <ModalParcela />
         <LancamentoModal />
@@ -261,10 +403,7 @@ watch(() => [store.filters.update], carregarLancamentos)
 </template>
 
 <style scoped>
-@media (max-width: 640px) {
-    .card-content {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
 }
 </style>
