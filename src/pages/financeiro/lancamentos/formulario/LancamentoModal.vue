@@ -307,7 +307,7 @@ watch(() => params.value.hasEntrada, () => {
                     <!-- Conta Financeiro -->
                     <div class="col-span-6">
                         <label for="contasFinanceiroId" class="block text-sm font-medium mb-1">
-                            Conta Financeira *
+                            Conta *
                             <FormularioContas class="text-blue-500 px-2 cursor-pointer">+ Nova</FormularioContas>
                         </label>
                         <Select2Ajax id="contasFinanceiroId" v-model="store.form.contasFinanceiroId"

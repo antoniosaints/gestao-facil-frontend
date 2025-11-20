@@ -308,10 +308,10 @@ watch(() => [store.filters.update], carregarLancamentos)
                                     ]">
                                         {{ item.tipo === 'DESPESA' ? '-' : '+' }}{{ formatCurrencyBR(item.valor) }}
                                     </span>
-                                    <Badge :variant="item.status === 'PAGO' ? 'default' : 'outline'" :class="[
-                                        'text-[10px] px-1.5 py-0 h-5 text-normal border-none',
+                                    <Badge :variant="item.status === 'PAGO' ? 'outline' : 'outline'" :class="[
+                                        'text-[10px] px-1.5 py-0 h-5 text-normal border-none md:border bg-transparent',
                                         item.status === 'PAGO'
-                                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
+                                            ? 'text-green-600 border-green-200 dark:text-green-500'
                                             : 'text-yellow-600 border-yellow-200 dark:text-yellow-500'
                                     ]">
                                         {{ item.status === 'PAGO' ? 'Pago' : 'Pendente' }}
