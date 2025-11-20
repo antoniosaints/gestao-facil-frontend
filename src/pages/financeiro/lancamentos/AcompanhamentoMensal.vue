@@ -38,6 +38,7 @@ import { useUiStore } from "@/stores/ui/uiStore"
 import ModalParcela from "./modais/ModalParcela.vue"
 import LancamentoModal from "./formulario/LancamentoModal.vue"
 import ModalView from "@/components/formulario/ModalView.vue"
+import ClientesModal from "@/pages/clientes/modais/ClientesModal.vue"
 
 const toast = useToast()
 const store = useLancamentosStore()
@@ -399,6 +400,7 @@ watch(() => [store.filters.update], carregarLancamentos)
         <FormularioEfertivar @success="carregarLancamentos" />
         <ModalParcela />
         <LancamentoModal />
+        <ClientesModal />
     </div>
 </template>
 
