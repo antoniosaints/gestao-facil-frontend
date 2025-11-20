@@ -20,7 +20,8 @@ import {
     Wallet,
     Calendar as CalendarIcon,
     Search,
-    Filter
+    Filter,
+    Info
 } from "lucide-vue-next"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -127,7 +128,7 @@ const getDayLabel = (dateStr: string) => {
 }
 
 const getDayNumber = (dateStr: string) => {
-    return format(new Date(dateStr), "dd")
+    return format(new Date(dateStr), "dd", { locale: ptBR })
 }
 
 // Totals Calculation
@@ -326,6 +327,12 @@ watch(() => [store.filters.update], carregarLancamentos)
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" class="w-40">
+                                        <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
+                                            <DropdownMenuItem>
+                                                <Info class="w-4 h-4 mr-2 text-blue-600" />
+                                                Detalhes
+                                            </DropdownMenuItem>
+                                        </RouterLink>
                                         <DropdownMenuItem @click="editarParcela(item, dia.dia)">
                                             <Edit class="w-4 h-4 mr-2" />
                                             Editar
