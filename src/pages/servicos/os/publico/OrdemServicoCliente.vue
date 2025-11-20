@@ -54,7 +54,7 @@
                             <li v-for="row in ordemServico?.ItensOrdensServico.filter(p => p.tipo === 'SERVICO')"
                                 :key="row.id!"
                                 class="flex justify-between items-center bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                <span class="text-gray-700">{{ row.itemName }}</span>
+                                <span class="text-gray-700">{{ row.itemName }} x {{ row.quantidade }}</span>
                                 <span class=" text-blue-600">
                                     {{ formatCurrencyBR(Number(row.valor) * row.quantidade) }}
                                 </span>
@@ -72,7 +72,7 @@
                             <li v-for="row in ordemServico?.ItensOrdensServico.filter(p => p.tipo === 'PRODUTO')"
                                 :key="row.id!"
                                 class="flex justify-between items-center bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                <span class="text-gray-700">{{ row.itemName }}</span>
+                                <span class="text-gray-700">{{ row.itemName }} x {{ row.quantidade }}</span>
                                 <span class=" text-blue-600">
                                     {{ formatCurrencyBR(Number(row.valor) * row.quantidade) }}
                                 </span>
