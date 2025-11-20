@@ -545,7 +545,7 @@ async function finalizarVendaPDV() {
         itens: cart.value.map((i) => ({
             id: i.id,
             quantidade: i.quantity,
-            preco: i.preco,
+            preco: formatToNumberValue(i.preco),
         })),
     }
 
