@@ -153,11 +153,11 @@ watch(() => [store.filters.update], carregarLancamentos)
 </script>
 
 <template>
-    <div class="overflow-auto rounded-lg md:pb-0 min-h-[calc(100vh-13rem)]">
+    <div class="overflow-auto rounded-lg max-w-6xl mx-auto md:pb-0 min-h-[calc(100vh-13rem)]">
         <!-- Header Section -->
         <div class="top-0 z-10 bg-card backdrop-blur-md rounded-lg border-b px-4 py-3 space-y-4">
             <!-- Month Navigation -->
-            <div class="flex items-center justify-between max-w-7xl mx-auto w-full">
+            <div class="flex items-center justify-between max-w-6xl mx-auto w-full">
                 <Button variant="ghost" size="icon" @click="navigateMonth('prev')"
                     class="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
                     <ArrowLeft class="w-5 h-5" />
@@ -181,7 +181,7 @@ watch(() => [store.filters.update], carregarLancamentos)
             </div>
 
             <!-- Quick Stats (Desktop only) -->
-            <div class="hidden md:grid grid-cols-3 gap-4 max-w-7xl mx-auto w-full">
+            <div class="hidden md:grid grid-cols-3 gap-4 max-w-6xl mx-auto w-full">
                 <Card
                     class="bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/50 shadow-sm">
                     <CardContent class="px-4 py-2 flex items-center justify-between">
@@ -222,7 +222,7 @@ watch(() => [store.filters.update], carregarLancamentos)
         </div>
 
         <!-- Main Content -->
-        <div class="max-w-6xl mx-auto p-4 space-y-6">
+        <div class="max-w-6xl mx-auto py-4 space-y-6">
             <!-- Loading State -->
             <div v-if="carregando" class="flex flex-col items-center justify-center py-12 space-y-4">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

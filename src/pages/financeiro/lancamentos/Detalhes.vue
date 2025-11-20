@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, BadgeCheck, BadgeDollarSign, CircleDollarSign, Component, ExternalLink, FileClock, HandCoins, PenLine, Plus, RotateCw, ToggleLeft, Trash, Trash2, Undo2 } from "lucide-vue-next"
+import { ArrowLeft, BadgeCheck, BadgeDollarSign, Check, CircleDollarSign, Component, Edit, ExternalLink, FileClock, HandCoins, Link2, MoreVertical, PenLine, Plus, RotateCw, ToggleLeft, Trash, Trash2, TrendingDown, TrendingUp, Undo2 } from "lucide-vue-next"
 import BadgeCell from "@/components/tabela/BadgeCell.vue"
 import { useRoute } from "vue-router"
 import type { CategoriaFinanceiro, ClientesFornecedores, LancamentoFinanceiro, ParcelaFinanceiro } from "@/types/schemas"
@@ -24,6 +24,7 @@ import { useUiStore } from "@/stores/ui/uiStore"
 import { goBack } from "@/hooks/links"
 import { useCobrancasFinanceirasStore } from "@/stores/lancamentos/useCobrancas"
 import ModalParcela from "./modais/ModalParcela.vue"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 const route = useRoute()
 const toast = useToast()
@@ -240,8 +241,8 @@ const valorTotal = computed(() => {
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div class="relative overflow-x-auto shadow-md sm:rounded-lg border border-border">
-                    <Table>
+                <div class="relative overflow-x-auto shadow-none md:shadow-md sm:rounded-lg">
+                    <Table v-if="!uiStore.isMobile">
                         <TableHeader class="text-sm bg-body">
                             <TableRow>
                                 <TableHead>Tipo</TableHead>
@@ -289,7 +290,7 @@ const valorTotal = computed(() => {
                                         </Button>
                                         <Button v-if="p.CobrancasFinanceiras?.length"
                                             @click="openLinkCobranca(p.CobrancasFinanceiras[0].externalLink!)"
-                                            variant="outline" class="h-8 p-0 px-2 bg-secondary hover:bg-secondary/80">
+                                            variant="outline" class="h-8 p-0 text-white px-2 bg-info hover:bg-info/80">
                                             <ExternalLink class="w-4 h-4" />
                                         </Button>
                                         <Button v-if="!p.pago" :disabled="lancamento.vendaId"
@@ -312,6 +313,96 @@ const valorTotal = computed(() => {
                             </TableRow>
                         </TableBody>
                     </Table>
+                    <div v-else class="grid gap-1 pl-0 md:pl-14">
+                        <div v-for="item in lancamento.parcelas" :key="item.id"
+                            class="group relative bg-white dark:bg-card border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between overflow-hidden">
+
+                            <!-- Left Border Indicator -->
+                            <div :class="[
+                                'absolute left-0 top-0 bottom-0 w-1',
+                                lancamento.tipo === 'RECEITA' ? 'bg-emerald-500' : 'bg-rose-500'
+                            ]"></div>
+
+                            <div class="flex items-center gap-4 overflow-hidden">
+                                <!-- Icon/Category -->
+                                <div :class="[
+                                    'flex-shrink-0 w-10 h-10 rounded-full items-center justify-center hidden md:flex',
+                                    lancamento.tipo === 'RECEITA' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600'
+                                ]">
+                                    <TrendingUp v-if="lancamento.tipo === 'RECEITA'" class="w-5 h-5" />
+                                    <TrendingDown v-else class="w-5 h-5" />
+                                </div>
+
+                                <!-- Details -->
+                                <div class="flex flex-col min-w-0">
+                                    <span class="font-medium text-sm truncate text-gray-900 dark:text-gray-100">
+                                        {{ item.numero === 1 && lancamento.parcelas.length === 1 ? "À vista" :
+                                            item.numero ===
+                                                0 ? "Entrada" : `Parcela ${item.numero}` }}
+                                    </span>
+                                    <span class="text-xs text-muted-foreground truncate">
+                                        {{ item.vencimento ? formatDate(item.vencimento, "dd/MM/yyyy") : "-" }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Right Side -->
+                            <div class="flex items-center gap-3 md:gap-6 flex-shrink-0 ml-4">
+                                <div class="flex flex-col items-end">
+                                    <span :class="[
+                                        'text-xs',
+                                        lancamento.tipo === 'RECEITA' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                                    ]">
+                                        {{ lancamento.tipo === 'DESPESA' ? '-' : '+' }}{{ formatCurrencyBR(item.valor)
+                                        }}
+                                    </span>
+                                    <Badge :variant="lancamento.status === 'PAGO' ? 'default' : 'outline'" :class="[
+                                        'text-[10px] px-1.5 py-0 h-5 text-normal border-none',
+                                        item.pago
+                                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
+                                            : 'text-yellow-600 border-yellow-200 dark:text-yellow-500'
+                                    ]">
+                                        {{ item.pago ? 'Pago' : 'Pendente' }}
+                                    </Badge>
+                                </div>
+
+                                <!-- Actions Menu -->
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger as-child>
+                                        <Button variant="outline" size="icon"
+                                            class="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                                            <MoreVertical class="w-4 h-4 text-gray-500" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" class="w-40">
+                                        <DropdownMenuItem @click="editarParcela(item)">
+                                            <Edit class="w-4 h-4 mr-2" />
+                                            Editar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem v-if="!item.pago" @click="efetivarParcela(item.id!)">
+                                            <Check class="w-4 h-4 mr-2" />
+                                            {{ lancamento.tipo === 'RECEITA' ? 'Receber' : 'Pagar' }}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem v-if="item.pago" :disabled="lancamento.vendaId != undefined"
+                                            @click="estornarParcela(item.id!)">
+                                            <Undo2 class="w-4 h-4 mr-2" />
+                                            Estornar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem v-if="!item.pago && !item.CobrancasFinanceiras?.length"
+                                            @click="gerarCobrancaParcela(item.id!, item.valor)">
+                                            <CircleDollarSign class="w-4 h-4 mr-2" />
+                                            Gerar cobrança
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem v-if="item.CobrancasFinanceiras?.length"
+                                            @click="openLinkCobranca(item.CobrancasFinanceiras[0].externalLink!)">
+                                            <Link2 class="w-4 h-4 mr-2" />
+                                            Abrir cobrança
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </CardContent>
         </Card>
