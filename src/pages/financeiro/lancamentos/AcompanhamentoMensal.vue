@@ -303,7 +303,7 @@ watch(() => [store.filters.update], carregarLancamentos)
                             <div class="flex items-center gap-3 md:gap-6 flex-shrink-0 ml-4">
                                 <div class="flex flex-col items-end">
                                     <span :class="[
-                                        'text-xs',
+                                        'text-xs md:text-sm',
                                         item.tipo === 'RECEITA' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                                     ]">
                                         {{ item.tipo === 'DESPESA' ? '-' : '+' }}{{ formatCurrencyBR(item.valor) }}
