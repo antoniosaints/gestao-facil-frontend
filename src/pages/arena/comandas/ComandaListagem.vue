@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useVendasStore } from '@/stores/vendas/useVenda';
 import { onMounted, onUnmounted, provide, ref } from 'vue';
-import { BadgePlus, Funnel, RotateCw, ShoppingCart, Tags } from 'lucide-vue-next';
+import { BadgePlus, RotateCw, ShoppingCart, Tags } from 'lucide-vue-next';
 import { getSocket } from '@/pluguins/socket';
 import type { Socket } from 'socket.io-client';
 import TabelaVendas from './TabelaVendas.vue';
@@ -41,10 +41,6 @@ provide('openModalFiltroVendas', openFilter);
                 <p class="text-sm text-muted-foreground">Listagem de vendas/comandas cadastrados</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <button @click="openFilter = true"
-                    class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
-                    <Funnel class="w-4 h-4 inline-flex" />
-                </button>
                 <button @click="store.openSave"
                     class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova venda</span>
