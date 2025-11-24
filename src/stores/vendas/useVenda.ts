@@ -37,7 +37,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
     clienteId: null,
     data: new Date(),
     desconto: null,
-    status: 'FINALIZADO',
+    status: 'PENDENTE',
     garantia: 0,
     observacoes: '',
   })
@@ -45,7 +45,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
   const reset = () => {
     form.value = {
       id: null,
-      status: 'FINALIZADO',
+      status: 'PENDENTE',
       data: new Date(),
       desconto: null,
       clienteId: null,

@@ -155,6 +155,39 @@ const routes: RouteInterface[] = [
     ],
   },
   {
+    path: '/arena',
+    name: 'arena',
+    children: [
+      {
+        path: '',
+        name: 'arena-dashboard',
+        component: () => import('@/pages/arena/comandas/Dashboard.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 2,
+        },
+      },
+      {
+        path: 'comandas',
+        name: 'arena-comandas',
+        component: () => import('@/pages/arena/comandas/ComandaListagem.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
+        path: 'calendario',
+        name: 'arena-calendario',
+        component: () => import('@/pages/arena/comandas/CalendarioReservas.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 2,
+        },
+      },
+    ],
+  },
+  {
     path: '/financeiro',
     name: 'financeiro',
     redirect: { name: 'lancamentos-financeiro' },

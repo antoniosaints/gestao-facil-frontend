@@ -5,6 +5,8 @@ import Main from './layouts/Main.vue'
 import Default from './layouts/Default.vue'
 import { useUiStore } from './stores/ui/uiStore'
 import Admin from './layouts/Admin.vue'
+import { env } from './utils/dotenv'
+import Arena from './layouts/Arena.vue'
 
 const store = useUiStore()
 const route = useRoute()
@@ -12,7 +14,7 @@ const route = useRoute()
 // Definição dos layouts disponíveis
 const layouts = {
   default: Default,
-  main: Main,
+  main: env.VITE_MODE_SYSTEM === 'arena' ? Arena : Main,
   admin: Admin
 }
 
