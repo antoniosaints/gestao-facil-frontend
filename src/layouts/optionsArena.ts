@@ -41,7 +41,7 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
     },
     {
       nome: 'Reservas',
-      link: '/vendas/dashboard',
+      link: '/arena/reservas',
       icone: TicketCheck,
       color: 'blue',
     },
