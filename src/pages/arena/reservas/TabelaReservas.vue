@@ -40,18 +40,27 @@
                     <p class="text-gray-500 dark:text-gray-300">Nenhuma reserva encontrada.</p>
                 </div>
             </div>
-            <div v-for="row in reservas" :key="row.id"
+            <div v-for="row in reservas.filter(row => new Date(row.endAt) > new Date())" :key="row.id"
                 class="rounded-xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
                     <div class="text-sm font-semibold dark:text-white">
                         {{ row.Cliente?.nome || 'SEM CLIENTE VINCULADO' }}
+                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ isOverdue(row) ? ' (VENCIDA)' : '' }}
+                        </span>
+                        <span class="text-xs text-success">
+                            {{ isVigente(row) ? ' (ANDAMENTO)' : '' }}
+                        </span>
+                        <span class="text-xs text-primary">
+                            {{ isNext(row) ? ' (PRÓXIMA)' : '' }}
+                        </span>
                     </div>
                     <div class="text-sm text-green-500 dark:text-green-400">
                         {{ formatCurrencyBR(row.valor) }}
                     </div>
                 </div>
                 <div class="flex justify-between">
-                    <div :class="`text-xs text-warning`">
+                    <div class="text-xs text-warning">
                         {{ row.status }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
                         {{ new Date(row.startAt).toLocaleDateString('pt-BR') }}
@@ -133,7 +142,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import Select2Ajax from "@/components/formulario/Select2Ajax.vue";
 import { ArenaReservasRepository } from "@/repositories/reservas-repository";
 import { formatCurrencyBR } from "@/utils/formatters";
-import { endOfDay, endOfMonth, endOfYear, format, startOfDay, startOfMonth, startOfYear } from "date-fns";
+import { endOfDay, endOfMonth, endOfYear, format, isAfter, isBefore, startOfDay, startOfMonth, startOfYear } from "date-fns";
 const store = useVendasStore();
 const arenaIdFilter = ref(undefined);
 const reservas = ref<ArenaAgendamentos[]>([]);
@@ -160,6 +169,22 @@ async function renderMobile(page: number = 1) {
     loading.value = false;
 }
 
+const isOverdue = (agendamento: ArenaAgendamentos) => {
+    const dataAgendamento = new Date(agendamento.endAt);
+    const dataAtual = new Date();
+    return isBefore(dataAgendamento, dataAtual);
+}
+const isVigente = (agendamento: ArenaAgendamentos) => {
+    const dataAgendamento = new Date(agendamento.endAt);
+    const dataInicio = new Date(agendamento.startAt);
+    const dataAtual = new Date();
+    return isAfter(dataAgendamento, dataAtual) && isBefore(dataInicio, dataAtual);
+}
+const isNext = (agendamento: ArenaAgendamentos) => {
+    const dataAgendamento = new Date(agendamento.startAt);
+    const dataAtual = new Date();
+    return isAfter(dataAgendamento, dataAtual);
+}
 function previousPage() {
     if (currentPage.value > 1) renderMobile(currentPage.value - 1);
 }
