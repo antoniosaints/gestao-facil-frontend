@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue"
 import { useRoute } from "vue-router"
-import { Calendar, Clock, GalleryHorizontal, ShoppingCart } from "lucide-vue-next"
+import { Calendar, Clock, MapPin, ShoppingCart } from "lucide-vue-next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
@@ -118,6 +118,14 @@ function removeFromCart(index: number) {
   cartItems.value.splice(index, 1)
 }
 
+const filteredHorarios = computed(() => {
+  const now = new Date()
+  return reservasDisponiveis.value.filter((horario) => {
+    const date = new Date(horario.start)
+    return date >= now
+  })
+})
+
 function isTimeSlotInCart(quadraId: number, date: Date, startTime: string) {
   return cartItems.value.some(
     (item) =>
@@ -135,7 +143,7 @@ const totalPrice = computed(() =>
 <template>
   <div class="min-h-screen p-4 relative"
     style="background-image: linear-gradient(135deg, #127bb0 0%, #123cb0 100%); background-size: cover; background-position: center; background-attachment: fixed;">
-    <div class="max-w-md mx-auto space-y-6">
+    <div class="max-w-md mx-auto flex flex-col gap-4">
       <!-- Header -->
       <div class="text-center py-6">
         <div class="flex items-center justify-center space-x-4 mb-4">
@@ -166,7 +174,7 @@ const totalPrice = computed(() =>
       <Card class="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">
         <CardHeader>
           <CardTitle class="flex items-center space-x-2 font-normal">
-            <GalleryHorizontal class="h-5 w-5" />
+            <MapPin class="h-5 w-5" />
             <span>Escolha a Quadra</span>
           </CardTitle>
         </CardHeader>
@@ -208,7 +216,7 @@ const totalPrice = computed(() =>
       </Card>
 
       <!-- Horários Disponíveis -->
-      <Card v-if="selectedQuadra && selectedDate" class="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">
+      <Card v-if="selectedQuadra && selectedDate" class="bg-white/90 dark:bg-gray-800/90">
         <CardHeader>
           <CardTitle class="flex items-center space-x-2 gap-2 font-normal">
             <Clock class="h-5 w-5" />
@@ -218,7 +226,7 @@ const totalPrice = computed(() =>
         <CardContent>
           <!-- Mock de horários -->
           <div class="grid grid-cols-2 gap-2">
-            <Button v-for="(hora, index) in reservasDisponiveis" :key="index"
+            <Button class="text-white" v-for="(hora, index) in filteredHorarios" :key="index"
               @click="addToCart(selectedQuadra, selectedDate, hora.start, hora.end)"
               :variant="isTimeSlotInCart(selectedQuadra.id!, selectedDate, hora.start) ? 'secondary' : 'default'">
               {{ format(new Date(hora.start), "HH:mm", {
@@ -233,7 +241,7 @@ const totalPrice = computed(() =>
 
       <!-- Modal de Carrinho -->
       <div v-if="showCart" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md">
+        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-[90%] max-w-lg">
           <h2 class="text-lg font-bold mb-4">Carrinho</h2>
           <div v-for="(item, index) in cartItems" :key="index" class="flex justify-between border-b py-2">
             <div>
@@ -247,7 +255,7 @@ const totalPrice = computed(() =>
           <p class="mt-4 font-semibold">Total: {{ formatCurrencyBR(totalPrice) }}</p>
 
           <div class="flex gap-2 mt-4">
-            <Button class="flex-1">Pagar 100%</Button>
+            <Button class="flex-1 text-white">Pagar 100%</Button>
             <Button variant="outline" class="flex-1">
               Reservar (50%) - {{ formatCurrencyBR((totalPrice / 2)) }}
             </Button>

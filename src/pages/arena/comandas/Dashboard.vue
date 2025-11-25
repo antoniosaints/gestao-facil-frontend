@@ -56,7 +56,7 @@
                     <span @click="copyLink"
                         class="text-sm text-muted-foreground mt-2 cursor-pointer flex items-center gap-2 bg-body/60 px-3 py-2 rounded-md">
                         <Copy class="h-6 w-6 inline-flex text-blue-500" />
-                        <span class="text-blue-500">{{ linkAgendamento }}</span>
+                        <span class="text-blue-500 truncate">{{ linkAgendamento }}</span>
                     </span>
                 </div>
 
