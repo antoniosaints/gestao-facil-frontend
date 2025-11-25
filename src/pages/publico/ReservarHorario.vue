@@ -399,8 +399,9 @@ watch(() => selectedDate.value, () => {
             </p>
 
             <div class="grid grid-cols-2 gap-2" v-if="!canBookingWithoutPayment">
-              <Button class="flex-1 text-white text-md" @click="reservar">Pagar 100%</Button>
-              <Button variant="outline" @click="showModalConfirm = true" class="flex-1 text-md">
+              <Button class="flex-1 text-white text-md col-span-2 md:col-span-1" @click="reservar">Pagar 100%</Button>
+              <Button variant="outline" @click="showModalConfirm = true"
+                class="flex-1 text-md col-span-2 md:col-span-1">
                 Reservar (50%) - {{ formatCurrencyBR((totalPrice / 2)) }}
               </Button>
             </div>
