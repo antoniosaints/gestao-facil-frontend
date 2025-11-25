@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue"
 import { useRoute } from "vue-router"
-import { Calendar, Clock, MapPin, ShoppingCart } from "lucide-vue-next"
+import { Calendar, Clock, MapPin, MessageCircle, ShoppingCart, Trash } from "lucide-vue-next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
@@ -15,6 +15,8 @@ import { formatCurrencyBR } from "@/utils/formatters"
 import { ArenaReservasRepository } from "@/repositories/reservas-repository"
 import { endOfDay, format, startOfDay } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import ModalView from "@/components/formulario/ModalView.vue"
+import { Input } from "@/components/ui/input"
 
 interface CartItem {
   quadraId: number
@@ -28,6 +30,7 @@ interface CartItem {
 interface HorariosReservar {
   start: string
   end: string
+  reservada: boolean
 }
 
 const toast = useToast()
@@ -41,6 +44,7 @@ const selectedDate = ref<Date>(new Date())
 const selectedQuadra = ref<ArenaQuadras | null>(null)
 const cartItems = ref<CartItem[]>([])
 const showCart = ref(false)
+const showModalConfirm = ref(false)
 
 const logo = computed(() => {
   const url = env.VITE_BACKEND_URL
@@ -138,11 +142,91 @@ function isTimeSlotInCart(quadraId: number, date: Date, startTime: string) {
 const totalPrice = computed(() =>
   cartItems.value.reduce((total, item) => total + Number(item.price), 0)
 )
+
+function mergeConsecutive(items: any[]) {
+  if (!items.length) return []
+
+  const sorted = [...items].sort(
+    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+  )
+
+  const result: CartItem[] = [sorted[0]]
+
+  for (let i = 1; i < sorted.length; i++) {
+    const last = result[result.length - 1]
+    const current = sorted[i]
+
+    if (last.endTime === current.startTime) {
+      last.endTime = current.endTime
+    } else {
+      result.push(current)
+    }
+  }
+
+  return result
+}
+
+async function reservar() {
+  try {
+    const payload = cartItems.value.map((item) => ({
+      quadraId: item.quadraId,
+      date: item.date.toISOString(),
+      startTime: item.startTime,
+      endTime: item.endTime,
+    }))
+
+    console.log(mergeConsecutive([...payload]))
+    toast.success('Reservas realizadas com sucesso!')
+    showCart.value = false
+  } catch (error) {
+    toast.error('Erro ao reservar, tente novamente!')
+  }
+}
+
+function generateWhatsAppLink() {
+  if (!cartItems.value.length) return toast.error("Nenhuma reserva selecionada.")
+  if (!conta.value) return toast.error("Erro com o ID da conta, recarregue a página!")
+  const telefone = conta.value.telefone
+
+  if (!telefone) return toast.error("Erro com o telefone da conta, verifique com o gestor do sistema!")
+
+  const telefoneLimpo = telefone.replace(/\D/g, "")
+  const telefonePadraoInternacional = `55${telefoneLimpo}`
+
+  const formatBR = (valor: number) =>
+    valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+
+  const linhas = cartItems.value.map(item => {
+    const date = item.date.toLocaleDateString("pt-BR")
+    const horaInicio = new Date(item.startTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    const horaFim = new Date(item.endTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    const preco = formatCurrencyBR(item.price)
+
+    return `${date} | de ${horaInicio} até ${horaFim} | ${preco}`
+  })
+
+  const total = formatBR(cartItems.value.reduce((t, i) => t + Number(i.price), 0))
+
+  const msg =
+    `Olá! Gostaria de reservar os seguintes horários na quadra ${selectedQuadra.value?.name}:%0A%0A` +
+    linhas.join("%0A") +
+    `%0A%0ATotal: ${total}`
+
+  const url = `https://wa.me/${telefonePadraoInternacional}?text=${msg}`
+
+  window.open(url, "_blank")
+}
+
+
+const canBookingWithoutPayment = computed(() => {
+  const quadra = selectedQuadra.value
+  return quadra && quadra.aprovarSemPagamento
+})
 </script>
 
 <template>
   <div class="min-h-screen p-4 relative"
-    style="background-image: linear-gradient(135deg, #127bb0 0%, #123cb0 100%); background-size: cover; background-position: center; background-attachment: fixed;">
+    style="background-image: linear-gradient(135deg, #127bb0 0%, #124b96 100%); background-size: cover; background-position: center; background-attachment: fixed;">
     <div class="max-w-md mx-auto flex flex-col gap-4">
       <!-- Header -->
       <div class="text-center py-6">
@@ -161,7 +245,7 @@ const totalPrice = computed(() =>
       <!-- Carrinho flutuante -->
       <div v-if="cartItems.length > 0" class="fixed bottom-4 right-4 z-50">
         <Button @click="showCart = true"
-          class="bg-primary hover:bg-primary/90 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg relative">
+          class="bg-primary border hover:bg-primary/90 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg relative">
           <ShoppingCart class="h-6 w-6" />
           <span
             class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
@@ -194,7 +278,7 @@ const totalPrice = computed(() =>
                   <p class="text-lg font-bold text-primary dark:text-gray-100">
                     {{ formatCurrencyBR(quadra.precoHora) }}
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-200">/hora</p>
+                  <p class="text-xs text-muted-foreground dark:text-gray-200">/hora</p>
                 </div>
               </div>
             </div>
@@ -226,9 +310,9 @@ const totalPrice = computed(() =>
         <CardContent>
           <!-- Mock de horários -->
           <div class="grid grid-cols-2 gap-2">
-            <Button class="text-white" v-for="(hora, index) in filteredHorarios" :key="index"
-              @click="addToCart(selectedQuadra, selectedDate, hora.start, hora.end)"
-              :variant="isTimeSlotInCart(selectedQuadra.id!, selectedDate, hora.start) ? 'secondary' : 'default'">
+            <Button class="text-white disabled:bg-secondary" v-for="(hora, index) in filteredHorarios" :key="index"
+              @click="addToCart(selectedQuadra, selectedDate, hora.start, hora.end)" :disabled="hora.reservada"
+              :class="[isTimeSlotInCart(selectedQuadra.id!, selectedDate, hora.start) ? 'bg-warning hover:bg-warning/80' : 'bg-primary hover:bg-primary/80']">
               {{ format(new Date(hora.start), "HH:mm", {
                 locale: ptBR
               }) }} - {{ format(new Date(hora.end), "HH:mm", {
@@ -242,28 +326,70 @@ const totalPrice = computed(() =>
       <!-- Modal de Carrinho -->
       <div v-if="showCart" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-[90%] max-w-lg">
-          <h2 class="text-lg font-bold mb-4">Carrinho</h2>
-          <div v-for="(item, index) in cartItems" :key="index" class="flex justify-between border-b py-2">
-            <div>
-              <p>{{ item.quadra.name }} - {{ format(item.startTime, "HH:mm", { locale: ptBR }) }} - {{
-                format(item.endTime, "HH:mm", { locale: ptBR }) }}</p>
-              <p class="text-sm text-gray-500">{{ item.date.toLocaleDateString() }}</p>
-            </div>
-            <Button variant="destructive" size="sm" @click="removeFromCart(index)">Remover</Button>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Carrinho</h2>
+            <p>Horários: {{ cartItems.length }}</p>
           </div>
+          <div v-if="!cartItems.length">
+            <p class="text-muted-foreground flex flex-col items-center justify-center">
+              <Clock class="h-14 w-14" />
+              Nenhum horário selecionado.
+            </p>
+          </div>
+          <div v-for="(item, index) in cartItems" :key="index" class="flex justify-between items-center border-b py-2">
+            <div>
+              <p>
+                {{ item.quadra.name }}
+                <span class="text-sm text-muted-foreground border px-3 py-0 rounded-md">
+                  {{ format(item.startTime, "HH:mm", { locale: ptBR }) }}
+                  até
+                  {{ format(item.endTime, "HH:mm", { locale: ptBR }) }}
+                </span>
+              </p>
+              <p class="text-sm text-muted-foreground">{{ item.date.toLocaleDateString() }}</p>
+            </div>
+            <Button variant="destructive" size="sm" @click="removeFromCart(index)">
+              <Trash class="h-5 w-5" />
+            </Button>
+          </div>
+          <div v-if="cartItems.length">
+            <p class="mt-4 font-semibold text-xl">Total: {{ formatCurrencyBR(totalPrice) }}</p>
 
-          <p class="mt-4 font-semibold">Total: {{ formatCurrencyBR(totalPrice) }}</p>
+            <p class="text-sm text-muted-foreground">
+              As reservas devem ser feitas e confirmadas com 30 minutos antes do
+              horário, para evitar
+              cancelamentos.
+            </p>
 
-          <div class="flex gap-2 mt-4">
-            <Button class="flex-1 text-white">Pagar 100%</Button>
-            <Button variant="outline" class="flex-1">
-              Reservar (50%) - {{ formatCurrencyBR((totalPrice / 2)) }}
+            <div class="grid grid-cols-2 gap-2" v-if="!canBookingWithoutPayment">
+              <Button class="flex-1 text-white text-md" @click="showModalConfirm = true">Pagar 100%</Button>
+              <Button variant="outline" @click="showModalConfirm = true" class="flex-1 text-md">
+                Reservar (50%) - {{ formatCurrencyBR((totalPrice / 2)) }}
+              </Button>
+            </div>
+            <div class="flex gap-2 mt-4" v-else>
+              <Button class="flex-1 text-white text-md" @click="showModalConfirm = true">Reservar</Button>
+            </div>
+            <Button variant="outline" @click="generateWhatsAppLink"
+              class="flex-1 col-span-2 w-full mt-2 text-white h-10 text-md bg-success hover:bg-success/80 hover:text-white">
+              <MessageCircle />
+              Reservar no WhatsApp
             </Button>
           </div>
 
-          <Button variant="outline" class="mt-4 w-full" @click="showCart = false">Voltar</Button>
+          <Button variant="outline" class="mt-4 w-full" @click="showCart = false">Fechar carrinho</Button>
         </div>
       </div>
     </div>
+
+    <ModalView v-model:open="showModalConfirm" title="Reservar horário"
+      description="Informe seus dados para confirmar a reserva" size="md">
+      <!-- <form class="flex flex-col px-4 gap-4">
+        <Input id="name" v-model="name" placeholder="Nome completo" />
+        <Input id="email" v-model="email" placeholder="E-mail" />
+        <Input id="phone" v-model="phone" placeholder="Telefone" />
+        <Button class="mt-2 text-white" type="button" @click="submit" variant="default">Confirmar</Button>
+      </form> -->
+    </ModalView>
   </div>
 </template>
