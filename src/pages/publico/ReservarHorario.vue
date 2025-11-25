@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue"
 import { useRoute } from "vue-router"
-import { Calendar, Clock, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
+import { Calendar, Check, CheckCheck, Clock, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
@@ -198,6 +198,8 @@ async function reservar() {
     }))
 
     console.log(mergeConsecutive([...payload]))
+    cartItems.value = []
+    selectedQuadra.value = null
     toast.success('Reservas realizadas com sucesso!')
     showCart.value = false
   } catch (error) {
@@ -277,7 +279,7 @@ watch(() => selectedDate.value, () => {
           <ShoppingCart class="h-6 w-6" />
           <span
             class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-            {{ mergedCart.length }}
+            {{ cartItems.length }}
           </span>
         </Button>
       </div>
@@ -346,6 +348,8 @@ watch(() => selectedDate.value, () => {
             <Button class="text-white disabled:bg-secondary" v-for="(hora, index) in filteredHorarios" :key="index"
               @click="addToCart(selectedQuadra, selectedDate, hora.start, hora.end)" :disabled="hora.reservada"
               :class="[isTimeSlotInCart(selectedQuadra.id!, selectedDate, hora.start) ? 'bg-warning hover:bg-warning/80' : 'bg-primary hover:bg-primary/80']">
+              <Check class="h-4 w-4" v-if="isTimeSlotInCart(selectedQuadra.id!, selectedDate, hora.start)" />
+              <CheckCheck class="h-4 w-4" v-if="hora.reservada" />
               {{ format(new Date(hora.start), "HH:mm", {
                 locale: ptBR
               }) }} - {{ format(new Date(hora.end), "HH:mm", {
