@@ -484,20 +484,25 @@ export type IDetalheOrdemServico = OrdensServico & {
   Operador: Usuarios
 }
 
-export type ArenaAgendamentoStatus = 'PENDENTE' | 'CONFIRMADA' | 'CANCELADA' | 'BLOQUEADO' | 'FINALIZADA';
+export type ArenaAgendamentoStatus =
+  | 'PENDENTE'
+  | 'CONFIRMADA'
+  | 'CANCELADA'
+  | 'BLOQUEADO'
+  | 'FINALIZADA'
 
 export interface ArenaQuadras {
   id?: number
-  contaId: number
-  tempoMinimo: number
-  tempoReserva: number
+  contaId?: number
+  tempoMinimo?: number
+  tempoReserva?: number
   name: string
   description?: string | null
   precoHora: number
-  permitirReservaOnline: boolean
-  aprovarSemPagamento: boolean
-  active: boolean
-  schedules: ArenaAgendamentos[]
+  permitirReservaOnline?: boolean
+  aprovarSemPagamento?: boolean
+  active?: boolean
+  schedules?: ArenaAgendamentos[]
 }
 
 export interface ArenaAgendamentos {
@@ -511,5 +516,5 @@ export interface ArenaAgendamentos {
   recorrente: boolean
   observacoes?: string | null
   Quadra: ArenaQuadras
-  Cliente?: ClientesFornecedores | null;
+  Cliente?: ClientesFornecedores | null
 }

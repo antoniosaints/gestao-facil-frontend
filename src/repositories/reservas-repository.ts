@@ -12,6 +12,20 @@ export class ArenaReservasRepository {
     })
     return data.data
   }
+  static async getHorariosPublicoReservar(
+    contaId: number,
+    quadraId: number,
+    inicio: string,
+    fim: string,
+  ) {
+    const data = await http.post(`/arenas/reservas/publico/horarios`, {
+      contaId,
+      quadraId,
+      inicio,
+      fim,
+    })
+    return data.data
+  }
   static async save(data: Omit<ClientesFornecedores, 'id'>) {
     await http.post(`/clientes`, data)
   }

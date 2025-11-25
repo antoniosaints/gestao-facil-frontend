@@ -32,10 +32,12 @@
                                 Nova venda
                             </span>
                         </RouterLink>
-                        <span class="py-2 px-3 gap-2 flex items-center bg-body/60 rounded-md border cursor-pointer">
-                            <ClockPlus class="w-4 h-4 inline-flex text-purple-500" />
-                            Novo agendamento
-                        </span>
+                        <RouterLink to="/arena/reservas">
+                            <span class="py-2 px-3 gap-2 flex items-center bg-body/60 rounded-md border cursor-pointer">
+                                <ClockPlus class="w-4 h-4 inline-flex text-purple-500" />
+                                Novo agendamento
+                            </span>
+                        </RouterLink>
                         <span class="py-2 px-3 gap-2 flex items-center bg-body/60 rounded-md border cursor-pointer">
                             <CalendarPlus class="w-4 h-4 inline-flex text-blue-500" />
                             Nova assinatura
@@ -54,7 +56,7 @@
                     <span @click="copyLink"
                         class="text-sm text-muted-foreground mt-2 cursor-pointer flex items-center gap-2 bg-body/60 px-3 py-2 rounded-md">
                         <Copy class="h-6 w-6 inline-flex text-blue-500" />
-                        <span class="text-blue-500">https://gestao-facil-erp.com.br/</span>
+                        <span class="text-blue-500">{{ linkAgendamento }}</span>
                     </span>
                 </div>
 
@@ -86,6 +88,7 @@ import BarChart from '@/components/graficos/BarChart.vue';
 import { optionsChartBar } from '@/composables/useChartOptions';
 import { VendaRepository } from '@/repositories/venda-repository';
 import { useUiStore } from '@/stores/ui/uiStore';
+import { HashGenerator } from '@/utils/generators';
 import { endOfMonth, startOfMonth } from 'date-fns';
 import { CalendarPlus, ChartBarStacked, CircleX, ClockPlus, Copy, Funnel, Link, Rocket, Tag } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
@@ -94,8 +97,10 @@ const toast = useToast()
 const uiStore = useUiStore()
 const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())]);
 const dataVendas: any = ref({ labels: [], datasets: [] });
+const idEncoded = HashGenerator.encode(uiStore.contaInfo.id!)
+const linkAgendamento = `${window.location.origin}/agendamento/${idEncoded}`
 const copyLink = () => {
-    navigator.clipboard.writeText('https://gestao-facil-erp.com.br/')
+    navigator.clipboard.writeText(linkAgendamento)
     toast.success('Link copiado com sucesso!', {
         timeout: 2000,
         position: POSITION.BOTTOM_RIGHT,
@@ -103,7 +108,6 @@ const copyLink = () => {
         closeButton: CircleX,
     })
 }
-
 async function getDataDashboard() {
     try {
         const inicio = filtroPeriodo.value === null ? startOfMonth(new Date()).toISOString() : filtroPeriodo.value[0].toISOString();

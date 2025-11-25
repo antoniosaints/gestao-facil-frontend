@@ -86,11 +86,6 @@ const routes: RouteInterface[] = [
     ],
   },
   {
-    path: '/reservar-horario/:conta',
-    name: 'reservar-horario',
-    component: () => import('@/pages/publico/ReservarHorario.vue'),
-  },
-  {
     path: '/administracao',
     name: 'administracao',
     children: [
@@ -153,6 +148,14 @@ const routes: RouteInterface[] = [
         },
       },
     ],
+  },
+  {
+    path: '/agendamento/:conta',
+    name: 'reservar-horario',
+    component: () => import('@/pages/publico/ReservarHorario.vue'),
+    meta: {
+      isPublic: true,
+    },
   },
   {
     path: '/arena',
