@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, watch } from "vue"
 import { useRoute } from "vue-router"
-import { Calendar, Clock, MapPin, MessageCircle, ShoppingCart, Trash } from "lucide-vue-next"
+import { Calendar, Clock, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
@@ -16,7 +16,6 @@ import { ArenaReservasRepository } from "@/repositories/reservas-repository"
 import { endOfDay, format, startOfDay } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import ModalView from "@/components/formulario/ModalView.vue"
-import { Input } from "@/components/ui/input"
 
 interface CartItem {
   quadraId: number
@@ -150,14 +149,21 @@ function mergeConsecutive(items: any[]) {
     (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
   )
 
-  const result: CartItem[] = [sorted[0]]
+  const result: CartItem[] = [{ ...sorted[0], price: Number(sorted[0].price) }]
 
   for (let i = 1; i < sorted.length; i++) {
     const last = result[result.length - 1]
-    const current = sorted[i]
+    const current = { ...sorted[i], price: Number(sorted[i].price) }
 
-    if (last.endTime === current.startTime) {
+    const sameQuadra = last.quadraId === current.quadraId
+    const sameDate =
+      new Date(last.date).toDateString() === new Date(current.date).toDateString()
+
+    const consecutive = last.endTime === current.startTime
+
+    if (sameQuadra && sameDate && consecutive) {
       last.endTime = current.endTime
+      last.price = Number(last.price) + current.price
     } else {
       result.push(current)
     }
@@ -166,10 +172,26 @@ function mergeConsecutive(items: any[]) {
   return result
 }
 
+
+const mergedCart = computed(() => {
+  const payload = cartItems.value.map((item) => ({
+    quadra: item.quadra,
+    quadraId: item.quadraId,
+    price: item.price,
+    date: item.date,
+    startTime: item.startTime,
+    endTime: item.endTime,
+  }))
+
+  return mergeConsecutive([...payload])
+})
+
+
 async function reservar() {
   try {
     const payload = cartItems.value.map((item) => ({
       quadraId: item.quadraId,
+      preco: item.price,
       date: item.date.toISOString(),
       startTime: item.startTime,
       endTime: item.endTime,
@@ -196,7 +218,7 @@ function generateWhatsAppLink() {
   const formatBR = (valor: number) =>
     valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
-  const linhas = cartItems.value.map(item => {
+  const linhas = mergedCart.value.map(item => {
     const date = item.date.toLocaleDateString("pt-BR")
     const horaInicio = new Date(item.startTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
     const horaFim = new Date(item.endTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
@@ -222,6 +244,12 @@ const canBookingWithoutPayment = computed(() => {
   const quadra = selectedQuadra.value
   return quadra && quadra.aprovarSemPagamento
 })
+
+watch(() => selectedDate.value, () => {
+  if (selectedQuadra.value) {
+    getHorariosDisponiveis(selectedQuadra.value)
+  }
+})
 </script>
 
 <template>
@@ -243,13 +271,13 @@ const canBookingWithoutPayment = computed(() => {
       </div>
 
       <!-- Carrinho flutuante -->
-      <div v-if="cartItems.length > 0" class="fixed bottom-4 right-4 z-50">
+      <div v-if="mergedCart.length > 0" class="fixed bottom-4 right-4 z-50">
         <Button @click="showCart = true"
           class="bg-primary border hover:bg-primary/90 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg relative">
           <ShoppingCart class="h-6 w-6" />
           <span
             class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-            {{ cartItems.length }}
+            {{ mergedCart.length }}
           </span>
         </Button>
       </div>
@@ -266,7 +294,7 @@ const canBookingWithoutPayment = computed(() => {
           <div class="grid grid-cols-1 gap-3">
             <div v-for="quadra in quadras" :key="quadra.id" @click="getHorariosDisponiveis(quadra)"
               class="p-4 rounded-lg border-2 cursor-pointer transition-all"
-              :class="selectedQuadra?.id === quadra.id ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'">
+              :class="selectedQuadra?.id === quadra.id ? 'border-primary dark:border-blue-400 bg-primary/10' : ''">
               <div class="flex justify-between items-center">
                 <div>
                   <h3 class="text-lg">{{ quadra.name }}</h3>
@@ -310,6 +338,11 @@ const canBookingWithoutPayment = computed(() => {
         <CardContent>
           <!-- Mock de horários -->
           <div class="grid grid-cols-2 gap-2">
+            <div v-if="!filteredHorarios.length"
+              class="flex flex-col justify-center col-span-2 gap-2 items-center space-x-2">
+              <Clock class="h-10 w-10 inline-flex text-gray-500 dark:text-gray-300" :stroke-width="2.5" />
+              <p class="text-sm text-muted-foreground dark:text-gray-200">Nenhum horário disponível</p>
+            </div>
             <Button class="text-white disabled:bg-secondary" v-for="(hora, index) in filteredHorarios" :key="index"
               @click="addToCart(selectedQuadra, selectedDate, hora.start, hora.end)" :disabled="hora.reservada"
               :class="[isTimeSlotInCart(selectedQuadra.id!, selectedDate, hora.start) ? 'bg-warning hover:bg-warning/80' : 'bg-primary hover:bg-primary/80']">
@@ -324,19 +357,19 @@ const canBookingWithoutPayment = computed(() => {
       </Card>
 
       <!-- Modal de Carrinho -->
-      <div v-if="showCart" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div v-if="showCart" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-[90%] max-w-lg">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold">Carrinho</h2>
-            <p>Horários: {{ cartItems.length }}</p>
+            <p>Horários: {{ mergedCart.length }}</p>
           </div>
-          <div v-if="!cartItems.length">
+          <div v-if="!mergedCart.length">
             <p class="text-muted-foreground flex flex-col items-center justify-center">
               <Clock class="h-14 w-14" />
               Nenhum horário selecionado.
             </p>
           </div>
-          <div v-for="(item, index) in cartItems" :key="index" class="flex justify-between items-center border-b py-2">
+          <div v-for="(item, index) in mergedCart" :key="index" class="flex justify-between items-center border-b py-2">
             <div>
               <p>
                 {{ item.quadra.name }}
@@ -346,13 +379,17 @@ const canBookingWithoutPayment = computed(() => {
                   {{ format(item.endTime, "HH:mm", { locale: ptBR }) }}
                 </span>
               </p>
-              <p class="text-sm text-muted-foreground">{{ item.date.toLocaleDateString() }}</p>
+              <p class="text-sm text-muted-foreground flex items-center">
+                {{ item.date.toLocaleDateString() }}
+                |
+                {{ formatCurrencyBR(item.price) }}
+              </p>
             </div>
             <Button variant="destructive" size="sm" @click="removeFromCart(index)">
               <Trash class="h-5 w-5" />
             </Button>
           </div>
-          <div v-if="cartItems.length">
+          <div v-if="mergedCart.length">
             <p class="mt-4 font-semibold text-xl">Total: {{ formatCurrencyBR(totalPrice) }}</p>
 
             <p class="text-sm text-muted-foreground">
@@ -362,7 +399,7 @@ const canBookingWithoutPayment = computed(() => {
             </p>
 
             <div class="grid grid-cols-2 gap-2" v-if="!canBookingWithoutPayment">
-              <Button class="flex-1 text-white text-md" @click="showModalConfirm = true">Pagar 100%</Button>
+              <Button class="flex-1 text-white text-md" @click="reservar">Pagar 100%</Button>
               <Button variant="outline" @click="showModalConfirm = true" class="flex-1 text-md">
                 Reservar (50%) - {{ formatCurrencyBR((totalPrice / 2)) }}
               </Button>
