@@ -197,7 +197,6 @@ async function reservar() {
       endTime: item.endTime,
     }))
 
-    console.log(mergeConsecutive([...payload]))
     cartItems.value = []
     selectedQuadra.value = null
     toast.success('Reservas realizadas com sucesso!')
