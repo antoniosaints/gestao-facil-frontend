@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { useVendasStore } from '@/stores/vendas/useVenda';
 import { onMounted, onUnmounted, provide, ref } from 'vue';
-import { BadgePlus, MapPinned, RotateCw, Ticket } from 'lucide-vue-next';
+import { BadgePlus, MapPinned, RotateCw } from 'lucide-vue-next';
 import { getSocket } from '@/pluguins/socket';
 import type { Socket } from 'socket.io-client';
 import TabelaQuadras from './TabelaQuadras.vue';
-const store = useVendasStore();
+import ModalQuadra from './ModalQuadra.vue';
+import { useQuadraStore } from '@/stores/arena/quadraStore';
+const store = useQuadraStore();
 const openFilter = ref(false);
 
 let socket: Socket;
@@ -35,7 +36,7 @@ provide('openModalFiltroVendas', openFilter);
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
                 <button @click="store.openSave"
-                    class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
+                    class="bg-teal-700 dark:bg-teal-900 text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova quadra</span>
                 </button>
                 <button @click="store.updateTable"
@@ -47,5 +48,6 @@ provide('openModalFiltroVendas', openFilter);
         <div class="overflow-x-auto rounded-lg">
             <TabelaQuadras />
         </div>
+        <ModalQuadra />
     </div>
 </template>

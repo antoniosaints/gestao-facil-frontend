@@ -6,7 +6,7 @@
                 class="border bg-card dark:bg-card-dark col-span-12 md:col-span-4 border-border dark:border-border-dark rounded-lg px-4 py-1.5 w-full"
                 placeholder="Digite a busca ..." @keyup.enter="renderMobile(1)" />
             <Select v-model="statusFilter" :disabled="loading">
-                <SelectTrigger class="col-span-6 md:col-span-4">
+                <SelectTrigger class="col-span-12 md:col-span-3">
                     <SelectValue placeholder="Selecione o status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -42,24 +42,24 @@
                     <div class="text-md font-semibold dark:text-white">
                         {{ row.name || 'SEM NOME' }}
                     </div>
-                    <div class="text-sm text-green-500 dark:text-green-400">
-                        {{ formatCurrencyBR(row.precoHora) }}/hora
+                    <div class="text-sm text-green-600 dark:text-green-400">
+                        {{ formatCurrencyBR(row.precoHora!) }}/hora
                     </div>
                 </div>
                 <div class="flex justify-between">
                     <div class="text-xs" :class="[
                         row.active ?
-                            'text-success' : 'text-danger']">
+                            'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']">
                         {{ row.active ? 'Ativo' : 'Inativo' }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ row.tempoMinimo || '-' }} min
+                        {{ row.tempoReserva || '-' }} min
                     </div>
                 </div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-1">
-                        <button @click="store.openDetalhes(row.id!)"
-                            class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-2 py-1 rounded-md text-sm">
-                            <Eye class="w-5 h-5" />
+                        <button @click="store.openUpdate(row.id!)"
+                            class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
+                            <Pen class="w-5 h-5" />
                         </button>
                     </div>
                 </div>
@@ -109,15 +109,15 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from "vue";
 import type { ArenaQuadras } from "@/types/schemas";
-import { useVendasStore } from "@/stores/vendas/useVenda";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgePlus, Eye, MapPinned, Ticket } from "lucide-vue-next";
+import { BadgePlus, MapPinned, Pen } from "lucide-vue-next";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { endOfMonth, startOfMonth } from "date-fns";
 import { ArenaQuadrasRepository } from "@/repositories/quadras-repository";
-const store = useVendasStore();
+import { useQuadraStore } from "@/stores/arena/quadraStore";
+const store = useQuadraStore();
 const arenaIdFilter = ref(undefined);
 const quadras = ref<ArenaQuadras[]>([]);
 const currentPage = ref(1);
@@ -126,7 +126,7 @@ const loading = ref(false);
 const searchQuery = ref("");
 const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())]);
 const showDrawer = ref(false);
-const statusFilter = ref('null');
+const statusFilter = ref('ATIVAS');
 
 const quadrasFiltered = computed(() => {
     if (statusFilter.value !== 'null') {
@@ -144,7 +144,6 @@ async function renderMobile(page: number = 1) {
     try {
         loading.value = true;
         const resp = await ArenaQuadrasRepository.getTable(searchQuery.value, page, 10);
-        console.log(resp);
         quadras.value = resp.data;
         currentPage.value = resp.pagination.page;
         totalPages.value = resp.pagination.totalPages;

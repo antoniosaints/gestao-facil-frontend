@@ -498,7 +498,7 @@ export interface ArenaQuadras {
   tempoReserva?: number
   name: string
   description?: string | null
-  precoHora: number
+  precoHora: number | undefined
   permitirReservaOnline?: boolean
   aprovarSemPagamento?: boolean
   active?: boolean

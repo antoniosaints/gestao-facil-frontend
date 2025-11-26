@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { ptBR } from "date-fns/locale";
-import { endOfMonth, endOfYear, startOfMonth, startOfYear, subMonths } from "date-fns";
+import { endOfDay, endOfMonth, endOfWeek, endOfYear, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays, subMonths } from "date-fns";
 
 interface Props {
     placeholder?: string;
@@ -36,7 +36,13 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const presetDates = ref([
-    { label: 'Hoje', value: [new Date(), new Date()] },
+    { label: 'Ontem', value: [startOfDay(subDays(new Date(), 1)), endOfDay(subDays(new Date(), 1))] },
+    { label: 'Hoje', value: [startOfDay(new Date()), endOfDay(new Date())] },
+    { label: 'Amanhã', value: [startOfDay(subDays(new Date(), -1)), endOfDay(subDays(new Date(), -1))] },
+    {
+        label: 'Está semana',
+        value: [startOfWeek(new Date(), { weekStartsOn: 0 }), endOfWeek(new Date(), { weekStartsOn: 0 })],
+    },
     { label: 'Este mês', value: [startOfMonth(new Date()), endOfMonth(new Date())] },
     {
         label: 'Último mês',

@@ -15,6 +15,9 @@
                 </SelectTrigger>
                 <SelectContent>
                     <SelectGroup>
+                        <SelectItem value="null">
+                            Todas
+                        </SelectItem>
                         <SelectItem value="PENDENTE">
                             Pendentes
                         </SelectItem>
@@ -26,9 +29,6 @@
                         </SelectItem>
                         <SelectItem value="CANCELADA">
                             Canceladas
-                        </SelectItem>
-                        <SelectItem value="null">
-                            Todas
                         </SelectItem>
                     </SelectGroup>
                 </SelectContent>
