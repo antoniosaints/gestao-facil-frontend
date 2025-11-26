@@ -12,6 +12,14 @@ export class ArenaReservasRepository {
     })
     return data.data
   }
+  static async getResumoMensalChart(ano?: number) {
+    const data = await http.get(`/arenas/graficos/receita-mensal`, {
+      params: {
+        ano,
+      },
+    })
+    return data.data
+  }
   static async getHorariosPublicoReservar(
     contaId: number,
     quadraId: number,

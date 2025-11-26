@@ -4,7 +4,7 @@ import { onMounted, onUnmounted, provide, ref } from 'vue';
 import { BadgePlus, RotateCw, Ticket } from 'lucide-vue-next';
 import { getSocket } from '@/pluguins/socket';
 import type { Socket } from 'socket.io-client';
-import TabelaReservas from './TabelaReservas.vue';
+import TabelaQuadras from './TabelaQuadras.vue';
 const store = useVendasStore();
 const openFilter = ref(false);
 
@@ -29,14 +29,14 @@ provide('openModalFiltroVendas', openFilter);
             <div>
                 <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                     <Ticket class="h-6 w-6" :stroke-width="2.5" />
-                    Reservas
+                    Quadras
                 </h2>
-                <p class="text-sm text-muted-foreground">Listagem de reservas cadastradas</p>
+                <p class="text-sm text-muted-foreground">Listagem de quadras cadastradas</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
                 <button @click="store.openSave"
                     class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
-                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova reserva</span>
+                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova quadra</span>
                 </button>
                 <button @click="store.updateTable"
                     class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
@@ -45,7 +45,7 @@ provide('openModalFiltroVendas', openFilter);
             </div>
         </div>
         <div class="overflow-x-auto rounded-lg">
-            <TabelaReservas />
+            <TabelaQuadras />
         </div>
     </div>
 </template>

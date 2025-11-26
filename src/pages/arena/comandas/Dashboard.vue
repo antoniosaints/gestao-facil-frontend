@@ -66,7 +66,7 @@
                             <Tag class="mr-2 w-5 h-5" />
                             Vendas Mensais
                         </h2>
-                        <RouterLink to="/vendas">
+                        <RouterLink to="/arena/comandas">
                             <button type="button"
                                 class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
                                 <i class="fa-solid fa-square-arrow-up-right"></i>
@@ -78,6 +78,24 @@
                         <BarChart class="max-h-64" :data="dataVendas" :options="optionsChartBar" />
                     </div>
                 </div>
+                <div class="border-border col-span-12 bg-card shadow-md rounded-xl p-4 md:col-span-6 border">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-lg font-semibold px-0 py-1 flex items-center">
+                            <Coins class="mr-2 w-5 h-5" />
+                            Resumo mensal
+                        </h2>
+                        <RouterLink to="/arena/reservas">
+                            <button type="button"
+                                class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
+                                <i class="fa-solid fa-square-arrow-up-right"></i>
+                                Ver mais
+                            </button>
+                        </RouterLink>
+                    </div>
+                    <div>
+                        <BarChart class="max-h-64" :data="resumoMensal" :options="optionsChartBarDefault" />
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -85,18 +103,20 @@
 
 <script setup lang="ts">
 import BarChart from '@/components/graficos/BarChart.vue';
-import { optionsChartBar } from '@/composables/useChartOptions';
+import { optionsChartBar, optionsChartBarDefault } from '@/composables/useChartOptions';
+import { ArenaReservasRepository } from '@/repositories/reservas-repository';
 import { VendaRepository } from '@/repositories/venda-repository';
 import { useUiStore } from '@/stores/ui/uiStore';
 import { HashGenerator } from '@/utils/generators';
 import { endOfMonth, startOfMonth } from 'date-fns';
-import { CalendarPlus, ChartBarStacked, CircleX, ClockPlus, Copy, Funnel, Link, Rocket, Tag } from 'lucide-vue-next';
+import { CalendarPlus, ChartBarStacked, CircleX, ClockPlus, Coins, Copy, Funnel, Link, Rocket, Tag } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { POSITION, useToast } from 'vue-toastification';
 const toast = useToast()
 const uiStore = useUiStore()
 const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())]);
 const dataVendas: any = ref({ labels: [], datasets: [] });
+const resumoMensal: any = ref({ labels: [], datasets: [] });
 const idEncoded = HashGenerator.encode(uiStore.contaInfo.id!)
 const linkAgendamento = `${window.location.origin}/agendamento/${idEncoded}`
 const copyLink = () => {
@@ -112,11 +132,14 @@ async function getDataDashboard() {
     try {
         const inicio = filtroPeriodo.value === null ? startOfMonth(new Date()).toISOString() : filtroPeriodo.value[0].toISOString();
         const fim = filtroPeriodo.value === null ? endOfMonth(new Date()).toISOString() : filtroPeriodo.value[1].toISOString();
-        const [vendas] = await Promise.all([
+        const [vendas, resumo] = await Promise.all([
             VendaRepository.getResumoMensal(),
+            ArenaReservasRepository.getResumoMensalChart()
         ])
+        console.log(resumo);
 
         dataVendas.value = { labels: [...vendas.data.labels], datasets: [...vendas.data.datasets] };
+        resumoMensal.value = { labels: [...resumo.labels], datasets: [...resumo.datasets] };
     } catch (error) {
         console.log(error);
         toast.warning('Erro ao buscar os dados do dashboard, recarregue a página!');

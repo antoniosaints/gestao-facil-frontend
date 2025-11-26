@@ -1,4 +1,5 @@
 import { handleRouteGuard } from '@/composables/useRouterControl'
+import { env } from '@/utils/dotenv'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 type RouteMeta = {
@@ -15,7 +16,12 @@ const routes: RouteInterface[] = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/pages/dashboard/Dashboard.vue'),
+    component: () => {
+      if (env.VITE_MODE_SYSTEM === 'arena') {
+        return import('@/pages/arena/comandas/Dashboard.vue')
+      }
+      return import('@/pages/dashboard/Dashboard.vue')
+    },
     meta: {
       layout: 'main',
     },
@@ -88,6 +94,7 @@ const routes: RouteInterface[] = [
   {
     path: '/administracao',
     name: 'administracao',
+    redirect: { name: 'usuarios' },
     children: [
       {
         path: 'usuarios',
@@ -183,6 +190,15 @@ const routes: RouteInterface[] = [
         path: 'reservas',
         name: 'arena-reservas',
         component: () => import('@/pages/arena/reservas/ReservasListagem.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
+        path: 'quadras',
+        name: 'arena-quadras',
+        component: () => import('@/pages/arena/quadras/QuadrasListagem.vue'),
         meta: {
           layout: 'main',
           permissao: 3,

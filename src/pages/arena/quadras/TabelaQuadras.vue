@@ -161,7 +161,7 @@ const currentPage = ref(1);
 const totalPages = ref(1);
 const loading = ref(false);
 const searchQuery = ref("");
-const filtroPeriodo = ref([startOfDay(new Date()), endOfDay(new Date())]);
+const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())]);
 const showDrawer = ref(false);
 const statusFilter = ref('null');
 

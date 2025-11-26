@@ -1,28 +1,21 @@
 import { type Permissoes } from '@/stores/ui/uiStore'
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
-  Box,
   Boxes,
   CalendarCheck,
-  CalendarCheck2,
   CalendarClock,
   ChartPie,
-  CircleDollarSign,
   Cog,
-  FileBox,
   FileCheck,
-  FileCheck2,
-  FileDigit,
   GitBranchPlus,
-  HandCoins,
   Lock,
   MapPinned,
+  Pen,
   Sparkles,
   Tags,
   TicketCheck,
   User,
   UserStar,
-  Wrench,
 } from 'lucide-vue-next'
 
 export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuType[] => {
@@ -34,16 +27,23 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
       color: 'blue',
     },
     {
-      nome: 'Calendário',
-      link: '/arena/calendario',
-      icone: CalendarCheck2,
-      color: 'blue',
-    },
-    {
       nome: 'Reservas',
-      link: '/arena/reservas',
       icone: TicketCheck,
       color: 'blue',
+      children: [
+        {
+          nome: 'Reservas',
+          link: '/arena/reservas',
+          icone: CalendarClock,
+          color: 'blue',
+        },
+        {
+          nome: 'Calendário',
+          link: '/arena/calendario',
+          icone: CalendarCheck,
+          color: 'blue',
+        },
+      ],
     },
     {
       nome: 'Vendas',
@@ -53,40 +53,48 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
     },
     {
       nome: 'Quadras',
-      link: '/vendas/dashboard',
+      link: '/arena/quadras',
       icone: MapPinned,
       color: 'blue',
     },
     {
-      nome: 'Produtos',
-      link: '/produtos',
-      icone: Boxes,
-      color: 'blue',
-    },
-    {
-      nome: 'Serviços',
-      link: '/servicos',
-      icone: FileCheck,
-      color: 'blue',
-    },
-    {
-      nome: 'Clientes',
-      icone: UserStar,
-      show: permissions.clientes.visualizar,
-      color: 'violet',
-      link: '/clientes',
+      nome: 'Cadastros',
+      icone: Pen,
+      children: [
+        {
+          nome: 'Produtos',
+          link: '/produtos',
+          show: permissions.produtos.visualizar,
+          icone: Boxes,
+          color: 'blue',
+        },
+        {
+          nome: 'Serviços',
+          link: '/servicos',
+          show: permissions.servicos.visualizar,
+          icone: FileCheck,
+          color: 'blue',
+        },
+        {
+          nome: 'Clientes',
+          icone: UserStar,
+          show: permissions.clientes.visualizar,
+          color: 'violet',
+          link: '/clientes',
+        },
+        {
+          nome: 'Usuários',
+          icone: User,
+          show: permissions.admin,
+          color: 'purple',
+          link: '/administracao/usuarios',
+        },
+      ],
     },
     {
       nome: 'Administração',
       divisor: true,
       show: permissions.admin,
-    },
-    {
-      nome: 'Usuários',
-      icone: User,
-      show: permissions.admin,
-      color: 'purple',
-      link: '/administracao/usuarios',
     },
     {
       nome: 'Configurações',
