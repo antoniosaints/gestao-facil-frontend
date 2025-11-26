@@ -20,6 +20,26 @@ export class ArenaReservasRepository {
     })
     return data.data
   }
+  static async getTable(
+    searchQuery: string,
+    page: number = 1,
+    limit: number = 10,
+    quadraId?: number,
+    inicio?: string,
+    fim?: string,
+  ) {
+    const data = await http.get(`/arenas/reservas/tabela`, {
+      params: {
+        search: searchQuery,
+        limit,
+        page,
+        quadraId,
+        inicio,
+        fim,
+      },
+    })
+    return data.data
+  }
   static async getHorariosPublicoReservar(
     contaId: number,
     quadraId: number,

@@ -36,7 +36,7 @@
                 class="flex items-center col-span-3 rounded-md justify-center h-[calc(100vh-17rem)]">
                 <div class="text-center">
                     <Tags class="h-10 w-10 inline-flex text-gray-500 dark:text-gray-300" :stroke-width="2.5" />
-                    <p class="text-gray-500 dark:text-gray-300">Nenhum ítem encontrado.</p>
+                    <p class="text-gray-500 dark:text-gray-300">Nenhua venda encontrada.</p>
                 </div>
             </div>
             <div v-for="venda in vendas" :key="venda.id"

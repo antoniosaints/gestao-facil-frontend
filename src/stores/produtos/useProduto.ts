@@ -46,7 +46,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     saidas: true,
     unidade: '',
     status: 'ATIVO',
-    controlaEstoque: false,
+    controlaEstoque: true,
     producaoLocal: false,
   })
 
@@ -64,7 +64,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
       saidas: true,
       unidade: 'un',
       status: 'ATIVO',
-      controlaEstoque: false,
+      controlaEstoque: true,
       producaoLocal: false,
       custoMedioProducao: undefined,
     }

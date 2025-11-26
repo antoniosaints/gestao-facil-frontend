@@ -174,15 +174,24 @@ function openSaveVenda() {
     // showDrawer.value = false;
     store.openSave();
 }
+
 async function renderMobile(page: number = 1) {
-    loading.value = true;
-    const inicio = filtroPeriodo.value === null ? startOfYear(new Date()) : startOfDay(filtroPeriodo.value[0]);
-    const fim = filtroPeriodo.value === null ? endOfYear(new Date()) : endOfDay(filtroPeriodo.value[1]);
-    const data = await ArenaReservasRepository.get(undefined, arenaIdFilter.value, inicio.toISOString(), fim.toISOString());
-    reservas.value = data.data;
-    currentPage.value = page;
-    totalPages.value = 1;
-    loading.value = false;
+    try {
+        loading.value = true;
+        const inicio = filtroPeriodo.value === null ? startOfYear(new Date()) : startOfDay(filtroPeriodo.value[0]);
+        const fim = filtroPeriodo.value === null ? endOfYear(new Date()) : endOfDay(filtroPeriodo.value[1]);
+        const resp = await ArenaReservasRepository.getTable(searchQuery.value, page, 10, arenaIdFilter.value, inicio.toISOString(), fim.toISOString());
+        console.log(resp);
+        reservas.value = resp.data;
+        currentPage.value = resp.pagination.page;
+        totalPages.value = resp.pagination.totalPages;
+        loading.value = false;
+    } catch (err) {
+        console.error("tabela_quadras:", err);
+        reservas.value = [];
+    } finally {
+        loading.value = false;
+    }
 }
 
 const isOverdue = (agendamento: ArenaAgendamentos) => {

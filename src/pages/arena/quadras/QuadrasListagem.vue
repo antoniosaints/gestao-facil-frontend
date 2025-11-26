@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useVendasStore } from '@/stores/vendas/useVenda';
 import { onMounted, onUnmounted, provide, ref } from 'vue';
-import { BadgePlus, RotateCw, Ticket } from 'lucide-vue-next';
+import { BadgePlus, MapPinned, RotateCw, Ticket } from 'lucide-vue-next';
 import { getSocket } from '@/pluguins/socket';
 import type { Socket } from 'socket.io-client';
 import TabelaQuadras from './TabelaQuadras.vue';
@@ -28,7 +28,7 @@ provide('openModalFiltroVendas', openFilter);
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
             <div>
                 <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                    <Ticket class="h-6 w-6" :stroke-width="2.5" />
+                    <MapPinned class="h-6 w-6" :stroke-width="2.5" />
                     Quadras
                 </h2>
                 <p class="text-sm text-muted-foreground">Listagem de quadras cadastradas</p>

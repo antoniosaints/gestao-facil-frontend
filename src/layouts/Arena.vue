@@ -8,11 +8,11 @@
         </button>
         <!-- Sidebar -->
         <aside id="sidebar-content-sistema"
-            class="fixed overflow-auto top-0 hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-sidebar p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
+            class="fixed overflow-auto top-0 hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-yellow-700 dark:bg-yellow-950 p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
             :class="{ '-translate-x-full': !store.openSidebar }">
 
             <TopMenu />
-            <SidebarMenu :menu="sidebarMenuArenaOptions(store.permissoes)" />
+            <SidebarMenuArena :menu="sidebarMenuArenaOptions(store.permissoes)" />
             <div class="grid grid-cols-12 gap-2 items-center justify-center">
                 <LogoutButton class="col-span-10 md:col-span-12" />
                 <ColorToggle class="col-span-2 h-full w-full" v-if="store.isMobile" />
@@ -44,7 +44,6 @@
 <script setup lang="ts">
 import ColorToggle from '@/components/layout/colorToggle.vue'
 import HeaderMenu from '@/components/layout/headerMenu.vue'
-import SidebarMenu from '@/components/layout/sidebarMenu.vue'
 import TopMenu from '@/components/layout/topMenu.vue'
 import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -55,6 +54,7 @@ import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
 import { onMounted, ref } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import { sidebarMenuArenaOptions } from './optionsArena'
+import SidebarMenuArena from '@/components/layout/sidebarMenuArena.vue'
 const store = useUiStore()
 const loading = ref(false)
 window.addEventListener('resize', () => {
