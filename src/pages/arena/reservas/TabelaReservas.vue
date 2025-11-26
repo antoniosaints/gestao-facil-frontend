@@ -40,16 +40,16 @@
                     <p class="text-gray-500 dark:text-gray-300">Nenhuma reserva encontrada.</p>
                 </div>
             </div>
-            <div v-for="row in reservas.filter(row => new Date(row.endAt) > new Date())" :key="row.id"
+            <div v-for="row in reservas.filter(row => !['CANCELADA', 'BLOQUEADA'].includes(row.status))" :key="row.id"
                 class="rounded-xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
-                    <div class="text-sm font-semibold dark:text-white">
+                    <div class="text-md font-semibold dark:text-white">
                         {{ row.Cliente?.nome || 'SEM CLIENTE VINCULADO' }}
                         <span class="text-xs text-gray-500 dark:text-gray-400">
-                            {{ isOverdue(row) ? ' (VENCIDA)' : '' }}
+                            {{ isOverdue(row) ? ' (TERMINADO)' : '' }}
                         </span>
                         <span class="text-xs text-success">
-                            {{ isVigente(row) ? ' (ANDAMENTO)' : '' }}
+                            {{ isVigente(row) ? ' (OCORRENDO)' : '' }}
                         </span>
                         <span class="text-xs text-primary">
                             {{ isNext(row) ? ' (PRÓXIMA)' : '' }}
@@ -60,13 +60,18 @@
                     </div>
                 </div>
                 <div class="flex justify-between">
-                    <div class="text-xs text-warning">
+                    <div class="text-xs" :class="[
+                        row.status === 'PENDENTE' ?
+                            'text-warning' : row.status === 'CONFIRMADA' ?
+                                'text-primary' : row.status === 'FINALIZADA' ?
+                                    'text-success' : row.status === 'CANCELADA' ?
+                                        'text-danger' : 'text-secondary']">
                         {{ row.status }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
                         {{ new Date(row.startAt).toLocaleDateString('pt-BR') }}
                     </div>
                 </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">
+                <div class="text-md text-gray-500 dark:text-gray-400">
                     {{ format(row.startAt, 'HH:mm') }}
                     até {{ format(row.endAt, 'HH:mm') }}
                 </div>
