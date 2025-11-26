@@ -10,22 +10,28 @@ import ModalFiltro from '@/pages/vendas/formulario/ModalFiltro.vue';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue';
 import GerarCobranca from '@/pages/financeiro/lancamentos/modais/GerarCobranca.vue';
+import Calendario from './calendario/Calendario.vue';
+import type { ArenaAgendamentos } from '@/types/schemas';
+import { ArenaReservasRepository } from '@/repositories/reservas-repository';
 const store = useVendasStore();
+const reservas = ref<ArenaAgendamentos[]>([]);
 const openFilter = ref(false);
 
-let socket: Socket;
+provide('openModalFiltroVendas', openFilter);
+
+async function getReservasSistema() {
+    try {
+        const data = await ArenaReservasRepository.get();
+        console.log(data);
+        reservas.value = data.data
+    } catch (error) {
+        console.error(error)
+    }
+}
 
 onMounted(() => {
-    socket = getSocket();
-    socket.on("vendas:updatetable", (dados) => {
-    });
-
-    onUnmounted(() => {
-        socket.off("vendas:updatetable");
-    })
+    getReservasSistema()
 })
-
-provide('openModalFiltroVendas', openFilter);
 </script>
 
 <template>
@@ -46,7 +52,7 @@ provide('openModalFiltroVendas', openFilter);
             </div>
         </div>
         <div class="overflow-x-auto rounded-lg">
-
+            <Calendario description="Calendário de reservas" title="Reservas do sistema" :eventos="reservas" />
         </div>
         <ModalVendas />
         <ModalFaturar />

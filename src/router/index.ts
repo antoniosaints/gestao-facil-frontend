@@ -207,7 +207,7 @@ const routes: RouteInterface[] = [
       {
         path: 'calendario',
         name: 'arena-calendario',
-        component: () => import('@/pages/arena/comandas/CalendarioReservas.vue'),
+        component: () => import('@/pages/arena/reservas/CalendarioReservas.vue'),
         meta: {
           layout: 'main',
           permissao: 2,
