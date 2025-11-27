@@ -11,7 +11,7 @@ const padrao: ArenaAgendamentos = {
   endAt: new Date(),
   status: 'PENDENTE',
   recorrente: false,
-  startAt: new Date()
+  startAt: new Date(),
 }
 
 export const useReservaStore = defineStore('reservaStore', () => {
@@ -27,8 +27,9 @@ export const useReservaStore = defineStore('reservaStore', () => {
     }
   }
 
-  const openSave = () => {
+  const openSave = (startAt?: string) => {
     if (form.value.id) reset()
+    if (startAt) form.value.startAt = startAt
     openModal.value = true
   }
 

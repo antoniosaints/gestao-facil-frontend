@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, provide, ref } from 'vue';
+import { onMounted, provide, ref, watch } from 'vue';
 import { BadgePlus, Calendar } from 'lucide-vue-next';
 import Calendario from './calendario/Calendario.vue';
 import type { ArenaAgendamentos } from '@/types/schemas';
@@ -31,6 +31,8 @@ async function getReservasSistema() {
 onMounted(() => {
     getReservasSistema()
 })
+
+watch(() => store.filters.update, () => getReservasSistema())
 </script>
 
 <template>
@@ -44,7 +46,7 @@ onMounted(() => {
                 <p class="text-sm text-muted-foreground">Análise de reservas cadastradas</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <button @click="store.openSave"
+                <button @click="store.openSave()"
                     class="bg-teal-700 dark:bg-teal-900 text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova reserva</span>
                 </button>

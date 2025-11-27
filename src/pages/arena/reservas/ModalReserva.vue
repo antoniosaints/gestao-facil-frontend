@@ -25,7 +25,7 @@ const hours = computed(() => {
     const base = dateBase.value
 
     const list: Date[] = []
-    for (let h = 8; h <= 23; h++) {
+    for (let h = 6; h <= 23; h++) {
         list.push(setMinutes(setHours(base, h), 0))
     }
     return list

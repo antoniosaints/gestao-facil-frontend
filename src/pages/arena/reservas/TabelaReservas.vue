@@ -90,19 +90,34 @@
                     até {{ format(new Date(row.endAt), "HH:mm") }}
                 </div>
                 <div class="mt-2 flex justify-between gap-2">
-                    <div class="flex gap-1">
+                    <button v-if="['FINALIZADA'].includes(row.status)"
+                        class="bg-teal-200 text-teal-900 dark:text-teal-100 dark:bg-teal-800 px-2 py-1 rounded-md text-sm flex items-center gap-2">
+                        <CalendarCheck2 class="w-4 h-4 inline-flex" />
+                        Reserva concluída
+                    </button>
+                    <div v-else class="flex gap-1">
                         <button v-if="['PENDENTE', 'CONFIRMADA'].includes(row.status)"
                             class="bg-green-200 text-green-900 dark:text-green-100 dark:bg-green-800 px-2 py-1 rounded-md text-sm">
                             <SquareCheckBig class="w-5 h-5" />
                         </button>
                         <button v-if="['PENDENTE', 'CONFIRMADA'].includes(row.status)"
-                            class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
+                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
                             <OctagonX class="w-5 h-5" />
                         </button>
                         <button v-if="!['FINALIZADA', 'BLOQUEADA', 'CANCELADA'].includes(row.status)"
                             @click="store.openUpdate(row.id!)"
                             class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
                             <Pen class="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div class="flex gap-1">
+                        <button v-if="['PENDENTE', 'BLOQUEADA', 'CANCELADA'].includes(row.status)"
+                            class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
+                            <Trash class="w-5 h-5" />
+                        </button>
+                        <button v-if="['FINALIZADA'].includes(row.status)"
+                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm flex items-center gap-2">
+                            <Undo2 class="w-5 h-5 inline-flex" />
                         </button>
                     </div>
                 </div>
@@ -154,7 +169,7 @@ import { ref, onMounted, watch, computed } from "vue";
 import type { ArenaAgendamentos } from "@/types/schemas";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgeCheck, BadgePlus, Clock, OctagonX, Pen, ShieldX, SquareCheckBig, Ticket } from "lucide-vue-next";
+import { BadgeCheck, BadgePlus, CalendarCheck2, Clock, OctagonX, Pen, ShieldX, SquareCheckBig, Ticket, Trash, Undo2 } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Select2Ajax from "@/components/formulario/Select2Ajax.vue";

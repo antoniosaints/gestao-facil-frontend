@@ -6,7 +6,9 @@ import { ptBR } from "date-fns/locale";
 import { formatToCapitalize } from "@/utils/formatters";
 import type { ArenaAgendamentos } from "@/types/schemas";
 import { Button } from "@/components/ui/button";
+import { useReservaStore } from "@/stores/arena/reservaStore";
 
+const store = useReservaStore()
 const selectedDate = ref(inject("selectedDate", new Date()))
 const props = defineProps<{ eventos: ArenaAgendamentos[] }>()
 const eventosHoje = computed(() =>
@@ -90,7 +92,8 @@ const sameHour = (hour: any) => {
                 </div>
             </div>
 
-            <Button variant="outline" size="sm" class="flex-shrink-0" title="Reserva rápida">
+            <Button variant="outline" size="sm" class="flex-shrink-0" @click="store.openSave(dateRow.toISOString())"
+                title="Reserva rápida">
                 <Plus class="h-4 w-4" />
             </Button>
         </div>
