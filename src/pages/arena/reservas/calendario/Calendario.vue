@@ -15,6 +15,7 @@ const selectedDate = defineModel("selectedDate", {
 })
 const arenaIdFilter = ref(null)
 const arenaLabel = ref()
+const statusFilter = ref('null')
 
 provide("visualizacao", visualizacao);
 provide("selectedDate", selectedDate);
@@ -27,8 +28,19 @@ interface Props {
 const props = defineProps<Props>()
 
 const eventosComputed = computed(() => {
-    if (!arenaIdFilter.value) return props.eventos
-    return props.eventos.filter(e => e.Quadra?.id === arenaIdFilter.value).sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+  let result = props.eventos
+
+  if (arenaIdFilter.value) {
+    result = result
+      .filter(e => e.Quadra?.id === arenaIdFilter.value)
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+  }
+
+  if (statusFilter.value !== 'null') {
+    result = result.filter(e => e.status === statusFilter.value)
+  }
+
+  return result
 })
 
 </script>
@@ -39,7 +51,9 @@ const eventosComputed = computed(() => {
             <CardTitle class="text-lg font-normal flex items-center">
                 <div class="flex flex-col">
                     <div class="flex items-center gap-2">
-                        <span v-show="arenaLabel" class="text-xs bg-teal-500 text-white dark:bg-teal-800 border border-teal-700 px-2 py-0.5 rounded-xl">{{ arenaLabel }}</span>
+                        <span v-show="arenaLabel"
+                            class="text-xs bg-teal-500 text-white dark:bg-teal-800 border border-teal-700 px-2 py-0.5 rounded-xl">{{
+                            arenaLabel }}</span>
                         <h1>{{ title }}</h1>
                     </div>
                     <span v-if="description" class="text-sm text-muted-foreground">{{ description }}</span>
@@ -57,20 +71,40 @@ const eventosComputed = computed(() => {
                         <SelectItem value="agenda">Agenda</SelectItem>
                     </SelectContent>
                 </Select>
-                <Select2Ajax class="col-span-12 md:col-span-3"
-                v-model="arenaIdFilter" url="/arenas/quadras/select2" placeholder="Quadra.." v-model:label="arenaLabel" :allow-clear="true" />
+                <Select v-model="statusFilter">
+                    <SelectTrigger class="col-span-6 md:col-span-2">
+                        <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectItem value="null">
+                                Todas
+                            </SelectItem>
+                            <SelectItem value="CONFIRMADA">
+                                Confirmadas
+                            </SelectItem>
+                            <SelectItem value="PENDENTE">
+                                Pendentes
+                            </SelectItem>
+                            <SelectItem value="FINALIZADA">
+                                Finalizadas
+                            </SelectItem>
+                            <SelectItem value="CANCELADA">
+                                Canceladas
+                            </SelectItem>
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+                <Select2Ajax class="col-span-12 md:col-span-3" v-model="arenaIdFilter" url="/arenas/quadras/select2"
+                    placeholder="Quadra.." v-model:label="arenaLabel" :allow-clear="true" />
             </div>
         </CardHeader>
 
         <CardContent>
-            <CalendarioMes v-if="visualizacao === 'mes'"
-                :eventos="eventosComputed" />
-            <CalendarioSemana v-if="visualizacao === 'semana'"
-                :eventos="eventosComputed" />
-            <CalendarioDia v-if="visualizacao === 'dia'"
-                :eventos="eventosComputed" />
-            <CalendarioAgenda v-if="visualizacao === 'agenda'"
-                :eventos="eventosComputed" />
+            <CalendarioMes v-if="visualizacao === 'mes'" :eventos="eventosComputed" />
+            <CalendarioSemana v-if="visualizacao === 'semana'" :eventos="eventosComputed" />
+            <CalendarioDia v-if="visualizacao === 'dia'" :eventos="eventosComputed" />
+            <CalendarioAgenda v-if="visualizacao === 'agenda'" :eventos="eventosComputed" />
         </CardContent>
     </Card>
 </template>

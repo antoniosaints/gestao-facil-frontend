@@ -47,9 +47,14 @@
                 </div>
             </div>
             <div v-for="row in reservasFiltered" :key="row.id"
-                class="rounded-xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
+                class="rounded-xl border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
-                    <div class="text-md font-semibold dark:text-white">
+                    <div class="text-md font-semibold dark:text-white flex items-center gap-1">
+                        <BadgeCheck v-if="row.status === 'FINALIZADA'" class="h-5 w-5 text-primary dark:text-blue-400 inline-flex" />
+                        <Clock v-if="row.status === 'PENDENTE'" class="h-5 w-5 text-warning dark:text-yellow-400 inline-flex" />
+                        <SquareCheckBig v-if="row.status === 'CONFIRMADA'" class="h-5 w-5 text-success dark:text-green-400 inline-flex" />
+                        <ShieldX v-if="row.status === 'BLOQUEADO'" class="h-5 w-5 text-secondary dark:text-gray-400 inline-flex" />
+                        <ShieldX v-if="row.status === 'CANCELADA'" class="h-5 w-5 text-danger dark:text-red-400 inline-flex" />
                         {{ row.Cliente?.nome || 'SEM CLIENTE VINCULADO' }}
                         <span class="text-xs text-gray-500 dark:text-gray-400">
                             {{ isOverdue(row) ? ' (TERMINADO)' : '' }}
@@ -68,21 +73,25 @@
                 <div class="flex justify-between">
                     <div class="text-xs" :class="[
                         row.status === 'PENDENTE' ?
-                            'text-warning' : row.status === 'CONFIRMADA' ?
-                                'text-primary' : row.status === 'FINALIZADA' ?
-                                    'text-success' : row.status === 'CANCELADA' ?
-                                        'text-danger' : 'text-secondary']">
+                            'text-warning dark:text-yellow-400' : row.status === 'CONFIRMADA' ?
+                                'text-success dark:text-green-400' : row.status === 'FINALIZADA' ?
+                                    'text-primary dark:text-blue-400' : row.status === 'CANCELADA' ?
+                                        'text-danger dark:text-red-400' : 'text-secondary dark:text-gray-400']">
                         {{ row.status }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
                         {{ new Date(row.startAt).toLocaleDateString('pt-BR') }}
                     </div>
                 </div>
-                <div class="text-md text-gray-500 dark:text-gray-400">
+                <div class="text-sm text-gray-500 dark:text-gray-400">
                     {{ format(row.startAt, 'HH:mm') }}
-                    até {{ format(row.endAt, 'HH:mm') }}
+                    até {{ format(subMinutes(new Date(row.endAt), 1), "HH:mm") }}
                 </div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-1">
+                        <button v-if="['PENDENTE', 'CONFIRMADA'].includes(row.status)"
+                            class="bg-green-200 text-green-900 dark:text-green-100 dark:bg-green-800 px-2 py-1 rounded-md text-sm">
+                            <SquareCheckBig class="w-5 h-5" />
+                        </button>
                         <button v-if="['PENDENTE', 'CONFIRMADA'].includes(row.status)"
                             class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
                             <OctagonX class="w-5 h-5" />
@@ -141,13 +150,13 @@ import { ref, onMounted, watch, computed } from "vue";
 import type { ArenaAgendamentos } from "@/types/schemas";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgePlus, OctagonX, Pen, Ticket } from "lucide-vue-next";
+import { BadgeCheck, BadgePlus, Clock, OctagonX, Pen, ShieldX, SquareCheckBig, Ticket } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Select2Ajax from "@/components/formulario/Select2Ajax.vue";
 import { ArenaReservasRepository } from "@/repositories/reservas-repository";
 import { formatCurrencyBR } from "@/utils/formatters";
-import { endOfDay, endOfYear, format, isAfter, isBefore, startOfDay, startOfYear } from "date-fns";
+import { endOfDay, endOfYear, format, isAfter, isBefore, startOfDay, startOfYear, subMinutes } from "date-fns";
 import { useReservaStore } from "@/stores/arena/reservaStore";
 const store = useReservaStore();
 const arenaIdFilter = ref(undefined);

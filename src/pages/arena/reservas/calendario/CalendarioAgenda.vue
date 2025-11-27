@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ArenaAgendamentos } from "@/types/schemas";
-import { format, startOfDay, addHours, isEqual } from "date-fns"
+import { format, startOfDay, addHours, isEqual, subMinutes } from "date-fns"
 import { inject, ref } from "vue";
 
 const selectedDate = ref(inject("selectedDate", new Date()))
@@ -38,7 +38,7 @@ function eventosNaHora(hora: Date) {
                     <div v-for="ev in eventosNaHora(hora)" :key="ev.id"
                         class="p-1 text-xs bg-teal-700 dark:bg-teal-900 text-white rounded-sm">
                         {{ format(new Date(ev.startAt), "HH:mm") }} -
-                        {{ format(new Date(ev.endAt), "HH:mm") }} |
+                        {{ format(subMinutes(new Date(ev.endAt), 1), "HH:mm") }} |
                         {{ ev.Cliente?.nome || "Sem cliente" }} |
                         {{ ev.observacoes || "Sem observações" }}
                     </div>
