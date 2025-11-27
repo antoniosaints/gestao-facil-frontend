@@ -18,6 +18,7 @@ interface Item {
 }
 
 interface Props {
+    placeholder?: string
     modelValue?: string | number | null
     url: string
     allowClear?: boolean
@@ -29,6 +30,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
     allowClear: false,
     required: false,
+    placeholder: "Selecione...",
 })
 
 const emit = defineEmits<{
@@ -123,8 +125,8 @@ onMounted(fetchItems)
             @update:open="(open) => open && fetchItems()">
             <SelectTrigger class="bg-card dark:bg-card-dark"
                 :class="{ 'w-[calc(100%-2.5rem)]': allowClear && selectedId }">
-                <SelectValue :value="selectedId" :placeholder="'Selecione...'">
-                    {{ selectedItem?.label ?? 'Selecione...' }}
+                <SelectValue :value="selectedId" :placeholder="placeholder">
+                    {{ selectedItem?.label ?? placeholder }}
                 </SelectValue>
             </SelectTrigger>
 

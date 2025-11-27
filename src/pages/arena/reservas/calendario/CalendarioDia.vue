@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { addDays, addHours, format, isSameDay, isSameHour, startOfDay, subDays } from "date-fns"
+import { addDays, addHours, format, isSameDay, isSameHour, isWithinInterval, startOfDay, subDays } from "date-fns"
 import { ArrowBigLeft, ArrowBigRight, Plus } from "lucide-vue-next";
 import { computed, inject, ref } from "vue";
 import { ptBR } from "date-fns/locale";
@@ -46,27 +46,32 @@ const sameHour = (hour: any) => {
             </div>
             <ArrowBigRight class="cursor-pointer p-2" :size="35" @click="changeDay('next')" />
         </div>
-        <div v-for="hora in horas" :key="hora.toISOString()"
+        <div v-for="dateRow in horas" :key="dateRow.toISOString()"
             class="flex items-center space-x-4 p-3 border relative rounded-lg mb-2">
             <span
                 class="absolute left-[-.85rem] bg-gray-50 dark:dark:bg-gray-900 border-2 p-1 border-primary rounded-full"
-                :class="{ 'bg-primary text-white': sameHour(hora) }">
+                :class="{ 'bg-primary text-white': sameHour(dateRow) }">
                 <ArrowBigRight class="h-4 w-4" />
             </span>
             <div class="text-sm font-medium text-muted-foreground">
-                {{ format(hora, "HH:mm") }}
+                {{ format(dateRow, "HH:mm") }}
             </div>
             <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-                <div v-for="ev in eventosHoje.filter(e => isSameHour(new Date(e.startAt), hora))" :key="ev.id"
-                    class="px-3 py-2 rounded-sm bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
-                    <div class="font-medium truncate">
+                <div v-for="ev in eventosHoje.filter(e => isWithinInterval(dateRow, { start: new Date(e.startAt), end: new Date(e.endAt) }))" :key="ev.id"
+                    class="px-3 py-2 rounded-xl bg-teal-100 border flex flex-col text-teal-800 dark:bg-teal-800 dark:text-teal-50">
+                    <div class="font-medium text-sm truncate">
+                        <span class="text-xs bg-teal-200 dark:bg-teal-700 px-1 rounded">{{ ev.Quadra?.name || "Sem quadra" }}</span>
                         {{ ev.Cliente?.nome || "Sem descrição" }}
                     </div>
                     <div class="text-xs">
-                        {{ format(new Date(ev.startAt), "HH:mm") }}
+                        ({{ format(new Date(ev.startAt), "HH:mm") }}
                         -
-                        {{ format(new Date(ev.endAt), "HH:mm") }}
+                        {{ format(new Date(ev.endAt), "HH:mm") }})
+                        <span></span>
                     </div>
+                    <span class="text-xs">
+                        {{ ev.observacoes || "Sem observações" }}
+                    </span>
                 </div>
             </div>
 

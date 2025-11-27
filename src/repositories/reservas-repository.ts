@@ -1,5 +1,6 @@
-import type { ClientesFornecedores } from '@/types/schemas'
+import type { ArenaAgendamentos, ClientesFornecedores } from '@/types/schemas'
 import http from '@/utils/axios'
+import { formatToNumberValue } from '@/utils/formatters'
 export class ArenaReservasRepository {
   static async get(id?: number, quadraId?: number, inicio?: string, fim?: string) {
     const data = await http.get(`/arenas/reservas`, {
@@ -54,7 +55,14 @@ export class ArenaReservasRepository {
     })
     return data.data
   }
-  static async save(data: Omit<ClientesFornecedores, 'id'>) {
-    await http.post(`/clientes`, data)
+  static async save(data: Omit<ArenaAgendamentos, 'id'>) {
+    await http.post(`/arenas/reservas/agendar`, {
+      ...data
+    })
+  }
+  static async update(id: number, data: ArenaAgendamentos) {
+    await http.post(`/arenas/reservas/agendar?id=${id}`, {
+      ...data
+    })
   }
 }

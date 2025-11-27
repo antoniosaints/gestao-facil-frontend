@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { useVendasStore } from '@/stores/vendas/useVenda';
 import { onMounted, onUnmounted, provide, ref } from 'vue';
 import { BadgePlus, RotateCw, Ticket } from 'lucide-vue-next';
 import { getSocket } from '@/pluguins/socket';
 import type { Socket } from 'socket.io-client';
 import TabelaReservas from './TabelaReservas.vue';
-const store = useVendasStore();
+import ModalReserva from './ModalReserva.vue';
+import { useReservaStore } from '@/stores/arena/reservaStore';
+import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
+const store = useReservaStore();
 const openFilter = ref(false);
 
 let socket: Socket;
@@ -47,5 +49,7 @@ provide('openModalFiltroVendas', openFilter);
         <div class="overflow-x-auto rounded-lg">
             <TabelaReservas />
         </div>
+        <ModalReserva />
+        <ClientesModal />
     </div>
 </template>

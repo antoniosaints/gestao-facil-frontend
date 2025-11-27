@@ -36,7 +36,7 @@ function eventosNaHora(hora: Date) {
                 <!-- Eventos -->
                 <div class="flex flex-col gap-1 min-h-[40px] w-full border-l p-2">
                     <div v-for="ev in eventosNaHora(hora)" :key="ev.id"
-                        class="p-1 text-xs bg-primary text-white rounded-sm">
+                        class="p-1 text-xs bg-teal-700 dark:bg-teal-900 text-white rounded-sm">
                         {{ format(new Date(ev.startAt), "HH:mm") }} -
                         {{ format(new Date(ev.endAt), "HH:mm") }} |
                         {{ ev.Cliente?.nome || "Sem cliente" }} |

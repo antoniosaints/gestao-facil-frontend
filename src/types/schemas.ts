@@ -507,14 +507,14 @@ export interface ArenaQuadras {
 
 export interface ArenaAgendamentos {
   id?: number
-  quadraId: number
+  quadraId?: number
   clienteId?: number | null
   startAt: Date | string
   endAt: Date | string
   status: ArenaAgendamentoStatus
-  valor: number
-  recorrente: boolean
+  valor?: number | undefined
+  recorrente?: boolean
   observacoes?: string | null
-  Quadra: ArenaQuadras
+  Quadra?: ArenaQuadras
   Cliente?: ClientesFornecedores | null
 }

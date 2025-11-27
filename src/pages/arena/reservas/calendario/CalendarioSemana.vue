@@ -3,7 +3,7 @@ import type { ArenaAgendamentos } from "@/types/schemas";
 import { formatToCapitalize } from "@/utils/formatters";
 import { startOfWeek, addDays, format, isSameDay } from "date-fns"
 import { ptBR } from "date-fns/locale";
-import { ArrowBigLeft, ArrowBigRight } from "lucide-vue-next";
+import { ArrowBigLeft, ArrowBigRight, Dot } from "lucide-vue-next";
 import { computed, inject, ref } from "vue";
 
 const selectedDate = ref(inject("selectedDate", new Date()))
@@ -49,8 +49,9 @@ function changeWeek(type: "prev" | "next") {
             :class="{ 'bg-slate-200 dark:bg-slate-800': isSameDay(dia, new Date()) }">
             <div>{{ formatToCapitalize(format(dia, "EEE dd/MM", { locale: ptBR })) }}</div>
             <div v-for="ev in eventosDoDia(dia)" :key="ev.id"
-                class="mt-1 bg-primary text-xs truncate text-white px-1 py-1 rounded">
+                class="mt-1 bg-teal-700 dark:bg-teal-900 text-xs truncate flex items-center text-white px-1 rounded">
                 {{ format(new Date(ev.startAt), "HH:mm") }}
+                <Dot class="inline-flex" />
                 {{ ev.Cliente?.nome || "Sem descrição" }}
             </div>
             <div v-show="!eventosDoDia(dia).length"

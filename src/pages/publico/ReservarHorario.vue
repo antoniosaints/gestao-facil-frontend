@@ -102,7 +102,7 @@ function addToCart(quadra: ArenaQuadras, date: Date, startTime: string, endTime:
     date,
     startTime,
     endTime,
-    price: quadra.precoHora,
+    price: quadra.precoHora as number,
   }
 
   const exists = cartItems.value.some(
@@ -272,7 +272,7 @@ watch(() => selectedDate.value, () => {
       </div>
 
       <!-- Carrinho flutuante -->
-      <div v-if="mergedCart.length > 0" class="fixed bottom-4 right-4 z-50">
+      <div v-if="cartItems.length > 0" class="fixed bottom-4 right-4 z-50">
         <Button @click="showCart = true"
           class="bg-primary border hover:bg-primary/90 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg relative">
           <ShoppingCart class="h-6 w-6" />
@@ -305,7 +305,7 @@ watch(() => selectedDate.value, () => {
                 </div>
                 <div class="text-right">
                   <p class="text-lg font-bold text-primary dark:text-gray-100">
-                    {{ formatCurrencyBR(quadra.precoHora) }}
+                    {{ formatCurrencyBR(quadra.precoHora || 0) }}
                   </p>
                   <p class="text-xs text-muted-foreground dark:text-gray-200">/hora</p>
                 </div>
@@ -364,15 +364,15 @@ watch(() => selectedDate.value, () => {
         <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-[90%] max-w-lg">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold">Carrinho</h2>
-            <p>Horários: {{ mergedCart.length }}</p>
+            <p>Horários: {{ cartItems.length }}</p>
           </div>
-          <div v-if="!mergedCart.length">
+          <div v-if="!cartItems.length">
             <p class="text-muted-foreground flex flex-col items-center justify-center">
               <Clock class="h-14 w-14" />
               Nenhum horário selecionado.
             </p>
           </div>
-          <div v-for="(item, index) in mergedCart" :key="index" class="flex justify-between items-center border-b py-2">
+          <div v-for="(item, index) in cartItems" :key="index" class="flex justify-between items-center border-b py-2">
             <div>
               <p>
                 {{ item.quadra.name }}

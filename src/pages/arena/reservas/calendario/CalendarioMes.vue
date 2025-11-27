@@ -73,7 +73,7 @@ const navigateToDay = (dia: Date) => {
                 ]">
                 <div class="font-semibold">{{ format(dia, "dd") }}</div>
                 <div v-for="ev in eventosDoDia(dia).slice(0, 2)" :key="ev.id"
-                    class="mt-1 bg-primary text-white truncate px-1 rounded">
+                    class="mt-1 bg-teal-700 dark:bg-teal-900 text-white truncate px-1 rounded">
                     {{ format(new Date(ev.startAt), "HH:mm") }}
                     {{ ev.Cliente?.nome || "Sem descrição" }}
                 </div>

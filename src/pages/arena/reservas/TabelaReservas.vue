@@ -62,7 +62,7 @@
                         </span>
                     </div>
                     <div class="text-sm text-green-500 dark:text-green-400">
-                        {{ formatCurrencyBR(row.valor) }}
+                        {{ formatCurrencyBR(row.valor!) }}
                     </div>
                 </div>
                 <div class="flex justify-between">
@@ -83,17 +83,13 @@
                 </div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-1">
-                        <button @click="store.openDetalhes(row.id!)"
-                            class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-2 py-1 rounded-md text-sm">
-                            <Eye class="w-5 h-5" />
+                        <button v-if="['PENDENTE', 'CONFIRMADA'].includes(row.status)"
+                            class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
+                            <OctagonX class="w-5 h-5" />
                         </button>
-                        <button v-if="row.status === 'PENDENTE'" @click="openModalFaturarVenda(row.id!)"
-                            class="bg-emerald-200 text-emerald-900 dark:text-emerald-100 dark:bg-emerald-800 px-2 py-1 rounded-md text-sm">
-                            <BadgeCheck class="w-5 h-5" />
-                        </button>
-                        <button v-else @click="estornarVenda(row.id!)"
-                            class="bg-yellow-200 text-yellow-900 dark:text-yellow-100 dark:bg-yellow-800 px-2 py-1 rounded-md text-sm">
-                            <Undo2 class="w-5 h-5" />
+                        <button v-if="!['FINALIZADA', 'BLOQUEADA', 'CANCELADA'].includes(row.status)" @click="store.openUpdate(row.id!)"
+                            class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
+                            <Pen class="w-5 h-5" />
                         </button>
                     </div>
                 </div>
@@ -143,18 +139,17 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from "vue";
 import type { ArenaAgendamentos } from "@/types/schemas";
-import { estornarVenda, openModalFaturarVenda } from "../../vendas/ActionsVendas";
-import { useVendasStore } from "@/stores/vendas/useVenda";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgeCheck, BadgePlus, Eye, Ticket, Undo2 } from "lucide-vue-next";
+import { BadgePlus, OctagonX, Pen, Ticket } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Select2Ajax from "@/components/formulario/Select2Ajax.vue";
 import { ArenaReservasRepository } from "@/repositories/reservas-repository";
 import { formatCurrencyBR } from "@/utils/formatters";
-import { endOfDay, endOfMonth, endOfYear, format, isAfter, isBefore, startOfDay, startOfMonth, startOfYear } from "date-fns";
-const store = useVendasStore();
+import { endOfDay, endOfYear, format, isAfter, isBefore, startOfDay, startOfYear } from "date-fns";
+import { useReservaStore } from "@/stores/arena/reservaStore";
+const store = useReservaStore();
 const arenaIdFilter = ref(undefined);
 const reservas = ref<ArenaAgendamentos[]>([]);
 const currentPage = ref(1);

@@ -1,19 +1,12 @@
 <script setup lang="ts">
-import { useVendasStore } from '@/stores/vendas/useVenda';
-import { onMounted, onUnmounted, provide, ref } from 'vue';
+import { onMounted, provide, ref } from 'vue';
 import { BadgePlus, Calendar } from 'lucide-vue-next';
-import { getSocket } from '@/pluguins/socket';
-import type { Socket } from 'socket.io-client';
-import ModalVendas from '@/pages/vendas/formulario/ModalVendas.vue';
-import ModalFaturar from '@/pages/vendas/formulario/ModalFaturar.vue';
-import ModalFiltro from '@/pages/vendas/formulario/ModalFiltro.vue';
-import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
-import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue';
-import GerarCobranca from '@/pages/financeiro/lancamentos/modais/GerarCobranca.vue';
 import Calendario from './calendario/Calendario.vue';
 import type { ArenaAgendamentos } from '@/types/schemas';
 import { ArenaReservasRepository } from '@/repositories/reservas-repository';
-const store = useVendasStore();
+import ModalReserva from './ModalReserva.vue';
+import { useReservaStore } from '@/stores/arena/reservaStore';
+const store = useReservaStore();
 const reservas = ref<ArenaAgendamentos[]>([]);
 const openFilter = ref(false);
 
@@ -52,13 +45,8 @@ onMounted(() => {
             </div>
         </div>
         <div class="overflow-x-auto rounded-lg">
-            <Calendario description="Calendário de reservas" title="Reservas do sistema" :eventos="reservas" />
+            <Calendario description="Calendário de reservas" title="Reservas do sistema" :eventos="reservas.filter((reserva) => reserva.status !== 'CANCELADA')" />
         </div>
-        <ModalVendas />
-        <ModalFaturar />
-        <ModalFiltro />
-        <ClientesModal />
-        <DetalhesVenda />
-        <GerarCobranca />
+        <ModalReserva />
     </div>
 </template>
