@@ -135,7 +135,11 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
         () => ['Descrição', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) => {
-      return render('div', {}, row.original.descricao || 'Sem descrição')
+      return render(
+        'div',
+        { class: 'text-left truncate max-w-80' },
+        row.original.descricao || 'Sem descrição',
+      )
     },
   },
   {
