@@ -408,7 +408,11 @@ const routes: RouteInterface[] = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('@/pages/auth/LoginPage.vue'),
+    component: () => {
+      return env.VITE_MODE_SYSTEM === 'arena'
+        ? import('@/pages/auth/LoginPageArena.vue')
+        : import('@/pages/auth/LoginPage.vue')
+    },
     meta: {
       isPublic: true,
     },
