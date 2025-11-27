@@ -12,12 +12,16 @@
 
         <Tabs v-model="tab" class="w-auto">
             <div class="overflow-auto max-w-full">
-                <TabsList class="grid w-max grid-cols-4">
+                <TabsList class="grid w-max grid-cols-5">
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger value="integracoes"><i class="fa-solid fa-link mr-2"></i> Integrações</TabsTrigger>
                     <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i>
                         Impressão</TabsTrigger>
+                    <TabsTrigger :disabled="true" value="financeiro" class="flex items-center">
+                        <Banknote class="inline-flex mr-1 w-5 h-5" />
+                        Financeiro
+                    </TabsTrigger>
                 </TabsList>
             </div>
 
@@ -169,7 +173,7 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Cog, Link, Menu, Undo2 } from 'lucide-vue-next'
+import { Banknote, Cog, Link, Menu, Undo2 } from 'lucide-vue-next'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -177,7 +181,7 @@ import ImpressaoPage from './ImpressaoPage.vue'
 import { goBack } from '@/hooks/links'
 import ModalView from '@/components/formulario/ModalView.vue'
 
-const tab = ref<'empresa' | 'notificacoes' | 'integracoes' | 'impressao'>('empresa')
+const tab = ref<'empresa' | 'notificacoes' | 'integracoes' | 'impressao' | 'financeiro'>('empresa')
 const toast = useToast()
 const storeUi = useUiStore()
 const openModalMercadoPago = ref(false)
