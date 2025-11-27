@@ -3,9 +3,9 @@
         class="flex flex-col gap-1 p-1 overflow-auto max-h-[calc(100vh-13rem)] md:max-h-full min-h-[calc(100vh-13rem)]">
         <div class="grid grid-cols-12 gap-2 mb-2">
             <input type="text" v-model="searchQuery"
-                class="border bg-card dark:bg-card-dark col-span-12 md:col-span-4 border-border dark:border-border-dark rounded-lg px-4 py-1.5 w-full"
+                class="border bg-card dark:bg-card-dark col-span-12 md:col-span-5 border-border dark:border-border-dark rounded-lg px-4 py-1.5 w-full"
                 placeholder="Digite a busca ..." @keyup.enter="renderMobile(1)" />
-            <Select2Ajax class="col-span-12 md:col-span-3" @change="renderMobile(1)" :disabled="loading"
+            <Select2Ajax class="col-span-12 md:col-span-2" @change="renderMobile(1)" :disabled="loading"
                 v-model="arenaIdFilter" url="/arenas/quadras/select2" :allow-clear="true" />
             <Calendarpicker class="col-span-6 md:col-span-3" v-model="filtroPeriodo" :range="true"
                 @change="renderMobile(1)" />
@@ -50,20 +50,18 @@
                 class="rounded-xl border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
                     <div class="text-md font-semibold dark:text-white flex items-center gap-1">
-                        <BadgeCheck v-if="row.status === 'FINALIZADA'" class="h-5 w-5 text-primary dark:text-blue-400 inline-flex" />
-                        <Clock v-if="row.status === 'PENDENTE'" class="h-5 w-5 text-warning dark:text-yellow-400 inline-flex" />
-                        <SquareCheckBig v-if="row.status === 'CONFIRMADA'" class="h-5 w-5 text-success dark:text-green-400 inline-flex" />
-                        <ShieldX v-if="row.status === 'BLOQUEADO'" class="h-5 w-5 text-secondary dark:text-gray-400 inline-flex" />
-                        <ShieldX v-if="row.status === 'CANCELADA'" class="h-5 w-5 text-danger dark:text-red-400 inline-flex" />
-                        {{ row.Cliente?.nome || 'SEM CLIENTE VINCULADO' }}
-                        <span class="text-xs text-gray-500 dark:text-gray-400">
-                            {{ isOverdue(row) ? ' (TERMINADO)' : '' }}
-                        </span>
-                        <span class="text-xs text-success">
-                            {{ isVigente(row) ? ' (OCORRENDO)' : '' }}
-                        </span>
-                        <span class="text-xs text-primary">
-                            {{ isNext(row) ? ' (PRÓXIMA)' : '' }}
+                        <span class="truncate">
+                            <BadgeCheck v-if="row.status === 'FINALIZADA'"
+                                class="h-5 w-5 text-primary dark:text-blue-400 inline-flex" />
+                            <Clock v-if="row.status === 'PENDENTE'"
+                                class="h-5 w-5 text-warning dark:text-yellow-400 inline-flex" />
+                            <SquareCheckBig v-if="row.status === 'CONFIRMADA'"
+                                class="h-5 w-5 text-success dark:text-green-400 inline-flex" />
+                            <ShieldX v-if="row.status === 'BLOQUEADO'"
+                                class="h-5 w-5 text-secondary dark:text-gray-400 inline-flex" />
+                            <ShieldX v-if="row.status === 'CANCELADA'"
+                                class="h-5 w-5 text-danger dark:text-red-400 inline-flex" />
+                            {{ row.Cliente?.nome || 'SEM CLIENTE VINCULADO' }}
                         </span>
                     </div>
                     <div class="text-sm text-green-500 dark:text-green-400">
@@ -71,20 +69,25 @@
                     </div>
                 </div>
                 <div class="flex justify-between">
-                    <div class="text-xs" :class="[
-                        row.status === 'PENDENTE' ?
-                            'text-warning dark:text-yellow-400' : row.status === 'CONFIRMADA' ?
-                                'text-success dark:text-green-400' : row.status === 'FINALIZADA' ?
-                                    'text-primary dark:text-blue-400' : row.status === 'CANCELADA' ?
-                                        'text-danger dark:text-red-400' : 'text-secondary dark:text-gray-400']">
-                        {{ row.status }}</div>
+                    <div class="flex justify-between gap-2">
+                        <div class="text-xs" :class="[
+                            row.status === 'PENDENTE' ?
+                                'text-warning dark:text-yellow-400' : row.status === 'CONFIRMADA' ?
+                                    'text-success dark:text-green-400' : row.status === 'FINALIZADA' ?
+                                        'text-primary dark:text-blue-400' : row.status === 'CANCELADA' ?
+                                            'text-danger dark:text-red-400' : 'text-secondary dark:text-gray-400']">
+                            {{ row.status }}</div>
+                        <span class="text-xs font-thin text-white bg-teal-500 dark:bg-teal-900 px-1 rounded-md">
+                            {{ row.Quadra?.name || 'SEM QUADRA VINCULADA' }}
+                        </span>
+                    </div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
                         {{ new Date(row.startAt).toLocaleDateString('pt-BR') }}
                     </div>
                 </div>
                 <div class="text-sm text-gray-500 dark:text-gray-400">
                     {{ format(row.startAt, 'HH:mm') }}
-                    até {{ format(subMinutes(new Date(row.endAt), 1), "HH:mm") }}
+                    até {{ format(new Date(row.endAt), "HH:mm") }}
                 </div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-1">
@@ -96,7 +99,8 @@
                             class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
                             <OctagonX class="w-5 h-5" />
                         </button>
-                        <button v-if="!['FINALIZADA', 'BLOQUEADA', 'CANCELADA'].includes(row.status)" @click="store.openUpdate(row.id!)"
+                        <button v-if="!['FINALIZADA', 'BLOQUEADA', 'CANCELADA'].includes(row.status)"
+                            @click="store.openUpdate(row.id!)"
                             class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
                             <Pen class="w-5 h-5" />
                         </button>
@@ -185,7 +189,6 @@ async function renderMobile(page: number = 1) {
         const inicio = filtroPeriodo.value === null ? startOfYear(new Date()) : startOfDay(filtroPeriodo.value[0]);
         const fim = filtroPeriodo.value === null ? endOfYear(new Date()) : endOfDay(filtroPeriodo.value[1]);
         const resp = await ArenaReservasRepository.getTable(searchQuery.value, page, 10, arenaIdFilter.value, inicio.toISOString(), fim.toISOString());
-        console.log(resp);
         reservas.value = resp.data;
         currentPage.value = resp.pagination.page;
         totalPages.value = resp.pagination.totalPages;
@@ -196,23 +199,6 @@ async function renderMobile(page: number = 1) {
     } finally {
         loading.value = false;
     }
-}
-
-const isOverdue = (agendamento: ArenaAgendamentos) => {
-    const dataAgendamento = new Date(agendamento.endAt);
-    const dataAtual = new Date();
-    return isBefore(dataAgendamento, dataAtual);
-}
-const isVigente = (agendamento: ArenaAgendamentos) => {
-    const dataAgendamento = new Date(agendamento.endAt);
-    const dataInicio = new Date(agendamento.startAt);
-    const dataAtual = new Date();
-    return isAfter(dataAgendamento, dataAtual) && isBefore(dataInicio, dataAtual);
-}
-const isNext = (agendamento: ArenaAgendamentos) => {
-    const dataAgendamento = new Date(agendamento.startAt);
-    const dataAtual = new Date();
-    return isAfter(dataAgendamento, dataAtual);
 }
 function previousPage() {
     if (currentPage.value > 1) renderMobile(currentPage.value - 1);

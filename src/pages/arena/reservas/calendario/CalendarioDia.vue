@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { addDays, addHours, format, isSameDay, isSameHour, isWithinInterval, startOfDay, subDays, subMinutes } from "date-fns"
+import { addDays, addHours, addMinutes, format, isSameDay, isSameHour, isWithinInterval, startOfDay, subDays, subMinutes } from "date-fns"
 import { ArrowBigLeft, ArrowBigRight, Plus, Ticket } from "lucide-vue-next";
 import { computed, inject, ref } from "vue";
 import { ptBR } from "date-fns/locale";
@@ -58,14 +58,14 @@ const sameHour = (hour: any) => {
             </div>
             <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
                 <div
-                    v-if="!eventosHoje.filter(e => isWithinInterval(dateRow, { start: new Date(e.startAt), end: subMinutes(new Date(e.endAt), 1) })).length">
+                    v-if="!eventosHoje.filter(e => isWithinInterval(addMinutes(dateRow, 1), { start: new Date(e.startAt), end: new Date(e.endAt) })).length">
                     <div class="flex items-center rounded-md bg-secondary/20 border py-1 px-2">
                         <div class="text-center">
                             <p class="text-gray-500 text-xs dark:text-gray-300">Nenhuma reserva aqui.</p>
                         </div>
                     </div>
                 </div>
-                <div v-for="ev in eventosHoje.filter(e => isWithinInterval(dateRow, { start: new Date(e.startAt), end: subMinutes(new Date(e.endAt), 1) }))"
+                <div v-for="ev in eventosHoje.filter(e => isWithinInterval(addMinutes(dateRow, 1), { start: new Date(e.startAt), end: new Date(e.endAt) }))"
                     :key="ev.id" class="px-3 py-2 rounded-xl border flex flex-col" :class="{
                         'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-50': ev.status === 'CONFIRMADA',
                         'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-50': ev.status === 'PENDENTE',
@@ -83,7 +83,6 @@ const sameHour = (hour: any) => {
                         ({{ format(new Date(ev.startAt), "HH:mm") }}
                         -
                         {{ format(subMinutes(new Date(ev.endAt), 1), "HH:mm") }})
-                        <span></span>
                     </div>
                     <span class="text-xs text-muted-foreground">
                         {{ ev.observacoes || "Sem observações" }}

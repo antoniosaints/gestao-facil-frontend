@@ -6,16 +6,22 @@ import type { ArenaAgendamentos } from '@/types/schemas';
 import { ArenaReservasRepository } from '@/repositories/reservas-repository';
 import ModalReserva from './ModalReserva.vue';
 import { useReservaStore } from '@/stores/arena/reservaStore';
+import { endOfMonth, startOfMonth } from 'date-fns';
 const store = useReservaStore();
 const reservas = ref<ArenaAgendamentos[]>([]);
+const dataSelecionada = ref(new Date());
 const openFilter = ref(false);
 
 provide('openModalFiltroVendas', openFilter);
 
 async function getReservasSistema() {
     try {
-        const data = await ArenaReservasRepository.get();
-        console.log(data);
+        const data = await ArenaReservasRepository.get(
+            undefined,
+            undefined,
+            startOfMonth(dataSelecionada.value).toISOString(),
+            endOfMonth(dataSelecionada.value).toISOString()
+        );
         reservas.value = data.data
     } catch (error) {
         console.error(error)
@@ -45,7 +51,8 @@ onMounted(() => {
             </div>
         </div>
         <div class="overflow-x-auto rounded-lg">
-            <Calendario description="Calendário de reservas" title="Reservas do sistema" :eventos="reservas.filter((reserva) => reserva.status !== 'CANCELADA')" />
+            <Calendario description="Calendário de reservas" v-model:selected-date="dataSelecionada"
+                title="Reservas do sistema" :eventos="reservas.filter((reserva) => reserva.status !== 'CANCELADA')" />
         </div>
         <ModalReserva />
     </div>

@@ -3,10 +3,9 @@ import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import ModalView from '@/components/formulario/ModalView.vue';
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { ArenaReservasRepository } from '@/repositories/reservas-repository';
 import { useReservaStore } from '@/stores/arena/reservaStore';
 import { useClientesStore } from '@/stores/clientes/useClientes';
@@ -19,10 +18,11 @@ import { POSITION, useToast } from 'vue-toastification';
 const toast = useToast()
 const store = useReservaStore()
 const storeCliente = useClientesStore()
+const dateBase = computed(() => store.form.startAt ? new Date(store.form.startAt) : new Date())
 
 const hours = computed(() => {
-    if (!store.form.startAt) return []
-    const base = new Date(store.form.startAt)
+    if (!dateBase.value) return []
+    const base = dateBase.value
 
     const list: Date[] = []
     for (let h = 8; h <= 23; h++) {
@@ -45,16 +45,21 @@ async function submit() {
             })
             return
         }
+        const payload = {
+            ...store.form,
+            inicio: format(store.form.startAt, "yyyy-MM-dd'T'HH:mm:ss", { locale: ptBR }),
+            fim: format(store.form.endAt, "yyyy-MM-dd'T'HH:mm:ss", { locale: ptBR })
+        }
         store.form.id
-            ? await ArenaReservasRepository.update(store.form.id, store.form)
-            : await ArenaReservasRepository.save(store.form)
+            ? await ArenaReservasRepository.update(store.form.id, payload)
+            : await ArenaReservasRepository.save(payload)
         toast.success(store.form.id ? 'Quadra atualizada com sucesso!' : 'Quadra salva com sucesso!')
         store.openModal = false
         store.updateTable()
         store.reset()
-    } catch (error) {
+    } catch (error: any) {
         console.log(error);
-        toast.error('Erro ao registrar a quadra!')
+        toast.error(error?.response?.data?.message ?? 'Erro ao registrar a quadra!')
     }
 }
 </script>
@@ -64,20 +69,26 @@ async function submit() {
         description="Preencha os dados da reserva" size="md">
         <form @submit.prevent="submit" class="flex flex-col px-4">
             <div class="bg-background dark:bg-background-dark rounded-md w-full h-full grid grid-cols-2 gap-2">
-                <div class="w-full gap-2 flex flex-col col-span-2">
-                    <Label for="nome" class="flex items-center gap-2">Cliente <span class="text-blue-500 text-xs cursor-pointer"
-                            @click="storeCliente.openSave">+ Novo cliente</span>
+                <div class="w-full gap-1 flex flex-col col-span-2">
+                    <Label for="nome" class="flex items-center gap-2">Cliente <span
+                            class="text-blue-500 text-xs cursor-pointer" @click="storeCliente.openSave">+ Novo
+                            cliente</span>
                     </Label>
                     <Select2Ajax placeholder="Selecione o cliente" :url="'/clientes/select2'"
                         v-model:model-value="store.form.clienteId" :allowClear="true" />
                 </div>
-                <div class="w-full gap-2 flex flex-col col-span-2">
-                    <Label for="diaAgendamento">Data da reserva</Label>
-                    <Calendarpicker v-model="store.form.startAt" required :teleport="true" />
+                <div class="w-full gap-1 flex flex-col">
+                    <Label for="quadraReserva">Quadra</Label>
+                    <Select2Ajax id="quadraReserva" class="col-span-12 md:col-span-3" v-model="store.form.quadraId"
+                        url="/arenas/quadras/select2" />
                 </div>
-                <div class="w-full gap-2 flex flex-col">
-                    <Label for="diaAgendamento">Inicia</Label>
-                    <Select v-model="store.form.startAt">
+                <div class="w-full gap-1 flex flex-col">
+                    <Label for="diaAgendamento">Data da reserva</Label>
+                    <Calendarpicker id="diaAgendamento" v-model="dateBase" required :teleport="true" />
+                </div>
+                <div class="w-full gap-1 flex flex-col">
+                    <Label for="inicioAgendamento">Inicia</Label>
+                    <Select id="inicioAgendamento" v-model="store.form.startAt">
                         <SelectTrigger>
                             <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
@@ -88,9 +99,9 @@ async function submit() {
                         </SelectContent>
                     </Select>
                 </div>
-                <div class="w-full gap-2 flex flex-col">
-                    <Label for="diaAgendamento">Termina</Label>
-                    <Select v-model="store.form.endAt">
+                <div class="w-full gap-1 flex flex-col">
+                    <Label for="fimAgendamento">Termina</Label>
+                    <Select id="fimAgendamento" v-model="store.form.endAt">
                         <SelectTrigger>
                             <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
@@ -109,6 +120,11 @@ async function submit() {
                         <Label for="recorrenteReserva">{{ store.form.recorrente ? 'Sim' : 'Não' }}</Label>
                     </Label>
                 </div> -->
+                <div class="w-full gap-1 flex flex-col col-span-2">
+                    <Label for="observacaoReserva">Observação</Label>
+                    <Textarea id="observacaoReserva" v-model="(store.form.observacoes as string)"
+                        placeholder="Observação" />
+                </div>
             </div>
             <div class="flex justify-end gap-2 mt-4">
                 <Button type="button" variant="secondary" @click="store.openModal = false"> Fechar </Button>

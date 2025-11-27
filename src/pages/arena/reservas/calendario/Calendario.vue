@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, provide, ref } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup } from "@/components/ui/select"
 import type { ArenaAgendamentos } from "@/types/schemas"
 import CalendarioMes from "./CalendarioMes.vue"
 import CalendarioSemana from "./CalendarioSemana.vue"
@@ -28,19 +28,19 @@ interface Props {
 const props = defineProps<Props>()
 
 const eventosComputed = computed(() => {
-  let result = props.eventos
+    let result = props.eventos
 
-  if (arenaIdFilter.value) {
-    result = result
-      .filter(e => e.Quadra?.id === arenaIdFilter.value)
-      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
-  }
+    if (arenaIdFilter.value) {
+        result = result
+            .filter(e => e.Quadra?.id === arenaIdFilter.value)
+            .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+    }
 
-  if (statusFilter.value !== 'null') {
-    result = result.filter(e => e.status === statusFilter.value)
-  }
+    if (statusFilter.value !== 'null') {
+        result = result.filter(e => e.status === statusFilter.value)
+    }
 
-  return result
+    return result
 })
 
 </script>
@@ -53,7 +53,7 @@ const eventosComputed = computed(() => {
                     <div class="flex items-center gap-2">
                         <span v-show="arenaLabel"
                             class="text-xs bg-teal-500 text-white dark:bg-teal-800 border border-teal-700 px-2 py-0.5 rounded-xl">{{
-                            arenaLabel }}</span>
+                                arenaLabel }}</span>
                         <h1>{{ title }}</h1>
                     </div>
                     <span v-if="description" class="text-sm text-muted-foreground">{{ description }}</span>

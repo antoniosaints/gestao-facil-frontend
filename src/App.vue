@@ -11,6 +11,15 @@ import Arena from './layouts/Arena.vue'
 const store = useUiStore()
 const route = useRoute()
 
+const logo = document.querySelector<HTMLImageElement>('#logotipoSystema')
+if (logo) {
+  if (env.VITE_MODE_SYSTEM === 'arena') {
+    logo.setAttribute('href', '/imgs/logo_arena.png')
+  } else {
+    logo.setAttribute('href', '/imgs/logo.png')
+  }
+}
+
 // Definição dos layouts disponíveis
 const layouts = {
   default: Default,

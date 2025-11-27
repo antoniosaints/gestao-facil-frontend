@@ -38,6 +38,7 @@ function eventosNaHora(hora: Date) {
                     <div v-for="ev in eventosNaHora(hora)" :key="ev.id"
                         class="p-1 text-xs bg-teal-700 dark:bg-teal-900 text-white rounded-sm">
                         {{ format(new Date(ev.startAt), "HH:mm") }} -
+                        ({{ ev.Quadra?.name }}) |
                         {{ format(subMinutes(new Date(ev.endAt), 1), "HH:mm") }} |
                         {{ ev.Cliente?.nome || "Sem cliente" }} |
                         {{ ev.observacoes || "Sem observações" }}
