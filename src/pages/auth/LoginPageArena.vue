@@ -124,7 +124,7 @@ async function loginUsuario() {
                                 class="bg-teal-100 dark:bg-teal-950 backdrop-blur-sm rounded-xl p-6 border border-teal-500 dark:border-teal-800">
                                 <div class="flex items-center space-x-3">
                                     <div
-                                        class="w-12 h-12 bg-teal-100 dark:bg-teal-900 rounded-lg flex items-center justify-center">
+                                        class="w-12 h-12 bg-teal-50 dark:bg-teal-900 rounded-lg flex items-center justify-center">
                                         <MapPinned class="h-6 w-6 text-teal-500" :stroke-width="2.5" />
                                     </div>
                                     <div>
@@ -138,7 +138,7 @@ async function loginUsuario() {
                                 class="bg-teal-100 dark:bg-teal-950 backdrop-blur-sm rounded-xl p-6 border border-teal-500 dark:border-teal-800">
                                 <div class="flex items-center space-x-3">
                                     <div
-                                        class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                                        class="w-12 h-12 bg-teal-50 dark:bg-green-900 rounded-lg flex items-center justify-center">
                                         <i class="fas fa-chart-line text-green-600 dark:text-green-400 text-xl"></i>
                                     </div>
                                     <div>
@@ -287,7 +287,7 @@ async function loginUsuario() {
 
                                     <!-- Login Button -->
                                     <Button type="submit"
-                                        class="w-full bg-gradient-to-r h-30 from-teal-500/80 to-teal-500 hover:from-teal-500/90 hover:to-teal-500/80 text-white py-3 rounded-lg text-lg transition-all duration-200 transform shadow-lg hover:shadow-xl">
+                                        class="w-full bg-gradient-to-r h-30 from-teal-600/80 to-teal-500 hover:from-teal-600/90 hover:to-teal-500/80 text-white py-3 rounded-lg text-lg transition-all duration-200 transform shadow-lg hover:shadow-xl">
                                         <component :is="iconLogin" class="w-8 h-8 mr-2" />
                                         {{ textLogin }}
                                     </Button>

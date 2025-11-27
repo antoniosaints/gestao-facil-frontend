@@ -95,13 +95,22 @@
                         <CalendarCheck2 class="w-4 h-4 inline-flex" />
                         Reserva concluída
                     </button>
+                    <button v-if="['CANCELADA'].includes(row.status)"
+                        class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm flex items-center gap-2">
+                        <CalendarX2 class="w-4 h-4 inline-flex" />
+                        Reserva cancelada
+                    </button>
                     <div v-else class="flex gap-1">
-                        <button v-if="['PENDENTE', 'CONFIRMADA'].includes(row.status)"
+                        <button v-if="['PENDENTE'].includes(row.status)"
                             class="bg-green-200 text-green-900 dark:text-green-100 dark:bg-green-800 px-2 py-1 rounded-md text-sm">
                             <SquareCheckBig class="w-5 h-5" />
                         </button>
-                        <button v-if="['PENDENTE', 'CONFIRMADA'].includes(row.status)"
+                        <button v-if="['CONFIRMADA'].includes(row.status)"
                             class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
+                            <Undo class="w-5 h-5" />
+                        </button>
+                        <button v-if="['PENDENTE', 'CONFIRMADA'].includes(row.status)"
+                            class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
                             <OctagonX class="w-5 h-5" />
                         </button>
                         <button v-if="!['FINALIZADA', 'BLOQUEADA', 'CANCELADA'].includes(row.status)"
@@ -111,7 +120,8 @@
                         </button>
                     </div>
                     <div class="flex gap-1">
-                        <button v-if="['PENDENTE', 'BLOQUEADA', 'CANCELADA'].includes(row.status)"
+                        <button @click="deleteReserva(row.id!)"
+                            v-if="['PENDENTE', 'BLOQUEADA', 'CANCELADA'].includes(row.status) && uiStore.permissoes.admin"
                             class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
                             <Trash class="w-5 h-5" />
                         </button>
@@ -169,7 +179,7 @@ import { ref, onMounted, watch, computed } from "vue";
 import type { ArenaAgendamentos } from "@/types/schemas";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgeCheck, BadgePlus, CalendarCheck2, Clock, OctagonX, Pen, ShieldX, SquareCheckBig, Ticket, Trash, Undo2 } from "lucide-vue-next";
+import { BadgeCheck, BadgePlus, CalendarCheck2, CalendarX2, Clock, OctagonX, Pen, ShieldX, SquareCheckBig, Ticket, Trash, Undo, Undo2 } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Select2Ajax from "@/components/formulario/Select2Ajax.vue";
@@ -177,7 +187,12 @@ import { ArenaReservasRepository } from "@/repositories/reservas-repository";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { endOfDay, endOfYear, format, isAfter, isBefore, startOfDay, startOfYear, subMinutes } from "date-fns";
 import { useReservaStore } from "@/stores/arena/reservaStore";
+import { useToast } from "vue-toastification";
+import { useConfirm } from "@/composables/useConfirm";
+import { useUiStore } from "@/stores/ui/uiStore";
 const store = useReservaStore();
+const uiStore = useUiStore();
+const toast = useToast();
 const arenaIdFilter = ref(undefined);
 const reservas = ref<ArenaAgendamentos[]>([]);
 const currentPage = ref(1);
@@ -196,6 +211,24 @@ const reservasFiltered = computed(() => {
 function openSaveVenda() {
     // showDrawer.value = false;
     store.openSave();
+}
+
+async function deleteReserva(id: number) {
+    try {
+        const y = await useConfirm().confirm({
+            title: 'Excluir reserva',
+            message: 'Tem certeza que deseja excluir esta reserva?',
+            confirmText: 'Sim, excluir!',
+            cancelText: 'Cancelar',
+        });
+        if (!y) return;
+        await ArenaReservasRepository.delete(id);
+        toast.success('Reserva deletada com sucesso!');
+        store.updateTable();
+    } catch (error: any) {
+        console.log(error);
+        toast.error(error?.response?.data?.message ?? 'Erro ao deletar a reserva!');
+    }
 }
 
 async function renderMobile(page: number = 1) {

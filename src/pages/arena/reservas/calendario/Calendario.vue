@@ -89,9 +89,6 @@ const eventosComputed = computed(() => {
                             <SelectItem value="FINALIZADA">
                                 Finalizadas
                             </SelectItem>
-                            <SelectItem value="CANCELADA">
-                                Canceladas
-                            </SelectItem>
                         </SelectGroup>
                     </SelectContent>
                 </Select>

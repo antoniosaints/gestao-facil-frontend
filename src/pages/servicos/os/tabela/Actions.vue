@@ -34,17 +34,29 @@ async function deletar(id: number) {
     }
 }
 
+async function confirmarAcao(id: number, Uid: string) {
+    const ok = await useConfirm().confirm({
+        title: 'Gerar PDF',
+        message: 'Tem certeza que deseja gerar o PDF desta OS?',
+        confirmText: 'Sim, gerar!',
+        cancelText: 'Cancelar',
+        colorButton: 'primary'
+    });
+    if (!ok) return
+    await getPDFOs(id, Uid)
+}
 async function getPDFOs(id: number, Uid: string) {
     try {
+        let Pix = false
         const ok = await useConfirm().confirm({
-            title: 'Gerar PDF',
-            message: 'Tem certeza que deseja gerar o PDF desta OS?',
-            confirmText: 'Sim, gerar!',
-            cancelText: 'Cancelar',
-            colorButton: 'primary'
+            title: 'Pix na OS',
+            message: 'Deseja adicionar o PIX na OS?',
+            confirmText: 'Sim!',
+            cancelText: 'Não',
+            colorButton: 'success'
         });
-        if (!ok) return
-        await OrdensServicoRepository.getOsPdf(id, Uid)
+        if (ok) Pix = true
+        await OrdensServicoRepository.getOsPdf(id, Uid, Pix)
         toast.success('PDF gerado com sucesso')
     } catch (error: any) {
         console.log(error)
@@ -70,7 +82,7 @@ async function getPDFOs(id: number, Uid: string) {
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
             </DropdownMenuItem>
-            <DropdownMenuItem @click="getPDFOs(data.id!, data.Uid!)">
+            <DropdownMenuItem @click="confirmarAcao(data.id!, data.Uid!)">
                 <FileArchive class="mr-1" />
                 PDF A4
             </DropdownMenuItem>

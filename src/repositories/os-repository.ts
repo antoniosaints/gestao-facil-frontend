@@ -16,13 +16,16 @@ export class OrdensServicoRepository {
     const { data } = await http.get(`/servicos/ordem-detalhe/${id}`)
     return data.data
   }
-  static async getOsPdf(id: number, UID: string): Promise<any> {
-    const data = await http.get(`/servicos/ordens/relatorio/${id}`, {
-      responseType: 'blob',
-      headers: {
-        'Content-Type': 'application/pdf',
+  static async getOsPdf(id: number, UID: string, withPix: boolean = false): Promise<any> {
+    const data = await http.get(
+      `/servicos/ordens/relatorio/${id}${withPix ? '?withPix=true' : ''}`,
+      {
+        responseType: 'blob',
+        headers: {
+          'Content-Type': 'application/pdf',
+        },
       },
-    })
+    )
 
     const url = window.URL.createObjectURL(data.data)
     const a = document.createElement('a')

@@ -57,12 +57,15 @@ export class ArenaReservasRepository {
   }
   static async save(data: Omit<ArenaAgendamentos, 'id'>) {
     await http.post(`/arenas/reservas/agendar`, {
-      ...data
+      ...data,
     })
   }
   static async update(id: number, data: ArenaAgendamentos) {
     await http.post(`/arenas/reservas/agendar?id=${id}`, {
-      ...data
+      ...data,
     })
+  }
+  static async delete(id: number) {
+    await http.delete(`/arenas/reservas?id=${id}`)
   }
 }
