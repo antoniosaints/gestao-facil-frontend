@@ -17,7 +17,8 @@
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger value="integracoes"><i class="fa-solid fa-link mr-2"></i> Integrações</TabsTrigger>
                     <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i>
-                        Impressão</TabsTrigger>
+                        Impressão
+                    </TabsTrigger>
                     <TabsTrigger :disabled="true" value="financeiro" class="flex items-center">
                         <Banknote class="inline-flex mr-1 w-5 h-5" />
                         Financeiro

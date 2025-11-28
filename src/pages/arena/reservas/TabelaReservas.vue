@@ -101,15 +101,15 @@
                         Reserva cancelada
                     </button>
                     <div v-else class="flex gap-1">
-                        <button v-if="['PENDENTE'].includes(row.status)"
+                        <button v-if="['PENDENTE'].includes(row.status)" @click="confirmarReserva(row.id!)"
                             class="bg-green-200 text-green-900 dark:text-green-100 dark:bg-green-800 px-2 py-1 rounded-md text-sm">
                             <SquareCheckBig class="w-5 h-5" />
                         </button>
-                        <button v-if="['CONFIRMADA'].includes(row.status)"
-                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
-                            <Undo class="w-5 h-5" />
+                        <button v-if="['CONFIRMADA'].includes(row.status)" @click="finalizarReserva(row.id!)"
+                            class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-2 py-1 rounded-md text-sm">
+                            <BadgeCheck class="w-5 h-5" />
                         </button>
-                        <button v-if="['PENDENTE', 'CONFIRMADA'].includes(row.status)"
+                        <button v-if="['PENDENTE', 'CONFIRMADA'].includes(row.status)" @click="cancelarReserva(row.id!)"
                             class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
                             <OctagonX class="w-5 h-5" />
                         </button>
@@ -125,7 +125,7 @@
                             class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
                             <Trash class="w-5 h-5" />
                         </button>
-                        <button v-if="['FINALIZADA'].includes(row.status)"
+                        <button v-if="['FINALIZADA'].includes(row.status)" @click="estornarReserva(row.id!)"
                             class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm flex items-center gap-2">
                             <Undo2 class="w-5 h-5 inline-flex" />
                         </button>
@@ -228,6 +228,78 @@ async function deleteReserva(id: number) {
     } catch (error: any) {
         console.log(error);
         toast.error(error?.response?.data?.message ?? 'Erro ao deletar a reserva!');
+    }
+}
+async function cancelarReserva(id: number) {
+    try {
+        const y = await useConfirm().confirm({
+            title: 'Cancelar reserva',
+            message: 'Tem certeza que deseja cancelar esta reserva?',
+            confirmText: 'Sim, cancelar!',
+            cancelText: 'Fechar',
+            colorButton: 'danger'
+        });
+        if (!y) return;
+        await ArenaReservasRepository.cancelar(id);
+        toast.success('Reserva cancelada com sucesso!');
+        store.updateTable();
+    } catch (error: any) {
+        console.log(error);
+        toast.error(error?.response?.data?.message ?? 'Erro ao cancelar a reserva!');
+    }
+}
+async function confirmarReserva(id: number) {
+    try {
+        const y = await useConfirm().confirm({
+            title: 'Confirmar reserva',
+            message: 'Tem certeza que deseja confirmar esta reserva?',
+            confirmText: 'Sim, confirmar!',
+            cancelText: 'Fechar',
+            colorButton: 'success'
+        });
+        if (!y) return;
+        await ArenaReservasRepository.confirmar(id);
+        toast.success('Reserva confirmada com sucesso!');
+        store.updateTable();
+    } catch (error: any) {
+        console.log(error);
+        toast.error(error?.response?.data?.message ?? 'Erro ao confirmar a reserva!');
+    }
+}
+async function finalizarReserva(id: number) {
+    try {
+        const y = await useConfirm().confirm({
+            title: 'Finalizar reserva',
+            message: 'Tem certeza que deseja finalizar esta reserva?',
+            confirmText: 'Sim, finalizar!',
+            cancelText: 'Fechar',
+            colorButton: 'primary'
+        });
+        if (!y) return;
+        await ArenaReservasRepository.finalizar(id);
+        toast.success('Reserva finalizada com sucesso!');
+        store.updateTable();
+    } catch (error: any) {
+        console.log(error);
+        toast.error(error?.response?.data?.message ?? 'Erro ao finalizar a reserva!');
+    }
+}
+async function estornarReserva(id: number) {
+    try {
+        const y = await useConfirm().confirm({
+            title: 'Estornar reserva',
+            message: 'Tem certeza que deseja estornar esta reserva?',
+            confirmText: 'Sim, continuar!',
+            cancelText: 'Fechar',
+            colorButton: 'warning'
+        });
+        if (!y) return;
+        await ArenaReservasRepository.estornar(id);
+        toast.success('Reserva estornada com sucesso!');
+        store.updateTable();
+    } catch (error: any) {
+        console.log(error);
+        toast.error(error?.response?.data?.message ?? 'Erro ao estornar a reserva!');
     }
 }
 

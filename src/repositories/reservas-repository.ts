@@ -1,6 +1,5 @@
-import type { ArenaAgendamentos, ClientesFornecedores } from '@/types/schemas'
+import type { ArenaAgendamentos } from '@/types/schemas'
 import http from '@/utils/axios'
-import { formatToNumberValue } from '@/utils/formatters'
 export class ArenaReservasRepository {
   static async get(id?: number, quadraId?: number, inicio?: string, fim?: string) {
     const data = await http.get(`/arenas/reservas`, {
@@ -67,5 +66,17 @@ export class ArenaReservasRepository {
   }
   static async delete(id: number) {
     await http.delete(`/arenas/reservas?id=${id}`)
+  }
+  static async estornar(id: number) {
+    await http.get(`/arenas/reservas/estornar?id=${id}`)
+  }
+  static async cancelar(id: number) {
+    await http.get(`/arenas/reservas/cancelar?id=${id}`)
+  }
+  static async confirmar(id: number) {
+    await http.get(`/arenas/reservas/confirmar?id=${id}`)
+  }
+  static async finalizar(id: number) {
+    await http.get(`/arenas/reservas/finalizar?id=${id}`)
   }
 }
