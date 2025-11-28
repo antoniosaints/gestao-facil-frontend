@@ -246,6 +246,11 @@ const canBookingWithoutPayment = computed(() => {
   return quadra && quadra.aprovarSemPagamento
 })
 
+const cor = ref({
+  primary: "#0f766e",
+  secondary: "#134e4a",
+})
+
 watch(() => selectedDate.value, () => {
   if (selectedQuadra.value) {
     getHorariosDisponiveis(selectedQuadra.value)
@@ -254,8 +259,9 @@ watch(() => selectedDate.value, () => {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 relative"
-    style="background-image: linear-gradient(135deg, #127bb0 0%, #124b96 100%); background-size: cover; background-position: center; background-attachment: fixed;">
+  <div class="min-h-screen p-4 relative" :style="{
+    backgroundImage: `linear-gradient(135deg, ${cor.primary} 0%, ${cor.secondary} 100%)`
+  }">
     <div class="max-w-md mx-auto flex flex-col gap-4">
       <!-- Header -->
       <div class="text-center py-6">
