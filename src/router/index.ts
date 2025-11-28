@@ -130,7 +130,12 @@ const routes: RouteInterface[] = [
       {
         path: '',
         name: 'vendas-home',
-        component: () => import('@/pages/vendas/VendasHome.vue'),
+        component: () => {
+          if (env.VITE_MODE_SYSTEM === 'arena') {
+            return import('@/pages/arena/vendas/ComandaListagem.vue')
+          }
+          return import('@/pages/vendas/VendasHome.vue')
+        },
         meta: {
           layout: 'main',
           permissao: 2,
