@@ -117,6 +117,7 @@ import { formatCurrencyBR } from "@/utils/formatters";
 import { endOfMonth, startOfMonth } from "date-fns";
 import { ArenaQuadrasRepository } from "@/repositories/quadras-repository";
 import { useQuadraStore } from "@/stores/arena/quadraStore";
+import SelectMultiple from "@/components/formulario/SelectMultiple.vue";
 const store = useQuadraStore();
 const arenaIdFilter = ref(undefined);
 const quadras = ref<ArenaQuadras[]>([]);
