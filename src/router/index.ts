@@ -192,6 +192,15 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'vendas',
+        name: 'arena-vendas',
+        component: () => import('@/pages/arena/vendas/VendasListagem.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
         path: 'reservas',
         name: 'arena-reservas',
         component: () => import('@/pages/arena/reservas/ReservasListagem.vue'),

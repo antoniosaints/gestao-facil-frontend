@@ -12,6 +12,7 @@ import {
   Lock,
   MapPinned,
   Pen,
+  ShoppingBag,
   Sparkles,
   Tags,
   TicketCheck,
@@ -48,15 +49,22 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
     },
     {
       nome: 'Vendas',
-      link: '/arena/comandas',
-      icone: Tags,
+      icone: ShoppingBag,
       color: 'blue',
-    },
-    {
-      nome: 'Comandas',
-      link: '/arena/comandas',
-      icone: FileText,
-      color: 'blue',
+      children: [
+        {
+          nome: 'Vendas',
+          link: '/arena/vendas',
+          icone: Tags,
+          color: 'blue',
+        },
+        {
+          nome: 'Comandas',
+          link: '/arena/comandas',
+          icone: FileText,
+          color: 'blue',
+        },
+      ],
     },
     {
       nome: 'Quadras',

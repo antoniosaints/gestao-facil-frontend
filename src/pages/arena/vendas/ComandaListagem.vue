@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import { useVendasStore } from '@/stores/vendas/useVenda';
 import { onMounted, onUnmounted, provide, ref } from 'vue';
-import { BadgePlus, RotateCw, ShoppingCart, Tags } from 'lucide-vue-next';
+import { BadgePlus, FileText, RotateCw } from 'lucide-vue-next';
 import { getSocket } from '@/pluguins/socket';
 import type { Socket } from 'socket.io-client';
-import ModalVendas from '@/pages/vendas/formulario/ModalVendas.vue';
-import ModalProporValor from '@/pages/vendas/formulario/ModalProporValor.vue';
 import ModalFaturar from '@/pages/vendas/formulario/ModalFaturar.vue';
-import ModalFiltro from '@/pages/vendas/formulario/ModalFiltro.vue';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
-import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue';
-import GerarCobranca from '@/pages/financeiro/lancamentos/modais/GerarCobranca.vue';
-import TabelaVendas from './TabelaVendas.vue';
+import TabelaComandas from './TabelaComandas.vue';
+import ModalItemComanda from './ModalItemComanda.vue';
+import ModalComanda from './ModalComanda.vue';
+import { useComandaStore } from '@/stores/arena/comandaStore';
 const store = useVendasStore();
+const storeComanda = useComandaStore()
 const openFilter = ref(false);
 
 let socket: Socket;
@@ -35,35 +34,28 @@ provide('openModalFiltroVendas', openFilter);
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
             <div>
                 <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                    <Tags class="h-6 w-6" :stroke-width="2.5" />
-                    Vendas/Comandas
+                    <FileText class="h-6 w-6" :stroke-width="2.5" />
+                    Comandas
                 </h2>
-                <p class="text-sm text-muted-foreground">Listagem de vendas/comandas cadastrados</p>
+                <p class="text-sm text-muted-foreground">Listagem de comandas cadastradas</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <button @click="store.openSave"
+                <button @click="storeComanda.openSave"
                     class="bg-teal-700 dark:bg-teal-900 text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
-                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova venda</span>
+                    <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova comanda</span>
                 </button>
-                <RouterLink to="/vendas/pdv"
-                    class="border border-body bg-secondary hover:border-secondary px-2 py-1.5 text-sm rounded-lg flex items-center gap-1">
-                    <ShoppingCart class="w-5 h-5 inline-flex" /> PDV
-                </RouterLink>
-                <button @click="store.updateTable"
+                <button @click="storeComanda.updateTable"
                     class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
                     <RotateCw class="w-5 h-5" />
                 </button>
             </div>
         </div>
         <div class="overflow-x-auto rounded-lg">
-            <TabelaVendas />
+            <TabelaComandas />
         </div>
-        <ModalVendas />
-        <ModalProporValor />
+        <ModalItemComanda />
         <ModalFaturar />
-        <ModalFiltro />
         <ClientesModal />
-        <DetalhesVenda />
-        <GerarCobranca />
+        <ModalComanda />
     </div>
 </template>

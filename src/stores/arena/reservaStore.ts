@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import type { ArenaAgendamentos } from '@/types/schemas'
 import { useToast } from 'vue-toastification'
 import { ArenaReservasRepository } from '@/repositories/reservas-repository'
+import { addHours } from 'date-fns'
 
 const toast = useToast()
 const padrao: ArenaAgendamentos = {
@@ -29,7 +30,10 @@ export const useReservaStore = defineStore('reservaStore', () => {
 
   const openSave = (startAt?: string) => {
     if (form.value.id) reset()
-    if (startAt) form.value.startAt = startAt
+    if (startAt) {
+      form.value.startAt = startAt
+      form.value.endAt = addHours(new Date(startAt), 1).toISOString()
+    }
     openModal.value = true
   }
 

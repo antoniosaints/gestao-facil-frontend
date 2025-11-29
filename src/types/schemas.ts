@@ -518,3 +518,29 @@ export interface ArenaAgendamentos {
   Quadra?: ArenaQuadras
   Cliente?: ClientesFornecedores | null
 }
+
+export type StatusComanda = 'ABERTA' | 'FECHADA' | 'CANCELADA'
+
+export interface ComandaVenda {
+  id?: number
+  contaId?: number
+  status: StatusComanda
+  abertura: Date
+  fechamento?: Date | null
+  clienteNome: string
+  observacao?: string | null
+  clienteId?: number | null
+  Cliente?: ClientesFornecedores
+  reservaId?: number | null
+  ArenaReservas?: ArenaAgendamentos
+  vendas?: Vendas[]
+  comandaPagamentos?: ComandaPagamento[]
+}
+
+export interface ComandaPagamento {
+  id?: number
+  comandaId: number
+  formaPagamento: MetodoPagamento
+  valor: number
+  dataPagamento: Date
+}
