@@ -7,6 +7,7 @@ import {
   ChartPie,
   Cog,
   FileCheck,
+  FileText,
   GitBranchPlus,
   Lock,
   MapPinned,
@@ -49,6 +50,12 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
       nome: 'Vendas',
       link: '/arena/comandas',
       icone: Tags,
+      color: 'blue',
+    },
+    {
+      nome: 'Comandas',
+      link: '/arena/comandas',
+      icone: FileText,
       color: 'blue',
     },
     {
