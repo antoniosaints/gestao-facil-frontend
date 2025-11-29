@@ -124,20 +124,6 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.financeiro.visualizar,
     },
     {
-      nome: 'Assinatura',
-      color: 'orange',
-      show: permissions.financeiro.visualizar,
-      icone: Sparkles,
-      link: '/assinatura/resumo',
-    },
-    {
-      nome: 'Modo Admin',
-      color: 'violet',
-      icone: Lock,
-      show: permissions.superadmin,
-      link: '/admin',
-    },
-    {
       nome: 'Atualizações',
       color: 'blue',
       show: true,

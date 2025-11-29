@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="max-h-[calc(100vh-5rem)] overflow-auto">
         <div v-for="(item, index) in menu" :key="index" class="space-y-4">
             <!-- Divisor -->
             <div v-if="item.divisor" v-show="item.show !== false" class="flex items-center mt-2">

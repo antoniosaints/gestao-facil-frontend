@@ -8,10 +8,11 @@
         </button>
         <!-- Sidebar -->
         <aside id="sidebar-content-sistema"
-            class="fixed overflow-auto top-0 hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-teal-800 dark:bg-teal-950 p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
+            class="fixed overflow-auto top-0 hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-teal-800 dark:bg-teal-950 p-4 space-y-2 transform transition-transform duration-300 ease-in-out z-40"
             :class="{ '-translate-x-full': !store.openSidebar }">
 
-            <TopMenu />
+            <!-- <TopMenu /> -->
+            <NavUserSidebar />
             <SidebarMenuArena :menu="sidebarMenuArenaOptions(store.permissoes)" />
             <div class="grid grid-cols-12 gap-2 items-center justify-center">
                 <LogoutButton class="col-span-10 md:col-span-12" />
@@ -55,6 +56,7 @@ import { onMounted, ref } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import { sidebarMenuArenaOptions } from './optionsArena'
 import SidebarMenuArena from '@/components/layout/sidebarMenuArena.vue'
+import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
 const store = useUiStore()
 const loading = ref(false)
 window.addEventListener('resize', () => {
