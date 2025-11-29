@@ -444,7 +444,7 @@ onMounted(() => {
                 class="flex justify-between items-center bg-white dark:bg-gray-900 border rounded-md p-2 shadow-sm">
                 <div class="flex flex-col text-sm">
                   <span class="font-medium text-gray-800 dark:text-gray-200">({{ item.tipoItem }}) {{ item.produto
-                  }}</span>
+                    }}</span>
                   <span class="text-gray-500 dark:text-gray-400">Qtd: {{ item.quantidade }}</span>
                 </div>
                 <div class="flex items-center">
