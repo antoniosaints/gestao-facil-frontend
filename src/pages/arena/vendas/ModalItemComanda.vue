@@ -257,7 +257,7 @@ onMounted(() => {
                 <div class="col-span-4 md:col-span-3">
                     <Button type="button" :disabled="!ableAdd" @click="addToCartVendas" class="text-white w-full">
                         <i class="fa-solid fa-cart-plus"></i>
-                        Adicionar
+                        incluir
                     </Button>
                 </div>
             </div>

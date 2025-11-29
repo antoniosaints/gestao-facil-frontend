@@ -52,7 +52,7 @@ const sameHour = (hour: any) => {
             class="flex items-center space-x-4 px-2 py-1 border relative rounded-lg mb-2"
             :class="{ 'border-primary': sameHour(dateRow) }">
             <span v-if="sameHour(dateRow)"
-                class="absolute left-[-.85rem] bg-gray-50 dark:dark:bg-gray-900 border p-1 border-primary rounded-full">
+                class="absolute left-[-.75rem] bg-gray-50 dark:dark:bg-gray-900 border p-1 border-primary rounded-full">
                 <ArrowBigRight class="h-4 w-4" />
             </span>
             <div class="text-sm font-medium text-muted-foreground" :class="{ 'text-primary': sameHour(dateRow) }">

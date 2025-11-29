@@ -47,47 +47,54 @@
                 </div>
             </div>
             <div v-for="row in reservasFiltered" :key="row.id"
-                class="rounded-xl border dark:border-border-dark bg-card dark:bg-card-dark p-4">
-                <div class="flex justify-between">
-                    <div class="text-md font-semibold dark:text-white flex items-center gap-1">
-                        <span class="truncate">
-                            <BadgeCheck v-if="row.status === 'FINALIZADA'"
-                                class="h-5 w-5 text-primary dark:text-blue-400 inline-flex" />
-                            <Clock v-if="row.status === 'PENDENTE'"
-                                class="h-5 w-5 text-warning dark:text-yellow-400 inline-flex" />
-                            <SquareCheckBig v-if="row.status === 'CONFIRMADA'"
-                                class="h-5 w-5 text-success dark:text-green-400 inline-flex" />
-                            <ShieldX v-if="row.status === 'BLOQUEADO'"
-                                class="h-5 w-5 text-secondary dark:text-gray-400 inline-flex" />
-                            <ShieldX v-if="row.status === 'CANCELADA'"
-                                class="h-5 w-5 text-danger dark:text-red-400 inline-flex" />
-                            {{ row.Cliente?.nome || 'SEM CLIENTE VINCULADO' }}
-                        </span>
+                class="rounded-xl border dark:border-border-dark flex flex-col justify-between bg-card dark:bg-card-dark p-4">
+                <div>
+                    <div class="flex justify-between">
+                        <div class="text-md font-semibold dark:text-white flex items-center gap-1">
+                            <span class="truncate">
+                                <BadgeCheck v-if="row.status === 'FINALIZADA'"
+                                    class="h-5 w-5 text-primary dark:text-blue-400 inline-flex" />
+                                <Clock v-if="row.status === 'PENDENTE'"
+                                    class="h-5 w-5 text-warning dark:text-yellow-400 inline-flex" />
+                                <SquareCheckBig v-if="row.status === 'CONFIRMADA'"
+                                    class="h-5 w-5 text-success dark:text-green-400 inline-flex" />
+                                <ShieldX v-if="row.status === 'BLOQUEADO'"
+                                    class="h-5 w-5 text-secondary dark:text-gray-400 inline-flex" />
+                                <ShieldX v-if="row.status === 'CANCELADA'"
+                                    class="h-5 w-5 text-danger dark:text-red-400 inline-flex" />
+                                {{ row.Cliente?.nome || 'SEM CLIENTE VINCULADO' }}
+                            </span>
+                        </div>
+                        <div class="text-sm text-green-500 dark:text-green-400">
+                            {{ formatCurrencyBR(row.valor!) }}
+                        </div>
                     </div>
-                    <div class="text-sm text-green-500 dark:text-green-400">
-                        {{ formatCurrencyBR(row.valor!) }}
+                    <div class="flex justify-between">
+                        <div class="flex justify-between gap-2">
+                            <div class="text-xs"
+                                :class="[
+                                    row.status === 'PENDENTE' ?
+                                        'text-warning dark:text-yellow-400' : row.status === 'CONFIRMADA' ?
+                                            'text-success dark:text-green-400' : row.status === 'FINALIZADA' ?
+                                                'text-primary dark:text-blue-400' : row.status === 'CANCELADA' ?
+                                                    'text-danger dark:text-red-400' : 'text-secondary dark:text-gray-400']">
+                                {{ row.status }}</div>
+                            <span class="text-xs font-thin text-white bg-teal-500 dark:bg-teal-900 px-1 rounded-md">
+                                {{ row.Quadra?.name || 'SEM QUADRA VINCULADA' }}
+                            </span>
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ new Date(row.startAt).toLocaleDateString('pt-BR') }}
+                        </div>
                     </div>
-                </div>
-                <div class="flex justify-between">
-                    <div class="flex justify-between gap-2">
-                        <div class="text-xs" :class="[
-                            row.status === 'PENDENTE' ?
-                                'text-warning dark:text-yellow-400' : row.status === 'CONFIRMADA' ?
-                                    'text-success dark:text-green-400' : row.status === 'FINALIZADA' ?
-                                        'text-primary dark:text-blue-400' : row.status === 'CANCELADA' ?
-                                            'text-danger dark:text-red-400' : 'text-secondary dark:text-gray-400']">
-                            {{ row.status }}</div>
-                        <span class="text-xs font-thin text-white bg-teal-500 dark:bg-teal-900 px-1 rounded-md">
-                            {{ row.Quadra?.name || 'SEM QUADRA VINCULADA' }}
-                        </span>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ format(row.startAt, 'HH:mm') }}
+                        até {{ format(new Date(row.endAt), "HH:mm") }}
                     </div>
+
                     <div class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ new Date(row.startAt).toLocaleDateString('pt-BR') }}
+                        {{ row.observacoes || 'Nenhuma observação.' }}
                     </div>
-                </div>
-                <div class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ format(row.startAt, 'HH:mm') }}
-                    até {{ format(new Date(row.endAt), "HH:mm") }}
                 </div>
                 <div class="mt-2 flex justify-between gap-2">
                     <button v-if="['FINALIZADA'].includes(row.status)"
@@ -113,7 +120,7 @@
                             class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
                             <OctagonX class="w-5 h-5" />
                         </button>
-                        <button v-if="!['FINALIZADA', 'BLOQUEADA', 'CANCELADA'].includes(row.status)"
+                        <button v-if="!['FINALIZADA', 'BLOQUEADA', 'CANCELADA', 'CONFIRMADA'].includes(row.status)"
                             @click="store.openUpdate(row.id!)"
                             class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
                             <Pen class="w-5 h-5" />
