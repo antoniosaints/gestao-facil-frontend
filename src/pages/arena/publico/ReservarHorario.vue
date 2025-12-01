@@ -322,7 +322,7 @@ function changeWeek(type: "prev" | "next") {
     backgroundImage: `linear-gradient(135deg, ${cor.primary} 0%, ${cor.secondary} 100%)`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
-    backgroundAttachment: 'fixed'
+    backgroundAttachment: 'fixed',
   }">
     <div class="max-w-md mx-auto flex flex-col gap-4">
       <!-- Header -->
@@ -408,7 +408,7 @@ function changeWeek(type: "prev" | "next") {
           <div class="grid grid-cols-7 gap-2">
             <div v-for="row in diasSemana" :key="row.toISOString()" @click="selectedDate = row"
               class="border rounded-xl p-2 text-xs text-center cursor-pointer shadow-md hover:shadow-none"
-              :class="isSameDay(selectedDate, row) ? 'bg-primary text-white' : ''">
+              :class="isSameDay(selectedDate, row) ? 'bg-primary text-white shadow-none' : ''">
               <div>{{ formatToUpperCase(format(row, "EEEEEE dd/MM", { locale: ptBR })) }}</div>
             </div>
           </div>
@@ -534,12 +534,12 @@ function changeWeek(type: "prev" | "next") {
           <div class="flex flex-col gap-2">
             <RadioGroup default-value="PIX" class="grid grid-cols-3">
               <Label for="option-one"
-                class="flex items-center text-sm p-3 px-4 gap-2 bg-success/20 border rounded-lg cursor-pointer">
+                class="flex items-center text-sm col-span-3 p-3 px-4 gap-2 bg-success/20 border rounded-lg cursor-pointer">
                 <RadioGroupItem id="option-one" value="PIX" class="bg-white" />
                 <i class="fa-brands fa-pix"></i>
                 PIX
               </Label>
-              <Label for="option-three"
+              <!-- <Label for="option-three"
                 class="flex items-center text-sm p-3 px-4 gap-2 bg-body/70 border rounded-lg cursor-pointer">
                 <RadioGroupItem id="option-three" value="BOLETO" class="bg-white" />
                 <i class="fa-solid fa-file-invoice"></i>
@@ -550,7 +550,7 @@ function changeWeek(type: "prev" | "next") {
                 <RadioGroupItem id="option-two" value="LINK" class="bg-white" />
                 <i class="fa-solid fa-link"></i>
                 Link
-              </Label>
+              </Label> -->
             </RadioGroup>
           </div>
         </div>
