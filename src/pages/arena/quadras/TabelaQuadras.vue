@@ -36,8 +36,7 @@
                     <p class="text-gray-500 dark:text-gray-300">Nenhuma quadra encontrada.</p>
                 </div>
             </div>
-            <div v-for="row in quadrasFiltered" :key="row.id"
-                class="rounded-xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
+            <div v-for="row in quadrasFiltered" :key="row.id" class="rounded-xl cursor-pointer border bg-card p-4">
                 <div class="flex justify-between">
                     <div class="text-md font-semibold dark:text-white">
                         {{ row.name || 'SEM NOME' }}
@@ -52,14 +51,23 @@
                             'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']">
                         {{ row.active ? 'Ativo' : 'Inativo' }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ row.tempoReserva || '-' }} min
+                        {{ row.tempoReserva || '-' }}min/reserva
                     </div>
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ row.description || '-' }}
                 </div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-1">
                         <button @click="store.openUpdate(row.id!)"
                             class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
                             <Pen class="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div class="flex gap-1">
+                        <button @click="store.openUpdate(row.id!)"
+                            class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
+                            <Trash class="w-5 h-5" />
                         </button>
                     </div>
                 </div>
@@ -111,13 +119,13 @@ import { ref, onMounted, watch, computed } from "vue";
 import type { ArenaQuadras } from "@/types/schemas";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgePlus, MapPinned, Pen } from "lucide-vue-next";
+import { BadgePlus, MapPinned, Pen, Trash } from "lucide-vue-next";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { endOfMonth, startOfMonth } from "date-fns";
 import { ArenaQuadrasRepository } from "@/repositories/quadras-repository";
 import { useQuadraStore } from "@/stores/arena/quadraStore";
-import SelectMultiple from "@/components/formulario/SelectMultiple.vue";
+import DataTableFacetedFilter from "@/components/formulario/DataTableFacetedFilter.vue";
 const store = useQuadraStore();
 const arenaIdFilter = ref(undefined);
 const quadras = ref<ArenaQuadras[]>([]);

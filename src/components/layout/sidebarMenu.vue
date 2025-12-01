@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="max-h-[calc(100vh-13.5rem)] md:max-h-[calc(100vh-9rem)] overflow-auto hidden_scrollbar">
         <div v-for="(item, index) in menu" :key="index" class="space-y-4">
             <!-- Divisor -->
             <div v-if="item.divisor" v-show="item.show !== false" class="flex items-center mt-2">
@@ -72,22 +72,6 @@ import { useRoute } from 'vue-router';
 defineProps<{ menu: SidebarMenuType[] }>()
 const route = useRoute()
 
-const colorClasses = {
-    red: "text-red-500",
-    green: "text-green-500",
-    blue: "text-blue-500",
-    yellow: "text-yellow-500",
-    gray: "text-gray-500",
-    orange: "text-orange-500",
-    indigo: "text-indigo-500",
-    purple: "text-purple-500",
-    pink: "text-pink-500",
-    emerald: "text-emerald-500",
-    cyan: "text-cyan-500",
-    slate: "text-slate-500",
-    violet: "text-violet-500",
-};
-
 const openDropdowns = ref<string[]>([])
 const toggleDropdown = (id: string) => {
     const index = openDropdowns.value.indexOf(id)
@@ -98,3 +82,14 @@ const toggleDropdown = (id: string) => {
     }
 }
 </script>
+
+<style scoped>
+.hidden_scrollbar {
+    overflow: auto;
+    /* ou scroll, conforme sua necessidade */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE e Edge antigo */
+}
+</style>

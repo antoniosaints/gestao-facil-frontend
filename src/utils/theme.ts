@@ -1,5 +1,5 @@
 import { useColorMode } from '@vueuse/core'
-import { onMounted, watch } from 'vue'
+import { watch } from 'vue'
 import { env } from './dotenv'
 
 export const colorTheme = useColorMode({

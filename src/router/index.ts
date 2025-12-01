@@ -188,7 +188,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/arena/vendas/ComandaListagem.vue'),
         meta: {
           layout: 'main',
-          permissao: 3,
+          permissao: 2,
         },
       },
       {
@@ -197,7 +197,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/arena/vendas/VendasListagem.vue'),
         meta: {
           layout: 'main',
-          permissao: 3,
+          permissao: 2,
         },
       },
       {
@@ -206,7 +206,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/arena/reservas/ReservasListagem.vue'),
         meta: {
           layout: 'main',
-          permissao: 3,
+          permissao: 2,
         },
       },
       {

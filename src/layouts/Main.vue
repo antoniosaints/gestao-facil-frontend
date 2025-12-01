@@ -8,20 +8,24 @@
         </button>
         <!-- Sidebar -->
         <aside id="sidebar-content-sistema"
-            class="fixed overflow-auto top-0 hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-sidebar p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
+            class="fixed overflow-auto top-0 flex flex-col justify-between hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-sidebar p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
             :class="{ '-translate-x-full': !store.openSidebar }">
 
             <!-- <TopMenu /> -->
-            <NavUserSidebar />
-            <SidebarMenu :menu="sidebarMenuOptions(store.permissoes)" />
-            <div class="grid grid-cols-12 gap-2 items-center justify-center">
-                <LogoutButton class="col-span-10 md:col-span-12" />
-                <ColorToggle class="col-span-2 h-full w-full" v-if="store.isMobile" />
+            <div>
+                <NavUserSidebar />
+                <SidebarMenu :menu="sidebarMenuOptions(store.permissoes)" />
             </div>
-            <button @click="store.toggleSidebar"
-                class="md:hidden mt-4 flex items-center border border-gray-400 dark:border-gray-500 gap-2 px-4 py-3 rounded-lg transition bg-sidebar text-white w-full justify-center">
-                <i class="fa-solid fa-circle-xmark mr-1"></i> Fechar
-            </button>
+            <div>
+                <div class="grid grid-cols-12 gap-2 items-center justify-center">
+                    <LogoutButton class="col-span-10 md:col-span-12" />
+                    <ColorToggle class="col-span-2 h-full w-full" v-if="store.isMobile" />
+                </div>
+                <button @click="store.toggleSidebar"
+                    class="md:hidden mt-4 flex items-center border border-gray-400 dark:border-gray-500 gap-2 px-4 py-3 rounded-lg transition bg-sidebar text-white w-full justify-center">
+                    <i class="fa-solid fa-circle-xmark mr-1"></i> Fechar
+                </button>
+            </div>
         </aside>
         <main id="container-main-app-sistema"
             class="overflow-y-auto h-[calc(100vh-5rem)] text-gray-700 dark:text-gray-300 md:h-[calc(100vh-4.3rem)] p-6 mt-0 transition-all duration-300 ease-in-out"

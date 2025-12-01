@@ -51,16 +51,19 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
       nome: 'Vendas',
       icone: ShoppingBag,
       color: 'blue',
+      show: permissions.vendas.visualizar,
       children: [
         {
           nome: 'Vendas',
           link: '/arena/vendas',
+          show: permissions.vendas.criar,
           icone: Tags,
           color: 'blue',
         },
         {
           nome: 'Comandas',
           link: '/arena/comandas',
+          show: permissions.vendas.criar,
           icone: FileText,
           color: 'blue',
         },
@@ -70,6 +73,7 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
       nome: 'Quadras',
       link: '/arena/quadras',
       icone: MapPinned,
+      show: permissions.produtos.visualizar,
       color: 'blue',
     },
     {
