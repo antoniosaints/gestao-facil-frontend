@@ -1,5 +1,16 @@
 import type { ArenaAgendamentos } from '@/types/schemas'
 import http from '@/utils/axios'
+
+export interface SaveReservaPublico {
+  contaId: number
+  quadraId: number
+  inicio: string
+  fim: string
+  modoPagamento: 'PARCIAL' | 'TOTAL'
+  nomeCliente?: string
+  telefoneCliente?: string
+  enderecoCliente?: string
+}
 export class ArenaReservasRepository {
   static async get(id?: number, quadraId?: number, inicio?: string, fim?: string) {
     const data = await http.get(`/arenas/reservas`, {
@@ -55,6 +66,11 @@ export class ArenaReservasRepository {
     return data.data
   }
   static async save(data: Omit<ArenaAgendamentos, 'id'>) {
+    await http.post(`/arenas/reservas/agendar`, {
+      ...data,
+    })
+  }
+  static async savePublico(data: SaveReservaPublico) {
     await http.post(`/arenas/reservas/agendar`, {
       ...data,
     })

@@ -35,8 +35,11 @@ function eventosNaHora(hora: Date) {
 
                 <!-- Eventos -->
                 <div class="flex flex-col gap-1 min-h-[40px] w-full border-l p-2">
-                    <div v-for="ev in eventosNaHora(hora)" :key="ev.id"
-                        class="p-1 text-xs bg-teal-700 dark:bg-teal-900 text-white rounded-sm">
+                    <div v-for="ev in eventosNaHora(hora)" :key="ev.id" class="p-1 text-xs rounded-sm" :class="{
+                        'bg-teal-500 text-teal-50 dark:bg-teal-900 dark:text-teal-50': ev.status === 'CONFIRMADA',
+                        'bg-yellow-500 text-yellow-50 dark:bg-yellow-900 dark:text-yellow-50': ev.status === 'PENDENTE',
+                        'bg-blue-500 text-blue-50 dark:bg-blue-900 dark:text-blue-50': ev.status === 'FINALIZADA',
+                    }">
                         {{ format(new Date(ev.startAt), "HH:mm") }} -
                         ({{ ev.Quadra?.name }}) |
                         {{ format(subMinutes(new Date(ev.endAt), 1), "HH:mm") }} |

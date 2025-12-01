@@ -72,8 +72,11 @@ const navigateToDay = (dia: Date) => {
                         : ''
                 ]">
                 <div class="font-semibold">{{ format(dia, "dd") }}</div>
-                <div v-for="ev in eventosDoDia(dia).slice(0, 2)" :key="ev.id"
-                    class="mt-1 bg-teal-700 dark:bg-teal-900 text-white truncate px-1 rounded">
+                <div v-for="ev in eventosDoDia(dia).slice(0, 2)" :key="ev.id" class="mt-1 truncate px-1 rounded" :class="{
+                    'bg-teal-500 text-teal-50 dark:bg-teal-900 dark:text-teal-50': ev.status === 'CONFIRMADA',
+                    'bg-yellow-500 text-yellow-50 dark:bg-yellow-900 dark:text-yellow-50': ev.status === 'PENDENTE',
+                    'bg-blue-500 text-blue-50 dark:bg-blue-900 dark:text-blue-50': ev.status === 'FINALIZADA',
+                }">
                     {{ format(new Date(ev.startAt), "HH:mm") }}
                     {{ ev.Cliente?.nome || "Sem descrição" }}
                 </div>

@@ -28,6 +28,7 @@ import { env } from "@/utils/dotenv";
 import ModalUploadPerfil from "@/pages/configs/ModalUploadPerfil.vue";
 import { useAuthStore } from "@/stores/login/useAuthStore";
 import { useToast } from "vue-toastification";
+import { getLettersName } from "@/utils/formatters";
 
 const uiStore = useUiStore()
 const store = useAuthStore();
@@ -65,7 +66,7 @@ const colorTheme = computed(() => {
           <Avatar class="h-8 w-8 rounded-lg">
             <AvatarImage :src="uiStore.logoProfile" :alt="uiStore.contaInfo.nome" />
             <AvatarFallback class="rounded-lg">
-              CN
+              {{ getLettersName(uiStore.contaInfo.nome) }}
             </AvatarFallback>
           </Avatar>
           <div class="grid flex-1 text-left text-sm leading-tight">
@@ -84,7 +85,7 @@ const colorTheme = computed(() => {
             <Avatar class="h-8 w-8 rounded-lg">
               <AvatarImage :src="uiStore.logoProfile" :alt="uiStore.contaInfo.nome" />
               <AvatarFallback class="rounded-lg">
-                AE
+                {{ getLettersName(uiStore.usuarioLogged.nome) }}
               </AvatarFallback>
             </Avatar>
             <div class="grid flex-1 text-left text-sm leading-tight">

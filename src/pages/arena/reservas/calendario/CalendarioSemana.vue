@@ -38,7 +38,7 @@ function changeWeek(type: "prev" | "next") {
     <div class="flex items-center space-x-4 rounded-lg mb-2 justify-between">
         <ArrowBigLeft class="cursor-pointer p-2" :size="35" @click="changeWeek('prev')" />
         <div class="flex flex-col items-center">
-            <h1 class="text-md font-bold">{{ format(inicioSemana, "dd/MM/yyyy") }} até {{ format(addDays(inicioSemana,
+            <h1 class="text-md">{{ format(inicioSemana, "dd/MM/yyyy") }} até {{ format(addDays(inicioSemana,
                 6), "dd/MM/yyyy") }}</h1>
         </div>
         <ArrowBigRight class="cursor-pointer p-2" :size="35" @click="changeWeek('next')" />
@@ -47,11 +47,14 @@ function changeWeek(type: "prev" | "next") {
 
         <div v-for="dia in diasSemana" :key="dia.toISOString()" class="border rounded p-2 text-sm"
             :class="{ 'bg-slate-200 dark:bg-slate-800': isSameDay(dia, new Date()) }">
-            <div>{{ formatToCapitalize(format(dia, "EEE dd/MM", { locale: ptBR })) }}</div>
+            <div>{{ formatToCapitalize(format(dia, "EEEEEE dd/MM", { locale: ptBR })) }}</div>
             <div v-for="ev in eventosDoDia(dia)" :key="ev.id"
-                class="mt-1 bg-teal-700 dark:bg-teal-900 text-xs truncate flex items-center text-white px-1 rounded">
+                class="mt-1 text-xs truncate flex items-center px-1 py-1 gap-1 rounded" :class="{
+                    'bg-teal-500 text-teal-50 dark:bg-teal-900 dark:text-teal-50': ev.status === 'CONFIRMADA',
+                    'bg-yellow-500 text-yellow-50 dark:bg-yellow-900 dark:text-yellow-50': ev.status === 'PENDENTE',
+                    'bg-blue-500 text-blue-50 dark:bg-blue-900 dark:text-blue-50': ev.status === 'FINALIZADA',
+                }">
                 {{ format(new Date(ev.startAt), "HH:mm") }}
-                <Dot class="inline-flex" />
                 {{ ev.Cliente?.nome || "Sem descrição" }}
             </div>
             <div v-show="!eventosDoDia(dia).length"

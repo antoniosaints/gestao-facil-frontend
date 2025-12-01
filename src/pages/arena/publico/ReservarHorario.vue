@@ -1,21 +1,26 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue"
 import { useRoute } from "vue-router"
-import { ArrowBigLeft, ArrowBigRight, Calendar, Check, CheckCheck, Clock, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight, Calendar, Check, CheckCheck, CircleDollarSign, Clock, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
 import type { ArenaQuadras, Contas } from "@/types/schemas"
-import { useToast } from "vue-toastification"
+import { POSITION, useToast } from "vue-toastification"
 import { ArenaQuadrasRepository } from "@/repositories/quadras-repository"
 import { HashGenerator } from "@/utils/generators"
 import http from "@/utils/axios"
 import { env } from "@/utils/dotenv"
 import { formatCurrencyBR, formatToCapitalize, formatToUpperCase } from "@/utils/formatters"
-import { ArenaReservasRepository } from "@/repositories/reservas-repository"
-import { addDays, endOfDay, format, startOfDay, startOfWeek } from "date-fns"
+import { ArenaReservasRepository, type SaveReservaPublico } from "@/repositories/reservas-repository"
+import { addDays, endOfDay, format, isSameDay, startOfDay, startOfWeek } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import ModalView from "@/components/formulario/ModalView.vue"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { phoneMaskOptions } from "@/lib/imaska"
+import { vMaska } from "maska/vue"
 
 interface CartItem {
   quadraId: number
@@ -44,11 +49,22 @@ const selectedQuadra = ref<ArenaQuadras | null>(null)
 const cartItems = ref<CartItem[]>([])
 const showCart = ref(false)
 const showModalConfirm = ref(false)
+const dadosReserva = ref<Partial<SaveReservaPublico>>({
+  enderecoCliente: "",
+  nomeCliente: "",
+  telefoneCliente: "",
+  modoPagamento: "TOTAL"
+})
 
 const logo = computed(() => {
   const url = env.VITE_BACKEND_URL
   return url + '/' + conta.value?.profile + '?_t=' + Date.now()
 })
+
+const openModalPagamento = (tipo: "TOTAL" | "PARCIAL") => {
+  dadosReserva.value.modoPagamento = tipo
+  showModalConfirm.value = true
+}
 
 async function getQuadras() {
   try {
@@ -66,6 +82,13 @@ async function getQuadras() {
     loading.value = false
   }
 }
+
+const quadrasFiltered = computed(() => {
+  if (selectedQuadra.value) {
+    return quadras.value?.filter(quadra => quadra.id === selectedQuadra.value?.id)
+  }
+  return quadras.value
+})
 
 async function getHorariosDisponiveis(quadra: ArenaQuadras) {
   try {
@@ -189,20 +212,26 @@ const mergedCart = computed(() => {
 
 async function reservar() {
   try {
-    const payload = cartItems.value.map((item) => ({
+    const payload: SaveReservaPublico[] = mergedCart.value.map((item) => ({
       quadraId: item.quadraId,
-      preco: item.price,
-      date: item.date.toISOString(),
-      startTime: item.startTime,
-      endTime: item.endTime,
+      contaId: Number(contaId.value),
+      inicio: format(item.startTime, "yyyy-MM-dd'T'HH:mm:ss", { locale: ptBR }),
+      fim: format(item.endTime, "yyyy-MM-dd'T'HH:mm:ss", { locale: ptBR }),
+      modoPagamento: 'TOTAL'
     }))
-
+    await Promise.all(
+      payload.map(item => ArenaReservasRepository.savePublico(item))
+    )
     cartItems.value = []
     selectedQuadra.value = null
-    toast.success('Reservas realizadas com sucesso!')
+    toast.success('Reservas realizadas com sucesso!', {
+      timeout: 5000,
+      position: POSITION.BOTTOM_CENTER
+    })
     showCart.value = false
-  } catch (error) {
-    toast.error('Erro ao reservar, tente novamente!')
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error?.response?.data?.message ?? 'Erro ao reservar, tente novamente!')
   }
 }
 
@@ -269,13 +298,13 @@ const diasSemana = computed(() =>
 
 function changeWeek(type: "prev" | "next") {
   selectedDate.value = type === "prev"
-    ? addDays(selectedDate.value, -7)
-    : addDays(selectedDate.value, 7)
+    ? addDays(selectedDate.value, -1)
+    : addDays(selectedDate.value, 1)
 }
 </script>
 
 <template>
-  <div class="min-h-screen p-4 relative" :style="{
+  <div class="min-h-screen p-4 relative select-none" :style="{
     backgroundImage: `linear-gradient(135deg, ${cor.primary} 0%, ${cor.secondary} 100%)`
   }">
     <div class="max-w-md mx-auto flex flex-col gap-4">
@@ -308,14 +337,17 @@ function changeWeek(type: "prev" | "next") {
       <!-- Seleção de Quadra -->
       <Card class="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">
         <CardHeader>
-          <CardTitle class="flex items-center space-x-2 font-normal">
-            <MapPin class="h-5 w-5" />
-            <span>Escolha a Quadra</span>
+          <CardTitle class="flex items-center justify-between space-x-2 font-normal">
+            <div class="flex items-center space-x-2">
+              <MapPin class="h-5 w-5" />
+              <span>Escolha a Quadra</span>
+            </div>
+            <Button v-if="selectedQuadra" @click="selectedQuadra = null" size="xs">Trocar quadra</Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div class="grid grid-cols-1 gap-3">
-            <div v-for="quadra in quadras" :key="quadra.id" @click="getHorariosDisponiveis(quadra)"
+            <div v-for="quadra in quadrasFiltered" :key="quadra.id" @click="getHorariosDisponiveis(quadra)"
               class="p-4 rounded-lg border-2 cursor-pointer transition-all"
               :class="selectedQuadra?.id === quadra.id ? 'border-primary dark:border-blue-400 bg-primary/10' : ''">
               <div class="flex justify-between items-center">
@@ -345,7 +377,7 @@ function changeWeek(type: "prev" | "next") {
               <Calendar class="h-5 w-5" />
               <span>Escolha a Data</span>
             </div>
-            <div class="flex items-center space-x-4 rounded-lg justify-between">
+            <div class="flex items-center space-x-2 rounded-lg justify-between">
               <ArrowBigLeft class="cursor-pointer p-2" :size="35" @click="changeWeek('prev')" />
               <div class="flex flex-col items-center">
                 <h1 class="text-xs">{{ format(selectedDate, "dd/MM/yyyy") }}</h1>
@@ -359,7 +391,7 @@ function changeWeek(type: "prev" | "next") {
           <div class="grid grid-cols-7 gap-2">
             <div v-for="row in diasSemana" :key="row.toISOString()" @click="selectedDate = row"
               class="border rounded p-2 text-xs text-center cursor-pointer shadow-md hover:shadow-none"
-              :class="selectedDate?.toISOString() === row.toISOString() ? 'bg-primary text-white' : ''">
+              :class="isSameDay(selectedDate, row) ? 'bg-primary text-white' : ''">
               <div>{{ formatToUpperCase(format(row, "EEEEEE dd/MM", { locale: ptBR })) }}</div>
             </div>
           </div>
@@ -401,7 +433,10 @@ function changeWeek(type: "prev" | "next") {
       <div v-if="showCart" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-[90%] max-w-lg">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">Carrinho</h2>
+            <h2 class="text-xl font-bold">
+
+              <ShoppingCart class="h-7 w-7 inline-flex" :stroke-width="2.5" /> Carrinho
+            </h2>
             <p>Horários: {{ cartItems.length }}</p>
           </div>
           <div v-if="!cartItems.length">
@@ -440,14 +475,15 @@ function changeWeek(type: "prev" | "next") {
             </p>
 
             <div class="grid grid-cols-2 gap-2" v-if="!canBookingWithoutPayment">
-              <Button class="flex-1 text-white text-md col-span-2 md:col-span-1" @click="reservar">Pagar 100%</Button>
-              <Button variant="outline" @click="showModalConfirm = true"
+              <Button class="flex-1 text-white text-md col-span-2 md:col-span-1"
+                @click="openModalPagamento('TOTAL')">Pagar 100%</Button>
+              <Button variant="outline" @click="openModalPagamento('PARCIAL')"
                 class="flex-1 text-md col-span-2 md:col-span-1">
                 Reservar (50%) - {{ formatCurrencyBR((totalPrice / 2)) }}
               </Button>
             </div>
             <div class="flex gap-2 mt-4" v-else>
-              <Button class="flex-1 text-white text-md" @click="showModalConfirm = true">Reservar</Button>
+              <Button class="flex-1 text-white text-md" @click="reservar">Reservar</Button>
             </div>
             <Button variant="outline" @click="generateWhatsAppLink"
               class="flex-1 col-span-2 w-full mt-2 text-white h-10 text-md bg-success hover:bg-success/80 hover:text-white">
@@ -463,12 +499,49 @@ function changeWeek(type: "prev" | "next") {
 
     <ModalView v-model:open="showModalConfirm" title="Reservar horário"
       description="Informe seus dados para confirmar a reserva" size="md">
-      <!-- <form class="flex flex-col px-4 gap-4">
-        <Input id="name" v-model="name" placeholder="Nome completo" />
-        <Input id="email" v-model="email" placeholder="E-mail" />
-        <Input id="phone" v-model="phone" placeholder="Telefone" />
-        <Button class="mt-2 text-white" type="button" @click="submit" variant="default">Confirmar</Button>
-      </form> -->
+      <form class="flex flex-col px-4 gap-2">
+        <div>
+          <Label for="name">Nome completo <span class="text-red-500">*</span></Label>
+          <Input id="name" v-model="dadosReserva.nomeCliente" placeholder="Nome completo" />
+        </div>
+        <div>
+          <Label for="phone">Telefone <span class="text-red-500">*</span></Label>
+          <Input id="phone" v-model="dadosReserva.telefoneCliente" v-maska="phoneMaskOptions" placeholder="Telefone" />
+        </div>
+        <div>
+          <Label for="email">E-mail</Label>
+          <Input id="email" v-model="dadosReserva.enderecoCliente" placeholder="E-mail" />
+        </div>
+        <div>
+          <Label for="formaPagamento">Forma de pagamento</Label>
+          <div class="flex flex-col gap-2">
+            <RadioGroup default-value="PIX" class="grid grid-cols-3">
+              <Label for="option-one"
+                class="flex items-center text-sm p-3 px-4 gap-2 bg-success/20 border rounded-lg cursor-pointer">
+                <RadioGroupItem id="option-one" value="PIX" class="bg-white" />
+                <i class="fa-brands fa-pix"></i>
+                PIX
+              </Label>
+              <Label for="option-three"
+                class="flex items-center text-sm p-3 px-4 gap-2 bg-body/70 border rounded-lg cursor-pointer">
+                <RadioGroupItem id="option-three" value="BOLETO" class="bg-white" />
+                <i class="fa-solid fa-file-invoice"></i>
+                Boleto
+              </Label>
+              <Label for="option-two"
+                class="flex items-center text-sm p-3 px-4 gap-2 bg-primary/20 border rounded-lg cursor-pointer">
+                <RadioGroupItem id="option-two" value="LINK" class="bg-white" />
+                <i class="fa-solid fa-link"></i>
+                Link
+              </Label>
+            </RadioGroup>
+          </div>
+        </div>
+        <Button class="mt-4 h-12 text-md text-white" type="button" @click="reservar" variant="default">
+          <CircleDollarSign />
+          Confirmar e pagar
+        </Button>
+      </form>
     </ModalView>
   </div>
 </template>

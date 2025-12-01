@@ -50,7 +50,6 @@
 import ColorToggle from '@/components/layout/colorToggle.vue'
 import HeaderMenu from '@/components/layout/headerMenu.vue'
 import SidebarMenu from '@/components/layout/sidebarMenu.vue'
-import TopMenu from '@/components/layout/topMenu.vue'
 import { sidebarMenuOptions } from './options'
 import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -61,6 +60,7 @@ import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
 import { onMounted, ref } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
+import { getLettersName } from '@/utils/formatters'
 const store = useUiStore()
 const loading = ref(false)
 window.addEventListener('resize', () => {

@@ -513,6 +513,9 @@ export interface ArenaAgendamentos {
   endAt: Date | string
   status: ArenaAgendamentoStatus
   valor?: number | undefined
+  enderecoCliente?: string
+  nomeCliente?: string
+  telefoneCliente?: string
   recorrente?: boolean
   observacoes?: string | null
   Quadra?: ArenaQuadras

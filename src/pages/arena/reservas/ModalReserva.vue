@@ -38,15 +38,9 @@ const filteredEndHours = computed(() => {
 
 async function submit() {
     try {
-        if (!store.form.clienteId) {
-            toast.error('Selecione um cliente!', {
-                timeout: 3000,
-                position: POSITION.BOTTOM_CENTER
-            })
-            return
-        }
         const payload = {
             ...store.form,
+            clienteId: store.form.clienteId ?? undefined,
             inicio: format(store.form.startAt, "yyyy-MM-dd'T'HH:mm:ss", { locale: ptBR }),
             fim: format(store.form.endAt, "yyyy-MM-dd'T'HH:mm:ss", { locale: ptBR })
         }

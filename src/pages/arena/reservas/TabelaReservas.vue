@@ -62,7 +62,7 @@
                                     class="h-5 w-5 text-secondary dark:text-gray-400 inline-flex" />
                                 <ShieldX v-if="row.status === 'CANCELADA'"
                                     class="h-5 w-5 text-danger dark:text-red-400 inline-flex" />
-                                {{ row.Cliente?.nome || 'SEM CLIENTE VINCULADO' }}
+                                {{ row.Cliente?.nome || row.nomeCliente || 'SEM CLIENTE VINCULADO' }}
                             </span>
                         </div>
                         <div class="text-sm text-green-500 dark:text-green-400">

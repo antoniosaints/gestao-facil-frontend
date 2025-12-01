@@ -55,6 +55,18 @@ export const formatLabel = (
   </span>`
 }
 
+export function getLettersName(name: string, letters: number = 2): string {
+  const split = name.split(' ')
+  let sigla = ''
+  if (split.length > 1) {
+    sigla = split[0][0] + split[1][0]
+  } else {
+    sigla = split[0][0] + split[0][1]
+  }
+
+  return sigla.toUpperCase()
+}
+
 export function formatPhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, '')
   if (cleaned.length === 11) {
