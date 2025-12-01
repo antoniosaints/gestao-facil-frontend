@@ -1,5 +1,5 @@
 <template>
-    <div class="max-h-[calc(100vh-5rem)] overflow-auto">
+    <div class="max-h-[calc(100vh-13.5rem)] md:max-h-[calc(100vh-9rem)] overflow-auto hidden_scrollbar">
         <div v-for="(item, index) in menu" :key="index" class="space-y-4">
             <!-- Divisor -->
             <div v-if="item.divisor" v-show="item.show !== false" class="flex items-center mt-2">
@@ -82,3 +82,14 @@ const toggleDropdown = (id: string) => {
     }
 }
 </script>
+
+<style scoped>
+.hidden_scrollbar {
+    overflow: auto;
+    /* ou scroll, conforme sua necessidade */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE e Edge antigo */
+}
+</style>

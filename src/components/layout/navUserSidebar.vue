@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import {
-  BadgeCheck,
-  Bell,
   ChevronsUpDown,
   Cog,
-  CreditCard,
+  Crown,
   Image,
   LogOut,
   Sparkles,
@@ -25,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useUiStore } from "@/stores/ui/uiStore";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { env } from "@/utils/dotenv";
 import ModalUploadPerfil from "@/pages/configs/ModalUploadPerfil.vue";
 import { useAuthStore } from "@/stores/login/useAuthStore";
@@ -34,9 +32,9 @@ import { useToast } from "vue-toastification";
 const uiStore = useUiStore()
 const store = useAuthStore();
 const toast = useToast()
-const logo = computed(() => {
-  const url = import.meta.env.VITE_BACKEND_URL
-  return url + '/' + uiStore.contaInfo.profile + '?_t=' + Date.now()
+
+onMounted(() => {
+  uiStore.setLogoProfile(env.VITE_BACKEND_URL + '/' + uiStore.contaInfo.profile + '?_t=' + Date.now())
 })
 
 const openModal = () => {
@@ -62,11 +60,10 @@ const colorTheme = computed(() => {
   <div>
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
-        <div size="lg"
-          class="text-white cursor-pointer flex gap-2 items-center px-3 py-3 rounded-lg"
+        <div size="lg" class="text-white cursor-pointer flex gap-2 items-center px-3 py-3 rounded-lg"
           :class="colorTheme">
           <Avatar class="h-8 w-8 rounded-lg">
-            <AvatarImage :src="logo" :alt="uiStore.contaInfo.nome" />
+            <AvatarImage :src="uiStore.logoProfile" :alt="uiStore.contaInfo.nome" />
             <AvatarFallback class="rounded-lg">
               CN
             </AvatarFallback>
@@ -78,11 +75,14 @@ const colorTheme = computed(() => {
           <ChevronsUpDown class="ml-auto size-4" />
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent class="min-w-56 rounded-lg bg-teal-700 dark:bg-teal-950 text-white border-teal-800 dark:border-teal-800" :side="uiStore.isMobile ? 'bottom' : 'right'">
+      <DropdownMenuContent class="min-w-56 rounded-lg" :class="{
+        'bg-teal-700 dark:bg-teal-950 text-white border-teal-800 dark:border-teal-800': env.VITE_MODE_SYSTEM === 'arena',
+        'bg-blue-700 dark:bg-blue-950 text-white border-blue-800 dark:border-blue-800': env.VITE_MODE_SYSTEM === 'erp',
+      }" :side="uiStore.isMobile ? 'bottom' : 'right'">
         <DropdownMenuLabel class="p-0 font-normal">
           <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <Avatar class="h-8 w-8 rounded-lg">
-              <AvatarImage :src="logo" :alt="uiStore.contaInfo.nome" />
+              <AvatarImage :src="uiStore.logoProfile" :alt="uiStore.contaInfo.nome" />
               <AvatarFallback class="rounded-lg">
                 AE
               </AvatarFallback>
@@ -93,7 +93,10 @@ const colorTheme = computed(() => {
             </div>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator class="bg-teal-800 dark:bg-teal-800" />
+        <DropdownMenuSeparator :class="{
+          'bg-teal-800 dark:bg-teal-800': env.VITE_MODE_SYSTEM === 'arena',
+          'bg-blue-800 dark:bg-blue-800': env.VITE_MODE_SYSTEM === 'erp',
+        }" />
         <DropdownMenuGroup>
           <RouterLink to="/assinatura/resumo">
             <DropdownMenuItem>
@@ -102,8 +105,17 @@ const colorTheme = computed(() => {
             </DropdownMenuItem>
           </RouterLink>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator class="bg-teal-800 dark:bg-teal-800" />
+        <DropdownMenuSeparator :class="{
+          'bg-teal-800 dark:bg-teal-800': env.VITE_MODE_SYSTEM === 'arena',
+          'bg-blue-800 dark:bg-blue-800': env.VITE_MODE_SYSTEM === 'erp',
+        }" />
         <DropdownMenuGroup>
+          <RouterLink v-if="uiStore.permissoes.superadmin" to="/admin">
+            <DropdownMenuItem>
+              <Crown />
+              Modo CEO
+            </DropdownMenuItem>
+          </RouterLink>
           <RouterLink to="/configuracoes">
             <DropdownMenuItem>
               <Cog />
@@ -115,7 +127,10 @@ const colorTheme = computed(() => {
             Foto do perfil
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator class="bg-teal-800 dark:bg-teal-800" />
+        <DropdownMenuSeparator :class="{
+          'bg-teal-800 dark:bg-teal-800': env.VITE_MODE_SYSTEM === 'arena',
+          'bg-blue-800 dark:bg-blue-800': env.VITE_MODE_SYSTEM === 'erp',
+        }" />
         <DropdownMenuItem @click="logOut">
           <LogOut />
           Sair

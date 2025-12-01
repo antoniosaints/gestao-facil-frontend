@@ -164,7 +164,7 @@ const routes: RouteInterface[] = [
   {
     path: '/agendamento/:conta',
     name: 'reservar-horario',
-    component: () => import('@/pages/publico/ReservarHorario.vue'),
+    component: () => import('@/pages/arena/publico/ReservarHorario.vue'),
     meta: {
       isPublic: true,
     },

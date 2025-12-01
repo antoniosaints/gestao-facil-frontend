@@ -11,7 +11,8 @@
             class="fixed overflow-auto top-0 hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-sidebar p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
             :class="{ '-translate-x-full': !store.openSidebar }">
 
-            <TopMenu />
+            <!-- <TopMenu /> -->
+            <NavUserSidebar />
             <SidebarMenu :menu="sidebarMenuOptions(store.permissoes)" />
             <div class="grid grid-cols-12 gap-2 items-center justify-center">
                 <LogoutButton class="col-span-10 md:col-span-12" />
@@ -55,6 +56,7 @@ import { PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
 import { onMounted, ref } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
+import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
 const store = useUiStore()
 const loading = ref(false)
 window.addEventListener('resize', () => {

@@ -26,6 +26,7 @@ export interface Permissoes {
 
 export const useUiStore = defineStore('uiStore', () => {
   const openSidebar = ref(true)
+  const logoProfile = ref('/imgs/logo.png')
   const openModalProfile = ref(false)
   const isMobile = ref(window.innerWidth < 768)
   const usuarioLogged = ref<Usuarios>({} as Usuarios)
@@ -34,6 +35,10 @@ export const useUiStore = defineStore('uiStore', () => {
   const diasParaVencer = ref<number>(
     Number(localStorage.getItem('gestao_facil:diasParaVencer')) || 0,
   )
+
+  const setLogoProfile = (logo: string) => {
+    logoProfile.value = logo
+  }
 
   const permissoes = ref<Permissoes>({
     superadmin: false,
@@ -213,5 +218,7 @@ export const useUiStore = defineStore('uiStore', () => {
     getStatus,
     toggleSidebar,
     isMobile,
+    logoProfile,
+    setLogoProfile,
   }
 })

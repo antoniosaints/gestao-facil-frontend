@@ -136,8 +136,6 @@ async function getDataDashboard() {
             VendaRepository.getResumoMensal(),
             ArenaReservasRepository.getResumoMensalChart()
         ])
-        console.log(resumo);
-
         dataVendas.value = { labels: [...vendas.data.labels], datasets: [...vendas.data.datasets] };
         resumoMensal.value = { labels: [...resumo.labels], datasets: [...resumo.datasets] };
     } catch (error) {

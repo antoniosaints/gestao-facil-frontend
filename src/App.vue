@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Main from './layouts/Main.vue'
 import Default from './layouts/Default.vue'
@@ -7,6 +7,7 @@ import { useUiStore } from './stores/ui/uiStore'
 import Admin from './layouts/Admin.vue'
 import { env } from './utils/dotenv'
 import Arena from './layouts/Arena.vue'
+import { updateMetaTags } from './utils/theme'
 
 const store = useUiStore()
 const route = useRoute()
@@ -31,6 +32,10 @@ const layouts = {
 const layout = computed(() => {
   const name = route.meta.layout as keyof typeof layouts || 'default'
   return layouts[name]
+})
+
+onMounted(() => {
+  updateMetaTags()
 })
 </script>
 

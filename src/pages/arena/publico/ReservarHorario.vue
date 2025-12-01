@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue"
 import { useRoute } from "vue-router"
-import { Calendar, Check, CheckCheck, Clock, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight, Calendar, Check, CheckCheck, Clock, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
@@ -11,9 +11,9 @@ import { ArenaQuadrasRepository } from "@/repositories/quadras-repository"
 import { HashGenerator } from "@/utils/generators"
 import http from "@/utils/axios"
 import { env } from "@/utils/dotenv"
-import { formatCurrencyBR } from "@/utils/formatters"
+import { formatCurrencyBR, formatToCapitalize, formatToUpperCase } from "@/utils/formatters"
 import { ArenaReservasRepository } from "@/repositories/reservas-repository"
-import { endOfDay, format, startOfDay } from "date-fns"
+import { addDays, endOfDay, format, startOfDay, startOfWeek } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import ModalView from "@/components/formulario/ModalView.vue"
 
@@ -256,6 +256,22 @@ watch(() => selectedDate.value, () => {
     getHorariosDisponiveis(selectedQuadra.value)
   }
 })
+
+// início da semana reativo
+const inicioSemana = computed(() =>
+  startOfWeek(selectedDate.value, { weekStartsOn: 0 }) // domingo
+)
+
+// dias da semana reativo
+const diasSemana = computed(() =>
+  Array.from({ length: 7 }, (_, i) => addDays(inicioSemana.value, i))
+)
+
+function changeWeek(type: "prev" | "next") {
+  selectedDate.value = type === "prev"
+    ? addDays(selectedDate.value, -7)
+    : addDays(selectedDate.value, 7)
+}
 </script>
 
 <template>
@@ -324,13 +340,29 @@ watch(() => selectedDate.value, () => {
       <!-- Seleção de Data -->
       <Card v-if="selectedQuadra" class="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 z-50">
         <CardHeader>
-          <CardTitle class="flex items-center space-x-2 font-normal">
-            <Calendar class="h-5 w-5" />
-            <span>Escolha a Data</span>
+          <CardTitle class="flex items-center space-x-2 font-normal justify-between">
+            <div class="flex items-center space-x-2">
+              <Calendar class="h-5 w-5" />
+              <span>Escolha a Data</span>
+            </div>
+            <div class="flex items-center space-x-4 rounded-lg justify-between">
+              <ArrowBigLeft class="cursor-pointer p-2" :size="35" @click="changeWeek('prev')" />
+              <div class="flex flex-col items-center">
+                <h1 class="text-xs">{{ format(selectedDate, "dd/MM/yyyy") }}</h1>
+              </div>
+              <ArrowBigRight class="cursor-pointer p-2" :size="35" @click="changeWeek('next')" />
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Calendarpicker v-model="selectedDate" />
+          <!-- <Calendarpicker v-model="selectedDate" /> -->
+          <div class="grid grid-cols-7 gap-2">
+            <div v-for="row in diasSemana" :key="row.toISOString()" @click="selectedDate = row"
+              class="border rounded p-2 text-xs text-center cursor-pointer shadow-md hover:shadow-none"
+              :class="selectedDate?.toISOString() === row.toISOString() ? 'bg-primary text-white' : ''">
+              <div>{{ formatToUpperCase(format(row, "EEEEEE dd/MM", { locale: ptBR })) }}</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

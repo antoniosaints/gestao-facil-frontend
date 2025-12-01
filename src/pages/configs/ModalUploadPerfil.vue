@@ -3,7 +3,6 @@
         <form @submit.prevent="submit" class="grid items-start gap-4 px-4 ">
             <div class="bg-background dark:bg-background-dark rounded-md w-full h-full">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <!-- Nome -->
                     <div class="md:col-span-12">
                         <!-- <Label for="profile_account"> Nova foto de perfil<span class="text-danger">*</span>
                         </Label> -->
@@ -33,6 +32,7 @@ import ModalView from "@/components/formulario/ModalView.vue"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { ContaRepository } from "@/repositories/conta-repository"
 import FileUpload from "@/components/formulario/fileUpload.vue"
+import { env } from "@/utils/dotenv"
 
 const title = ref('Alterar foto da conta')
 const description = ref('Selecione uma imagem')
@@ -50,7 +50,7 @@ const onFileChange = (event: Event) => {
 }
 
 function onFileSelected(archive: File | null) {
-  file.value = archive
+    file.value = archive
 }
 
 async function submit() {
@@ -74,6 +74,7 @@ async function submit() {
         await store.getDataUsuario()
         toast.success('Foto da conta atualizada')
         store.openModalProfile = false
+        store.setLogoProfile(env.VITE_BACKEND_URL + '/' + store.contaInfo?.profile + '?_t=' + Date.now())
     } catch (error: any) {
         console.log(error)
         toast.error('Erro ao atualizar a foto da conta')
