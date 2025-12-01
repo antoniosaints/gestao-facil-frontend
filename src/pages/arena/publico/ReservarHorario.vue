@@ -13,7 +13,7 @@ import http from "@/utils/axios"
 import { env } from "@/utils/dotenv"
 import { formatCurrencyBR, formatToCapitalize, formatToUpperCase } from "@/utils/formatters"
 import { ArenaReservasRepository, type SaveReservaPublico } from "@/repositories/reservas-repository"
-import { addDays, endOfDay, format, isSameDay, startOfDay, startOfWeek } from "date-fns"
+import { addDays, endOfDay, format, isSameDay, setHours, startOfDay, startOfWeek } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import ModalView from "@/components/formulario/ModalView.vue"
 import { Input } from "@/components/ui/input"
@@ -44,7 +44,7 @@ const conta = ref<Contas | null>(null)
 const quadras = ref<ArenaQuadras[]>()
 const reservasDisponiveis = ref<HorariosReservar[]>([])
 const loading = ref(false)
-const selectedDate = ref<Date>(new Date())
+const selectedDate = ref<Date>(startOfDay(new Date()))
 const selectedQuadra = ref<ArenaQuadras | null>(null)
 const cartItems = ref<CartItem[]>([])
 const showCart = ref(false)
@@ -97,8 +97,8 @@ async function getHorariosDisponiveis(quadra: ArenaQuadras) {
     const horarios = await ArenaReservasRepository.getHorariosPublicoReservar(
       Number(contaId.value),
       quadra.id!,
-      format(startOfDay(selectedDate.value), "yyyy-MM-dd'T'HH:mm:ss"),
-      format(endOfDay(selectedDate.value), "yyyy-MM-dd'T'HH:mm:ss")
+      format(setHours(selectedDate.value, 8), "yyyy-MM-dd'T'HH:mm:ss"),
+      format(setHours(selectedDate.value, 22), "yyyy-MM-dd'T'HH:mm:ss")
     )
     cartItems.value = []
     selectedQuadra.value = quadra
@@ -212,12 +212,24 @@ const mergedCart = computed(() => {
 
 async function reservar() {
   try {
+    if (!selectedQuadra.value?.aprovarSemPagamento) {
+      if (!dadosReserva.value.nomeCliente || !dadosReserva.value.telefoneCliente) {
+        return toast.error('Preencha o nome e telefone para finalizar a reserva e realizar o pagamento!', {
+          timeout: 5000,
+          position: POSITION.BOTTOM_CENTER
+        })
+      }
+    }
     const payload: SaveReservaPublico[] = mergedCart.value.map((item) => ({
       quadraId: item.quadraId,
       contaId: Number(contaId.value),
       inicio: format(item.startTime, "yyyy-MM-dd'T'HH:mm:ss", { locale: ptBR }),
       fim: format(item.endTime, "yyyy-MM-dd'T'HH:mm:ss", { locale: ptBR }),
-      modoPagamento: 'TOTAL'
+      modoPagamento: 'TOTAL',
+      nomeCliente: dadosReserva.value.nomeCliente,
+      telefoneCliente: dadosReserva.value.telefoneCliente,
+      enderecoCliente: dadosReserva.value.enderecoCliente,
+      observacoes: dadosReserva.value.observacoes
     }))
     await Promise.all(
       payload.map(item => ArenaReservasRepository.savePublico(item))
@@ -228,7 +240,9 @@ async function reservar() {
       timeout: 5000,
       position: POSITION.BOTTOM_CENTER
     })
+    showModalConfirm.value = false
     showCart.value = false
+    dadosReserva.value = { nomeCliente: '', telefoneCliente: '', enderecoCliente: '', observacoes: '' }
   } catch (error: any) {
     console.log(error)
     toast.error(error?.response?.data?.message ?? 'Erro ao reservar, tente novamente!')
@@ -305,7 +319,10 @@ function changeWeek(type: "prev" | "next") {
 
 <template>
   <div class="min-h-screen p-4 relative select-none" :style="{
-    backgroundImage: `linear-gradient(135deg, ${cor.primary} 0%, ${cor.secondary} 100%)`
+    backgroundImage: `linear-gradient(135deg, ${cor.primary} 0%, ${cor.secondary} 100%)`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed'
   }">
     <div class="max-w-md mx-auto flex flex-col gap-4">
       <!-- Header -->
@@ -390,7 +407,7 @@ function changeWeek(type: "prev" | "next") {
           <!-- <Calendarpicker v-model="selectedDate" /> -->
           <div class="grid grid-cols-7 gap-2">
             <div v-for="row in diasSemana" :key="row.toISOString()" @click="selectedDate = row"
-              class="border rounded p-2 text-xs text-center cursor-pointer shadow-md hover:shadow-none"
+              class="border rounded-xl p-2 text-xs text-center cursor-pointer shadow-md hover:shadow-none"
               :class="isSameDay(selectedDate, row) ? 'bg-primary text-white' : ''">
               <div>{{ formatToUpperCase(format(row, "EEEEEE dd/MM", { locale: ptBR })) }}</div>
             </div>
@@ -545,3 +562,14 @@ function changeWeek(type: "prev" | "next") {
     </ModalView>
   </div>
 </template>
+
+<style scoped>
+.hidden_scrollbar {
+  overflow: auto !important;
+  /* ou scroll, conforme sua necessidade */
+  scrollbar-width: none !important;
+  /* Firefox */
+  -ms-overflow-style: none !important;
+  /* IE e Edge antigo */
+}
+</style>

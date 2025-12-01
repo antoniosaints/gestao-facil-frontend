@@ -10,6 +10,7 @@ export interface SaveReservaPublico {
   nomeCliente?: string
   telefoneCliente?: string
   enderecoCliente?: string
+  observacoes?: string
 }
 export class ArenaReservasRepository {
   static async get(id?: number, quadraId?: number, inicio?: string, fim?: string) {
@@ -71,7 +72,7 @@ export class ArenaReservasRepository {
     })
   }
   static async savePublico(data: SaveReservaPublico) {
-    await http.post(`/arenas/reservas/agendar`, {
+    await http.post(`/arenas/reservas/publico/agendamento`, {
       ...data,
     })
   }
