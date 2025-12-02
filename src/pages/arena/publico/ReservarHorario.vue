@@ -64,6 +64,7 @@ const logo = computed(() => {
 })
 
 const openModalPagamento = (tipo: "TOTAL" | "PARCIAL") => {
+  if (!userAcceptTerms.value) return toast.error('Aceite os termos para finalizar a reserva!', { timeout: 5000, position: POSITION.BOTTOM_CENTER })
   dadosReserva.value.modoPagamento = tipo
   showModalConfirm.value = true
 }
@@ -290,7 +291,7 @@ function generateWhatsAppLink() {
 }
 
 
-const canBookingWithoutPayment = computed(() => {
+const canBookingPayment = computed(() => {
   const quadra = selectedQuadra.value
   return quadra && quadra.aprovarSemPagamento
 })
@@ -505,8 +506,8 @@ function changeWeek(type: "prev" | "next") {
           <div v-if="mergedCart.length">
             <p class="mt-4 font-semibold text-xl">Total: {{ formatCurrencyBR(totalPrice) }}</p>
 
-            <div class="flex flex-col gap-1">
-              <p class="text-xs text-muted-foreground bg-muted/40 p-2 rounded-md">
+            <div class="flex flex-col gap-1" v-if="canBookingPayment">
+              <p class="text-xs text-muted-foreground border bg-muted/40 p-2 rounded-md">
                 As reservas devem ser pagas em até <span class="font-semibold">30 minutos</span> antes do horário
                 marcado
                 para evitar cancelamentos, sobre
@@ -515,22 +516,22 @@ function changeWeek(type: "prev" | "next") {
                 obrigação legal de devolução.
               </p>
               <Label for="canBookingWithoutPayment"
-                class="text-xs text-muted-foreground flex items-center justify-between bg-muted/40 my-2 p-2 rounded-md">
+                class="text-xs cursor-pointer border flex items-center justify-between my-2 p-2 rounded-md" :class="{
+                  'bg-muted/40 text-muted-foreground': !userAcceptTerms,
+                  'bg-success/20 text-dark': userAcceptTerms
+                }">
                 Confirmo que li e aceito os termos acima
                 <Switch v-model="userAcceptTerms" id="canBookingWithoutPayment" class="float-right" />
               </Label>
             </div>
 
-            <div class="grid grid-cols-2 gap-2" v-if="!canBookingWithoutPayment">
+            <div class="grid grid-cols-2 gap-2" v-if="canBookingPayment">
               <Button class="flex-1 text-white text-md col-span-2 md:col-span-1"
                 @click="openModalPagamento('TOTAL')">Pagar 100%</Button>
               <Button variant="outline" @click="openModalPagamento('PARCIAL')"
                 class="flex-1 text-md col-span-2 md:col-span-1">
                 Reservar (50%) - {{ formatCurrencyBR((totalPrice / 2)) }}
               </Button>
-            </div>
-            <div class="flex gap-2 mt-4" v-else>
-              <Button class="flex-1 text-white text-md" @click="reservar">Reservar</Button>
             </div>
             <Button variant="outline" @click="generateWhatsAppLink"
               class="flex-1 col-span-2 w-full mt-2 text-white h-10 text-md bg-success hover:bg-success/80 hover:text-white">

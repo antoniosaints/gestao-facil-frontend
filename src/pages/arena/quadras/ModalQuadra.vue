@@ -69,12 +69,12 @@ async function submit() {
                     </Label>
                 </div>
                 <div class="w-full gap-2 flex flex-col">
-                    <Label for="agendamentoSemPagamento">Aprovar direto</Label>
+                    <Label for="agendamentoSemPagamento">Pagamento online</Label>
                     <Label for="agendamentoSemPagamento"
                         class="flex items-center cursor-pointer border bg-card rounded-md py-2 px-3 gap-2">
                         <Switch id="agendamentoSemPagamento" v-model="store.form.aprovarSemPagamento" />
                         <Label for="agendamentoSemPagamento">{{ store.form.aprovarSemPagamento ? 'Sim' : 'Não'
-                        }}</Label>
+                            }}</Label>
                     </Label>
                 </div>
                 <div class="w-full gap-2 flex flex-col col-span-2">
