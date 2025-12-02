@@ -225,13 +225,11 @@ async function reservar() {
     if (!userAcceptTerms.value) {
       return toast.error('Aceite os termos para finalizar a reserva!', { timeout: 5000, position: POSITION.BOTTOM_CENTER })
     }
-    if (!selectedQuadra.value?.aprovarSemPagamento) {
-      if (!dadosReserva.value.nomeCliente || !dadosReserva.value.telefoneCliente) {
-        return toast.error('Preencha o nome e telefone para finalizar a reserva e realizar o pagamento!', {
-          timeout: 5000,
-          position: POSITION.BOTTOM_CENTER
-        })
-      }
+    if (!dadosReserva.value.nomeCliente || !dadosReserva.value.telefoneCliente) {
+      return toast.error('Preencha o nome e telefone para finalizar a reserva e realizar o pagamento!', {
+        timeout: 5000,
+        position: POSITION.BOTTOM_CENTER
+      })
     }
     const payload: SaveReservaPublico[] = mergedCart.value.map((item) => ({
       quadraId: item.quadraId,
@@ -356,6 +354,10 @@ function changeWeek(type: "prev" | "next") {
     ? addDays(selectedDate.value, -1)
     : addDays(selectedDate.value, 1)
 }
+const novaReserva = () => {
+  localStorage.removeItem('linkPagamento_arenaErp')
+  linkPagamento.value = null
+}
 </script>
 
 <template>
@@ -397,8 +399,7 @@ function changeWeek(type: "prev" | "next") {
               <CircleDollarSign class="h-5 w-5 mr-2 inline-flex" />
               Realizar pagamento
             </Button>
-            <Button @click="linkPagamento = null"
-              class="w-full h-12 text-lg flex bg-success hover:bg-success/80 items-center">
+            <Button @click="novaReserva" class="w-full h-12 text-lg flex bg-success hover:bg-success/80 items-center">
               <FilePlus class="h-5 w-5 mr-2 inline-flex" />
               Nova reserva
             </Button>
