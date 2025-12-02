@@ -135,7 +135,7 @@
                     </div>
                     <div class="flex gap-1">
                         <button @click="deleteReserva(row.id!)"
-                            v-if="['PENDENTE', 'BLOQUEADA', 'CANCELADA'].includes(row.status) && uiStore.permissoes.admin"
+                            v-if="['PENDENTE', 'BLOQUEADA', 'CANCELADA'].includes(row.status) && uiStore.permissoes.admin && !hasCobrancaPending(row)"
                             class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
                             <Trash class="w-5 h-5" />
                         </button>
@@ -221,6 +221,10 @@ const reservasFiltered = computed(() => {
     if (statusFilter.value === 'null') return reservas.value;
     return reservas.value.filter(r => r.status === statusFilter.value);
 })
+
+const hasCobrancaPending = (reserva: ArenaAgendamentos) => {
+    return reserva.cobrancasOnAgendamentos && reserva.cobrancasOnAgendamentos.filter(c => c.cobranca.status === 'PENDENTE').length > 0;
+}
 
 function openSaveVenda() {
     // showDrawer.value = false;

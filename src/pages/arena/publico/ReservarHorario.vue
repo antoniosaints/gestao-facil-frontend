@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue"
 import { useRoute } from "vue-router"
-import { ArrowBigLeft, ArrowBigRight, Calendar, Check, CheckCheck, CircleDollarSign, Clock, FilePlus, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight, Calendar, Check, CheckCheck, CircleDollarSign, Clock, FilePlus, LoaderIcon, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
@@ -221,6 +221,7 @@ const mergedCart = computed(() => {
 
 async function reservar() {
   try {
+    loading.value = true
     if (!userAcceptTerms.value) {
       return toast.error('Aceite os termos para finalizar a reserva!', { timeout: 5000, position: POSITION.BOTTOM_CENTER })
     }
@@ -253,7 +254,8 @@ async function reservar() {
       })
     )
     const valorTotal = cartItems.value.reduce((t, i) => t + Number(i.price), 0);
-    const result = await ArenaReservasRepository.gerarPixReserva(valorTotal, Number(contaId.value), ids);
+    const valorEfetivo = dadosReserva.value.modoPagamento === 'TOTAL' ? valorTotal : valorTotal / 2
+    const result = await ArenaReservasRepository.gerarPixReserva(valorEfetivo, Number(contaId.value), ids);
     if (result) {
       linkPagamento.value = result.message
       localStorage.setItem('linkPagamento_arenaErp', result.message)
@@ -271,6 +273,8 @@ async function reservar() {
   } catch (error: any) {
     console.log(error)
     toast.error(error?.response?.data?.message ?? 'Erro ao reservar, tente novamente!')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -373,7 +377,6 @@ function changeWeek(type: "prev" | "next") {
             <p class="text-white/80">Agendamento Online</p>
           </div>
         </div>
-        <p class="text-white/90 mt-2">Escolha o dia e horário perfeito para você</p>
       </div>
       <Card class="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">
         <CardHeader>
@@ -645,9 +648,11 @@ function changeWeek(type: "prev" | "next") {
             </RadioGroup>
           </div>
         </div>
-        <Button class="mt-4 h-12 text-md text-white" type="button" @click="reservar" variant="default">
-          <CircleDollarSign />
-          Confirmar e pagar
+        <Button class="mt-4 h-12 text-md text-white" type="button" :disabled="loading" @click="reservar"
+          variant="default">
+          <CircleDollarSign v-if="!loading" />
+          <LoaderIcon v-else class="animate-spin" />
+          {{ loading ? 'Reservando...' : 'Confirmar e pagar' }}
         </Button>
       </form>
     </ModalView>
