@@ -66,6 +66,16 @@ export class ArenaReservasRepository {
     })
     return data.data
   }
+  static async gerarPixReserva(valor: number, contaId: number, reservas: number[]) {
+    const data = await http.post(`/lancamentos/cobrancas/cobrarPublico`, {
+      contaId,
+      type: 'PIX',
+      value: valor,
+      gateway: 'mercadopago',
+      reservas,
+    })
+    return data.data
+  }
   static async save(data: Omit<ArenaAgendamentos, 'id'>) {
     await http.post(`/arenas/reservas/agendar`, {
       ...data,

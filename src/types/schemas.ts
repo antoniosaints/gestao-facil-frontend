@@ -514,6 +514,12 @@ export interface ArenaAgendamentos {
   startAt: Date | string
   endAt: Date | string
   status: ArenaAgendamentoStatus
+  cobrancasOnAgendamentos?: {
+    id?: number
+    cobrancaId: number
+    agendamentoId: number
+    cobranca: CobrancaFinanceira
+  }[]
   valor?: number | undefined
   enderecoCliente?: string
   nomeCliente?: string

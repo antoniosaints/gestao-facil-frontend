@@ -87,9 +87,15 @@
                             {{ new Date(row.startAt).toLocaleDateString('pt-BR') }}
                         </div>
                     </div>
-                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ format(row.startAt, 'HH:mm') }}
-                        até {{ format(new Date(row.endAt), "HH:mm") }}
+                    <div class="flex justify-between gap-2 mt-2">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ format(row.startAt, 'HH:mm') }}
+                            até {{ format(new Date(row.endAt), "HH:mm") }}
+                        </div>
+                        <a v-if="row.cobrancasOnAgendamentos" class="text-blue-500 text-sm" target="_blank"
+                            :href="(row.cobrancasOnAgendamentos[0].cobranca.externalLink as string)">
+                            Acessar
+                        </a>
                     </div>
 
                     <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -316,6 +322,7 @@ async function renderMobile(page: number = 1) {
         const inicio = filtroPeriodo.value === null ? startOfYear(new Date()) : startOfDay(filtroPeriodo.value[0]);
         const fim = filtroPeriodo.value === null ? endOfYear(new Date()) : endOfDay(filtroPeriodo.value[1]);
         const resp = await ArenaReservasRepository.getTable(searchQuery.value, page, 10, arenaIdFilter.value, inicio.toISOString(), fim.toISOString());
+        console.log(resp)
         reservas.value = resp.data;
         currentPage.value = resp.pagination.page;
         totalPages.value = resp.pagination.totalPages;

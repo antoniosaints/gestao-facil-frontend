@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue"
 import { useRoute } from "vue-router"
-import { ArrowBigLeft, ArrowBigRight, Calendar, Check, CheckCheck, CircleDollarSign, Clock, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
+import { ArrowBigLeft, ArrowBigRight, Calendar, Check, CheckCheck, CircleDollarSign, Clock, FilePlus, MapPin, MessageCircle, ShoppingCart, Tags, Trash } from "lucide-vue-next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
@@ -51,6 +51,7 @@ const cartItems = ref<CartItem[]>([])
 const showCart = ref(false)
 const showModalConfirm = ref(false)
 const userAcceptTerms = ref(false)
+const linkPagamento = ref<string | null>(localStorage.getItem('linkPagamento_arenaErp') || null)
 const dadosReserva = ref<Partial<SaveReservaPublico>>({
   enderecoCliente: "",
   nomeCliente: "",
@@ -62,6 +63,11 @@ const logo = computed(() => {
   const url = env.VITE_BACKEND_URL
   return url + '/' + conta.value?.profile + '?_t=' + Date.now()
 })
+
+const openLinkPagamento = () => {
+  localStorage.setItem('linkPagamento_arenaErp', linkPagamento.value as string)
+  window.open(linkPagamento.value as string, '_blank')
+}
 
 const openModalPagamento = (tipo: "TOTAL" | "PARCIAL") => {
   if (!userAcceptTerms.value) return toast.error('Aceite os termos para finalizar a reserva!', { timeout: 5000, position: POSITION.BOTTOM_CENTER })
@@ -246,12 +252,18 @@ async function reservar() {
         return res
       })
     )
-    cartItems.value = []
-    selectedQuadra.value = null
+    const valorTotal = cartItems.value.reduce((t, i) => t + Number(i.price), 0);
+    const result = await ArenaReservasRepository.gerarPixReserva(valorTotal, Number(contaId.value), ids);
+    if (result) {
+      linkPagamento.value = result.message
+      localStorage.setItem('linkPagamento_arenaErp', result.message)
+    }
     toast.success('Reservas realizadas com sucesso!', {
       timeout: 5000,
       position: POSITION.BOTTOM_CENTER
     })
+    cartItems.value = []
+    selectedQuadra.value = null
     showModalConfirm.value = false
     showCart.value = false
     userAcceptTerms.value = false
@@ -349,7 +361,49 @@ function changeWeek(type: "prev" | "next") {
     backgroundPosition: 'center',
     backgroundAttachment: 'fixed',
   }">
-    <div class="max-w-md mx-auto flex flex-col gap-4">
+    <div class="max-w-md mx-auto flex flex-col gap-4" v-if="linkPagamento">
+      <!-- Header -->
+      <div class="text-center py-6">
+        <div class="flex items-center justify-center space-x-4 mb-4">
+          <div class="h-16 w-16 bg-white/20 rounded-lg flex items-center justify-center">
+            <img :src="logo" alt="Logo" class="w-14 h-14 rounded-lg">
+          </div>
+          <div class="text-white">
+            <h1 class="text-2xl">{{ conta?.nome }}</h1>
+            <p class="text-white/80">Agendamento Online</p>
+          </div>
+        </div>
+        <p class="text-white/90 mt-2">Escolha o dia e horário perfeito para você</p>
+      </div>
+      <Card class="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">
+        <CardHeader>
+          <CardTitle class="flex items-center justify-between space-x-2 font-normal">
+            <div class="flex items-center space-x-2">
+              <CircleDollarSign class="h-5 w-5" />
+              <span>Realize o pagamento da sua reserva</span>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="grid grid-cols-1 gap-3">
+            <p class="text-sm text-gray-500">O pagamento da reserva deve ser feito via PIX, lembre-se de realizar o
+              pagamento antes do horário marcado
+              para evitar a perda de reserva.
+            </p>
+            <Button @click="openLinkPagamento" class="w-full h-12 text-lg flex items-center">
+              <CircleDollarSign class="h-5 w-5 mr-2 inline-flex" />
+              Realizar pagamento
+            </Button>
+            <Button @click="linkPagamento = null"
+              class="w-full h-12 text-lg flex bg-success hover:bg-success/80 items-center">
+              <FilePlus class="h-5 w-5 mr-2 inline-flex" />
+              Nova reserva
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+    <div class="max-w-md mx-auto flex flex-col gap-4" v-else>
       <!-- Header -->
       <div class="text-center py-6">
         <div class="flex items-center justify-center space-x-4 mb-4">
