@@ -71,10 +71,11 @@ export class ArenaReservasRepository {
       ...data,
     })
   }
-  static async savePublico(data: SaveReservaPublico) {
-    await http.post(`/arenas/reservas/publico/agendamento`, {
-      ...data,
+  static async savePublico(payload: SaveReservaPublico) {
+    const { data } = await http.post(`/arenas/reservas/publico/agendamento`, {
+      ...payload,
     })
+    return data.data
   }
   static async update(id: number, data: ArenaAgendamentos) {
     await http.post(`/arenas/reservas/agendar?id=${id}`, {

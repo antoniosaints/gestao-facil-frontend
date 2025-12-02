@@ -237,8 +237,14 @@ async function reservar() {
       enderecoCliente: dadosReserva.value.enderecoCliente,
       observacoes: dadosReserva.value.observacoes
     }))
+
+    let ids: number[] = []
     await Promise.all(
-      payload.map(item => ArenaReservasRepository.savePublico(item))
+      payload.map(async (item) => {
+        const res = await ArenaReservasRepository.savePublico(item)
+        ids.push(res.booking.id)
+        return res
+      })
     )
     cartItems.value = []
     selectedQuadra.value = null
