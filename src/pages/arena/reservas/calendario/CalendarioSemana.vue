@@ -55,7 +55,7 @@ function changeWeek(type: "prev" | "next") {
                     'bg-blue-500 text-blue-50 dark:bg-blue-900 dark:text-blue-50': ev.status === 'FINALIZADA',
                 }">
                 {{ format(new Date(ev.startAt), "HH:mm") }}
-                {{ ev.Cliente?.nome || "Sem descrição" }}
+                {{ ev.Cliente?.nome || ev.nomeCliente || "Sem descrição" }}
             </div>
             <div v-show="!eventosDoDia(dia).length"
                 class="mt-1 bg-gray-100 dark:bg-gray-800 text-xs truncate px-1 py-1 rounded">

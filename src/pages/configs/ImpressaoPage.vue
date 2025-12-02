@@ -2,11 +2,11 @@
   <Card class="w-full bg-background mx-auto rounded-none rounded-b-xl">
     <CardHeader>
       <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-        <div>
-          <CardTitle>Configurar impressora</CardTitle>
-          <p class="text-sm text-muted-foreground">
+        <div class="space-y-2">
+          <CardTitle class="font-normal">Configurar impressora</CardTitle>
+          <CardDescription>
             Escolha a impressora usada pelo PDV, verifique se o QZTray está instalado corretamente.
-          </p>
+          </CardDescription>
         </div>
 
         <div class="flex items-center gap-2">
@@ -145,7 +145,7 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useConfirm } from '@/composables/useConfirm'
 import qzTray from '@/utils/qzTray'

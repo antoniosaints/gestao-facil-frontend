@@ -78,7 +78,7 @@ const navigateToDay = (dia: Date) => {
                     'bg-blue-500 text-blue-50 dark:bg-blue-900 dark:text-blue-50': ev.status === 'FINALIZADA',
                 }">
                     {{ format(new Date(ev.startAt), "HH:mm") }}
-                    {{ ev.Cliente?.nome || "Sem descrição" }}
+                    {{ ev.Cliente?.nome || ev.nomeCliente || "Sem descrição" }}
                 </div>
                 <div v-if="eventosDoDia(dia).length > 2" class="text-xs text-gray-500 dark:text-gray-300 ">
                     {{ eventosDoDia(dia).length - 2 }} mais ...

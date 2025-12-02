@@ -13,7 +13,7 @@ import http from "@/utils/axios"
 import { env } from "@/utils/dotenv"
 import { formatCurrencyBR, formatToCapitalize, formatToUpperCase } from "@/utils/formatters"
 import { ArenaReservasRepository, type SaveReservaPublico } from "@/repositories/reservas-repository"
-import { addDays, endOfDay, format, isSameDay, setHours, startOfDay, startOfWeek } from "date-fns"
+import { addDays, addHours, endOfDay, format, isSameDay, setHours, startOfDay, startOfWeek, subHours } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import ModalView from "@/components/formulario/ModalView.vue"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { phoneMaskOptions } from "@/lib/imaska"
 import { vMaska } from "maska/vue"
+import { Switch } from "@/components/ui/switch"
 
 interface CartItem {
   quadraId: number
@@ -49,6 +50,7 @@ const selectedQuadra = ref<ArenaQuadras | null>(null)
 const cartItems = ref<CartItem[]>([])
 const showCart = ref(false)
 const showModalConfirm = ref(false)
+const userAcceptTerms = ref(false)
 const dadosReserva = ref<Partial<SaveReservaPublico>>({
   enderecoCliente: "",
   nomeCliente: "",
@@ -212,6 +214,9 @@ const mergedCart = computed(() => {
 
 async function reservar() {
   try {
+    if (!userAcceptTerms.value) {
+      return toast.error('Aceite os termos para finalizar a reserva!', { timeout: 5000, position: POSITION.BOTTOM_CENTER })
+    }
     if (!selectedQuadra.value?.aprovarSemPagamento) {
       if (!dadosReserva.value.nomeCliente || !dadosReserva.value.telefoneCliente) {
         return toast.error('Preencha o nome e telefone para finalizar a reserva e realizar o pagamento!', {
@@ -242,6 +247,7 @@ async function reservar() {
     })
     showModalConfirm.value = false
     showCart.value = false
+    userAcceptTerms.value = false
     dadosReserva.value = { nomeCliente: '', telefoneCliente: '', enderecoCliente: '', observacoes: '' }
   } catch (error: any) {
     console.log(error)
@@ -309,6 +315,18 @@ const inicioSemana = computed(() =>
 const diasSemana = computed(() =>
   Array.from({ length: 7 }, (_, i) => addDays(inicioSemana.value, i))
 )
+
+const disableHour = (hour: HorariosReservar) => {
+  if (hour.reservada) return true
+  const oneHourLater = addHours(hour.start, 1)
+  const onrHoueBefore = subHours(hour.start, 1)
+
+  const now = new Date()
+  return (
+    now > oneHourLater ||
+    now < onrHoueBefore
+  )
+}
 
 function changeWeek(type: "prev" | "next") {
   selectedDate.value = type === "prev"
@@ -487,11 +505,21 @@ function changeWeek(type: "prev" | "next") {
           <div v-if="mergedCart.length">
             <p class="mt-4 font-semibold text-xl">Total: {{ formatCurrencyBR(totalPrice) }}</p>
 
-            <p class="text-sm text-muted-foreground">
-              As reservas devem ser feitas e confirmadas com 30 minutos antes do
-              horário, para evitar
-              cancelamentos.
-            </p>
+            <div class="flex flex-col gap-1">
+              <p class="text-xs text-muted-foreground bg-muted/40 p-2 rounded-md">
+                As reservas devem ser pagas em até <span class="font-semibold">30 minutos</span> antes do horário
+                marcado
+                para evitar cancelamentos, sobre
+                devolução de valores em caso de não comparecimento,
+                informar com até <span class="font-semibold">1 hora de antecedência</span>, após isso, a empresa não tem
+                obrigação legal de devolução.
+              </p>
+              <Label for="canBookingWithoutPayment"
+                class="text-xs text-muted-foreground flex items-center justify-between bg-muted/40 my-2 p-2 rounded-md">
+                Confirmo que li e aceito os termos acima
+                <Switch v-model="userAcceptTerms" id="canBookingWithoutPayment" class="float-right" />
+              </Label>
+            </div>
 
             <div class="grid grid-cols-2 gap-2" v-if="!canBookingWithoutPayment">
               <Button class="flex-1 text-white text-md col-span-2 md:col-span-1"
