@@ -60,6 +60,7 @@ import { entrarNaConta } from '@/pluguins/socket'
 import { sidebarMenuArenaOptions } from './optionsArena'
 import SidebarMenuArena from '@/components/layout/sidebarMenuArena.vue'
 import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
+import { updateMetaTags } from '@/utils/theme'
 const store = useUiStore()
 const loading = ref(false)
 window.addEventListener('resize', () => {
@@ -81,6 +82,7 @@ async function initialize() {
 
 onMounted(() => {
     initialize()
+    updateMetaTags()
 })
 </script>
 

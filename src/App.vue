@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Main from './layouts/Main.vue'
 import Default from './layouts/Default.vue'
@@ -7,19 +7,9 @@ import { useUiStore } from './stores/ui/uiStore'
 import Admin from './layouts/Admin.vue'
 import { env } from './utils/dotenv'
 import Arena from './layouts/Arena.vue'
-import { updateMetaTags } from './utils/theme'
 
 const store = useUiStore()
 const route = useRoute()
-
-const logo = document.querySelector<HTMLImageElement>('#logotipoSystema')
-if (logo) {
-  if (env.VITE_MODE_SYSTEM === 'arena') {
-    logo.setAttribute('href', '/imgs/logo_arena.png')
-  } else {
-    logo.setAttribute('href', '/imgs/logo.png')
-  }
-}
 
 // Definição dos layouts disponíveis
 const layouts = {
@@ -32,10 +22,6 @@ const layouts = {
 const layout = computed(() => {
   const name = route.meta.layout as keyof typeof layouts || 'default'
   return layouts[name]
-})
-
-onMounted(() => {
-  updateMetaTags()
 })
 </script>
 

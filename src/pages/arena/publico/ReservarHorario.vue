@@ -359,7 +359,9 @@ function changeWeek(type: "prev" | "next") {
               <MapPin class="h-5 w-5" />
               <span>Escolha a Quadra</span>
             </div>
-            <Button v-if="selectedQuadra" @click="selectedQuadra = null" size="xs">Trocar quadra</Button>
+            <Button v-if="selectedQuadra" @click="selectedQuadra = null" class="text-xs text-white rounded-lg"
+              size="xs">Trocar
+              quadra</Button>
           </CardTitle>
         </CardHeader>
         <CardContent>

@@ -48,26 +48,11 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
       ],
     },
     {
-      nome: 'Vendas',
-      icone: ShoppingBag,
+      nome: 'Comandas',
+      link: '/arena/comandas',
+      show: permissions.vendas.criar,
+      icone: FileText,
       color: 'blue',
-      show: permissions.vendas.visualizar,
-      children: [
-        {
-          nome: 'Vendas',
-          link: '/arena/vendas',
-          show: permissions.vendas.criar,
-          icone: Tags,
-          color: 'blue',
-        },
-        {
-          nome: 'Comandas',
-          link: '/arena/comandas',
-          show: permissions.vendas.criar,
-          icone: FileText,
-          color: 'blue',
-        },
-      ],
     },
     {
       nome: 'Quadras',
@@ -111,7 +96,7 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
       ],
     },
     {
-      nome: 'Administração',
+      nome: 'Ajustes',
       divisor: true,
       show: permissions.admin,
     },
@@ -121,11 +106,6 @@ export const sidebarMenuArenaOptions = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.configuracoes.visualizar,
       color: 'indigo',
       link: '/configuracoes',
-    },
-    {
-      nome: 'Assinatura',
-      divisor: true,
-      show: permissions.financeiro.visualizar,
     },
     {
       nome: 'Atualizações',

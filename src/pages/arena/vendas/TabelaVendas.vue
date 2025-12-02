@@ -50,8 +50,12 @@
                     </div>
                 </div>
                 <div class="flex justify-between">
-                    <div
-                        :class="`text-xs text-${venda.status === 'FATURADO' ? 'green' : 'gray'}-500 dark:text-${venda.status === 'FATURADO' ? 'green' : 'gray'}-400`">
+                    <div class="text-xs" :class="{
+                        'text-yellow-700 dark:text-yellow-500': venda.status === 'PENDENTE',
+                        'text-green-700 dark:text-green-500': venda.status === 'FATURADO',
+                        'text-red-700 dark:text-red-500': venda.status === 'CANCELADO',
+                        'text-blue-700 dark:text-blue-500': venda.status === 'FINALIZADO',
+                    }">
                         {{ venda.status }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
                         {{ new Date(venda.data).toLocaleDateString('pt-BR') }}

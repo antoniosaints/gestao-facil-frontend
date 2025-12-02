@@ -55,6 +55,7 @@ import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
 import { onMounted, ref } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import { sidebarMenuOptionsAdmin } from './optionsAdmin'
+import { updateMetaTags } from '@/utils/theme'
 const store = useUiStore()
 const loading = ref(false)
 window.addEventListener('resize', () => {
@@ -76,6 +77,7 @@ async function initialize() {
 
 onMounted(() => {
     initialize()
+    updateMetaTags()
 })
 </script>
 

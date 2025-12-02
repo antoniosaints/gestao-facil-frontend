@@ -42,7 +42,7 @@ async function submitFormularioVenda() {
     }
 
     try {
-        const data: FormularioVenda & { itens: { id: number, quantidade: number, preco: number }[] } = {
+        const data: FormularioVenda & { itens: { id: number, quantidade: number, tipo: 'SERVICO' | 'PRODUTO', preco: number }[] } = {
             id: store.form.id,
             data: new Date(),
             desconto: store.form.desconto ? getValorDesconto.value : 0,
@@ -51,7 +51,7 @@ async function submitFormularioVenda() {
             vendedorId: store.form.vendedorId || storeUi.usuarioLogged.id!,
             garantia: 0,
             observacoes: store.form.observacoes,
-            itens: store.carrinho.map(item => ({ id: item.id, quantidade: item.quantidade, preco: item.preco }))
+            itens: store.carrinho.map(item => ({ id: item.id, quantidade: item.quantidade, tipo: 'PRODUTO', preco: item.preco }))
         };
         await http.post(`vendas/criar${hasId ? `?id=${hasId}` : ''}`, data);
 

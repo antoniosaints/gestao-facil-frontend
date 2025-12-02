@@ -3,6 +3,7 @@ import './assets/style.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import './utils/worker'
+import './utils/theme'
 import Toast, { POSITION } from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 

@@ -61,6 +61,7 @@ import { onMounted, ref } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
 import { getLettersName } from '@/utils/formatters'
+import { updateMetaTags } from '@/utils/theme'
 const store = useUiStore()
 const loading = ref(false)
 window.addEventListener('resize', () => {
@@ -82,6 +83,7 @@ async function initialize() {
 
 onMounted(() => {
     initialize()
+    updateMetaTags()
 })
 </script>
 
