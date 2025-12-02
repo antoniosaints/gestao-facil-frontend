@@ -35,8 +35,8 @@
             <div v-if="data.length === 0"
                 class="flex items-center col-span-3 rounded-md justify-center h-[calc(100vh-17rem)]">
                 <div class="text-center">
-                    <Tags class="h-10 w-10 inline-flex text-gray-500 dark:text-gray-300" :stroke-width="2.5" />
-                    <p class="text-gray-500 dark:text-gray-300">Nenhua venda encontrada.</p>
+                    <FileText class="h-10 w-10 inline-flex text-gray-500 dark:text-gray-300" :stroke-width="2.5" />
+                    <p class="text-gray-500 dark:text-gray-300">Nenhua comanda encontrada.</p>
                 </div>
             </div>
             <div v-for="row in data" :key="row.id"
@@ -45,13 +45,17 @@
                     <div class="text-sm font-semibold dark:text-white">
                         {{ row.clienteNome || row.Cliente?.nome || 'Sem cliente vinculado' }}
                     </div>
-                    <div class="text-sm text-green-500 dark:text-green-400">
+                    <div class="text-sm" :class="{
+                        'text-yellow-600 dark:text-yellow-400': row.status === 'ABERTA',
+                        'text-red-500 dark:text-red-400': row.status === 'CANCELADA',
+                        'text-blue-500 dark:text-blue-400': row.status === 'FECHADA',
+                    }">
                         {{ formatCurrencyBR(calculateValorComanda(row)) }}
                     </div>
                 </div>
                 <div class="flex justify-between">
                     <div class="text-xs" :class="{
-                        'text-green-500 dark:text-green-400': row.status === 'ABERTA',
+                        'text-yellow-600 dark:text-yellow-400': row.status === 'ABERTA',
                         'text-red-500 dark:text-red-400': row.status === 'CANCELADA',
                         'text-blue-500 dark:text-blue-400': row.status === 'FECHADA',
                     }">
@@ -137,7 +141,7 @@ import { deletarVenda, openModalFaturarVenda } from "../../vendas/ActionsVendas"
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgeCheck, BadgePlus, Eye, PenLine, Plus, Tags, Trash } from "lucide-vue-next";
+import { BadgeCheck, BadgePlus, Eye, FileText, PenLine, Plus, Tags, Trash } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrencyBR } from "@/utils/formatters";
@@ -165,11 +169,9 @@ function calculateValorComanda(comanda: ComandaVenda) {
 }
 function renderMobile(page: number = 1) {
     loading.value = true;
-    const token = localStorage.getItem("gestao_facil:token");
     http.get(`/arenas/comandas/tabela`, {
-        headers: { Authorization: `Bearer ${token}` },
         params: {
-            status: statusFilter.value,
+            status: statusFilter.value === 'null' ? undefined : statusFilter.value,
             search: searchQuery.value,
             limit: 10,
             page

@@ -337,6 +337,7 @@ export interface ItemOrdemServico {
 }
 
 export interface FormularioVenda {
+  comandaId?: number
   clienteId: number | null
   data: Date | null
   vendedorId: number | null
@@ -391,6 +392,7 @@ export interface UpdateParametrosConta {
   eventoVendaConcluida?: boolean | null
   MercadoPagoApiKey?: string | null
   MercadoPagoEnv?: string | null
+  chavePix?: string | null
 }
 
 export interface ItensVendas {

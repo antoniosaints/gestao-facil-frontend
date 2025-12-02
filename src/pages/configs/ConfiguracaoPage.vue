@@ -19,7 +19,7 @@
                     <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i>
                         Impressão
                     </TabsTrigger>
-                    <TabsTrigger :disabled="true" value="financeiro" class="flex items-center">
+                    <TabsTrigger value="financeiro" class="flex items-center">
                         <Banknote class="inline-flex mr-1 w-5 h-5" />
                         Financeiro
                     </TabsTrigger>
@@ -132,6 +132,28 @@
             <TabsContent value="impressao">
                 <ImpressaoPage />
             </TabsContent>
+            <TabsContent value="financeiro">
+                <Card class="rounded-t-none bg-background">
+                    <form @submit.prevent="submit(formularioFinanceiro)">
+                        <CardHeader>
+                            <CardTitle class="font-normal">Financeiro</CardTitle>
+                            <CardDescription>Configure chave PIX e opções de financeiro.</CardDescription>
+                        </CardHeader>
+                        <CardContent class="space-y-6">
+                            <div class="grid md:grid-cols-2 gap-3">
+                                <div class="space-y-2">
+                                    <Label for="chavePixSistema">Chave PIX (Celular, E-mail, CPF ou Aleatória)</Label>
+                                    <Input id="chavePixSistema" v-model="(formularioFinanceiro.chavePix as string)"
+                                        type="text" placeholder="Sua chave aqui..." />
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter class="justify-end">
+                            <Button class="ml-2 text-white" type="submit">Salvar</Button>
+                        </CardFooter>
+                    </form>
+                </Card>
+            </TabsContent>
         </Tabs>
         <ModalView v-model:open="openModalMercadoPago" description="Configuração do mercado pago"
             title="Configurar Mercado Pago" size="md">
@@ -201,6 +223,9 @@ const formularioNotificacoes = reactive<UpdateParametrosConta>({
     eventoSangria: false,
     emailAvisos: '',
 })
+const formularioFinanceiro = reactive<UpdateParametrosConta>({
+    chavePix: '',
+})
 
 async function submit(data: UpdateParametrosConta) {
     try {
@@ -229,6 +254,9 @@ async function getParametros() {
                 eventoVendaConcluida: response.data.eventoVendaConcluida,
                 eventoSangria: response.data.eventoSangria,
                 emailAvisos: response.data.emailAvisos,
+            })
+            Object.assign(formularioFinanceiro, {
+                chavePix: response.data.chavePix,
             })
         }
     } catch (error) {

@@ -265,7 +265,7 @@ onMounted(() => {
             <!-- Tabela de itens -->
             <div>
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-medium mb-2">Itens da Venda</h3>
+                    <h3 class="text-lg font-medium mb-2">Itens da Comanda</h3>
                     <div class="flex gap-2">
                         <!-- <button :disabled="store.carrinho.length === 0" @click="store.openModalPropor = true"
                             type="button"
