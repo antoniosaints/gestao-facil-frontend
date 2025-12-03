@@ -93,9 +93,10 @@
                             até {{ format(new Date(row.endAt), "HH:mm") }}
                         </div>
                         <a v-if="row.cobrancasOnAgendamentos && row.cobrancasOnAgendamentos.length > 0"
-                            class="text-blue-500 text-sm" target="_blank"
+                            class="text-blue-500 text-xs flex items-center gap-1 underline" target="_blank"
                             :href="(row.cobrancasOnAgendamentos[0].cobranca.externalLink as string)">
-                            Acessar
+                            <ExternalLink class="w-3 h-3 inline-flex" />
+                            Cobrança
                         </a>
                     </div>
 
@@ -193,7 +194,7 @@ import { ref, onMounted, watch, computed } from "vue";
 import type { ArenaAgendamentos } from "@/types/schemas";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgeCheck, BadgePlus, CalendarCheck2, CalendarX2, Clock, OctagonX, Pen, ShieldX, SquareCheckBig, Ticket, Trash, Undo, Undo2 } from "lucide-vue-next";
+import { BadgeCheck, BadgePlus, CalendarCheck2, CalendarX2, Clock, ExternalLink, OctagonX, Pen, ShieldX, SquareCheckBig, Ticket, Trash, Undo, Undo2 } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Select2Ajax from "@/components/formulario/Select2Ajax.vue";
