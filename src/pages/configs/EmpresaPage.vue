@@ -82,8 +82,10 @@
             </CardContent>
 
             <CardFooter class="justify-end">
-                <Button type="submit" class="ml-2 text-white">
-                    <CircleCheck /> Salvar
+                <Button :disabled="loading" type="submit" class="ml-2 text-white">
+                    <CircleCheck v-if="!loading" />
+                    <LoaderIcon v-if="loading" class="animate-spin" />
+                    {{ loading ? 'Salvando...' : 'Salvar' }}
                 </Button>
             </CardFooter>
         </form>
@@ -98,13 +100,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ContaRepository, type UpdateConta } from '@/repositories/conta-repository'
 import { useToast } from 'vue-toastification'
-import { CircleCheck } from 'lucide-vue-next'
+import { CircleCheck, LoaderIcon } from 'lucide-vue-next'
 import { vMaska } from 'maska/vue'
 import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useUiStore } from '@/stores/ui/uiStore'
 const toast = useToast()
 const storeUi = useUiStore()
+const loading = ref(false)
 const form = ref<Partial<UpdateConta & { email: string, cep: string }>>({
     documento: "",
     endereco: "",
@@ -143,17 +146,21 @@ const DEFAULT_COLORS: ColorItem[] = [
 
 const submitForm = async () => {
     try {
+        loading.value = true
         await ContaRepository.update(form.value)
         await storeUi.getDataUsuario()
         toast.success("Dados atualizados com sucesso")
     } catch (error) {
         console.error(error)
         toast.error("Erro ao atualizar os dados")
+    } finally {
+        loading.value = false
     }
 }
 
 async function getDataConta() {
     try {
+        loading.value = true
         const response = await ContaRepository.detalhes()
         Object.assign(form.value, {
             nome: response.nome,
@@ -167,6 +174,8 @@ async function getDataConta() {
         })
     } catch (error) {
         console.error(error)
+    } finally {
+        loading.value = false
     }
 }
 

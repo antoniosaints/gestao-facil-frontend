@@ -84,7 +84,11 @@
                             </div>
                         </CardContent>
                         <CardFooter class="justify-end">
-                            <Button class="ml-2 text-white" type="submit">Salvar</Button>
+                            <Button :disabled="loading" class="ml-2 text-white" type="submit">
+                                <CircleCheck v-if="!loading" />
+                                <LoaderIcon v-if="loading" class="animate-spin" />
+                                {{ loading ? 'Salvando...' : 'Salvar' }}
+                            </Button>
                         </CardFooter>
                     </form>
                 </Card>
@@ -149,7 +153,11 @@
                             </div>
                         </CardContent>
                         <CardFooter class="justify-end">
-                            <Button class="ml-2 text-white" type="submit">Salvar</Button>
+                            <Button :disabled="loading" class="ml-2 text-white" type="submit">
+                                <CircleCheck v-if="!loading" />
+                                <LoaderIcon v-if="loading" class="animate-spin" />
+                                {{ loading ? 'Salvando...' : 'Salvar' }}
+                            </Button>
                         </CardFooter>
                     </form>
                 </Card>
@@ -165,8 +173,12 @@
                 <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
                     clientes.</p>
             </div>
-            <Button class="mt-2 mx-4 text-white" type="button" @click="submit(formularioIntegracoesMercadoPago)"
-                variant="default">Salvar</Button>
+            <Button :disabled="loading" class="mt-2 mx-4 text-white" type="button"
+                @click="submit(formularioIntegracoesMercadoPago)" variant="default">
+                <CircleCheck v-if="!loading" />
+                <LoaderIcon v-if="loading" class="animate-spin" />
+                {{ loading ? 'Salvando...' : 'Salvar' }}
+            </Button>
         </ModalView>
         <nav v-if="storeUi.isMobile"
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
@@ -196,7 +208,7 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Banknote, Cog, Link, Menu, Undo2 } from 'lucide-vue-next'
+import { Banknote, CircleCheck, Cog, Link, LoaderIcon, Menu, Undo2 } from 'lucide-vue-next'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -208,6 +220,7 @@ const tab = ref<'empresa' | 'notificacoes' | 'integracoes' | 'impressao' | 'fina
 const toast = useToast()
 const storeUi = useUiStore()
 const openModalMercadoPago = ref(false)
+const loading = ref(false)
 
 const formularioIntegracoes = reactive<UpdateParametrosConta>({
     AsaasApiKey: '',
@@ -229,11 +242,14 @@ const formularioFinanceiro = reactive<UpdateParametrosConta>({
 
 async function submit(data: UpdateParametrosConta) {
     try {
+        loading.value = true
         await ContaRepository.parametros(data)
         toast.success('Configurações salvas com sucesso')
     } catch (error) {
         console.error(error)
         toast.error('Erro ao salvar as configurações')
+    } finally {
+        loading.value = false
     }
 }
 
