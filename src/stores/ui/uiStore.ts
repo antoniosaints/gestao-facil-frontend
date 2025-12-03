@@ -26,6 +26,7 @@ export interface Permissoes {
 
 export const useUiStore = defineStore('uiStore', () => {
   const openSidebar = ref(true)
+  const loading = ref(false)
   const logoProfile = ref('/imgs/logo.png')
   const openModalProfile = ref(false)
   const isMobile = ref(window.innerWidth < 768)
@@ -207,6 +208,7 @@ export const useUiStore = defineStore('uiStore', () => {
   }
 
   return {
+    loading,
     openSidebar,
     openModalProfile,
     status,

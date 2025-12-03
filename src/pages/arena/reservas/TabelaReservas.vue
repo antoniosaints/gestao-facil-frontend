@@ -202,7 +202,7 @@ import { ArenaReservasRepository } from "@/repositories/reservas-repository";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { endOfDay, endOfYear, format, isAfter, isBefore, startOfDay, startOfYear, subMinutes } from "date-fns";
 import { useReservaStore } from "@/stores/arena/reservaStore";
-import { useToast } from "vue-toastification";
+import { POSITION, TYPE, useToast } from "vue-toastification";
 import { useConfirm } from "@/composables/useConfirm";
 import { useUiStore } from "@/stores/ui/uiStore";
 const store = useReservaStore();
@@ -241,8 +241,19 @@ async function deleteReserva(id: number) {
             cancelText: 'Cancelar',
         });
         if (!y) return;
+        const toastId = toast.info('Excluindo reserva...', {
+            showCloseButtonOnHover: true,
+            timeout: false,
+            position: POSITION.BOTTOM_CENTER
+        });
         await ArenaReservasRepository.delete(id);
-        toast.success('Reserva deletada com sucesso!');
+        toast.update(toastId, {
+            content: 'Reserva excluida com sucesso!',
+            options: {
+                type: TYPE.SUCCESS,
+                timeout: 2000
+            }
+        });
         store.updateTable();
     } catch (error: any) {
         console.log(error);
@@ -259,8 +270,19 @@ async function cancelarReserva(id: number) {
             colorButton: 'danger'
         });
         if (!y) return;
+        const toastId = toast.info('Cancelando reserva...', {
+            showCloseButtonOnHover: true,
+            timeout: false,
+            position: POSITION.BOTTOM_CENTER
+        })
         await ArenaReservasRepository.cancelar(id);
-        toast.success('Reserva cancelada com sucesso!');
+        toast.update(toastId, {
+            content: 'Reserva cancelada com sucesso!',
+            options: {
+                type: TYPE.SUCCESS,
+                timeout: 3000
+            }
+        })
         store.updateTable();
     } catch (error: any) {
         console.log(error);
@@ -277,8 +299,19 @@ async function confirmarReserva(id: number) {
             colorButton: 'success'
         });
         if (!y) return;
+        const toastId = toast.info('Confirmando reserva...', {
+            showCloseButtonOnHover: true,
+            timeout: false,
+            position: POSITION.BOTTOM_CENTER
+        })
         await ArenaReservasRepository.confirmar(id);
-        toast.success('Reserva confirmada com sucesso!');
+        toast.update(toastId, {
+            content: 'Reserva confirmada com sucesso!',
+            options: {
+                type: TYPE.SUCCESS,
+                timeout: 3000
+            }
+        })
         store.updateTable();
     } catch (error: any) {
         console.log(error);
@@ -295,8 +328,19 @@ async function finalizarReserva(id: number) {
             colorButton: 'primary'
         });
         if (!y) return;
+        const toastId = toast.info('Finalizando reserva...', {
+            showCloseButtonOnHover: true,
+            timeout: false,
+            position: POSITION.BOTTOM_CENTER
+        })
         await ArenaReservasRepository.finalizar(id);
-        toast.success('Reserva finalizada com sucesso!');
+        toast.update(toastId, {
+            content: 'Reserva finalizada com sucesso!',
+            options: {
+                type: TYPE.SUCCESS,
+                timeout: 3000
+            }
+        })
         store.updateTable();
     } catch (error: any) {
         console.log(error);
@@ -313,8 +357,19 @@ async function estornarReserva(id: number) {
             colorButton: 'warning'
         });
         if (!y) return;
+        const toastId = toast.info('Estornando reserva...', {
+            showCloseButtonOnHover: true,
+            timeout: false,
+            position: POSITION.BOTTOM_CENTER
+        })
         await ArenaReservasRepository.estornar(id);
-        toast.success('Reserva estornada com sucesso!');
+        toast.update(toastId, {
+            content: 'Reserva estornada com sucesso!',
+            options: {
+                type: TYPE.SUCCESS,
+                timeout: 3000
+            }
+        })
         store.updateTable();
     } catch (error: any) {
         console.log(error);

@@ -32,6 +32,15 @@
             :class="{ 'md:ml-64': store.openSidebar }">
             <div class="max-w-7xl mx-auto" id="content">
                 <AlertTopbar />
+                <div v-if="store.loading || progress > 0"
+                    class="absolute hidden md:block top-14 h-2 transition-all duration-100 ease-linear"
+                    :style="{ width: progress + '%' }" :class="{
+                        'bg-primary/50': env.VITE_MODE_SYSTEM === 'erp',
+                        'bg-success/50': env.VITE_MODE_SYSTEM === 'arena',
+                        'left-[16rem]': store.openSidebar,
+                        'left-0': !store.openSidebar
+                    }"></div>
+
                 <slot v-if="!loading" />
                 <div v-else
                     class="flex flex-col gap-4 max-w-7xl mx-auto items-center justify-center h-[calc(100vh-12rem)]">
@@ -55,14 +64,15 @@ import InstallPrompt from '@/components/layout/installPrompt.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
 import { PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import { sidebarMenuArenaOptions } from './optionsArena'
 import SidebarMenuArena from '@/components/layout/sidebarMenuArena.vue'
 import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
 import { updateMetaTags } from '@/utils/theme'
-const store = useUiStore()
+import { env } from '@/utils/dotenv'
 const loading = ref(false)
+const store = useUiStore()
 window.addEventListener('resize', () => {
     if (window.innerWidth < 768) {
         store.openSidebar = false
@@ -70,6 +80,43 @@ window.addEventListener('resize', () => {
         store.openSidebar = true
     }
 })
+
+const progress = ref(0)
+
+watch(() => store.loading, (v) => {
+    if (v) startProgress()
+    else finishProgress()
+})
+
+
+let interval: any
+
+function startProgress() {
+    progress.value = 0
+
+    clearInterval(interval)
+
+    interval = setInterval(() => {
+        if (progress.value < 60) {
+            progress.value += 3     // rápido no começo
+        } else if (progress.value < 90) {
+            progress.value += 1     // lento depois
+        }
+    }, 100)
+}
+
+function finishProgress() {
+    clearInterval(interval)
+
+    const complete = setInterval(() => {
+        progress.value += 5
+        if (progress.value >= 80) {
+            clearInterval(complete)
+            progress.value = 0
+        }
+    }, 30)
+}
+
 
 async function initialize() {
     loading.value = true

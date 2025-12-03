@@ -10,16 +10,26 @@ import { ArenaQuadrasRepository } from '@/repositories/quadras-repository';
 import { useQuadraStore } from '@/stores/arena/quadraStore';
 import { MapPinned } from 'lucide-vue-next';
 import { vMaska } from 'maska/vue';
-import { useToast } from 'vue-toastification';
+import { POSITION, TYPE, useToast } from 'vue-toastification';
 
 const toast = useToast()
 const store = useQuadraStore()
 async function submit() {
     try {
+        const toastId = toast.info('Salvando quadra...', {
+            timeout: false,
+            position: POSITION.BOTTOM_CENTER
+        })
         store.form.id
             ? await ArenaQuadrasRepository.update(store.form.id, store.form)
             : await ArenaQuadrasRepository.save(store.form)
-        toast.success(store.form.id ? 'Quadra atualizada com sucesso!' : 'Quadra salva com sucesso!')
+        toast.update(toastId, {
+            content: store.form.id ? 'Quadra atualizada com sucesso!' : 'Quadra salva com sucesso!',
+            options: {
+                type: TYPE.SUCCESS,
+                timeout: 3000
+            }
+        })
         store.openModal = false
         store.updateTable()
         store.reset()
@@ -74,7 +84,7 @@ async function submit() {
                         class="flex items-center cursor-pointer border bg-card rounded-md py-2 px-3 gap-2">
                         <Switch id="agendamentoSemPagamento" v-model="store.form.aprovarSemPagamento" />
                         <Label for="agendamentoSemPagamento">{{ store.form.aprovarSemPagamento ? 'Sim' : 'Não'
-                            }}</Label>
+                        }}</Label>
                     </Label>
                 </div>
                 <div class="w-full gap-2 flex flex-col col-span-2">

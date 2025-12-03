@@ -1,6 +1,7 @@
 import { hasPermission } from '@/hooks/authorize'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
+import { isBefore } from 'date-fns'
 import type { RouteLocationNormalizedGeneric } from 'vue-router'
 import { useToast } from 'vue-toastification'
 
@@ -20,9 +21,9 @@ type typed = RouteLocationNormalizedGeneric
 export async function handleRouteGuard(to: typed, from: typed) {
   const storeUi = useUiStore()
   const toast = useToast()
-
+  storeUi.loading = true
   await storeUi.getDataUsuario()
-
+  storeUi.loading = false
   const home = { name: 'home' }
   const login = { name: 'login' }
   const assinatura = { name: 'assinatura-resumo' }
@@ -45,8 +46,7 @@ export async function handleRouteGuard(to: typed, from: typed) {
 
   // Checa status da conta (exceto login/assinatura)
   if (!allowedRouteNames.includes(to.name as string)) {
-    const ativo = await useControlRouter()
-    if (!ativo) {
+    if (isBefore(new Date(storeUi.contaInfo.vencimento), new Date())) {
       toast.info('Sua conta está inativa, realize o pagamento para ativá-la.')
       return assinatura
     }

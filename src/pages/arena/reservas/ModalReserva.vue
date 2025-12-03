@@ -13,7 +13,7 @@ import { format, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarClock } from 'lucide-vue-next';
 import { computed } from 'vue';
-import { POSITION, useToast } from 'vue-toastification';
+import { POSITION, TYPE, useToast } from 'vue-toastification';
 
 const toast = useToast()
 const store = useReservaStore()
@@ -44,16 +44,26 @@ async function submit() {
             inicio: format(store.form.startAt, "yyyy-MM-dd'T'HH:mm:ss", { locale: ptBR }),
             fim: format(store.form.endAt, "yyyy-MM-dd'T'HH:mm:ss", { locale: ptBR })
         }
+        const toastId = toast.info('Salvando reserva...', {
+            timeout: false,
+            position: POSITION.BOTTOM_CENTER
+        })
         store.form.id
             ? await ArenaReservasRepository.update(store.form.id, payload)
             : await ArenaReservasRepository.save(payload)
-        toast.success(store.form.id ? 'Quadra atualizada com sucesso!' : 'Quadra salva com sucesso!')
+        toast.update(toastId, {
+            content: store.form.id ? 'Reserva atualizada com sucesso!' : 'Reserva salva com sucesso!',
+            options: {
+                type: TYPE.SUCCESS,
+                timeout: 3000
+            }
+        })
         store.openModal = false
         store.updateTable()
         store.reset()
     } catch (error: any) {
         console.log(error);
-        toast.error(error?.response?.data?.message ?? 'Erro ao registrar a quadra!')
+        toast.error(error?.response?.data?.message ?? 'Erro ao registrar a reserva!')
     }
 }
 </script>
