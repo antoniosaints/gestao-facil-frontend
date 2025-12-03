@@ -23,6 +23,7 @@ const layout = computed(() => {
   const name = route.meta.layout as keyof typeof layouts || 'default'
   return layouts[name]
 })
+
 </script>
 
 <template>

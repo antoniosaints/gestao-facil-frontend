@@ -435,7 +435,7 @@ const novaReserva = () => {
       </div>
 
       <!-- Seleção de Quadra -->
-      <Card class="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">
+      <Card class="backdrop-blur-sm v-if bg-white/90 dark:bg-gray-800/90">
         <CardHeader>
           <CardTitle class="flex items-center justify-between space-x-2 font-normal">
             <div class="flex items-center space-x-2">
