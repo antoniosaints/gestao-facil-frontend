@@ -121,7 +121,7 @@
                 <TabsContent value="mensagens" class="mt-3">
                     <div class="flex flex-col gap-3">
                         <div class="overflow-auto max-h-60 border rounded-md p-3">
-                            <ul class="flex flex-col-reverse">
+                            <ul class="flex flex-col-reverse gap-2">
                                 <li v-for="msg in store.ordemDetalhe.MensagensInteracoesOrdemServico" :key="msg.id"
                                     class="px-4 bg-gray-100 dark:bg-gray-800 py-2 rounded-lg border">
                                     <div class="text-sm flex items-center justify-between">
