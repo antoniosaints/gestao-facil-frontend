@@ -239,7 +239,7 @@ onMounted(() => { store.form.vendedorId = storeUi.usuarioLogged.id || null });
                                 </Button>
                             </div>
 
-                            <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                            <div class="flex-1 overflow-y-auto p-2 space-y-3">
                                 <div v-if="store.carrinho.length === 0"
                                     class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60 py-10">
                                     <ShoppingCart class="w-12 h-12 mb-2 stroke-[1]" />

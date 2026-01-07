@@ -11,6 +11,7 @@ import ModalItemComanda from './ModalItemComanda.vue';
 import ModalComanda from './ModalComanda.vue';
 import { useComandaStore } from '@/stores/arena/comandaStore';
 import TabelaVendas from './TabelaVendas.vue';
+import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue';
 const store = useVendasStore();
 const storeComanda = useComandaStore()
 const openFilter = ref(false);
@@ -58,5 +59,6 @@ provide('openModalFiltroVendas', openFilter);
         <ModalFaturar />
         <ClientesModal />
         <ModalComanda />
+        <DetalhesVenda />
     </div>
 </template>

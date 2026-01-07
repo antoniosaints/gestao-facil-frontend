@@ -42,7 +42,8 @@
             <div v-for="venda in vendas" :key="venda.id"
                 class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
-                    <div class="text-sm font-semibold dark:text-white">
+                    <div class="text-sm font-semibold dark:text-white flex items-center gap-1">
+                        <Tag class="w-4" />
                         {{ venda.cliente?.nome || 'SEM CLIENTE VINCULADO' }}
                     </div>
                     <div class="text-sm text-green-500 dark:text-green-400">
@@ -68,10 +69,6 @@
                             class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-2 py-1 rounded-md text-sm">
                             <Eye class="w-5 h-5" />
                         </button>
-                        <button @click="gerarCupomVenda(venda.id!)"
-                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
-                            <FileChartLine class="w-5 h-5" />
-                        </button>
                         <button v-if="!venda.faturado" @click="openModalFaturarVenda(venda.id!)"
                             class="bg-emerald-200 text-emerald-900 dark:text-emerald-100 dark:bg-emerald-800 px-2 py-1 rounded-md text-sm">
                             <BadgeCheck class="w-5 h-5" />
@@ -83,6 +80,15 @@
                         <button v-if="!venda.faturado" @click="store.openUpdate(venda.id!)"
                             class="bg-slate-200 text-slate-900 dark:text-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-sm">
                             <PenLine class="w-5 h-5" />
+                        </button>
+                        <Separator orientation="vertical" />
+                        <button @click="gerarCupomVenda(venda.id!)"
+                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
+                            <FileChartLine class="w-5 h-5" />
+                        </button>
+                        <button @click="printCupom(venda.id!)"
+                            class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
+                            <Printer class="w-5 h-5" />
                         </button>
                     </div>
                     <button @click="deletarVenda(venda.id!)"
@@ -151,9 +157,13 @@ import { deletarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } f
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgeCheck, BadgePlus, Eye, FileChartLine, PenLine, ShoppingBasket, Tags, Trash, Undo2 } from "lucide-vue-next";
+import { BadgeCheck, BadgePlus, Eye, FileChartLine, PenLine, Printer, ShoppingBasket, Tag, Tags, Trash, Undo2 } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VendaRepository } from "@/repositories/venda-repository";
+import { useConfirm } from "@/composables/useConfirm";
+import { POSITION, TYPE, useToast } from "vue-toastification";
+import { Separator } from "@/components/ui/separator";
 const store = useVendasStore();
 const vendas = ref<Vendas[]>([]);
 const currentPage = ref(1);
@@ -163,10 +173,40 @@ const searchQuery = ref("");
 const filtroPeriodo = ref(null);
 const showDrawerVendas = ref(false);
 const statusFilter = ref('PENDENTE');
+const toast = useToast();
 
 function openSaveVenda() {
     // showDrawerVendas.value = false;
     store.openSave();
+}
+
+async function printCupom(id: number) {
+    try {
+        const confirm = await useConfirm().confirm({
+            title: 'Imprimir cupom?',
+            message: 'O comprovante de venda será enviado para a impressora.',
+            confirmText: 'Sim, imprimir!',
+            cancelText: 'Cancelar',
+            colorButton: 'primary'
+        });
+        if (!confirm) return
+        const t = toast.info('Preparando cupom...', {
+            showCloseButtonOnHover: true,
+            timeout: false,
+            position: POSITION.BOTTOM_CENTER
+        })
+        await VendaRepository.printCupom(id)
+
+        toast.update(t, {
+            content: 'Cupom enviado para a impressora!',
+            options: {
+                type: TYPE.SUCCESS,
+                timeout: 3000
+            }
+        })
+    } catch (error) {
+        console.log(error)
+    }
 }
 function renderListaVendas(page: number = 1) {
     loading.value = true;
