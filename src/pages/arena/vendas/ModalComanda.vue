@@ -6,6 +6,7 @@ import { ref } from "vue";
 import { POSITION, useToast } from "vue-toastification";
 import { useUiStore } from "@/stores/ui/uiStore";
 import { useComandaStore } from "@/stores/arena/comandaStore";
+import { Input } from "@/components/ui/input";
 
 const description = ref('Preencha os campos abaixo')
 const toast = useToast()
@@ -29,9 +30,22 @@ async function submit() {
 
 <template>
     <ModalView v-model:open="storeComanda.openModal" :title="storeComanda.form.id ? 'Editar comanda' : 'Nova comanda'"
-        :description="description" size="lg">
+        :description="description" size="2xl">
         <form @submit.prevent="submit" class="space-y-4 px-4">
-
+            <div class="grid grid-cols-12 gap-2">
+                <div class="col-span-6">
+                    <Label>Cliente</Label>
+                    <Input type="text" v-model="(storeComanda.form.observacao as string)" placeholder="Observação" />
+                </div>
+                <div class="col-span-6">
+                    <Label>Local</Label>
+                    <Input type="text" v-model="(storeComanda.form.observacao as string)" placeholder="Observação" />
+                </div>
+                <div class="col-span-12">
+                    <Label>Observação</Label>
+                    <Input type="text" v-model="(storeComanda.form.observacao as string)" placeholder="Observação" />
+                </div>
+            </div>
             <div class="flex justify-end gap-2">
                 <Button type="button" variant="secondary" @click="storeComanda.openModal = false">
                     Fechar

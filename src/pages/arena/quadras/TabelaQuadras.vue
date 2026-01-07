@@ -30,13 +30,13 @@
         </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             <div v-if="quadrasFiltered.length === 0"
-                class="flex items-center col-span-3 rounded-md justify-center h-[calc(100vh-17rem)]">
+                class="flex items-center col-span-3 border-2 border-dashed rounded-md justify-center h-[calc(100vh-17rem)]">
                 <div class="text-center">
                     <MapPinned class="h-10 w-10 inline-flex text-gray-500 dark:text-gray-300" :stroke-width="2.5" />
                     <p class="text-gray-500 dark:text-gray-300">Nenhuma quadra encontrada.</p>
                 </div>
             </div>
-            <div v-for="row in quadrasFiltered" :key="row.id" class="rounded-xl cursor-pointer border bg-card p-4">
+            <div v-for="row in quadrasFiltered" :key="row.id" class="rounded-xl border bg-card p-4">
                 <div class="flex justify-between">
                     <div class="text-md font-semibold dark:text-white">
                         {{ row.name || 'SEM NOME' }}
@@ -60,8 +60,9 @@
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-1">
                         <button @click="store.openUpdate(row.id!)"
-                            class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
+                            class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 flex items-center gap-2 rounded-md text-sm">
                             <Pen class="w-5 h-5" />
+                            <span class="hidden md:flex">Editar</span>
                         </button>
                     </div>
                     <div class="flex gap-1">
@@ -125,7 +126,7 @@ import { formatCurrencyBR } from "@/utils/formatters";
 import { endOfMonth, startOfMonth } from "date-fns";
 import { ArenaQuadrasRepository } from "@/repositories/quadras-repository";
 import { useQuadraStore } from "@/stores/arena/quadraStore";
-import DataTableFacetedFilter from "@/components/formulario/DataTableFacetedFilter.vue";
+
 const store = useQuadraStore();
 const arenaIdFilter = ref(undefined);
 const quadras = ref<ArenaQuadras[]>([]);

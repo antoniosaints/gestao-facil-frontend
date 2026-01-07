@@ -33,10 +33,10 @@
         </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             <div v-if="vendas.length === 0"
-                class="flex items-center col-span-3 rounded-md justify-center h-[calc(100vh-17rem)]">
+                class="flex items-center border-2 border-dashed col-span-3 rounded-md justify-center h-[calc(100vh-17rem)]">
                 <div class="text-center">
                     <Tags class="h-10 w-10 inline-flex text-gray-500 dark:text-gray-300" :stroke-width="2.5" />
-                    <p class="text-gray-500 dark:text-gray-300">Nenhua venda encontrada.</p>
+                    <p class="text-gray-500 dark:text-gray-300">Nenhuma venda encontrada.</p>
                 </div>
             </div>
             <div v-for="venda in vendas" :key="venda.id"

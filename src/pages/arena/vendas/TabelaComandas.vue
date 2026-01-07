@@ -33,14 +33,14 @@
         </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             <div v-if="data.length === 0"
-                class="flex items-center col-span-3 rounded-md justify-center h-[calc(100vh-17rem)]">
+                class="flex items-center col-span-3 rounded-md border-2 border-dashed justify-center h-[calc(100vh-17rem)]">
                 <div class="text-center">
                     <FileText class="h-10 w-10 inline-flex text-gray-500 dark:text-gray-300" :stroke-width="2.5" />
                     <p class="text-gray-500 dark:text-gray-300">Nenhuma comanda encontrada.</p>
                 </div>
             </div>
             <div v-for="row in data" :key="row.id"
-                class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
+                class="rounded-2xl border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
                     <div class="text-sm font-semibold dark:text-white">
                         {{ row.clienteNome || row.Cliente?.nome || 'Sem cliente vinculado' }}
