@@ -175,13 +175,22 @@ const routes: RouteInterface[] = [
     },
   },
   {
-    path: '/ia',
-    name: 'ia',
+    path: '/chat',
+    name: 'chat',
     children: [
       {
-        path: 'chat',
-        name: 'chat',
+        path: 'ia',
+        name: 'ia',
         component: () => import('@/pages/agente/ChatPage.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 2,
+        },
+      },
+      {
+        path: 'local',
+        name: 'local',
+        component: () => import('@/pages/chats/ChatLocal.vue'),
         meta: {
           layout: 'main',
           permissao: 2,
