@@ -4,17 +4,17 @@ import {
     Bot,
     Settings,
     Sparkles,
-    ShoppingCart,
-    PackagePlus,
-    RefreshCw,
-    BarChart3,
     SendHorizontal,
     User,
-    X
+    X,
+    Package,
+    Users
 } from 'lucide-vue-next';
 import { GeminiRepository } from '@/repositories/gemini-repository';
+import { useUiStore } from '@/stores/ui/uiStore';
 
 const chatHistory = ref<any[]>([]);
+const storeUi = useUiStore();
 // --- Interfaces ---
 interface Message {
     id: number;
@@ -26,7 +26,7 @@ interface Message {
 const messages = ref<Message[]>([
     {
         id: Date.now(),
-        text: "Olá, bem vindo ao chat de ajuda! Como posso ajudar?",
+        text: `Olá, ${storeUi.usuarioLogged.nome.split(' ')[0]}, bem vindo ao Core! Como posso ajudar?`,
         isUser: false
     }
 ]);
@@ -148,16 +148,16 @@ const quickAction = (action: string) => {
                     <Bot :size="24" />
                 </div>
                 <div>
-                    <h1 class="font-bold text-gray-800">Assistente de Gestão</h1>
+                    <h1 class="font-bold text-gray-800">Core IA</h1>
                     <span class="text-xs flex items-center gap-1" :class="'text-green-500'">
                         <span class="w-2 h-2 rounded-full" :class="['bg-green-500 animate-pulse']"></span>
                         {{ 'Pronto para usar' }}
                     </span>
                 </div>
             </div>
-            <button @click="toggleSettings" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition">
+            <!-- <button @click="toggleSettings" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition">
                 <Settings :size="20" />
-            </button>
+            </button> -->
         </header>
 
         <!-- Modal de Configuração -->
@@ -229,17 +229,11 @@ const quickAction = (action: string) => {
             <div class="md:max-w-4xl md:mx-auto w-full space-y-2">
                 <!-- Quick Actions -->
                 <div class="flex gap-2 overflow-x-auto no-scrollbar">
-                    <button @click="quickAction('Quero registrar uma venda')" class="action-btn">
-                        <ShoppingCart class="text-green-500" :size="16" /> Vendas
+                    <button @click="quickAction('Me mostre o estoque dos produtos')" class="action-btn">
+                        <Package class="text-green-500" :size="16" /> Estoque
                     </button>
-                    <button @click="quickAction('Quero registrar uma compra')" class="action-btn">
-                        <PackagePlus class="text-blue-500" :size="16" /> Compras
-                    </button>
-                    <button @click="quickAction('Quais produtos precisam de reposição?')" class="action-btn">
-                        <RefreshCw class="text-orange-500" :size="16" /> Reposição
-                    </button>
-                    <button @click="quickAction('Me mostre o relatório de vendas de hoje')" class="action-btn">
-                        <BarChart3 class="text-purple-500" :size="16" /> Relatórios
+                    <button @click="quickAction('Quais clientes tenho no sistema?')" class="action-btn">
+                        <Users class="text-blue-500" :size="16" /> Clientes
                     </button>
                 </div>
 
