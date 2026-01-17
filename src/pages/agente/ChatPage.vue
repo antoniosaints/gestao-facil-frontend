@@ -140,7 +140,7 @@ const quickAction = (action: string) => {
 </script>
 
 <template>
-    <div class="flex flex-col h-[calc(100vh-5.3rem)] -m-4 rounded-md bg-gray-100 font-sans">
+    <div class="flex flex-col h-[calc(100vh-5.3rem)] -m-4 rounded-md bg-card font-sans">
         <!-- Header -->
         <header class="border-b rounded-t-md p-4 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-2">
@@ -148,7 +148,7 @@ const quickAction = (action: string) => {
                     <Bot :size="24" />
                 </div>
                 <div>
-                    <h1 class="font-bold text-gray-800">Core IA</h1>
+                    <h1 class="font-bold text-foreground">Core IA</h1>
                     <span class="text-xs flex items-center gap-1" :class="'text-green-500'">
                         <span class="w-2 h-2 rounded-full" :class="['bg-green-500 animate-pulse']"></span>
                         {{ 'Pronto para usar' }}
@@ -162,7 +162,7 @@ const quickAction = (action: string) => {
 
         <!-- Modal de Configuração -->
         <div v-if="isSettingsOpen" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <div class="bg-muted rounded-2xl p-6 w-full max-w-md shadow-xl">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold">Configurações</h2>
                     <button @click="toggleSettings" class="text-gray-400 hover:text-gray-600">
@@ -202,8 +202,8 @@ const quickAction = (action: string) => {
                 <div :class="[
                     'px-4 py-2 rounded-2xl shadow-sm border', /* Removido o whitespace-pre-wrap aqui */
                     msg.isUser
-                        ? 'bg-blue-600 text-white rounded-tr-none border-blue-500'
-                        : 'bg-white text-gray-700 rounded-tl-none border-gray-100'
+                        ? 'bg-blue-600 dark:bg-blue-900 text-white rounded-tr-none border-blue-500 dark:border-blue-700'
+                        : 'bg-white dark:bg-gray-800 text-foreground rounded-tl-none border-gray-100 dark:border-gray-700'
                 ]">
                     <!-- Substituído o <p>{{ msg.text }}</p> por esta div com v-html -->
                     <div class="text-sm md:text-base leading-relaxed" v-html="formatMessage(msg.text)"></div>
@@ -216,7 +216,7 @@ const quickAction = (action: string) => {
                     <Sparkles class="text-blue-600" :size="18" />
                 </div>
                 <div
-                    class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm flex gap-1 items-center border border-gray-100">
+                    class="bg-muted p-4 rounded-2xl rounded-tl-none shadow-sm flex gap-1 items-center border border-gray-100 dark:border-gray-700">
                     <span class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></span>
                     <span class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></span>
                     <span class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></span>
@@ -225,7 +225,7 @@ const quickAction = (action: string) => {
         </main>
 
         <!-- Footer -->
-        <footer class="bg-white border-t rounded-b-lg p-4">
+        <footer class="bg-white dark:bg-gray-800 border-t rounded-b-lg p-4">
             <div class="md:max-w-4xl md:mx-auto w-full space-y-2">
                 <!-- Quick Actions -->
                 <div class="flex gap-2 overflow-x-auto no-scrollbar">
@@ -241,7 +241,7 @@ const quickAction = (action: string) => {
                 <div class="relative flex items-center">
                     <input v-model="userInput" @keyup.enter="handleSendMessage" type="text"
                         placeholder="Digite sua mensagem..."
-                        class="w-full p-4 pr-12 rounded-2xl border border-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition">
+                        class="w-full p-4 pr-12 rounded-2xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition">
                     <button @click="handleSendMessage" :disabled="!userInput.trim() || isTyping"
                         class="absolute right-2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <SendHorizontal :size="20" />
@@ -305,6 +305,6 @@ const quickAction = (action: string) => {
 }
 
 .action-btn {
-    @apply flex items-center gap-2 bg-white border border-gray-200 hover:border-blue-500 hover:text-blue-600 px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap shadow-sm;
+    @apply flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-blue-500 hover:text-blue-600 px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap shadow-sm;
 }
 </style>
