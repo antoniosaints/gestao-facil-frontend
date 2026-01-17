@@ -12,7 +12,9 @@ import {
     User,
     X
 } from 'lucide-vue-next';
+import { GeminiRepository } from '@/repositories/gemini-repository';
 
+const chatHistory = ref<any[]>([]);
 // --- Interfaces ---
 interface Message {
     id: number;
@@ -24,7 +26,7 @@ interface Message {
 const messages = ref<Message[]>([
     {
         id: Date.now(),
-        text: "Olá! Configure sua chave API nas configurações para começarmos a gerir suas vendas, compras e estoque.",
+        text: "Olá, bem vindo ao chat de ajuda! Como posso ajudar?",
         isUser: false
     }
 ]);
@@ -86,122 +88,36 @@ const addMessage = (text: string, isUser: boolean) => {
     });
 };
 
-const tools = [
-    {
-        type: "function",
-        function: {
-            name: "register_sale",
-            description: "Registra uma nova venda no sistema de ERP",
-            parameters: {
-                type: "object",
-                properties: {
-                    product: { type: "string", description: "Nome do produto vendido" },
-                    quantity: { type: "number", description: "Quantidade vendida" },
-                    price: { type: "number", description: "Preço unitário (opcional)" }
-                },
-                required: ["product", "quantity"]
-            }
-        }
-    },
-    {
-        type: "function",
-        function: {
-            name: "get_inventory",
-            description: "Consulta o estoque atual",
-            parameters: {
-                type: "object",
-                properties: {
-                    category: { type: "string", enum: ['alimentos', 'eletronicos', 'limpeza'] }
-                }
-            }
-        }
-    }
-];
-
-// const SaleSchema = z.object({
-//     product: z.string().min(1, "Nome do produto é obrigatório"),
-//     quantity: z.number().int().positive("A quantidade deve ser maior que zero"),
-//     price: z.number().positive("O preço deve ser positivo").optional()
-// });
-
-// const InventorySchema = z.object({
-//     category: z.enum(['alimentos', 'eletronicos', 'limpeza']).optional(),
-// });
-
-// type SaleType = z.infer<typeof SaleSchema>;
-
-const handleFunctionCall = (name: string, args: string) => {
-    const parsedArgs = JSON.parse(args);
-
-    if (name === 'register_sale') {
-        // Validação com Zod
-        // const result = SaleSchema.safeParse(parsedArgs);
-        // if (!result.success) {
-        //     return `Erro de validação: ${result.error.errors.map(e => e.message).join(', ')}`;
-        // }
-
-        // // Aqui você chamaria sua API real de backend
-        // console.log("Venda registrada no banco:", result.data);
-        // return `Sucesso: Venda de ${result.data.quantity}x ${result.data.product} registrada com sucesso!`;
-    }
-
-    if (name === 'get_inventory') {
-        return `O estoque de ${parsedArgs.category || 'geral'} está em dia. Itens principais: Maçã (50), Banana (20).`;
-    }
-
-    return "Função não encontrada.";
-};
-
 const callIA = async (message: string) => {
-    if (!apiKey.value) {
-        alert("Por favor, configure sua chave API da OpenAI primeiro.");
-        isSettingsOpen.value = true;
-        return;
-    }
+    // Se você não precisar mais da chave API no front (pois o backend resolve), 
+    // pode remover a validação de apiKey.value ou mantê-la se o backend exigir via Header.
 
     isTyping.value = true;
 
-    let chatMessages = [
-        { role: "system", content: "Você é um assistente de  gestão ERP. Use as funções disponíveis para registrar dados e também ajude o usuário com conversas gerais, sempre seja direto e profissional e use Markdown para formatar listas ou negrito." },
-        { role: "user", content: message }
-    ];
-
-
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey.value}`
-            },
-            body: JSON.stringify({
-                model: "gpt-3.5-turbo",
-                messages: chatMessages,
-                temperature: 0.7
-            })
-        });
+        // Chamada ao repository que você criou
+        // Enviamos o prompt atual e o histórico acumulado
+        const response = await GeminiRepository.chat(message, chatHistory.value);
 
-        const data = await response.json();
-        const responseMessage = data.choices[0].message;
-        if (data.error) throw new Error(data.error.message);
+        /* 
+           Baseado no seu retorno:
+           { "status": 200, "data": { "reply": "...", "history": [...] } }
+        */
+        if (response.status === 200) {
+            const { reply, history: newHistory } = response.data;
 
-        // Verificar se a IA quer chamar uma função
-        if (responseMessage.tool_calls) {
-            for (const toolCall of responseMessage.tool_calls) {
-                const functionName = toolCall.function.name;
-                const functionArgs = toolCall.function.arguments;
+            // 1. Atualiza o histórico local com o que voltou do servidor
+            chatHistory.value = newHistory;
 
-                // Executa a lógica local
-                const result = handleFunctionCall(functionName, functionArgs);
-
-                // Adiciona o resultado ao chat (opcional: você pode fazer uma segunda chamada à IA para ela comentar o resultado)
-                addMessage(`[Ação: ${functionName}] ${result}`, false);
-            }
+            // 2. Exibe a mensagem na tela
+            addMessage(reply, false);
         } else {
-            addMessage(responseMessage.content, false);
+            throw new Error(response.message || "Erro desconhecido");
         }
+
     } catch (error: any) {
-        addMessage("Erro: " + error.message, false);
+        console.error("Erro na API:", error);
+        addMessage("Desculpe, ocorreu um erro ao processar sua solicitação.", false);
     } finally {
         isTyping.value = false;
     }
@@ -224,19 +140,18 @@ const quickAction = (action: string) => {
 </script>
 
 <template>
-    <div class="flex flex-col h-[calc(100vh-7.6rem)] rounded-md bg-gray-100 font-sans">
+    <div class="flex flex-col h-[calc(100vh-5.3rem)] -m-4 rounded-md bg-gray-100 font-sans">
         <!-- Header -->
         <header class="border-b rounded-t-md p-4 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-2">
-                <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
                     <Bot :size="24" />
                 </div>
                 <div>
                     <h1 class="font-bold text-gray-800">Assistente de Gestão</h1>
-                    <span class="text-xs flex items-center gap-1" :class="apiKey ? 'text-green-500' : 'text-red-500'">
-                        <span class="w-2 h-2 rounded-full"
-                            :class="[apiKey ? 'bg-green-500 animate-pulse' : 'bg-red-500']"></span>
-                        {{ apiKey ? 'Pronto para usar' : 'Sem Chave API' }}
+                    <span class="text-xs flex items-center gap-1" :class="'text-green-500'">
+                        <span class="w-2 h-2 rounded-full" :class="['bg-green-500 animate-pulse']"></span>
+                        {{ 'Pronto para usar' }}
                     </span>
                 </div>
             </div>
@@ -257,7 +172,7 @@ const quickAction = (action: string) => {
 
                 <label class="block text-sm font-medium text-gray-700 mb-1">OpenAI API Key</label>
                 <input v-model="apiKey" type="password" placeholder="sk-..."
-                    class="w-full p-2 border rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    class="w-full p-2 border rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 outline-none">
                 <p class="text-xs text-gray-500 mb-6 italic">*Sua chave fica salva apenas no seu navegador.</p>
 
                 <div class="flex justify-end gap-2">
@@ -265,7 +180,7 @@ const quickAction = (action: string) => {
                         Cancelar
                     </button>
                     <button @click="saveSettings"
-                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition">
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
                         Salvar
                     </button>
                 </div>
@@ -274,20 +189,20 @@ const quickAction = (action: string) => {
 
         <!-- Chat Container -->
         <main ref="chatContainer"
-            class="flex-1 overflow-y-auto p-4 space-y-4 md:max-w-4xl md:mx-auto w-full no-scrollbar">
+            class="flex-1 overflow-y-auto p-4 space-y-2 md:max-w-4xl md:mx-auto w-full no-scrollbar">
             <div v-for="msg in messages" :key="msg.id"
                 :class="['flex gap-3', msg.isUser ? 'flex-row-reverse' : 'max-w-[80%]']">
                 <div :class="[
                     'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                    msg.isUser ? 'bg-gray-800 text-white' : 'bg-indigo-100 text-indigo-600'
+                    msg.isUser ? 'bg-gray-800 text-white' : 'bg-blue-100 text-blue-600'
                 ]">
                     <User v-if="msg.isUser" :size="18" />
                     <Sparkles v-else :size="18" />
                 </div>
                 <div :class="[
-                    'p-4 rounded-2xl shadow-sm border', /* Removido o whitespace-pre-wrap aqui */
+                    'px-4 py-2 rounded-2xl shadow-sm border', /* Removido o whitespace-pre-wrap aqui */
                     msg.isUser
-                        ? 'bg-indigo-600 text-white rounded-tr-none border-indigo-500'
+                        ? 'bg-blue-600 text-white rounded-tr-none border-blue-500'
                         : 'bg-white text-gray-700 rounded-tl-none border-gray-100'
                 ]">
                     <!-- Substituído o <p>{{ msg.text }}</p> por esta div com v-html -->
@@ -297,8 +212,8 @@ const quickAction = (action: string) => {
 
             <!-- Typing Indicator -->
             <div v-if="isTyping" class="flex gap-3 max-w-[80%]">
-                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                    <Sparkles class="text-indigo-600" :size="18" />
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <Sparkles class="text-blue-600" :size="18" />
                 </div>
                 <div
                     class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm flex gap-1 items-center border border-gray-100">
@@ -311,9 +226,9 @@ const quickAction = (action: string) => {
 
         <!-- Footer -->
         <footer class="bg-white border-t rounded-b-lg p-4">
-            <div class="md:max-w-4xl md:mx-auto w-full space-y-4">
+            <div class="md:max-w-4xl md:mx-auto w-full space-y-2">
                 <!-- Quick Actions -->
-                <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <div class="flex gap-2 overflow-x-auto no-scrollbar">
                     <button @click="quickAction('Quero registrar uma venda')" class="action-btn">
                         <ShoppingCart class="text-green-500" :size="16" /> Vendas
                     </button>
@@ -332,9 +247,9 @@ const quickAction = (action: string) => {
                 <div class="relative flex items-center">
                     <input v-model="userInput" @keyup.enter="handleSendMessage" type="text"
                         placeholder="Digite sua mensagem..."
-                        class="w-full p-4 pr-12 rounded-2xl border border-gray-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm transition">
+                        class="w-full p-4 pr-12 rounded-2xl border border-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition">
                     <button @click="handleSendMessage" :disabled="!userInput.trim() || isTyping"
-                        class="absolute right-2 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="absolute right-2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <SendHorizontal :size="20" />
                     </button>
                 </div>
@@ -396,6 +311,6 @@ const quickAction = (action: string) => {
 }
 
 .action-btn {
-    @apply flex items-center gap-2 bg-white border border-gray-200 hover:border-indigo-500 hover:text-indigo-600 px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap shadow-sm;
+    @apply flex items-center gap-2 bg-white border border-gray-200 hover:border-blue-500 hover:text-blue-600 px-4 py-2 rounded-full text-sm font-medium transition whitespace-nowrap shadow-sm;
 }
 </style>
