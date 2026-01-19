@@ -82,43 +82,68 @@ const formatMessage = (text: string) => {
         .replace(/>/g, '&gt;')
 
         // 2. Blocos de Código (```json ... ```)
-        // Usamos uma função de retorno para evitar que o conteúdo dentro do código sofra outras transformações
-        .replace(/```(?:json|javascript|js|bash)?\n([\s\S]*?)```/g, (_match, code) => {
+        .replace(/```(?:json|javascript|js|bash|typescript)?\n([\s\S]*?)```/g, (_match, code) => {
             return `<pre class="code-block my-3 bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto"><code>${code.trim()}</code></pre>`;
         })
 
-        // 3. Código Inline (`código`)
+        // --- NOVO: 3. Tabelas Markdown ---
+        .replace(/^(\|.*\|)\n(\|[:\-\s|]+\|)\n((?:\|.*\|(?:\n|$))*)/gm, (match, headerLine, separatorLine, bodyLines) => {
+            const parseRow = (row: string) => {
+                // Remove os pipes das extremidades e divide por |
+                const cells = row.replace(/^\||\|$/g, '').split('|');
+                return cells;
+            };
+
+            const headers = parseRow(headerLine);
+            const rows = bodyLines.trim().split('\n').filter((r: any) => r.trim() !== '');
+
+            const headerHtml = `<thead><tr class="bg-gray-100 dark:bg-gray-800">` +
+                headers.map(h => `<th class="px-4 py-2 border border-gray-300 dark:border-gray-600 font-bold text-left">${h.trim()}</th>`).join('') +
+                `</tr></thead>`;
+
+            const bodyHtml = `<tbody>` +
+                rows.map((row: any) => {
+                    const cells = parseRow(row);
+                    return `<tr class="border-b border-gray-200 dark:border-gray-700">` +
+                        cells.map(c => `<td class="px-4 py-2 border border-gray-300 dark:border-gray-600">${c.trim()}</td>`).join('') +
+                        `</tr>`;
+                }).join('') +
+                `</tbody>`;
+
+            return `<div class="overflow-x-auto my-4"><table class="min-w-full border-collapse border border-gray-300 dark:border-gray-600 text-sm text-left">${headerHtml}${bodyHtml}</table></div>`;
+        })
+
+        // 4. Código Inline (`código`)
         .replace(/`([^`]+)`/g, '<code class="bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono text-sm">$1</code>')
 
-        // 4. Títulos (Headers)
+        // 5. Títulos (Headers)
         .replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mt-4 mb-2">$1</h3>')
         .replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-4 mb-2">$1</h2>')
         .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>')
 
-        // 5. Negrito (**texto**)
+        // 6. Negrito (**texto**)
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
 
-        // 6. Itálico (*texto*)
+        // 7. Itálico (*texto*)
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
 
-        // 7. Listas (Linhas começando com - ou *)
-        // Nota: Esta é uma versão simplificada
+        // 8. Listas (Linhas começando com - ou *)
         .replace(/^\s*[-*]\s+(.*)$/gm, '<li class="ml-4 list-disc">$1</li>')
 
-        // 8. Links ([texto](url))
+        // 9. Links ([texto](url))
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
 
-        // 9. Citações (> texto)
+        // 10. Citações (> texto)
         .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 italic my-2">$1</blockquote>')
 
-        // 10. Quebras de linha
-        // Transformamos \n em <br>, mas evitamos duplicar quebras onde já existem tags de bloco
-        .replace(/\n/g, '<br>');
+        // 11. Quebras de linha
+        // Ocultamos a quebra se a linha terminar com uma tag de bloco para evitar espaços excessivos
+        .replace(/\n/g, (match) => {
+            return '<br>';
+        });
 
-    // Limpeza opcional: Se você gerou <li>, pode envolver em <ul> (opcional para visualização simples)
     return html;
 };
-
 const addMessage = (text: string, isUser: boolean) => {
     messages.value.push({
         id: Date.now(),
