@@ -10,7 +10,8 @@ import {
     Package,
     Users,
     Tag,
-    Trash
+    Trash,
+    Wrench
 } from 'lucide-vue-next';
 import { GeminiRepository } from '@/repositories/gemini-repository';
 import { useUiStore } from '@/stores/ui/uiStore';
@@ -189,7 +190,7 @@ const clearChat = () => {
 </script>
 
 <template>
-    <div class="flex flex-col h-[calc(100vh-5.3rem)] -m-4 rounded-md bg-card font-sans">
+    <div class="flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5.3rem)] -m-4 rounded-md bg-card font-sans">
         <!-- Header -->
         <header class="border-b rounded-t-md p-4 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-2">
@@ -283,8 +284,8 @@ const clearChat = () => {
                         <Trash class="text-red-500" :size="16" />
                     </button>
                     <Separator v-if="messages.length > 1" orientation="vertical" class="h-8" />
-                    <button @click="quickAction('Me mostre o estoque dos produtos')" class="action-btn">
-                        <Package class="text-green-500" :size="16" /> Estoque
+                    <button @click="quickAction('Me mostre os produtos do sistema')" class="action-btn">
+                        <Package class="text-green-500" :size="16" /> Produtos
                     </button>
                     <button @click="quickAction('Quais clientes tenho no sistema?')" class="action-btn">
                         <Users class="text-blue-500" :size="16" /> Clientes
@@ -292,10 +293,13 @@ const clearChat = () => {
                     <button @click="quickAction('Quero um resumo das vendas do sistema.')" class="action-btn">
                         <Tag class="text-purple-500" :size="16" /> Vendas
                     </button>
+                    <button @click="quickAction('Quais serviços tenho no sistema?')" class="action-btn">
+                        <Wrench class="text-yellow-500" :size="16" /> Serviços
+                    </button>
                 </div>
 
                 <!-- Input Area -->
-                <div class="relative flex items-center">
+                <div class="relative hidden md:flex items-center">
                     <input v-model="userInput" @keyup.enter="handleSendMessage" type="text"
                         placeholder="Digite sua mensagem..."
                         class="w-full p-4 pr-12 rounded-2xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition">
@@ -306,6 +310,18 @@ const clearChat = () => {
                 </div>
             </div>
         </footer>
+        <nav
+            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around h-20 shadow-lg z-20">
+            <div class="relative flex w-full px-3 items-center">
+                <input v-model="userInput" @keyup.enter="handleSendMessage" type="text"
+                    placeholder="Digite sua mensagem..."
+                    class="w-full p-4 pr-14 rounded-2xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition">
+                <button @click="handleSendMessage" :disabled="!userInput.trim() || isTyping"
+                    class="absolute right-6 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    <SendHorizontal :size="20" />
+                </button>
+            </div>
+        </nav>
     </div>
 </template>
 
