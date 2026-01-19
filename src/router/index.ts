@@ -175,6 +175,21 @@ const routes: RouteInterface[] = [
     },
   },
   {
+    path: '/loja',
+    name: 'loja',
+    children: [
+      {
+        path: '',
+        name: 'loja-home',
+        component: () => import('@/pages/store/StorePage.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 2,
+        },
+      },
+    ],
+  },
+  {
     path: '/chat',
     name: 'chat',
     children: [

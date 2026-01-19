@@ -8,13 +8,18 @@ import {
     User,
     X,
     Package,
-    Users
+    Users,
+    Tag,
+    Trash
 } from 'lucide-vue-next';
 import { GeminiRepository } from '@/repositories/gemini-repository';
 import { useUiStore } from '@/stores/ui/uiStore';
+import { POSITION, useToast } from 'vue-toastification';
+import { Separator } from '@/components/ui/separator';
 
 const chatHistory = ref<any[]>([]);
 const storeUi = useUiStore();
+const toast = useToast();
 // --- Interfaces ---
 interface Message {
     id: number;
@@ -69,15 +74,48 @@ const saveSettings = () => {
 const formatMessage = (text: string) => {
     if (!text) return '';
 
-    return text
-        // Negrito: **texto** -> <strong>texto</strong>
+    let html = text
+        // 1. Escapar HTML perigoso (Segurança)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+
+        // 2. Blocos de Código (```json ... ```)
+        // Usamos uma função de retorno para evitar que o conteúdo dentro do código sofra outras transformações
+        .replace(/```(?:json|javascript|js|bash)?\n([\s\S]*?)```/g, (_match, code) => {
+            return `<pre class="code-block my-3 bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto"><code>${code.trim()}</code></pre>`;
+        })
+
+        // 3. Código Inline (`código`)
+        .replace(/`([^`]+)`/g, '<code class="bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono text-sm">$1</code>')
+
+        // 4. Títulos (Headers)
+        .replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mt-4 mb-2">$1</h3>')
+        .replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-4 mb-2">$1</h2>')
+        .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>')
+
+        // 5. Negrito (**texto**)
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // Blocos de código JSON
-        .replace(/```json\n([\s\S]*?)```/g, '<div class="code-block mt-2 bg-gray-900 text-gray-100 p-3 rounded-lg font-mono text-xs overflow-x-auto">$1</div>')
-        // Outros blocos de código
-        .replace(/```([\s\S]*?)```/g, '<div class="code-block mt-2 bg-gray-900 text-gray-100 p-3 rounded-lg font-mono text-xs overflow-x-auto">$1</div>')
-        // Quebras de linha -> <br>
+
+        // 6. Itálico (*texto*)
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+
+        // 7. Listas (Linhas começando com - ou *)
+        // Nota: Esta é uma versão simplificada
+        .replace(/^\s*[-*]\s+(.*)$/gm, '<li class="ml-4 list-disc">$1</li>')
+
+        // 8. Links ([texto](url))
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
+
+        // 9. Citações (> texto)
+        .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 italic my-2">$1</blockquote>')
+
+        // 10. Quebras de linha
+        // Transformamos \n em <br>, mas evitamos duplicar quebras onde já existem tags de bloco
         .replace(/\n/g, '<br>');
+
+    // Limpeza opcional: Se você gerou <li>, pode envolver em <ul> (opcional para visualização simples)
+    return html;
 };
 
 const addMessage = (text: string, isUser: boolean) => {
@@ -136,6 +174,17 @@ const quickAction = (action: string) => {
     if (isTyping.value) return;
     addMessage(action, true);
     callIA(action);
+};
+
+const clearChat = () => {
+    messages.value = [];
+    chatHistory.value = [];
+    userInput.value = '';
+    addMessage(`Olá, ${storeUi.usuarioLogged.nome.split(' ')[0]}, bem vindo ao Core! Como posso ajudar?`, false);
+    toast.success("Chat limpo com sucesso!", {
+        timeout: 2000,
+        position: POSITION.BOTTOM_CENTER
+    });
 };
 </script>
 
@@ -206,7 +255,8 @@ const quickAction = (action: string) => {
                         : 'bg-white dark:bg-gray-800 text-foreground rounded-tl-none border-gray-100 dark:border-gray-700'
                 ]">
                     <!-- Substituído o <p>{{ msg.text }}</p> por esta div com v-html -->
-                    <div class="text-sm md:text-base leading-relaxed" v-html="formatMessage(msg.text)"></div>
+                    <div class="text-sm md:text-base leading-relaxed message-content" v-html="formatMessage(msg.text)">
+                    </div>
                 </div>
             </div>
 
@@ -216,7 +266,7 @@ const quickAction = (action: string) => {
                     <Sparkles class="text-blue-600" :size="18" />
                 </div>
                 <div
-                    class="bg-muted p-4 rounded-2xl rounded-tl-none shadow-sm flex gap-1 items-center border border-gray-100 dark:border-gray-700">
+                    class="bg-white dark:bg-gray-800 p-4 rounded-2xl rounded-tl-none shadow-sm flex gap-1 items-center border border-gray-100 dark:border-gray-700">
                     <span class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></span>
                     <span class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></span>
                     <span class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></span>
@@ -228,12 +278,19 @@ const quickAction = (action: string) => {
         <footer class="bg-white dark:bg-gray-800 border-t rounded-b-lg p-4">
             <div class="md:max-w-4xl md:mx-auto w-full space-y-2">
                 <!-- Quick Actions -->
-                <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                <div class="flex gap-2 items-center overflow-x-auto no-scrollbar">
+                    <button type="button" v-if="messages.length > 1" @click="clearChat" class="action-btn">
+                        <Trash class="text-red-500" :size="16" />
+                    </button>
+                    <Separator v-if="messages.length > 1" orientation="vertical" class="h-8" />
                     <button @click="quickAction('Me mostre o estoque dos produtos')" class="action-btn">
                         <Package class="text-green-500" :size="16" /> Estoque
                     </button>
                     <button @click="quickAction('Quais clientes tenho no sistema?')" class="action-btn">
                         <Users class="text-blue-500" :size="16" /> Clientes
+                    </button>
+                    <button @click="quickAction('Quero um resumo das vendas do sistema.')" class="action-btn">
+                        <Tag class="text-purple-500" :size="16" /> Vendas
                     </button>
                 </div>
 
@@ -302,6 +359,17 @@ const quickAction = (action: string) => {
     50% {
         transform: translateY(-5px);
     }
+}
+
+.message-content :deep(br) {
+    content: "";
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.message-content :deep(li)+br {
+    display: none;
+    /* Evita espaço excessivo em listas */
 }
 
 .action-btn {

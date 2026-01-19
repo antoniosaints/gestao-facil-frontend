@@ -1,6 +1,7 @@
 import { type Permissoes } from '@/stores/ui/uiStore'
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
+  Bot,
   Box,
   Boxes,
   CalendarCheck,
@@ -17,6 +18,7 @@ import {
   Lock,
   MapPinned,
   Sparkles,
+  Store,
   Tags,
   TicketCheck,
   User,
@@ -181,6 +183,18 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
       link: '/clientes',
     },
     {
+      nome: 'Apps',
+      divisor: true,
+      show: true,
+    },
+    {
+      nome: 'Core IA',
+      icone: Bot,
+      show: permissions.vendas.visualizar,
+      color: 'purple',
+      link: '/chat/ia',
+    },
+    {
       nome: 'Administração',
       divisor: true,
       show: permissions.admin,
@@ -211,6 +225,17 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
       color: 'blue',
       icone: User,
       link: '/usuario/perfil',
+    },
+    {
+      nome: 'Complementos',
+      divisor: true,
+      show: true,
+    },
+    {
+      nome: 'App Store',
+      color: 'blue',
+      icone: Store,
+      link: '/loja',
     },
   ]
 }

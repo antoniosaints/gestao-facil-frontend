@@ -67,106 +67,164 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="max-w-7xl mx-auto space-y-4">
-        <!-- Assinatura atual -->
-        <Card class="border shadow-md">
-            <CardHeader>
-                <CardTitle class="flex justify-between items-center text-xl">
-                    <div class="flex items-center text-gray-700 dark:text-gray-300">
-                        <Sparkles class="mr-2 w-4 h-4" />
-                        Assinatura Gestão Fácil
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- Dashboard de Assinatura -->
+        <Card class="border shadow-sm overflow-hidden">
+            <CardHeader class="pb-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <CardTitle class="flex items-center gap-2 text-xl font-bold tracking-tight">
+                            <Sparkles class="w-5 h-5 text-primary" />
+                            Gestão Fácil Pro
+                        </CardTitle>
+                        <CardDescription>Gerencie seu plano e pagamentos da assinatura</CardDescription>
                     </div>
-                    <Badge variant="outline" class="text-white dark:text-gray-300 border-none"
-                        :class="storeUi.status === 'ATIVO' ? 'bg-success' : 'bg-danger'">
+                    <Badge :variant="storeUi.status === 'ATIVO' ? 'default' : 'destructive'"
+                        class="px-4 py-1 uppercase tracking-wider font-bold">
                         {{ storeUi.status }}
                     </Badge>
-                </CardTitle>
-                <CardDescription>Assinatura atual do ERP Gestão Fácil, tenha acesso a todos os recursos da plataforma
-                    mantendo a sua assinatura ativa</CardDescription>
+                </div>
             </CardHeader>
 
-            <CardContent class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700 dark:text-gray-300">
-                <div>
-                    <p class="text-sm text-muted-foreground">Valor</p>
-                    <p class="text-lg font-semibold">{{ assinatura?.valor }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-muted-foreground">Próximo vencimento</p>
-                    <p class="text-lg font-semibold">{{ assinatura?.proximoVencimento }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-muted-foreground">Faturas geradas</p>
-                    <p class="text-lg font-semibold">{{ assinatura?.faturas.length }}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-muted-foreground">Dias até o vencimento</p>
-                    <p class="text-lg font-semibold">{{ Math.max(assinatura?.diasParaVencer || 0, 0).toFixed(0) }}</p>
+            <CardContent class="pt-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="space-y-1">
+                        <span class="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                            <CircleDollarSign class="w-3 h-3" /> Valor Mensal
+                        </span>
+                        <p class="text-2xl font-bold text-primary dark:text-blue-400">
+                            {{ assinatura?.valor || 'R$ 0,00' }}
+                        </p>
+                    </div>
+
+                    <div class="space-y-1">
+                        <span class="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                            <Clock class="w-3 h-3" /> Vencimento
+                        </span>
+                        <p class="text-lg font-semibold">{{ assinatura?.proximoVencimento }}</p>
+                    </div>
+
+                    <div class="space-y-1">
+                        <span class="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                            <RotateCw class="w-3 h-3" /> Dias Restantes
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <p class="text-lg font-semibold"
+                                :class="assinatura?.diasParaVencer! <= 5 ? 'text-destructive' : ''">
+                                {{ Math.max(assinatura?.diasParaVencer || 0, 0).toFixed(0) }} dias
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <span class="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                            <FileCheck2 class="w-3 h-3" /> Total Faturas
+                        </span>
+                        <p class="text-lg font-semibold">{{ faturas?.length || 0 }}</p>
+                    </div>
                 </div>
             </CardContent>
 
-            <CardFooter class="flex gap-2 justify-end">
-                <Button variant="outline" @click="getDataConta">
-                    <RotateCw :class="refresh ? 'animate-spin' : ''" /> {{ refresh ? "Atualizando..." : "Atualizar" }}
+            <CardFooter class="bg-muted/10 p-4 flex gap-3 justify-end">
+                <Button variant="outline" size="sm" @click="getDataConta" :disabled="refresh">
+                    <RotateCw class="w-4 h-4 mr-2" :class="refresh ? 'animate-spin' : ''" />
+                    Atualizar
                 </Button>
-                <Button :disabled="generatingLink"
-                    v-if="storeUi.diasParaVencer <= 3 && assinatura?.proximoLinkPagamento == null"
-                    @click="renovarAssinatura" variant="default" class="text-white">
-                    <CreditCard /> {{ renewText }}
+
+                <Button v-if="storeUi.diasParaVencer <= 3 && !assinatura?.proximoLinkPagamento" size="sm"
+                    @click="renovarAssinatura" :disabled="generatingLink">
+                    <CreditCard class="w-4 h-4 mr-2" /> {{ renewText }}
                 </Button>
-                <Button :disabled="generatingLink" v-if="storeUi.status !== 'ATIVO' && assinatura?.proximoLinkPagamento"
-                    @click="abrirLinkPagamento" variant="default"
-                    class="text-gray-700 dark:text-gray-300 bg-warning hover:bg-warning/80">
-                    <BadgeDollarSign /> Pagar agora
+
+                <Button v-if="assinatura?.proximoLinkPagamento" size="sm" variant="default"
+                    class="bg-orange-500 hover:bg-orange-600 text-white" @click="abrirLinkPagamento">
+                    <BadgeDollarSign class="w-4 h-4 mr-2" /> Pagar Próxima
                 </Button>
             </CardFooter>
         </Card>
 
-        <!-- Faturas -->
-        <div v-if="faturas && faturas.length > 0">
-            <h3 class="text-2xl font-bold mb-2">Minhas Faturas</h3>
-
-            <div class="space-y-4 overflow-auto max-h-80 pb-2">
-                <Card v-for="fatura in faturas?.slice(0, 10)" :key="fatura.id"
-                    class="flex justify-between items-center p-4">
-                    <div>
-                        <p class="text-lg font-semibold">{{ formatCurrencyBR(parseFloat(fatura.valor.replace(',', '.')))
-                        }}</p>
-                        <p class="text-sm text-muted-foreground">Vencimento: {{ fatura.vencimento }}</p>
+        <!-- Lista de Faturas Compacta -->
+        <Card class="border shadow-sm">
+            <CardHeader class="pb-2">
+                <CardTitle class="text-lg font-bold">Histórico de Faturas</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div class="rounded-md border overflow-hidden">
+                    <div v-if="!faturas || faturas.length === 0" class="p-8 text-center text-muted-foreground">
+                        Nenhuma fatura encontrada.
                     </div>
 
-                    <div class="flex items-center text-gray-700 dark:text-gray-300 gap-2">
-                        <span v-if="fatura.status === 'PAGO'" @click="abrirComprovante(fatura.linkPagamento)"
-                            class="px-2 py-2 rounded-md flex items-center cursor-pointer bg-info text-white">
-                            <FileCheck2 class="w-4 h-4" />
-                        </span>
+                    <div v-else class="divide-y">
+                        <!-- Cabeçalho Simulado -->
+                        <div
+                            class="grid grid-cols-4 md:grid-cols-5 bg-muted/50 p-3 text-xs font-bold uppercase text-muted-foreground">
+                            <span>Descrição</span>
+                            <span class="text-center">Valor</span>
+                            <span class="hidden md:block">Vencimento</span>
+                            <span class="text-center md:text-left">Status</span>
+                            <span class="text-right">Ações</span>
+                        </div>
 
-                        <span v-if="fatura.status === 'PAGO'"
-                            class="px-2 py-1 rounded-md flex items-center bg-success text-white">
-                            <CheckCircle class="w-4 h-4 mr-1" /> Paga
-                        </span>
-                        <span v-else-if="fatura.status === 'PENDENTE'"
-                            class="px-2 py-1 rounded-md flex items-center bg-warning text-white">
-                            <Clock class="w-4 h-4 mr-1" /> Pendente
-                        </span>
-                        <span v-else class="px-2 py-1 rounded-md flex items-center bg-danger text-white">
-                            <XCircle class="w-4 h-4 mr-1" /> Cancelada
-                        </span>
+                        <!-- Linhas da "Tabela" -->
+                        <div v-for="fatura in faturas?.slice(0, 10)" :key="fatura.id"
+                            class="grid grid-cols-4 md:grid-cols-5 p-3 items-center hover:bg-muted/30 transition-colors">
+                            <div class="text-sm text-muted-foreground">
+                                Pagamento de mensalidade
+                            </div>
 
-                        <Button v-if="fatura.status === 'PENDENTE'" class="text-white"
-                            @click="pagarFatura(fatura.linkPagamento)">
-                            <CircleDollarSign />
-                            Pagar
-                        </Button>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-sm text-center">
+                                    {{ formatCurrencyBR(fatura.valor) }}
+                                </span>
+                            </div>
+
+                            <div class="hidden md:block text-sm text-muted-foreground">
+                                {{ fatura.vencimento }}
+                            </div>
+
+                            <div>
+                                <Badge v-if="fatura.status === 'PAGO'" variant="outline"
+                                    class="bg-emerald-50 text-emerald-700 border-success/40 dark:bg-emerald-900/20 dark:text-emerald-400 gap-1">
+                                    <CheckCircle class="w-3 h-3" /> <span class="hidden sm:inline">Paga</span>
+                                </Badge>
+                                <Badge v-else-if="fatura.status === 'PENDENTE'" variant="outline"
+                                    class="bg-amber-50 text-amber-700 border-warning/40 dark:bg-amber-900/20 dark:text-amber-400 gap-1">
+                                    <Clock class="w-3 h-3" /> <span class="hidden sm:inline">Pendente</span>
+                                </Badge>
+                                <Badge v-else variant="outline"
+                                    class="bg-red-50 dark:bg-red-900/20 text-red-700 border-danger/40 dark:text-red-400 gap-1">
+                                    <XCircle class="w-3 h-3" /> <span class="hidden sm:inline">Cancelada</span>
+                                </Badge>
+                            </div>
+
+                            <div class="flex justify-end gap-2">
+                                <Button v-if="fatura.status === 'PAGO'" variant="ghost" size="icon"
+                                    class="h-8 w-8 text-blue-500" title="Ver Comprovante"
+                                    @click="abrirComprovante(fatura.linkPagamento)">
+                                    <FileCheck2 class="w-4 h-4" />
+                                </Button>
+
+                                <Button v-if="fatura.status === 'PENDENTE'" size="sm" class="h-8 px-3"
+                                    @click="pagarFatura(fatura.linkPagamento)">
+                                    <CircleDollarSign class="w-4 h-4 mr-1" /> Pagar
+                                </Button>
+                            </div>
+                        </div>
                     </div>
-                </Card>
-            </div>
-        </div>
+                </div>
+                <p class="text-[11px] text-muted-foreground mt-4 italic">* Exibindo as últimas 10 faturas.</p>
+            </CardContent>
+        </Card>
+
+        <!-- Menu Mobile (Espaçador para não cobrir conteúdo) -->
+        <div class="h-20 md:hidden"></div>
+
         <nav v-if="storeUi.isMobile"
-            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
-            <button type="button" @click="storeUi.openSidebar = true"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <Menu />
-                <span class="text-xs">Menu</span>
+            class="fixed bottom-0 left-0 w-full bg-background border-t flex justify-around items-center h-16 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50">
+            <button @click="storeUi.openSidebar = true"
+                class="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary">
+                <Menu class="w-5 h-5" />
+                <span class="text-[10px] font-medium">Menu</span>
             </button>
         </nav>
     </div>
