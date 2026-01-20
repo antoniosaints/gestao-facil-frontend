@@ -11,13 +11,15 @@ import {
     Users,
     Tag,
     Trash,
-    Wrench
+    Wrench,
+    FileQuestion
 } from 'lucide-vue-next';
 import { GeminiRepository } from '@/repositories/gemini-repository';
 import { useUiStore } from '@/stores/ui/uiStore';
 import { POSITION, useToast } from 'vue-toastification';
 import { Separator } from '@/components/ui/separator';
 
+// --- Variáveis ---
 const chatHistory = ref<any[]>([]);
 const storeUi = useUiStore();
 const toast = useToast();
@@ -309,6 +311,9 @@ const clearChat = () => {
                         <Trash class="text-red-500" :size="16" />
                     </button>
                     <Separator v-if="messages.length > 1" orientation="vertical" class="h-8" />
+                    <button @click="quickAction('O que pode fazer?')" class="action-btn">
+                        <FileQuestion class="text-cyan-500" :size="16" /> O que pode fazer?
+                    </button>
                     <button @click="quickAction('Me mostre os produtos do sistema')" class="action-btn">
                         <Package class="text-green-500" :size="16" /> Produtos
                     </button>
