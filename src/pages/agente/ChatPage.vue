@@ -323,7 +323,7 @@ const clearChat = () => {
                     <button @click="quickAction('Quero um resumo das vendas do sistema.')" class="action-btn">
                         <Tag class="text-purple-500" :size="16" /> Vendas
                     </button>
-                    <button @click="quickAction('Quais serviços tenho no sistema?')" class="action-btn">
+                    <button @click="quickAction('Quais Ordens de serviço tenho no sistema?')" class="action-btn">
                         <Wrench class="text-yellow-500" :size="16" /> Serviços
                     </button>
                 </div>
