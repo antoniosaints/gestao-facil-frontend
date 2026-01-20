@@ -85,7 +85,7 @@ const formatMessage = (text: string) => {
 
         // 2. Blocos de Código (```json ... ```)
         .replace(/```(?:json|javascript|js|bash|typescript)?\n([\s\S]*?)```/g, (_match, code) => {
-            return `<pre class="code-block my-3 bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto"><code>${code.trim()}</code></pre>`;
+            return `<pre class="code-block my-3 bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto"><code>${code.trim()}</code></pre>`;
         })
 
         // --- NOVO: 3. Tabelas Markdown ---
@@ -99,7 +99,7 @@ const formatMessage = (text: string) => {
             const headers = parseRow(headerLine);
             const rows = bodyLines.trim().split('\n').filter((r: any) => r.trim() !== '');
 
-            const headerHtml = `<thead><tr class="bg-gray-100 dark:bg-gray-800">` +
+            const headerHtml = `<thead><tr class="bg-gray-100 dark:bg-gray-900">` +
                 headers.map(h => `<th class="px-4 py-2 border border-gray-300 dark:border-gray-600 font-bold text-left">${h.trim()}</th>`).join('') +
                 `</tr></thead>`;
 
@@ -112,11 +112,11 @@ const formatMessage = (text: string) => {
                 }).join('') +
                 `</tbody>`;
 
-            return `<div class="overflow-x-auto my-4"><table class="min-w-full border-collapse border border-gray-300 dark:border-gray-600 text-sm text-left">${headerHtml}${bodyHtml}</table></div>`;
+            return `<div class="overflow-x-auto border border-gray-300 dark:border-gray-600 my-4 rounded-lg"><table class="min-w-full border-collapse rounded-md border border-gray-300 dark:border-gray-600 text-sm text-left">${headerHtml}${bodyHtml}</table></div>`;
         })
 
         // 4. Código Inline (`código`)
-        .replace(/`([^`]+)`/g, '<code class="bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono text-sm">$1</code>')
+        .replace(/`([^`]+)`/g, '<code class="bg-gray-200 dark:bg-gray-900 px-1.5 py-0.5 rounded font-mono text-sm">$1</code>')
 
         // 5. Títulos (Headers)
         .replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mt-4 mb-2">$1</h3>')
