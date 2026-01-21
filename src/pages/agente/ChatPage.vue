@@ -112,7 +112,7 @@ const formatMessage = (text: string) => {
                 }).join('') +
                 `</tbody>`;
 
-            return `<div class="overflow-x-auto border border-gray-300 dark:border-gray-600 my-4 rounded-lg"><table class="min-w-full border-collapse rounded-md border border-gray-300 dark:border-gray-600 text-sm text-left">${headerHtml}${bodyHtml}</table></div>`;
+            return `<div class="overflow-x-auto border border-gray-300 dark:border-gray-600 my-4 rounded-lg"><table class="min-w-full border-collapse rounded-md text-sm text-left">${headerHtml}${bodyHtml}</table></div>`;
         })
 
         // 4. Código Inline (`código`)
