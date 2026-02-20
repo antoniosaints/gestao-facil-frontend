@@ -446,6 +446,15 @@ const routes: RouteInterface[] = [
           permissao: 2,
         },
       },
+      {
+        path: ':id',
+        name: 'clientes-detalhes',
+        component: () => import('@/pages/clientes/DetalhesCliente.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 2,
+        },
+      },
     ],
   },
   {

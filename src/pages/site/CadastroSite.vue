@@ -1,417 +1,290 @@
 <template>
-    <div
-        class="bg-gradient-to-br from-white/20 to-white/10 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300 min-h-screen">
-        <div class="absolute inset-0 opacity-5 dark:opacity-10">
-            <div class="absolute inset-0">
+    <div class="min-h-screen grid lg:grid-cols-2">
+
+        <!-- Lado Esquerdo (Imagem/Benefícios) -->
+        <div class="hidden lg:flex flex-col justify-between bg-zinc-900 p-12 text-white relative overflow-hidden">
+            <!-- Background Decoration -->
+            <div class="absolute inset-0 z-0">
+                <div
+                    class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2">
+                </div>
+                <div
+                    class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2">
+                </div>
             </div>
-        </div>
-        <div class="relative z-10 container mx-auto px-0 py-0 md:px-4 md:py-8 min-h-screen flex items-center">
-            <div class="max-w-6xl mx-auto">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-                    <!-- Left Side - Benefits -->
-                    <div class="space-y-8 hidden sm:block">
-                        <div>
-                            <h2 class="text-4xl font-bold text-gray-800 dark:text-white mb-4">
-                                Comece sua <span class="text-blue-500">gestão inteligente</span> hoje mesmo
-                            </h2>
-                            <p class="text-xl text-gray-600 dark:text-gray-300">
-                                Junte-se a mais de 100 lojistas que já transformaram sua gestão
-                            </p>
-                        </div>
+            <div class="relative z-10">
+                <div class="flex items-center gap-2 mb-12">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-white border border-white/20">
+                        G</div>
+                    <span class="font-bold text-xl tracking-tight">Gestão Fácil</span>
+                </div>
 
-                        <!-- Benefits List -->
-                        <div class="space-y-6">
-                            <div class="flex items-start space-x-4">
-                                <div
-                                    class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-check text-green-600 dark:text-green-400 text-xl"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-xl text-gray-800 dark:text-white mb-2">7 dias grátis
-                                    </h3>
-                                    <p class="text-gray-600 dark:text-gray-300">Teste todas as funcionalidades sem
-                                        compromisso</p>
-                                </div>
-                            </div>
+                <h1 class="text-5xl font-extrabold tracking-tight mb-8 leading-tight">
+                    Comece sua jornada <br />
+                    para o <span class="text-primary">sucesso</span>.
+                </h1>
 
-                            <div class="flex items-start space-x-4">
-                                <div
-                                    class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-bolt text-blue-600 dark:text-blue-400 text-xl"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-xl text-gray-800 dark:text-white mb-2">Configuração
-                                        rápida
-                                    </h3>
-                                    <p class="text-gray-600 dark:text-gray-300">Em 5 minutos você já estará vendendo</p>
-                                </div>
-                            </div>
+                <p class="text-xl text-zinc-400 max-w-md mb-12">
+                    Junte-se a milhares de empreendedores que transformaram a gestão de seus negócios.
+                </p>
 
-                            <div class="flex items-start space-x-4">
-                                <div
-                                    class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-headset text-purple-600 dark:text-purple-400 text-xl"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-xl text-gray-800 dark:text-white mb-2">Suporte
-                                        dedicado
-                                    </h3>
-                                    <p class="text-gray-600 dark:text-gray-300">Nossa equipe te ajuda na migração</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-start space-x-4">
-                                <div
-                                    class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-shield-alt text-orange-600 dark:text-orange-400 text-xl"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-xl text-gray-800 dark:text-white mb-2">Dados seguros
-                                    </h3>
-                                    <p class="text-gray-600 dark:text-gray-300">Criptografia e backup automático</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Social Proof -->
+                <div class="space-y-6">
+                    <div class="flex items-start gap-4">
                         <div
-                            class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                            <div class="flex items-center space-x-4 mb-4">
-                                <div class="flex -space-x-2">
-                                    <div
-                                        class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                        JS</div>
-                                    <div
-                                        class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                        MS</div>
-                                    <div
-                                        class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                        AL</div>
-                                    <div
-                                        class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                        +2k</div>
-                                </div>
-                                <div>
-                                    <p class="text-gray-800 dark:text-white">Mais de 100 lojas ativas</p>
-                                    <div class="flex items-center">
-                                        <div class="flex text-yellow-400 mr-2">
-                                            <i class="fas fa-star text-sm"></i>
-                                            <i class="fas fa-star text-sm"></i>
-                                            <i class="fas fa-star text-sm"></i>
-                                            <i class="fas fa-star text-sm"></i>
-                                            <i class="fas fa-star text-sm"></i>
-                                        </div>
-                                        <span class="text-sm text-gray-600 dark:text-gray-300">4.9/5 (500+
-                                            avaliações)</span>
-                                    </div>
-                                </div>
-                            </div>
+                            class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
+                            <Rocket class="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">Comece em minutos</h3>
+                            <p class="text-zinc-400">Cadastro simplificado para você não perder tempo.</p>
                         </div>
                     </div>
-
-                    <!-- Right Side - Form -->
-                    <div
-                        class="bg-card backdrop-blur-sm rounded-none md:rounded-2xl md:shadow-2xl p-6 md:p-8 md:border border-border">
-                        <div class="text-center mb-8">
-                            <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Criar conta gratuita</h3>
-                            <p class="text-gray-600 dark:text-gray-300">Preencha os dados abaixo para começar</p>
+                    <div class="flex items-start gap-4">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
+                            <ShieldCheck class="w-6 h-6 text-green-500" />
                         </div>
-
-                        <form @submit.prevent="submitForm" class="space-y-6">
-                            <!-- Step Indicator -->
-                            <div class="flex items-center justify-center mb-8">
-                                <div class="flex items-center">
-                                    <!-- Step 1 -->
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-                                        :class="step >= 1 ? 'bg-orange-500 text-white' : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400'">
-                                        1
-                                    </div>
-                                    <div
-                                        :class="step > 1 ? 'w-16 h-1 bg-orange-500 mx-2' : 'w-16 h-1 bg-gray-300 dark:bg-gray-600 mx-2'">
-                                    </div>
-
-                                    <!-- Step 2 -->
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-                                        :class="step >= 2 ? 'bg-orange-500 text-white' : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400'">
-                                        2
-                                    </div>
-                                    <div
-                                        :class="step > 2 ? 'w-16 h-1 bg-orange-500 mx-2' : 'w-16 h-1 bg-gray-300 dark:bg-gray-600 mx-2'">
-                                    </div>
-
-                                    <!-- Step 3 -->
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-                                        :class="step >= 3 ? 'bg-orange-500 text-white' : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400'">
-                                        3
-                                    </div>
-                                </div>
-                            </div>
-
-
-                            <!-- Step 1: Personal Info -->
-                            <div v-show="step === 1" id="step1Form" class="space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Nome *
-                                        </label>
-                                        <input type="text" v-model="store.form.firstName" required
-                                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
-                                            placeholder="Seu nome">
-                                        <span v-if="errors.firstName" class="text-red-500 text-sm">Campo
-                                            obrigatório</span>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Sobrenome *
-                                        </label>
-                                        <input type="text" v-model="store.form.lastName" required
-                                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
-                                            placeholder="Seu sobrenome">
-                                        <span v-if="errors.lastName" class="text-red-500 text-sm">Campo
-                                            obrigatório</span>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        E-mail *
-                                    </label>
-                                    <input type="email" v-model="store.form.email" required
-                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
-                                        placeholder="seu@email.com">
-                                    <span v-if="errors.email" class="text-red-500 text-sm">E-mail inválido</span>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Telefone *
-                                    </label>
-                                    <input type="text" v-maska="phoneMaskOptions" v-model="store.form.phone" required
-                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
-                                        placeholder="(11) 99999-9999">
-                                    <span v-if="errors.phone" class="text-red-500 text-sm">Campo obrigatório</span>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Senha *
-                                    </label>
-                                    <div class="relative">
-                                        <input type="password" v-model="store.form.password" required
-                                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 pr-12"
-                                            placeholder="Mínimo 6 caracteres">
-                                        <span v-if="errors.password" class="text-red-500 text-sm">Mínimo 6
-                                            caracteres</span>
-                                    </div>
-                                    <div class="mt-2">
-                                        <div class="flex items-center space-x-2 text-sm">
-                                            <div class="flex space-x-1">
-                                                <div v-for="n in 4" :key="n"
-                                                    class="w-6 h-1 rounded transition-colors duration-300"
-                                                    :class="barClass(n)"></div>
-                                            </div>
-                                            <span class="text-gray-500 dark:text-gray-400">
-                                                {{ strengthText }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button type="button" @click="nextStep"
-                                    class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg text-lg transition-colors duration-200 flex items-center justify-center">
-                                    Continuar
-                                    <i class="fas fa-arrow-right ml-2"></i>
-                                </button>
-                            </div>
-
-                            <!-- Step 2: Store Info -->
-                            <div v-show="step === 2" id="step2Form" class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Nome da Loja *
-                                    </label>
-                                    <input type="text" v-model="store.form.storeName" required
-                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
-                                        placeholder="Ex: Boutique Fashion">
-                                    <span v-if="errors.storeName" class="text-red-500 text-sm">Campo obrigatório</span>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Segmento *
-                                    </label>
-                                    <select id="segment" v-model="store.form.segment" required
-                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200">
-                                        <option value="">Selecione o segmento</option>
-                                        <option value="moda">Moda e Vestuário</option>
-                                        <option value="assistencia">Assistência Técnica</option>
-                                        <option value="eletronicos">Eletrônicos</option>
-                                        <option value="alimentacao">Alimentação</option>
-                                        <option value="joias">Joias e Acessórios</option>
-                                        <option value="farmacia">Farmácia</option>
-                                        <option value="casa">Casa e Decoração</option>
-                                        <option value="beleza">Beleza e Cosméticos</option>
-                                        <option value="esportes">Esportes</option>
-                                        <option value="telecom">Telecomunicações</option>
-                                        <option value="outros">Outros</option>
-                                    </select>
-                                    <span v-if="errors.segment" class="text-red-500 text-sm">Campo obrigatório</span>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            CPF/CNPJ
-                                        </label>
-                                        <input type="text" v-maska="cpfCnpjMaskOptions" v-model="store.form.cnpj"
-                                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200"
-                                            placeholder="CPF ou CNPJ">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Funcionários *
-                                        </label>
-                                        <select id="employees" v-model="store.form.employees" required
-                                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200">
-                                            <option value="">Selecione</option>
-                                            <option value="1">Apenas eu</option>
-                                            <option value="5">2 a 5 funcionários</option>
-                                            <option value="10">6 a 10 funcionários</option>
-                                            <option value="20">Mais de 10</option>
-                                        </select>
-                                        <span v-if="errors.employees" class="text-red-500 text-sm">Campo
-                                            obrigatório</span>
-                                    </div>
-                                </div>
-
-                                <div class="flex space-x-4">
-                                    <button type="button" @click="prevStep"
-                                        class="flex-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white py-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
-                                        <i class="fas fa-arrow-left mr-2"></i>
-                                        Voltar
-                                    </button>
-                                    <button type="button" @click="nextStep"
-                                        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
-                                        Continuar
-                                        <i class="fas fa-arrow-right ml-2"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Step 3: Confirmation -->
-                            <div v-show="step === 3" id="step3Form" class="space-y-4">
-                                <div class="text-center">
-                                    <div
-                                        class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <i class="fas fa-check text-green-600 dark:text-green-400 text-2xl"></i>
-                                    </div>
-                                    <h4 class="text-xl text-gray-800 dark:text-white mb-2">Quase pronto!
-                                    </h4>
-                                    <p class="text-gray-600 dark:text-gray-300">Revise suas informações e confirme o
-                                        cadastro</p>
-                                </div>
-
-                                <!-- Summary -->
-                                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 space-y-4">
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600 dark:text-gray-300">Nome:</span>
-                                        <span id="summaryName" class="text-gray-800 dark:text-white">
-                                            {{ store.form.firstName }} {{ store.form.lastName }}
-                                        </span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600 dark:text-gray-300">E-mail:</span>
-                                        <span id="summaryEmail" class="text-gray-800 dark:text-white">
-                                            {{ store.form.email }}
-                                        </span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600 dark:text-gray-300">Loja:</span>
-                                        <span id="summaryStore" class="text-gray-800 dark:text-white">
-                                            {{ store.form.storeName }}
-                                        </span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600 dark:text-gray-300">Segmento:</span>
-                                        <span id="summarySegment" class="text-gray-800 dark:text-white">
-                                            {{ store.form.segment }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Terms -->
-                                <div class="space-y-4">
-                                    <label class="flex items-start space-x-3">
-                                        <input type="checkbox" v-model="store.form.terms" required
-                                            class="mt-1 w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500">
-                                        <span class="text-sm text-gray-600 dark:text-gray-300">
-                                            Aceito os <RouterLink to="/site/termos-politica"
-                                                class="text-blue hover:underline">Termos de Uso</RouterLink>
-                                            e
-                                            <RouterLink to="/site/termos-politica" class="text-blue hover:underline">
-                                                Política de Privacidade</RouterLink>
-                                        </span>
-                                        <span v-if="errors.terms" class="text-red-500 text-sm">Campo obrigatório</span>
-                                    </label>
-
-                                    <label class="flex items-start space-x-3">
-                                        <input type="checkbox" id="newsletter"
-                                            class="mt-1 w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500">
-                                        <span class="text-sm text-gray-600 dark:text-gray-300">
-                                            Quero receber dicas e novidades por e-mail
-                                        </span>
-                                    </label>
-                                </div>
-
-                                <div class="flex space-x-4">
-                                    <button type="button" @click="prevStep"
-                                        class="flex-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-white py-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
-                                        <i class="fas fa-arrow-left mr-2"></i>
-                                        Voltar
-                                    </button>
-                                    <button type="submit" id="submitForm"
-                                        class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
-                                        <i class="fas fa-rocket mr-2"></i>
-                                        Criar Conta Grátis
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-
-                        <!-- Footer -->
-                        <div class="mt-8 text-center">
-                            <p class="text-sm text-gray-600 dark:text-gray-400">
-                                Já tem uma conta?
-                                <RouterLink to="/login"
-                                    class="text-blue-500 hover:text-blue-600 transition-colors duration-200">
-                                    Clique aqui para entrar
-                                </RouterLink>
-                            </p>
+                        <div>
+                            <h3 class="font-bold text-lg">7 dias grátis</h3>
+                            <p class="text-zinc-400">Teste todas as funcionalidades sem compromisso.</p>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="relative z-10 mt-12 bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
+                <div class="flex gap-1 text-yellow-500 mb-2">
+                    <Star v-for="n in 5" :key="n" class="w-4 h-4 fill-current" />
+                </div>
+                <p class="text-lg italic mb-4">"Mudou completamente a forma como gerencio minha loja. Indispensável!"
+                </p>
+                <div class="flex items-center gap-3">
+                    <Avatar>
+                        <AvatarFallback>RC</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p class="font-bold text-sm">Ricardo Costa</p>
+                        <p class="text-xs text-zinc-400">Loja de Informática</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lado Direito (Formulário) -->
+        <div class="bg-background flex flex-col justify-center p-6 lg:p-12 overflow-y-auto">
+            <div class="max-w-md mx-auto w-full">
+                <div class="lg:hidden mb-8">
+                    <div class="flex items-center gap-2">
+                        <div
+                            class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
+                            G</div>
+                        <span class="font-bold text-xl text-foreground">Gestão Fácil</span>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold mb-2">Crie sua conta</h2>
+                    <p class="text-muted-foreground">Preencha os dados abaixo para começar seu teste gratuito.</p>
+                </div>
+
+                <!-- Stepper Visual -->
+                <div class="flex items-center gap-2 mb-8">
+                    <div v-for="s in 3" :key="s" class="h-2 flex-1 rounded-full transition-colors duration-300"
+                        :class="step >= s ? 'bg-primary' : 'bg-muted'"></div>
+                </div>
+
+                <form @submit.prevent="submitForm" class="space-y-6">
+
+                    <!-- Passo 1: Informações Pessoais -->
+                    <div v-show="step === 1" class="space-y-4 animate-in fade-in slide-in-from-right-8 duration-300">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <Label for="firstName">Nome</Label>
+                                <Input id="firstName" v-model="store.form.firstName" placeholder="Seu nome"
+                                    :class="{ 'border-red-500': errors.firstName }" />
+                                <span v-if="errors.firstName" class="text-xs text-red-500">Obrigatório</span>
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="lastName">Sobrenome</Label>
+                                <Input id="lastName" v-model="store.form.lastName" placeholder="Seu sobrenome"
+                                    :class="{ 'border-red-500': errors.lastName }" />
+                                <span v-if="errors.lastName" class="text-xs text-red-500">Obrigatório</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="email">E-mail</Label>
+                            <Input id="email" type="email" v-model="store.form.email" placeholder="seu@email.com"
+                                :class="{ 'border-red-500': errors.email }" />
+                            <span v-if="errors.email" class="text-xs text-red-500">E-mail inválido</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="phone">Telefone / WhatsApp</Label>
+                            <Input id="phone" v-model="store.form.phone" v-maska="phoneMaskOptions"
+                                placeholder="(00) 00000-0000" :class="{ 'border-red-500': errors.phone }" />
+                            <span v-if="errors.phone" class="text-xs text-red-500">Obrigatório</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="password">Senha</Label>
+                            <Input id="password" type="password" v-model="store.form.password"
+                                placeholder="Mínimo 6 caracteres" :class="{ 'border-red-500': errors.password }" />
+
+                            <!-- Password Strength Bar -->
+                            <div class="h-1.5 w-full bg-muted rounded-full overflow-hidden mt-2">
+                                <div class="h-full transition-all duration-300" :class="strengthColor"
+                                    :style="{ width: `${strength * 25}%` }"></div>
+                            </div>
+                            <p class="text-xs text-muted-foreground text-right">{{ strengthText }}</p>
+                        </div>
+
+                        <Button type="button" class="w-full" @click="nextStep">Continuar
+                            <ArrowRight class="ml-2 w-4 h-4" />
+                        </Button>
+                    </div>
+
+                    <!-- Passo 2: Dados da Empresa -->
+                    <div v-show="step === 2" class="space-y-4 animate-in fade-in slide-in-from-right-8 duration-300">
+                        <div class="space-y-2">
+                            <Label for="storeName">Nome da Loja</Label>
+                            <Input id="storeName" v-model="store.form.storeName" placeholder="Ex: Minha Loja Top"
+                                :class="{ 'border-red-500': errors.storeName }" />
+                            <span v-if="errors.storeName" class="text-xs text-red-500">Obrigatório</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="segment">Segmento</Label>
+                            <Select v-model="store.form.segment">
+                                <SelectTrigger :class="{ 'border-red-500': errors.segment }">
+                                    <SelectValue placeholder="Selecione o segmento" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="moda">Moda e Vestuário</SelectItem>
+                                    <SelectItem value="eletronicos">Eletrônicos e Informática</SelectItem>
+                                    <SelectItem value="alimentacao">Alimentação e Bebidas</SelectItem>
+                                    <SelectItem value="servicos">Prestação de Serviços</SelectItem>
+                                    <SelectItem value="varejo">Varejo em Geral</SelectItem>
+                                    <SelectItem value="outros">Outros</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <span v-if="errors.segment" class="text-xs text-red-500">Obrigatório</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="cnpj">CPF ou CNPJ (Opcional)</Label>
+                            <Input id="cnpj" v-model="store.form.cnpj" v-maska="cpfCnpjMaskOptions"
+                                placeholder="Apenas números" />
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="employees">Tamanho da Equipe</Label>
+                            <Select v-model="store.form.employees">
+                                <SelectTrigger :class="{ 'border-red-500': errors.employees }">
+                                    <SelectValue placeholder="Quantas pessoas?" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="1">Apenas eu</SelectItem>
+                                    <SelectItem value="5">2 a 5 pessoas</SelectItem>
+                                    <SelectItem value="10">6 a 10 pessoas</SelectItem>
+                                    <SelectItem value="20">Mais de 10</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <span v-if="errors.employees" class="text-xs text-red-500">Obrigatório</span>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <Button type="button" variant="outline" class="flex-1" @click="prevStep">Voltar</Button>
+                            <Button type="button" class="flex-1" @click="nextStep">Continuar</Button>
+                        </div>
+                    </div>
+
+                    <!-- Passo 3: Confirmação -->
+                    <div v-show="step === 3" class="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300">
+                        <div class="bg-muted/50 p-6 rounded-xl border space-y-3">
+                            <h3 class="font-bold border-b pb-2 mb-2">Resumo</h3>
+                            <div class="grid grid-cols-[100px_1fr] gap-2 text-sm">
+                                <span class="text-muted-foreground">Nome:</span>
+                                <span class="font-medium truncate">{{ store.form.firstName }} {{ store.form.lastName
+                                    }}</span>
+
+                                <span class="text-muted-foreground">Loja:</span>
+                                <span class="font-medium truncate">{{ store.form.storeName }}</span>
+
+                                <span class="text-muted-foreground">Email:</span>
+                                <span class="font-medium truncate">{{ store.form.email }}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-2">
+                                <Checkbox id="terms" v-model:checked="store.form.terms" />
+                                <label for="terms"
+                                    class="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    Aceito os <RouterLink to="/site/termos-politica" target="_blank"
+                                        class="text-primary hover:underline">Termos de Uso</RouterLink> e <RouterLink
+                                        to="/site/termos-politica" target="_blank" class="text-primary hover:underline">
+                                        Política de Privacidade</RouterLink>.
+                                </label>
+                            </div>
+                            <span v-if="errors.terms" class="text-xs text-red-500 block mt-1">Você precisa aceitar os
+                                termos</span>
+
+                            <div class="flex items-center gap-2">
+                                <Checkbox id="newsletter" v-model:checked="store.form.newsletter" />
+                                <Label for="newsletter" class="font-normal">Quero receber dicas e novidades.</Label>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <Button type="button" variant="outline" class="flex-1" @click="prevStep">Voltar</Button>
+                            <Button type="submit" class="flex-1" :disabled="loading">
+                                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+                                <span v-else>Finalizar Cadastro</span>
+                            </Button>
+                        </div>
+                    </div>
+
+                </form>
+
+                <p class="text-center text-sm text-muted-foreground mt-8">
+                    Já tem uma conta?
+                    <RouterLink to="/login" class="text-primary hover:underline font-medium">Fazer Login</RouterLink>
+                </p>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ContaRepository } from '@/repositories/conta-repository';
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useToast } from 'vue-toastification';
-import { vMaska } from 'maska/vue';
-import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska';
-import { useAccountCreateStore } from '@/stores/login/useCreateAccount';
-const router = useRouter();
-const toast = useToast();
-const store = useAccountCreateStore();
-// Step atual
-const step = ref(1);
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
+import { vMaska } from 'maska/vue'
+import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
+import { useAccountCreateStore } from '@/stores/login/useCreateAccount'
+import { ContaRepository } from '@/repositories/conta-repository'
 
-// Validação simples
+// UI Components
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select'
+import { Rocket, ShieldCheck, ArrowRight, Star, Loader2 } from 'lucide-vue-next'
+
+const router = useRouter()
+const toast = useToast()
+const store = useAccountCreateStore()
+
+const step = ref(1)
+const loading = ref(false)
+
 const errors = ref({
     firstName: false,
     lastName: false,
@@ -422,98 +295,91 @@ const errors = ref({
     segment: false,
     employees: false,
     terms: false
-});
-
-const validateStep1 = () => {
-    errors.value.firstName = !store.form.firstName;
-    errors.value.lastName = !store.form.lastName;
-    errors.value.email = !store.form.email || !/^\S+@\S+\.\S+$/.test(store.form.email);
-    errors.value.phone = !store.form.phone;
-    errors.value.password = !store.form.password || store.form.password.length < 6;
-
-    return !Object.values(errors.value).some((e, idx) => idx < 5 && e);
-};
-
-const validateStep2 = () => {
-    errors.value.storeName = !store.form.storeName;
-    errors.value.segment = !store.form.segment;
-    errors.value.employees = !store.form.employees;
-
-    return !errors.value.storeName && !errors.value.segment && !errors.value.employees;
-};
-
-const validateStep3 = () => {
-    errors.value.terms = !store.form.terms;
-    return !errors.value.terms;
-};
-
-// Navegação entre steps
-const nextStep = () => {
-    if (step.value === 1 && validateStep1()) step.value++;
-    else if (step.value === 2 && validateStep2()) step.value++;
-};
-
-const prevStep = () => {
-    if (step.value > 1) step.value--;
-};
+})
 
 const strength = computed(() => {
     let score = 0
-    if (store.form.password.length >= 6) score++
-    if (/[A-Z]/.test(store.form.password)) score++
-    if (/[0-9]/.test(store.form.password)) score++
-    if (/[^A-Za-z0-9]/.test(store.form.password)) score++
+    const pwd = store.form.password || ''
+    if (pwd.length >= 6) score++
+    if (/[A-Z]/.test(pwd)) score++
+    if (/[0-9]/.test(pwd)) score++
+    if (/[^A-Za-z0-9]/.test(pwd)) score++
     return score
 })
 
 const strengthText = computed(() => {
-    switch (strength.value) {
-        case 0:
-        case 1:
-            return 'Fraca'
-        case 2:
-            return 'Média'
-        case 3:
-            return 'Forte'
-        case 4:
-            return 'Muito forte'
-        default:
-            return 'Força da senha'
-    }
+    if (!store.form.password) return ''
+    if (strength.value <= 1) return 'Senha Fraca'
+    if (strength.value === 2) return 'Senha Média'
+    if (strength.value >= 3) return 'Senha Forte'
+    return ''
 })
-function barClass(n: number) {
-    if (strength.value >= n) {
-        if (strength.value <= 1) return 'bg-red-500'
-        if (strength.value === 2) return 'bg-yellow-500'
-        if (strength.value === 3) return 'bg-green-500'
-        return 'bg-emerald-600'
-    }
-    return 'bg-gray-300 dark:bg-gray-600'
+
+const strengthColor = computed(() => {
+    if (strength.value <= 1) return 'bg-red-500'
+    if (strength.value === 2) return 'bg-yellow-500'
+    return 'bg-green-500'
+})
+
+const validateStep1 = () => {
+    errors.value.firstName = !store.form.firstName
+    errors.value.lastName = !store.form.lastName
+    errors.value.email = !store.form.email || !/^\S+@\S+\.\S+$/.test(store.form.email)
+    errors.value.phone = !store.form.phone
+    errors.value.password = !store.form.password || store.form.password.length < 6
+
+    return !errors.value.firstName && !errors.value.lastName && !errors.value.email && !errors.value.phone && !errors.value.password
 }
+
+const validateStep2 = () => {
+    errors.value.storeName = !store.form.storeName
+    errors.value.segment = !store.form.segment
+    errors.value.employees = !store.form.employees
+
+    return !errors.value.storeName && !errors.value.segment && !errors.value.employees
+}
+
+const validateStep3 = () => {
+    errors.value.terms = !store.form.terms
+    return !errors.value.terms
+}
+
+const nextStep = () => {
+    if (step.value === 1 && validateStep1()) step.value++
+    else if (step.value === 2 && validateStep2()) step.value++
+}
+
+const prevStep = () => {
+    if (step.value > 1) step.value--
+}
+
 const submitForm = async () => {
-    if (validateStep3()) {
-        try {
-            await ContaRepository.create({
-                nome: store.form.firstName + " " + store.form.lastName,
-                cpfCnpj: store.form.cnpj,
-                conta: store.form.storeName,
-                telefone: store.form.phone,
-                dicasNovidades: store.form.newsletter,
-                email: store.form.email,
-                senha: store.form.password,
-                funcionarios: Number(store.form.employees),
-                tipo: store.form.segment
-            });
-            toast.success("Conta criada com sucesso!");
-            router.push("/login");
-        } catch (error) {
-            console.error(error);
-            toast.error("Erro ao criar conta, tente novamente.");
-        }
+    if (!validateStep3()) return
+
+    loading.value = true
+    try {
+        await ContaRepository.create({
+            nome: `${store.form.firstName} ${store.form.lastName}`,
+            cpfCnpj: store.form.cnpj,
+            conta: store.form.storeName,
+            telefone: store.form.phone,
+            dicasNovidades: store.form.newsletter,
+            email: store.form.email,
+            senha: store.form.password,
+            funcionarios: Number(store.form.employees),
+            tipo: store.form.segment
+        })
+        toast.success("Conta criada com sucesso! Faça login para continuar.")
+        router.push("/login")
+    } catch (error) {
+        console.error(error)
+        toast.error("Erro ao criar conta. Verifique os dados e tente novamente.")
+    } finally {
+        loading.value = false
     }
-};
+}
 
 onMounted(() => {
-    store.form.employees ? step.value = 3 : step.value = 1
-});
+    // Reset or init logic if needed
+})
 </script>

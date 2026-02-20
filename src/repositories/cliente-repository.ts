@@ -1,5 +1,6 @@
 import type { ClientesFornecedores } from '@/types/schemas'
 import http from '@/utils/axios'
+
 export class ClienteRepository {
   static async get(id: number) {
     const data = await http.get(`/clientes/${id}`)
@@ -14,5 +15,9 @@ export class ClienteRepository {
   }
   static async save(data: Omit<ClientesFornecedores, 'id'>) {
     await http.post(`/clientes`, data)
+  }
+  static async getStats(id: number) {
+    const { data } = await http.get(`/clientes/${id}/estatisticas`)
+    return data.data
   }
 }

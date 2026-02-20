@@ -6,6 +6,7 @@ interface updateProfile {
   telefone: string
   biografia: string
   endereco: string
+  profile: string
 }
 export class UsuarioRepository {
   static async whoami() {

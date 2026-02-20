@@ -32,10 +32,14 @@
                     </div>
                     <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.observacaos || '-' }}</div>
                     <div class="mt-2 flex justify-between gap-2">
-                        <div>
+                        <div class="flex gap-2">
                             <button @click="store.openUpdate(row.id!)"
                                 class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
                                 <PenLine class="w-5 h-5" />
+                            </button>
+                            <button @click="$router.push({ name: 'clientes-detalhes', params: { id: row.id } })"
+                                class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
+                                <Info class="w-5 h-5" />
                             </button>
                         </div>
                         <button @click="deletar(row.id!)"
@@ -138,7 +142,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Link, PenLine, Trash, UserPlus } from "lucide-vue-next";
+import { Info, Link, PenLine, Trash, UserPlus } from "lucide-vue-next";
 import { useClientesStore } from "@/stores/clientes/useClientes";
 import type { ClientesFornecedores } from "@/types/schemas";
 import { useConfirm } from "@/composables/useConfirm";

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Menu } from 'lucide-vue-next'
+import { Info, Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { ClientesFornecedores } from '@/types/schemas';
@@ -46,6 +46,10 @@ async function deletar(id: number) {
             <DropdownMenuItem @click="store.openUpdate(data.id!)">
                 <i class="fa-regular fa-pen-to-square mr-1"></i>
                 Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="$router.push({ name: 'clientes-detalhes', params: { id: data.id } })">
+                <Info class="mr-1" />
+                Detalhes
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">
