@@ -7,6 +7,7 @@ type RouteMeta = {
     isPublic?: boolean
     layout?: 'main' | 'default' | 'admin'
     permissao?: number
+    modulo?: string
   }
 }
 
@@ -88,6 +89,16 @@ const routes: RouteInterface[] = [
         path: '',
         name: 'admin-home',
         component: () => import('@/pages/admin/dashboard/DashboardAdmin.vue'),
+      },
+      {
+        path: 'assinantes',
+        name: 'admin-assinantes',
+        component: () => import('@/pages/admin/assinantes/Home.vue'),
+      },
+      {
+        path: 'faturas',
+        name: 'admin-faturas',
+        component: () => import('@/pages/admin/faturas/Home.vue'),
       },
     ],
   },
@@ -200,6 +211,7 @@ const routes: RouteInterface[] = [
         meta: {
           layout: 'main',
           permissao: 2,
+          modulo: 'core-ia',
         },
       },
       {
@@ -306,6 +318,24 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'categorias',
+        name: 'financeiro-categorias',
+        component: () => import('@/pages/financeiro/categorias/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 4,
+        },
+      },
+      {
+        path: 'contas',
+        name: 'financeiro-contas',
+        component: () => import('@/pages/financeiro/contas/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 4,
+        },
+      },
+      {
         path: 'detalhes',
         name: 'lancamentos-financeiro-detalhes',
         component: () => import('@/pages/financeiro/lancamentos/Detalhes.vue'),
@@ -342,6 +372,15 @@ const routes: RouteInterface[] = [
         path: 'detalhes',
         name: 'produtos-detalhes',
         component: () => import('@/pages/produtos/others/DetalhesProduto.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 4,
+        },
+      },
+      {
+        path: 'categorias',
+        name: 'produtos-categorias',
+        component: () => import('@/pages/produtos/categorias/Home.vue'),
         meta: {
           layout: 'main',
           permissao: 4,

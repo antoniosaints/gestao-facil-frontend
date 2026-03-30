@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ProdutoRepository } from "@/repositories/produto-repository";
+import { ProdutoVarianteRepository } from "@/repositories/produto-repository";
 import { computed, onMounted, ref, watch } from "vue";
 import { POSITION, useToast } from "vue-toastification";
 import { vMaska } from "maska/vue"
@@ -181,7 +181,7 @@ const ableAdd = ref(true);
 async function getValorProduto(id: number) {
   try {
     ableAdd.value = true
-    const { data } = await ProdutoRepository.get(id);
+    const { data } = await ProdutoVarianteRepository.get(id);
     if (data.estoque <= 0) {
       addItemForm.value.preco = null;
       addItemForm.value.id = null;
@@ -379,7 +379,7 @@ onMounted(() => {
           </Select>
         </div>
         <div v-if="adicionarTipo === 'PRODUTO'" class="col-span-8 md:col-span-5">
-          <label class="block text-sm mb-1">Produto <span class="text-red-500">*</span></label>
+          <label class="block text-sm mb-1">Variante <span class="text-red-500">*</span></label>
           <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
             url="/produtos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
         </div>

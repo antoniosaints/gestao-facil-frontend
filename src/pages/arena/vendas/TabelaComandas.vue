@@ -13,11 +13,20 @@
                 </SelectTrigger>
                 <SelectContent>
                     <SelectGroup>
+                        <SelectItem value="ABERTA,PENDENTE">
+                            Abertas e pendentes
+                        </SelectItem>
                         <SelectItem value="ABERTA">
                             Abertas
                         </SelectItem>
+                        <SelectItem value="PENDENTE">
+                            Pendentes
+                        </SelectItem>
                         <SelectItem value="FECHADA">
                             Fechadas
+                        </SelectItem>
+                        <SelectItem value="CANCELADA">
+                            Canceladas
                         </SelectItem>
                         <SelectItem value="null">
                             Todas
@@ -115,7 +124,7 @@
     <!-- Navegação Mobile -->
     <nav
         class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20">
-        <button type="button" @click="previousPage" :disabled="currentPage <= 1"
+        <button v-if="totalPages > 1" type="button" @click="previousPage" :disabled="currentPage <= 1"
             class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
             <i class="fa-solid fa-arrow-left text-lg"></i>
             <span class="text-xs">Anterior</span>
@@ -125,7 +134,7 @@
             <i class="fa-solid fa-bars text-lg"></i>
             <span class="text-xs">Mais</span>
         </button>
-        <button type="button" @click="nextPage" :disabled="currentPage >= totalPages"
+        <button v-if="totalPages > 1" type="button" @click="nextPage" :disabled="currentPage >= totalPages"
             class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
             <i class="fa-solid fa-arrow-right text-lg"></i>
             <span class="text-xs">Próximo</span>
@@ -156,7 +165,7 @@ const loading = ref(false);
 const searchQuery = ref("");
 const filtroPeriodo = ref(null);
 const showDrawer = ref(false);
-const statusFilter = ref('PENDENTE');
+const statusFilter = ref('ABERTA,PENDENTE');
 
 function openSaveVenda() {
     // showDrawer.value = false;

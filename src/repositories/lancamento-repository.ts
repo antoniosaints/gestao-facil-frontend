@@ -7,6 +7,14 @@ import type {
 } from '@/types/schemas'
 import http from '@/utils/axios'
 export class LancamentosRepository {
+  static async listarCategorias() {
+    const data = await http.get(`/lancamentos/categorias`)
+    return data.data
+  }
+  static async listarContas() {
+    const data = await http.get(`/lancamentos/contas`)
+    return data.data
+  }
   static async get(id: number) {
     const data = await http.get(`/lancamentos/${id}`)
     return data.data
@@ -49,17 +57,17 @@ export class LancamentosRepository {
     const data = await http.get(`/lancamentos/relatorios/valor-conta`)
     return data.data
   }
-  static async criarConta(data: Omit<ContasFinanceiro, 'id'>) {
+  static async criarConta(data: Pick<ContasFinanceiro, 'nome'> & { id?: number; saldoInicial?: number }) {
     await http.post(`/lancamentos/contas`, data)
   }
   static async deletarConta(id: number) {
     await http.delete(`/lancamentos/contas/${id}`)
   }
-  static async criarCategoria(data: Omit<CategoriaFinanceiro, 'id'>) {
+  static async criarCategoria(data: Pick<CategoriaFinanceiro, 'nome'> & { id?: number; categoriaPai?: number | null }) {
     await http.post(`/lancamentos/categorias`, data)
   }
   static async deletarCategoria(id: number) {
-    await http.delete(`/lancamentos/contas/${id}`)
+    await http.delete(`/lancamentos/categorias/${id}`)
   }
   static async getSaldoMensal() {
     const data = await http.get(`/lancamentos/graficos/saldo-mensal`)

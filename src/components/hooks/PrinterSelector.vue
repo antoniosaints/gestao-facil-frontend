@@ -25,7 +25,7 @@
 import qzTray from "@/utils/qzTray";
 import { ref } from "vue";
 
-const printers = ref([]);
+const printers = ref<string[]>([]);
 const selected = ref<string>("");
 const saved = ref(qzTray.getSavedPrinter());
 

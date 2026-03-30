@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useVendasStore } from '@/stores/vendas/useVenda';
 import { onMounted, onUnmounted, provide, ref } from 'vue';
-import { BadgePlus, RotateCw, ShoppingCart, Tags } from 'lucide-vue-next';
+import { BadgePlus, FileDown, RotateCw, ShoppingCart, Tags } from 'lucide-vue-next';
 import { getSocket } from '@/pluguins/socket';
 import type { Socket } from 'socket.io-client';
 import ModalProporValor from '@/pages/vendas/formulario/ModalProporValor.vue';
@@ -12,8 +12,10 @@ import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue';
 import GerarCobranca from '@/pages/financeiro/lancamentos/modais/GerarCobranca.vue';
 import TabelaVendas from './TabelaVendas.vue';
 import ModalVendas from '@/pages/vendas/formulario/ModalVendas.vue';
+import ModalRelatorioVendas from '@/pages/vendas/formulario/ModalRelatorioVendas.vue';
 const store = useVendasStore();
 const openFilter = ref(false);
+const openReport = ref(false);
 
 let socket: Socket;
 
@@ -41,6 +43,11 @@ provide('openModalFiltroVendas', openFilter);
                 <p class="text-sm text-muted-foreground">Listagem de vendas cadastradas</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
+                <button @click="openReport = true"
+                    class="border border-orange-500 hover:border-orange-700 text-orange-900 dark:text-orange-200 bg-orange-500/20 px-3 py-1.5 text-sm rounded-lg flex items-center gap-1">
+                    <FileDown class="w-4 h-4 inline-flex" />
+                    <span class="hidden lg:inline">Exportar relatório</span>
+                </button>
                 <button @click="store.openSave"
                     class="bg-teal-700 dark:bg-teal-900 text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova venda</span>
@@ -65,5 +72,6 @@ provide('openModalFiltroVendas', openFilter);
         <ClientesModal />
         <DetalhesVenda />
         <GerarCobranca />
+        <ModalRelatorioVendas v-model:open="openReport" />
     </div>
 </template>

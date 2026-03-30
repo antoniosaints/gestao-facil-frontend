@@ -1,9 +1,10 @@
-import { hasPermission } from '@/hooks/authorize'
-import { ContaRepository } from '@/repositories/conta-repository'
-import { useUiStore } from '@/stores/ui/uiStore'
 import { isBefore } from 'date-fns'
 import type { RouteLocationNormalizedGeneric } from 'vue-router'
 import { useToast } from 'vue-toastification'
+import { hasPermission } from '@/hooks/authorize'
+import { ContaRepository } from '@/repositories/conta-repository'
+import { StoreRepository } from '@/repositories/store-repository'
+import { useUiStore } from '@/stores/ui/uiStore'
 
 export const useControlRouter = async () => {
   try {
@@ -35,16 +36,14 @@ export async function handleRouteGuard(to: typed, from: typed) {
   }
 
   if (to.meta?.isPublic) return true
-  // Rota privada sem login
+
   if (!to.meta?.isPublic && !token) {
     toast.info('Necessário efetuar login para acessar essa rota!')
     return login
   }
 
-  // Evita login autenticado
   if (to.path === '/login' && token) return home
 
-  // Checa status da conta (exceto login/assinatura)
   if (!allowedRouteNames.includes(to.name as string)) {
     if (isBefore(new Date(storeUi.contaInfo.vencimento), new Date())) {
       toast.info('Sua conta está inativa, realize o pagamento para ativá-la.')
@@ -52,7 +51,6 @@ export async function handleRouteGuard(to: typed, from: typed) {
     }
   }
 
-  // Verificação de permissão
   if (to.meta?.permissao) {
     if (!hasPermission(storeUi.usuarioLogged, Number(to.meta?.permissao))) {
       toast.info('Você não tem permissão para acessar essa rota!')
@@ -60,6 +58,20 @@ export async function handleRouteGuard(to: typed, from: typed) {
     }
   }
 
-  // Libera navegação normalmente
+  if (to.meta?.modulo) {
+    try {
+      const response = await StoreRepository.listar()
+      const modulo = response.data.find((item) => item.codigo === to.meta?.modulo)
+
+      if (!modulo?.ativo) {
+        toast.info('Este app não está ativo na sua mensalidade.')
+        return { name: 'loja-home' }
+      }
+    } catch (error) {
+      toast.error('Não foi possível validar o acesso ao app adicional.')
+      return { name: 'loja-home' }
+    }
+  }
+
   return true
 }

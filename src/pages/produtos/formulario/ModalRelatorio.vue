@@ -2,7 +2,7 @@
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ProdutoRepository } from '@/repositories/produto-repository'
+import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
 import { FilePlus } from 'lucide-vue-next'
 import { ref } from 'vue'
@@ -15,7 +15,7 @@ const ordem = ref<'asc' | 'desc'>("asc")
 async function generateRelatorio() {
     try {
         if (!store.idMutation) return toast.error('ID nao informado!')
-        await ProdutoRepository.gerarRelatorio(store.idMutation!, ordem.value)
+        await ProdutoVarianteRepository.gerarRelatorio(store.idMutation!, ordem.value)
         store.openModalRelatorio = false
         toast.success('Relatorio gerado com sucesso')
     } catch (error) {

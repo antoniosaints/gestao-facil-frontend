@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { vMaska } from "maska/vue"
 import { moneyMaskOptions } from '@/lib/imaska'
-import { ProdutoRepository } from '@/repositories/produto-repository'
+import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
 import { ref } from 'vue'
 import { useToast } from 'vue-toastification'
@@ -28,7 +28,7 @@ const formulario = ref({
 async function submit() {
     try {
         if (!store.idMutation) return toast.error('ID não informado!')
-        await ProdutoRepository.repor({
+        await ProdutoVarianteRepository.repor({
             produtoId: store.idMutation,
             custo: formatToNumberValue(formulario.value.custo),
             quantidade: formulario.value.quantidade,

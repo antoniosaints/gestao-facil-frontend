@@ -101,9 +101,12 @@ export const useVendasStore = defineStore('vendasStore', () => {
       vendedorId: data?.vendedorId ? data?.vendedorId : null,
     }
     data.ItensVendas.forEach((item) => {
+      const itemId = item.produtoId ?? item.servicoId
+      if (!itemId) return
+
       const newItem = {
-        id: item.produtoId,
-        produto: item.produto.nome,
+        id: itemId,
+        produto: item.itemName || item.produto?.label || item.produto?.nome || item.servico?.nome || 'Item',
         quantidade: item.quantidade,
         preco: parseFloat(String(item.valor).replace(',', '.')),
         subtotal: parseFloat(String(item.valor).replace(',', '.')) * item.quantidade,

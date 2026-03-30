@@ -23,6 +23,7 @@ import {
   TicketCheck,
   User,
   UserStar,
+  Wallet,
   Wrench,
 } from 'lucide-vue-next'
 
@@ -116,6 +117,20 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
           nome: 'Cobranças',
           link: '/financeiro/cobrancas',
           icone: HandCoins,
+          show: permissions.admin,
+          color: 'emerald',
+        },
+        {
+          nome: 'Categorias',
+          link: '/financeiro/categorias',
+          icone: Tags,
+          show: permissions.admin,
+          color: 'emerald',
+        },
+        {
+          nome: 'Contas financeiras',
+          link: '/financeiro/contas',
+          icone: Wallet,
           show: permissions.admin,
           color: 'emerald',
         },

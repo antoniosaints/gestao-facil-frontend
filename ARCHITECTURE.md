@@ -1,0 +1,67 @@
+# Arquitetura do Frontend
+
+## Objetivo
+Este frontend concentra a interface principal do sistema em Vue 3. A base atual mistura ERP e modo `arena`, controlados por variáveis de ambiente e por rotas que escolhem páginas diferentes conforme o contexto.
+
+## Stack principal
+- Vue 3 com Composition API e Single File Components.
+- Vite como bundler e ambiente de desenvolvimento.
+- TypeScript em toda a aplicação.
+- Pinia para estado global e por domínio.
+- Vue Router para navegação, guards e metadados de permissão/layout.
+- Tailwind CSS como base visual, com utilitários próprios e componentes `ui`.
+- `reka-ui`, `vaul-vue`, `class-variance-authority`, `clsx` e `tailwind-merge` para primitives e composição de UI.
+- `axios` para HTTP.
+- `socket.io-client` para realtime.
+- `vue-toastification` para feedback global.
+- `@tanstack/vue-table`, `vue-chartjs`, `chart.js`, `maska`, `qz-tray` e `@vuepic/vue-datepicker` em fluxos específicos.
+- `shadcn-vue` para Interface
+
+## Entradas e infraestrutura
+- `src/main.ts` monta a aplicação, registra Pinia, Router, Toast e o `DatePicker` global.
+- `src/router/index.ts` centraliza as rotas e usa `meta` para:
+  - `layout`;
+  - `isPublic`;
+  - `permissao`.
+- `src/utils/axios.ts` define o cliente HTTP, injeta o token e tenta renovar sessão com refresh token.
+- `src/utils/worker.ts` e `src/utils/theme.ts` inicializam comportamento global adicional.
+
+## Organização real do código
+- `src/pages` organiza telas por domínio de negócio.
+- `src/components` guarda componentes compartilhados e blocos reutilizáveis.
+- `src/stores` concentra estado, formulários e ações de UI por domínio.
+- `src/repositories` encapsula chamadas para a API.
+- `src/composables` concentra lógica reutilizável e integrações entre UI e estado.
+- `src/layouts` define a casca visual de cada grupo de páginas.
+- `src/utils`, `src/lib`, `src/types` e `src/hooks` sustentam infraestrutura do app.
+
+## Fluxo padrão de implementação
+O fluxo dominante do app é:
+
+`page -> store/composable -> repository -> axios -> backend`
+
+Na prática:
+- páginas montam layout, tabela, modais e ações visuais;
+- stores seguram `form`, flags de modal, filtros e mutações locais;
+- repositories fazem chamadas HTTP com métodos estáticos;
+- composables resolvem comportamento transversal, como tabela server-side, guardas e confirmações.
+
+## Convenções importantes
+- O módulo costuma viver perto da sua tela: `Home.vue`, subpastas `tabela`, `modais`, `formulario`, `dashboard` e variantes mobile.
+- O mesmo domínio costuma combinar página, store e repository próprios.
+- O frontend usa contrato tipado local em `src/types/schemas.ts`, espelhando os domínios principais do backend.
+- O guard de rotas consulta dados do usuário, status da conta e permissão antes de liberar navegação.
+- O layout muda por `meta.layout` e o conteúdo também pode mudar por `VITE_MODE_SYSTEM`.
+
+## Áreas especiais
+- `public/` contém manifesto, service worker e assets públicos.
+- `dist/` é artefato gerado de build.
+- `src/components/ui/` concentra primitives reutilizáveis e deve ser a primeira opção antes de criar UI nova.
+- `src/pluguins/socket.ts` e `src/utils/qzTray.ts` mostram integrações de runtime que impactam a experiência.
+
+## Regras para futuras mudanças
+- Preservar a separação por domínio já adotada em `pages`, `stores` e `repositories`.
+- Reutilizar componentes de `components/ui`, `components/layout` e `components/formulario` antes de criar novos.
+- Não introduzir novo padrão de acesso HTTP fora de `repositories` sem motivo forte.
+- Manter `meta.layout`, `meta.permissao` e `meta.isPublic` coerentes com as regras existentes do router.
+- Tratar `arena` como variação real do produto, não como exceção pontual.

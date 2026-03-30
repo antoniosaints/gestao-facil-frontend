@@ -1,312 +1,371 @@
-<template>
-    <div>
-        <div class="flex flex-col gap-4">
-            <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                        <ChartPie class="h-6 w-6" :stroke-width="2.5" />
-                        Dashboard
-                    </h2>
-                    <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
-                </div>
-                <div class="flex items-center gap-2 w-content">
-                    <button type="button" id="limpar_filtro_dashboard_periodo"
-                        class="bg-red-600 hidden text-white text-nowrap px-3 py-1.5 rounded-md text-sm hover:bg-red-700 transition-colors">
-                        <i class="fa-solid fa-filter-circle-xmark"></i>
-                    </button>
-                    <Calendarpicker :range="true" v-model="filtroPeriodo" @update:model-value="atualizarIndicadores" />
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
-                <!-- Metric Item Start -->
-                <RouterLink to="/clientes">
-                    <div class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
-                        <div class="mb-6 flex items-center gap-3">
-                            <UserRoundPlus class="w-10 h-10 bg-blue-500/10 p-2 rounded-md text-blue-500" />
-                            <div>
-                                <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Assinantes</h3>
-                                <span class="hidden md:block text-theme-xs text-gray-500 dark:text-gray-400">
-                                    vinculados
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-end justify-between">
-                            <div>
-                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-                                    {{ data.totalClientes }}
-                                </h4>
-                            </div>
-                        </div>
-                    </div>
-                </RouterLink>
-
-                <RouterLink to="/produtos">
-                    <div class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
-                        <div class="mb-6 flex items-center gap-3">
-                            <TrendingUpDown class="w-10 h-10 bg-green-500/10 p-2 rounded-md text-green-500" />
-                            <div>
-                                <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Faturamento</h3>
-                                <span class="hidden md:block text-theme-xs text-gray-500 dark:text-gray-400">
-                                    do período
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-end justify-between">
-                            <div>
-                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-                                    {{ data.totalProdutos }}
-                                </h4>
-                            </div>
-
-                            <!-- <span
-                                class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-blue-600 dark:text-blue-500">
-                                <i class="fa-solid fa-boxes-packing"></i>
-                                Total
-                            </span> -->
-                        </div>
-                    </div>
-                </RouterLink>
-
-                <RouterLink to="/produtos">
-                    <div class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
-                        <div class="mb-6 flex items-center gap-3">
-                            <CalendarClock class="w-10 h-10 bg-orange-500/10 p-2 rounded-md text-orange-500" />
-
-                            <div>
-                                <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Vencimentos</h3>
-                                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">próximos </span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-end justify-between">
-                            <div>
-                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90"
-                                    id="produtos_em_baixa_dashboard">
-                                    {{ data.produtosEmBaixa }}
-                                </h4>
-                            </div>
-
-                            <!-- <span id="produtos_em_baixa_dashboard_alerta"
-                                class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-red-600 dark:text-red-500">
-                                <i class="fa-solid fa-triangle-exclamation"></i>
-                                Atenção!
-                            </span> -->
-                        </div>
-                    </div>
-                </RouterLink>
-
-                <RouterLink to="/vendas">
-                    <div class="rounded-2xl cursor-pointer border border-border shadow-md bg-card px-6 pb-5 pt-6">
-                        <div class="mb-6 flex items-center gap-3">
-                            <CircleDollarSign class="w-10 h-10 bg-yellow-500/10 p-2 rounded-md text-yellow-500" />
-                            <div>
-                                <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Total</h3>
-                                <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
-                                    a receber
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-end justify-between">
-                            <div>
-                                <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-                                    {{ data.totalVendas }}
-                                </h4>
-                            </div>
-
-                            <!-- <span id="porcentagem_vendas_dashboard_alerta"
-                                class="flex items-center gap-1 rounded-full py-0.5 pl-2 pr-2.5 text-sm font-medium text-green-600 dark:text-green-500">
-                                <i class="fa-solid fa-dollar-sign"></i>
-                                <span id="porcentagem_vendas_dashboard">0%</span>
-                            </span> -->
-                        </div>
-                    </div>
-                </RouterLink>
-                <!-- Metric Item End -->
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Gráfico de Barras -->
-                <div
-                    class="border-border bg-card shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-                    <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-lg font-semibold px-0 py-1 flex items-center">
-                            <UserPlus class="mr-2 w-5 h-5" />
-                            Novos assinantes
-                        </h2>
-                        <RouterLink to="/vendas">
-                            <button type="button"
-                                class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
-                                <i class="fa-solid fa-square-arrow-up-right"></i>
-                                Ver mais
-                            </button>
-                        </RouterLink>
-                    </div>
-                    <div>
-                        <BarChart class="max-h-64" :data="dataVendas" :options="optionsChartBar" />
-                    </div>
-                </div>
-
-                <!-- Gráfico de Linhas -->
-                <div
-                    class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-                    <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-lg font-semibold px-0 py-1 flex items-center">
-                            <TrendingUpDown class="mr-2 w-5 h-5" />
-                            Faturamento mensal
-                        </h2>
-                        <RouterLink to="/financeiro/lancamentos">
-                            <button type="button"
-                                class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-colors">
-                                <i class="fa-solid fa-square-arrow-up-right"></i>
-                                Ver mais
-                            </button>
-                        </RouterLink>
-                    </div>
-                    <div>
-                        <LineChart class="max-h-64" :data="dataSaldo" :options="optionsChartLine" />
-                    </div>
-                </div>
-
-                <!-- Últimas Vendas -->
-                <div
-                    class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-                    <div class="flex justify-between items-center mb-2">
-                        <h2 class="text-lg font-semibold px-0 py-1 flex items-center">
-                            <UserStar class="mr-2 w-5 h-5" />
-                            Top clientes
-                        </h2>
-                        <RouterLink to="/produtos">
-                            <button type="button"
-                                class="border-2 border-gray-300 text-gray-900 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-color">
-                                <i class="fa-solid fa-square-arrow-up-right"></i>
-                                Ver mais
-                            </button>
-                        </RouterLink>
-                    </div>
-                    <div>
-                        <BarChart class="max-h-64" :data="dataTicket" :options="optionsChartBarDefault" />
-                    </div>
-                </div>
-                <div
-                    class="border-border dark:border-border-dark bg-card dark:bg-card-dark shadow-md rounded-xl p-4 col-span-1 sm:col-span-2 lg:col-span-2 border">
-                    <div class="flex justify-between items-center mb-2">
-                        <h2 class="text-lg font-semibold px-0 py-1 flex items-center">
-                            <CalendarX2 class="mr-2 w-5 h-5" />
-                            Inatividades por mês
-                        </h2>
-                        <RouterLink to="/produtos">
-                            <button type="button"
-                                class="border-2 border-gray-300 text-gray-950 dark:border-gray-400 dark:text-gray-200 text-nowrap px-3 py-1 rounded-md text-sm transition-color">
-                                <i class="fa-solid fa-square-arrow-up-right"></i>
-                                Ver mais
-                            </button>
-                        </RouterLink>
-                    </div>
-                    <div>
-                        <BarChart class="max-h-64" :data="dataTopProdutos" :options="optionsChartBarDefault" />
-                    </div>
-                </div>
-            </div>
-        </div>
-        <nav v-if="uiStore.isMobile"
-            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
-            <RouterLink to="/vendas">
-                <button type="button"
-                    class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                    <Tags />
-                    <span class="text-xs">Vendas</span>
-                </button>
-            </RouterLink>
-            <RouterLink to="/servicos/os">
-                <button type="button"
-                    class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                    <FileDigit />
-                    <span class="text-xs">Serviços</span>
-                </button>
-            </RouterLink>
-            <RouterLink to="/produtos">
-                <button type="button"
-                    class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                    <Boxes />
-                    <span class="text-xs">Produtos</span>
-                </button>
-            </RouterLink>
-            <button type="button" @click="uiStore.openSidebar = true"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <Menu />
-                <span class="text-xs">Menu</span>
-            </button>
-        </nav>
-    </div>
-</template>
-
 <script setup lang="ts">
-import BarChart from '@/components/graficos/BarChart.vue';
-import LineChart from '@/components/graficos/LineChart.vue';
-import { useDashboardStore } from '@/stores/dashboard/useDashboardStore';
-import { onMounted, ref } from 'vue';
-import { VendaRepository } from '@/repositories/venda-repository';
-import Calendarpicker from '@/components/formulario/calendarpicker.vue';
-import { optionsChartBar, optionsChartBarDefault, optionsChartLine } from '@/composables/useChartOptions';
-import { LancamentosRepository } from '@/repositories/lancamento-repository';
-import { Boxes, CalendarClock, CalendarX2, ChartPie, CircleDollarSign, FileDigit, HandCoins, Menu, Star, Tag, Tags, TrendingUpDown, UserPlus, UserRoundPlus, UserStar } from 'lucide-vue-next';
-import { endOfMonth, startOfMonth } from 'date-fns';
-import { useToast } from 'vue-toastification';
-import { ProdutoRepository } from '@/repositories/produto-repository';
-import { useUiStore } from '@/stores/ui/uiStore';
+import BarChart from '@/components/graficos/BarChart.vue'
+import LineChart from '@/components/graficos/LineChart.vue'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Button } from '@/components/ui/button'
+import { optionsChartBarDefault, optionsChartLine } from '@/composables/useChartOptions'
+import {
+  type DashboardAdminCardItem,
+  type DashboardAdminCharts,
+  type DashboardAdminKpis,
+  type DashboardAdminRankItem,
+  ContaRepository,
+} from '@/repositories/conta-repository'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
+import {
+  AlertTriangle,
+  CalendarClock,
+  ChartPie,
+  CircleDollarSign,
+  CreditCard,
+  Loader,
+  Menu,
+  Tags,
+  TrendingUpDown,
+  UserMinus,
+  UserPlus,
+  UserRoundPlus,
+  UserStar,
+} from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import { useToast } from 'vue-toastification'
 
-const store = useDashboardStore();
-const uiStore = useUiStore();
-const toast = useToast();
-const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())]);
+const uiStore = useUiStore()
+const toast = useToast()
 
-const dataVendas: any = ref({ labels: [], datasets: [] });
-const dataSaldo: any = ref({ labels: [], datasets: [] });
-const dataTicket: any = ref({ labels: [], datasets: [] });
-const dataTopProdutos: any = ref({ labels: [], datasets: [] });
-const data = ref({
-    totalClientes: 0,
-    totalProdutos: 0,
-    produtosEmBaixa: 0,
-    totalVendas: 'R$ 0,00',
-});
+const loading = ref(false)
+const kpis = ref<DashboardAdminKpis>({
+  totalAssinantes: 0,
+  faturamentoMes: 0,
+  receberMes: 0,
+  pendenteTotal: 0,
+  atrasadoTotal: 0,
+  totalAReceber: 0,
+  novosAssinantes: 0,
+})
+const proximosVencimentos = ref<DashboardAdminCardItem[]>([])
+const topInvestidores = ref<DashboardAdminRankItem[]>([])
+const inativosMaisTempo = ref<DashboardAdminRankItem[]>([])
+const charts = ref<DashboardAdminCharts>({
+  novosAssinantes: { labels: [], datasets: [] },
+  faturamentoMensal: { labels: [], datasets: [] },
+  topInvestidores: { labels: [], datasets: [] },
+  inativosMaisTempo: { labels: [], datasets: [] },
+})
 
-async function getDataDashboard() {
-    try {
-        const inicio = filtroPeriodo.value === null ? startOfMonth(new Date()).toISOString() : filtroPeriodo.value[0].toISOString();
-        const fim = filtroPeriodo.value === null ? endOfMonth(new Date()).toISOString() : filtroPeriodo.value[1].toISOString();
-        const [vendas, saldo, ticket, topProdutos, resultado] = await Promise.all([
-            VendaRepository.getResumoMensal(),
-            LancamentosRepository.getSaldoMensal(),
-            ProdutoRepository.getTicketMedioMensal(),
-            VendaRepository.getTopProdutos(inicio, fim),
-            store.getResumo()
-        ])
-
-        dataVendas.value = { labels: [...vendas.data.labels], datasets: [...vendas.data.datasets] };
-        dataSaldo.value = { labels: [...saldo.labels], datasets: [...saldo.datasets] };
-        dataTicket.value = { labels: [...ticket.labels], datasets: [...ticket.datasets] };
-        dataTopProdutos.value = { labels: [...topProdutos.labels], datasets: [...topProdutos.datasets] };
-        data.value.totalClientes = resultado.data.clientes;
-        data.value.totalProdutos = resultado.data.produtos.length;
-        data.value.produtosEmBaixa = resultado.data.estoquesBaixos.length;
-        data.value.totalVendas = resultado.data.vendasCount;
-    } catch (error) {
-        console.log(error);
-        toast.warning('Erro ao buscar os dados do dashboard, recarregue a página!');
-    }
+async function loadDashboard() {
+  try {
+    loading.value = true
+    const response = await ContaRepository.getDashboardAdmin()
+    kpis.value = response.data.kpis
+    proximosVencimentos.value = response.data.proximosVencimentos || []
+    topInvestidores.value = response.data.topInvestidores || []
+    inativosMaisTempo.value = response.data.inativosMaisTempo || []
+    charts.value = response.data.charts
+  } catch (error) {
+    console.log(error)
+    toast.error('Erro ao carregar o dashboard administrativo')
+  } finally {
+    loading.value = false
+  }
 }
 
-async function atualizarIndicadores() {
-    await getDataDashboard()
-    toast.info('Indicadores atualizados!')
-}
-
-onMounted(() => {
-    getDataDashboard();
-});
+onMounted(loadDashboard)
 </script>
+
+<template>
+  <div class="space-y-4">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h2 class="flex items-center gap-2 text-2xl font-bold text-gray-700 dark:text-gray-300">
+          <ChartPie class="h-6 w-6" :stroke-width="2.5" />
+          Dashboard
+        </h2>
+        <p class="text-sm text-muted-foreground">
+          Acompanhamento financeiro e operacional das assinaturas do sistema.
+        </p>
+      </div>
+
+      <Button variant="outline" class="w-fit bg-card" @click="loadDashboard">Recarregar</Button>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <RouterLink to="/admin/assinantes">
+        <Card class="border-border shadow-sm transition hover:border-primary/40">
+          <CardHeader class="pb-3">
+            <CardTitle class="flex items-center gap-3 text-base">
+              <UserRoundPlus class="h-9 w-9 rounded-md bg-blue-500/10 p-2 text-blue-500" />
+              Total de assinantes
+            </CardTitle>
+            <CardDescription>Contas cadastradas na base</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-semibold text-foreground">{{ kpis.totalAssinantes }}</div>
+          </CardContent>
+        </Card>
+      </RouterLink>
+
+      <RouterLink to="/admin/faturas">
+        <Card class="border-border shadow-sm transition hover:border-primary/40">
+          <CardHeader class="pb-3">
+            <CardTitle class="flex items-center gap-3 text-base">
+              <TrendingUpDown class="h-9 w-9 rounded-md bg-green-500/10 p-2 text-green-500" />
+              Faturamento do mes
+            </CardTitle>
+            <CardDescription>Mensalidades pagas no ciclo atual</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-semibold text-foreground">{{ formatCurrencyBR(kpis.faturamentoMes) }}</div>
+          </CardContent>
+        </Card>
+      </RouterLink>
+
+      <RouterLink to="/admin/faturas">
+        <Card class="border-border shadow-sm transition hover:border-primary/40">
+          <CardHeader class="pb-3">
+            <CardTitle class="flex items-center gap-3 text-base">
+              <CalendarClock class="h-9 w-9 rounded-md bg-orange-500/10 p-2 text-orange-500" />
+              A receber no mes
+            </CardTitle>
+            <CardDescription>Pendencias do ciclo corrente</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-semibold text-foreground">{{ formatCurrencyBR(kpis.receberMes) }}</div>
+          </CardContent>
+        </Card>
+      </RouterLink>
+
+      <RouterLink to="/admin/faturas">
+        <Card class="border-border shadow-sm transition hover:border-primary/40">
+          <CardHeader class="pb-3">
+            <CardTitle class="flex items-center gap-3 text-base">
+              <CircleDollarSign class="h-9 w-9 rounded-md bg-yellow-500/10 p-2 text-yellow-500" />
+              Total a receber
+            </CardTitle>
+            <CardDescription>Pendente + atrasado</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-semibold text-foreground">{{ formatCurrencyBR(kpis.totalAReceber) }}</div>
+          </CardContent>
+        </Card>
+      </RouterLink>
+
+      <Card class="border-border shadow-sm">
+        <CardHeader class="pb-3">
+          <CardTitle class="flex items-center gap-3 text-base">
+            <UserPlus class="h-9 w-9 rounded-md bg-cyan-500/10 p-2 text-cyan-500" />
+            Novos assinantes
+          </CardTitle>
+          <CardDescription>Entradas registradas no mes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-semibold text-foreground">{{ kpis.novosAssinantes }}</div>
+        </CardContent>
+      </Card>
+
+      <Card class="border-border shadow-sm">
+        <CardHeader class="pb-3">
+          <CardTitle class="flex items-center gap-3 text-base">
+            <CreditCard class="h-9 w-9 rounded-md bg-indigo-500/10 p-2 text-indigo-500" />
+            Pendente total
+          </CardTitle>
+          <CardDescription>Faturas ainda abertas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-semibold text-foreground">{{ formatCurrencyBR(kpis.pendenteTotal) }}</div>
+        </CardContent>
+      </Card>
+
+      <Card class="border-border shadow-sm">
+        <CardHeader class="pb-3">
+          <CardTitle class="flex items-center gap-3 text-base">
+            <AlertTriangle class="h-9 w-9 rounded-md bg-red-500/10 p-2 text-red-500" />
+            Atrasado total
+          </CardTitle>
+          <CardDescription>Faturas vencidas e nao liquidadas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-semibold text-foreground">{{ formatCurrencyBR(kpis.atrasadoTotal) }}</div>
+        </CardContent>
+      </Card>
+
+      <Card class="border-border shadow-sm">
+        <CardHeader class="pb-3">
+          <CardTitle class="flex items-center gap-3 text-base">
+            <UserMinus class="h-9 w-9 rounded-md bg-slate-500/10 p-2 text-slate-500" />
+            Inativos no radar
+          </CardTitle>
+          <CardDescription>Contas com maior tempo de inatividade</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-semibold text-foreground">{{ inativosMaisTempo.length }}</div>
+        </CardContent>
+      </Card>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <Card class="border-border shadow-sm">
+        <CardHeader class="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Novos assinantes</CardTitle>
+            <CardDescription>Evolucao mensal dos cadastros</CardDescription>
+          </div>
+          <RouterLink to="/admin/assinantes" class="text-sm text-primary">Ver lista</RouterLink>
+        </CardHeader>
+        <CardContent>
+          <BarChart v-if="!loading" class="max-h-72" :data="charts.novosAssinantes" :options="optionsChartBarDefault" />
+          <Empty v-else>
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><Loader class="h-6 w-6 animate-spin text-info" /></EmptyMedia>
+              <EmptyTitle>Carregando...</EmptyTitle>
+              <EmptyDescription>Buscando a evolucao dos assinantes.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </CardContent>
+      </Card>
+
+      <Card class="border-border shadow-sm">
+        <CardHeader class="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Faturamento mensal</CardTitle>
+            <CardDescription>Valores pagos por mes</CardDescription>
+          </div>
+          <RouterLink to="/admin/faturas" class="text-sm text-primary">Ver faturas</RouterLink>
+        </CardHeader>
+        <CardContent>
+          <LineChart v-if="!loading" class="max-h-72" :data="charts.faturamentoMensal" :options="optionsChartLine" />
+          <Empty v-else>
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><Loader class="h-6 w-6 animate-spin text-info" /></EmptyMedia>
+              <EmptyTitle>Carregando...</EmptyTitle>
+              <EmptyDescription>Montando o historico de faturamento.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </CardContent>
+      </Card>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <Card class="border-border shadow-sm">
+        <CardHeader class="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Clientes que mais investiram</CardTitle>
+            <CardDescription>Ranking por mensalidades pagas</CardDescription>
+          </div>
+          <RouterLink to="/admin/faturas" class="text-sm text-primary">Financeiro</RouterLink>
+        </CardHeader>
+        <CardContent class="space-y-4">
+          <BarChart v-if="!loading" class="max-h-72" :data="charts.topInvestidores" :options="optionsChartBarDefault" />
+          <div class="space-y-3">
+            <div
+              v-for="item in topInvestidores"
+              :key="item.nome"
+              class="flex items-center justify-between rounded-lg border border-border/70 bg-background/70 px-3 py-2"
+            >
+              <div>
+                <div class="text-sm font-medium text-foreground">{{ item.nome }}</div>
+              </div>
+              <div class="text-sm text-muted-foreground">{{ formatCurrencyBR(item.total || 0) }}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card class="border-border shadow-sm">
+        <CardHeader class="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Clientes inativos ha mais tempo</CardTitle>
+            <CardDescription>Contas com maior tempo sem regularizacao</CardDescription>
+          </div>
+          <RouterLink to="/admin/assinantes" class="text-sm text-primary">Assinantes</RouterLink>
+        </CardHeader>
+        <CardContent class="space-y-4">
+          <BarChart v-if="!loading" class="max-h-72" :data="charts.inativosMaisTempo" :options="optionsChartBarDefault" />
+          <div class="space-y-3">
+            <div
+              v-for="item in inativosMaisTempo"
+              :key="item.nome"
+              class="flex items-center justify-between rounded-lg border border-border/70 bg-background/70 px-3 py-2"
+            >
+              <div>
+                <div class="text-sm font-medium text-foreground">{{ item.nome }}</div>
+                <div class="text-xs text-muted-foreground">{{ item.email }}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-medium text-foreground">{{ item.diasInativo || 0 }}d</div>
+                <div class="text-xs text-muted-foreground">{{ item.status }}</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+
+    <Card class="border-border shadow-sm">
+      <CardHeader class="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Proximos do vencimento</CardTitle>
+          <CardDescription>Contas que vencem nos proximos 7 dias</CardDescription>
+        </div>
+        <RouterLink to="/admin/assinantes" class="text-sm text-primary">Abrir assinantes</RouterLink>
+      </CardHeader>
+      <CardContent>
+        <div v-if="proximosVencimentos.length" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div
+            v-for="item in proximosVencimentos"
+            :key="item.id"
+            class="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-sm font-medium text-foreground">{{ item.nome }}</div>
+                <div class="text-xs text-muted-foreground">{{ item.email }}</div>
+              </div>
+              <div class="text-xs font-medium text-muted-foreground">
+                {{ item.diasParaVencer }}d
+              </div>
+            </div>
+            <div class="mt-4 flex items-center justify-between text-sm">
+              <span class="text-muted-foreground">{{ formatDateToPtBR(item.vencimento) }}</span>
+              <span class="font-medium text-foreground">{{ formatCurrencyBR(item.valorPlano) }}</span>
+            </div>
+          </div>
+        </div>
+        <Empty v-else>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <CalendarClock class="h-6 w-6" />
+            </EmptyMedia>
+            <EmptyTitle>Sem vencimentos imediatos</EmptyTitle>
+            <EmptyDescription>Nenhuma conta vence nos proximos 7 dias.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </CardContent>
+    </Card>
+
+    <nav
+      v-if="uiStore.isMobile"
+      class="fixed bottom-0 left-0 z-20 flex h-20 w-full justify-around border-t border-border bg-card pt-4 shadow-lg"
+    >
+      <RouterLink to="/admin/assinantes" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
+        <UserStar class="h-5 w-5" />
+        <span class="text-xs">Assinantes</span>
+      </RouterLink>
+      <RouterLink to="/admin/faturas" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
+        <Tags class="h-5 w-5" />
+        <span class="text-xs">Faturas</span>
+      </RouterLink>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="uiStore.openSidebar = true"
+      >
+        <Menu class="h-5 w-5" />
+        <span class="text-xs">Menu</span>
+      </button>
+    </nav>
+  </div>
+</template>

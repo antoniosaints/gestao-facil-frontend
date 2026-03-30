@@ -1,22 +1,30 @@
 <script setup lang="ts">
-import { provide, ref } from 'vue';
-import Tabela from '@/pages/produtos/partials/Tabela.vue';
-import Mobile from '@/pages/produtos/partials/Mobile.vue';
-import { useProdutoStore } from '@/stores/produtos/useProduto';
-import { useToast } from 'vue-toastification';
-import ModalProdutos from './formulario/ModalProdutos.vue';
-import ModalCriarLote from './others/ModalCriarLote.vue';
-import { ProdutoRepository } from '@/repositories/produto-repository';
-import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, Package, RotateCw, Trash } from 'lucide-vue-next';
-import ModalReposicao from './formulario/ModalReposicao.vue';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { useConfirm } from '@/composables/useConfirm';
-import ModalRelatorio from './formulario/ModalRelatorio.vue';
-import GerarRelatorioGeral from './others/GerarRelatorioGeral.vue';
+import Tabela from '@/pages/produtos/partials/Tabela.vue'
+import Mobile from '@/pages/produtos/partials/Mobile.vue'
+import { useProdutoStore } from '@/stores/produtos/useProduto'
+import { useToast } from 'vue-toastification'
+import ModalProdutos from './formulario/ModalProdutos.vue'
+import ModalCriarLote from './others/ModalCriarLote.vue'
+import { ProdutoRepository } from '@/repositories/produto-repository'
+import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, FolderTree, Package, RotateCw, Trash } from 'lucide-vue-next'
+import ModalReposicao from './formulario/ModalReposicao.vue'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/composables/useConfirm'
+import ModalRelatorio from './formulario/ModalRelatorio.vue'
+import GerarRelatorioGeral from './others/GerarRelatorioGeral.vue'
+import ModalVariante from './formulario/ModalVariante.vue'
+import GerarEtiquetas from './others/GerarEtiquetas.vue'
+import router from '@/router'
 
-const toast = useToast();
-const store = useProdutoStore();
+const toast = useToast()
+const store = useProdutoStore()
 
 const relatorioGeral = async () => {
     store.openModalRelatorioGeral = true
@@ -77,6 +85,10 @@ async function excluirEmLote() {
                     class="bg-green-600 text-white px-2 py-1.5 text-sm rounded-md">
                     <FileUp class="w-5 h-5" />
                 </button>
+                <button @click="router.push('/produtos/categorias')"
+                    class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
+                    <FolderTree class="w-5 h-5" />
+                </button>
                 <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo Produto</span>
                 </button>
@@ -96,6 +108,8 @@ async function excluirEmLote() {
         <ModalCriarLote />
         <ModalReposicao />
         <ModalRelatorio />
+        <ModalVariante />
+        <GerarEtiquetas />
         <GerarRelatorioGeral />
     </div>
 </template>

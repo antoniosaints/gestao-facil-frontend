@@ -113,7 +113,9 @@
                                 <img src="/imgs/logo.png" alt="logopng"
                                     class="w-16 h-16 object-cover mx-auto mb-2 rounded-md">
                                 <div class="text-center flex flex-col">
-                                    <h3 class="text-gray-800 dark:text-white text-xs">{{ p.nome }}</h3>
+                                    <h3 class="text-gray-800 dark:text-white text-xs">
+                                        {{ `${p.nome}${p.nomeVariante ? ` / ${p.nomeVariante}` : ''}` }}
+                                    </h3>
                                     <!-- <p class="text-gray-500 dark:text-gray-400 text-xs">Cód: {{ p.code }}</p> -->
                                     <p v-if="p.controlaEstoque" class="text-xs"
                                         :class="[p.estoque === 0 ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400']">
@@ -174,7 +176,9 @@
                             <div v-for="item in cart" :key="item.id"
                                 class="border bg-card dark:bg-gray-800 shadow-md rounded p-1 mb-3">
                                 <div class="flex justify-between items-start">
-                                    <h4 class="text-xs text-gray-800 dark:text-white p-1 truncate">{{ item.nome }}</h4>
+                                    <h4 class="text-xs text-gray-800 dark:text-white p-1 truncate">
+                                        {{ `${item.nome}${item.nomeVariante ? ` / ${item.nomeVariante}` : ''}` }}
+                                    </h4>
                                     <button type="button" title="Remover item" @click="atualizarQuantidade(item.id!, 0)"
                                         class="text-red-500 hover:text-red-700 text-sm">
                                         <SquareX />
@@ -365,7 +369,7 @@ import { useClientesStore } from '@/stores/clientes/useClientes';
 import { CirclePercent, Dot, HandCoins, HandGrab, MonitorDown, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import { Button } from '@/components/ui/button';
-import type { Produto } from '@/types/schemas';
+import type { ProdutoVariante } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
 import router from '@/router';
 import { useConfirm } from '@/composables/useConfirm';
@@ -385,11 +389,11 @@ function aplicarDesconto() {
     openModalDesconto.value = false
     toast.success('Desconto aplicado com sucesso')
 }
-interface CartItem extends Produto {
+interface CartItem extends ProdutoVariante {
     quantity: number
 }
 
-const products = ref<Produto[]>([])
+const products = ref<ProdutoVariante[]>([])
 const cart = ref<CartItem[]>(JSON.parse(localStorage.getItem("gestao_facil:cartPDV") || "[]"))
 const searchTerm = ref("")
 const discountType = ref<"percentage" | "value">("percentage")
@@ -439,7 +443,9 @@ watch(() => cart.value, () => {
 function quickAddCard() {
     const search = searchTerm.value.toLowerCase();
     if (!search) return toast.error('Informe o produto a ser adicionado')
-    const itemProduto = products.value.find(item => item.nome.toLowerCase().includes(search) || (item.codigo || '').toLowerCase().includes(search))
+    const itemProduto = products.value.find(item =>
+        [item.nome, item.nomeVariante || '', item.codigo || ''].join(' ').toLowerCase().includes(search)
+    )
     if (itemProduto?.nome) {
         adicionarAoCarrinho(itemProduto)
         searchInputField.value?.focus()
@@ -488,7 +494,7 @@ function saveCart() {
     if (cart.value.length > 0) podeFinalizarPDV.value = true
 }
 
-function adicionarAoCarrinho(product: Produto) {
+function adicionarAoCarrinho(product: ProdutoVariante) {
     const existing = cart.value.find((i) => i.id === product.id)
     if (existing) {
         if (product.controlaEstoque && !product.producaoLocal) {
@@ -544,8 +550,10 @@ async function finalizarVendaPDV() {
         desconto: discount.value,
         itens: cart.value.map((i) => ({
             id: i.id,
+            nome: `${i.nome}${i.nomeVariante ? ` / ${i.nomeVariante}` : ''}`,
             quantidade: i.quantity,
             preco: formatToNumberValue(i.preco),
+            tipo: 'PRODUTO',
         })),
     }
 

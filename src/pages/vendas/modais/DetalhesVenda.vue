@@ -142,7 +142,7 @@
                             class="grid grid-cols-4 gap-2 border-t pt-0.5 border-gray-300 dark:border-gray-600">
                             <div class="flex flex-col col-span-2">
                                 <span class="text-gray-600 text-xs md:text-sm dark:text-gray-400">
-                                    {{ item.produto.nome }}
+                                    {{ item.produto?.nome || item.servico?.nome || item.itemName || 'Item' }}
                                 </span>
                             </div>
                             <div class="flex flex-col">

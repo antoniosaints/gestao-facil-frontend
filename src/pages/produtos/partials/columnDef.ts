@@ -1,21 +1,21 @@
 import { Button } from '@/components/ui/button'
-import { render } from '@/lib/utils'
-import type { Produto } from '@/types/schemas'
-import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Package, ScanQrCode } from 'lucide-vue-next'
-import BadgeCell from '@/components/tabela/BadgeCell.vue'
-import { formatCurrencyBR } from '@/utils/formatters'
-import Actions from './Actions.vue'
-import { RouterLink } from 'vue-router'
 import { Checkbox } from '@/components/ui/checkbox'
+import BadgeCell from '@/components/tabela/BadgeCell.vue'
+import { render } from '@/lib/utils'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
-import { Switch } from '@/components/ui/switch'
+import type { ProdutoBase } from '@/types/schemas'
+import { formatCurrencyBR } from '@/utils/formatters'
+import type { ColumnDef } from '@tanstack/vue-table'
+import { ArrowUpDown, Boxes, Package, ScanQrCode, Tags } from 'lucide-vue-next'
+import { RouterLink } from 'vue-router'
+import Actions from './Actions.vue'
+
 const store = useProdutoStore()
 
-export const columnsProdutos: ColumnDef<Produto>[] = [
+export const columnsProdutos: ColumnDef<ProdutoBase>[] = [
   {
     id: 'select',
-    header: ({ table }) => render('div', {}, ''),
+    header: () => render('div', {}, ''),
     cell: ({ row }) =>
       render(Checkbox, {
         modelValue: store.selectedIds.includes(row.original.id!),
@@ -24,7 +24,7 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
           if (value) store.addSelectedId(row.original.id!)
           else store.removeSelectedId(row.original.id!)
         },
-        ariaLabel: 'Select row',
+        ariaLabel: 'Selecionar linha',
       }),
     enableSorting: false,
     enableHiding: false,
@@ -40,17 +40,15 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
         },
         () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
-    cell: ({ row }) => {
-      const isLowStock = row.original.estoque <= row.original.minimo
-      return render(RouterLink, { to: `/produtos/detalhes?id=${row.original.id}` }, () =>
+    cell: ({ row }) =>
+      render(RouterLink, { to: `/produtos/detalhes?id=${row.original.id}` }, () =>
         render(BadgeCell, {
           label: row.getValue('Uid') as string,
-          color: isLowStock ? 'red' : 'gray',
+          color: 'gray',
           icon: Package,
           capitalize: false,
         }),
-      )
-    },
+      ),
   },
   {
     accessorKey: 'nome',
@@ -61,24 +59,55 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
           variant: 'ghost',
           onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
         },
-        () => ['Produto', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+        () => ['Produto base', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
   },
   {
+    accessorKey: 'categoria',
+    header: () => render('div', {}, 'Categoria'),
+    cell: ({ row }) =>
+      render(BadgeCell, {
+        label: `${row.original.categoria || 'Sem categoria'}`,
+        color: 'blue',
+        icon: Tags,
+      }),
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'totalVariantes',
+    header: () => render('div', {}, 'Variantes'),
+    cell: ({ row }) =>
+      render(BadgeCell, {
+        label: `${row.original.totalVariantes || 0}`,
+        color: 'gray',
+        icon: Boxes,
+        capitalize: false,
+      }),
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'estoqueTotal',
+    header: () => render('div', {}, 'Estoque total'),
+    cell: ({ row }) =>
+      render(BadgeCell, {
+        label: `${row.original.estoqueTotal || 0} ${row.original.unidade || 'un'}`,
+        color: 'gray',
+      }),
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'preco',
+    header: () => render('div', {}, 'Preço padrão'),
+    cell: ({ row }) =>
+      render(BadgeCell, {
+        label: formatCurrencyBR(Number(row.original.preco || 0)),
+        color: 'green',
+      }),
+    enableSorting: false,
+  },
+  {
     accessorKey: 'codigo',
-    header: ({ column }) =>
-      render(
-        'div',
-        { class: 'text-left' },
-        render(
-          Button,
-          {
-            variant: 'ghost',
-            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-          },
-          () => ['Código', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-        ),
-      ),
+    header: () => render('div', {}, 'Código padrão'),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: `${row.original.codigo || '-'}`,
@@ -86,81 +115,7 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
         icon: ScanQrCode,
         capitalize: false,
       }),
-  },
-  {
-    accessorKey: 'estoque',
-    header: ({ column }) => {
-      return render(
-        'div',
-        { class: 'text-left' },
-        render(
-          Button,
-          {
-            variant: 'ghost',
-            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-          },
-          () => ['Estoque', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-        ),
-      )
-    },
-    cell: ({ row }) =>
-      render(BadgeCell, {
-        label: `${row.getValue('estoque')} ${row.original.unidade}`,
-        color: 'gray',
-      }),
-  },
-  {
-    accessorKey: 'preco',
-    header: ({ column }) =>
-      render(
-        'div',
-        { class: 'text-left' },
-        render(
-          Button,
-          {
-            variant: 'ghost',
-            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-          },
-          () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-        ),
-      ),
-    cell: ({ row }) => {
-      const valor = formatCurrencyBR(row.original.preco as number)
-      return render(BadgeCell, { label: valor, color: 'green' })
-    },
-  },
-  {
-    accessorKey: 'controlaEstoque',
-    header: ({ column }) =>
-      render(
-        'div',
-        { class: 'flex items-center gap-2 cursor-pointer select-none' },
-        render(
-          Button,
-          {
-            variant: 'ghost',
-            class: 'flex items-center gap-2 p-0 h-auto text-sm',
-            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-          },
-          () => [
-            'Controlado',
-            render(ArrowUpDown, { class: 'h-4 w-4 opacity-70 hover:opacity-100 transition' }),
-          ],
-        ),
-      ),
-    cell: ({ row }) => {
-      return render(
-        'div',
-        {
-          class: 'flex items-center justify-center py-1',
-        },
-        render(Switch, {
-          class: 'mx-auto',
-          readOnly: true,
-          modelValue: row.original.controlaEstoque,
-        }),
-      )
-    },
+    enableSorting: false,
   },
   {
     accessorKey: 'acoes',
@@ -168,10 +123,7 @@ export const columnsProdutos: ColumnDef<Produto>[] = [
     enableColumnFilter: false,
     enableHiding: false,
     header: () => render('div', { class: 'text-right' }, 'Ações'),
-    cell: ({ row, table }) => {
-      return render('div', { class: 'text-right' }, [
-        render(Actions, { data: { ...row.original }, table }),
-      ])
-    },
+    cell: ({ row, table }) =>
+      render('div', { class: 'text-right' }, [render(Actions, { data: { ...row.original }, table })]),
   },
 ]

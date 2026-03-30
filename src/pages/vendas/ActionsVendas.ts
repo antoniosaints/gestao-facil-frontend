@@ -51,13 +51,13 @@ export async function deletarVenda(id: number) {
   })
   if (!confirm) return
   try {
-    await VendaRepository.remove(id)
-    toast.success('Registro deletado com sucesso')
+    const response = await VendaRepository.remove(id)
+    toast.success(response.message || 'Registro deletado com sucesso')
     store.idMutation = null
     store.updateTable()
-  } catch (error) {
+  } catch (error: any) {
     console.log(error)
-    toast.error('Erro ao deletar o registro')
+    toast.error(error.response?.data?.message || 'Erro ao deletar o registro')
     store.idMutation = null
   }
 }

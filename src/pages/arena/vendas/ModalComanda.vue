@@ -1,59 +1,100 @@
 <script setup lang="ts">
-import ModalView from "@/components/formulario/ModalView.vue";
-import { Button } from "@/components/ui/button";
-import { useVendasStore } from "@/stores/vendas/useVenda";
-import { ref } from "vue";
-import { POSITION, useToast } from "vue-toastification";
-import { useUiStore } from "@/stores/ui/uiStore";
-import { useComandaStore } from "@/stores/arena/comandaStore";
-import { Input } from "@/components/ui/input";
+import { computed, ref, watch } from 'vue'
+import { useToast } from 'vue-toastification'
+import ModalView from '@/components/formulario/ModalView.vue'
+import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { ComandaRepository } from '@/repositories/comanda-repository'
+import { useComandaStore } from '@/stores/arena/comandaStore'
+import { useClientesStore } from '@/stores/clientes/useClientes'
 
-const description = ref('Preencha os campos abaixo')
+const store = useComandaStore()
+const storeClientes = useClientesStore()
 const toast = useToast()
-const store = useVendasStore()
-const storeComanda = useComandaStore()
-const storeUi = useUiStore()
+const saving = ref(false)
+const clienteLabel = ref('')
+
+const title = computed(() => (store.form.id ? 'Editar comanda' : 'Nova comanda'))
+const description = computed(() =>
+  store.form.id ? 'Atualize os dados principais da comanda.' : 'Cadastre uma nova comanda para lançar itens e gerar cobranças.',
+)
+
+watch(
+  () => store.openModal,
+  (isOpen) => {
+    if (!isOpen) {
+      clienteLabel.value = ''
+    }
+  },
+)
 
 async function submit() {
-    const hasId = store.form.id;
+  try {
+    const clienteNome = store.form.clienteNome.trim() || clienteLabel.value.trim()
 
-    try {
-
-    } catch (error: any) {
-        console.log(error);
-        const msg = error?.response?.data?.message || 'Ocorreu um erro ao registrar os ítens';
-        toast.error(msg, { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
+    if (!clienteNome) {
+      toast.error('Informe a identificação da comanda.')
+      return
     }
-}
 
+    saving.value = true
+    await ComandaRepository.save({
+      ...store.form,
+      clienteNome,
+    })
+    toast.success('Comanda salva com sucesso.')
+    store.openModal = false
+    store.reset()
+    store.updateTable()
+    if (store.selectedComanda?.id) {
+      await store.reloadDetalhes()
+    }
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error.response?.data?.message || 'Erro ao salvar a comanda.')
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <template>
-    <ModalView v-model:open="storeComanda.openModal" :title="storeComanda.form.id ? 'Editar comanda' : 'Nova comanda'"
-        :description="description" size="2xl">
-        <form @submit.prevent="submit" class="space-y-4 px-4">
-            <div class="grid grid-cols-12 gap-2">
-                <div class="col-span-6">
-                    <Label>Cliente</Label>
-                    <Input type="text" v-model="(storeComanda.form.observacao as string)" placeholder="Observação" />
-                </div>
-                <div class="col-span-6">
-                    <Label>Local</Label>
-                    <Input type="text" v-model="(storeComanda.form.observacao as string)" placeholder="Observação" />
-                </div>
-                <div class="col-span-12">
-                    <Label>Observação</Label>
-                    <Input type="text" v-model="(storeComanda.form.observacao as string)" placeholder="Observação" />
-                </div>
-            </div>
-            <div class="flex justify-end gap-2">
-                <Button type="button" variant="secondary" @click="storeComanda.openModal = false">
-                    Fechar
-                </Button>
-                <Button class="text-white" type="submit">
-                    Registrar
-                </Button>
-            </div>
-        </form>
-    </ModalView>
+  <ModalView v-model:open="store.openModal" :title="title" :description="description" size="2xl">
+    <form @submit.prevent="submit">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 px-4">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1">Identificação da comanda *</label>
+          <Input v-model="store.form.clienteNome" type="text" placeholder="Ex: Mesa 5, João, Balcão" />
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1">
+            Cliente
+            <button type="button" class="text-blue-500 px-2" @click="storeClientes.openSave">+ Novo</button>
+          </label>
+          <Select2Ajax
+            v-model="store.form.clienteId"
+            v-model:label="clienteLabel"
+            url="/clientes/select2"
+            placeholder="Selecione um cliente"
+            :allow-clear="true"
+          />
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1">Observação</label>
+          <Textarea v-model="store.form.observacao" rows="4" placeholder="Observações internas da comanda" />
+        </div>
+
+        <div class="md:col-span-2 flex justify-end gap-2">
+          <Button type="button" variant="secondary" @click="store.openModal = false">Fechar</Button>
+          <Button :disabled="saving" class="bg-primary text-white hover:bg-primary/90">
+            {{ saving ? 'Salvando...' : 'Salvar comanda' }}
+          </Button>
+        </div>
+      </div>
+    </form>
+  </ModalView>
 </template>

@@ -33,7 +33,7 @@ import { ref } from "vue"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import ModalView from "@/components/formulario/ModalView.vue"
-import { ProdutoRepository } from "@/repositories/produto-repository"
+import { ProdutoVarianteRepository } from "@/repositories/produto-repository"
 import { FilePlus } from "lucide-vue-next"
 
 const title = ref('Gerar etiquetas')
@@ -46,7 +46,7 @@ const quantidade = ref<number | undefined>(undefined)
 
 const gerarEtiquetas = async (id: number) => {
     try {
-        await ProdutoRepository.gerarEtiquetas(id, quantidade.value)
+        await ProdutoVarianteRepository.gerarEtiquetas(id, quantidade.value)
         toast.success('Etiquetas geradas com sucesso')
     } catch (error) {
         toast.error('Erro ao gerar as etiquetas')

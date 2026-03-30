@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ProdutoRepository } from "@/repositories/produto-repository";
+import { ProdutoVarianteRepository } from "@/repositories/produto-repository";
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import type { FormularioVenda } from "@/types/schemas";
 import http from "@/utils/axios";
@@ -48,7 +48,9 @@ async function submitFormularioVenda() {
     }
 
     try {
-        const data: FormularioVenda & { itens: { id: number, quantidade: number, tipo: 'SERVICO' | 'PRODUTO', preco: number }[] } = {
+        const data: FormularioVenda & {
+            itens: { id: number, nome: string, quantidade: number, tipo: 'SERVICO' | 'PRODUTO', preco: number }[]
+        } = {
             id: store.form.id,
             data: store.form.data!,
             desconto: store.form.desconto ? getValorDesconto.value : 0,
@@ -57,7 +59,13 @@ async function submitFormularioVenda() {
             vendedorId: store.form.vendedorId,
             garantia: store.form.garantia,
             observacoes: store.form.observacoes,
-            itens: store.carrinho.map(item => ({ id: item.id, quantidade: item.quantidade, tipo: 'PRODUTO', preco: item.preco }))
+            itens: store.carrinho.map(item => ({
+                id: item.id,
+                nome: item.produto,
+                quantidade: item.quantidade,
+                tipo: 'PRODUTO',
+                preco: item.preco
+            }))
         };
         await http.post(`vendas/criar${hasId ? `?id=${hasId}` : ''}`, data);
 
@@ -156,7 +164,7 @@ const ableAdd = ref(true);
 async function getValorProduto(id: number) {
     try {
         ableAdd.value = true
-        const { data } = await ProdutoRepository.get(id);
+        const { data } = await ProdutoVarianteRepository.get(id);
         if (data.estoque <= 0) {
             addItemForm.value.preco = null;
             addItemForm.value.id = null;
@@ -312,7 +320,7 @@ onMounted(() => {
             <!-- Adição de produtos -->
             <div class="grid grid-cols-12 gap-4 items-end">
                 <div class="col-span-8 md:col-span-6">
-                    <label class="block text-sm mb-1">Produto <span class="text-red-500">*</span></label>
+                    <label class="block text-sm mb-1">Variante <span class="text-red-500">*</span></label>
                     <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
                         url="/produtos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
                 </div>

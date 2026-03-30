@@ -215,24 +215,71 @@ export interface MovimentacoesEstoque {
   custo: number
 }
 
-export interface Produto {
+export interface ProdutoCategoria {
   id?: number
   Uid?: string
+  nome: string
+  status?: Status | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export interface ProdutoVariante {
+  id?: number
+  Uid?: string
+  contaId?: number
+  produtoBaseId?: number | null
   status: Status | string
   nome: string
-  descricao?: string
+  nomeVariante?: string
+  descricao?: string | null
   preco: number | string
-  precoCompra?: number | string
+  precoCompra?: number | string | null
   entradas?: boolean
   saidas?: boolean
-  unidade?: string
+  unidade?: string | null
   estoque: number
   minimo: number
-  codigo?: string
+  codigo?: string | null
   controlaEstoque?: boolean
   producaoLocal?: boolean
-  custoMedioProducao?: number
+  custoMedioProducao?: number | null
+  ehPadrao?: boolean
+  categoriaId?: number | null
+  categoria?: string | null
+  produtoBaseNome?: string
+  label?: string
 }
+
+export interface ProdutoBase {
+  id?: number
+  Uid?: string
+  contaId?: number
+  status: Status | string
+  nome: string
+  descricao?: string | null
+  categoriaId?: number | null
+  categoria?: string | null
+  Categoria?: ProdutoCategoria | null
+  preco: number | string
+  precoCompra?: number | string | null
+  entradas?: boolean
+  saidas?: boolean
+  unidade?: string | null
+  estoque: number
+  estoqueTotal?: number
+  minimo: number
+  codigo?: string | null
+  controlaEstoque?: boolean
+  producaoLocal?: boolean
+  custoMedioProducao?: number | null
+  nomeVariante?: string
+  totalVariantes?: number
+  variantePadraoId?: number | null
+  variantes?: ProdutoVariante[]
+}
+
+export type Produto = ProdutoVariante
 
 export interface Servicos {
   id?: number
@@ -306,6 +353,7 @@ export interface Vendas {
   data: Date
   valor: number
   clienteId?: number
+  comandaId?: number | null
   status: 'ORCAMENTO' | 'ANDAMENTO' | 'FINALIZADO' | 'PENDENTE' | 'CANCELADO' | 'FATURADO'
   vendedorId?: number
   garantia?: number
@@ -315,6 +363,9 @@ export interface Vendas {
   cliente?: ClientesFornecedores
   vendedor?: Usuarios
   CobrancasFinanceiras?: CobrancaFinanceira[]
+  ItensVendas?: ItensVendas[]
+  ComandaItens?: ComandaItem[]
+  PagamentoVendas?: PagamentoVendas | null
 }
 
 export interface CarrinhoItem {
@@ -323,6 +374,9 @@ export interface CarrinhoItem {
   quantidade: number
   preco: number
   subtotal: number
+  produtoBaseId?: number | null
+  nomeVariante?: string | null
+  categoria?: string | null
 }
 export interface ItemVenda {
   id: number
@@ -398,10 +452,13 @@ export interface UpdateParametrosConta {
 export interface ItensVendas {
   id?: number
   vendaId: number
-  produtoId: number
+  itemName?: string | null
+  produtoId?: number | null
+  servicoId?: number | null
   quantidade: number
   valor: number
-  produto: Produto
+  produto?: ProdutoVariante | null
+  servico?: Servicos | null
 }
 
 export interface PagamentoVendas {
@@ -415,14 +472,22 @@ export interface PagamentoVendas {
 
 export interface ContasFinanceiro {
   id?: number
+  Uid?: string
   nome: string
-  saldoInicial: number
+  saldoInicial: number | string
+}
+
+export interface CategoriaFinanceiroParent {
+  id?: number
+  nome: string
 }
 
 export interface CategoriaFinanceiro {
   id?: number
+  Uid?: string
   nome: string
-  parentId?: number
+  parentId?: number | null
+  Parent?: CategoriaFinanceiroParent | null
 }
 
 export interface LancamentoFinanceiro {
@@ -530,7 +595,33 @@ export interface ArenaAgendamentos {
   Cliente?: ClientesFornecedores | null
 }
 
-export type StatusComanda = 'ABERTA' | 'FECHADA' | 'CANCELADA'
+export type StatusComanda = 'ABERTA' | 'PENDENTE' | 'FECHADA' | 'CANCELADA'
+
+export type TipoItemComanda = 'PRODUTO' | 'SERVICO'
+
+export interface ComandaItem {
+  id?: number
+  comandaId: number
+  itemName: string
+  tipo: TipoItemComanda
+  produtoId?: number | null
+  servicoId?: number | null
+  quantidade: number
+  valor: number
+  vendaId?: number | null
+  produto?: ProdutoVariante | null
+  servico?: Servicos | null
+  venda?: Vendas | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export interface ComandaResumo {
+  itensAbertos: number
+  valorItensAbertos: number
+  valorPendente: number
+  valorPago: number
+}
 
 export interface ComandaVenda {
   id?: number
@@ -544,8 +635,14 @@ export interface ComandaVenda {
   Cliente?: ClientesFornecedores
   reservaId?: number | null
   ArenaReservas?: ArenaAgendamentos
+  itens?: ComandaItem[]
   vendas?: Vendas[]
   comandaPagamentos?: ComandaPagamento[]
+  resumo?: ComandaResumo
+  itensAbertos?: number
+  valorItensAbertos?: number
+  valorPendente?: number
+  valorPago?: number
 }
 
 export interface ComandaPagamento {

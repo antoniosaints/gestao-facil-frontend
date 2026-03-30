@@ -14,8 +14,9 @@ import {
     DrawerHeader,
     DrawerTitle,
 } from "@/components/ui/drawer"
-import { computed } from "vue";
+import { computed, inject, provide, ref, watch } from "vue";
 import { type LucideIcon } from "lucide-vue-next";
+import { allocateModalLayer, modalLayerKey } from "./modal-layer";
 
 // Reativo vindo de fora (pode ter vários na mesma página)
 const isOpen = defineModel<boolean>("open", { default: false })
@@ -42,6 +43,28 @@ const sizeClasses: Record<string, string> = {
 const sizeModal = computed(() => size ? sizeClasses[size] : 'max-w-4xl')
 
 const isDesktop = useMediaQuery("(min-width: 768px)")
+const parentLayer = inject(modalLayerKey, null)
+const layer = ref(60)
+
+provide(modalLayerKey, layer)
+
+watch(
+    () => isOpen.value,
+    (open) => {
+        if (open) {
+            layer.value = allocateModalLayer(parentLayer?.value)
+        }
+    },
+    { immediate: true }
+)
+
+const overlayStyle = computed(() => ({
+    zIndex: layer.value,
+}))
+
+const contentStyle = computed(() => ({
+    zIndex: layer.value + 1,
+}))
 </script>
 
 <template>
@@ -49,7 +72,8 @@ const isDesktop = useMediaQuery("(min-width: 768px)")
         <!-- Desktop: Modal -->
         <Dialog v-if="isDesktop" v-model:open="isOpen">
             <DialogContent class="p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
-                :disable-outside-pointer-events="true" :class="[sizeModal, 'mx-auto']">
+                :overlay-style="overlayStyle" :content-style="contentStyle"
+                :class="[sizeModal, 'mx-auto']">
                 <DialogHeader class="p-6 pb-0">
                     <DialogTitle class="font-normal text-xl -mb-1 flex items-center gap-1">
                         <component v-if="icon" :is="icon" class="h-5 w-5 inline-flex" />
@@ -67,7 +91,7 @@ const isDesktop = useMediaQuery("(min-width: 768px)")
 
         <!-- Mobile: Drawer -->
         <Drawer v-else v-model:open="isOpen">
-            <DrawerContent>
+            <DrawerContent :overlay-style="overlayStyle" :content-style="contentStyle">
                 <DrawerHeader class="text-left">
                     <DrawerTitle>{{ title }}</DrawerTitle>
                     <DrawerDescription v-if="description">

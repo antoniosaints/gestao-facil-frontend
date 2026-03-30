@@ -5,18 +5,42 @@ import qzTray from '@/utils/qzTray'
 export interface VendaEfetivar {
   pagamento: MetodoPagamento
   dataPagamento: Date | string
-  categoria: number
+  categoria: number | null
   conta: number | null
   lancamentoManual: boolean
+  cancelarCobrancaExterna?: boolean
 }
 export class VendaRepository {
+  static async gerarRelatorioPDF(inicio: string, fim: string) {
+    const data = await http.get(`/vendas/relatorios/resumo-pdf`, {
+      responseType: 'blob',
+      headers: { 'Content-Type': 'application/pdf' },
+      params: {
+        inicio,
+        fim,
+      },
+    })
+
+    const url = window.URL.createObjectURL(data.data)
+    const a = document.createElement('a')
+    a.href = url
+    const dataHoje = new Date()
+      .toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      .replace(/\//g, '-')
+    a.download = `relatorio-vendas_${dataHoje}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }
+
   static async get(id: number) {
     const data = await http.get(`/vendas/${id}`)
     return data.data
   }
 
   static async remove(id: number) {
-    await http.delete(`/vendas/${id}`)
+    const { data } = await http.delete(`/vendas/${id}`)
+    return data
   }
 
   static async update(data: Partial<Vendas>, id: number) {
