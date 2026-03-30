@@ -1,4 +1,4 @@
-import type { Contas, FaturasContas, UpdateParametrosConta, Usuarios } from '@/types/schemas'
+import type { Contas, UpdateParametrosConta, Usuarios } from '@/types/schemas'
 import http from '@/utils/axios'
 
 export interface ContaAssinanteAdmin {
@@ -110,10 +110,23 @@ export interface DashboardAdminResponse {
   }
 }
 
+export interface StatusContaFatura {
+  id: string
+  asaasPaymentId: string
+  descricao?: string | null
+  vencimento: Date | string
+  valor: number | string
+  status: 'PENDENTE' | 'PAGO' | 'ATRASADO' | 'CANCELADO'
+  linkPagamento?: string | null
+  color?: string
+  origem: 'MENSALIDADE' | 'APP'
+  criadoEm?: Date | string
+}
+
 export interface StatusConta {
   status: string
   valor: string
-  faturas: FaturasContas[]
+  faturas: StatusContaFatura[]
   diasParaVencer: number
   proximoVencimento: string
   valorTotal: string
