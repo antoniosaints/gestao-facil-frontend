@@ -8,15 +8,19 @@ import {
 } from '@/types/schemas'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { formatToNumberValue } from '@/utils/formatters'
+import { useToast } from 'vue-toastification'
 export interface CarrinhoOS extends CarrinhoItem {
   tipoItem: 'PRODUTO' | 'SERVICO'
 }
 export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
+  const toast = useToast()
   const openModal = ref(false)
   const openModalChecklist = ref(false)
   const openModalPropor = ref(false)
   const openModalDetalheOs = ref(false)
+  const loadingDetalhe = ref(false)
   const ordemDetalhe = ref<IDetalheOrdemServico>()
+  const detalheId = ref<number | null>(null)
   const carrinho = ref<CarrinhoOS[]>([])
   const idMutation = ref<number | null>(null)
   const tipoDesconto = ref<'VALOR' | 'PORCENTAGEM'>('VALOR')
@@ -74,11 +78,41 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
     if (form.value.id) reset()
     openModal.value = true
   }
+
+  const loadDetalhes = async (id: number) => {
+    loadingDetalhe.value = true
+    detalheId.value = id
+
+    try {
+      const response = await OrdensServicoRepository.getDetalhes(id)
+      ordemDetalhe.value = response
+      return response
+    } finally {
+      loadingDetalhe.value = false
+    }
+  }
+
+  const reloadDetalhes = async () => {
+    if (!detalheId.value) return
+    return await loadDetalhes(detalheId.value)
+  }
+
   const openDetalhes = async (id: number) => {
-    const response = await OrdensServicoRepository.getDetalhes(id)
-    console.log(response)
-    ordemDetalhe.value = response
-    openModalDetalheOs.value = true
+    try {
+      if (!id) {
+        return toast.info('ID da OS não informado!')
+      }
+
+      ordemDetalhe.value = undefined
+      openModalDetalheOs.value = true
+      await loadDetalhes(id)
+    } catch (error) {
+      ordemDetalhe.value = undefined
+      detalheId.value = null
+      openModalDetalheOs.value = false
+      console.log(error)
+      toast.error('Erro ao carregar os detalhes da OS.')
+    }
   }
   const openUpdate = async (id: number) => {
     const response = await OrdensServicoRepository.get(id)
@@ -131,7 +165,9 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
     openModalChecklist,
     openModalPropor,
     openModalDetalheOs,
+    loadingDetalhe,
     openDetalhes,
+    reloadDetalhes,
     ordemDetalhe,
     idMutation,
     carrinho,

@@ -243,6 +243,8 @@ export interface ProdutoVariante {
   codigo?: string | null
   controlaEstoque?: boolean
   producaoLocal?: boolean
+  mostrarNoPdv?: boolean
+  materiaPrima?: boolean
   custoMedioProducao?: number | null
   ehPadrao?: boolean
   categoriaId?: number | null
@@ -272,10 +274,22 @@ export interface ProdutoBase {
   codigo?: string | null
   controlaEstoque?: boolean
   producaoLocal?: boolean
+  mostrarNoPdv?: boolean
+  materiaPrima?: boolean
   custoMedioProducao?: number | null
   nomeVariante?: string
   totalVariantes?: number
   variantePadraoId?: number | null
+  ncm?: string | null
+  cest?: string | null
+  cfop?: string | null
+  origem?: string | null
+  aliquotaIcms?: number | string | null
+  aliquotaIpi?: number | string | null
+  aliquotaPis?: number | string | null
+  aliquotaCofins?: number | string | null
+  codigoProduto?: string | null
+  issAliquota?: number | string | null
   variantes?: ProdutoVariante[]
 }
 

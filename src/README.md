@@ -25,6 +25,8 @@
 - Interface de tela nasce em `pages`.
 - Estado e ações compartilhadas do módulo vão para `stores`.
 - Requisições externas vão para `repositories`.
+- Modais e páginas de detalhe com dados vivos, como OS, produto e comprovantes operacionais do PDV, devem carregar o estado via store/repository e recarregar após mutações relevantes.
+- Dashboards por domínio devem preferir agregações do backend via repository, incluindo filtros por período e isolamento por `contaId` do usuário autenticado.
 - Comportamento transversal ou reutilizável vai para `composables`.
 - Infraestrutura e detalhes técnicos ficam em `utils` ou `lib`.
 
@@ -32,3 +34,4 @@
 - Evitar lógica de regra de negócio grande direto em componentes visuais.
 - Evitar chamadas `axios` direto em páginas, exceto manutenção pontual muito localizada.
 - Ao criar funcionalidade nova, seguir o domínio mais próximo já existente em `pages`.
+- Evitar estado fake/local para fluxos que dependem de API; em detalhes operacionais, preferir loading explícito, reload e feedback visual coerente.

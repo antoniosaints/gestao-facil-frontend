@@ -27,6 +27,8 @@ type ProdutoForm = {
   minimo: number
   controlaEstoque: boolean
   producaoLocal: boolean
+  mostrarNoPdv: boolean
+  materiaPrima: boolean
   custoMedioProducao?: number
   nomeVariante: string
 }
@@ -47,6 +49,8 @@ type ProdutoVarianteForm = {
   minimo: number
   controlaEstoque: boolean
   producaoLocal: boolean
+  mostrarNoPdv: boolean
+  materiaPrima: boolean
   custoMedioProducao?: number
   nomeVariante: string
   categoriaId: number | null
@@ -76,6 +80,8 @@ function getDefaultProdutoForm(): ProdutoForm {
     status: 'ATIVO',
     controlaEstoque: true,
     producaoLocal: false,
+    mostrarNoPdv: true,
+    materiaPrima: false,
     custoMedioProducao: undefined,
   }
 }
@@ -98,6 +104,8 @@ function getDefaultVarianteForm(produtoBaseId: number | null = null): ProdutoVar
     status: 'ATIVO',
     controlaEstoque: true,
     producaoLocal: false,
+    mostrarNoPdv: true,
+    materiaPrima: false,
     custoMedioProducao: undefined,
     categoriaId: null,
   }
@@ -203,6 +211,8 @@ export const useProdutoStore = defineStore('produtoStore', () => {
         unidade: data?.unidade ?? 'un',
         controlaEstoque: data?.controlaEstoque ?? true,
         producaoLocal: data?.producaoLocal ?? false,
+        mostrarNoPdv: data?.mostrarNoPdv ?? true,
+        materiaPrima: data?.materiaPrima ?? false,
         custoMedioProducao: data?.custoMedioProducao || undefined,
         nomeVariante: data?.nomeVariante || 'Padrão',
       }
@@ -237,6 +247,8 @@ export const useProdutoStore = defineStore('produtoStore', () => {
         unidade: data.unidade ?? 'un',
         controlaEstoque: data.controlaEstoque ?? true,
         producaoLocal: data.producaoLocal ?? false,
+        mostrarNoPdv: data.mostrarNoPdv ?? true,
+        materiaPrima: data.materiaPrima ?? false,
         custoMedioProducao: data.custoMedioProducao || undefined,
         categoriaId: data.categoriaId ?? null,
       }

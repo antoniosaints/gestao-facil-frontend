@@ -270,30 +270,211 @@
                         </div>
                     </div>
 
-                    <!-- Botão Finalizar Venda -->
-                    <Button @click="finalizarVendaPDV"
-                        class="w-full text-white py-3 px-4 h-12 text-lg rounded transition-colors"
-                        :disabled="!podeFinalizarPDV">
-                        <ShoppingBasket />
-                        Finalizar Venda
-                    </Button>
+                    <!-- Botões de finalização -->
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <Button @click="finalizarVendaPDV()"
+                            class="w-full text-white py-3 px-4 h-10 text-sm rounded-lg transition-colors"
+                            :disabled="!podeFinalizarPDV">
+                            <ShoppingBasket />
+                            Finalizar Venda
+                        </Button>
+                        <Button type="button" variant="outline"
+                            class="w-full sm:w-auto flex items-center justify-center rounded-lg gap-2 h-10"
+                            :disabled="!podeFinalizarPDV"
+                            @click="finalizarVendaPDV({ print: true })">
+                            <Printer class="w-4 h-4" />
+                            <span class="text-sm">Finalizar e imprimir</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
-        <ModalView v-model:open="openModalVendaFinalizada" title="Venda finalizada"
-            description="Venda finalizada com sucesso" size="sm">
-            <div class="p-4 flex flex-col items-center">
-                <div
-                    class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-check text-2xl text-green-600 dark:text-green-300"></i>
+        <ModalView v-model:open="openModalVendaFinalizada" title="Comprovante da venda"
+            description="Ticket da venda pronto para imprimir, baixar ou enviar." size="md">
+            <div class="p-4 space-y-4">
+                <div class="flex flex-col items-center text-center space-y-2">
+                    <div
+                        class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
+                        <i class="fas fa-check text-2xl text-green-600 dark:text-green-300"></i>
+                    </div>
                 </div>
-                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Você finalizou a venda!</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-6 text-center">clique em "Nova Venda" para lançar outra.
-                </p>
-                <button @click="openModalVendaFinalizada = false"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
-                    Nova Venda
-                </button>
+
+                <div class="mx-auto w-full max-w-sm rounded-[28px] border border-dashed border-border bg-card px-4 py-5 shadow-sm">
+                    <div class="text-center font-mono text-xs text-muted-foreground">
+                        <p class="text-sm font-semibold tracking-[0.25em] text-foreground">COMPROVANTE</p>
+                        <p class="mt-1">Venda finalizada com sucesso</p>
+                        <p>{{ vendaRecibo?.createdAt ? new Date(vendaRecibo.createdAt).toLocaleString('pt-BR') : '—' }}</p>
+                    </div>
+
+                    <div class="my-4 border-t border-dashed border-border"></div>
+
+                    <div class="space-y-1 font-mono text-xs text-foreground">
+                        <div class="flex items-center justify-between gap-3">
+                            <span>Venda</span>
+                            <span class="font-semibold">{{ vendaRecibo?.uid || `#${vendaRecibo?.id}` }}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span>Pagamento</span>
+                            <span>{{ getPaymentMethodLabel(vendaRecibo?.paymentMethod) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span>Itens</span>
+                            <span>{{ vendaRecibo?.itemCount || 0 }}</span>
+                        </div>
+                    </div>
+
+                    <div class="my-4 border-t border-dashed border-border"></div>
+
+                    <div class="space-y-3 font-mono text-xs text-foreground">
+                        <div v-if="vendaRecibo?.items?.length" class="space-y-2">
+                            <div v-for="item in vendaRecibo.items" :key="item.id" class="space-y-1">
+                                <div class="truncate font-medium">{{ item.label }}</div>
+                                <div class="flex items-center justify-between gap-3 text-muted-foreground">
+                                    <span>{{ item.quantity }}x {{ formatCurrencyBR(item.unitPrice) }}</span>
+                                    <span>{{ formatCurrencyBR(item.total) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="text-center text-muted-foreground">
+                            Nenhum item disponível para o comprovante.
+                        </div>
+                    </div>
+
+                    <div class="my-4 border-t border-dashed border-border"></div>
+
+                    <div class="space-y-1 font-mono text-xs text-foreground">
+                        <div class="flex items-center justify-between gap-3">
+                            <span>Subtotal</span>
+                            <span>{{ formatCurrencyBR(vendaRecibo?.subtotal || 0) }}</span>
+                        </div>
+                        <div v-if="(vendaRecibo?.discount || 0) > 0" class="flex items-center justify-between gap-3">
+                            <span>Desconto</span>
+                            <span>- {{ formatCurrencyBR(vendaRecibo?.discount || 0) }}</span>
+                        </div>
+                        <div v-if="vendaRecibo?.paymentMethod === 'DINHEIRO'" class="flex items-center justify-between gap-3">
+                            <span>Recebido</span>
+                            <span>{{ formatCurrencyBR(vendaRecibo?.receivedAmount || 0) }}</span>
+                        </div>
+                        <div v-if="(vendaRecibo?.change || 0) > 0" class="flex items-center justify-between gap-3">
+                            <span>Troco</span>
+                            <span>{{ formatCurrencyBR(vendaRecibo?.change || 0) }}</span>
+                        </div>
+                        <div class="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-border pt-2 text-sm font-semibold">
+                            <span>Total</span>
+                            <span class="text-emerald-600 dark:text-emerald-400">{{ formatCurrencyBR(vendaRecibo?.total || 0) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <Card class="border-border/70 shadow-sm">
+                    <CardHeader class="pb-3">
+                        <CardTitle class="text-base">Destino do envio</CardTitle>
+                    </CardHeader>
+                    <CardContent class="space-y-3">
+                        <div class="grid grid-cols-7 gap-2">
+                            <Select2Ajax class="col-span-6" placeholder="Selecione o cliente" :url="'/clientes/select2'"
+                                v-model:model-value="clienteEnvio" :allowClear="true" />
+                            <button type="button" @click="storeCliente.openSave"
+                                class="bg-primary px-2 text-white rounded border border-border dark:border-border-dark flex justify-center items-center">
+                                <UserPlus class="w-5 inline-flex" />
+                            </button>
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            Número para envio:
+                            <span class="font-mono text-foreground">
+                                {{ numeroPreview || 'Selecione um cliente com telefone/WhatsApp' }}
+                            </span>
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <Button type="button" variant="outline" class="h-9" @click="imprimirComprovante"
+                        :disabled="!vendaRecibo?.id || printingCupom">
+                        <Printer class="w-4 h-4 mr-2" />
+                        {{ printingCupom ? 'Imprimindo...' : 'Imprimir' }}
+                    </Button>
+                    <Button type="button" variant="outline" class="h-9" @click="baixarComprovantePdf"
+                        :disabled="!vendaRecibo?.id || downloadingCupom">
+                        <Download class="w-4 h-4 mr-2" />
+                        {{ downloadingCupom ? 'Gerando...' : 'Baixar PDF' }}
+                    </Button>
+                    <Button type="button" class="h-9 text-white" @click="openModalSelecionarEnvio"
+                        :disabled="!vendaRecibo?.id">
+                        <Send class="w-4 h-4 mr-2" />
+                        Enviar
+                    </Button>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <Button type="button" class="text-white" @click="openModalVendaFinalizada = false">
+                        <Plus class="w-4 h-4 mr-2" />
+                        Nova venda
+                    </Button>
+                </div>
+            </div>
+        </ModalView>
+        <ModalView v-model:open="openModalEnvioComprovante" title="Enviar comprovante"
+            description="Escolha como deseja compartilhar o comprovante com o cliente." size="sm">
+            <div class="p-4 space-y-4">
+                <div class="rounded-xl border border-border bg-background p-3 text-sm">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <div class="font-medium text-foreground">Destino selecionado</div>
+                            <div class="text-xs text-muted-foreground">
+                                {{ numeroPreview || 'Selecione um cliente com telefone ou WhatsApp' }}
+                            </div>
+                        </div>
+                        <BadgeCell :label="numeroPreview ? 'Pronto para envio' : 'Destino pendente'"
+                            :color="numeroPreview ? 'green' : 'orange'" :icon="MessageCircleMore" :capitalize="false"
+                            size="sm" />
+                    </div>
+                </div>
+
+                <div class="grid gap-3">
+                    <button type="button" @click="enviarComprovanteViaLink"
+                        class="rounded-xl border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-muted/40"
+                        :disabled="!numeroPreview">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="font-medium text-foreground flex items-center gap-2">
+                                    <Link2 class="w-4 h-4 text-primary" />
+                                    Enviar via link
+                                </div>
+                                <p class="mt-1 text-xs text-muted-foreground">
+                                    Abre o WhatsApp com a mensagem pronta para você concluir o envio.
+                                </p>
+                            </div>
+                            <BadgeCell label="Disponível" color="green" :icon="Send" :capitalize="false"
+                                size="sm" />
+                        </div>
+                    </button>
+
+                    <button type="button" @click="enviarComprovanteViaApi"
+                        class="rounded-xl border border-dashed border-border bg-card p-4 text-left transition hover:bg-muted/30">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="font-medium text-foreground flex items-center gap-2">
+                                    <Send class="w-4 h-4 text-primary" />
+                                    Enviar via API
+                                </div>
+                                <p class="mt-1 text-xs text-muted-foreground">
+                                    Integração futura para envio automatizado direto pela aplicação.
+                                </p>
+                            </div>
+                            <BadgeCell label="Em desenvolvimento" color="orange" :icon="Clock3"
+                                :capitalize="false" size="sm" />
+                        </div>
+                    </button>
+                </div>
+
+                <Separator />
+
+                <div class="flex justify-end gap-2">
+                    <Button type="button" variant="secondary" @click="openModalEnvioComprovante = false">
+                        Fechar
+                    </Button>
+                </div>
             </div>
         </ModalView>
         <ModalView v-model:open="openModalDesconto" title="Aplicar desconto"
@@ -366,9 +547,14 @@ import { POSITION, useToast } from 'vue-toastification';
 import { useUiStore } from '@/stores/ui/uiStore';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
-import { CirclePercent, Dot, HandCoins, HandGrab, MonitorDown, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
-import ModalView from '@/components/formulario/ModalView.vue';
+import { ClienteRepository } from '@/repositories/cliente-repository';
+import { VendaRepository } from '@/repositories/venda-repository';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import BadgeCell from '@/components/tabela/BadgeCell.vue';
+import { CirclePercent, Clock3, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Plus, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
+import ModalView from '@/components/formulario/ModalView.vue';
 import type { ProdutoVariante } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
 import router from '@/router';
@@ -383,6 +569,31 @@ const podeFinalizarPDV = ref(false)
 const openModalDesconto = ref(false)
 const openModalAcoes = ref(false)
 const openModalVendaFinalizada = ref(false)
+const openModalEnvioComprovante = ref(false)
+const printingCupom = ref(false)
+const downloadingCupom = ref(false)
+const vendaRecibo = ref<{
+    id: number
+    uid?: string | null
+    total: number
+    subtotal: number
+    discount: number
+    clienteId: number | null
+    itemCount: number
+    paymentMethod: string
+    createdAt: string
+    receivedAmount: number | null
+    change: number
+    items: Array<{
+        id: number
+        label: string
+        quantity: number
+        unitPrice: number
+        total: number
+    }>
+} | null>(null)
+const clienteEnvio = ref<number | null>(null)
+const numeroPreview = ref<string>('')
 const searchInputField = ref<HTMLInputElement | null>(null)
 function aplicarDesconto() {
     if (discountValue.value === null) return toast.error('Informe o desconto a ser aplicado')
@@ -440,6 +651,10 @@ watch(() => cart.value, () => {
     searchTerm.value = ""
 }, { deep: true })
 
+watch(() => clienteEnvio.value, (value) => {
+    atualizarNumeroPreview(value)
+})
+
 function quickAddCard() {
     const search = searchTerm.value.toLowerCase();
     if (!search) return toast.error('Informe o produto a ser adicionado')
@@ -474,10 +689,48 @@ const change = computed(() => {
     return Math.max(0, (receivedAmount.value ? parseFloat(receivedAmount.value?.replace(",", ".")) : 0) - total.value)
 })
 
+function getPaymentMethodLabel(method?: string | null) {
+    switch (method) {
+        case 'DINHEIRO':
+            return 'Dinheiro'
+        case 'CARTAO':
+            return 'Cartão'
+        case 'PIX':
+            return 'PIX'
+        case 'BOLETO':
+            return 'Boleto'
+        default:
+            return method || 'Pagamento'
+    }
+}
+
+function getPaymentMethodBadge(method?: string | null) {
+    switch (method) {
+        case 'DINHEIRO':
+            return { color: 'green' as const, label: 'Dinheiro' }
+        case 'CARTAO':
+            return { color: 'blue' as const, label: 'Cartão' }
+        case 'PIX':
+            return { color: 'purple' as const, label: 'PIX' }
+        case 'BOLETO':
+            return { color: 'orange' as const, label: 'Boleto' }
+        default:
+            return { color: 'gray' as const, label: method || 'Pagamento' }
+    }
+}
+
+function openModalSelecionarEnvio() {
+    if (!vendaRecibo.value?.id) {
+        toast.error('Nenhum comprovante disponível para envio')
+        return
+    }
+    openModalEnvioComprovante.value = true
+}
+
 async function fetchProducts() {
     try {
         const { data } = await http.get("/produtos/lista/geral", {
-            params: { search: searchTerm.value, limit: 12 },
+            params: { search: searchTerm.value, limit: 12, pdv: true },
         })
         products.value = data.data;
         if (cart.value.length > 0) {
@@ -533,8 +786,113 @@ function limparCarrinho() {
     saveCart()
 }
 
+async function atualizarNumeroPreview(clienteId: number | string | null) {
+    const id = clienteId ? Number(clienteId) : null
+    if (!id) {
+        numeroPreview.value = ''
+        return
+    }
+    try {
+        const response = await ClienteRepository.get(id)
+        const dadosCliente = response.data
+        numeroPreview.value = dadosCliente?.whastapp || dadosCliente?.telefone || ''
+    } catch (error) {
+        console.log(error)
+        numeroPreview.value = ''
+    }
+}
+
+function prepararComprovante(venda: any, resumo?: {
+    subtotal: number
+    discount: number
+    total: number
+    itemCount: number
+    paymentMethod: string
+    receivedAmount: number | null
+    change: number
+    items: Array<{
+        id: number
+        label: string
+        quantity: number
+        unitPrice: number
+        total: number
+    }>
+}) {
+    if (!venda) return
+    const totalNumero = typeof venda.valor === 'number' ? venda.valor : Number(venda.valor || resumo?.total || 0)
+    vendaRecibo.value = {
+        id: venda.id,
+        uid: venda.Uid ?? null,
+        total: totalNumero,
+        subtotal: resumo?.subtotal ?? totalNumero,
+        discount: resumo?.discount ?? 0,
+        clienteId: venda.clienteId ?? null,
+        itemCount: resumo?.itemCount ?? cart.value.length,
+        paymentMethod: resumo?.paymentMethod ?? paymentMethod.value,
+        createdAt: venda.data ?? new Date().toISOString(),
+        receivedAmount: resumo?.receivedAmount ?? null,
+        change: resumo?.change ?? 0,
+        items: resumo?.items ?? [],
+    }
+    clienteEnvio.value = vendaRecibo.value.clienteId ?? (cliente.value as any) ?? null
+    atualizarNumeroPreview(clienteEnvio.value)
+    openModalEnvioComprovante.value = false
+    openModalVendaFinalizada.value = true
+}
+
+async function imprimirComprovante() {
+    if (!vendaRecibo.value?.id) return
+    try {
+        printingCupom.value = true
+        await VendaRepository.printCupom(vendaRecibo.value.id)
+        toast.success('Cupom enviado para a impressora!')
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao enviar cupom para a impressora')
+    } finally {
+        printingCupom.value = false
+    }
+}
+
+async function baixarComprovantePdf() {
+    if (!vendaRecibo.value?.id) return
+    try {
+        downloadingCupom.value = true
+        await VendaRepository.getCupomPDF(vendaRecibo.value.id)
+        toast.success('PDF do comprovante gerado com sucesso!')
+    } catch (error) {
+        console.log(error)
+        toast.error('Erro ao gerar o PDF do comprovante')
+    } finally {
+        downloadingCupom.value = false
+    }
+}
+
+function enviarComprovanteViaLink() {
+    if (!numeroPreview.value) {
+        toast.error('Selecione um cliente com telefone ou WhatsApp para enviar o comprovante')
+        return
+    }
+    const numeroLimpo = numeroPreview.value.replace(/\D/g, '')
+    if (!numeroLimpo) {
+        toast.error('Número inválido para envio')
+        return
+    }
+    const identificadorVenda = vendaRecibo.value?.uid || `#${vendaRecibo.value?.id}`
+    const valorFormatado = formatCurrencyBR(vendaRecibo.value?.total || 0)
+    const mensagem = encodeURIComponent(`Olá! Segue o comprovante da venda ${identificadorVenda} no valor de ${valorFormatado}.`)
+    const url = `https://wa.me/${numeroLimpo}?text=${mensagem}`
+    window.open(url, '_blank')
+    openModalEnvioComprovante.value = false
+    toast.success('Link de envio aberto com sucesso!')
+}
+
+function enviarComprovanteViaApi() {
+    toast.info('Envio via API em desenvolvimento.')
+}
+
 // ---- Venda ----
-async function finalizarVendaPDV() {
+async function finalizarVendaPDV(options?: { print?: boolean }) {
     if (!cart.value.length) {
         toast.error("Carrinho vazio!")
         return
@@ -557,12 +915,35 @@ async function finalizarVendaPDV() {
         })),
     }
 
+    const resumoRecibo = {
+        subtotal: subtotal.value,
+        discount: discount.value,
+        total: total.value,
+        itemCount: cart.value.reduce((acc, item) => acc + item.quantity, 0),
+        paymentMethod: paymentMethod.value,
+        receivedAmount: paymentMethod.value === 'DINHEIRO'
+            ? (receivedAmount.value ? parseFloat(receivedAmount.value.replace(",", ".")) : null)
+            : null,
+        change: change.value,
+        items: cart.value.map((item) => ({
+            id: Number(item.id),
+            label: `${item.nome}${item.nomeVariante && item.nomeVariante !== 'Padrão' ? ` / ${item.nomeVariante}` : ''}`,
+            quantity: item.quantity,
+            unitPrice: Number(item.preco),
+            total: Number(item.preco) * item.quantity,
+        })),
+    }
+
     try {
-        await http.post("/vendas/criar", data)
+        const response = await http.post("/vendas/criar", data)
+        const vendaCriada = response.data?.data ?? response.data
         limparCarrinho()
         await fetchProducts()
         toast.success("Venda realizada com sucesso!")
-        openModalVendaFinalizada.value = true
+        prepararComprovante(vendaCriada, resumoRecibo)
+        if (options?.print && vendaCriada?.id) {
+            await imprimirComprovante()
+        }
         searchInputField.value?.focus()
     } catch (err: any) {
         toast.error(err.response?.data?.message || "Erro inesperado")

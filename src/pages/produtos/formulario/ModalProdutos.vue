@@ -45,7 +45,15 @@ function buildPayload() {
     precoCompra: isBlank(store.form.precoCompra) ? undefined : formatToNumberValue(store.form.precoCompra),
     estoque: Number(store.form.estoque),
     minimo: Number(store.form.minimo),
-    custoMedioProducao: isBlank(store.form.custoMedioProducao) ? undefined : Number(store.form.custoMedioProducao),
+    entradas: store.form.entradas,
+    saidas: store.form.saidas,
+    controlaEstoque: store.form.controlaEstoque,
+    producaoLocal: store.form.producaoLocal,
+    mostrarNoPdv: store.form.mostrarNoPdv,
+    materiaPrima: store.form.materiaPrima,
+    custoMedioProducao: isBlank(store.form.custoMedioProducao)
+      ? undefined
+      : Number(store.form.custoMedioProducao),
   }
 }
 
@@ -362,6 +370,20 @@ async function submit() {
               >
                 <span>Controla estoque</span>
                 <Switch v-model:model-value="store.form.controlaEstoque" />
+              </label>
+
+              <label
+                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"
+              >
+                <span>Mostrar no PDV</span>
+                <Switch v-model:model-value="store.form.mostrarNoPdv" />
+              </label>
+
+              <label
+                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"
+              >
+                <span>Materia prima</span>
+                <Switch v-model:model-value="store.form.materiaPrima" />
               </label>
             </div>
           </CardContent>

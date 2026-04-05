@@ -16,6 +16,10 @@ export class OrdensServicoRepository {
     const { data } = await http.get(`/servicos/ordem-detalhe/${id}`)
     return data.data
   }
+  static async addMensagem(id: number, mensagem: string) {
+    const { data } = await http.post(`/servicos/ordens/mensagens/${id}`, { mensagem })
+    return data.data
+  }
   static async getOsPdf(id: number, UID: string, withPix: boolean = false): Promise<any> {
     const data = await http.get(
       `/servicos/ordens/relatorio/${id}${withPix ? '?withPix=true' : ''}`,

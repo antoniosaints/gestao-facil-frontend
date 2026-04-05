@@ -45,6 +45,8 @@ Na prática:
 - stores seguram `form`, flags de modal, filtros e mutações locais;
 - repositories fazem chamadas HTTP com métodos estáticos;
 - composables resolvem comportamento transversal, como tabela server-side, guardas e confirmações.
+- telas de detalhe operacional, como modais ricos de ordens de serviço e páginas de detalhe de produto, devem usar store + repository para carregar, recarregar e sincronizar resumo, itens, variantes e mensagens após cada ação.
+- dashboards operacionais, como o painel de produtos, devem consumir endpoints agregados do backend filtrados por período e sempre respeitar o `contaId` do contexto autenticado para evitar mistura entre contas.
 
 ## Convenções importantes
 - O módulo costuma viver perto da sua tela: `Home.vue`, subpastas `tabela`, `modais`, `formulario`, `dashboard` e variantes mobile.

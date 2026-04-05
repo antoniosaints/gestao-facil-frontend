@@ -19,9 +19,11 @@ Cada domínio tende a repetir esta estrutura:
 - O router define qual página é renderizada e qual layout será usado.
 - `VITE_MODE_SYSTEM` altera a escolha de algumas telas, principalmente entre ERP e `arena`.
 - Rotas privadas dependem de autenticação, status da conta e `permissao`.
+- Páginas de dashboard devem refletir filtros operacionais reais do domínio, como período e agregações segregadas por conta.
 
 ## Regras
 - Ao criar funcionalidade nova, encaixar dentro do domínio correto antes de abrir uma nova área.
 - Componentes específicos da tela devem ficar próximos dela.
 - Regras de acesso devem ser refletidas tanto no router quanto na experiência visual da página.
+- Fluxos operacionais como PDV, comprovante pós-venda e modais de envio devem manter ações principais visíveis, feedback imediato e estados explícitos de disponibilidade ou desenvolvimento.
 - Sempre use Tanstack table para criação de listagens desktop, acesse outras tabelas para entender o padrão

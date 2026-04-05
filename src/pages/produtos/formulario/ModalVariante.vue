@@ -42,6 +42,8 @@ function buildPayload() {
     saidas: store.varianteForm.saidas,
     controlaEstoque: store.varianteForm.controlaEstoque,
     producaoLocal: store.varianteForm.producaoLocal,
+    mostrarNoPdv: store.varianteForm.mostrarNoPdv,
+    materiaPrima: store.varianteForm.materiaPrima,
     categoriaId: store.varianteForm.categoriaId,
     custoMedioProducao: isBlank(store.varianteForm.custoMedioProducao)
       ? undefined
@@ -273,7 +275,7 @@ async function submit() {
             Regras operacionais
           </CardTitle>
           <CardDescription class="text-muted-foreground">
-            Controle a participacao da variante em entradas, saidas e producao.
+            Controle a participacao da variante em entradas, saidas, producao e PDV.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -304,6 +306,20 @@ async function submit() {
             >
               <span>Controla estoque</span>
               <Switch v-model:model-value="store.varianteForm.controlaEstoque" />
+            </label>
+
+            <label
+              class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"
+            >
+              <span>Mostrar no PDV</span>
+              <Switch v-model:model-value="store.varianteForm.mostrarNoPdv" />
+            </label>
+
+            <label
+              class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"
+            >
+              <span>Materia prima</span>
+              <Switch v-model:model-value="store.varianteForm.materiaPrima" />
             </label>
           </div>
         </CardContent>

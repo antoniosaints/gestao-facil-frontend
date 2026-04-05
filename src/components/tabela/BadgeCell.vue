@@ -6,10 +6,12 @@ interface Props {
   color: "cyan" | "yellow" | "gray" | "violet" | "purple" | "green" | "emerald" | "orange" | "red" | "blue"
   icon?: string | Component
   capitalize?: boolean
+  size?: "sm" | "md" | "lg"
 }
 
 const props = withDefaults(defineProps<Props>(), {
   capitalize: true,
+  size: "lg",
 })
 
 function formatToCapitalize(text: string): string {
@@ -20,8 +22,16 @@ const formattedLabel = computed(() =>
   props.capitalize ? formatToCapitalize(props.label) : props.label
 )
 
-const baseClasses =
-  "inline-flex items-center gap-1 px-2 py-1 border rounded-lg w-max";
+const baseClasses = computed(() => {
+  if (props.size === "sm") {
+    // Versão compacta, usada apenas quando size="sm" for informado
+    return "inline-flex items-center gap-1 px-1.5 py-[1px] border rounded-md w-max text-[11px]"
+  }
+  // Padrão anterior (mantido para compatibilidade)
+  return "inline-flex items-center gap-1 px-2 py-1 border rounded-lg w-max"
+})
+
+const iconClasses = computed(() => (props.size === "sm" ? "h-3 w-3" : "h-4 w-4"))
 
 
 const colors = {
@@ -40,8 +50,17 @@ const colors = {
 
 <template>
   <span :class="[baseClasses, colors[props.color] || colors.cyan]">
-    <i :class="props?.icon" v-if="typeof props.icon === 'string' && props.icon"></i>
-    <component :is="props.icon" class="h-4 w-4" v-else></component>
+    <template v-if="props.icon">
+      <i
+        v-if="typeof props.icon === 'string'"
+        :class="[props.icon as string, iconClasses]"
+      />
+      <component
+        v-else
+        :is="props.icon"
+        :class="iconClasses"
+      />
+    </template>
     <span>{{ formattedLabel }}</span>
   </span>
 </template>

@@ -64,8 +64,12 @@ export class ProdutoRepository {
     })
   }
 
-  static async gerarRelatorioGeral() {
+  static async gerarRelatorioGeral(inicio?: string, fim?: string) {
     const data = await http.get(`/produtos/relatorio`, {
+      params: {
+        inicio,
+        fim,
+      },
       responseType: 'blob',
       headers: {
         'Content-Type': 'application/pdf',
@@ -131,6 +135,26 @@ export class ProdutoRepository {
         fim,
       },
     })
+    return data
+  }
+
+  static async getFluxoEstoqueMensal(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/produtos/graficos/fluxo-estoque`, {
+      params: {
+        inicio,
+        fim,
+      },
+    })
+    return data
+  }
+
+  static async getDistribuicaoCategorias() {
+    const { data } = await http.get(`/produtos/graficos/categorias`)
+    return data
+  }
+
+  static async getSaudeEstoque() {
+    const { data } = await http.get(`/produtos/graficos/saude-estoque`)
     return data
   }
 
