@@ -121,6 +121,7 @@ function getDefaultCategoriaForm(): ProdutoCategoriaForm {
 
 export const useProdutoStore = defineStore('produtoStore', () => {
   const openModal = ref(false)
+  const openModalCadastroTipo = ref(false)
   const openModalLote = ref(false)
   const openModalReposicao = ref(false)
   const openModalEtiquetas = ref(false)
@@ -169,11 +170,19 @@ export const useProdutoStore = defineStore('produtoStore', () => {
 
   const openSave = () => {
     reset()
+    resetVariante(null)
+    openModalCadastroTipo.value = true
+  }
+
+  const openSaveProduto = () => {
+    reset()
+    openModalCadastroTipo.value = false
     openModal.value = true
   }
 
-  const openSaveVariante = (produtoBaseId: number) => {
+  const openSaveVariante = (produtoBaseId: number | null = null) => {
     resetVariante(produtoBaseId)
+    openModalCadastroTipo.value = false
     openModalVariante.value = true
   }
 
@@ -182,9 +191,15 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     openModalCategoria.value = true
   }
 
-  const filters = ref<{ status?: Status | string; update: boolean }>({
+  const filters = ref<{ status?: Status | string; listingMode: 'base' | 'variante'; update: boolean }>({
+    listingMode: 'base',
     update: false,
   })
+
+  const updateListingMode = (mode: 'base' | 'variante') => {
+    filters.value.listingMode = mode
+    updateTable()
+  }
 
   const updateTable = () => {
     filters.value.update = !filters.value.update
@@ -282,6 +297,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
 
   return {
     openModal,
+    openModalCadastroTipo,
     openModalReposicao,
     openModalEtiquetas,
     openModalRelatorio,
@@ -290,12 +306,14 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     openModalVariante,
     openModalCategoria,
     openSave,
+    openSaveProduto,
     openSaveVariante,
     openSaveCategoria,
     openUpdate,
     openUpdateVariante,
     openUpdateCategoria,
     updateTable,
+    updateListingMode,
     filters,
     reset,
     resetVariante,

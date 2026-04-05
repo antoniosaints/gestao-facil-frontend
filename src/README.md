@@ -27,6 +27,7 @@
 - Requisições externas vão para `repositories`.
 - Modais e páginas de detalhe com dados vivos, como OS, produto e comprovantes operacionais do PDV, devem carregar o estado via store/repository e recarregar após mutações relevantes.
 - Dashboards por domínio devem preferir agregações do backend via repository, incluindo filtros por período e isolamento por `contaId` do usuário autenticado.
+- Módulos com produto base e variantes devem explicitar quando a ação cria um item novo do zero ou apenas uma variante adicional, e a listagem pode alternar entre visão agregada por base e visão analítica por variante.
 - Comportamento transversal ou reutilizável vai para `composables`.
 - Infraestrutura e detalhes técnicos ficam em `utils` ou `lib`.
 

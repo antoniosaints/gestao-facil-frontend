@@ -77,7 +77,8 @@ const fetchItems = async () => {
 
 // Busca item específico pelo ID
 const fetchById = async (id: number | string) => {
-    const url = `${props.url}?id=${id}`
+    const connector = props.url.includes('?') ? '&' : '?'
+    const url = buildUrl(`${connector}id=${encodeURIComponent(id)}`)
     const { data } = await http.get(url)
     return data.results?.[0] ?? null
 }

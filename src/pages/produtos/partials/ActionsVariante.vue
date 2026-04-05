@@ -7,9 +7,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ProdutoRepository } from '@/repositories/produto-repository'
+import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
-import type { ProdutoBase } from '@/types/schemas'
+import type { ProdutoVariante } from '@/types/schemas'
 import type { Table } from '@tanstack/vue-table'
 import { Menu } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
@@ -20,13 +20,13 @@ const store = useProdutoStore()
 const toast = useToast()
 
 const { data } = defineProps<{
-  data: ProdutoBase
-  table: Table<ProdutoBase>
+  data: ProdutoVariante & { produtoBaseNome?: string }
+  table: Table<ProdutoVariante>
 }>()
 
 function openModalReposicao(varianteId?: number | null) {
   if (!varianteId) {
-    toast.error('Variante padrão não encontrada')
+    toast.error('Variante não encontrada')
     return
   }
   store.idMutation = varianteId
@@ -35,7 +35,7 @@ function openModalReposicao(varianteId?: number | null) {
 
 function gerarRelatorio(varianteId?: number | null) {
   if (!varianteId) {
-    toast.error('Variante padrão não encontrada')
+    toast.error('Variante não encontrada')
     return
   }
   store.idMutation = varianteId
@@ -44,7 +44,7 @@ function gerarRelatorio(varianteId?: number | null) {
 
 function abrirEtiquetas(varianteId?: number | null) {
   if (!varianteId) {
-    toast.error('Variante padrão não encontrada')
+    toast.error('Variante não encontrada')
     return
   }
   store.idMutation = varianteId
@@ -54,18 +54,18 @@ function abrirEtiquetas(varianteId?: number | null) {
 async function deletar(id: number) {
   if (!id) return toast.error('ID não informado')
   const confirm = await useConfirm().confirm({
-    title: 'Excluir produto',
-    message: 'Tem certeza que deseja excluir este produto base e suas variantes?',
+    title: 'Excluir variante',
+    message: 'Tem certeza que deseja excluir esta variante?',
     confirmText: 'Sim, excluir!',
   })
   if (!confirm) return
   try {
-    await ProdutoRepository.remove(id)
+    await ProdutoVarianteRepository.remove(id)
     store.updateTable()
-    toast.success('Produto deletado com sucesso')
+    toast.success('Variante deletada com sucesso')
   } catch (error) {
     console.log(error)
-    toast.error('Erro ao deletar o produto')
+    toast.error('Erro ao deletar a variante')
   }
 }
 </script>
@@ -79,13 +79,19 @@ async function deletar(id: number) {
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
-      <DropdownMenuItem @click="router.push(`/produtos/detalhes?id=${data.id}`)">Ver detalhes</DropdownMenuItem>
-      <DropdownMenuItem @click="store.openUpdate(data.id!)">Editar produto</DropdownMenuItem>
-      <DropdownMenuItem @click="openModalReposicao(data.variantePadraoId)">Reposição</DropdownMenuItem>
-      <DropdownMenuItem @click="gerarRelatorio(data.variantePadraoId)">Relatório</DropdownMenuItem>
-      <DropdownMenuItem @click="abrirEtiquetas(data.variantePadraoId)">Etiquetas</DropdownMenuItem>
+      <DropdownMenuItem @click="router.push(`/produtos/detalhes?id=${data.produtoBaseId}`)">Ver produto</DropdownMenuItem>
+      <DropdownMenuItem @click="store.openUpdateVariante(data.id!)">Editar variante</DropdownMenuItem>
+      <DropdownMenuItem @click="openModalReposicao(data.id)">Repor variante</DropdownMenuItem>
+      <DropdownMenuItem @click="gerarRelatorio(data.id)">Relatório da variante</DropdownMenuItem>
+      <DropdownMenuItem @click="abrirEtiquetas(data.id)">Etiquetas da variante</DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">Excluir</DropdownMenuItem>
+      <DropdownMenuItem
+        class="text-danger"
+        :disabled="data.ehPadrao === true"
+        @click="deletar(data.id!)"
+      >
+        {{ data.ehPadrao ? 'Variante padrão não pode ser excluída' : 'Excluir variante' }}
+      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

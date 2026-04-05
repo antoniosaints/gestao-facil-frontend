@@ -8,6 +8,7 @@
 - Os métodos usam o cliente central de `src/utils/axios.ts`.
 - O naming dominante é simples: `get`, `save`, `update`, `remove`, `status`, `getStats` e variantes por caso de uso.
 - O mesmo repository pode expor ações auxiliares de detalhe, como recarregar resumo operacional, enviar mensagens vinculadas a uma ordem de serviço ou buscar datasets agregados de dashboard por período.
+- No domínio de produtos, o repository também intermedia modos diferentes de listagem, como visão por produto base, visão por variante e exportações filtradas por período.
 
 ## Fluxo
 - Página ou store chama o repository.

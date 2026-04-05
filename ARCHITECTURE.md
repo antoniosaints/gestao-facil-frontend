@@ -46,6 +46,7 @@ Na prática:
 - repositories fazem chamadas HTTP com métodos estáticos;
 - composables resolvem comportamento transversal, como tabela server-side, guardas e confirmações.
 - telas de detalhe operacional, como modais ricos de ordens de serviço e páginas de detalhe de produto, devem usar store + repository para carregar, recarregar e sincronizar resumo, itens, variantes e mensagens após cada ação.
+- telas de catálogo que misturam produto base e variante devem manter estado explícito para o modo de listagem e para o tipo de cadastro iniciado pelo usuário.
 - dashboards operacionais, como o painel de produtos, devem consumir endpoints agregados do backend filtrados por período e sempre respeitar o `contaId` do contexto autenticado para evitar mistura entre contas.
 
 ## Convenções importantes

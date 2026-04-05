@@ -6,7 +6,7 @@ import { useToast } from 'vue-toastification'
 import ModalProdutos from './formulario/ModalProdutos.vue'
 import ModalCriarLote from './others/ModalCriarLote.vue'
 import { ProdutoRepository } from '@/repositories/produto-repository'
-import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, FolderTree, Package, RotateCw, Trash } from 'lucide-vue-next'
+import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, FolderTree, Layers3, Package, RotateCw, Tags, Trash } from 'lucide-vue-next'
 import ModalReposicao from './formulario/ModalReposicao.vue'
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import ModalRelatorio from './formulario/ModalRelatorio.vue'
 import GerarRelatorioGeral from './others/GerarRelatorioGeral.vue'
 import ModalVariante from './formulario/ModalVariante.vue'
 import GerarEtiquetas from './others/GerarEtiquetas.vue'
+import ModalTipoCadastroProduto from './others/ModalTipoCadastroProduto.vue'
 import router from '@/router'
 
 const toast = useToast()
@@ -60,7 +61,31 @@ async function excluirEmLote() {
                 <p class="text-sm text-muted-foreground">Listagem de produtos cadastrados</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <DropdownMenu v-if="store.selectedIds.length">
+                <div class="flex items-center rounded-lg border border-border bg-card p-1">
+                    <button
+                        type="button"
+                        @click="store.updateListingMode('base')"
+                        :class="[
+                            'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition',
+                            store.filters.listingMode === 'base' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted'
+                        ]"
+                    >
+                        <Package class="h-4 w-4" />
+                        Produtos base
+                    </button>
+                    <button
+                        type="button"
+                        @click="store.updateListingMode('variante')"
+                        :class="[
+                            'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition',
+                            store.filters.listingMode === 'variante' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted'
+                        ]"
+                    >
+                        <Layers3 class="h-4 w-4" />
+                        Variantes
+                    </button>
+                </div>
+                <DropdownMenu v-if="store.selectedIds.length && store.filters.listingMode === 'base'">
                     <DropdownMenuTrigger as-child>
                         <Button variant="outline">
                             <CircleChevronDown />
@@ -111,5 +136,6 @@ async function excluirEmLote() {
         <ModalVariante />
         <GerarEtiquetas />
         <GerarRelatorioGeral />
+        <ModalTipoCadastroProduto />
     </div>
 </template>

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
+import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -18,6 +19,11 @@ const store = useProdutoStore()
 const toast = useToast()
 
 const title = computed(() => (store.varianteForm.id ? 'Editar variante' : 'Nova variante'))
+const description = computed(() =>
+  store.varianteForm.id
+    ? 'Atualize os dados da variante vinculada ao produto base selecionado.'
+    : 'Selecione o produto e preencha somente os dados da nova variante.',
+)
 
 function isBlank(value: string | number | null | undefined) {
   return String(value ?? '').trim() === ''
@@ -118,7 +124,7 @@ async function submit() {
   <ModalView
     v-model:open="store.openModalVariante"
     :title="title"
-    description="Cadastre uma variante vinculada ao produto base selecionado."
+    :description="description"
     size="4xl"
   >
     <form @submit.prevent="submit" class="grid gap-5 px-4 pb-1">
@@ -134,6 +140,21 @@ async function submit() {
         </CardHeader>
         <CardContent>
           <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+            <div class="md:col-span-12">
+              <label class="mb-1.5 block text-sm font-medium text-foreground">
+                Produto base <span class="text-red-500">*</span>
+              </label>
+              <Select2Ajax
+                v-model:model-value="store.varianteForm.produtoBaseId"
+                class="w-full"
+                url="/produtos/select2"
+                :params="[{ key: 'baseOnly', value: true }]"
+                :allow-clear="true"
+                placeholder="Selecione o produto para receber a nova variante"
+                :disabled="!!store.varianteForm.id"
+              />
+            </div>
+
             <div class="md:col-span-6">
               <label class="mb-1.5 block text-sm font-medium text-foreground">
                 Nome da variante <span class="text-red-500">*</span>
