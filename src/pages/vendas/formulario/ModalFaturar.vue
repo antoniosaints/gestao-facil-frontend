@@ -131,7 +131,7 @@ async function submit() {
           <Switch v-model="faturarVenda.cancelarCobrancaExterna" />
         </div>
 
-        <div class="flex w-full flex-col gap-2" :class="{ 'opacity-60': !lancamentoAutomatico }">
+        <div v-show="lancamentoAutomatico" class="flex w-full flex-col gap-2" :class="{ 'opacity-60': !lancamentoAutomatico }">
           <Label for="contaPagamento">
             Conta
             <FormularioContas class="cursor-pointer px-2 text-blue-500">
@@ -151,7 +151,7 @@ async function submit() {
           </p>
         </div>
 
-        <div class="flex w-full flex-col gap-2" :class="{ 'opacity-60': !lancamentoAutomatico }">
+        <div v-show="lancamentoAutomatico" class="flex w-full flex-col gap-2" :class="{ 'opacity-60': !lancamentoAutomatico }">
           <Label for="categoriaFinanceira">
             Categoria
             <FormularioCategorias class="cursor-pointer px-2 text-blue-500">

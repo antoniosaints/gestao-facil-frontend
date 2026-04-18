@@ -292,14 +292,14 @@
         <ModalView v-model:open="openModalVendaFinalizada" title="Comprovante da venda"
             description="Ticket da venda pronto para imprimir, baixar ou enviar." size="md">
             <div class="p-4 space-y-4">
-                <div class="flex flex-col items-center text-center space-y-2">
-                    <div
-                        class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
-                        <i class="fas fa-check text-2xl text-green-600 dark:text-green-300"></i>
+                
+                <div class="mx-auto w-full rounded-3xl border border-dashed border-border bg-card px-6 py-5 shadow-sm">
+                    <div class="flex flex-col items-center text-center space-y-2">
+                        <div
+                            class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
+                            <i class="fas fa-check text-2xl text-green-600 dark:text-green-300"></i>
+                        </div>
                     </div>
-                </div>
-
-                <div class="mx-auto w-full max-w-sm rounded-[28px] border border-dashed border-border bg-card px-4 py-5 shadow-sm">
                     <div class="text-center font-mono text-xs text-muted-foreground">
                         <p class="text-sm font-semibold tracking-[0.25em] text-foreground">COMPROVANTE</p>
                         <p class="mt-1">Venda finalizada com sucesso</p>
@@ -366,7 +366,7 @@
                     </div>
                 </div>
 
-                <Card class="border-border/70 shadow-sm">
+                <Card class="border-border/70 shadow-sm rounded-3xl">
                     <CardHeader class="pb-3">
                         <CardTitle class="text-base">Destino do envio</CardTitle>
                     </CardHeader>
