@@ -362,7 +362,7 @@ onMounted(carregarModulos)
       >
         <CardHeader class="space-y-4 p-4">
           <div class="flex items-start justify-between gap-3">
-            <div class="rounded-xl bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+            <div class="rounded-xl bg-primary/10 dark:text-blue-500 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
               <component :is="getIcon(modulo)" class="h-5 w-5" />
             </div>
 
@@ -399,7 +399,7 @@ onMounted(carregarModulos)
           </div>
 
           <div class="space-y-2">
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center justify-between gap-2">
               <CardTitle class="text-lg">{{ modulo.nome }}</CardTitle>
               <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                 {{ formatCurrencyBR(modulo.preco) }}/mes
@@ -412,7 +412,7 @@ onMounted(carregarModulos)
           </div>
         </CardHeader>
 
-        <CardContent class="space-y-3 px-4 pb-4 pt-0">
+        <CardContent class="space-y-2 px-4 pb-4 pt-0">
           <p class="text-sm leading-relaxed text-muted-foreground">
             {{ modulo.descricao }}
           </p>
@@ -453,7 +453,7 @@ onMounted(carregarModulos)
 
         <CardFooter class="border-t bg-muted/5 px-4 py-4">
           <Button
-            class="w-full gap-2"
+            class="w-full gap-2 dark:text-white"
             :variant="modulo.ativo || modulo.pendenteAtivacao ? 'outline' : 'default'"
             @click="abrirDetalhes(modulo)"
           >
@@ -610,7 +610,7 @@ onMounted(carregarModulos)
 
           <Button
             v-if="moduloSelecionado && !moduloSelecionado.ativo && !moduloSelecionado.pendenteAtivacao"
-            class="gap-2 px-8"
+            class="gap-2 px-8 dark:text-white"
             :disabled="actionLoadingId === moduloSelecionado.id"
             @click="adicionarAoPlano(moduloSelecionado)"
           >

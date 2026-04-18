@@ -27,4 +27,7 @@ Cada domínio tende a repetir esta estrutura:
 - Componentes específicos da tela devem ficar próximos dela.
 - Regras de acesso devem ser refletidas tanto no router quanto na experiência visual da página.
 - Fluxos operacionais como PDV, comprovante pós-venda e modais de envio devem manter ações principais visíveis, feedback imediato e estados explícitos de disponibilidade ou desenvolvimento.
+- Listagens mobile de domínios operacionais devem preferir cards compactos com ações rápidas e barra inferior fixa de navegação/atalhos quando o fluxo exigir paginação, busca e menu de ações, seguindo o padrão usado em vendas e produtos.
+- Quando a listagem mobile não exigir paginação, a bottombar ainda deve concentrar as ações principais do módulo, como busca, criação, limpeza de filtro e atualização.
+- Tablists com múltiplas opções devem aceitar scroll lateral nativo em larguras pequenas, evitando quebra visual ou tabs inacessíveis no mobile.
 - Sempre use Tanstack table para criação de listagens desktop, acesse outras tabelas para entender o padrão

@@ -15,6 +15,36 @@ type ReposicaoEstoque = {
   vendaId?: number
 }
 
+type ProductReportType = 'catalogo' | 'movimentacoes' | 'vendas' | 'lucro'
+type ProductReportScope = 'produto-base' | 'variante'
+
+type ProductReportParams = {
+  reportType: ProductReportType
+  scope?: ProductReportScope
+  targetId?: number
+  inicio?: string
+  fim?: string
+  orderBy?: 'asc' | 'desc'
+}
+
+function downloadBlob(data: BlobPart, filename: string) {
+  const blob = data instanceof Blob ? data : new Blob([data])
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+function getTodayFileSuffix() {
+  return new Date()
+    .toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    .replace(/\//g, '-')
+}
+
 export class ProdutoRepository {
   static async get(id: number) {
     const res = await http.get(`/produtos/${id}`)
@@ -45,13 +75,7 @@ export class ProdutoRepository {
       headers: { 'Content-Type': 'text/csv' },
     })
 
-    const url = window.URL.createObjectURL(data.data)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'produtos_base.csv'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
+    downloadBlob(data.data, 'produtos_base.csv')
   }
 
   static async sendCsvUpload(file: File) {
@@ -76,16 +100,67 @@ export class ProdutoRepository {
       },
     })
 
-    const url = window.URL.createObjectURL(data.data)
-    const a = document.createElement('a')
-    const dataHoje = new Date()
-      .toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' })
-      .replace(/\//g, '-')
-    a.href = url
-    a.download = `relatorio-produtos-${dataHoje}.pdf`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
+    downloadBlob(data.data, `relatorio-catalogo-produtos-${getTodayFileSuffix()}.pdf`)
+  }
+
+  static async gerarRelatorioVendas(scope: ProductReportScope, targetId: number, inicio?: string, fim?: string) {
+    const data = await http.get(`/produtos/relatorio/vendas`, {
+      params: {
+        targetType: scope === 'produto-base' ? 'BASE' : 'VARIANTE',
+        targetId,
+        inicio,
+        fim,
+      },
+      responseType: 'blob',
+      headers: {
+        'Content-Type': 'application/pdf',
+      },
+    })
+
+    downloadBlob(data.data, `relatorio-vendas-produto-${getTodayFileSuffix()}.pdf`)
+  }
+
+  static async gerarRelatorioLucro(scope: ProductReportScope, targetId: number, inicio?: string, fim?: string) {
+    const data = await http.get(`/produtos/relatorio/lucro`, {
+      params: {
+        targetType: scope === 'produto-base' ? 'BASE' : 'VARIANTE',
+        targetId,
+        inicio,
+        fim,
+      },
+      responseType: 'blob',
+      headers: {
+        'Content-Type': 'application/pdf',
+      },
+    })
+
+    downloadBlob(data.data, `relatorio-lucro-produto-${getTodayFileSuffix()}.pdf`)
+  }
+
+  static async gerarRelatorio(params: ProductReportParams) {
+    if (params.reportType === 'catalogo') {
+      return this.gerarRelatorioGeral(params.inicio, params.fim)
+    }
+
+    if (params.reportType === 'vendas') {
+      if (!params.scope || !params.targetId) {
+        throw new Error('Selecione um produto base ou variante para gerar o relatório de vendas.')
+      }
+      return this.gerarRelatorioVendas(params.scope, params.targetId, params.inicio, params.fim)
+    }
+
+    if (params.reportType === 'lucro') {
+      if (!params.scope || !params.targetId) {
+        throw new Error('Selecione um produto base ou variante para gerar o relatório de lucro.')
+      }
+      return this.gerarRelatorioLucro(params.scope, params.targetId, params.inicio, params.fim)
+    }
+
+    if (!params.targetId) {
+      throw new Error('Selecione uma variante para gerar o relatório de movimentações.')
+    }
+
+    return ProdutoVarianteRepository.gerarRelatorio(params.targetId, params.orderBy || 'desc')
   }
 
   static async getResumoGeral(inicio?: string, fim?: string) {
@@ -226,13 +301,7 @@ export class ProdutoVarianteRepository {
       },
     )
 
-    const url = window.URL.createObjectURL(data.data)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `etiquetas_produto_${id}.pdf`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
+    downloadBlob(data.data, `etiquetas-produto-${id}-${getTodayFileSuffix()}.pdf`)
   }
 
   static async gerarRelatorio(id: number, orderBy: 'asc' | 'desc') {
@@ -243,16 +312,7 @@ export class ProdutoVarianteRepository {
       },
     })
 
-    const url = window.URL.createObjectURL(data.data)
-    const a = document.createElement('a')
-    a.href = url
-    const dataHoje = new Date()
-      .toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' })
-      .replace(/\//g, '-')
-    a.download = `relatorio-reposicao-${dataHoje}.pdf`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
+    downloadBlob(data.data, `relatorio-movimentacoes-variante-${getTodayFileSuffix()}.pdf`)
   }
 }
 

@@ -62,6 +62,17 @@ type ProdutoCategoriaForm = {
   status: Status | string
 }
 
+type ProductReportType = 'catalogo' | 'movimentacoes' | 'vendas' | 'lucro'
+type ProductReportScope = 'produto-base' | 'variante'
+
+type ProductReportForm = {
+  reportType: ProductReportType
+  scope: ProductReportScope
+  targetId: number | null
+  targetLabel: string
+  orderBy: 'asc' | 'desc'
+}
+
 function getDefaultProdutoForm(): ProdutoForm {
   return {
     id: undefined,
@@ -119,6 +130,16 @@ function getDefaultCategoriaForm(): ProdutoCategoriaForm {
   }
 }
 
+function getDefaultReportForm(): ProductReportForm {
+  return {
+    reportType: 'catalogo',
+    scope: 'produto-base',
+    targetId: null,
+    targetLabel: '',
+    orderBy: 'desc',
+  }
+}
+
 export const useProdutoStore = defineStore('produtoStore', () => {
   const openModal = ref(false)
   const openModalCadastroTipo = ref(false)
@@ -136,6 +157,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   const form = ref<ProdutoForm>(getDefaultProdutoForm())
   const varianteForm = ref<ProdutoVarianteForm>(getDefaultVarianteForm())
   const categoriaForm = ref<ProdutoCategoriaForm>(getDefaultCategoriaForm())
+  const reportForm = ref<ProductReportForm>(getDefaultReportForm())
 
   function resetSelectedIds() {
     selectedIds.value = []
@@ -168,6 +190,10 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     categoriaForm.value = getDefaultCategoriaForm()
   }
 
+  const resetReportForm = () => {
+    reportForm.value = getDefaultReportForm()
+  }
+
   const openSave = () => {
     reset()
     resetVariante(null)
@@ -189,6 +215,25 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   const openSaveCategoria = () => {
     resetCategoria()
     openModalCategoria.value = true
+  }
+
+  const openReportModal = (options?: Partial<ProductReportForm>) => {
+    reportForm.value = {
+      ...getDefaultReportForm(),
+      ...options,
+    }
+
+    if (reportForm.value.reportType === 'catalogo') {
+      reportForm.value.targetId = null
+      reportForm.value.targetLabel = ''
+      reportForm.value.scope = 'produto-base'
+    }
+
+    if (reportForm.value.reportType === 'movimentacoes') {
+      reportForm.value.scope = 'variante'
+    }
+
+    openModalRelatorio.value = true
   }
 
   const filters = ref<{ status?: Status | string; listingMode: 'base' | 'variante'; update: boolean }>({
@@ -309,6 +354,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     openSaveProduto,
     openSaveVariante,
     openSaveCategoria,
+    openReportModal,
     openUpdate,
     openUpdateVariante,
     openUpdateCategoria,
@@ -318,9 +364,11 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     reset,
     resetVariante,
     resetCategoria,
+    resetReportForm,
     form,
     varianteForm,
     categoriaForm,
+    reportForm,
     idMutation,
     baseMutationId,
     selectedIds,

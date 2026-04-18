@@ -18,7 +18,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { useConfirm } from '@/composables/useConfirm'
 import ModalRelatorio from './formulario/ModalRelatorio.vue'
-import GerarRelatorioGeral from './others/GerarRelatorioGeral.vue'
 import ModalVariante from './formulario/ModalVariante.vue'
 import GerarEtiquetas from './others/GerarEtiquetas.vue'
 import ModalTipoCadastroProduto from './others/ModalTipoCadastroProduto.vue'
@@ -28,7 +27,7 @@ const toast = useToast()
 const store = useProdutoStore()
 
 const relatorioGeral = async () => {
-    store.openModalRelatorioGeral = true
+    store.openReportModal({ reportType: 'catalogo' })
 }
 
 async function excluirEmLote() {
@@ -135,7 +134,6 @@ async function excluirEmLote() {
         <ModalRelatorio />
         <ModalVariante />
         <GerarEtiquetas />
-        <GerarRelatorioGeral />
         <ModalTipoCadastroProduto />
     </div>
 </template>

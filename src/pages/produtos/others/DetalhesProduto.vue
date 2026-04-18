@@ -33,6 +33,7 @@ import {
   CircleDollarSign,
   CircleOff,
   Edit,
+  FileBarChart,
   FileText,
   Package,
   PackagePlus,
@@ -58,6 +59,7 @@ interface ResumoEstoque {
 }
 
 type BadgeColor = 'cyan' | 'yellow' | 'gray' | 'violet' | 'purple' | 'green' | 'emerald' | 'orange' | 'red' | 'blue'
+type ActiveTab = 'variante' | 'variantes' | 'visao-geral'
 
 type RuleConfig = {
   label: string
@@ -76,13 +78,49 @@ const resumoVariante = ref<ResumoEstoque | null>(null)
 const loading = ref(false)
 const loadingResumoProduto = ref(false)
 const loadingResumoVariante = ref(false)
-const activeTab = ref<'resumo' | 'variantes'>('resumo')
+const activeTab = ref<ActiveTab>('variante')
 const selectedVariantId = ref<string>('')
 
 const variants = computed(() => produto.value?.variantes ?? [])
 const selectedVariant = computed<ProdutoVariante | null>(() => {
   const id = Number(selectedVariantId.value)
   return variants.value.find((item) => Number(item.id) === id) ?? null
+})
+
+const pageTitle = computed(() => {
+  if (!produto.value) return 'Produto'
+  if (!selectedVariant.value) return produto.value.nome
+  return `${produto.value.nome} • ${selectedVariant.value.nomeVariante || 'Padrão'}`
+})
+
+const pageSubtitle = computed(() => {
+  if (!produto.value) return 'Detalhes do produto'
+  return `${produto.value.categoria || 'Sem categoria'} • ${produto.value.totalVariantes || 0} variante(s) cadastrada(s)`
+})
+
+const overviewHighlights = computed(() => {
+  if (!produto.value) return []
+
+  return [
+    {
+      label: 'Produto base',
+      value: produto.value.nome || 'Sem nome',
+      color: 'blue' as BadgeColor,
+      icon: Package,
+    },
+    {
+      label: 'Variantes cadastradas',
+      value: `${produto.value.totalVariantes || variants.value.length}`,
+      color: 'purple' as BadgeColor,
+      icon: Boxes,
+    },
+    {
+      label: 'Estoque total monitorado',
+      value: `${produto.value.estoqueTotal || 0} ${produto.value.unidade || 'un'}`,
+      color: 'emerald' as BadgeColor,
+      icon: BadgeCheck,
+    },
+  ]
 })
 
 const fiscalFields = computed(() => {
@@ -109,9 +147,6 @@ const fiscalFields = computed(() => {
 })
 
 const productStatusBadge = computed(() => getStatusBadge(produto.value?.status))
-const productStockBadge = computed(() =>
-  getStockBadge(produto.value?.estoqueTotal, produto.value?.minimo, produto.value?.controlaEstoque),
-)
 const variantStatusBadge = computed(() => getStatusBadge(selectedVariant.value?.status))
 const variantStockBadge = computed(() =>
   getStockBadge(selectedVariant.value?.estoque, selectedVariant.value?.minimo, selectedVariant.value?.controlaEstoque),
@@ -200,10 +235,17 @@ async function loadProduto() {
     loading.value = true
     const response = await ProdutoRepository.get(id)
     produto.value = response.data
-    const nextVariantId =
-      selectedVariantId.value && variants.value.some((item) => Number(item.id) === Number(selectedVariantId.value))
+
+    const variantFromQuery = Number(route.query.varianteId)
+    const hasVariantFromQuery = !Number.isNaN(variantFromQuery)
+      && response.data?.variantes?.some((item: ProdutoVariante) => Number(item.id) === variantFromQuery)
+
+    const nextVariantId = hasVariantFromQuery
+      ? String(variantFromQuery)
+      : selectedVariantId.value && response.data?.variantes?.some((item: ProdutoVariante) => Number(item.id) === Number(selectedVariantId.value))
         ? selectedVariantId.value
         : String(response.data?.variantePadraoId || response.data?.variantes?.[0]?.id || '')
+
     selectedVariantId.value = nextVariantId
   } catch (error) {
     console.log(error)
@@ -253,16 +295,31 @@ async function reloadDetalhes() {
   await Promise.all([loadResumoProduto(), loadResumoVariante()])
 }
 
+function syncVariantQueryParam() {
+  const currentVariantId = selectedVariantId.value || undefined
+  router.replace({
+    query: {
+      ...route.query,
+      varianteId: currentVariantId,
+    },
+  })
+}
+
 function openReposicao() {
   if (!selectedVariant.value?.id) return toast.error('Selecione uma variante')
   store.idMutation = selectedVariant.value.id
   store.openModalReposicao = true
 }
 
-function openRelatorio() {
+function openRelatorio(defaultType: 'movimentacoes' | 'vendas' | 'lucro' = 'movimentacoes') {
   if (!selectedVariant.value?.id) return toast.error('Selecione uma variante')
-  store.idMutation = selectedVariant.value.id
-  store.openModalRelatorio = true
+
+  store.openReportModal({
+    reportType: defaultType,
+    scope: 'variante',
+    targetId: selectedVariant.value.id,
+    targetLabel: `${produto.value?.nome || selectedVariant.value.produtoBaseNome || 'Produto'} / ${selectedVariant.value.nomeVariante || 'Padrão'}`,
+  })
 }
 
 function openEtiquetas() {
@@ -312,6 +369,7 @@ async function deletarVariante(varianteId?: number) {
 }
 
 watch(selectedVariantId, () => {
+  syncVariantQueryParam()
   loadResumoVariante()
 })
 
@@ -337,59 +395,54 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-2">
+  <div class="space-y-3">
     <div class="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div class="min-w-0 space-y-3">
           <div class="flex flex-wrap items-center gap-2">
-            <h1 class="flex items-center gap-2 text-lg font-semibold text-foreground md:text-2xl">
-              <Box class="h-6 w-6 text-primary" />
-              {{ produto?.nome || 'Produto' }}
-            </h1>
             <BadgeCell
-              :size="'sm'"
               v-if="produto"
+              :size="'sm'"
               :label="productStatusBadge.label"
               :color="productStatusBadge.color"
               :icon="productStatusBadge.icon"
               :capitalize="false"
             />
             <BadgeCell
+              v-if="selectedVariant"
               :size="'sm'"
-              v-if="produto"
-              :label="productStockBadge.label"
-              :color="productStockBadge.color"
-              :icon="productStockBadge.icon"
+              :label="variantStatusBadge.label"
+              :color="variantStatusBadge.color"
+              :icon="variantStatusBadge.icon"
+              :capitalize="false"
+            />
+            <BadgeCell
+              v-if="selectedVariant"
+              :size="'sm'"
+              :label="variantStockBadge.label"
+              :color="variantStockBadge.color"
+              :icon="variantStockBadge.icon"
               :capitalize="false"
             />
           </div>
 
-          <p class="text-sm text-muted-foreground">
-            {{ produto?.categoria || 'Sem categoria' }} • {{ produto?.totalVariantes || 0 }} variantes cadastradas
-          </p>
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 text-lg font-semibold text-foreground md:text-2xl">
+              <Box class="h-6 w-6 text-primary" />
+              {{ pageTitle }}
+            </div>
+            <p class="text-sm text-muted-foreground">
+              {{ pageSubtitle }}
+            </p>
+          </div>
 
           <div class="flex flex-wrap gap-2">
             <BadgeCell
-              v-if="produto"
-              :label="`${produto?.estoqueTotal || 0} ${produto?.unidade || 'un'} em estoque`"
-              color="blue"
-              :icon="Boxes"
-              :capitalize="false"
-              size="sm"
-            />
-            <BadgeCell
-              v-if="produto"
-              :label="`Variante padrão: ${produto?.nomeVariante || 'Padrão'}`"
-              color="purple"
-              :icon="BadgeCheck"
-              :capitalize="false"
-              size="sm"
-            />
-            <BadgeCell
-              v-if="produto"
-              :label="`Preço base: ${formatCurrencyBR(Number(produto?.preco || 0))}`"
-              color="emerald"
-              :icon="CircleDollarSign"
+              v-for="highlight in overviewHighlights"
+              :key="highlight.label"
+              :label="`${highlight.label}: ${highlight.value}`"
+              :color="highlight.color"
+              :icon="highlight.icon"
               :capitalize="false"
               size="sm"
             />
@@ -417,12 +470,12 @@ onMounted(async () => {
       </div>
     </div>
 
-    <Tabs v-model="activeTab" default-value="resumo" class="space-y-2">
+    <Tabs v-model="activeTab" default-value="variante" class="space-y-2">
       <TabsList class="w-full justify-start rounded-b-lg">
-        <TabsTrigger value="resumo" class="h-10 px-4">
+        <TabsTrigger value="variante" class="h-10 px-4">
           <span class="flex items-center gap-2">
-            <FileText class="h-4 w-4" />
-            <span>Resumo</span>
+            <Tag class="h-4 w-4" />
+            <span>Detalhes</span>
           </span>
         </TabsTrigger>
         <TabsTrigger value="variantes" class="h-10 px-4">
@@ -431,60 +484,113 @@ onMounted(async () => {
             <span>Variantes</span>
           </span>
         </TabsTrigger>
+        <TabsTrigger value="visao-geral" class="h-10 px-4">
+          <span class="flex items-center gap-2">
+            <FileText class="h-4 w-4" />
+            <span>Visão geral</span>
+          </span>
+        </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="resumo" class="space-y-4">
-        <div class="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-          <div class="space-y-4">
-            <Card class="border-border">
-              <CardHeader>
-                <CardTitle>Visão geral do produto</CardTitle>
-                <CardDescription>Informações principais do produto base sem poluir a navegação.</CardDescription>
-              </CardHeader>
-              <CardContent class="space-y-4">
+      <TabsContent value="variante" class="space-y-4">
+        <div class="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <Card class="border-border">
+            <CardContent class="space-y-4 mt-4">
+              <div>
+                <label class="mb-1.5 block text-sm font-medium text-foreground">Produto selecionado</label>
+                <Select v-model="selectedVariantId">
+                  <SelectTrigger class="w-full">
+                    <SelectValue placeholder="Selecione uma variante" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="item in variants" :key="item.id" :value="String(item.id)">
+                      {{ item.nomeVariante || 'Padrão' }} • {{ item.codigo || 'Sem código' }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div v-if="selectedVariant" class="space-y-4">
+                <div class="flex flex-wrap gap-2">
+                  <BadgeCell
+                    :label="variantStatusBadge.label"
+                    :color="variantStatusBadge.color"
+                    :icon="variantStatusBadge.icon"
+                    :capitalize="false"
+                    size="sm"
+                  />
+                  <BadgeCell
+                    :label="variantStockBadge.label"
+                    :color="variantStockBadge.color"
+                    :icon="variantStockBadge.icon"
+                    :capitalize="false"
+                    size="sm"
+                  />
+                  <BadgeCell
+                    :label="selectedVariant.ehPadrao ? 'Variante padrão' : 'Variante auxiliar'"
+                    :color="selectedVariant.ehPadrao ? 'purple' : 'gray'"
+                    :icon="selectedVariant.ehPadrao ? BadgeCheck : Boxes"
+                    :capitalize="false"
+                    size="sm"
+                  />
+                </div>
+
                 <div>
-                  <div class="text-xs uppercase tracking-wide text-muted-foreground">Descrição</div>
-                  <div class="mt-1 text-sm text-foreground whitespace-pre-wrap">
-                    {{ produto?.descricao || 'Sem descrição cadastrada.' }}
+                  <div class="text-xl font-semibold text-foreground">
+                    {{ selectedVariant.nomeVariante || 'Padrão' }}
+                  </div>
+                  <div class="text-sm text-muted-foreground">
+                    {{ produto?.nome || selectedVariant.produtoBaseNome || 'Produto base' }}
                   </div>
                 </div>
 
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div class="grid gap-3 sm:grid-cols-2">
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Categoria</div>
-                    <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.categoria || 'Sem categoria' }}</div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Unidade base</div>
-                    <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.unidade || 'un' }}</div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Código/SKU</div>
-                    <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.codigo || 'Sem código' }}</div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Preço padrão</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Preço de venda</div>
                     <div class="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                      {{ formatCurrencyBR(Number(produto?.preco || 0)) }}
+                      {{ formatCurrencyBR(Number(selectedVariant.preco || 0)) }}
                     </div>
                   </div>
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Custo padrão</div>
-                    <div class="mt-1 text-sm font-medium text-foreground">
-                      {{ formatCurrencyBR(Number(produto?.precoCompra || 0)) }}
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Preço de compra</div>
+                    <div class="mt-1 text-sm font-semibold text-foreground">
+                      {{ formatCurrencyBR(Number(selectedVariant.precoCompra || 0)) }}
                     </div>
                   </div>
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Total de variantes</div>
-                    <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.totalVariantes || 0 }}</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Estoque atual</div>
+                    <div class="mt-1 text-sm font-semibold text-foreground">
+                      {{ selectedVariant.estoque || 0 }} {{ selectedVariant.unidade || 'un' }}
+                    </div>
+                  </div>
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Estoque mínimo</div>
+                    <div class="mt-1 text-sm font-semibold text-foreground">
+                      {{ selectedVariant.minimo || 0 }} {{ selectedVariant.unidade || 'un' }}
+                    </div>
+                  </div>
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Código</div>
+                    <div class="mt-1 text-sm font-semibold text-foreground">{{ selectedVariant.codigo || 'Sem código' }}</div>
+                  </div>
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Unidade</div>
+                    <div class="mt-1 text-sm font-semibold text-foreground">{{ selectedVariant.unidade || 'un' }}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="text-xs uppercase tracking-wide text-muted-foreground">Descrição da variante</div>
+                  <div class="mt-1 text-sm whitespace-pre-wrap text-foreground">
+                    {{ selectedVariant.descricao || 'Sem descrição adicional para esta variante.' }}
                   </div>
                 </div>
 
                 <div class="space-y-2">
-                  <div class="text-xs uppercase tracking-wide text-muted-foreground">Regras operacionais</div>
+                  <div class="text-xs uppercase tracking-wide text-muted-foreground">Regras da variante</div>
                   <div class="flex flex-wrap gap-2">
                     <BadgeCell
-                      v-for="rule in productRules"
+                      v-for="rule in variantRules"
                       :key="rule.label"
                       :label="rule.label"
                       :color="rule.color"
@@ -492,262 +598,86 @@ onMounted(async () => {
                       :capitalize="false"
                       size="sm"
                     />
-                    <span v-if="!productRules.length" class="text-sm text-muted-foreground">
-                      Nenhuma regra operacional ativa.
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card class="border-border">
-              <CardHeader>
-                <CardTitle class="flex items-center gap-2">
-                  <ReceiptText class="h-4 w-4" />
-                  Resumo consolidado do produto
-                </CardTitle>
-                <CardDescription>Indicadores agrupados considerando todas as variantes do produto base.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div v-if="loadingResumoProduto" class="text-sm text-muted-foreground">Carregando resumo do produto...</div>
-                <div v-else-if="resumoProduto" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Valor em estoque</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">
-                      {{ formatCurrencyBR(Number(resumoProduto.valorEstoque || 0)) }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Lucro líquido</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">
-                      {{ formatCurrencyBR(Number(resumoProduto.lucroLiquido || 0)) }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Custo médio</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">
-                      {{ formatCurrencyBR(Number(resumoProduto.custoMedio || 0)) }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">
-                      {{ formatCurrencyBR(Number(resumoProduto.ticketMedio || 0)) }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Entradas</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoProduto.totalEntradas }}</div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Saídas</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoProduto.totalSaidas }}</div>
-                  </div>
-                </div>
-                <div v-else class="text-sm text-muted-foreground">Resumo consolidado indisponível.</div>
-              </CardContent>
-            </Card>
-
-            <Card v-if="fiscalFields.length" class="border-border">
-              <CardHeader>
-                <CardTitle>Dados fiscais</CardTitle>
-                <CardDescription>Campos fiscais retornados no cadastro base do produto.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <div v-for="field in fiscalFields" :key="field.label" class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">{{ field.label }}</div>
-                    <div class="mt-1 text-sm font-medium text-foreground">{{ field.value }}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div class="space-y-4">
-            <Card class="border-border">
-              <CardContent class="space-y-4 mt-4">
-                <div>
-                  <label class="mb-1.5 block text-sm font-medium text-foreground">Variante selecionada</label>
-                  <Select v-model="selectedVariantId">
-                    <SelectTrigger class="w-full">
-                      <SelectValue placeholder="Selecione uma variante" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem v-for="item in variants" :key="item.id" :value="String(item.id)">
-                        {{ item.nomeVariante || 'Padrão' }} • {{ item.codigo || 'Sem código' }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div v-if="selectedVariant" class="space-y-4">
-                  <div class="flex flex-wrap gap-2">
-                    <BadgeCell
-                      :label="variantStatusBadge.label"
-                      :color="variantStatusBadge.color"
-                      :icon="variantStatusBadge.icon"
-                      :capitalize="false"
-                      size="sm"
-                    />
-                    <BadgeCell
-                      :label="variantStockBadge.label"
-                      :color="variantStockBadge.color"
-                      :icon="variantStockBadge.icon"
-                      :capitalize="false"
-                      size="sm"
-                    />
-                    <BadgeCell
-                      :label="selectedVariant.ehPadrao ? 'Variante padrão' : 'Variante auxiliar'"
-                      :color="selectedVariant.ehPadrao ? 'purple' : 'gray'"
-                      :icon="selectedVariant.ehPadrao ? BadgeCheck : Boxes"
-                      :capitalize="false"
-                      size="sm"
-                    />
-                  </div>
-
-                  <div>
-                    <div class="text-base font-semibold text-foreground">
-                      {{ selectedVariant.nomeVariante || 'Padrão' }}
-                    </div>
-                    <div class="text-xs text-muted-foreground">
-                      {{ selectedVariant.produtoBaseNome || produto?.nome || 'Produto base' }}
-                    </div>
-                  </div>
-
-                  <div class="grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-xl border border-border bg-background px-3 py-2">
-                      <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Preço de venda</div>
-                      <div class="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                        {{ formatCurrencyBR(Number(selectedVariant.preco || 0)) }}
-                      </div>
-                    </div>
-                    <div class="rounded-xl border border-border bg-background px-3 py-2">
-                      <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Preço de compra</div>
-                      <div class="mt-1 text-sm font-semibold text-foreground">
-                        {{ formatCurrencyBR(Number(selectedVariant.precoCompra || 0)) }}
-                      </div>
-                    </div>
-                    <div class="rounded-xl border border-border bg-background px-3 py-2">
-                      <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Estoque atual</div>
-                      <div class="mt-1 text-sm font-semibold text-foreground">
-                        {{ selectedVariant.estoque || 0 }} {{ selectedVariant.unidade || 'un' }}
-                      </div>
-                    </div>
-                    <div class="rounded-xl border border-border bg-background px-3 py-2">
-                      <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Estoque mínimo</div>
-                      <div class="mt-1 text-sm font-semibold text-foreground">
-                        {{ selectedVariant.minimo || 0 }} {{ selectedVariant.unidade || 'un' }}
-                      </div>
-                    </div>
-                    <div class="rounded-xl border border-border bg-background px-3 py-2">
-                      <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Código</div>
-                      <div class="mt-1 text-sm font-semibold text-foreground">{{ selectedVariant.codigo || 'Sem código' }}</div>
-                    </div>
-                    <div class="rounded-xl border border-border bg-background px-3 py-2">
-                      <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Unidade</div>
-                      <div class="mt-1 text-sm font-semibold text-foreground">{{ selectedVariant.unidade || 'un' }}</div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div class="text-xs uppercase tracking-wide text-muted-foreground">Descrição da variante</div>
-                    <div class="mt-1 text-sm text-foreground whitespace-pre-wrap">
-                      {{ selectedVariant.descricao || 'Sem descrição adicional para esta variante.' }}
-                    </div>
-                  </div>
-
-                  <div class="space-y-2">
-                    <div class="text-xs uppercase tracking-wide text-muted-foreground">Regras da variante</div>
-                    <div class="flex flex-wrap gap-2">
-                      <BadgeCell
-                        v-for="rule in variantRules"
-                        :key="rule.label"
-                        :label="rule.label"
-                        :color="rule.color"
-                        :icon="rule.icon"
-                        :capitalize="false"
-                        size="sm"
-                      />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div class="grid grid-cols-2 gap-2">
-                    <Button variant="outline" @click="openReposicao">
-                      <ArchiveRestore class="mr-2 h-4 w-4" />
-                      Reposição
-                    </Button>
-                    <Button variant="outline" @click="openEtiquetas">
-                      <Tag class="mr-2 h-4 w-4" />
-                      Etiquetas
-                    </Button>
-                    <Button variant="outline" @click="openRelatorio">
-                      <FileText class="mr-2 h-4 w-4" />
-                      Relatório
-                    </Button>
-                    <Button variant="outline" @click="store.openUpdateVariante(selectedVariant.id!)">
-                      <PencilLine class="mr-2 h-4 w-4" />
-                      Editar variante
-                    </Button>
                   </div>
                 </div>
 
-                <div v-else class="text-sm text-muted-foreground">Nenhuma variante selecionada.</div>
-              </CardContent>
-            </Card>
+                <Separator />
 
-            <Card class="border-border">
-              <CardHeader>
-                <CardTitle class="flex items-center gap-2">
-                  <ShieldCheck class="h-4 w-4" />
-                  Resumo da variante
-                </CardTitle>
-                <CardDescription>Indicadores rápidos da variante ativa para apoiar a tomada de decisão.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div v-if="loadingResumoVariante" class="text-sm text-muted-foreground">Carregando resumo da variante...</div>
-                <div v-else-if="resumoVariante" class="grid gap-3 sm:grid-cols-2">
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Valor em estoque</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">
-                      {{ formatCurrencyBR(Number(resumoVariante.valorEstoque || 0)) }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Lucro líquido</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">
-                      {{ formatCurrencyBR(Number(resumoVariante.lucroLiquido || 0)) }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Custo médio</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">
-                      {{ formatCurrencyBR(Number(resumoVariante.custoMedio || 0)) }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">
-                      {{ formatCurrencyBR(Number(resumoVariante.ticketMedio || 0)) }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Entradas / saídas</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">
-                      {{ resumoVariante.totalEntradas }} / {{ resumoVariante.totalSaidas }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Margem</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoVariante.margemLucro }}</div>
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                  <Button variant="outline" @click="openReposicao">
+                    <ArchiveRestore class="mr-2 h-4 w-4" />
+                    Reposição
+                  </Button>
+                  <Button variant="outline" @click="openEtiquetas">
+                    <Tag class="mr-2 h-4 w-4" />
+                    Etiquetas
+                  </Button>
+                  <Button variant="outline" @click="openRelatorio('movimentacoes')">
+                    <FileBarChart class="mr-2 h-4 w-4" />
+                    Relatórios
+                  </Button>
+                  <Button variant="outline" @click="store.openUpdateVariante(selectedVariant.id!)">
+                    <PencilLine class="mr-2 h-4 w-4" />
+                    Editar variante
+                  </Button>
+                </div>
+              </div>
+
+              <div v-else class="text-sm text-muted-foreground">Nenhuma variante selecionada.</div>
+            </CardContent>
+          </Card>
+
+          <Card class="border-border">
+            <CardHeader>
+              <CardTitle class="flex items-center gap-2">
+                <ShieldCheck class="h-4 w-4" />
+                Resumo da variante
+              </CardTitle>
+              <CardDescription>
+                Indicadores rápidos da variante ativa para apoiar decisão de compra, venda e reposição.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div v-if="loadingResumoVariante" class="text-sm text-muted-foreground">Carregando resumo da variante...</div>
+              <div v-else-if="resumoVariante" class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Valor em estoque</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoVariante.valorEstoque || 0)) }}
                   </div>
                 </div>
-                <div v-else class="text-sm text-muted-foreground">Resumo da variante indisponível.</div>
-              </CardContent>
-            </Card>
-          </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Lucro líquido</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoVariante.lucroLiquido || 0)) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Custo médio</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoVariante.custoMedio || 0)) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoVariante.ticketMedio || 0)) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Entradas / saídas</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ resumoVariante.totalEntradas }} / {{ resumoVariante.totalSaidas }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Margem</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoVariante.margemLucro }}</div>
+                </div>
+              </div>
+              <div v-else class="text-sm text-muted-foreground">Resumo da variante indisponível.</div>
+            </CardContent>
+          </Card>
         </div>
       </TabsContent>
 
@@ -759,6 +689,9 @@ onMounted(async () => {
                 <Boxes class="h-5 w-5" />
                 Variantes do produto
               </CardTitle>
+              <CardDescription>
+                Selecione a variante que deseja analisar ou editar. O botão de foco abre a primeira aba já com ela destacada.
+              </CardDescription>
             </div>
             <Button class="text-white" @click="store.openSaveVariante(produto?.id!)">
               <PackagePlus class="mr-2 h-4 w-4" />
@@ -856,8 +789,8 @@ onMounted(async () => {
                             variant="ghost"
                             size="icon"
                             class="h-8 w-8"
-                            :title="'Selecionar variante'"
-                            @click="selectedVariantId = String(item.id); activeTab = 'resumo'"
+                            :title="'Focar esta variante'"
+                            @click="selectedVariantId = String(item.id); activeTab = 'variante'"
                           >
                             <Box class="h-4 w-4" />
                           </Button>
@@ -902,12 +835,137 @@ onMounted(async () => {
           </CardContent>
         </Card>
       </TabsContent>
+
+      <TabsContent value="visao-geral" class="space-y-4">
+        <div class="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <div class="space-y-4">
+            <Card class="border-border">
+              <CardHeader>
+                <CardTitle>Visão geral do produto base</CardTitle>
+                <CardDescription>
+                  Informações do cadastro principal que valem para todas as variantes sem poluir a leitura operacional.
+                </CardDescription>
+              </CardHeader>
+              <CardContent class="space-y-4">
+                <div>
+                  <div class="text-xs uppercase tracking-wide text-muted-foreground">Descrição</div>
+                  <div class="mt-1 text-sm whitespace-pre-wrap text-foreground">
+                    {{ produto?.descricao || 'Sem descrição cadastrada.' }}
+                  </div>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Categoria</div>
+                    <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.categoria || 'Sem categoria' }}</div>
+                  </div>
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Produto base</div>
+                    <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.nome || 'Sem nome' }}</div>
+                  </div>
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Total de variantes</div>
+                    <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.totalVariantes || 0 }}</div>
+                  </div>
+                </div>
+
+                <div class="space-y-2">
+                  <div class="text-xs uppercase tracking-wide text-muted-foreground">Regras operacionais compartilhadas</div>
+                  <div class="flex flex-wrap gap-2">
+                    <BadgeCell
+                      v-for="rule in productRules"
+                      :key="rule.label"
+                      :label="rule.label"
+                      :color="rule.color"
+                      :icon="rule.icon"
+                      :capitalize="false"
+                      size="sm"
+                    />
+                    <span v-if="!productRules.length" class="text-sm text-muted-foreground">
+                      Nenhuma regra operacional ativa.
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card v-if="fiscalFields.length" class="border-border">
+              <CardHeader>
+                <CardTitle>Dados fiscais</CardTitle>
+                <CardDescription>Campos fiscais retornados no cadastro base do produto.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div v-for="field in fiscalFields" :key="field.label" class="rounded-xl border border-border bg-background px-3 py-2">
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">{{ field.label }}</div>
+                    <div class="mt-1 text-sm font-medium text-foreground">{{ field.value }}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card class="border-border">
+            <CardHeader>
+              <CardTitle class="flex items-center gap-2">
+                <ReceiptText class="h-4 w-4" />
+                Resumo consolidado do produto
+              </CardTitle>
+              <CardDescription>
+                Indicadores agrupados considerando todas as variantes do produto base.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div v-if="loadingResumoProduto" class="text-sm text-muted-foreground">Carregando resumo do produto...</div>
+              <div v-else-if="resumoProduto" class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Valor em estoque</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoProduto.valorEstoque || 0)) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Lucro líquido</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoProduto.lucroLiquido || 0)) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Custo médio</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoProduto.custoMedio || 0)) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoProduto.ticketMedio || 0)) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Entradas</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoProduto.totalEntradas }}</div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Saídas</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoProduto.totalSaidas }}</div>
+                </div>
+              </div>
+              <div v-else class="text-sm text-muted-foreground">Resumo consolidado indisponível.</div>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
     </Tabs>
 
     <div class="hidden gap-2 md:flex">
       <Button variant="outline" @click="store.openUpdate(produto?.id!)">
         <Edit class="mr-2 h-4 w-4" />
         Editar produto
+      </Button>
+      <Button variant="outline" @click="openRelatorio('vendas')">
+        <FileBarChart class="mr-2 h-4 w-4" />
+        Relatórios do item selecionado
       </Button>
       <Button variant="destructive" @click="deletarProdutoBase">
         <Trash2 class="mr-2 h-4 w-4" />
@@ -937,11 +995,11 @@ onMounted(async () => {
       </button>
       <button
         type="button"
-        @click="openReposicao"
+        @click="openRelatorio('vendas')"
         class="flex flex-col items-center text-foreground transition hover:text-primary"
       >
-        <ArchiveRestore />
-        <span class="text-xs">Reposição</span>
+        <FileBarChart />
+        <span class="text-xs">Relatórios</span>
       </button>
       <button type="button" @click="goBack" class="flex flex-col items-center text-foreground transition hover:text-primary">
         <Undo2 />

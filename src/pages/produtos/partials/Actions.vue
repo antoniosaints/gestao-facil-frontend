@@ -33,13 +33,13 @@ function openModalReposicao(varianteId?: number | null) {
   store.openModalReposicao = true
 }
 
-function gerarRelatorio(varianteId?: number | null) {
-  if (!varianteId) {
-    toast.error('Variante padrão não encontrada')
-    return
-  }
-  store.idMutation = varianteId
-  store.openModalRelatorio = true
+function gerarRelatorio() {
+  store.openReportModal({
+    reportType: 'vendas',
+    scope: 'produto-base',
+    targetId: data.id || null,
+    targetLabel: data.nome,
+  })
 }
 
 function abrirEtiquetas(varianteId?: number | null) {
@@ -82,7 +82,7 @@ async function deletar(id: number) {
       <DropdownMenuItem @click="router.push(`/produtos/detalhes?id=${data.id}`)">Ver detalhes</DropdownMenuItem>
       <DropdownMenuItem @click="store.openUpdate(data.id!)">Editar produto</DropdownMenuItem>
       <DropdownMenuItem @click="openModalReposicao(data.variantePadraoId)">Reposição</DropdownMenuItem>
-      <DropdownMenuItem @click="gerarRelatorio(data.variantePadraoId)">Relatório</DropdownMenuItem>
+      <DropdownMenuItem @click="gerarRelatorio()">Central de relatórios</DropdownMenuItem>
       <DropdownMenuItem @click="abrirEtiquetas(data.variantePadraoId)">Etiquetas</DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">Excluir</DropdownMenuItem>

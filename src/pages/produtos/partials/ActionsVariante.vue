@@ -38,8 +38,12 @@ function gerarRelatorio(varianteId?: number | null) {
     toast.error('Variante não encontrada')
     return
   }
-  store.idMutation = varianteId
-  store.openModalRelatorio = true
+  store.openReportModal({
+    reportType: 'movimentacoes',
+    scope: 'variante',
+    targetId: varianteId,
+    targetLabel: `${data.produtoBaseNome || data.nome} / ${data.nomeVariante || 'Padrão'}`,
+  })
 }
 
 function abrirEtiquetas(varianteId?: number | null) {
@@ -79,10 +83,10 @@ async function deletar(id: number) {
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
-      <DropdownMenuItem @click="router.push(`/produtos/detalhes?id=${data.produtoBaseId}`)">Ver produto</DropdownMenuItem>
+      <DropdownMenuItem @click="router.push(`/produtos/detalhes?id=${data.produtoBaseId}&varianteId=${data.id}`)">Ver produto</DropdownMenuItem>
       <DropdownMenuItem @click="store.openUpdateVariante(data.id!)">Editar variante</DropdownMenuItem>
       <DropdownMenuItem @click="openModalReposicao(data.id)">Repor variante</DropdownMenuItem>
-      <DropdownMenuItem @click="gerarRelatorio(data.id)">Relatório da variante</DropdownMenuItem>
+      <DropdownMenuItem @click="gerarRelatorio(data.id)">Central de relatórios</DropdownMenuItem>
       <DropdownMenuItem @click="abrirEtiquetas(data.id)">Etiquetas da variante</DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem

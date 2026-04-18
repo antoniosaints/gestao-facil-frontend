@@ -147,12 +147,20 @@ export const columnsVariantes: ColumnDef<ProdutoVarianteRow>[] = [
         () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render(BadgeCell, {
-        label: row.getValue('Uid') as string,
-        color: 'gray',
-        icon: Package,
-        capitalize: false,
-      }),
+      // render(BadgeCell, {
+      //   label: row.getValue('Uid') as string,
+      //   color: 'gray',
+      //   icon: Package,
+      //   capitalize: false,
+      // }),
+       render(RouterLink, { to: `/produtos/detalhes?id=${row.original.produtoBaseId}&varianteId=${row.original.id}` }, () =>
+        render(BadgeCell, {
+          label: row.getValue('Uid') as string,
+          color: 'gray',
+          icon: Package,
+          capitalize: false,
+        }),
+      ),
   },
   {
     accessorKey: 'produtoBaseNome',
@@ -166,25 +174,10 @@ export const columnsVariantes: ColumnDef<ProdutoVarianteRow>[] = [
         () => ['Produto', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render(RouterLink, { to: `/produtos/detalhes?id=${row.original.produtoBaseId}` }, () => row.original.produtoBaseNome || row.original.nome),
-  },
-  {
-    accessorKey: 'nomeVariante',
-    header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Variante', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
-    cell: ({ row }) =>
-      render(BadgeCell, {
-        label: `${row.original.nomeVariante || 'Padrão'}`,
-        color: row.original.ehPadrao ? 'blue' : 'gray',
-        icon: Boxes,
-        capitalize: false,
+      render(RouterLink, { to: `/produtos/detalhes?id=${row.original.produtoBaseId}&varianteId=${row.original.id}` }, () => {
+        const base = row.original.produtoBaseNome || row.original.nome
+        const variante = row.original.nomeVariante || ''
+        return base + ' ' + variante;
       }),
   },
   {

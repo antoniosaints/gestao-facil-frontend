@@ -27,11 +27,12 @@ function isBlank(value: string | number | null | undefined) {
 const title = computed(() => (store.form.id ? 'Editar produto' : 'Novo produto'))
 const description = computed(() =>
   store.form.id
-    ? 'Atualize os dados do produto base e da variante padrao.'
-    : 'Cadastre o produto base. A variante padrao sera criada automaticamente.',
+    ? 'Atualize os dados do produto base e da variante padrão principal.'
+    : 'Cadastre o produto base primeiro. A variante padrão inicial será criada automaticamente com os dados abaixo.',
 )
 
 const estoqueReadonly = computed(() => store.form.id != null)
+const controlaEstoqueAtivo = computed(() => store.form.controlaEstoque)
 
 function buildPayload() {
   return {
@@ -164,7 +165,7 @@ async function submit() {
           <CardHeader class="space-y-1 p-4">
             <CardTitle class="flex items-center gap-2 text-base text-foreground">
               <Layers3 class="h-4 w-4 text-primary dark:text-blue-500" />
-              Variante padrao
+              Variante padrão
             </CardTitle>
           </CardHeader>
           <CardContent class="space-y-2 px-4">
@@ -173,7 +174,7 @@ async function submit() {
                 <label class="mb-1.5 block text-sm font-medium text-foreground">
                   Nome da variante <span class="text-red-500">*</span>
                 </label>
-                <Input v-model="store.form.nomeVariante" required type="text" placeholder="Padrao"
+                <Input v-model="store.form.nomeVariante" required type="text" placeholder="Ex: Padrão, Azul G, 1L"
                   class="bg-background dark:bg-background/60" />
               </div>
 
@@ -215,7 +216,7 @@ async function submit() {
           <CardHeader class="space-y-1 p-4">
             <CardTitle class="flex items-center gap-2 text-base text-foreground">
               <CircleDollarSign class="h-4 w-4 text-primary dark:text-blue-500" />
-              Preco e estoque
+              Preço e estoque
             </CardTitle>
           </CardHeader>
           <CardContent class="space-y-2 px-4">
@@ -249,8 +250,8 @@ async function submit() {
                   <label class="mb-1.5 block text-sm font-medium text-foreground">
                     Estoque inicial <span class="text-red-500">* <span class="text-xs" v-if="estoqueReadonly">Campo não pode ser editado.</span></span>
                   </label>
-                  <Input v-model="store.form.estoque" :readonly="estoqueReadonly"
-                    class="bg-background read-only:cursor-not-allowed read-only:bg-muted dark:bg-background/70" required
+                  <Input v-model="store.form.estoque" :readonly="estoqueReadonly" :disabled="!controlaEstoqueAtivo"
+                    class="bg-background read-only:cursor-not-allowed read-only:bg-muted disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70" required
                     type="number" min="0" />
                 </div>
 
@@ -258,8 +259,8 @@ async function submit() {
                   <label class="mb-1.5 block text-sm font-medium text-foreground">
                     Estoque minimo <span class="text-red-500">*</span>
                   </label>
-                  <Input v-model="store.form.minimo" required type="number" min="0"
-                    class="bg-background dark:bg-background/70" />
+                  <Input v-model="store.form.minimo" required type="number" min="0" :disabled="!controlaEstoqueAtivo"
+                    class="bg-background disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70" />
                 </div>
               </div>
             </div>

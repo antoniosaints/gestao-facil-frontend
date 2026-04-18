@@ -22,8 +22,9 @@ const title = computed(() => (store.varianteForm.id ? 'Editar variante' : 'Nova 
 const description = computed(() =>
   store.varianteForm.id
     ? 'Atualize os dados da variante vinculada ao produto base selecionado.'
-    : 'Selecione o produto e preencha somente os dados da nova variante.',
+    : 'Selecione o produto base e preencha somente o que muda nesta nova variante.',
 )
+const controlaEstoqueAtivo = computed(() => store.varianteForm.controlaEstoque)
 
 function isBlank(value: string | number | null | undefined) {
   return String(value ?? '').trim() === ''
@@ -129,16 +130,13 @@ async function submit() {
   >
     <form @submit.prevent="submit" class="grid gap-5 px-4 pb-1">
       <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
-        <CardHeader class="space-y-1">
+        <CardHeader class="space-y-1 p-4">
           <CardTitle class="flex items-center gap-2 text-base text-foreground">
             <PackagePlus class="h-4 w-4 text-primary" />
-            Identificacao da variante
+            Identificação da variante
           </CardTitle>
-          <CardDescription class="text-muted-foreground">
-            Configure os dados que diferenciam essa variante nas selecoes e listagens.
-          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent class="space-y-2 px-4">
           <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
             <div class="md:col-span-12">
               <label class="mb-1.5 block text-sm font-medium text-foreground">
@@ -149,7 +147,6 @@ async function submit() {
                 class="w-full"
                 url="/produtos/select2"
                 :params="[{ key: 'baseOnly', value: true }]"
-                :allow-clear="true"
                 placeholder="Selecione o produto para receber a nova variante"
                 :disabled="!!store.varianteForm.id"
               />
@@ -163,7 +160,7 @@ async function submit() {
                 v-model="store.varianteForm.nomeVariante"
                 required
                 type="text"
-                placeholder="Ex: Azul G"
+                placeholder="Ex: Azul G, Caixa 12un, 1L"
                 class="bg-background dark:bg-background/60"
               />
             </div>
@@ -207,16 +204,13 @@ async function submit() {
       </Card>
 
       <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
-        <CardHeader class="space-y-1">
+        <CardHeader class="space-y-1 p-4">
           <CardTitle class="flex items-center gap-2 text-base text-foreground">
             <CircleDollarSign class="h-4 w-4 text-primary" />
             Preco e estoque
           </CardTitle>
-          <CardDescription class="text-muted-foreground">
-            Mantenha os dados comerciais e o estoque da variante organizados por bloco.
-          </CardDescription>
         </CardHeader>
-        <CardContent class="space-y-4">
+        <CardContent class="space-y-2 px-4">
           <div class="rounded-xl">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
               <div class="md:col-span-4">
@@ -268,7 +262,8 @@ async function submit() {
                   required
                   type="number"
                   min="0"
-                  class="bg-background dark:bg-background/70"
+                  :disabled="!controlaEstoqueAtivo"
+                  class="bg-background disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70"
                 />
               </div>
 
@@ -281,7 +276,8 @@ async function submit() {
                   required
                   type="number"
                   min="0"
-                  class="bg-background dark:bg-background/70"
+                  :disabled="!controlaEstoqueAtivo"
+                  class="bg-background disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70"
                 />
               </div>
             </div>
@@ -290,16 +286,13 @@ async function submit() {
       </Card>
 
       <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
-        <CardHeader class="space-y-1">
+        <CardHeader class="space-y-1 p-4">
           <CardTitle class="flex items-center gap-2 text-base text-foreground">
             <Settings2 class="h-4 w-4 text-primary" />
             Regras operacionais
           </CardTitle>
-          <CardDescription class="text-muted-foreground">
-            Controle a participacao da variante em entradas, saidas, producao e PDV.
-          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent class="space-y-2 px-4">
           <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
             <label
               class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"

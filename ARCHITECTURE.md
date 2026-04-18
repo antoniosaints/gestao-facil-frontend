@@ -46,11 +46,14 @@ Na prática:
 - repositories fazem chamadas HTTP com métodos estáticos;
 - composables resolvem comportamento transversal, como tabela server-side, guardas e confirmações.
 - telas de detalhe operacional, como modais ricos de ordens de serviço e páginas de detalhe de produto, devem usar store + repository para carregar, recarregar e sincronizar resumo, itens, variantes e mensagens após cada ação.
+- detalhes de produto com base + variantes devem separar claramente a visão da variante selecionada, a lista de variantes e a visão geral consolidada do produto base.
 - telas de catálogo que misturam produto base e variante devem manter estado explícito para o modo de listagem e para o tipo de cadastro iniciado pelo usuário.
 - dashboards operacionais, como o painel de produtos, devem consumir endpoints agregados do backend filtrados por período e sempre respeitar o `contaId` do contexto autenticado para evitar mistura entre contas.
+- centrais de relatório do domínio devem abrir com contexto pré-preenchido quando o usuário parte de uma linha, detalhe ou variante específica, reduzindo retrabalho na seleção de filtros.
 
 ## Convenções importantes
 - O módulo costuma viver perto da sua tela: `Home.vue`, subpastas `tabela`, `modais`, `formulario`, `dashboard` e variantes mobile.
+- Quando uma listagem desktop precisa de adaptação mobile, a preferência é manter a tabela no desktop e usar cards compactos + bottombar fixa no mobile, reaproveitando o store e o repository do domínio.
 - O mesmo domínio costuma combinar página, store e repository próprios.
 - O frontend usa contrato tipado local em `src/types/schemas.ts`, espelhando os domínios principais do backend.
 - O guard de rotas consulta dados do usuário, status da conta e permissão antes de liberar navegação.
@@ -60,6 +63,7 @@ Na prática:
 - `public/` contém manifesto, service worker e assets públicos.
 - `dist/` é artefato gerado de build.
 - `src/components/ui/` concentra primitives reutilizáveis e deve ser a primeira opção antes de criar UI nova.
+- `src/components/mobile/` concentra padrões móveis compartilhados, como bottombar fixa para listagens e atalhos operacionais.
 - `src/pluguins/socket.ts` e `src/utils/qzTray.ts` mostram integrações de runtime que impactam a experiência.
 
 ## Regras para futuras mudanças

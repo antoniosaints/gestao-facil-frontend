@@ -59,7 +59,7 @@ function montarIndicadores(data: any) {
     {
       titulo: 'Estoque baixo',
       valor: `${data.estoqueBaixo || 0}`,
-      detalhe: `${data.produtosSemEstoque || 0} variante(s) sem estoque`,
+      detalhe: `${data.produtosSemEstoque || 0} variante(s) sem estoque e ${data.controlaEstoque || 0} com controle ativo`,
       icone: 'fa-solid fa-triangle-exclamation text-amber-600',
     },
     {
