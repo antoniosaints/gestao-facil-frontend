@@ -54,6 +54,7 @@ Na prática:
 ## Convenções importantes
 - O módulo costuma viver perto da sua tela: `Home.vue`, subpastas `tabela`, `modais`, `formulario`, `dashboard` e variantes mobile.
 - Quando uma listagem desktop precisa de adaptação mobile, a preferência é manter a tabela no desktop e usar cards compactos + bottombar fixa no mobile, reaproveitando o store e o repository do domínio.
+- Em financeiro, páginas auxiliares como contas e categorias podem existir como telas próprias, mas a navegação primária deve partir das ações de `lancamentos` quando fizerem parte do mesmo fluxo operacional.
 - O mesmo domínio costuma combinar página, store e repository próprios.
 - O frontend usa contrato tipado local em `src/types/schemas.ts`, espelhando os domínios principais do backend.
 - O guard de rotas consulta dados do usuário, status da conta e permissão antes de liberar navegação.

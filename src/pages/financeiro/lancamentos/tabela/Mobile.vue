@@ -1,7 +1,6 @@
 <template>
     <div>
         <div class="flex flex-col gap-2 mt-2 overflow-auto max-h-[calc(100vh-13rem)] md:max-h-full">
-            <!-- Lista de Vendas -->
             <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-13rem)]">
                 <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark">
                 </div>
@@ -26,9 +25,6 @@
                             <ArrowUp v-else class="w-4 h-4 inline-flex" />
                             {{ formatCurrencyBR(Number(row.valorTotal)) }}
                         </div>
-                    </div>
-                    <div class="flex justify-between">
-
                     </div>
                     <div
                         :class="['text-xs flex items-center justify-between', row.tipo === 'RECEITA' ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
@@ -62,7 +58,6 @@
             </div>
         </div>
 
-        <!-- Modal Buscar Vendas -->
         <div v-if="showModalBuscar" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div
                 class="bg-card dark:bg-card-dark border-t border-border dark:border-border-dark p-6 rounded shadow-xl max-w-[95%] transform transition-all duration-300 scale-95 opacity-0 animate-fade-in">
@@ -116,7 +111,22 @@
                         </div>
                         <div class="font-medium text-center text-gray-500 dark:text-gray-400">DRE</div>
                     </div>
-                    <!-- Outros itens iguais -->
+                    <div @click="goToCategorias"
+                        class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                        <div
+                            class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                            <Tags class="w-10 h-10 text-gray-500 dark:text-gray-400" />
+                        </div>
+                        <div class="font-medium text-center text-gray-500 dark:text-gray-400">Categorias</div>
+                    </div>
+                    <div @click="goToContas"
+                        class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                        <div
+                            class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                            <Wallet class="w-10 h-10 text-gray-500 dark:text-gray-400" />
+                        </div>
+                        <div class="font-medium text-center text-gray-500 dark:text-gray-400">Contas</div>
+                    </div>
                 </div>
                 <DrawerFooter class="pt-2">
                     <DrawerClose as-child>
@@ -128,7 +138,6 @@
             </DrawerContent>
         </Drawer>
 
-        <!-- Navegação Mobile -->
         <nav
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20">
             <button type="button" @click="previousPage" :disabled="currentPage <= 1"
@@ -160,7 +169,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, ArrowUp, Dot, Eye, FileChartLine, Trash, TrendingDown, TrendingUp } from "lucide-vue-next";
+import { ArrowDown, ArrowUp, Dot, Eye, FileChartLine, Tags, Trash, TrendingDown, TrendingUp, Wallet } from "lucide-vue-next";
 import type { LancamentoFinanceiro } from "@/types/schemas";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { watch } from "vue";
@@ -168,6 +177,7 @@ import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos";
 import { useConfirm } from "@/composables/useConfirm";
 import { LancamentosRepository } from "@/repositories/lancamento-repository";
 import { useToast } from "vue-toastification";
+import router from "@/router";
 
 const store = useLancamentosStore();
 const toast = useToast();
@@ -210,6 +220,16 @@ function previousPage() {
 
 function nextPage() {
     if (currentPage.value < totalPages.value) renderListaVendas(currentPage.value + 1);
+}
+
+function goToCategorias() {
+    showDrawer.value = false
+    router.push('/financeiro/categorias')
+}
+
+function goToContas() {
+    showDrawer.value = false
+    router.push('/financeiro/contas')
 }
 
 watch(() => store.filters.update, () => {

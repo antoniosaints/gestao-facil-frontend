@@ -120,20 +120,6 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
           show: permissions.admin,
           color: 'emerald',
         },
-        {
-          nome: 'Categorias',
-          link: '/financeiro/categorias',
-          icone: Tags,
-          show: permissions.admin,
-          color: 'emerald',
-        },
-        {
-          nome: 'Contas financeiras',
-          link: '/financeiro/contas',
-          icone: Wallet,
-          show: permissions.admin,
-          color: 'emerald',
-        },
       ],
     },
     {

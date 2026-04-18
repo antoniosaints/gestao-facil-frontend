@@ -323,7 +323,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/financeiro/categorias/Home.vue'),
         meta: {
           layout: 'main',
-          permissao: 4,
+          permissao: 3,
         },
       },
       {
@@ -332,7 +332,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/financeiro/contas/Home.vue'),
         meta: {
           layout: 'main',
-          permissao: 4,
+          permissao: 3,
         },
       },
       {
