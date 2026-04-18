@@ -337,7 +337,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-2">
     <div class="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div class="min-w-0 space-y-3">
@@ -417,16 +417,16 @@ onMounted(async () => {
       </div>
     </div>
 
-    <Tabs v-model="activeTab" default-value="resumo" class="space-y-4">
-      <TabsList class="w-full justify-start">
+    <Tabs v-model="activeTab" default-value="resumo" class="space-y-2">
+      <TabsList class="w-full justify-start rounded-b-lg">
         <TabsTrigger value="resumo" class="h-10 px-4">
-          <span class="inline-flex items-center gap-2">
+          <span class="flex items-center gap-2">
             <FileText class="h-4 w-4" />
             <span>Resumo</span>
           </span>
         </TabsTrigger>
         <TabsTrigger value="variantes" class="h-10 px-4">
-          <span class="inline-flex items-center gap-2">
+          <span class="flex items-center gap-2">
             <Boxes class="h-4 w-4" />
             <span>Variantes</span>
           </span>
@@ -450,31 +450,31 @@ onMounted(async () => {
                 </div>
 
                 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Categoria</div>
                     <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.categoria || 'Sem categoria' }}</div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Unidade base</div>
                     <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.unidade || 'un' }}</div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Código/SKU</div>
                     <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.codigo || 'Sem código' }}</div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Preço padrão</div>
                     <div class="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                       {{ formatCurrencyBR(Number(produto?.preco || 0)) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Custo padrão</div>
                     <div class="mt-1 text-sm font-medium text-foreground">
                       {{ formatCurrencyBR(Number(produto?.precoCompra || 0)) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Total de variantes</div>
                     <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.totalVariantes || 0 }}</div>
                   </div>
@@ -511,35 +511,35 @@ onMounted(async () => {
               <CardContent>
                 <div v-if="loadingResumoProduto" class="text-sm text-muted-foreground">Carregando resumo do produto...</div>
                 <div v-else-if="resumoProduto" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Valor em estoque</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ formatCurrencyBR(Number(resumoProduto.valorEstoque || 0)) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Lucro líquido</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ formatCurrencyBR(Number(resumoProduto.lucroLiquido || 0)) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Custo médio</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ formatCurrencyBR(Number(resumoProduto.custoMedio || 0)) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ formatCurrencyBR(Number(resumoProduto.ticketMedio || 0)) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Entradas</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoProduto.totalEntradas }}</div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Saídas</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoProduto.totalSaidas }}</div>
                   </div>
@@ -555,7 +555,7 @@ onMounted(async () => {
               </CardHeader>
               <CardContent>
                 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <div v-for="field in fiscalFields" :key="field.label" class="rounded-xl border border-border bg-background p-3">
+                  <div v-for="field in fiscalFields" :key="field.label" class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">{{ field.label }}</div>
                     <div class="mt-1 text-sm font-medium text-foreground">{{ field.value }}</div>
                   </div>
@@ -616,35 +616,35 @@ onMounted(async () => {
                   </div>
 
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-xl border border-border bg-background p-3">
+                    <div class="rounded-xl border border-border bg-background px-3 py-2">
                       <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Preço de venda</div>
                       <div class="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                         {{ formatCurrencyBR(Number(selectedVariant.preco || 0)) }}
                       </div>
                     </div>
-                    <div class="rounded-xl border border-border bg-background p-3">
+                    <div class="rounded-xl border border-border bg-background px-3 py-2">
                       <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Preço de compra</div>
                       <div class="mt-1 text-sm font-semibold text-foreground">
                         {{ formatCurrencyBR(Number(selectedVariant.precoCompra || 0)) }}
                       </div>
                     </div>
-                    <div class="rounded-xl border border-border bg-background p-3">
+                    <div class="rounded-xl border border-border bg-background px-3 py-2">
                       <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Estoque atual</div>
                       <div class="mt-1 text-sm font-semibold text-foreground">
                         {{ selectedVariant.estoque || 0 }} {{ selectedVariant.unidade || 'un' }}
                       </div>
                     </div>
-                    <div class="rounded-xl border border-border bg-background p-3">
+                    <div class="rounded-xl border border-border bg-background px-3 py-2">
                       <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Estoque mínimo</div>
                       <div class="mt-1 text-sm font-semibold text-foreground">
                         {{ selectedVariant.minimo || 0 }} {{ selectedVariant.unidade || 'un' }}
                       </div>
                     </div>
-                    <div class="rounded-xl border border-border bg-background p-3">
+                    <div class="rounded-xl border border-border bg-background px-3 py-2">
                       <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Código</div>
                       <div class="mt-1 text-sm font-semibold text-foreground">{{ selectedVariant.codigo || 'Sem código' }}</div>
                     </div>
-                    <div class="rounded-xl border border-border bg-background p-3">
+                    <div class="rounded-xl border border-border bg-background px-3 py-2">
                       <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Unidade</div>
                       <div class="mt-1 text-sm font-semibold text-foreground">{{ selectedVariant.unidade || 'un' }}</div>
                     </div>
@@ -709,37 +709,37 @@ onMounted(async () => {
               <CardContent>
                 <div v-if="loadingResumoVariante" class="text-sm text-muted-foreground">Carregando resumo da variante...</div>
                 <div v-else-if="resumoVariante" class="grid gap-3 sm:grid-cols-2">
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Valor em estoque</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ formatCurrencyBR(Number(resumoVariante.valorEstoque || 0)) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Lucro líquido</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ formatCurrencyBR(Number(resumoVariante.lucroLiquido || 0)) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Custo médio</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ formatCurrencyBR(Number(resumoVariante.custoMedio || 0)) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ formatCurrencyBR(Number(resumoVariante.ticketMedio || 0)) }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Entradas / saídas</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ resumoVariante.totalEntradas }} / {{ resumoVariante.totalSaidas }}
                     </div>
                   </div>
-                  <div class="rounded-xl border border-border bg-background p-3">
+                  <div class="rounded-xl border border-border bg-background px-3 py-2">
                     <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Margem</div>
                     <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoVariante.margemLucro }}</div>
                   </div>
@@ -753,13 +753,12 @@ onMounted(async () => {
 
       <TabsContent value="variantes">
         <Card class="border-border">
-          <CardHeader class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <CardHeader class="flex flex-col gap-2 px-6 py-3 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle class="flex items-center gap-2">
                 <Boxes class="h-5 w-5" />
                 Variantes do produto
               </CardTitle>
-              <CardDescription>Gerencie códigos, preço, estoque e regras de cada variante.</CardDescription>
             </div>
             <Button class="text-white" @click="store.openSaveVariante(produto?.id!)">
               <PackagePlus class="mr-2 h-4 w-4" />
@@ -795,7 +794,7 @@ onMounted(async () => {
                   <TableBody>
                     <TableRow v-for="item in variants" :key="item.id">
                       <TableCell class="align-middle">
-                        <div class="flex flex-col gap-1">
+                        <div class="flex flex-col gap-0">
                           <div class="flex flex-wrap items-center gap-2">
                             <span class="text-sm font-semibold text-foreground">
                               {{ item.nomeVariante || 'Padrão' }}
@@ -805,7 +804,7 @@ onMounted(async () => {
                               :label="item.ehPadrao ? 'Padrão' : 'Variante'"
                               :color="item.ehPadrao ? 'purple' : 'gray'"
                               :icon="item.ehPadrao ? BadgeCheck : Boxes"
-                              :capitalize="false"
+                              :capitalize="true"
                             />
                           </div>
                           <p class="text-[11px] text-muted-foreground">

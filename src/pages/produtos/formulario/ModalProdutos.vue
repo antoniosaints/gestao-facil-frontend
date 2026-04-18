@@ -121,42 +121,29 @@ async function submit() {
 <template>
   <div>
     <ModalView v-model:open="store.openModal" :title="title" :description="description" size="5xl">
-      <form @submit.prevent="submit" class="grid gap-5 px-4 pb-1">
+      <form @submit.prevent="submit" class="grid gap-4 px-4 pb-1">
         <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
-          <CardHeader class="space-y-1">
+          <CardHeader class="space-y-1 p-4">
             <CardTitle class="flex items-center gap-2 text-base text-foreground">
               <Package2 class="h-4 w-4 text-primary dark:text-blue-500" />
               Dados do produto
             </CardTitle>
-            <CardDescription class="text-muted-foreground">
-              Informacoes compartilhadas entre todas as variantes desse produto.
-            </CardDescription>
           </CardHeader>
-          <CardContent class="space-y-4">
+          <CardContent class="space-y-2 px-4">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
               <div class="md:col-span-7">
                 <label class="mb-1.5 block text-sm font-medium text-foreground">
                   Nome do produto <span class="text-red-500">*</span>
                 </label>
-                <Input
-                  v-model="store.form.nome"
-                  required
-                  type="text"
-                  placeholder="Ex: Camiseta Dry Fit"
-                  class="bg-background dark:bg-background/60"
-                />
+                <Input v-model="store.form.nome" required type="text" placeholder="Ex: Camiseta Dry Fit"
+                  class="bg-background dark:bg-background/60" />
               </div>
 
               <div class="md:col-span-5">
                 <label class="mb-1.5 block text-sm font-medium text-foreground">Categoria</label>
                 <div class="flex items-center gap-2">
-                  <Select2Ajax
-                    v-model:model-value="store.form.categoriaId"
-                    class="w-full"
-                    url="/produtos/categorias/select2"
-                    :allow-clear="true"
-                    placeholder="Selecione a categoria"
-                  />
+                  <Select2Ajax v-model:model-value="store.form.categoriaId" class="w-full"
+                    url="/produtos/categorias/select2" :allow-clear="true" placeholder="Selecione a categoria" />
                   <Button type="button" variant="outline" class="shrink-0" @click="store.openSaveCategoria">
                     <BadgePlus class="h-4 w-4" />
                   </Button>
@@ -166,49 +153,34 @@ async function submit() {
 
             <div class="rounded-xl">
               <label class="mb-1.5 block text-sm font-medium text-foreground">Descricao</label>
-              <Textarea
-                v-model="store.form.descricao"
-                rows="4"
+              <Textarea v-model="store.form.descricao" rows="4"
                 placeholder="Adicione observacoes ou detalhes sobre o produto"
-                class="bg-background dark:bg-background/70"
-              />
+                class="bg-background dark:bg-background/70" />
             </div>
           </CardContent>
         </Card>
 
         <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
-          <CardHeader class="space-y-1">
+          <CardHeader class="space-y-1 p-4">
             <CardTitle class="flex items-center gap-2 text-base text-foreground">
               <Layers3 class="h-4 w-4 text-primary dark:text-blue-500" />
               Variante padrao
             </CardTitle>
-            <CardDescription class="text-muted-foreground">
-              A variante padrao e criada automaticamente e permanece como a unidade vendavel do sistema.
-            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent class="space-y-2 px-4">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
               <div class="md:col-span-5">
                 <label class="mb-1.5 block text-sm font-medium text-foreground">
                   Nome da variante <span class="text-red-500">*</span>
                 </label>
-                <Input
-                  v-model="store.form.nomeVariante"
-                  required
-                  type="text"
-                  placeholder="Padrao"
-                  class="bg-background dark:bg-background/60"
-                />
+                <Input v-model="store.form.nomeVariante" required type="text" placeholder="Padrao"
+                  class="bg-background dark:bg-background/60" />
               </div>
 
               <div class="md:col-span-4">
                 <label class="mb-1.5 block text-sm font-medium text-foreground">Codigo</label>
-                <Input
-                  v-model="store.form.codigo"
-                  type="text"
-                  placeholder="Codigo interno ou SKU"
-                  class="bg-background dark:bg-background/60"
-                />
+                <Input v-model="store.form.codigo" type="text" placeholder="Codigo interno ou SKU"
+                  class="bg-background dark:bg-background/60" />
               </div>
 
               <div class="md:col-span-3">
@@ -240,92 +212,54 @@ async function submit() {
         </Card>
 
         <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
-          <CardHeader class="space-y-1">
+          <CardHeader class="space-y-1 p-4">
             <CardTitle class="flex items-center gap-2 text-base text-foreground">
               <CircleDollarSign class="h-4 w-4 text-primary dark:text-blue-500" />
               Preco e estoque
             </CardTitle>
-            <CardDescription class="text-muted-foreground">
-              Organize os dados financeiros e o controle de estoque da variante padrao.
-            </CardDescription>
           </CardHeader>
-          <CardContent class="space-y-4">
+          <CardContent class="space-y-2 px-4">
             <div class="rounded-xl">
               <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                 <div class="md:col-span-4">
                   <label class="mb-1.5 block text-sm font-medium text-foreground">Preco de compra</label>
-                  <Input
-                    v-model="store.form.precoCompra"
-                    v-maska="moneyMaskOptions"
-                    type="text"
-                    placeholder="0,00"
-                    class="bg-background dark:bg-background/70"
-                  />
+                  <Input v-model="store.form.precoCompra" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
+                    class="bg-background dark:bg-background/70" />
                 </div>
 
                 <div class="md:col-span-4">
                   <label class="mb-1.5 block text-sm font-medium text-foreground">
                     Preco de venda <span class="text-red-500">*</span>
                   </label>
-                  <Input
-                    v-model="store.form.preco"
-                    v-maska="moneyMaskOptions"
-                    required
-                    type="text"
-                    placeholder="0,00"
-                    class="bg-background dark:bg-background/70"
-                  />
+                  <Input v-model="store.form.preco" v-maska="moneyMaskOptions" required type="text" placeholder="0,00"
+                    class="bg-background dark:bg-background/70" />
                 </div>
 
                 <div class="md:col-span-4">
                   <label class="mb-1.5 block text-sm font-medium text-foreground">Custo medio producao</label>
-                  <Input
-                    v-model="store.form.custoMedioProducao"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    class="bg-background dark:bg-background/70"
-                  />
+                  <Input placeholder="0,00" v-model="store.form.custoMedioProducao" type="number" min="0" step="0.01"
+                    class="bg-background dark:bg-background/70" />
                 </div>
               </div>
             </div>
 
             <div class="rounded-xl">
-              <div class="mb-3 flex items-start justify-between gap-4">
-                <div>
-                  <p class="text-sm font-medium text-foreground">Estoque</p>
-                  <p class="text-xs text-muted-foreground">
-                    {{ estoqueReadonly ? 'O estoque inicial nao pode ser alterado por aqui depois do cadastro.' : 'Defina o estoque inicial e o estoque minimo da variante padrao.' }}
-                  </p>
-                </div>
-              </div>
-
               <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                 <div class="md:col-span-6">
                   <label class="mb-1.5 block text-sm font-medium text-foreground">
-                    Estoque inicial <span class="text-red-500">*</span>
+                    Estoque inicial <span class="text-red-500">* <span class="text-xs" v-if="estoqueReadonly">Campo não pode ser editado.</span></span>
                   </label>
-                  <Input
-                    v-model="store.form.estoque"
-                    :readonly="estoqueReadonly"
-                    class="bg-background read-only:cursor-not-allowed read-only:bg-muted dark:bg-background/70"
-                    required
-                    type="number"
-                    min="0"
-                  />
+                  <Input v-model="store.form.estoque" :readonly="estoqueReadonly"
+                    class="bg-background read-only:cursor-not-allowed read-only:bg-muted dark:bg-background/70" required
+                    type="number" min="0" />
                 </div>
 
                 <div class="md:col-span-6">
                   <label class="mb-1.5 block text-sm font-medium text-foreground">
                     Estoque minimo <span class="text-red-500">*</span>
                   </label>
-                  <Input
-                    v-model="store.form.minimo"
-                    required
-                    type="number"
-                    min="0"
-                    class="bg-background dark:bg-background/70"
-                  />
+                  <Input v-model="store.form.minimo" required type="number" min="0"
+                    class="bg-background dark:bg-background/70" />
                 </div>
               </div>
             </div>
@@ -333,55 +267,46 @@ async function submit() {
         </Card>
 
         <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
-          <CardHeader class="space-y-1">
+          <CardHeader class="space-y-1 p-4">
             <CardTitle class="flex items-center gap-2 text-base text-foreground">
               <Settings2 class="h-4 w-4 text-primary dark:text-blue-500" />
               Regras operacionais
             </CardTitle>
-            <CardDescription class="text-muted-foreground">
-              Determine como a variante padrao participa das movimentacoes e da producao.
-            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent class="space-y-2 px-4">
             <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
               <label
-                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"
-              >
+                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
                 <span>Permite saidas</span>
                 <Switch v-model:model-value="store.form.saidas" />
               </label>
 
               <label
-                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"
-              >
+                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
                 <span>Permite entradas</span>
                 <Switch v-model:model-value="store.form.entradas" />
               </label>
 
               <label
-                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"
-              >
+                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
                 <span>Producao local</span>
                 <Switch v-model:model-value="store.form.producaoLocal" />
               </label>
 
               <label
-                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"
-              >
+                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
                 <span>Controla estoque</span>
                 <Switch v-model:model-value="store.form.controlaEstoque" />
               </label>
 
               <label
-                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"
-              >
+                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
                 <span>Mostrar no PDV</span>
                 <Switch v-model:model-value="store.form.mostrarNoPdv" />
               </label>
 
               <label
-                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20"
-              >
+                class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
                 <span>Materia prima</span>
                 <Switch v-model:model-value="store.form.materiaPrima" />
               </label>

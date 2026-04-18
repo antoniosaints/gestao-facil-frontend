@@ -6,7 +6,7 @@ interface Props {
   color: "cyan" | "yellow" | "gray" | "violet" | "purple" | "green" | "emerald" | "orange" | "red" | "blue"
   icon?: string | Component
   capitalize?: boolean
-  size?: "sm" | "md" | "lg"
+  size?: "sm" | "md" | "lg",
 }
 
 const props = withDefaults(defineProps<Props>(), {
