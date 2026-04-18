@@ -22,11 +22,13 @@ import {
   CircleAlert,
   CircleDollarSign,
   Clock3,
+  Cog,
   FileArchive,
   FileClock,
   FileText,
   LoaderCircle,
   Mail,
+  MessageCircle,
   MessageCircleMore,
   OctagonX,
   Package,
@@ -244,7 +246,7 @@ watch(
     title="Detalhes da OS"
     description="Resumo operacional, itens vinculados e histórico de mensagens da ordem de serviço."
   >
-    <div v-if="store.loadingDetalhe" class="px-4 py-8">
+    <div v-if="store.loadingDetalhe" class="px-4 py-8 transition-all animate-pulse">
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">
@@ -256,19 +258,20 @@ watch(
       </Empty>
     </div>
 
-    <div v-else-if="ordem" class="space-y-4 px-4">
+    <div v-else-if="ordem" class="space-y-2 px-4">
       <div class="rounded-xl border border-border bg-background p-4 shadow-sm">
         <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div class="min-w-0 space-y-4">
             <div class="flex flex-wrap items-center gap-2">
-              <div class="text-xl font-semibold text-foreground">
-                {{ ordem.Uid || `OS #${ordem.id}` }}
+              <div class="text-xl font-semibold text-blue-500 dark:text-blue-400">
+                {{ `#${ordem.Uid || ordem.id}` }}
               </div>
               <BadgeCell
                 :label="statusMeta.label"
                 :color="statusMeta.color"
                 :icon="statusMeta.icon"
                 :capitalize="false"
+                size="sm"
               />
               <BadgeCell
                 :label="`${mensagens.length} mensagem(ns)`"
@@ -303,33 +306,33 @@ watch(
                   <Wrench class="h-3.5 w-3.5 text-violet-500" />
                   Responsável
                 </div>
-                <div class="font-medium text-foreground">{{ ordem.Operador?.nome || 'Não informado' }}</div>
+                <div class="font-medium text-foreground truncate">{{ ordem.Operador?.nome || 'Não informado' }}</div>
                 <div class="mt-1 text-xs text-muted-foreground">Abertura em {{ formatDateSafe(ordem.data) }}</div>
               </div>
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2 xl:w-[360px]">
-            <div class="rounded-lg border border-border bg-card px-3 py-3">
+            <div class="rounded-lg border border-border bg-card px-3 py-2">
               <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Total final</div>
               <div class="mt-1 text-lg font-semibold text-foreground">{{ formatCurrencyBR(totalFinal) }}</div>
             </div>
-            <div class="rounded-lg border border-border bg-card px-3 py-3">
+            <div class="rounded-lg border border-border bg-card px-3 py-2">
               <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Itens</div>
               <div class="mt-1 text-lg font-semibold text-foreground">{{ quantidadeItens }}</div>
             </div>
-            <div class="rounded-lg border border-border bg-card px-3 py-3">
+            <div class="rounded-lg border border-border bg-card px-3 py-2">
               <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Produtos</div>
               <div class="mt-1 text-lg font-semibold text-foreground">{{ quantidadeProdutos }}</div>
             </div>
-            <div class="rounded-lg border border-border bg-card px-3 py-3">
+            <div class="rounded-lg border border-border bg-card px-3 py-2">
               <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Serviços</div>
               <div class="mt-1 text-lg font-semibold text-foreground">{{ quantidadeServicos }}</div>
             </div>
           </div>
         </div>
 
-        <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div class="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button type="button" variant="outline" @click="editarOrdem">
             <PenLine class="mr-2 h-4 w-4 text-violet-500" />
             Editar OS
@@ -352,16 +355,16 @@ watch(
       </div>
 
       <Tabs v-model="activeTab" class="w-full">
-        <div class="overflow-auto pb-1">
+        <div class="overflow-auto pb-0">
           <TabsList class="grid w-full min-w-[720px] grid-cols-4 rounded-lg">
-            <TabsTrigger value="geral">Geral</TabsTrigger>
-            <TabsTrigger value="mensagens">Mensagens ({{ mensagens.length }})</TabsTrigger>
-            <TabsTrigger value="produtos">Produtos ({{ produtos.length }})</TabsTrigger>
-            <TabsTrigger value="servicos">Serviços ({{ servicos.length }})</TabsTrigger>
+            <TabsTrigger value="geral"><span class="flex items-center gap-2"><Cog class="h-4 w-4" /> Geral</span></TabsTrigger>
+            <TabsTrigger value="mensagens"><span class="flex items-center gap-2"><MessageCircle class="h-4 w-4" />Mensagens - {{ mensagens.length }}</span></TabsTrigger>
+            <TabsTrigger value="produtos"><span class="flex items-center gap-2"><Box class="h-4 w-4" />Produtos - {{ produtos.length }}</span></TabsTrigger>
+            <TabsTrigger value="servicos"><span class="flex items-center gap-2"><Wrench class="h-4 w-4" />Serviços - {{ servicos.length }}</span></TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="geral" class="mt-4 space-y-4">
+        <TabsContent value="geral" class="mt-2 space-y-4">
           <div class="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
             <div class="space-y-4">
               <div class="rounded-xl border border-border bg-background p-4">
@@ -466,7 +469,7 @@ watch(
         </TabsContent>
 
         <TabsContent value="mensagens" class="mt-4 space-y-4">
-          <div class="rounded-xl border border-border bg-background p-4">
+          <div class="rounded-xl bg-background">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div class="font-medium text-foreground">Linha do tempo da OS</div>
@@ -482,12 +485,12 @@ watch(
 
             <Separator class="my-4" />
 
-            <ScrollArea class="h-[360px] rounded-xl border border-border bg-muted/20 p-4">
-              <div v-if="mensagens.length" class="space-y-3">
+            <ScrollArea class="rounded-xl border border-border bg-muted/20 p-4">
+              <div v-if="mensagens.length" class="space-y-2">
                 <div
                   v-for="(msg, index) in mensagens"
                   :key="msg.id ?? `${msg.tipo}-${index}`"
-                  class="rounded-xl border p-3"
+                  class="rounded-xl border px-3 py-2"
                   :class="getMessageTypeMeta(msg.tipo).containerClass"
                 >
                   <div class="flex items-start gap-3">
@@ -515,7 +518,7 @@ watch(
                         </div>
                       </div>
 
-                      <div class="text-sm text-foreground whitespace-pre-wrap">
+                      <div class="text-xs text-foreground whitespace-pre-wrap">
                         {{ msg.mensagem }}
                       </div>
                     </div>
@@ -563,7 +566,7 @@ watch(
         </TabsContent>
 
         <TabsContent value="produtos" class="mt-4">
-          <div class="rounded-xl border border-border bg-background p-4">
+          <div class="rounded-xl bg-background">
             <div class="flex items-center gap-2 text-sm font-medium text-foreground">
               <Package class="h-4 w-4 text-emerald-500" />
               Produtos vinculados
@@ -576,10 +579,10 @@ watch(
               <div
                 v-for="(item, index) in produtos"
                 :key="buildItemKey(item, index)"
-                class="rounded-xl border border-border bg-card p-4"
+                class="rounded-xl border border-border bg-card px-4 py-2"
               >
                 <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0 space-y-2">
+                  <div class="min-w-0 space-y-0">
                     <BadgeCell
                       :label="getItemTypeBadge(item.tipo).label"
                       :color="getItemTypeBadge(item.tipo).color"
@@ -614,7 +617,7 @@ watch(
         </TabsContent>
 
         <TabsContent value="servicos" class="mt-4">
-          <div class="rounded-xl border border-border bg-background p-4">
+          <div class="rounded-xl bg-background">
             <div class="flex items-center gap-2 text-sm font-medium text-foreground">
               <ShieldCheck class="h-4 w-4 text-yellow-500" />
               Serviços vinculados
