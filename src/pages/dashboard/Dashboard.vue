@@ -311,13 +311,13 @@ function getPeriodoSelecionado() {
 function getAlertClasses(tone: AlertCard['tone']) {
   switch (tone) {
     case 'danger':
-      return 'border-red-200 bg-red-500/5'
+      return 'border-red-200 bg-red-500/5 dark:border-red-800 dark:bg-red-900/10'
     case 'warning':
-      return 'border-amber-200 bg-amber-500/5'
+      return 'border-amber-200 bg-amber-500/5 dark:border-amber-800 dark:bg-amber-900/10'
     case 'success':
-      return 'border-emerald-200 bg-emerald-500/5'
+      return 'border-emerald-200 bg-emerald-500/5 dark:border-emerald-800 dark:bg-emerald-900/10'
     default:
-      return 'border-blue-200 bg-blue-500/5'
+      return 'border-blue-200 bg-blue-500/5 dark:border-blue-800 dark:bg-blue-900/10'
   }
 }
 
@@ -461,7 +461,7 @@ onMounted(() => {
               </div>
               <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             </div>
-            <RouterLink v-if="alert.link" :to="alert.link" class="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary">
+            <RouterLink v-if="alert.link" :to="alert.link" class="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary dark:text-blue-500">
               {{ alert.cta || 'Abrir' }}
               <ChevronRight class="h-4 w-4" />
             </RouterLink>
