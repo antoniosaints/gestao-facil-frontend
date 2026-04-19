@@ -1,418 +1,747 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue"
-import { addMonths, format, isSameDay, subMonths, isToday, isYesterday } from "date-fns"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { LancamentosRepository } from "@/repositories/lancamento-repository"
-import { formatCurrencyBR, formatToCapitalize } from "@/utils/formatters"
-import { ptBR } from "date-fns/locale"
+import { computed, onMounted, ref, watch } from 'vue'
+import { addMonths, format, isSameDay, isToday, isYesterday, subMonths } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import {
-    ArrowLeft,
-    ArrowRight,
-    TrendingUp,
-    TrendingDown,
-    MoreVertical,
-    Edit,
-    Trash2,
-    CheckCircle2,
-    Undo2,
-    Plus,
-    Home,
-    Wallet,
-    Calendar as CalendarIcon,
-    Search,
-    Filter,
-    Info
-} from "lucide-vue-next"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  CheckCircle2,
+  CircleDollarSign,
+  Filter,
+  HandCoins,
+  Info,
+  MoreVertical,
+  PenLine,
+  RotateCw,
+  Search,
+  TrendingDown,
+  TrendingUp,
+  Undo2,
+  Wallet,
+  X,
+} from 'lucide-vue-next'
+import { useToast } from 'vue-toastification'
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useToast } from "vue-toastification"
-import FormularioEfertivar from "./modais/FormularioEfertivar.vue"
-import { useLancamentosStore } from "@/stores/lancamentos/useLancamentos"
-import { goBack, goTo } from "@/hooks/links"
-import { useUiStore } from "@/stores/ui/uiStore"
-import ModalParcela from "./modais/ModalParcela.vue"
-import LancamentoModal from "./formulario/LancamentoModal.vue"
-import ModalView from "@/components/formulario/ModalView.vue"
-import ClientesModal from "@/pages/clientes/modais/ClientesModal.vue"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+import { LancamentosRepository } from '@/repositories/lancamento-repository'
+import type { CategoriaFinanceiro, ContasFinanceiro } from '@/types/schemas'
+import { formatCurrencyBR } from '@/utils/formatters'
+import { goBack, goTo } from '@/hooks/links'
+import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
+import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
+import { useUiStore } from '@/stores/ui/uiStore'
+
+import FormularioEfertivar from './modais/FormularioEfertivar.vue'
+import GerarCobranca from './modais/GerarCobranca.vue'
+import ModalParcela from './modais/ModalParcela.vue'
+import LancamentoModal from './formulario/LancamentoModal.vue'
+import ModalView from '@/components/formulario/ModalView.vue'
+import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
+
+type FiltroTipo = 'TODOS' | 'RECEITA' | 'DESPESA'
+type FiltroStatus = 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
+
+type LancamentoDia = {
+  id: number
+  uid: string
+  parcelaId: number
+  numero: number
+  descricao: string
+  categoria: string
+  cliente: string | null
+  conta: string | null
+  valor: number
+  tipo: 'RECEITA' | 'DESPESA'
+  status: 'PAGO' | 'PENDENTE' | 'ATRASADO'
+  pago: boolean
+  vencimento: string | Date
+  dataPagamento: string | Date | null
+  formaPagamento: string | null
+  cobrancaLink: string | null
+}
+
+type DiaLancamento = {
+  dia: string | Date
+  entradasPrevistas: number
+  saidasPrevistas: number
+  entradasRealizadas: number
+  saidasRealizadas: number
+  saldoRealizado: number
+  saldoPrevisto: number
+  lancamentos: LancamentoDia[]
+}
+
+type ResumoMensal = {
+  saldoInicialPeriodo: number
+  receitasPrevistas: number
+  despesasPrevistas: number
+  receitasRealizadas: number
+  despesasRealizadas: number
+  pendenteReceber: number
+  pendentePagar: number
+  saldoAtualDia: number
+  saldoPossivelDia: number
+  dataReferenciaSaldo: string | Date
+}
 
 const toast = useToast()
 const store = useLancamentosStore()
+const storeCobranca = useCobrancasFinanceirasStore()
 const uiStore = useUiStore()
+
+const carregando = ref(false)
 const openModalLancar = ref(false)
+const openModalFiltros = ref(false)
+const activeTab = ref<'geral' | 'resumo'>('geral')
+const quickPreset = ref<'all' | 'today'>('all')
+const dias = ref<DiaLancamento[]>([])
+const resumo = ref<ResumoMensal>({
+  saldoInicialPeriodo: 0,
+  receitasPrevistas: 0,
+  despesasPrevistas: 0,
+  receitasRealizadas: 0,
+  despesasRealizadas: 0,
+  pendenteReceber: 0,
+  pendentePagar: 0,
+  saldoAtualDia: 0,
+  saldoPossivelDia: 0,
+  dataReferenciaSaldo: new Date(),
+})
+const contas = ref<ContasFinanceiro[]>([])
+const categorias = ref<CategoriaFinanceiro[]>([])
 
-// Navigation
-const navigateMonth = (direction: "prev" | "next") => {
-    store.currentMonth = direction === "prev"
-        ? subMonths(store.currentMonth, 1)
-        : addMonths(store.currentMonth, 1)
-    carregarLancamentos()
+const filtros = ref<{
+  search: string
+  tipo: FiltroTipo
+  status: FiltroStatus
+  contaFinanceiraId: string
+  categoriaId: string
+}>({
+  search: '',
+  tipo: 'TODOS',
+  status: 'TODOS',
+  contaFinanceiraId: 'all',
+  categoriaId: 'all',
+})
+
+function getRequestFilters() {
+  return {
+    search: filtros.value.search.trim() || undefined,
+    tipo: filtros.value.tipo,
+    status: filtros.value.status,
+    contaFinanceiraId:
+      filtros.value.contaFinanceiraId !== 'all' ? Number(filtros.value.contaFinanceiraId) : null,
+    categoriaId: filtros.value.categoriaId !== 'all' ? Number(filtros.value.categoriaId) : null,
+  }
 }
 
-const openByTipo = (tipo: 'RECEITA' | 'DESPESA') => {
-    store.form.tipo = tipo
-    store.openSave()
-    openModalLancar.value = false
+async function carregarOpcoes() {
+  try {
+    const [responseContas, responseCategorias] = await Promise.all([
+      LancamentosRepository.listarContas(),
+      LancamentosRepository.listarCategorias(),
+    ])
+
+    contas.value = responseContas.data ?? []
+    categorias.value = responseCategorias.data ?? []
+  } catch (error) {
+    console.error(error)
+    toast.warning('Não foi possível carregar contas e categorias do filtro.')
+  }
 }
 
-// Interfaces
-interface Lancamento {
-    id: number
-    descricao: string
-    parcelaId: number
-    valor: number
-    status: string
-    categoria: string
-    tipo: string
-}
+async function carregarLancamentos(showFeedback = false) {
+  try {
+    carregando.value = true
+    const response = await LancamentosRepository.getLancamentosMensais(
+      store.currentMonth.toISOString().slice(0, 7),
+      getRequestFilters(),
+    )
 
-interface DiaLancamento {
-    dia: string
-    lancamentos: Lancamento[]
-    saldo: number
-}
+    dias.value = response.data?.dias ?? []
+    resumo.value = response.data?.resumo ?? resumo.value
 
-// State
-const carregando = ref<boolean>(false)
-const lancamentos = ref<DiaLancamento[]>([])
-
-// Actions
-async function carregarLancamentos() {
-    try {
-        carregando.value = true
-        const { data } = await LancamentosRepository.getLancamentosMensais(store.currentMonth.toISOString().slice(0, 7))
-        lancamentos.value = data
-    } catch (e) {
-        console.error(e)
-    } finally {
-        carregando.value = false
+    if (showFeedback) {
+      toast.info('Acompanhamento financeiro atualizado!')
     }
+  } catch (error) {
+    console.error(error)
+    toast.error('Erro ao carregar o acompanhamento financeiro.')
+  } finally {
+    carregando.value = false
+  }
 }
 
-async function efetivarParcela(id: number) {
-    store.idMutation = id
-    store.openModalEfetivar = true
+function navigateMonth(direction: 'prev' | 'next') {
+  store.currentMonth = direction === 'prev' ? subMonths(store.currentMonth, 1) : addMonths(store.currentMonth, 1)
+  carregarLancamentos()
+}
+
+function clearFilters(reload = true) {
+  filtros.value = {
+    search: '',
+    tipo: 'TODOS',
+    status: 'TODOS',
+    contaFinanceiraId: 'all',
+    categoriaId: 'all',
+  }
+  quickPreset.value = 'all'
+
+  if (reload) {
+    carregarLancamentos(true)
+  }
+}
+
+function applyFilters() {
+  openModalFiltros.value = false
+  carregarLancamentos(true)
+}
+
+function applyPreset(preset: 'today' | 'due-today' | 'overdue' | 'receitas' | 'despesas' | 'reset') {
+  if (preset === 'today' || preset === 'due-today') {
+    store.currentMonth = new Date()
+    quickPreset.value = 'today'
+  }
+
+  if (preset === 'overdue') {
+    store.currentMonth = new Date()
+    filtros.value.status = 'ATRASADO'
+    quickPreset.value = 'all'
+  }
+
+  if (preset === 'receitas') {
+    filtros.value.tipo = 'RECEITA'
+  }
+
+  if (preset === 'despesas') {
+    filtros.value.tipo = 'DESPESA'
+  }
+
+  if (preset === 'reset') {
+    quickPreset.value = 'all'
+    clearFilters(false)
+  }
+}
+
+function openByTipo(tipo: 'RECEITA' | 'DESPESA') {
+  store.form.tipo = tipo
+  store.openSave()
+  openModalLancar.value = false
+}
+
+function editarParcela(item: LancamentoDia) {
+  store.idMutation = item.parcelaId
+  store.formParcela = {
+    valor: item.valor,
+    vencimento: new Date(item.vencimento),
+  }
+  store.openModalParcela = true
+}
+
+function gerarCobrancaParcela(idParcela: number, valor?: number) {
+  storeCobranca.openSave({
+    id: idParcela,
+    tipo: 'parcela',
+    valor,
+  })
+}
+
+function efetivarParcela(id: number) {
+  store.idMutation = id
+  store.openModalEfetivar = true
 }
 
 async function estornarParcela(id: number) {
-    try {
-        await LancamentosRepository.estornarParcela(id);
-        toast.success("Parcela estornada com sucesso");
-        carregarLancamentos();
-    } catch (error: any) {
-        console.error(error);
-        toast.error(error.response?.data?.message || "Erro ao estornar a parcela");
-    }
+  try {
+    await LancamentosRepository.estornarParcela(id)
+    toast.success('Parcela estornada com sucesso')
+    carregarLancamentos()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error.response?.data?.message || 'Erro ao estornar a parcela')
+  }
 }
 
-function editarParcela(parcela: Lancamento, data: string) {
-    store.idMutation = parcela.parcelaId!
-    store.formParcela = {
-        valor: parcela.valor,
-        vencimento: new Date(data)
-    }
-    store.openModalParcela = true
+function openLinkCobranca(link?: string | null) {
+  if (!link) return
+  window.open(link, '_blank')
 }
 
-// Helpers
-const getDayLabel = (dateStr: string) => {
-    const date = new Date(dateStr)
-    if (isToday(date)) return 'Hoje'
-    if (isYesterday(date)) return 'Ontem'
-    return format(date, "EEEE", { locale: ptBR })
+function getDayLabel(dateStr: string | Date) {
+  const date = new Date(dateStr)
+  if (isToday(date)) return 'Hoje'
+  if (isYesterday(date)) return 'Ontem'
+  return format(date, 'EEEE', { locale: ptBR })
 }
 
-const getDayNumber = (dateStr: string) => {
-    return format(new Date(dateStr), "dd", { locale: ptBR })
+function getReferenceLabel() {
+  const referenceDate = new Date(resumo.value.dataReferenciaSaldo)
+  return isSameDay(referenceDate, new Date())
+    ? 'Saldo atual do dia'
+    : `Saldo em ${format(referenceDate, 'dd/MM', { locale: ptBR })}`
 }
 
-// Totals Calculation
-const totalReceitas = computed(() => {
-    return lancamentos.value.reduce((acc, dia) => {
-        return acc + dia.lancamentos
-            .filter(l => l.tipo === 'RECEITA')
-            .reduce((sum, l) => sum + l.valor, 0)
-    }, 0)
+function getContaNomeById(id: string) {
+  return contas.value.find((conta) => String(conta.id) === id)?.nome || null
+}
+
+function getCategoriaNomeById(id: string) {
+  return categorias.value.find((categoria) => String(categoria.id) === id)?.nome || null
+}
+
+const filtrosAtivos = computed(() => {
+  const items: string[] = []
+
+  if (quickPreset.value === 'today') items.push('Visualização: hoje')
+  if (filtros.value.search.trim()) items.push(`Busca: ${filtros.value.search.trim()}`)
+  if (filtros.value.tipo !== 'TODOS') items.push(`Tipo: ${filtros.value.tipo}`)
+  if (filtros.value.status !== 'TODOS') items.push(`Status: ${filtros.value.status}`)
+  if (filtros.value.contaFinanceiraId !== 'all') {
+    items.push(`Conta: ${getContaNomeById(filtros.value.contaFinanceiraId) || filtros.value.contaFinanceiraId}`)
+  }
+  if (filtros.value.categoriaId !== 'all') {
+    items.push(
+      `Categoria: ${getCategoriaNomeById(filtros.value.categoriaId) || filtros.value.categoriaId}`,
+    )
+  }
+
+  return items
 })
 
-const totalDespesas = computed(() => {
-    return lancamentos.value.reduce((acc, dia) => {
-        return acc + dia.lancamentos
-            .filter(l => l.tipo === 'DESPESA')
-            .reduce((sum, l) => sum + l.valor, 0)
-    }, 0)
+const displayedDias = computed(() => {
+  if (quickPreset.value !== 'today') return dias.value
+
+  const hoje = new Date()
+  return dias.value.filter((dia) => isSameDay(new Date(dia.dia), hoje))
 })
 
-const saldoMensal = computed(() => totalReceitas.value - totalDespesas.value)
+const indicadores = computed(() => [
+  {
+    titulo: getReferenceLabel(),
+    valor: resumo.value.saldoAtualDia,
+    detalhe: 'Baseado no saldo realizado e efetivações confirmadas.',
+    icone: Wallet,
+    colorClass: 'text-blue-600 bg-blue-500/10',
+  },
+  {
+    titulo: 'Saldo possível do dia',
+    valor: resumo.value.saldoPossivelDia,
+    detalhe: 'Considera o saldo atual somado ao fluxo previsto até a data de referência.',
+    icone: TrendingUp,
+    colorClass: resumo.value.saldoPossivelDia >= 0 ? 'text-emerald-600 bg-emerald-500/10' : 'text-rose-600 bg-rose-500/10',
+  },
+  {
+    titulo: 'Receitas previstas',
+    valor: resumo.value.receitasPrevistas,
+    detalhe: `Realizadas no período: ${formatCurrencyBR(resumo.value.receitasRealizadas)}`,
+    icone: TrendingUp,
+    colorClass: 'text-green-600 bg-green-500/10',
+  },
+  {
+    titulo: 'Despesas previstas',
+    valor: resumo.value.despesasPrevistas,
+    detalhe: `Realizadas no período: ${formatCurrencyBR(resumo.value.despesasRealizadas)}`,
+    icone: TrendingDown,
+    colorClass: 'text-rose-600 bg-rose-500/10',
+  },
+  {
+    titulo: 'A receber pendente',
+    valor: resumo.value.pendenteReceber,
+    detalhe: 'Parcelas de receita ainda abertas neste mês.',
+    icone: CalendarDays,
+    colorClass: 'text-amber-600 bg-amber-500/10',
+  },
+  {
+    titulo: 'A pagar pendente',
+    valor: resumo.value.pendentePagar,
+    detalhe: 'Parcelas de despesa ainda abertas neste mês.',
+    icone: HandCoins,
+    colorClass: 'text-orange-600 bg-orange-500/10',
+  },
+])
 
-onMounted(carregarLancamentos)
-watch(() => [store.filters.update], carregarLancamentos)
+onMounted(async () => {
+  await Promise.all([carregarOpcoes(), carregarLancamentos()])
+})
+watch(() => store.filters.update, () => carregarLancamentos())
 </script>
 
 <template>
-    <div class="overflow-auto rounded-lg max-w-6xl mx-auto md:pb-0 min-h-[calc(100vh-13rem)]">
-        <!-- Header Section -->
-        <div class="top-0 z-10 bg-card backdrop-blur-md rounded-lg border-b px-4 py-3 space-y-4">
-            <!-- Month Navigation -->
-            <div class="flex items-center justify-between max-w-6xl mx-auto w-full">
-                <Button variant="ghost" size="icon" @click="navigateMonth('prev')"
-                    class="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                    <ArrowLeft class="w-5 h-5" />
-                </Button>
-
-                <div class="flex flex-col items-center">
-                    <h2 class="text-lg font-semibold capitalize">
-                        {{ format(store.currentMonth, "MMMM yyyy", { locale: ptBR }) }}
-                    </h2>
-                    <div class="flex items-center gap-2 text-xs font-medium">
-                        <span :class="saldoMensal >= 0 ? 'text-emerald-600' : 'text-rose-600'">
-                            {{ formatCurrencyBR(saldoMensal) }}
-                        </span>
-                    </div>
-                </div>
-
-                <Button variant="ghost" size="icon" @click="navigateMonth('next')"
-                    class="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                    <ArrowRight class="w-5 h-5" />
-                </Button>
-            </div>
-
-            <!-- Quick Stats (Desktop only) -->
-            <div class="hidden md:grid grid-cols-3 gap-4 max-w-6xl mx-auto w-full">
-                <Card
-                    class="bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/50 shadow-sm">
-                    <CardContent class="px-4 py-2 flex items-center justify-between">
-                        <div>
-                            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Receitas</p>
-                            <p class="text-lg font-bold text-emerald-700 dark:text-emerald-300">{{
-                                formatCurrencyBR(totalReceitas) }}</p>
-                        </div>
-                        <div class="p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-full">
-                            <TrendingUp class="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card class="bg-red-50/50 dark:bg-red-950/20 border-red-100 dark:border-red-900/50 shadow-sm">
-                    <CardContent class="px-4 py-2 flex items-center justify-between">
-                        <div>
-                            <p class="text-xs text-red-600 dark:text-red-400 font-medium">Despesas</p>
-                            <p class="text-lg font-bold text-red-700 dark:text-red-300">{{
-                                formatCurrencyBR(totalDespesas) }}</p>
-                        </div>
-                        <div class="p-2 bg-red-100 dark:bg-red-900/50 rounded-full">
-                            <TrendingDown class="w-5 h-5 text-red-600 dark:text-red-400" />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <div class="flex gap-2 items-center justify-end">
-                    <Button @click="openByTipo('RECEITA')"
-                        class="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
-                        <Plus class="w-4 h-4 mr-2" /> Receita
-                    </Button>
-                    <Button @click="openByTipo('DESPESA')" class="bg-red-600 hover:bg-red-700 text-white shadow-sm">
-                        <Plus class="w-4 h-4 mr-2" /> Despesa
-                    </Button>
-                </div>
-            </div>
+  <div class="mx-auto max-w-7xl space-y-4 pb-24 md:pb-0">
+    <div class="rounded-2xl border bg-card p-4 shadow-sm">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="space-y-1">
+          <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+            <CalendarDays class="h-6 w-6 text-primary" />
+            Acompanhamento financeiro
+          </h2>
+          <p class="text-sm text-muted-foreground">
+            Saldo realizado vs. saldo possível do dia, com leitura por vencimento e menos ruído visual.
+          </p>
         </div>
 
-        <!-- Main Content -->
-        <div class="max-w-6xl mx-auto py-4 space-y-6">
-            <!-- Loading State -->
-            <div v-if="carregando" class="flex flex-col items-center justify-center py-12 space-y-4">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                <p class="text-sm text-muted-foreground">Carregando lançamentos...</p>
-            </div>
-
-            <!-- Empty State -->
-            <div v-else-if="lancamentos.length === 0"
-                class="flex flex-col items-center justify-center py-16 text-center space-y-4">
-                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-full">
-                    <CalendarIcon class="w-8 h-8 text-gray-400" />
-                </div>
-                <div>
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Nenhum lançamento</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Não há registros para este mês.</p>
-                </div>
-                <Button @click="openModalLancar = true" variant="outline" class="mt-4">
-                    Adicionar Lançamento
-                </Button>
-            </div>
-
-            <!-- Transactions List -->
-            <div v-else class="space-y-3">
-                <div v-for="dia in lancamentos" :key="dia.dia" class="space-y-3">
-                    <!-- Day Header -->
-                    <div class="flex items-center gap-3 top-[120px] md:top-[180px] z-0">
-                        <div
-                            class="flex flex-col items-center justify-center bg-white dark:bg-card border rounded-lg w-10 h-10 shadow-sm">
-                            <span class="text-md font-bold leading-none">{{ getDayNumber(dia.dia) }}</span>
-                            <span class="text-[9px] text-muted-foreground uppercase font-medium">{{ format(new
-                                Date(dia.dia), "MMM", { locale: ptBR }) }}</span>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-sm font-medium capitalize text-gray-900 dark:text-gray-100">
-                                {{ getDayLabel(dia.dia) }}
-                            </span>
-                            <span class="text-xs text-muted-foreground">
-                                Saldo do dia: {{ formatCurrencyBR(dia.saldo) }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Transactions Cards -->
-                    <div class="grid gap-1 pl-0 md:pl-14">
-                        <div v-for="item in dia.lancamentos" :key="item.id"
-                            class="group relative bg-white dark:bg-card border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between overflow-hidden">
-
-                            <!-- Left Border Indicator -->
-                            <div :class="[
-                                'absolute left-0 top-0 bottom-0 w-1',
-                                item.tipo === 'RECEITA' ? 'bg-emerald-500' : 'bg-rose-500'
-                            ]"></div>
-
-                            <div class="flex items-center gap-4 overflow-hidden">
-                                <!-- Icon/Category -->
-                                <div :class="[
-                                    'flex-shrink-0 w-10 h-10 rounded-full items-center justify-center hidden md:flex',
-                                    item.tipo === 'RECEITA' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600'
-                                ]">
-                                    <TrendingUp v-if="item.tipo === 'RECEITA'" class="w-5 h-5" />
-                                    <TrendingDown v-else class="w-5 h-5" />
-                                </div>
-
-                                <!-- Details -->
-                                <div class="flex flex-col min-w-0">
-                                    <span class="font-medium text-sm truncate text-gray-900 dark:text-gray-100">
-                                        {{ item.descricao }}
-                                    </span>
-                                    <span class="text-xs text-muted-foreground truncate">
-                                        {{ item.categoria }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Right Side -->
-                            <div class="flex items-center gap-3 md:gap-6 flex-shrink-0 ml-4">
-                                <div class="flex flex-col items-end">
-                                    <span :class="[
-                                        'text-xs md:text-sm',
-                                        item.tipo === 'RECEITA' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                                    ]">
-                                        {{ item.tipo === 'DESPESA' ? '-' : '+' }}{{ formatCurrencyBR(item.valor) }}
-                                    </span>
-                                    <Badge :variant="item.status === 'PAGO' ? 'outline' : 'outline'" :class="[
-                                        'text-[10px] px-1.5 py-0 h-5 text-normal border-none md:border bg-transparent',
-                                        item.status === 'PAGO'
-                                            ? 'text-green-600 border-green-200 dark:text-green-500'
-                                            : 'text-yellow-600 border-yellow-200 dark:text-yellow-500'
-                                    ]">
-                                        {{ item.status === 'PAGO' ? 'Pago' : 'Pendente' }}
-                                    </Badge>
-                                </div>
-
-                                <!-- Actions Menu -->
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger as-child>
-                                        <Button variant="outline" size="icon"
-                                            class="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                                            <MoreVertical class="w-4 h-4 text-gray-500" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" class="w-40">
-                                        <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
-                                            <DropdownMenuItem>
-                                                <Info class="w-4 h-4 mr-2 text-blue-600" />
-                                                Detalhes
-                                            </DropdownMenuItem>
-                                        </RouterLink>
-                                        <DropdownMenuItem @click="editarParcela(item, dia.dia)">
-                                            <Edit class="w-4 h-4 mr-2" />
-                                            Editar
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem v-if="item.status !== 'PAGO'"
-                                            @click="efetivarParcela(item.parcelaId)">
-                                            <CheckCircle2 class="w-4 h-4 mr-2 text-emerald-600" />
-                                            Efetivar
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem v-else @click="estornarParcela(item.parcelaId)">
-                                            <Undo2 class="w-4 h-4 mr-2 text-yellow-600" />
-                                            Estornar
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="flex items-center gap-2 self-start lg:self-auto">
+          <Button variant="outline" size="icon" @click="navigateMonth('prev')">
+            <ArrowLeft class="h-4 w-4" />
+          </Button>
+          <div class="min-w-[180px] text-center">
+            <p class="text-base font-semibold capitalize text-foreground">
+              {{ format(store.currentMonth, 'MMMM yyyy', { locale: ptBR }) }}
+            </p>
+            <p class="text-xs text-muted-foreground">
+              Saldo inicial: {{ formatCurrencyBR(resumo.saldoInicialPeriodo) }}
+            </p>
+          </div>
+          <Button variant="outline" size="icon" @click="navigateMonth('next')">
+            <ArrowRight class="h-4 w-4" />
+          </Button>
+          <Button variant="outline" @click="openModalFiltros = true">
+            <Filter class="h-4 w-4" /> Filtros
+          </Button>
+          <Button variant="outline" size="icon" @click="carregarLancamentos(true)">
+            <RotateCw class="h-4 w-4" :class="{ 'animate-spin': carregando }" />
+          </Button>
         </div>
+      </div>
 
-        <!-- Mobile Bottom Navigation -->
-        <div v-if="uiStore.isMobile"
-            class="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t border-border z-10 pb-safe">
-            <div class="flex items-center justify-around h-16 px-2">
-                <button @click="goTo('/financeiro/lancamentos')"
-                    class="flex flex-col items-center justify-center w-full h-full space-y-1 text-muted-foreground hover:text-primary transition-colors">
-                    <Home class="w-5 h-5" />
-                    <span class="text-[10px] font-medium">Início</span>
-                </button>
-
-                <button @click="openModalLancar = true" class="flex flex-col items-center justify-center -mt-6">
-                    <div
-                        class="w-12 h-12 bg-primary rounded-full shadow-lg flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform">
-                        <Plus class="w-6 h-6 text-white" />
-                    </div>
-                    <span class="text-[10px] font-medium mt-1 text-primary">Novo</span>
-                </button>
-
-                <button @click="goBack"
-                    class="flex flex-col items-center justify-center w-full h-full space-y-1 text-muted-foreground hover:text-primary transition-colors">
-                    <Undo2 class="w-5 h-5" />
-                    <span class="text-[10px] font-medium">Voltar</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Modals -->
-        <ModalView v-model:open="openModalLancar" title="Novo Lançamento" size="sm">
-            <div class="grid grid-cols-2 gap-4 p-4">
-                <button @click="openByTipo('RECEITA')"
-                    class="flex flex-col items-center justify-center p-4 rounded-xl border bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-200 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 transition-all group">
-                    <div
-                        class="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                        <TrendingUp class="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <span class="font-medium text-emerald-900 dark:text-emerald-100">Receita</span>
-                </button>
-
-                <button @click="openByTipo('DESPESA')"
-                    class="flex flex-col items-center justify-center p-4 rounded-xl border bg-rose-50 hover:bg-rose-100 hover:border-rose-200 dark:bg-rose-950/30 dark:hover:bg-rose-900/50 transition-all group">
-                    <div
-                        class="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                        <TrendingDown class="w-6 h-6 text-rose-600 dark:text-rose-400" />
-                    </div>
-                    <span class="font-medium text-rose-900 dark:text-rose-100">Despesa</span>
-                </button>
-            </div>
-        </ModalView>
-
-        <FormularioEfertivar @success="carregarLancamentos" />
-        <ModalParcela />
-        <LancamentoModal />
-        <ClientesModal />
+      <div v-if="filtrosAtivos.length" class="mt-3 flex flex-wrap gap-2">
+        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
+          {{ item }}
+        </Badge>
+      </div>
+      <div v-if="filtrosAtivos.length" class="mt-3 flex flex-wrap gap-2">
+        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
+          {{ item }}
+        </Badge>
+      </div>
     </div>
-</template>
 
-<style scoped>
-.pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-}
-</style>
+    <Tabs v-model="activeTab" default-value="geral" class="space-y-4">
+      <div class="overflow-x-auto">
+        <TabsList class="inline-flex w-max min-w-full justify-start gap-2 rounded-xl border bg-card p-1">
+          <TabsTrigger value="geral" class="px-4">Geral</TabsTrigger>
+          <TabsTrigger value="resumo" class="px-4">Resumos KPI</TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent value="geral" class="space-y-4">
+        <div v-if="carregando" class="flex flex-col items-center justify-center py-16 text-center">
+          <RotateCw class="mb-3 h-8 w-8 animate-spin text-primary" />
+          <p class="text-sm text-muted-foreground">Carregando acompanhamento financeiro...</p>
+        </div>
+
+        <div v-else-if="!displayedDias.length" class="rounded-2xl border bg-card p-10 text-center shadow-sm">
+          <CalendarDays class="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+          <h3 class="text-lg font-semibold text-foreground">Nenhum lançamento encontrado</h3>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Ajuste os filtros ou crie um novo lançamento para este período.
+          </p>
+          <Button class="mt-4" variant="outline" @click="openModalLancar = true">Novo lançamento</Button>
+        </div>
+
+        <div v-else class="space-y-4">
+          <div v-for="dia in displayedDias" :key="String(dia.dia)" class="space-y-2">
+            <div
+              class="flex flex-col gap-2 rounded-xl border bg-card px-3 py-1.5 shadow-sm md:flex-row md:items-center md:justify-between">
+              <div>
+                <p class="text-sm font-semibold capitalize text-foreground">{{ getDayLabel(dia.dia) }}</p>
+                <p class="text-xs text-muted-foreground">
+                  {{ format(new Date(dia.dia), "dd 'de' MMMM", { locale: ptBR }) }}
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <Badge class="border-0 bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                  Realizado {{ formatCurrencyBR(dia.saldoRealizado) }}
+                </Badge>
+                <Badge class="border-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  Possível {{ formatCurrencyBR(dia.saldoPrevisto) }}
+                </Badge>
+              </div>
+            </div>
+
+            <div class="grid gap-2 md:pl-4">
+              <div v-for="item in dia.lancamentos" :key="item.parcelaId"
+                class="relative overflow-hidden rounded-r-xl border bg-card px-3 py-1.5 shadow-sm">
+                <div class="absolute left-0 top-0 h-full w-1"
+                  :class="item.tipo === 'DESPESA' ? 'bg-rose-500' : 'bg-emerald-500'" />
+
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1 space-y-1.5 pl-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <Badge v-if="item.cobrancaLink" variant="outline" class="px-2 py-0 text-[10px]">Cobrança</Badge>
+                    </div>
+
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="truncate text-sm font-semibold text-foreground">{{ item.descricao }}</p>
+                        <p class="truncate text-xs text-muted-foreground">
+                          {{ item.categoria }}<span v-if="item.conta"> • {{ item.conta }}</span><span
+                            v-if="item.cliente"> • {{ item.cliente }}</span>
+                        </p>
+                        <p class="truncate text-[11px] text-muted-foreground">
+                          Parcela {{ item.numero === 0 ? 'Entrada' : item.numero }} • Venc. {{ format(new
+                            Date(item.vencimento), 'dd/MM/yyyy', { locale: ptBR }) }}
+                          <span v-if="item.dataPagamento"> • Pgto {{ format(new Date(item.dataPagamento), 'dd/MM/yyyy',
+                            { locale: ptBR }) }}</span>
+                          <span v-if="item.formaPagamento"> • {{ item.formaPagamento }}</span>
+                        </p>
+                      </div>
+
+                      <div class="text-right flex flex-col gap-1">
+                        <p :class="item.tipo === 'DESPESA' ? 'text-rose-600' : 'text-emerald-600'"
+                          class="text-md font-semibold">
+                          {{ item.tipo === 'DESPESA' ? '-' : '+' }}{{ formatCurrencyBR(item.valor) }}
+                        </p>
+                        <div class="flex flex-wrap gap-1">
+                          <Badge class="border-0 px-2 py-0 text-[10px]"
+                            :class="item.tipo === 'DESPESA' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'">
+                            {{ item.tipo === 'DESPESA' ? 'Despesa' : 'Receita' }}
+                          </Badge>
+                          <Badge class="border-0 px-2 py-0 text-[10px]"
+                            :class="item.status === 'PAGO' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' : item.status === 'ATRASADO' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'">
+                            {{ item.status }}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-1">
+                    <div class="hidden items-center gap-1 lg:flex">
+                      <Button variant="outline" size="icon" class="h-8 w-8" @click="editarParcela(item)">
+                        <PenLine class="h-4 w-4" />
+                      </Button>
+                      <Button v-if="!item.pago" size="icon" class="h-8 w-8" @click="efetivarParcela(item.parcelaId)">
+                        <CheckCircle2 class="h-4 w-4" />
+                      </Button>
+                      <Button v-else size="icon" class="h-8 w-8 bg-warning text-white hover:bg-warning/80"
+                        @click="estornarParcela(item.parcelaId)">
+                        <Undo2 class="h-4 w-4" />
+                      </Button>
+                      <Button v-if="!item.pago && !item.cobrancaLink" size="icon"
+                        class="h-8 w-8 bg-success text-white hover:bg-success/80"
+                        @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
+                        <CircleDollarSign class="h-4 w-4" />
+                      </Button>
+                      <Button v-if="item.cobrancaLink" variant="outline" size="icon" class="h-8 w-8"
+                        @click="openLinkCobranca(item.cobrancaLink)">
+                        <Info class="h-4 w-4" />
+                      </Button>
+                      <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
+                        <Button variant="outline" size="icon" class="h-8 w-8">
+                          <Info class="h-4 w-4" />
+                        </Button>
+                      </RouterLink>
+                    </div>
+
+                    <DropdownMenu v-if="uiStore.isMobile">
+                      <DropdownMenuTrigger as-child>
+                        <Button variant="outline" size="icon" class="h-8 w-8">
+                          <MoreVertical class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" class="w-44">
+                        <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
+                          <DropdownMenuItem>
+                            <Info class="mr-2 h-4 w-4" /> Detalhes
+                          </DropdownMenuItem>
+                        </RouterLink>
+                        <DropdownMenuItem @click="editarParcela(item)">
+                          <PenLine class="mr-2 h-4 w-4" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem v-if="!item.pago" @click="efetivarParcela(item.parcelaId)">
+                          <CheckCircle2 class="mr-2 h-4 w-4" /> {{ item.tipo === 'DESPESA' ? 'Pagar' : 'Receber' }}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem v-else @click="estornarParcela(item.parcelaId)">
+                          <Undo2 class="mr-2 h-4 w-4" /> Estornar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem v-if="!item.pago && !item.cobrancaLink"
+                          @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
+                          <CircleDollarSign class="mr-2 h-4 w-4" /> Cobrança
+                        </DropdownMenuItem>
+                        <DropdownMenuItem v-if="item.cobrancaLink" @click="openLinkCobranca(item.cobrancaLink)">
+                          <Info class="mr-2 h-4 w-4" /> Abrir cobrança
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="resumo">
+        <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <Card v-for="item in indicadores" :key="item.titulo" class="shadow rounded-xl transition">
+            <CardHeader class="pb-2">
+              <CardTitle class="flex flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <div class="rounded-md p-2" :class="item.colorClass">
+                  <component :is="item.icone" class="h-4 w-4" />
+                </div>
+                <span>{{ item.titulo }}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-1">
+              <p class="text-base md:text-lg font-semibold text-gray-700 dark:text-gray-200">
+                {{ formatCurrencyBR(item.valor) }}
+              </p>
+              <p class="text-xs text-muted-foreground leading-relaxed">{{ item.detalhe }}</p>
+            </CardContent>
+          </Card>
+        </section>
+      </TabsContent>
+    </Tabs>
+
+    <div v-if="uiStore.isMobile" class="fixed bottom-0 left-0 right-0 z-20 border-t bg-card/95 px-3 py-3 backdrop-blur">
+      <div class="grid grid-cols-3 gap-2">
+        <Button variant="outline" class="w-full" @click="goTo('/financeiro/lancamentos')">
+          <ArrowLeft class="h-4 w-4" />
+        </Button>
+        <Button class="w-full" @click="openModalLancar = true">
+          <TrendingUp class="h-4 w-4" />
+        </Button>
+        <Button variant="outline" class="w-full" @click="goBack">
+          <Undo2 class="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+
+    <ModalView v-model:open="openModalLancar" title="Novo lançamento" size="sm">
+      <div class="grid grid-cols-2 gap-4 p-4">
+        <button
+          class="rounded-2xl border bg-emerald-50 p-4 text-left transition hover:bg-emerald-100 dark:bg-emerald-950/30"
+          @click="openByTipo('RECEITA')">
+          <TrendingUp class="mb-2 h-6 w-6 text-emerald-600" />
+          <p class="font-medium text-foreground">Receita</p>
+          <p class="text-xs text-muted-foreground">Registrar entrada financeira.</p>
+        </button>
+        <button class="rounded-2xl border bg-rose-50 p-4 text-left transition hover:bg-rose-100 dark:bg-rose-950/30"
+          @click="openByTipo('DESPESA')">
+          <TrendingDown class="mb-2 h-6 w-6 text-rose-600" />
+          <p class="font-medium text-foreground">Despesa</p>
+          <p class="text-xs text-muted-foreground">Registrar saída financeira.</p>
+        </button>
+      </div>
+    </ModalView>
+
+    <ModalView v-model:open="openModalFiltros" title="Filtros do acompanhamento" size="lg">
+      <div class="grid gap-4 p-4 md:grid-cols-2">
+        <div class="space-y-2 md:col-span-2">
+          <label class="text-sm font-medium">Atalhos rápidos</label>
+          <div class="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" @click="applyPreset('today')">Hoje</Button>
+            <Button type="button" variant="outline" size="sm" @click="applyPreset('due-today')">Vencendo hoje</Button>
+            <Button type="button" variant="outline" size="sm" @click="applyPreset('overdue')">Atrasados</Button>
+            <Button type="button" variant="outline" size="sm" @click="applyPreset('receitas')">Somente receitas</Button>
+            <Button type="button" variant="outline" size="sm" @click="applyPreset('despesas')">Somente despesas</Button>
+          </div>
+        </div>
+
+        <div class="space-y-2 md:col-span-2">
+          <label class="text-sm font-medium">Busca</label>
+          <div class="relative">
+            <Search
+              class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input v-model="filtros.search" class="pl-9" placeholder="Descrição, UID, categoria ou cliente" />
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Tipo</label>
+          <Select v-model="filtros.tipo">
+            <SelectTrigger>
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TODOS">Todos os tipos</SelectItem>
+              <SelectItem value="RECEITA">Somente receitas</SelectItem>
+              <SelectItem value="DESPESA">Somente despesas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Status</label>
+          <Select v-model="filtros.status">
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TODOS">Todos os status</SelectItem>
+              <SelectItem value="PAGO">Pago</SelectItem>
+              <SelectItem value="PENDENTE">Pendente</SelectItem>
+              <SelectItem value="ATRASADO">Atrasado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Conta financeira</label>
+          <Select v-model="filtros.contaFinanceiraId">
+            <SelectTrigger>
+              <SelectValue placeholder="Conta financeira" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as contas</SelectItem>
+              <SelectItem v-for="conta in contas" :key="conta.id" :value="String(conta.id)">
+                {{ conta.nome }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Categoria</label>
+          <Select v-model="filtros.categoriaId">
+            <SelectTrigger>
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              <SelectItem v-for="categoria in categorias" :key="categoria.id" :value="String(categoria.id)">
+                {{ categoria.nome }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div class="flex justify-end gap-2 md:col-span-2">
+          <Button variant="outline" @click="clearFilters(false)">
+            <X class="h-4 w-4" /> Limpar
+          </Button>
+          <Button variant="outline" @click="openModalFiltros = false">Cancelar</Button>
+          <Button @click="applyFilters">
+            <Filter class="h-4 w-4" /> Aplicar filtros
+          </Button>
+        </div>
+      </div>
+    </ModalView>
+
+    <FormularioEfertivar @success="carregarLancamentos" />
+    <GerarCobranca />
+    <ModalParcela />
+    <LancamentoModal />
+    <ClientesModal />
+  </div>
+</template>

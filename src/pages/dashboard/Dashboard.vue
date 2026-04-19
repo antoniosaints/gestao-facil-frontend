@@ -227,7 +227,7 @@ const alerts = computed<AlertCard[]>(() => {
       titulo: 'Tudo sob controle',
       descricao: 'Nenhum alerta crítico foi identificado com os dados carregados agora.',
       tone: 'success',
-      link: '/dashboard',
+      link: '/',
       cta: 'Atualizar painel',
     })
   }
@@ -245,7 +245,7 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
   return [
     {
       titulo: 'Vendas',
-      descricao: 'Visão rápida do comercial no período filtrado.',
+      descricao: 'Visão rápida do comercial.',
       icone: ShoppingCart,
       link: '/vendas/dashboard',
       metrics: [
@@ -267,7 +267,7 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
     },
     {
       titulo: 'Produtos',
-      descricao: 'Catálogo e criticidade operacional do estoque.',
+      descricao: 'Catálogo operacional do estoque.',
       icone: Boxes,
       link: '/produtos/dashboard',
       metrics: [

@@ -1,21 +1,25 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
+import ModalView from "@/components/formulario/ModalView.vue"
 import { optionsChartBarDefault, optionsChartLine, optionsChartPie } from "@/composables/useChartOptions"
 import BarChart from "@/components/graficos/BarChart.vue"
 import LineChart from "@/components/graficos/LineChart.vue"
 import PieChart from "@/components/graficos/PieChart.vue"
 import { useToast } from "vue-toastification"
+import { endOfDay, endOfMonth, startOfDay, startOfMonth } from "date-fns"
 import { VendaRepository } from "@/repositories/venda-repository"
-import { endOfMonth, startOfMonth } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tag, Tags, Undo2, TrendingUp, DollarSign, CreditCard, CheckCircle2 } from "lucide-vue-next"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Tag, Tags, Undo2, TrendingUp, DollarSign, CreditCard, CheckCircle2, Filter } from "lucide-vue-next"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { goBack, goTo } from "@/hooks/links"
 
 const toast = useToast()
 const uiStore = useUiStore()
+const openModalFiltros = ref(false)
 const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
 const loading = ref(true);
 const indicadores = ref<any[]>([])
@@ -23,6 +27,27 @@ const topProdutos: any = ref({ labels: [], datasets: [] });
 const faturamentoMensal: any = ref({ labels: [], datasets: [] });
 const tipoPagamento: any = ref({ labels: [], datasets: [] });
 const statusVendas: any = ref({ labels: [], datasets: [] });
+
+function getPeriodoSelecionado() {
+  const inicio = filtroPeriodo.value === null ? startOfMonth(new Date()).toISOString() : filtroPeriodo.value[0].toISOString();
+  const fim = filtroPeriodo.value === null ? endOfMonth(new Date()).toISOString() : filtroPeriodo.value[1].toISOString();
+  return { inicio, fim }
+}
+
+function applyPreset(preset: 'today' | 'current-month') {
+  if (preset === 'today') {
+    filtroPeriodo.value = [startOfDay(new Date()), endOfDay(new Date())]
+  }
+
+  if (preset === 'current-month') {
+    filtroPeriodo.value = [startOfMonth(new Date()), endOfMonth(new Date())]
+  }
+}
+
+const filtrosAtivos = computed(() => {
+  const { inicio, fim } = getPeriodoSelecionado()
+  return [`Período: ${new Date(inicio).toLocaleDateString('pt-BR')} até ${new Date(fim).toLocaleDateString('pt-BR')}`]
+})
 
 const getIndicadores = async (inicio?: string, fim?: string) => {
   try {
@@ -87,9 +112,16 @@ onMounted(() => {
         <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
       </div>
       <div class="flex items-center gap-2 w-content">
-        <Calendarpicker class="w-content" :range="true" v-model="filtroPeriodo"
-          @update:model-value="atualizarIndicadores" />
+        <Button variant="outline" @click="openModalFiltros = true">
+          <Filter class="h-4 w-4" /> Filtros
+        </Button>
       </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
+        {{ item }}
+      </Badge>
     </div>
 
     <section v-if="!loading">
@@ -153,6 +185,30 @@ onMounted(() => {
         <BarChart class="max-h-64" :data="statusVendas" :options="optionsChartBarDefault" />
       </div>
     </div>
+    <ModalView v-model:open="openModalFiltros" title="Filtros do painel de vendas" size="lg">
+      <div class="grid gap-4 p-4">
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Atalhos rápidos</label>
+          <div class="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" @click="applyPreset('today')">Hoje</Button>
+            <Button type="button" variant="outline" size="sm" @click="applyPreset('current-month')">Este mês</Button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Período</label>
+          <Calendarpicker class="w-full" :range="true" v-model="filtroPeriodo" />
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" @click="applyPreset('current-month')">Resetar</Button>
+          <Button variant="outline" @click="openModalFiltros = false">Cancelar</Button>
+          <Button @click="openModalFiltros = false; atualizarIndicadores()">
+            <Filter class="h-4 w-4" /> Aplicar filtros
+          </Button>
+        </div>
+      </div>
+    </ModalView>
     <nav v-if="uiStore.isMobile"
       class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
       <button type="button" @click="goTo('/vendas')"

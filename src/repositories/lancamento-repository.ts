@@ -82,10 +82,24 @@ export class LancamentosRepository {
       },
     })
   }
-  static async getLancamentosMensais(month: string) {
+  static async getLancamentosMensais(
+    month: string,
+    filters?: {
+      contaFinanceiraId?: number | null
+      categoriaId?: number | null
+      tipo?: 'TODOS' | 'RECEITA' | 'DESPESA'
+      status?: 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
+      search?: string
+    },
+  ) {
     const data = await http.get(`/lancamentos/lancamentosMes`, {
       params: {
         mes: month,
+        ...(filters?.contaFinanceiraId ? { contaFinanceiraId: filters.contaFinanceiraId } : {}),
+        ...(filters?.categoriaId ? { categoriaId: filters.categoriaId } : {}),
+        ...(filters?.tipo && filters.tipo !== 'TODOS' ? { tipo: filters.tipo } : {}),
+        ...(filters?.status && filters.status !== 'TODOS' ? { status: filters.status } : {}),
+        ...(filters?.search ? { search: filters.search } : {}),
       },
     })
     return data.data
@@ -159,8 +173,24 @@ export class LancamentosRepository {
     })
     return data.data
   }
-  static async graficoBalanco() {
-    const data = await http.get(`/lancamentos/graficos/receita-despesa-mensal`)
+  static async getDashboardVisaoGeral(params?: {
+    inicio?: string
+    fim?: string
+    contaFinanceiraId?: number | null
+    categoriaId?: number | null
+    tipo?: 'TODOS' | 'RECEITA' | 'DESPESA'
+    search?: string
+  }) {
+    const data = await http.get(`/lancamentos/dashboard/visao-geral`, {
+      params: {
+        ...(params?.inicio ? { inicio: params.inicio } : {}),
+        ...(params?.fim ? { fim: params.fim } : {}),
+        ...(params?.contaFinanceiraId ? { contaFinanceiraId: params.contaFinanceiraId } : {}),
+        ...(params?.categoriaId ? { categoriaId: params.categoriaId } : {}),
+        ...(params?.tipo && params.tipo !== 'TODOS' ? { tipo: params.tipo } : {}),
+        ...(params?.search ? { search: params.search } : {}),
+      },
+    })
     return data.data
   }
   static async cancelarCobranca(id: number | string) {
