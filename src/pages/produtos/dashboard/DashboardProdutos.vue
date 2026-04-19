@@ -80,7 +80,7 @@ function montarIndicadores(data: any) {
     {
       titulo: 'Estoque baixo',
       valor: `${data.estoqueBaixo || 0}`,
-      detalhe: `${data.produtosSemEstoque || 0} variante(s) sem estoque e ${data.controlaEstoque || 0} com controle ativo`,
+      detalhe: `${data.produtosSemEstoque || 0} sem estoque e ${data.controlaEstoque || 0} controladas`,
       icone: AlertTriangle,
       colorClass: 'text-amber-600 bg-amber-500/10',
     },
@@ -226,7 +226,7 @@ onMounted(() => {
     <section v-if="!loading">
       <div class="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-4">
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition">
-          <CardHeader class="pb-2">
+          <CardHeader class="py-2">
             <CardTitle class="flex flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
               <div class="rounded-md p-2" :class="kpi.colorClass">
                 <component :is="kpi.icone" class="h-4 w-4" />
@@ -234,7 +234,7 @@ onMounted(() => {
               <span>{{ kpi.titulo }}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent class="space-y-1">
+          <CardContent class="space-y-1 pb-2">
             <p class="text-base md:text-lg font-semibold text-gray-700 dark:text-gray-200">{{ kpi.valor }}</p>
             <p class="text-xs text-muted-foreground leading-relaxed">{{ kpi.detalhe }}</p>
           </CardContent>

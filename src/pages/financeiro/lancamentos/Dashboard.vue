@@ -352,7 +352,7 @@ onMounted(async () => {
 
     <section v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       <Card v-for="item in indicadores" :key="item.titulo" class="shadow rounded-xl transition">
-        <CardHeader class="pb-2">
+        <CardHeader class="pb-2 py-3">
           <CardTitle class="flex flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <div class="rounded-md p-2" :class="item.colorClass">
               <component :is="item.icone" class="h-4 w-4" />
@@ -360,7 +360,7 @@ onMounted(async () => {
             <span>{{ item.titulo }}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent class="space-y-1">
+        <CardContent class="space-y-1 pb-3">
           <p class="text-base md:text-lg font-semibold text-gray-700 dark:text-gray-200">
             {{ formatCurrencyBR(item.valor) }}
           </p>

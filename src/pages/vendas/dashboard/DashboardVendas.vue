@@ -173,7 +173,7 @@ onMounted(() => {
     <section v-if="!loading">
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition">
-          <CardHeader class="pb-2">
+          <CardHeader class="py-2">
             <CardTitle class="flex flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
               <div class="rounded-md p-2" :class="kpi.colorClass">
                 <component :is="kpi.icone" class="h-4 w-4" />
@@ -181,9 +181,9 @@ onMounted(() => {
               <span>{{ kpi.titulo }}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent class="space-y-1">
+          <CardContent class="space-y-1 pb-2">
             <p class="text-base md:text-lg font-semibold text-gray-700 dark:text-gray-300">{{ kpi.valor }}</p>
-            <p class="text-xs text-muted-foreground leading-relaxed">{{ kpi.detalhe }}</p>
+            <p class="text-xs text-muted-foreground leading-relaxed truncate" :title="kpi.detalhe">{{ kpi.detalhe }}</p>
           </CardContent>
         </Card>
       </div>
