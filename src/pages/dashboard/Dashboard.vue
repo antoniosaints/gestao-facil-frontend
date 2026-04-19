@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, type Component } from 'vue'
 import { endOfMonth, startOfMonth } from 'date-fns'
 import { useToast } from 'vue-toastification'
 import { RouterLink } from 'vue-router'
@@ -9,6 +9,7 @@ import {
   ChartPie,
   ChevronRight,
   DollarSign,
+  EyeClosed,
   FileDigit,
   HandCoins,
   LayoutDashboard,
@@ -41,7 +42,7 @@ import { formatCurrencyBR, formatToCapitalize, formatToNumberValue } from '@/uti
 
 type KpiCard = {
   titulo: string
-  valor: string
+  valor: string | any
   detalhe: string
   icone: any
   colorClass: string
@@ -61,7 +62,7 @@ type SummaryBlock = {
   descricao: string
   icone: any
   link: string
-  metrics: Array<{ label: string; value: string }>
+  metrics: Array<{ label: string; value: string | Component }>
 }
 
 const store = useDashboardStore()
@@ -106,7 +107,7 @@ const kpis = computed<KpiCard[]>(() => {
     },
     {
       titulo: 'Ticket médio',
-      valor: formatCurrencyBR(vendas?.ticketMedio || 0),
+      valor: uiStore.permissoes.vendas.painel ? formatCurrencyBR(vendas?.ticketMedio || 0) : EyeClosed,
       detalhe: 'Média das vendas faturadas no período',
       icone: Receipt,
       colorClass: 'text-blue-600 bg-blue-500/10',
@@ -114,8 +115,8 @@ const kpis = computed<KpiCard[]>(() => {
     },
     {
       titulo: 'Saldo financeiro',
-      valor: financeiro?.saldo || 'R$ 0,00',
-      detalhe: `Receitas ${financeiro?.receitas || 'R$ 0,00'} • Despesas ${financeiro?.despesas || 'R$ 0,00'}`,
+      valor: uiStore.permissoes.financeiro.painel ? (financeiro?.saldo || 'R$ 0,00') : EyeClosed,
+      detalhe: uiStore.permissoes.financeiro.painel ? `Receitas ${financeiro?.receitas || 'R$ 0,00'} • Despesas ${financeiro?.despesas || 'R$ 0,00'}` : 'Sem acesso à essa informação.',
       icone: Wallet,
       colorClass: 'text-emerald-600 bg-emerald-500/10',
       link: '/financeiro/painel',
@@ -130,7 +131,7 @@ const kpis = computed<KpiCard[]>(() => {
     },
     {
       titulo: 'Catálogo',
-      valor: `${produtos?.totalProdutosBase || 0} base(s)`,
+      valor: `${produtos?.totalProdutosBase || 0} Produto(s)`,
       detalhe: `${produtos?.totalVariantes || 0} variante(s) e ${produtos?.totalCategorias || 0} categoria(s)`,
       icone: Boxes,
       colorClass: 'text-sky-600 bg-sky-500/10',
@@ -154,8 +155,8 @@ const kpis = computed<KpiCard[]>(() => {
     },
     {
       titulo: 'Pendências financeiras',
-      valor: formatCurrencyBR(financeiroStatus.value?.pendente || 0),
-      detalhe: `Pago no histórico: ${formatCurrencyBR(financeiroStatus.value?.pago || 0)}`,
+      valor: uiStore.permissoes.financeiro.painel ? formatCurrencyBR(financeiroStatus.value?.pendente || 0) : EyeClosed,
+      detalhe: uiStore.permissoes.financeiro.painel ? `Pago no histórico: ${formatCurrencyBR(financeiroStatus.value?.pago || 0)}` : 'Sem acesso à essa informação.',
       icone: HandCoins,
       colorClass: 'text-rose-600 bg-rose-500/10',
       link: '/financeiro/lancamentos',
@@ -192,7 +193,7 @@ const alerts = computed<AlertCard[]>(() => {
     })
   }
 
-  if (financeiroPendencias > 0) {
+  if (financeiroPendencias > 0 && uiStore.permissoes.financeiro.painel) {
     list.push({
       titulo: 'Existem pendências financeiras',
       descricao: `Total pendente acumulado em ${formatCurrencyBR(financeiroPendencias)}.`,
@@ -251,7 +252,7 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
       metrics: [
         { label: 'Vendas totais', value: `${vendas?.totalVendas || 0}` },
         { label: 'Faturadas', value: `${vendas?.totalFaturado || 0}` },
-        { label: 'Valor total', value: formatCurrencyBR(vendas?.totalValorVendas || 0) },
+        { label: 'Valor total', value: uiStore.permissoes.vendas.painel ? formatCurrencyBR(vendas?.totalValorVendas || 0) : EyeClosed },
       ],
     },
     {
@@ -260,9 +261,9 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
       icone: Wallet,
       link: '/financeiro/painel',
       metrics: [
-        { label: 'Receitas', value: financeiro?.receitas || 'R$ 0,00' },
-        { label: 'Despesas', value: financeiro?.despesas || 'R$ 0,00' },
-        { label: 'Saldo', value: financeiro?.saldo || 'R$ 0,00' },
+        { label: 'Receitas', value: uiStore.permissoes.financeiro.painel ? (financeiro?.receitas || 'R$ 0,00') : EyeClosed },
+        { label: 'Despesas', value: uiStore.permissoes.financeiro.painel ? (financeiro?.despesas || 'R$ 0,00') : EyeClosed },
+        { label: 'Saldo', value: uiStore.permissoes.financeiro.painel ? (financeiro?.saldo || 'R$ 0,00') : EyeClosed },
       ],
     },
     {
@@ -273,7 +274,7 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
       metrics: [
         { label: 'Produtos base', value: `${produtos?.totalProdutosBase || 0}` },
         { label: 'Estoque baixo', value: `${produtos?.estoqueBaixo || 0}` },
-        { label: 'Valor em estoque', value: formatCurrencyBR(produtos?.valorEstoque || 0) },
+        { label: 'Valor em estoque', value: uiStore.permissoes.financeiro.painel ? formatCurrencyBR(produtos?.valorEstoque || 0) : EyeClosed },
       ],
     },
     {
@@ -422,7 +423,7 @@ onMounted(() => {
     <section v-else class="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-4">
       <RouterLink v-for="item in kpis" :key="item.titulo" :to="item.link || '/'">
         <Card class="h-full rounded-2xl border-border/70 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
-          <CardHeader class="pb-2">
+          <CardHeader class="py-3">
             <CardTitle class="flex items-center gap-3 text-sm text-foreground">
               <span class="rounded-xl p-2" :class="item.colorClass">
                 <component :is="item.icone" class="h-4 w-4" />
@@ -430,8 +431,11 @@ onMounted(() => {
               <span>{{ item.titulo }}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent class="space-y-1">
-            <p class="text-lg font-semibold text-foreground md:text-xl">{{ item.valor }}</p>
+          <CardContent class="space-y-1 pb-3">
+            <p class="text-lg font-semibold text-foreground md:text-xl">
+              <component v-if="(typeof item.valor !== 'string')" :is="item.valor" class="h-5 w-5 my-1.5" />
+              <span v-else>{{ item.valor }}</span> 
+            </p>
             <p class="text-xs leading-relaxed text-muted-foreground">{{ item.detalhe }}</p>
           </CardContent>
         </Card>
@@ -451,7 +455,7 @@ onMounted(() => {
           <div
             v-for="alert in alerts"
             :key="alert.titulo"
-            class="rounded-xl border p-4"
+            class="rounded-xl border px-4 py-2"
             :class="getAlertClasses(alert.tone)"
           >
             <div class="flex items-start justify-between gap-3">
@@ -527,7 +531,8 @@ onMounted(() => {
             class="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 px-3 py-2 text-sm"
           >
             <span class="text-muted-foreground">{{ metric.label }}</span>
-            <span class="font-medium text-foreground">{{ metric.value }}</span>
+            <component v-if="(typeof metric.value !== 'string')" :is="metric.value" class="h-5 w-5" />
+            <span v-else class="font-medium text-foreground">{{ metric.value }}</span>
           </div>
           <RouterLink :to="block.link">
             <Button variant="outline" class="mt-1 w-full">Ver mais</Button>
