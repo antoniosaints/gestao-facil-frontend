@@ -13,9 +13,10 @@ import { VendaRepository } from "@/repositories/venda-repository"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tag, Tags, Undo2, TrendingUp, DollarSign, CreditCard, CheckCircle2, Filter } from "lucide-vue-next"
+import { CircleDollarSign, Clock3, CreditCard, DollarSign, FileText, Filter, ReceiptText, RefreshCw, Tag, Tags, TrendingUp, Undo2, ShoppingCart, CheckCircle2 } from "lucide-vue-next"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { goBack, goTo } from "@/hooks/links"
+import { formatCurrencyBR } from "@/utils/formatters"
 
 const toast = useToast()
 const uiStore = useUiStore()
@@ -49,17 +50,57 @@ const filtrosAtivos = computed(() => {
   return [`Período: ${new Date(inicio).toLocaleDateString('pt-BR')} até ${new Date(fim).toLocaleDateString('pt-BR')}`]
 })
 
+function toCurrency(value: string | number | null | undefined) {
+  return formatCurrencyBR(Number(value || 0))
+}
+
 const getIndicadores = async (inicio?: string, fim?: string) => {
   try {
     loading.value = true
     const { data }: any = await VendaRepository.resumo(inicio, fim)
     indicadores.value = [
-      { titulo: "Total geral", valor: data.totalVendas, detalhe: data.totalValorVendas, icone: "fa-solid fa-chart-line text-green-600" },
-      { titulo: "Faturado", valor: data.totalFaturado, detalhe: data.totalValorFaturado, icone: "fa-solid fa-money-bills text-blue-600" },
-      { titulo: "Em Aberto", valor: data.totalAberto, detalhe: data.totalValorAberto, icone: "fa-solid fa-chart-line text-yellow-600" },
-      { titulo: "Orçamento", valor: data.totalOrcamento, detalhe: data.totalValorOrcamento, icone: "fa-solid fa-list-check text-red-600" },
-      { titulo: "Descontos", valor: data.totalVendasComDesconto, detalhe: data.totalValorDescontos, icone: "fa-solid fa-percent text-green-600" },
-      { titulo: "Ticket Médio", valor: null, detalhe: data.ticketMedio, icone: "fa-solid fa-chart-line text-blue-600" },
+      {
+        titulo: 'Total geral',
+        valor: toCurrency(data.totalValorVendas),
+        detalhe: `${data.totalVendas || 0} venda(s) no período`,
+        icone: ShoppingCart,
+        colorClass: 'text-emerald-600 bg-emerald-500/10',
+      },
+      {
+        titulo: 'Faturado',
+        valor: toCurrency(data.totalValorFaturado),
+        detalhe: `${data.totalFaturado || 0} venda(s) concluídas`,
+        icone: CircleDollarSign,
+        colorClass: 'text-blue-600 bg-blue-500/10',
+      },
+      {
+        titulo: 'Em aberto',
+        valor: toCurrency(data.totalValorAberto),
+        detalhe: `${data.totalAberto || 0} venda(s) aguardando fechamento`,
+        icone: Clock3,
+        colorClass: 'text-amber-600 bg-amber-500/10',
+      },
+      {
+        titulo: 'Orçamento',
+        valor: toCurrency(data.totalValorOrcamento),
+        detalhe: `${data.totalOrcamento || 0} orçamento(s) ativos`,
+        icone: FileText,
+        colorClass: 'text-rose-600 bg-rose-500/10',
+      },
+      {
+        titulo: 'Descontos',
+        valor: toCurrency(data.totalValorDescontos),
+        detalhe: `${data.totalVendasComDesconto || 0} venda(s) com desconto`,
+        icone: TrendingUp,
+        colorClass: 'text-violet-600 bg-violet-500/10',
+      },
+      {
+        titulo: 'Ticket médio',
+        valor: toCurrency(data.ticketMedio),
+        detalhe: 'Média financeira por venda no período',
+        icone: ReceiptText,
+        colorClass: 'text-sky-600 bg-sky-500/10',
+      },
     ]
 
     loading.value = false
@@ -103,48 +144,52 @@ onMounted(() => {
 
 <template>
   <div class="space-y-4">
-    <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
-      <div>
-        <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-          <Tags class="h-6 w-6" :stroke-width="2.5" />
-          Painel de vendas
-        </h2>
-        <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
+    <div>
+      <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
+        <div>
+          <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+            <Tags class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
+            Painel de vendas
+          </h2>
+          <p class="text-sm text-muted-foreground">Resumo geral e insights</p>
+        </div>
+        <div class="flex items-center gap-2 w-content">
+          <Button variant="outline" @click="openModalFiltros = true">
+            <Filter class="h-4 w-4" /> Filtros
+          </Button>
+          <Button variant="outline" size="icon" @click="atualizarIndicadores()">
+            <RefreshCw class="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      <div class="flex items-center gap-2 w-content">
-        <Button variant="outline" @click="openModalFiltros = true">
-          <Filter class="h-4 w-4" /> Filtros
-        </Button>
-      </div>
-    </div>
 
-    <div class="flex flex-wrap gap-2">
-      <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
-        {{ item }}
-      </Badge>
+      <div class="flex flex-wrap gap-2 mt-1">
+        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
+          {{ item }}
+        </Badge>
+      </div>
     </div>
 
     <section v-if="!loading">
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition ">
-          <CardHeader>
-            <CardTitle class="flex flex-row items-center gap-2 text-md text-gray-700 dark:text-gray-300"><i
-                class="p-1 bg-background/20 rounded-md" :class="kpi.icone"></i> {{ kpi.titulo }}
+        <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition">
+          <CardHeader class="pb-2">
+            <CardTitle class="flex flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <div class="rounded-md p-2" :class="kpi.colorClass">
+                <component :is="kpi.icone" class="h-4 w-4" />
+              </div>
+              <span>{{ kpi.titulo }}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p class="text-xs text-muted-foreground">{{ kpi.valor != null ? `Qtd ${kpi.valor}` : 'No período' }}</p>
-            <p class="text-lg text-gray-700 dark:text-gray-300">R$ {{ kpi.detalhe.replace('.', ',') }}</p>
+          <CardContent class="space-y-1">
+            <p class="text-base md:text-lg font-semibold text-gray-700 dark:text-gray-300">{{ kpi.valor }}</p>
+            <p class="text-xs text-muted-foreground leading-relaxed">{{ kpi.detalhe }}</p>
           </CardContent>
         </Card>
       </div>
     </section>
-    <section v-if="loading" class="flex">
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div class="flex flex-col space-y-3">
-          <Skeleton class="h-[130px] w-[250px] rounded-xl" />
-        </div>
-      </div>
+    <section v-if="loading" class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <Skeleton v-for="item in 6" :key="item" class="h-[130px] rounded-xl" />
     </section>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

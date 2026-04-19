@@ -32,8 +32,8 @@
 - Módulos com produto base e variantes devem explicitar quando a ação cria um item novo do zero ou apenas uma variante adicional, e a listagem pode alternar entre visão agregada por base e visão analítica por variante.
 - Fluxos de relatório do domínio devem aceitar contexto pré-selecionado (produto base ou variante) e filtros opcionais de período, em vez de exigir reescolha manual do item a cada exportação.
 - Listagens mobile que substituem tabelas desktop devem preferir cards compactos, ações rápidas e bottombar fixa para busca, paginação ou atalhos do módulo.
-- No domínio financeiro, contas financeiras e categorias são fluxos auxiliares do módulo de lançamentos e devem ser acessados como ações contextuais dentro de `financeiro/lancamentos`, não como navegação primária lateral.
-- Telas financeiras de acompanhamento e dashboard devem expor filtros operacionais claros (conta, categoria, tipo, status/busca quando fizer sentido) e calcular saldo atual, saldo previsto, pendências e atrasos a partir das parcelas do lançamento, não apenas do cabeçalho do lançamento.
+- No domínio financeiro, contas financeiras e categorias seguem como fluxos auxiliares de configuração dentro de `financeiro/lancamentos`, enquanto as jornadas operacionais podem ser separadas em `lancamentos`, `acompanhamento`, `contas a receber` e `contas a pagar` para reduzir atrito de uso.
+- Telas financeiras de acompanhamento, contas a pagar e contas a receber devem expor filtros operacionais claros, criação rápida de lançamento, abas compactas para lista/KPI/calendário e cálculos de saldo, pendências e atrasos sempre baseados nas parcelas do lançamento, não apenas no cabeçalho.
 - Componentes de tabs devem permitir scroll horizontal nativo em telas menores quando a quantidade de abas ultrapassar a largura disponível.
 - Comportamento transversal ou reutilizável vai para `composables`.
 - Infraestrutura e detalhes técnicos ficam em `utils` ou `lib`.

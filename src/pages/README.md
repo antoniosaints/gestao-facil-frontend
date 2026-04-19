@@ -21,6 +21,7 @@ Cada domínio tende a repetir esta estrutura:
 - `VITE_MODE_SYSTEM` altera a escolha de algumas telas, principalmente entre ERP e `arena`.
 - Rotas privadas dependem de autenticação, status da conta e `permissao`.
 - Páginas de dashboard devem refletir filtros operacionais reais do domínio, como período e agregações segregadas por conta.
+- No financeiro, o domínio pode combinar uma listagem geral de lançamentos com telas operacionais separadas para acompanhamento, contas a pagar e contas a receber, reutilizando a mesma base de parcelas, filtros e ações rápidas quando a segmentação melhorar a UX.
 
 ## Regras
 - Ao criar funcionalidade nova, encaixar dentro do domínio correto antes de abrir uma nova área.

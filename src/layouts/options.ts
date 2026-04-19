@@ -21,6 +21,8 @@ import {
   Store,
   Tags,
   TicketCheck,
+  TrendingDown,
+  TrendingUp,
   User,
   UserStar,
   Wallet,
@@ -111,6 +113,18 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
           nome: 'Acompanhamento',
           link: '/financeiro/acompanhamento',
           icone: CalendarClock,
+          color: 'emerald',
+        },
+        {
+          nome: 'Contas a receber',
+          link: '/financeiro/contas-a-receber',
+          icone: TrendingUp,
+          color: 'emerald',
+        },
+        {
+          nome: 'Contas a pagar',
+          link: '/financeiro/contas-a-pagar',
+          icone: TrendingDown,
           color: 'emerald',
         },
         {

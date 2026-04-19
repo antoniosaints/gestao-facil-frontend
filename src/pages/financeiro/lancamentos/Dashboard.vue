@@ -317,11 +317,11 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-4 pb-24 md:pb-0">
-    <div class="rounded-2xl border bg-card p-4 shadow-sm">
+    <div class="">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
-            <Landmark class="h-6 w-6 text-primary" />
+            <Landmark class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
             Painel financeiro
           </h2>
           <p class="text-sm text-muted-foreground">
@@ -339,7 +339,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div class="mt-3 flex flex-wrap gap-2">
+      <div class="mt-1 flex flex-wrap gap-2">
         <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
           {{ item }}
         </Badge>

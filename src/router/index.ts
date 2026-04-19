@@ -309,6 +309,24 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'contas-a-receber',
+        name: 'financeiro-contas-receber',
+        component: () => import('@/pages/financeiro/lancamentos/ContasAReceber.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
+        path: 'contas-a-pagar',
+        name: 'financeiro-contas-pagar',
+        component: () => import('@/pages/financeiro/lancamentos/ContasAPagar.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
         path: 'cobrancas',
         name: 'lancamentos-cobrancas',
         component: () => import('@/pages/financeiro/cobrancas/Home.vue'),

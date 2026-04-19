@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Box, CalendarPlus, Coins, Filter, Package, PackageOpen, RefreshCw, Tags, TrendingUp, Undo2 } from "lucide-vue-next"
+import { AlertTriangle, Box, Boxes, CalendarPlus, Coins, Factory, Filter, HandCoins, Package, PackageOpen, ReceiptText, RefreshCw, Tags, TrendingUp, Undo2, Warehouse } from "lucide-vue-next"
 
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
 import ModalView from "@/components/formulario/ModalView.vue"
@@ -67,49 +67,57 @@ function montarIndicadores(data: any) {
       titulo: 'Produtos base',
       valor: `${data.totalProdutosBase || 0}`,
       detalhe: `${data.totalVariantes || 0} variantes cadastradas`,
-      icone: 'fa-solid fa-boxes-stacked text-blue-600',
+      icone: Boxes,
+      colorClass: 'text-blue-600 bg-blue-500/10',
     },
     {
       titulo: 'Categorias',
       valor: `${data.totalCategorias || 0}`,
       detalhe: `${data.produtosNoPdv || 0} variantes visíveis no PDV`,
-      icone: 'fa-solid fa-tags text-violet-600',
+      icone: Tags,
+      colorClass: 'text-violet-600 bg-violet-500/10',
     },
     {
       titulo: 'Estoque baixo',
       valor: `${data.estoqueBaixo || 0}`,
       detalhe: `${data.produtosSemEstoque || 0} variante(s) sem estoque e ${data.controlaEstoque || 0} com controle ativo`,
-      icone: 'fa-solid fa-triangle-exclamation text-amber-600',
+      icone: AlertTriangle,
+      colorClass: 'text-amber-600 bg-amber-500/10',
     },
     {
       titulo: 'Valor em estoque',
       valor: formatCurrencyBR(Number(data.valorEstoque || 0)),
       detalhe: `${data.controlaEstoque || 0} variantes controladas`,
-      icone: 'fa-solid fa-warehouse text-emerald-600',
+      icone: Warehouse,
+      colorClass: 'text-emerald-600 bg-emerald-500/10',
     },
     {
       titulo: 'Ticket médio',
       valor: formatCurrencyBR(Number(data.ticketMedioGeral || 0)),
       detalhe: 'Média das vendas faturadas no período',
-      icone: 'fa-solid fa-receipt text-sky-600',
+      icone: ReceiptText,
+      colorClass: 'text-sky-600 bg-sky-500/10',
     },
     {
       titulo: 'Lucro realizado',
       valor: formatCurrencyBR(Number(data.lucroMensal || 0)),
       detalhe: 'Receita vendida menos custo estimado',
-      icone: 'fa-solid fa-chart-line text-green-600',
+      icone: TrendingUp,
+      colorClass: 'text-green-600 bg-green-500/10',
     },
     {
       titulo: 'Reposições',
       valor: formatCurrencyBR(Number(data.custoReposicoes || 0)),
       detalhe: 'Custo acumulado de entradas concluídas',
-      icone: 'fa-solid fa-truck-ramp-box text-indigo-600',
+      icone: HandCoins,
+      colorClass: 'text-indigo-600 bg-indigo-500/10',
     },
     {
       titulo: 'Matérias-primas',
       valor: `${data.materiasPrimas || 0}`,
       detalhe: 'Itens marcados para produção local/insumo',
-      icone: 'fa-solid fa-industry text-rose-600',
+      icone: Factory,
+      colorClass: 'text-rose-600 bg-rose-500/10',
     },
   ]
 }
@@ -185,37 +193,44 @@ onMounted(() => {
 
 <template>
   <div class="space-y-4">
-    <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
-      <div>
-        <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-          <Package class="h-6 w-6" :stroke-width="2.5" />
-          Painel de produtos
-        </h2>
-        <p class="text-sm text-muted-foreground">Catálogo, estoque, reposição e giro filtrados por período e conta.</p>
+    <div>
+      <div class="flex flex-col md:flex-row gap-2 justify-between items-center">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          </h2>
+          <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+            <Package class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
+            Painel de produtos
+          </h2>
+          <p class="text-sm text-muted-foreground">Catálogo, estoque, reposição e giro filtrados por período e conta.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 w-content">
+          <Button variant="outline" @click="openModalFiltros = true">
+            <Filter class="w-4 h-4" /> Filtros
+          </Button>
+          <button type="button" @click="getDataDashboard(true)"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-foreground transition hover:bg-muted/50">
+            <RefreshCw class="w-4 h-4" />
+          </button>
+        </div>
       </div>
-      <div class="flex items-center gap-2 w-content">
-        <Button variant="outline" @click="openModalFiltros = true">
-          <Filter class="w-4 h-4" /> Filtros
-        </Button>
-        <button type="button" @click="getDataDashboard(true)"
-          class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-foreground transition hover:bg-muted/50">
-          <RefreshCw class="w-4 h-4" />
-        </button>
-      </div>
-    </div>
 
-    <div class="flex flex-wrap gap-2">
-      <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
-        {{ item }}
-      </Badge>
+      <div class="flex flex-wrap gap-2 mt-1">
+        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
+          {{ item }}
+        </Badge>
+      </div>
     </div>
 
     <section v-if="!loading">
-      <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-4">
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition">
           <CardHeader class="pb-2">
             <CardTitle class="flex flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <i class="p-1.5 bg-background/30 rounded-md text-sm" :class="kpi.icone"></i>
+              <div class="rounded-md p-2" :class="kpi.colorClass">
+                <component :is="kpi.icone" class="h-4 w-4" />
+              </div>
               <span>{{ kpi.titulo }}</span>
             </CardTitle>
           </CardHeader>
