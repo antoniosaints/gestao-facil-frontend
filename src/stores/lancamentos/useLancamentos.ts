@@ -9,6 +9,50 @@ interface filtro {
   update: boolean
 }
 
+type EscopoAlteracaoParcela =
+  | 'ATUAL'
+  | 'TODAS'
+  | 'PENDENTES'
+  | 'PAGAS'
+  | 'ATUAL_EM_DIANTE'
+  | 'ATUAL_PARA_TRAS'
+
+function createDefaultForm(
+  overrides?: Partial<
+    Pick<
+      FormularioLancamento,
+      | 'clienteId'
+      | 'categoriaId'
+      | 'contasFinanceiroId'
+      | 'formaPagamento'
+      | 'tipo'
+      | 'dataLancamento'
+      | 'periodoParcelamento'
+      | 'intervaloDiasPersonalizado'
+      | 'modoValorParcelamento'
+    >
+  >,
+): FormularioLancamento {
+  return {
+    id: null,
+    clienteId: overrides?.clienteId ?? null,
+    categoriaId: overrides?.categoriaId ?? null,
+    contasFinanceiroId: overrides?.contasFinanceiroId ?? null,
+    dataLancamento: overrides?.dataLancamento ?? new Date(),
+    dataEntrada: null,
+    desconto: '',
+    descricao: '',
+    formaPagamento: overrides?.formaPagamento ?? 'DINHEIRO',
+    parcelas: 1,
+    tipo: overrides?.tipo ?? 'RECEITA',
+    valorEntrada: '',
+    valorTotal: '',
+    periodoParcelamento: overrides?.periodoParcelamento ?? 'MENSAL',
+    intervaloDiasPersonalizado: overrides?.intervaloDiasPersonalizado ?? null,
+    modoValorParcelamento: overrides?.modoValorParcelamento ?? 'TOTAL',
+  }
+}
+
 export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const openModal = ref(false)
   const openModalParcela = ref(false)
@@ -18,6 +62,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const openModalFaturar = ref(false)
   const openModalCobranca = ref(false)
   const openModalDre = ref(false)
+  const openModalLote = ref(false)
   const idMutation = ref<number | null>(null)
   const currentMonth = ref(new Date())
   const selectedIds = ref<number[]>([])
@@ -39,47 +84,58 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     }
   }
 
-  const formParcela = ref<{ vencimento: Date; valor: number | string | null }>({
+  const formParcela = ref<{
+    vencimento: Date
+    valor: number | string | null
+    vencimentoOriginal: Date
+    numero: number
+    pago: boolean
+    escopo: EscopoAlteracaoParcela
+  }>({
     vencimento: new Date(),
     valor: null,
+    vencimentoOriginal: new Date(),
+    numero: 1,
+    pago: false,
+    escopo: 'ATUAL',
   })
 
-  const form = ref<FormularioLancamento>({
-    id: null,
-    clienteId: null,
-    categoriaId: null,
-    contasFinanceiroId: null,
-    dataLancamento: new Date(),
-    dataEntrada: null,
-    desconto: '',
-    descricao: '',
-    formaPagamento: 'DINHEIRO',
-    parcelas: 1,
-    tipo: 'RECEITA',
-    valorEntrada: '',
-    valorTotal: '',
-  })
+  const form = ref<FormularioLancamento>(createDefaultForm())
 
-  const reset = () => {
-    form.value = {
-      id: null,
-      clienteId: null,
-      categoriaId: null,
-      contasFinanceiroId: null,
-      dataLancamento: new Date(),
-      dataEntrada: null,
-      desconto: '',
-      descricao: '',
-      formaPagamento: 'DINHEIRO',
-      parcelas: 1,
-      tipo: 'RECEITA',
-      valorEntrada: '',
-      valorTotal: '',
+  const reset = (options?: { preserveBatchFields?: boolean; preserveDate?: boolean }) => {
+    const preserved = options?.preserveBatchFields
+      ? {
+          clienteId: form.value.clienteId,
+          categoriaId: form.value.categoriaId,
+          contasFinanceiroId: form.value.contasFinanceiroId,
+          formaPagamento: form.value.formaPagamento,
+          tipo: form.value.tipo,
+          periodoParcelamento: form.value.periodoParcelamento,
+          intervaloDiasPersonalizado: form.value.intervaloDiasPersonalizado,
+          modoValorParcelamento: form.value.modoValorParcelamento,
+          dataLancamento: options?.preserveDate ? form.value.dataLancamento : undefined,
+        }
+      : undefined
+
+    form.value = createDefaultForm(preserved)
+  }
+
+  const resetFormParcela = () => {
+    formParcela.value = {
+      vencimento: new Date(),
+      valor: null,
+      vencimentoOriginal: new Date(),
+      numero: 1,
+      pago: false,
+      escopo: 'ATUAL',
     }
   }
 
-  const openSave = () => {
-    if (form.value.id) reset()
+  const openSave = (options?: { presetDate?: Date | null }) => {
+    if (form.value.id) reset({ preserveBatchFields: true })
+    if (options?.presetDate) {
+      form.value.dataLancamento = options.presetDate
+    }
     openModal.value = true
   }
 
@@ -96,8 +152,22 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     const { data } = (await LancamentosRepository.get(id)) as {
       data: LancamentoFinanceiro
     }
+    form.value = createDefaultForm({
+      tipo: data.tipo,
+      formaPagamento: data.formaPagamento as
+        | 'DINHEIRO'
+        | 'DEBITO'
+        | 'CREDITO'
+        | 'BOLETO'
+        | 'DEPOSITO'
+        | 'TRANSFERENCIA'
+        | 'CHEQUE'
+        | 'PIX',
+      dataLancamento: data.dataLancamento,
+    })
     form.value = {
-      id: id,
+      ...form.value,
+      id,
       categoriaId: data.categoriaId,
       contasFinanceiroId: data.contasFinanceiroId!,
       clienteId: data.clienteId ? data.clienteId : null,
@@ -131,6 +201,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     openModalEfetivar,
     openModalCobranca,
     openModalParcela,
+    openModalLote,
     currentMonth,
     selectedIds,
     addSelectedId,
@@ -142,6 +213,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     updateTable,
     filters,
     reset,
+    resetFormParcela,
     form,
     formParcela,
   }

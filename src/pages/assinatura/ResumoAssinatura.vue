@@ -243,8 +243,8 @@ onMounted(() => {
   <div class="space-y-4">
     <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
       <div>
-        <h2 class="flex items-center gap-2 text-2xl font-bold text-gray-700 dark:text-gray-300">
-          <Sparkles class="h-6 w-6" :stroke-width="2.5" />
+        <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+          <Sparkles class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
           Assinatura e resumo financeiro
         </h2>
         <p class="text-sm text-muted-foreground">

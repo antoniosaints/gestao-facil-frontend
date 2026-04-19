@@ -24,6 +24,7 @@ import {
   Info,
   MoreVertical,
   PenLine,
+  Plus,
   RotateCw,
   Search,
   TrendingDown,
@@ -153,6 +154,7 @@ const quickPreset = ref<Preset>('all')
 const dias = ref<DiaLancamento[]>([])
 const calendarioData = ref(new Date(store.currentMonth))
 const eventoSelecionado = ref<LancamentoDia | null>(null)
+const pendingLaunchDate = ref<Date | null>(null)
 const resumo = ref<ResumoMensal>({
   saldoInicialPeriodo: 0,
   receitasPrevistas: 0,
@@ -220,6 +222,7 @@ function getRequestFilters() {
     contaFinanceiraId:
       filtros.value.contaFinanceiraId !== 'all' ? Number(filtros.value.contaFinanceiraId) : null,
     categoriaId: filtros.value.categoriaId !== 'all' ? Number(filtros.value.categoriaId) : null,
+    saldoCompleto: Boolean(tipoTravado.value),
   }
 }
 
@@ -340,8 +343,25 @@ function handleNewLancamento() {
 
 function openByTipo(tipo: 'RECEITA' | 'DESPESA') {
   store.form.tipo = tipo
-  store.openSave()
+  store.openSave({ presetDate: pendingLaunchDate.value })
+  pendingLaunchDate.value = null
   openModalLancar.value = false
+}
+
+function handleQuickCreate(date: string | Date) {
+  pendingLaunchDate.value = new Date(date)
+
+  if (tipoTravado.value === 'RECEITA') {
+    openByTipo('RECEITA')
+    return
+  }
+
+  if (tipoTravado.value === 'DESPESA') {
+    openByTipo('DESPESA')
+    return
+  }
+
+  openModalLancar.value = true
 }
 
 function editarParcela(item: LancamentoDia) {
@@ -349,6 +369,10 @@ function editarParcela(item: LancamentoDia) {
   store.formParcela = {
     valor: item.valor,
     vencimento: new Date(item.vencimento),
+    vencimentoOriginal: new Date(item.vencimento),
+    numero: item.numero,
+    pago: item.pago,
+    escopo: 'ATUAL',
   }
   store.openModalParcela = true
 }
@@ -445,8 +469,8 @@ function buildDiaWithFilteredLancamentos(dia: DiaLancamento, lancamentos: Lancam
     saidasPrevistas,
     entradasRealizadas,
     saidasRealizadas,
-    saldoRealizado: entradasRealizadas - saidasRealizadas,
-    saldoPrevisto: entradasPrevistas - saidasPrevistas,
+    saldoRealizado: dia.saldoRealizado,
+    saldoPrevisto: dia.saldoPrevisto,
     lancamentos,
   }
 }
@@ -579,6 +603,12 @@ watch(
   },
 )
 
+watch(openModalLancar, (value) => {
+  if (!value) {
+    pendingLaunchDate.value = null
+  }
+})
+
 onMounted(async () => {
   filtros.value.tipo = tipoTravado.value ?? filtros.value.tipo
   calendarioData.value = new Date(store.currentMonth)
@@ -680,13 +710,16 @@ onMounted(async () => {
                   {{ format(new Date(dia.dia), "dd 'de' MMMM", { locale: ptBR }) }}
                 </p>
               </div>
-              <div class="flex flex-wrap gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <Badge class="border-0 bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
                   Realizado {{ formatCurrencyBR(dia.saldoRealizado) }}
                 </Badge>
                 <Badge class="border-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                   Possível {{ formatCurrencyBR(dia.saldoPrevisto) }}
                 </Badge>
+                <Button variant="outline" size="icon" class="h-8 w-8" @click="handleQuickCreate(dia.dia)">
+                  <Plus class="h-4 w-4" />
+                </Button>
               </div>
             </div>
 

@@ -127,6 +127,14 @@
                         </div>
                         <div class="font-medium text-center text-gray-500 dark:text-gray-400">Contas</div>
                     </div>
+                    <div @click="openLote"
+                        class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                        <div
+                            class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                            <Upload class="w-10 h-10 text-gray-500 dark:text-gray-400" />
+                        </div>
+                        <div class="font-medium text-center text-gray-500 dark:text-gray-400">Importar CSV</div>
+                    </div>
                 </div>
                 <DrawerFooter class="pt-2">
                     <DrawerClose as-child>
@@ -169,7 +177,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, ArrowUp, Dot, Eye, FileChartLine, Tags, Trash, TrendingDown, TrendingUp, Wallet } from "lucide-vue-next";
+import { ArrowDown, ArrowUp, Dot, Eye, FileChartLine, Tags, Trash, TrendingDown, TrendingUp, Upload, Wallet } from "lucide-vue-next";
 import type { LancamentoFinanceiro } from "@/types/schemas";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { watch } from "vue";
@@ -230,6 +238,11 @@ function goToCategorias() {
 function goToContas() {
     showDrawer.value = false
     router.push('/financeiro/contas')
+}
+
+function openLote() {
+    showDrawer.value = false
+    store.openModalLote = true
 }
 
 watch(() => store.filters.update, () => {

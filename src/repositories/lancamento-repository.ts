@@ -6,6 +6,18 @@ import type {
   MetodoPagamentoFinanceiro,
 } from '@/types/schemas'
 import http from '@/utils/axios'
+
+function downloadBlob(data: BlobPart, filename: string) {
+  const blob = data instanceof Blob ? data : new Blob([data])
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  window.URL.revokeObjectURL(url)
+}
 export class LancamentosRepository {
   static async listarCategorias() {
     const data = await http.get(`/lancamentos/categorias`)
@@ -90,6 +102,7 @@ export class LancamentosRepository {
       tipo?: 'TODOS' | 'RECEITA' | 'DESPESA'
       status?: 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
       search?: string
+      saldoCompleto?: boolean
     },
   ) {
     const data = await http.get(`/lancamentos/lancamentosMes`, {
@@ -100,6 +113,7 @@ export class LancamentosRepository {
         ...(filters?.tipo && filters.tipo !== 'TODOS' ? { tipo: filters.tipo } : {}),
         ...(filters?.status && filters.status !== 'TODOS' ? { status: filters.status } : {}),
         ...(filters?.search ? { search: filters.search } : {}),
+        ...(filters?.saldoCompleto ? { saldoCompleto: 1 } : {}),
       },
     })
     return data.data
@@ -199,7 +213,14 @@ export class LancamentosRepository {
     })
     return data.data
   }
-  static async atualizarParcela(id: number, body: { vencimento: string; valor: number }) {
+  static async atualizarParcela(
+    id: number,
+    body: {
+      vencimento: string
+      valor: number
+      escopo?: 'ATUAL' | 'TODAS' | 'PENDENTES' | 'PAGAS' | 'ATUAL_EM_DIANTE' | 'ATUAL_PARA_TRAS'
+    },
+  ) {
     const data = await http.post(`/lancamentos/parcelas/${id}/atualizar`, {
       ...body,
     })
@@ -215,6 +236,28 @@ export class LancamentosRepository {
     const data = await http.delete(`/lancamentos/cobrancas/deletar/${id}`)
     return data.data
   }
+  static async downloadCsvModelo() {
+    const response = await http.get(`/lancamentos/download/csv`, {
+      responseType: 'blob',
+      headers: { 'Content-Type': 'text/csv' },
+    })
+
+    downloadBlob(response.data, 'lancamentos_base.csv')
+  }
+
+  static async importarCsv(file: File) {
+    const data = new FormData()
+    data.append('arquivo', file)
+
+    const response = await http.post(`/lancamentos/importar/csv`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    return response.data
+  }
+
   static async gerarCobranca(
     type: 'BOLETO' | 'LINK' | 'PIX',
     value: number,

@@ -57,6 +57,7 @@ Na prática:
 - Quando uma listagem desktop precisa de adaptação mobile, a preferência é manter a tabela no desktop e usar cards compactos + bottombar fixa no mobile, reaproveitando o store e o repository do domínio.
 - Em financeiro, contas e categorias continuam como fluxos auxiliares de configuração, enquanto a navegação operacional principal pode expor `lancamentos`, `acompanhamento`, `contas a receber` e `contas a pagar` como entradas separadas quando isso reduzir fricção para o usuário final.
 - O módulo financeiro deve tratar dashboards, acompanhamentos, calendários operacionais e telas de detalhe com base em parcelas reais, separando saldo realizado, saldo previsto, pendências e atrasos, sempre respeitando o `contaId` autenticado em toda consulta e filtro.
+- O lançamento financeiro deve aceitar parcelamento mensal, semanal, diário, quinzenal ou personalizado em dias, permitir valor total dividido ou valor fixo por parcela, manter campos operacionais recorrentes preenchidos entre lançamentos em lote manual e expor importação em massa por CSV no próprio domínio.
 - O mesmo domínio costuma combinar página, store e repository próprios.
 - O frontend usa contrato tipado local em `src/types/schemas.ts`, espelhando os domínios principais do backend.
 - O guard de rotas consulta dados do usuário, status da conta e permissão antes de liberar navegação.

@@ -22,6 +22,7 @@ Cada domínio tende a repetir esta estrutura:
 - Rotas privadas dependem de autenticação, status da conta e `permissao`.
 - Páginas de dashboard devem refletir filtros operacionais reais do domínio, como período e agregações segregadas por conta.
 - No financeiro, o domínio pode combinar uma listagem geral de lançamentos com telas operacionais separadas para acompanhamento, contas a pagar e contas a receber, reutilizando a mesma base de parcelas, filtros e ações rápidas quando a segmentação melhorar a UX.
+- As telas financeiras operacionais devem permitir criação rápida por dia, edição em cascata de parcelas por escopo (atual, todas, pagas, pendentes ou direção relativa), persistência de campos recorrentes no formulário e importação em lote por CSV com download de modelo.
 
 ## Regras
 - Ao criar funcionalidade nova, encaixar dentro do domínio correto antes de abrir uma nova área.

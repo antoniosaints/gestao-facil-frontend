@@ -104,8 +104,8 @@ onMounted(loadContas)
   <div>
     <div class="mb-4 flex flex-col justify-between gap-2 md:flex-row">
       <div>
-        <h2 class="flex items-center gap-2 text-2xl font-bold text-gray-700 dark:text-gray-300">
-          <Wallet class="h-6 w-6" :stroke-width="2.5" />
+        <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+          <Wallet class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
           Contas financeiras
         </h2>
         <p class="text-sm text-muted-foreground">Gerencie as contas usadas para movimentação e pagamento</p>

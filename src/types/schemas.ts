@@ -449,6 +449,9 @@ export interface FormularioLancamento {
   desconto: number | string
   parcelas: number | undefined
   descricao: string
+  periodoParcelamento?: 'MENSAL' | 'SEMANAL' | 'DIARIO' | 'QUINZENAL' | 'PERSONALIZADO'
+  intervaloDiasPersonalizado?: number | string | null
+  modoValorParcelamento?: 'TOTAL' | 'FIXO_PARCELA'
 }
 export interface UpdateParametrosConta {
   AsaasApiKey?: string | null

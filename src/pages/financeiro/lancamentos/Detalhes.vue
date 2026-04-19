@@ -187,6 +187,10 @@ function editarParcela(parcela: ParcelaDetalhe) {
   store.formParcela = {
     valor: parcela.valor,
     vencimento: new Date(parcela.vencimento),
+    vencimentoOriginal: new Date(parcela.vencimento),
+    numero: parcela.numero,
+    pago: parcela.pago,
+    escopo: 'ATUAL',
   }
   store.openModalParcela = true
 }

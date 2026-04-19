@@ -12,9 +12,11 @@ import {
   RotateCw,
   Tags,
   Trash,
+  Upload,
   Wallet,
 } from 'lucide-vue-next'
 import GerarDRE from './modais/GerarDRE.vue'
+import ModalLoteLancamentos from './modais/ModalLoteLancamentos.vue'
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import {
   DropdownMenu,
@@ -68,8 +70,8 @@ function goToContas() {
   <div>
     <div class="mb-4 flex flex-col justify-between gap-2 md:flex-row">
       <div>
-        <h2 class="flex items-center gap-2 text-2xl font-bold text-gray-700 dark:text-gray-300">
-          <Wallet class="h-6 w-6" :stroke-width="2.5" />
+        <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+          <Wallet class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
           Lançamentos
         </h2>
         <p class="text-sm text-muted-foreground">Lançamentos financeiros do sistema</p>
@@ -92,6 +94,10 @@ function goToContas() {
                 <BookOpenText />
                 <span>Contas financeiras</span>
               </DropdownMenuItem>
+              <DropdownMenuItem @click="store.openModalLote = true" class="cursor-pointer">
+                <Upload />
+                <span>Importar CSV</span>
+              </DropdownMenuItem>
               <DropdownMenuItem v-if="store.selectedIds.length" @click="excluirEmLote" class="cursor-pointer">
                 <Trash />
                 <span>Excluir em lote</span>
@@ -99,6 +105,12 @@ function goToContas() {
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+        <button
+          @click="store.openModalLote = true"
+          class="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+        >
+          <Upload class="h-5 w-5" /> <span class="hidden md:inline">CSV</span>
+        </button>
         <button
           @click="store.openModalDre = true"
           class="flex items-center gap-2 rounded-md bg-warning px-3 py-1.5 text-sm text-white"
@@ -129,6 +141,7 @@ function goToContas() {
       <Mobile />
     </div>
     <LancamentoModal />
+    <ModalLoteLancamentos />
     <ClientesModal />
     <GerarDRE />
   </div>

@@ -96,8 +96,8 @@ onMounted(loadCategorias)
   <div class="space-y-4">
     <div class="flex flex-col justify-between gap-2 md:flex-row md:items-center">
       <div>
-        <h2 class="flex items-center gap-2 text-2xl font-bold text-gray-700 dark:text-gray-300">
-          <FolderTree class="h-6 w-6" :stroke-width="2.5" />
+        <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+          <FolderTree class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
           Categorias de produtos
         </h2>
         <p class="text-sm text-muted-foreground">Organize os produtos base em categorias próprias do catálogo.</p>

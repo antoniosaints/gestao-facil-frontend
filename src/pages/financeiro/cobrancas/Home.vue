@@ -13,8 +13,8 @@ const uiStore = useUiStore()
     <div>
         <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
             <div>
-                <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                    <HandCoins class="h-6 w-6" :stroke-width="2.5" />
+                <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+                    <HandCoins class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
                     Cobranças
                 </h2>
                 <p class="text-sm text-muted-foreground">Cobranças cadastrados no sistema</p>
