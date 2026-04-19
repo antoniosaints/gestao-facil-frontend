@@ -578,6 +578,17 @@ const eventosCalendario = computed<CalendarEvent[]>(() =>
   ),
 )
 
+const mapStatus = (status: 'PAGO' | 'PENDENTE' | 'ATRASADO', tipo: 'RECEITA' | 'DESPESA') => {
+  switch (status) {
+    case 'PAGO':
+      return tipo === 'RECEITA' ? 'RECEBIDO' : 'PAGO'
+    case 'PENDENTE':
+      return 'PENDENTE'
+    case 'ATRASADO':
+      return 'ATRASADO'
+  }
+}
+
 watch(
   () => store.filters.update,
   () => carregarLancamentos(),
@@ -618,14 +629,14 @@ onMounted(async () => {
 
 <template>
   <div class="mx-auto max-w-7xl space-y-4 pb-24 md:pb-0">
-    <div class="rounded-2xl border bg-card p-4 shadow-sm">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div class="rounded-lg border bg-card p-4 shadow-sm">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center justify-center lg:justify-between">
         <div class="space-y-1">
           <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
             <component :is="headerIcon" class="h-6 w-6 text-primary dark:text-blue-500" />
             {{ title }}
           </h2>
-          <p class="text-xs text-muted-foreground">
+          <p class="text-xs text-muted-foreground truncate">
             {{ description }}
           </p>
         </div>
@@ -634,7 +645,7 @@ onMounted(async () => {
           <Button variant="outline" size="icon" @click="navigateMonth('prev')">
             <ArrowLeft class="h-4 w-4" />
           </Button>
-          <div class="min-w-[180px] text-center">
+          <div class="min-w-max text-center">
             <p class="text-base font-semibold capitalize text-foreground">
               {{ format(store.currentMonth, 'MMMM yyyy', { locale: ptBR }) }}
             </p>
@@ -666,7 +677,7 @@ onMounted(async () => {
 
     <Tabs v-model="activeTab" default-value="geral" class="space-y-2">
       <div class="overflow-x-auto">
-        <TabsList class="inline-flex w-max min-w-full justify-start gap-2 rounded-xl border bg-card p-1">
+        <TabsList class="inline-flex w-max min-w-full justify-start gap-2 rounded-md border bg-card p-1">
           <TabsTrigger value="geral" class="px-4">
             <span class="flex items-center gap-2">
               <BarChart class="h-4 w-4" />Geral
@@ -701,9 +712,11 @@ onMounted(async () => {
         </div>
 
         <div v-else class="space-y-4">
-          <div v-for="dia in displayedDias" :key="String(dia.dia)" class="space-y-2">
+          <div v-for="dia in displayedDias" :key="String(dia.dia)" class="space-y-0">
             <div
-              class="flex flex-col gap-2 rounded-xl border bg-card px-3 py-1.5 shadow-sm md:flex-row md:items-center md:justify-between">
+              class="flex flex-row relative gap-2 rounded-t-md rounded-bl-md border bg-card px-3 py-1.5 shadow-sm md:flex-row md:items-center justify-between border-none">
+              <div class="absolute left-0 top-0 h-full w-1 rounded-l-md"
+                  :class="'bg-blue-500'" />
               <div>
                 <p class="text-sm font-semibold capitalize text-foreground">{{ getDayLabel(dia.dia) }}</p>
                 <p class="text-xs text-muted-foreground">
@@ -711,11 +724,11 @@ onMounted(async () => {
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <Badge class="border-0 py-2 shadow-none bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 hover:bg-blue-200">
-                  Realizado {{ formatCurrencyBR(dia.saldoRealizado) }}
+                <Badge class="border-0 py-2 flex gap-1 shadow-none bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 hover:bg-blue-200">
+                  <span class="hidden md:inline-flex">Realizado</span> {{ formatCurrencyBR(dia.saldoRealizado) }}
                 </Badge>
-                <Badge class="border-0 py-2 shadow-none bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-200">
-                  Possível {{ formatCurrencyBR(dia.saldoPrevisto) }}
+                <Badge class="border-0 py-2 flex gap-1 shadow-none bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-200">
+                  <span class="hidden md:inline-flex">Previsto</span> {{ formatCurrencyBR(dia.saldoPrevisto) }}
                 </Badge>
                 <Button variant="outline" size="icon" class="h-8 w-8" @click="handleQuickCreate(dia.dia)">
                   <Plus class="h-4 w-4" />
@@ -723,9 +736,9 @@ onMounted(async () => {
               </div>
             </div>
 
-            <div class="grid gap-2 md:pl-4">
+            <div class="grid gap-0 md:pl-4">
               <div v-for="item in dia.lancamentos" :key="item.parcelaId"
-                class="relative overflow-hidden rounded-r-xl border bg-card px-3 py-1 shadow-sm">
+                class="relative overflow-hidden border-t bg-card px-3 py-1 shadow-sm fist:rounded-t-none last:rounded-b-md">
                 <div class="absolute left-0 top-0 h-full w-1"
                   :class="item.tipo === 'DESPESA' ? 'bg-rose-500' : 'bg-emerald-500'" />
 
@@ -752,15 +765,20 @@ onMounted(async () => {
                       </div>
 
                       <div class="flex flex-col gap-1 text-right">
-                        <p :class="item.tipo === 'DESPESA' ? 'text-rose-600' : 'text-emerald-600'"
-                          class="text-md font-semibold">
-                          {{ item.tipo === 'DESPESA' ? '-' : '+' }} {{ formatCurrencyBR(item.valor) }}
+                        <p :class="item.tipo === 'DESPESA' ? 
+                        'text-rose-600 dark:text-rose-400' : 
+                        'text-emerald-600 dark:text-emerald-400'"
+                          class="text-md font-semibold px-2 rounded-md">
+                          {{ formatCurrencyBR(item.valor) }}
                         </p>
                         <div class="flex flex-wrap justify-end gap-1">
-                          <Badge class="border-0 shadow-none px-2 py-0 text-[10px]"
-                            :class="item.status === 'PAGO' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' : item.status === 'ATRASADO' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'">
-                            {{ item.status }}
-                          </Badge>
+                          <span class="border shadow-none rounded-sm border-dashed px-2 py-0 text-[10px]"
+                            :class="item.status === 'PAGO' 
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-300 dark:border-blue-950' 
+                            : item.status === 'ATRASADO' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-300 dark:border-rose-950' 
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300 dark:border-amber-950'">
+                            {{ mapStatus(item.status, item.tipo) }}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -806,7 +824,7 @@ onMounted(async () => {
                             <Info class="mr-2 h-4 w-4" /> Detalhes
                           </DropdownMenuItem>
                         </RouterLink>
-                        <DropdownMenuItem @click="editarParcela(item)">
+                        <DropdownMenuItem v-if="!item.pago" @click="editarParcela(item)">
                           <PenLine class="mr-2 h-4 w-4" /> Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem v-if="!item.pago" @click="efetivarParcela(item.parcelaId)">
