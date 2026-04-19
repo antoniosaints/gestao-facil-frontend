@@ -154,8 +154,13 @@ export class LancamentosRepository {
   static async deletarCategoria(id: number) {
     await http.delete(`/lancamentos/categorias/${id}`)
   }
-  static async getSaldoMensal() {
-    const data = await http.get(`/lancamentos/graficos/saldo-mensal`)
+  static async getSaldoMensal(inicio?: string, fim?: string) {
+    const data = await http.get(`/lancamentos/graficos/saldo-mensal`, {
+      params: {
+        ...(inicio ? { inicio } : {}),
+        ...(fim ? { fim } : {}),
+      },
+    })
     return data.data
   }
   static async gerarDRE(inicio: string, fim: string) {

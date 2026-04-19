@@ -49,7 +49,7 @@ Na prática:
 - detalhes de produto com base + variantes devem separar claramente a visão da variante selecionada, a lista de variantes e a visão geral consolidada do produto base.
 - telas de catálogo que misturam produto base e variante devem manter estado explícito para o modo de listagem e para o tipo de cadastro iniciado pelo usuário.
 - dashboards operacionais, como o painel de produtos, devem consumir endpoints agregados do backend filtrados por período e sempre respeitar o `contaId` do contexto autenticado para evitar mistura entre contas.
-- a dashboard principal deve compor uma visão executiva transversal reutilizando agregações já existentes de vendas, financeiro, produtos e serviços antes de exigir um endpoint agregador novo.
+- a dashboard principal deve compor uma visão executiva transversal reutilizando agregações já existentes de vendas, financeiro, produtos e serviços antes de exigir um endpoint agregador novo, mas os gráficos precisam respeitar o período selecionado na tela e os critérios operacionais corretos de cada domínio.
 - centrais de relatório do domínio devem abrir com contexto pré-preenchido quando o usuário parte de uma linha, detalhe ou variante específica, reduzindo retrabalho na seleção de filtros.
 
 ## Convenções importantes

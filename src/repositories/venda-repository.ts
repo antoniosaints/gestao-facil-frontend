@@ -64,8 +64,13 @@ export class VendaRepository {
     await http.post(`/vendas`, data)
   }
 
-  static async getResumoMensal() {
-    const { data } = await http.get(`/vendas/resumo/mensal`)
+  static async getResumoMensal(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/vendas/resumo/mensal`, {
+      params: {
+        ...(inicio ? { inicio } : {}),
+        ...(fim ? { fim } : {}),
+      },
+    })
     return data
   }
   static async getFaturamentoMensal(ano?: number) {

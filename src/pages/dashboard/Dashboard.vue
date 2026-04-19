@@ -340,8 +340,8 @@ async function getDataDashboard(showFeedback = false) {
     ] = await Promise.all([
       store.getResumo(inicio, fim),
       VendaRepository.resumo(inicio, fim),
-      VendaRepository.getResumoMensal(),
-      LancamentosRepository.getSaldoMensal(),
+      VendaRepository.getResumoMensal(inicio, fim),
+      LancamentosRepository.getSaldoMensal(inicio, fim),
       ProdutoRepository.getTicketMedioMensal(inicio, fim),
       VendaRepository.getTopProdutos(inicio, fim),
       LancamentosRepository.resumoTotal(),
