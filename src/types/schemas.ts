@@ -494,6 +494,84 @@ export interface ContasFinanceiro {
   saldoInicial: number | string
 }
 
+export type FiltroStatusFinanceiro = 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
+export type FiltroTipoFinanceiro = 'TODOS' | 'RECEITA' | 'DESPESA'
+
+export interface ContaFinanceiraDetalheMovimentacao {
+  id: number
+  numero: number
+  valor: number
+  valorPago: number | null
+  pago: boolean
+  status: 'PAGO' | 'PENDENTE' | 'ATRASADO'
+  vencimento: Date | string
+  dataPagamento: Date | string | null
+  formaPagamento?: MetodoPagamento | string | null
+  lancamento: {
+    id: number
+    Uid?: string
+    descricao: string
+    tipo: 'RECEITA' | 'DESPESA'
+    categoria: { id?: number; nome: string }
+    cliente?: { id?: number; nome: string } | null
+  }
+}
+
+export interface ContaFinanceiraSaldoAtualResponse {
+  conta: {
+    id: number
+    nome: string
+    saldoInicial: number
+  }
+  resumo: {
+    saldoAtual: number
+    entradasRealizadas: number
+    saidasRealizadas: number
+  }
+}
+
+export interface ContaFinanceiraTransferPreviewResponse {
+  contaOrigem: {
+    id: number
+    nome: string
+  }
+  preview: {
+    parcelasAfetadas: number
+    lancamentosAfetados: number
+  }
+}
+
+export interface ContaFinanceiraDetalhesResponse {
+  conta: {
+    id: number
+    Uid?: string
+    nome: string
+    saldoInicial: number
+  }
+  periodo: {
+    inicio?: Date | string | null
+    fim?: Date | string | null
+  }
+  resumo: {
+    totalMovimentacoes: number
+    pagos: number
+    pendentes: number
+    atrasados: number
+    saldoInicial: number
+    entradasPrevistas: number
+    saidasPrevistas: number
+    entradasRealizadas: number
+    saidasRealizadas: number
+    pendenteReceber: number
+    pendentePagar: number
+    atrasadoReceber: number
+    atrasadoPagar: number
+    saldoAtual: number
+    saldoPrevisto: number
+  }
+  movimentacoes: ContaFinanceiraDetalheMovimentacao[]
+}
+
 export interface CategoriaFinanceiroParent {
   id?: number
   nome: string

@@ -1,5 +1,8 @@
 import type {
   CategoriaFinanceiro,
+  ContaFinanceiraDetalhesResponse,
+  ContaFinanceiraSaldoAtualResponse,
+  ContaFinanceiraTransferPreviewResponse,
   ContasFinanceiro,
   FormularioLancamento,
   MetodoPagamento,
@@ -71,6 +74,76 @@ export class LancamentosRepository {
   }
   static async criarConta(data: Pick<ContasFinanceiro, 'nome'> & { id?: number; saldoInicial?: number }) {
     await http.post(`/lancamentos/contas`, data)
+  }
+  static async getContaFinanceiraDetalhes(
+    id: number,
+    params?: {
+      inicio?: string
+      fim?: string
+      tipo?: 'TODOS' | 'RECEITA' | 'DESPESA'
+      status?: 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
+      search?: string
+      categoriaId?: number | null
+      clienteId?: number | null
+    },
+  ): Promise<{ data: ContaFinanceiraDetalhesResponse }> {
+    const response = await http.get(`/lancamentos/contas/${id}/detalhes`, {
+      params: {
+        ...(params?.inicio ? { inicio: params.inicio } : {}),
+        ...(params?.fim ? { fim: params.fim } : {}),
+        ...(params?.tipo && params.tipo !== 'TODOS' ? { tipo: params.tipo } : {}),
+        ...(params?.status && params.status !== 'TODOS' ? { status: params.status } : {}),
+        ...(params?.search ? { search: params.search } : {}),
+        ...(params?.categoriaId ? { categoriaId: params.categoriaId } : {}),
+        ...(params?.clienteId ? { clienteId: params.clienteId } : {}),
+      },
+    })
+    return response.data
+  }
+  static async getContaFinanceiraSaldoAtual(id: number): Promise<{ data: ContaFinanceiraSaldoAtualResponse }> {
+    const response = await http.get(`/lancamentos/contas/${id}/saldo-atual`)
+    return response.data
+  }
+  static async previewTransferirContaFinanceira(data: {
+    contaOrigemId: number
+    filtros?: {
+      inicio?: string
+      fim?: string
+      tipo?: 'TODOS' | 'RECEITA' | 'DESPESA'
+      status?: 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
+      search?: string
+    }
+  }): Promise<{ data: ContaFinanceiraTransferPreviewResponse }> {
+    const response = await http.post(`/lancamentos/contas/transferir/preview`, data)
+    return response.data
+  }
+  static async transferirContaFinanceira(data: {
+    contaOrigemId: number
+    contaDestinoId: number
+    modo: 'GERAR_FINANCEIRO' | 'MOVER_LANCAMENTOS'
+    valor?: number
+    data?: string
+    descricao?: string
+    filtros?: {
+      inicio?: string
+      fim?: string
+      tipo?: 'TODOS' | 'RECEITA' | 'DESPESA'
+      status?: 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
+      search?: string
+    }
+  }) {
+    const response = await http.post(`/lancamentos/contas/transferir`, data)
+    return response.data
+  }
+  static async ajustarSaldoContaFinanceira(data: {
+    contaFinanceiraId: number
+    saldoInformado: number
+    modo: 'LANCAR_FINANCEIRO' | 'AJUSTE_INTERNO'
+    data?: string
+    descricao?: string
+  }) {
+    const response = await http.post(`/lancamentos/contas/ajustar-saldo`, data)
+    return response.data
   }
   static async deletarConta(id: number) {
     await http.delete(`/lancamentos/contas/${id}`)
@@ -258,6 +331,13 @@ export class LancamentosRepository {
     return response.data
   }
 
+  static async atualizarLancamento(
+    id: number,
+    data: Pick<FormularioLancamento, 'descricao' | 'formaPagamento' | 'clienteId' | 'categoriaId' | 'contasFinanceiroId'>,
+  ) {
+    const response = await http.post(`/lancamentos/${id}/atualizar-basico`, data)
+    return response.data
+  }
   static async gerarCobranca(
     type: 'BOLETO' | 'LINK' | 'PIX',
     value: number,

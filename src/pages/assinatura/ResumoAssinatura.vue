@@ -305,7 +305,7 @@ onMounted(() => {
     </Alert>
 
     <Card class="overflow-hidden border">
-      <CardHeader class="border-b bg-muted/20 pb-4">
+      <CardHeader class="border-b bg-muted/20 pb-2 pt-2">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div class="space-y-3">
             <div class="flex items-center gap-3">
@@ -370,7 +370,7 @@ onMounted(() => {
       <CardContent class="space-y-4 p-4 md:p-6">
         <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <Card class="border-dashed">
-            <CardHeader class="space-y-1 pb-2">
+            <CardHeader class="space-y-1 py-2">
               <div class="flex items-center gap-2 text-sm text-muted-foreground">
                 <CircleDollarSign class="h-4 w-4" />
                 Mensalidade atual
@@ -385,7 +385,7 @@ onMounted(() => {
           </Card>
 
           <Card class="border-dashed">
-            <CardHeader class="space-y-1 pb-2">
+            <CardHeader class="space-y-1 py-2">
               <div class="flex items-center gap-2 text-sm text-muted-foreground">
                 <CalendarClock class="h-4 w-4" />
                 Proximo vencimento
@@ -400,7 +400,7 @@ onMounted(() => {
           </Card>
 
           <Card class="border-dashed">
-            <CardHeader class="space-y-1 pb-2">
+            <CardHeader class="space-y-1 py-2">
               <div class="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock3 class="h-4 w-4" />
                 Tempo restante
@@ -421,7 +421,7 @@ onMounted(() => {
           </Card>
 
           <Card class="border-dashed">
-            <CardHeader class="space-y-1 pb-2">
+            <CardHeader class="space-y-1 py-2">
               <div class="flex items-center gap-2 text-sm text-muted-foreground">
                 <ReceiptText class="h-4 w-4" />
                 Faturas recentes
@@ -491,9 +491,9 @@ onMounted(() => {
               <div
                 v-for="(passo, index) in proximosPassos"
                 :key="passo"
-                class="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-3 py-3"
+                class="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2"
               >
-                <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 border text-xs font-bold text-primary dark:text-blue-400">
                   {{ index + 1 }}
                 </div>
                 <p class="text-sm text-foreground">{{ passo }}</p>
@@ -506,7 +506,7 @@ onMounted(() => {
 
     <div class="grid gap-3 lg:grid-cols-3">
       <Card class="lg:col-span-2">
-        <CardHeader class="pb-3">
+        <CardHeader class="pb-2 pt-2">
           <CardTitle class="text-lg">Fatura em destaque</CardTitle>
           <CardDescription>
             A cobranca mais importante para acao imediata no seu ciclo atual.
@@ -596,7 +596,7 @@ onMounted(() => {
       </Card>
 
       <Card>
-        <CardHeader class="pb-3">
+        <CardHeader class="py-3">
           <CardTitle class="text-lg">Apps e recorrencia</CardTitle>
           <CardDescription>
             Ajuste os apps contratados e acompanhe o impacto no valor do plano.
@@ -611,7 +611,7 @@ onMounted(() => {
             </p>
           </div>
 
-          <Button as-child class="w-full gap-2">
+          <Button as-child class="w-full gap-2 dark:text-white">
             <RouterLink to="/loja">
               Abrir App Store
               <ArrowRight class="h-4 w-4" />
@@ -622,7 +622,7 @@ onMounted(() => {
     </div>
 
     <Card>
-      <CardHeader class="pb-3">
+      <CardHeader class="py-3">
         <CardTitle class="text-lg">Historico de faturas</CardTitle>
         <CardDescription>
           Consulte os ultimos pagamentos da assinatura, abra links pendentes e visualize comprovantes.
@@ -665,7 +665,7 @@ onMounted(() => {
           <div
             v-for="fatura in historicoFaturas"
             :key="fatura.id"
-            class="rounded-xl border border-border bg-card p-4"
+            class="rounded-xl border border-border bg-card px-4 py-2"
           >
             <div class="flex flex-col gap-4 md:grid md:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr] md:items-center">
               <div class="space-y-1">
@@ -720,7 +720,7 @@ onMounted(() => {
                 <Button
                   v-if="fatura.status === 'PAGO' && fatura.linkPagamento"
                   size="sm"
-                  variant="ghost"
+                  variant="outline"
                   class="gap-2"
                   @click="abrirLink(fatura.linkPagamento)"
                 >

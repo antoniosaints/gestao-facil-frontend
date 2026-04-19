@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Menu } from 'lucide-vue-next'
+import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -13,11 +14,15 @@ import { useConfirm } from '@/composables/useConfirm'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useContasFinanceirasStore } from '@/stores/lancamentos/useContasFinanceiras'
 import type { ContasFinanceiro } from '@/types/schemas'
+import ModalAjusteSaldoConta from '../ModalAjusteSaldoConta.vue'
+import ModalTransferenciaConta from '../ModalTransferenciaConta.vue'
 
 const store = useContasFinanceirasStore()
 const toast = useToast()
+const openTransferModal = ref(false)
+const openAjusteModal = ref(false)
 
-defineProps<{
+const props = defineProps<{
   data: ContasFinanceiro
 }>()
 
@@ -50,15 +55,30 @@ async function deletar(id: number) {
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
-      <DropdownMenuItem @click="store.openUpdate(data)">
+      <DropdownMenuItem @click="store.openDetails(props.data)">
+        <i class="fa-regular fa-eye mr-1"></i>
+        Detalhes
+      </DropdownMenuItem>
+      <DropdownMenuItem @click="openTransferModal = true">
+        <i class="fa-solid fa-right-left mr-1"></i>
+        Transferir
+      </DropdownMenuItem>
+      <DropdownMenuItem @click="openAjusteModal = true">
+        <i class="fa-solid fa-scale-balanced mr-1"></i>
+        Ajustar saldo
+      </DropdownMenuItem>
+      <DropdownMenuItem @click="store.openUpdate(props.data)">
         <i class="fa-regular fa-pen-to-square mr-1"></i>
         Editar
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">
+      <DropdownMenuItem class="text-danger" @click="deletar(props.data.id!)">
         <i class="fa-regular fa-trash-can mr-1"></i>
         Excluir
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
+
+  <ModalTransferenciaConta v-model:open="openTransferModal" :conta-origem="props.data" />
+  <ModalAjusteSaldoConta v-model:open="openAjusteModal" :conta="props.data" />
 </template>

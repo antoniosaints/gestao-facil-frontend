@@ -6,6 +6,7 @@ import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import type { ContasFinanceiro } from '@/types/schemas'
 import { computed, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
+import { formatToNumberValue } from '@/utils/formatters'
 
 const open = defineModel<boolean>('open', { default: false })
 
@@ -22,6 +23,7 @@ const saving = ref(false)
 const form = ref({
   id: undefined as number | undefined,
   nome: '',
+  saldoInicial: '',
 })
 
 const title = computed(() => (props.conta ? 'Editar conta financeira' : 'Nova conta financeira'))
@@ -38,6 +40,7 @@ watch(
     form.value = {
       id: props.conta?.id,
       nome: props.conta?.nome ?? '',
+      saldoInicial: String(props.conta?.saldoInicial ?? 0),
     }
   },
   { immediate: true },
@@ -54,6 +57,7 @@ async function submit() {
     await LancamentosRepository.criarConta({
       id: form.value.id,
       nome: form.value.nome.trim(),
+      saldoInicial: formatToNumberValue(form.value.saldoInicial || 0),
     })
     toast.success('Conta salva com sucesso!')
     open.value = false
@@ -72,11 +76,17 @@ async function submit() {
     <form @submit.prevent="submit">
       <div class="grid grid-cols-1 gap-6 px-4">
         <div>
-          <label class="block text-sm font-medium mb-1">Nome da conta *</label>
+          <label class="mb-1 block text-sm font-medium">Nome da conta *</label>
           <Input v-model="form.nome" type="text" placeholder="Ex: Nubank PJ" />
         </div>
 
-        <div class="flex gap-2 justify-end">
+        <div>
+          <label class="mb-1 block text-sm font-medium">Saldo inicial</label>
+          <Input v-model="form.saldoInicial" type="number" step="0.01" placeholder="0,00" />
+          <p class="mt-1 text-xs text-muted-foreground">Usado como ponto de partida dos saldos da conta financeira.</p>
+        </div>
+
+        <div class="flex justify-end gap-2">
           <Button type="button" variant="secondary" @click="open = false">Fechar</Button>
           <Button :disabled="saving" class="bg-primary text-white hover:bg-primary/90">
             {{ saving ? 'Salvando...' : 'Salvar conta' }}

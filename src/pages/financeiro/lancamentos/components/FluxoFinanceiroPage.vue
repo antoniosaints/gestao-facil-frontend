@@ -711,10 +711,10 @@ onMounted(async () => {
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <Badge class="border-0 bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                <Badge class="border-0 py-2 shadow-none bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 hover:bg-blue-200">
                   Realizado {{ formatCurrencyBR(dia.saldoRealizado) }}
                 </Badge>
-                <Badge class="border-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <Badge class="border-0 py-2 shadow-none bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-200">
                   Possível {{ formatCurrencyBR(dia.saldoPrevisto) }}
                 </Badge>
                 <Button variant="outline" size="icon" class="h-8 w-8" @click="handleQuickCreate(dia.dia)">
@@ -725,11 +725,11 @@ onMounted(async () => {
 
             <div class="grid gap-2 md:pl-4">
               <div v-for="item in dia.lancamentos" :key="item.parcelaId"
-                class="relative overflow-hidden rounded-r-xl border bg-card px-3 py-1.5 shadow-sm">
+                class="relative overflow-hidden rounded-r-xl border bg-card px-3 py-1 shadow-sm">
                 <div class="absolute left-0 top-0 h-full w-1"
                   :class="item.tipo === 'DESPESA' ? 'bg-rose-500' : 'bg-emerald-500'" />
 
-                <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center justify-between gap-3">
                   <div class="min-w-0 flex-1 space-y-1.5 pl-1">
                     <div class="flex flex-wrap items-center gap-1.5">
                       <Badge v-if="item.cobrancaLink" variant="outline" class="px-2 py-0 text-[10px]">Cobrança</Badge>
@@ -757,7 +757,7 @@ onMounted(async () => {
                           {{ item.tipo === 'DESPESA' ? '-' : '+' }} {{ formatCurrencyBR(item.valor) }}
                         </p>
                         <div class="flex flex-wrap justify-end gap-1">
-                          <Badge class="border-0 px-2 py-0 text-[10px]"
+                          <Badge class="border-0 shadow-none px-2 py-0 text-[10px]"
                             :class="item.status === 'PAGO' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' : item.status === 'ATRASADO' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'">
                             {{ item.status }}
                           </Badge>
@@ -768,7 +768,7 @@ onMounted(async () => {
 
                   <div class="flex items-center gap-1">
                     <div class="hidden items-center gap-1 lg:flex">
-                      <Button variant="outline" size="icon" class="h-8 w-8" @click="editarParcela(item)">
+                      <Button v-if="!item.pago" variant="outline" size="icon" class="h-8 w-8" @click="editarParcela(item)">
                         <PenLine class="h-4 w-4" />
                       </Button>
                       <Button v-if="!item.pago" size="icon" class="h-8 w-8 dark:text-white" @click="efetivarParcela(item.parcelaId)">
@@ -840,7 +840,7 @@ onMounted(async () => {
       <TabsContent value="resumo">
         <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <Card v-for="item in indicadores" :key="item.titulo" class="rounded-xl shadow transition">
-            <CardHeader class="pb-2">
+            <CardHeader class="p-2 px-4">
               <CardTitle class="flex flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                 <div class="rounded-md p-2" :class="item.colorClass">
                   <component :is="item.icone" class="h-4 w-4" />
@@ -848,11 +848,11 @@ onMounted(async () => {
                 <span>{{ item.titulo }}</span>
               </CardTitle>
             </CardHeader>
-            <CardContent class="space-y-1">
+            <CardContent class="space-y-1 px-4 pb-2">
               <p class="text-base font-semibold text-gray-700 dark:text-gray-200 md:text-lg">
                 {{ formatCurrencyBR(item.valor) }}
               </p>
-              <p class="text-xs leading-relaxed text-muted-foreground">{{ item.detalhe }}</p>
+              <p class="text-xs leading-relaxed text-muted-foreground truncate" :title="item.detalhe">{{ item.detalhe }}</p>
             </CardContent>
           </Card>
         </section>

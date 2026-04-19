@@ -22,6 +22,7 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import type { ContasFinanceiro } from '@/types/schemas'
 import ModalConta from './ModalConta.vue'
+import ModalDetalhesConta from './ModalDetalhesConta.vue'
 import Tabela from './tabela/Tabela.vue'
 import { useContasFinanceirasStore } from '@/stores/lancamentos/useContasFinanceiras'
 
@@ -166,21 +167,30 @@ onMounted(loadContas)
             <div class="text-xs text-muted-foreground">Conta</div>
           </div>
           <div class="text-sm font-medium text-foreground">{{ item.nome }}</div>
-          <div class="text-xs text-muted-foreground">Saldo inicial configurado no cadastro da conta.</div>
+          <div class="text-xs text-muted-foreground">Saldo inicial: {{ Number(item.saldoInicial || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</div>
+          <div class="text-xs text-muted-foreground">Use os detalhes para acompanhar entradas, saídas e pendências da conta.</div>
           <div class="mt-3 flex items-center justify-between gap-2">
             <button
-              @click="store.openUpdate(item)"
-              class="rounded-md bg-slate-200 px-3 py-1.5 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+              @click="store.openDetails(item)"
+              class="rounded-md border border-border px-3 py-1.5 text-sm text-foreground"
             >
-              Editar
+              Detalhes
             </button>
-            <button
-              @click="removeConta(item)"
-              class="inline-flex items-center gap-1 rounded-md bg-red-200 px-3 py-1.5 text-sm text-red-900 dark:bg-red-800 dark:text-red-100"
-            >
-              <Trash class="h-4 w-4" />
-              Excluir
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                @click="store.openUpdate(item)"
+                class="rounded-md bg-slate-200 px-3 py-1.5 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+              >
+                Editar
+              </button>
+              <button
+                @click="removeConta(item)"
+                class="inline-flex items-center gap-1 rounded-md bg-red-200 px-3 py-1.5 text-sm text-red-900 dark:bg-red-800 dark:text-red-100"
+              >
+                <Trash class="h-4 w-4" />
+                Excluir
+              </button>
+            </div>
           </div>
         </article>
       </div>
@@ -237,5 +247,6 @@ onMounted(loadContas)
     </MobileBottomBar>
 
     <ModalConta v-model:open="store.openModal" :conta="store.selectedConta" @saved="handleSaved" />
+    <ModalDetalhesConta v-model:open="store.openDetailsModal" :conta="store.selectedContaDetalhes" />
   </div>
 </template>

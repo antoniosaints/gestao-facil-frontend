@@ -42,6 +42,12 @@
                     </div>
                     <div class="mt-2 flex justify-between gap-2">
                         <div class="flex gap-1">
+                            <button
+                                @click="store.openUpdate(row.id!)"
+                                class="bg-slate-200 text-slate-900 dark:text-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-sm"
+                            >
+                                <Pencil class="w-5 h-5" />
+                            </button>
                             <RouterLink :to="`/financeiro/detalhes?id=${row.id}`">
                                 <button
                                     class="bg-blue-200 text-blue-900 dark:text-blue-100 dark:bg-blue-800 px-2 py-1 rounded-md text-sm">
@@ -177,7 +183,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, ArrowUp, Dot, Eye, FileChartLine, Tags, Trash, TrendingDown, TrendingUp, Upload, Wallet } from "lucide-vue-next";
+import { ArrowDown, ArrowUp, Dot, Eye, FileChartLine, Pencil, Tags, Trash, TrendingDown, TrendingUp, Upload, Wallet } from "lucide-vue-next";
 import type { LancamentoFinanceiro } from "@/types/schemas";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { watch } from "vue";

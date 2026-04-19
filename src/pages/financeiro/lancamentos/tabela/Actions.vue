@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ChevronsLeftRightEllipsis, CircleDollarSign, FileText, Menu, Nfc, Settings2 } from 'lucide-vue-next'
+import { Menu, Pencil, Settings2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { LancamentoFinanceiro } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
-import { ref } from 'vue';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
 import { useConfirm } from '@/composables/useConfirm';
@@ -46,16 +45,16 @@ async function deletar(id: number) {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+                <DropdownMenuItem @click="store.openUpdate(data.id!)">
+                    <Pencil class="w-4 h-4 mr-1" />
+                    Editar dados
+                </DropdownMenuItem>
                 <RouterLink :to="`/financeiro/detalhes?id=${data.id}`">
                     <DropdownMenuItem>
                         <Settings2 class="w-4 h-4 mr-1" />
                         Gerenciar
                     </DropdownMenuItem>
                 </RouterLink>
-                <!-- <DropdownMenuItem disabled>
-                    <ChevronsLeftRightEllipsis class="w-4 h-4 mr-1" />
-                    Converter
-                </DropdownMenuItem> -->
                 <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">
                     <i class="fa-regular fa-trash-can mr-1"></i>
                     Excluir

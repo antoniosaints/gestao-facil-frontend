@@ -286,7 +286,7 @@ watch(() => store.filters.update, loadLancamento)
         </div>
         <div>
           <h1 class="flex flex-wrap items-center gap-2 text-xl font-semibold text-foreground">
-            <BadgeDollarSign class="h-5 w-5 text-primary" />
+            <BadgeDollarSign class="h-5 w-5 text-primary dark:text-yellow-400" />
             {{ lancamento?.descricao || 'Detalhes do lançamento' }}
           </h1>
           <p class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -493,11 +493,11 @@ watch(() => store.filters.update, loadLancamento)
       </CardHeader>
       <CardContent class="space-y-2.5 px-4">
         <div v-for="parcela in parcelasOrdenadas" :key="parcela.id"
-          class="relative overflow-hidden rounded-r-xl border bg-card px-3 py-1.5 shadow-sm">
+          class="relative overflow-hidden rounded-r-xl border bg-card px-3 py-1 shadow-sm">
           <div class="absolute left-0 top-0 h-full w-1"
             :class="lancamento?.tipo === 'DESPESA' ? 'bg-rose-500' : 'bg-emerald-500'" />
 
-          <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center justify-between gap-3">
             <div class="min-w-0 flex-1 space-y-1.5 pl-1">
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
@@ -533,7 +533,7 @@ watch(() => store.filters.update, loadLancamento)
 
             <div class="flex items-center gap-1">
               <div class="hidden items-center gap-1 md:flex">
-                <Button variant="outline" size="icon" class="h-8 w-8" @click="editarParcela(parcela)">
+                <Button v-if="!parcela.pago" variant="outline" size="icon" class="h-8 w-8" @click="editarParcela(parcela)">
                   <PenLine class="h-4 w-4" />
                 </Button>
                 <Button v-if="!parcela.pago && !parcela.CobrancasFinanceiras?.length" size="icon"
@@ -545,7 +545,7 @@ watch(() => store.filters.update, loadLancamento)
                   @click="openLinkCobranca(parcela.CobrancasFinanceiras[0].externalLink)">
                   <ExternalLink class="h-4 w-4" />
                 </Button>
-                <Button v-if="!parcela.pago" size="icon" class="h-8 w-8" :disabled="Boolean(lancamento?.vendaId)"
+                <Button v-if="!parcela.pago" size="icon" class="h-8 w-8 dark:text-white" :disabled="Boolean(lancamento?.vendaId)"
                   @click="efetivarParcela(parcela.id!)">
                   <CheckCircle2 class="h-4 w-4" />
                 </Button>
@@ -562,7 +562,7 @@ watch(() => store.filters.update, loadLancamento)
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" class="w-44">
-                  <DropdownMenuItem @click="editarParcela(parcela)">
+                  <DropdownMenuItem v-if="!parcela.pago" @click="editarParcela(parcela)">
                     <PenLine class="mr-2 h-4 w-4" /> Editar
                   </DropdownMenuItem>
                   <DropdownMenuItem v-if="!parcela.pago" :disabled="Boolean(lancamento?.vendaId)"
