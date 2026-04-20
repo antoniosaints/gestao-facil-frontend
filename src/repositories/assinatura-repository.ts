@@ -27,17 +27,17 @@ export interface AssinaturaOption {
 
 export interface AssinaturaItemForm {
   tipoItem: TipoItemAssinatura
-  servicoId?: number | string
-  produtoId?: number | string
+  servicoId?: number | string | null
+  produtoId?: number | string | null
   descricaoSnapshot: string
   quantidade: number
   valorUnitario: number
   cobrar: boolean
   comodato: boolean
   ativo?: boolean
-  identificacao?: string
-  dataPrevistaDevolucao?: string
-  observacoes?: string
+  identificacao?: string | null
+  dataPrevistaDevolucao?: string | Date | null
+  observacoes?: string | null
 }
 
 export interface PlanoAssinaturaPayload {

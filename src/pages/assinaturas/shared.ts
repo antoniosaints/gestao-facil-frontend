@@ -10,6 +10,10 @@ import type {
   TipoCobrancaAssinatura,
 } from '@/repositories/assinatura-repository'
 
+function isValidDate(value: unknown): value is Date {
+  return value instanceof Date && !Number.isNaN(value.getTime())
+}
+
 export const periodicidadeOptions: Array<{ value: PeriodicidadeAssinatura; label: string }> = [
   { value: 'SEMANAL', label: 'Semanal' },
   { value: 'QUINZENAL', label: 'Quinzenal' },
@@ -130,8 +134,8 @@ export function getStatusComodatoMeta(value?: string | null) {
 export function createEmptyItem(): AssinaturaItemForm {
   return {
     tipoItem: 'SERVICO',
-    servicoId: 0,
-    produtoId: 0,
+    servicoId: null,
+    produtoId: null,
     descricaoSnapshot: '',
     quantidade: 1,
     valorUnitario: 0,
@@ -139,7 +143,25 @@ export function createEmptyItem(): AssinaturaItemForm {
     comodato: false,
     ativo: true,
     identificacao: '',
-    dataPrevistaDevolucao: '',
+    dataPrevistaDevolucao: null,
     observacoes: '',
   }
+}
+
+export function parseDateOnlyFromApi(value?: string | Date | null): Date | null {
+  if (!value) return null
+
+  const parsed = value instanceof Date ? value : new Date(value)
+  if (!isValidDate(parsed)) return null
+
+  return new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate())
+}
+
+export function toDateOnlyIso(value?: string | Date | null): string | undefined {
+  if (!value) return undefined
+
+  const parsed = value instanceof Date ? value : new Date(value)
+  if (!isValidDate(parsed)) return undefined
+
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()).toISOString()
 }

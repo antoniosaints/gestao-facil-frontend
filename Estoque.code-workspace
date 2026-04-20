@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "../Estoque"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../Quiz AI"
+		},
+		{
+			"path": "../Quiz AI api"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "Chat IA",
+		"php.version": "7.4"
+	}
+}

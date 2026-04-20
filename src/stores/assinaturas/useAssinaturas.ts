@@ -21,12 +21,36 @@ export const useAssinaturasStore = defineStore('assinaturasStore', () => {
     update: false,
   })
 
+  const cobrancasFilters = ref<{
+    status: 'TODOS' | 'PENDENTE' | 'COBRADO' | 'PAGO' | 'ATRASADO' | 'CANCELADO' | 'FALHA'
+    update: boolean
+  }>({
+    status: 'TODOS',
+    update: false,
+  })
+
+  const comodatosFilters = ref<{
+    status: 'TODOS' | 'EM_USO' | 'DEVOLVIDO' | 'PERDIDO' | 'AVARIADO'
+    update: boolean
+  }>({
+    status: 'TODOS',
+    update: false,
+  })
+
   function refreshPlanos() {
     planosFilters.value.update = !planosFilters.value.update
   }
 
   function refreshAssinaturas() {
     assinaturasFilters.value.update = !assinaturasFilters.value.update
+  }
+
+  function refreshCobrancas() {
+    cobrancasFilters.value.update = !cobrancasFilters.value.update
+  }
+
+  function refreshComodatos() {
+    comodatosFilters.value.update = !comodatosFilters.value.update
   }
 
   function openCreatePlano() {
@@ -66,8 +90,12 @@ export const useAssinaturasStore = defineStore('assinaturasStore', () => {
     editingAssinaturaId,
     planosFilters,
     assinaturasFilters,
+    cobrancasFilters,
+    comodatosFilters,
     refreshPlanos,
     refreshAssinaturas,
+    refreshCobrancas,
+    refreshComodatos,
     openCreatePlano,
     openEditPlano,
     closePlanoModal,

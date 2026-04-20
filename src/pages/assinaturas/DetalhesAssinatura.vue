@@ -139,37 +139,37 @@ onMounted(() => {
     <template v-else-if="detalhe">
       <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card class="shadow-sm">
-          <CardHeader class="pb-2">
+          <CardHeader class="py-3">
             <CardTitle class="text-sm">Valor atual</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent class="pb-3">
             <p class="text-2xl font-semibold text-foreground">{{ formatCurrencyBR(detalhe.valorAtual) }}</p>
             <p class="text-xs text-muted-foreground">Modo {{ detalhe.modoValor.toLowerCase() }}</p>
           </CardContent>
         </Card>
         <Card class="shadow-sm">
-          <CardHeader class="pb-2">
+          <CardHeader class="py-3">
             <CardTitle class="text-sm">Periodicidade</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent class="pb-3">
             <p class="text-2xl font-semibold text-foreground">{{ getPeriodicidadeLabel(detalhe.periodicidade) }}</p>
             <p class="text-xs text-muted-foreground">Próxima cobrança {{ formatDateToPtBR(detalhe.proximaCobranca) }}</p>
           </CardContent>
         </Card>
         <Card class="shadow-sm">
-          <CardHeader class="pb-2">
+          <CardHeader class="py-3">
             <CardTitle class="text-sm">Itens / comodatos</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent class="pb-3">
             <p class="text-2xl font-semibold text-foreground">{{ detalhe.resumo.itens }}</p>
             <p class="text-xs text-muted-foreground">{{ detalhe.resumo.comodatos }} comodato(s) vinculado(s)</p>
           </CardContent>
         </Card>
         <Card class="shadow-sm">
-          <CardHeader class="pb-2">
+          <CardHeader class="py-3">
             <CardTitle class="text-sm">Pendências</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent class="pb-3">
             <p class="text-2xl font-semibold text-foreground">{{ detalhe.resumo.ciclosPendentes + detalhe.resumo.ciclosAtrasados }}</p>
             <p class="text-xs text-muted-foreground">{{ detalhe.resumo.ciclosPendentes }} pendente(s) • {{ detalhe.resumo.ciclosAtrasados }} atrasado(s)</p>
           </CardContent>
@@ -185,7 +185,7 @@ onMounted(() => {
           </CardHeader>
           <CardContent class="space-y-4">
             <div class="grid gap-3 md:grid-cols-2">
-              <div class="rounded-xl border border-border/60 bg-muted/10 p-4">
+              <div class="rounded-xl border border-border/60 bg-muted/10 px-4 py-2">
                 <p class="text-sm text-muted-foreground">Período</p>
                 <p class="mt-1 text-sm font-medium text-foreground">
                   {{ formatDateToPtBR(detalhe.inicio) }}
@@ -193,17 +193,17 @@ onMounted(() => {
                   <span v-else>• recorrência indefinida</span>
                 </p>
               </div>
-              <div class="rounded-xl border border-border/60 bg-muted/10 p-4">
+              <div class="rounded-xl border border-border/60 bg-muted/10 px-4 py-2">
                 <p class="text-sm text-muted-foreground">Cobrança</p>
                 <p class="mt-1 text-sm font-medium text-foreground">
                   {{ detalhe.gateway || 'Gateway não informado' }} • {{ detalhe.tipoCobranca || 'Tipo não informado' }}
                 </p>
               </div>
-              <div class="rounded-xl border border-border/60 bg-muted/10 p-4">
+              <div class="rounded-xl border border-border/60 bg-muted/10 px-4 py-2">
                 <p class="text-sm text-muted-foreground">Plano vinculado</p>
                 <p class="mt-1 text-sm font-medium text-foreground">{{ detalhe.plano?.nome || 'Sem plano base' }}</p>
               </div>
-              <div class="rounded-xl border border-border/60 bg-muted/10 p-4">
+              <div class="rounded-xl border border-border/60 bg-muted/10 px-4 py-2">
                 <p class="text-sm text-muted-foreground">Automação</p>
                 <p class="mt-1 text-sm font-medium text-foreground">
                   {{ detalhe.cobrancaAutomatica ? 'Cobrança automática habilitada' : 'Cobrança manual/assistida' }}
@@ -257,7 +257,7 @@ onMounted(() => {
             </CardTitle>
           </CardHeader>
           <CardContent class="space-y-3">
-            <div v-for="item in detalhe.itens" :key="item.id" class="rounded-2xl border border-border/60 bg-muted/10 p-4">
+            <div v-for="item in detalhe.itens" :key="item.id" class="rounded-md border border-border/60 bg-muted/10 px-4 py-2">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p class="font-medium text-foreground">{{ item.descricaoSnapshot }}</p>
@@ -310,7 +310,7 @@ onMounted(() => {
             </CardTitle>
           </CardHeader>
           <CardContent class="space-y-3">
-            <div v-for="item in detalhe.ciclos" :key="item.id" class="rounded-2xl border border-border/60 bg-muted/10 p-4">
+            <div v-for="item in detalhe.ciclos" :key="item.id" class="rounded-md border border-border/60 bg-muted/10 px-4 py-2">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p class="font-medium text-foreground">Referência {{ item.referencia }}</p>
@@ -336,7 +336,7 @@ onMounted(() => {
             </CardTitle>
           </CardHeader>
           <CardContent class="space-y-3">
-            <div v-for="item in detalhe.historico" :key="item.id" class="rounded-2xl border border-border/60 bg-muted/10 p-4">
+            <div v-for="item in detalhe.historico" :key="item.id" class="rounded-md border border-border/60 bg-muted/10 px-4 py-2">
               <p class="font-medium text-foreground">{{ item.evento }}</p>
               <p class="text-sm text-muted-foreground">{{ item.autor }} • {{ formatDateToPtBR(item.createdAt, true) }}</p>
             </div>
