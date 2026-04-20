@@ -4,8 +4,14 @@ import { type FormularioLancamento, type LancamentoFinanceiro } from '@/types/sc
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 
 interface filtro {
-  periodo: { inicio: string | null; fim: string | null }
-  status: string
+  periodo?: { inicio: string | null; fim: string | null }
+  tipo?: 'TODOS' | 'RECEITA' | 'DESPESA'
+  status?: 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
+  contaFinanceiraId?: number | null
+  categoriaId?: number | null
+  clienteId?: number | null
+  inicio?: string | null
+  fim?: string | null
   update: boolean
 }
 

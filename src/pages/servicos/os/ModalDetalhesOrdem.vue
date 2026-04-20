@@ -2,6 +2,7 @@
 import { computed, ref, watch, type Component } from 'vue'
 import { addDays, format } from 'date-fns'
 import { useToast } from 'vue-toastification'
+import { useConfirm } from '@/composables/useConfirm'
 import type { ItensOrdensServico } from '@/types/schemas'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
+import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos'
 import { formatCurrencyBR } from '@/utils/formatters'
 import {
@@ -45,7 +47,9 @@ import {
 type BadgeColor = 'cyan' | 'yellow' | 'gray' | 'violet' | 'purple' | 'green' | 'emerald' | 'orange' | 'red' | 'blue'
 
 const store = useOrdemServicoStore()
+const storeCobranca = useCobrancasFinanceirasStore()
 const toast = useToast()
+const confirm = useConfirm()
 
 const activeTab = ref('geral')
 const novaMensagem = ref('')
@@ -57,6 +61,7 @@ const itens = computed(() => ordem.value?.ItensOrdensServico ?? [])
 const produtos = computed(() => itens.value.filter((item) => item.tipo === 'PRODUTO'))
 const servicos = computed(() => itens.value.filter((item) => item.tipo === 'SERVICO'))
 const mensagens = computed(() => ordem.value?.MensagensInteracoesOrdemServico ?? [])
+const cobrancas = computed(() => ordem.value?.CobrancasFinanceiras ?? [])
 
 const subtotal = computed(() =>
   itens.value.reduce((total, item) => total + Number(item.valor || 0) * Number(item.quantidade || 0), 0),
@@ -209,6 +214,43 @@ async function editarOrdem() {
   await store.openUpdate(id)
 }
 
+function abrirFaturamento() {
+  if (!ordem.value?.id) return
+  store.idMutation = ordem.value.id
+  store.openModalFaturar = true
+}
+
+function abrirCobranca() {
+  if (!ordem.value?.id) return
+  storeCobranca.openSave({
+    id: ordem.value.id,
+    tipo: 'os',
+    valor: totalFinal.value,
+  })
+}
+
+async function estornarFaturamento() {
+  if (!ordem.value?.id) return
+
+  const ok = await confirm.confirm({
+    title: 'Estornar faturamento',
+    message: 'Tem certeza que deseja estornar o faturamento desta OS?',
+    confirmText: 'Sim, estornar',
+  })
+
+  if (!ok) return
+
+  try {
+    await OrdensServicoRepository.estornar(ordem.value.id)
+    toast.success('OS estornada com sucesso.')
+    await store.reloadDetalhes()
+    store.updateTable()
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error.response?.data?.message || 'Erro ao estornar o faturamento da OS.')
+  }
+}
+
 function handleComposerKeydown(event: KeyboardEvent) {
   if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
     event.preventDefault()
@@ -235,6 +277,15 @@ watch(
   () => {
     novaMensagem.value = ''
     activeTab.value = 'geral'
+  },
+)
+
+watch(
+  () => storeCobranca.filters.update,
+  () => {
+    if (store.openModalDetalheOs) {
+      void store.reloadDetalhes()
+    }
   },
 )
 </script>
@@ -337,6 +388,18 @@ watch(
             <PenLine class="mr-2 h-4 w-4 text-violet-500" />
             Editar OS
           </Button>
+          <Button v-if="ordem.status !== 'FATURADA'" type="button" @click="abrirFaturamento">
+            <ReceiptText class="mr-2 h-4 w-4" />
+            Faturar OS
+          </Button>
+          <Button v-else type="button" class="bg-warning text-white hover:bg-warning/80" @click="estornarFaturamento">
+            <ReceiptText class="mr-2 h-4 w-4" />
+            Estornar faturamento
+          </Button>
+          <Button type="button" variant="outline" @click="abrirCobranca">
+            <CircleDollarSign class="mr-2 h-4 w-4 text-emerald-500" />
+            Gerar cobrança
+          </Button>
           <Button type="button" variant="outline" :disabled="exportingPdf !== null" @click="gerarPdf(false)">
             <LoaderCircle v-if="exportingPdf === 'default'" class="mr-2 h-4 w-4 animate-spin" />
             <FileArchive v-else class="mr-2 h-4 w-4 text-blue-500" />
@@ -431,6 +494,42 @@ watch(
                     <span class="text-foreground">Total final</span>
                     <span class="text-foreground">{{ formatCurrencyBR(totalFinal) }}</span>
                   </div>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-border bg-background p-4">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <CircleDollarSign class="h-4 w-4 text-blue-500" />
+                    Cobranças vinculadas
+                  </div>
+                  <Button type="button" variant="outline" size="sm" @click="abrirCobranca">
+                    Nova cobrança
+                  </Button>
+                </div>
+                <Separator class="my-3" />
+                <div v-if="cobrancas.length" class="space-y-2">
+                  <div v-for="cobranca in cobrancas" :key="cobranca.id" class="rounded-lg border border-border bg-card px-3 py-3">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <div class="font-medium text-foreground">{{ formatCurrencyBR(Number(cobranca.valor || 0)) }}</div>
+                        <div class="text-xs text-muted-foreground">
+                          {{ cobranca.gateway }} • {{ cobranca.status }}
+                        </div>
+                      </div>
+                      <a
+                        v-if="cobranca.externalLink"
+                        :href="cobranca.externalLink"
+                        target="_blank"
+                        class="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        Abrir cobrança
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="rounded-lg border border-dashed border-border bg-card px-3 py-4 text-sm text-muted-foreground">
+                  Nenhuma cobrança vinculada a esta OS.
                 </div>
               </div>
 

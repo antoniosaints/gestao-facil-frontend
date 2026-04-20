@@ -1,238 +1,289 @@
 <template>
-    <div class="flex flex-col gap-2 mt-2 overflow-auto max-h-[calc(100vh-13rem)] md:max-h-full">
-        <!-- Lista de Vendas -->
-        <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-13rem)]">
-            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark"></div>
-        </div>
-        <div v-else class="flex flex-col gap-2">
-            <div v-if="dataMobile.length === 0"
-                class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-13rem)]">
-                <div class="text-center">
-                    <i class="fa-solid fa-box-open text-4xl text-gray-500 dark:text-gray-300 mb-4"></i>
-                    <p class="text-gray-500 dark:text-gray-300">Nenhum ítem encontrado.</p>
-                </div>
-            </div>
-            <div v-for="row in dataMobile" :key="row.id"
-                class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
-                <div class="flex justify-between items-center gap-2">
-                    <div class="text-xs font-semibold dark:text-white">{{ row.descricao || 'Sem descrição' }}</div>
-                    <div
-                        :class="['text-xs', row.status ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
-                        {{ formatToCapitalize(row.status) }}
-                    </div>
-                </div>
-                <div class="flex justify-between">
-                    <div :class="`text-xs`">
-                        {{formatCurrencyBR(row.ItensOrdensServico.reduce(
-                            (acc, item) => acc + formatToNumberValue(item.valor) * item.quantidade,
-                            0,
-                        ) - formatToNumberValue(row.desconto || 0) || 0)}}
-                    </div>
-                </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">Cliente: {{ row.Cliente?.nome || '-' }}</div>
-                <div class="mt-2 flex justify-between gap-2">
-                    <div class="flex gap-2">
-                        <button @click="store.openDetalhes(row.id!)"
-                            class="bg-cyan-200 text-cyan-900 dark:text-cyan-100 dark:bg-cyan-800 px-2 py-1 rounded-md text-sm">
-                            <Eye class="w-5 h-5" />
-                        </button>
-                        <button @click="getPDFOs(row.id!, row.Uid!)"
-                            class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
-                            <FileDigit class="w-5 h-5" />
-                        </button>
-                        <button @click="store.openUpdate(row.id!)"
-                            class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
-                            <PenLine class="w-5 h-5" />
-                        </button>
-                    </div>
-                    <button @click="deletar(row.id!)"
-                        class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
-                        <Trash class="w-5 h-5" />
-                    </button>
-                </div>
-            </div>
-        </div>
+  <div class="mt-2 flex max-h-[calc(100vh-13rem)] flex-col gap-2 overflow-auto md:max-h-full">
+    <div v-if="loading" class="flex h-[calc(100vh-13rem)] items-center justify-center">
+      <div class="h-16 w-16 animate-spin rounded-full border-b-2 border-primary dark:border-primary-dark"></div>
     </div>
 
-    <!-- Modal Buscar Vendas -->
-    <div v-if="showModalBuscar" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div
-            class="bg-card dark:bg-card-dark border-t border-border dark:border-border-dark p-6 rounded shadow-xl max-w-[95%] transform transition-all duration-300 scale-95 opacity-0 animate-fade-in">
-            <h2 class="text-xl font-bold mb-4">Buscar registro</h2>
-            <p class="mb-4">Digite o nome do ítem que deseja buscar.</p>
-            <input type="text" v-model="searchQuery"
-                class="border bg-card dark:bg-card-dark border-border dark:border-border-dark rounded px-4 py-2 w-full mb-4"
-                placeholder="Digite o nome do ítem" />
-            <div class="w-full flex justify-between items-center mb-4">
-                <button
-                    class="bg-secondary text-sm dark:bg-secondary-dark hover:opacity-90 text-white px-3 py-1.5 rounded-md"
-                    @click="showModalBuscar = false">
-                    <i class="fa-regular fa-circle-xmark"></i> Fechar
-                </button>
-                <button type="button"
-                    class="bg-primary text-sm dark:bg-primary-dark hover:opacity-90 text-white px-3 py-1.5 rounded-md"
-                    @click="renderMobile(1)">
-                    <i class="fa-solid fa-magnifying-glass"></i> Buscar
-                </button>
-            </div>
+    <div v-else class="flex flex-col gap-2 pb-20">
+      <div
+        v-if="dataMobile.length === 0"
+        class="flex h-[calc(100vh-13rem)] items-center justify-center rounded-md bg-card dark:bg-card-dark"
+      >
+        <div class="text-center">
+          <i class="fa-solid fa-box-open mb-4 text-4xl text-gray-500 dark:text-gray-300"></i>
+          <p class="text-gray-500 dark:text-gray-300">Nenhum item encontrado.</p>
         </div>
+      </div>
+
+      <article
+        v-for="row in dataMobile"
+        :key="row.id"
+        class="rounded-2xl border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <div class="text-sm font-semibold dark:text-white">{{ row.descricao || 'Sem descrição' }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.Uid }}</div>
+          </div>
+          <div
+            :class="[
+              'text-xs',
+              row.status === 'FATURADA'
+                ? 'text-green-500 dark:text-green-400'
+                : row.status === 'CANCELADA'
+                  ? 'text-red-500 dark:text-red-400'
+                  : 'text-blue-500 dark:text-blue-400',
+            ]"
+          >
+            {{ row.status }}
+          </div>
+        </div>
+
+        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cliente: {{ row.Cliente?.nome || '-' }}</div>
+        <div class="text-sm font-medium text-gray-700 dark:text-gray-100">
+          {{ formatCurrencyBR(getTotal(row)) }}
+        </div>
+
+        <div class="mt-3 flex justify-between gap-2">
+          <div class="flex flex-wrap gap-1">
+            <button
+              class="rounded-md bg-cyan-200 px-2 py-1 text-sm text-cyan-900 dark:bg-cyan-800 dark:text-cyan-100"
+              @click="store.openDetalhes(row.id!)"
+            >
+              <Eye class="h-5 w-5" />
+            </button>
+            <button
+              class="rounded-md bg-slate-200 px-2 py-1 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+              @click="store.openUpdate(row.id!)"
+            >
+              <PenLine class="h-5 w-5" />
+            </button>
+            <button
+              v-if="row.status !== 'FATURADA'"
+              class="rounded-md bg-emerald-200 px-2 py-1 text-sm text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100"
+              @click="abrirFaturamento(row.id!)"
+            >
+              <Wallet class="h-5 w-5" />
+            </button>
+            <button
+              v-else
+              class="rounded-md bg-orange-200 px-2 py-1 text-sm text-orange-900 dark:bg-orange-800 dark:text-orange-100"
+              @click="estornar(row.id!)"
+            >
+              <RotateCcw class="h-5 w-5" />
+            </button>
+            <button
+              class="rounded-md bg-blue-200 px-2 py-1 text-sm text-blue-900 dark:bg-blue-800 dark:text-blue-100"
+              @click="abrirCobranca(row)"
+            >
+              <CircleDollarSign class="h-5 w-5" />
+            </button>
+          </div>
+          <button
+            class="rounded-md bg-red-200 px-2 py-1 text-sm text-red-900 dark:bg-red-800 dark:text-red-100"
+            @click="deletar(row.id!)"
+          >
+            <Trash class="h-5 w-5" />
+          </button>
+        </div>
+      </article>
     </div>
 
-    <Drawer v-model:open="showDrawer">
-        <DrawerContent>
-            <DrawerHeader class="text-left">
-                <DrawerTitle>Ordens de serviço</DrawerTitle>
-            </DrawerHeader>
-            <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
-                <div @click="openSave"
-                    class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
-                    <div
-                        class="flex justify-center items-center p-2 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
-                        <i class="fa-solid fa-circle-plus text-2xl text-gray-500 dark:text-gray-400"></i>
-                    </div>
-                    <div class="font-medium text-center text-gray-500 dark:text-gray-400">Cadastrar</div>
-                </div>
-                <!-- Outros itens iguais -->
-            </div>
-            <DrawerFooter class="pt-2">
-                <DrawerClose as-child>
-                    <Button variant="outline">
-                        Fechar
-                    </Button>
-                </DrawerClose>
-            </DrawerFooter>
-        </DrawerContent>
-    </Drawer>
+    <div v-if="showModalBuscar" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div
+        class="max-w-[95%] transform rounded bg-card p-6 shadow-xl transition-all duration-300 animate-fade-in dark:bg-card-dark"
+      >
+        <h2 class="mb-4 text-xl font-bold">Buscar registro</h2>
+        <p class="mb-4">Digite o nome do item que deseja buscar.</p>
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="mb-4 w-full rounded border border-border bg-card px-4 py-2 dark:border-border-dark dark:bg-card-dark"
+          placeholder="Digite o nome do item"
+        />
+        <div class="mb-4 flex w-full items-center justify-between">
+          <button
+            class="rounded-md bg-secondary px-3 py-1.5 text-sm text-white hover:opacity-90 dark:bg-secondary-dark"
+            @click="showModalBuscar = false"
+          >
+            <i class="fa-regular fa-circle-xmark"></i> Fechar
+          </button>
+          <button
+            type="button"
+            class="rounded-md bg-primary px-3 py-1.5 text-sm text-white hover:opacity-90 dark:bg-primary-dark"
+            @click="renderMobile(1)"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i> Buscar
+          </button>
+        </div>
+      </div>
+    </div>
 
-    <!-- Navegação Mobile -->
     <nav
-        class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20">
-        <button type="button" @click="previousPage" :disabled="currentPage <= 1"
-            class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-            <i class="fa-solid fa-arrow-left text-lg"></i>
-            <span class="text-xs">Anterior</span>
-        </button>
-        <button type="button" @click="showModalBuscar = true"
-            class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-            <i class="fa-solid fa-search text-lg"></i>
-            <span class="text-xs">Busca</span>
-        </button>
-        <button type="button" @click="showDrawer = !showDrawer"
-            class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-            <i class="fa-solid fa-bars text-lg"></i>
-            <span class="text-xs">Mais</span>
-        </button>
-        <button type="button" @click="nextPage" :disabled="currentPage >= totalPages"
-            class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-            <i class="fa-solid fa-arrow-right text-lg"></i>
-            <span class="text-xs">Próximo</span>
-        </button>
+      class="fixed bottom-0 left-0 z-20 flex h-20 w-full justify-around border-t border-border bg-card pt-4 shadow-lg dark:border-border-dark dark:bg-card-dark md:hidden"
+    >
+      <button
+        type="button"
+        @click="previousPage"
+        :disabled="currentPage <= 1"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
+      >
+        <i class="fa-solid fa-arrow-left text-lg"></i>
+        <span class="text-xs">Anterior</span>
+      </button>
+      <button
+        type="button"
+        @click="showModalBuscar = true"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+      >
+        <i class="fa-solid fa-search text-lg"></i>
+        <span class="text-xs">Busca</span>
+      </button>
+      <button
+        type="button"
+        @click="store.openSave()"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+      >
+        <i class="fa-solid fa-plus text-lg"></i>
+        <span class="text-xs">Nova</span>
+      </button>
+      <button
+        type="button"
+        @click="renderMobile(currentPage)"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+      >
+        <RotateCcw class="h-5 w-5" />
+        <span class="text-xs">Atualizar</span>
+      </button>
+      <button
+        type="button"
+        @click="nextPage"
+        :disabled="currentPage >= totalPages"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
+      >
+        <i class="fa-solid fa-arrow-right text-lg"></i>
+        <span class="text-xs">Próximo</span>
+      </button>
     </nav>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import http from "@/utils/axios";
-import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
-import type { ItensOrdensServico, OrdensServico } from "@/types/schemas";
-import { Eye, FileDigit, PenLine, Trash } from "lucide-vue-next";
-import { useConfirm } from "@/composables/useConfirm";
-import { useToast } from "vue-toastification";
-import { watch } from "vue";
-import { formatCurrencyBR, formatToCapitalize, formatToNumberValue } from "@/utils/formatters";
-import { ServicoRepository } from "@/repositories/servico-repository";
-import { useOrdemServicoStore } from "@/stores/servicos/useOrdensServicos";
-import { OrdensServicoRepository } from "@/repositories/os-repository";
+import { onMounted, ref, watch } from 'vue'
+import http from '@/utils/axios'
+import type { ItensOrdensServico, OrdensServico } from '@/types/schemas'
+import { CircleDollarSign, Eye, PenLine, RotateCcw, Trash, Wallet } from 'lucide-vue-next'
+import { useConfirm } from '@/composables/useConfirm'
+import { useToast } from 'vue-toastification'
+import { formatCurrencyBR } from '@/utils/formatters'
+import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos'
+import { OrdensServicoRepository } from '@/repositories/os-repository'
+import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 
-type OrdemRecebida = OrdensServico & {
-    ItensOrdensServico: ItensOrdensServico[]
+const store = useOrdemServicoStore()
+const storeCobranca = useCobrancasFinanceirasStore()
+const toast = useToast()
+const dataMobile = ref<Array<OrdensServico & { ItensOrdensServico: ItensOrdensServico[] }>>([])
+const currentPage = ref(1)
+const totalPages = ref(1)
+const loading = ref(false)
+const searchQuery = ref('')
+const showModalBuscar = ref(false)
+
+function getTotal(row: OrdensServico & { ItensOrdensServico: ItensOrdensServico[] }) {
+  return (
+    row.ItensOrdensServico.reduce(
+      (acc, item) => acc + Number(item.valor || 0) * Number(item.quantidade || 0),
+      0,
+    ) - Number(row.desconto || 0)
+  )
 }
-const store = useOrdemServicoStore();
-const toast = useToast();
-const dataMobile = ref<OrdemRecebida[]>([]);
-const currentPage = ref(1);
-const totalPages = ref(1);
-const loading = ref(false);
-const searchQuery = ref("");
-const showModalBuscar = ref(false);
-const showDrawer = ref(false);
 
-function renderMobile(page: number = 1) {
-    loading.value = true;
-    http.get(`/servicos/lista/ordens/mobile`, {
-        params: {
-            search: searchQuery.value,
-            limit: 10,
-            page
-        }
-    }).then(response => {
-        dataMobile.value = response.data.data;
-        currentPage.value = response.data.pagination.page;
-        totalPages.value = response.data.pagination.totalPages;
-        loading.value = false;
-        showModalBuscar.value = false;
-    }).catch(err => {
-        console.error("mobile_vendas:", err);
-        dataMobile.value = [];
-        loading.value = false;
-    });
+async function renderMobile(page = 1) {
+  loading.value = true
+  try {
+    const response = await http.get('/servicos/lista/ordens/mobile', {
+      params: {
+        search: searchQuery.value,
+        limit: 10,
+        page,
+      },
+    })
+    dataMobile.value = response.data.data
+    currentPage.value = response.data.pagination.page
+    totalPages.value = response.data.pagination.totalPages
+    showModalBuscar.value = false
+  } catch (error) {
+    console.error('mobile_ordens:', error)
+    dataMobile.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 function previousPage() {
-    if (currentPage.value > 1) renderMobile(currentPage.value - 1);
+  if (currentPage.value > 1) renderMobile(currentPage.value - 1)
 }
 
 function nextPage() {
-    if (currentPage.value < totalPages.value) renderMobile(currentPage.value + 1);
+  if (currentPage.value < totalPages.value) renderMobile(currentPage.value + 1)
 }
 
-function openSave() {
-    // showDrawer.value = false;
-    store.openSave();
+function abrirFaturamento(id: number) {
+  store.idMutation = id
+  store.openModalFaturar = true
 }
 
-
-watch(() => store.filters.update, () => {
-    renderMobile();
-})
+function abrirCobranca(row: OrdensServico & { ItensOrdensServico: ItensOrdensServico[] }) {
+  storeCobranca.openSave({
+    id: row.id!,
+    tipo: 'os',
+    valor: getTotal(row),
+  })
+}
 
 async function deletar(id: number) {
-    if (!id) return toast.error('ID não informado!')
-    const confirm = await useConfirm().confirm({
-        title: 'Excluir OS',
-        message: 'Tem certeza que deseja excluir esta OS?',
-        confirmText: 'Sim, excluir!',
-    })
-    if (!confirm) return
-    try {
-        await ServicoRepository.remove(id)
-        store.updateTable()
-        toast.success('OS deletada com sucesso')
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao deletar a OS')
-    }
+  if (!id) return toast.error('ID não informado!')
+  const confirm = await useConfirm().confirm({
+    title: 'Excluir OS',
+    message: 'Tem certeza que deseja excluir esta OS?',
+    confirmText: 'Sim, excluir!',
+  })
+  if (!confirm) return
+  try {
+    await OrdensServicoRepository.remove(id)
+    store.updateTable()
+    toast.success('OS deletada com sucesso')
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error.response?.data?.message || 'Erro ao deletar a OS')
+  }
 }
 
-async function getPDFOs(id: number, Uid: string) {
-    try {
-        const ok = await useConfirm().confirm({
-            title: 'Gerar PDF',
-            message: 'Tem certeza que deseja gerar o PDF desta OS?',
-            confirmText: 'Sim, gerar!',
-            cancelText: 'Cancelar',
-            colorButton: 'primary'
-        });
-        if (!ok) return
-        await OrdensServicoRepository.getOsPdf(id, Uid)
-        toast.success('PDF gerado com sucesso')
-    } catch (error: any) {
-        console.log(error)
-        toast.error(error?.response?.data?.message || 'Erro ao gerar PDF')
-    }
+async function estornar(id: number) {
+  const confirm = await useConfirm().confirm({
+    title: 'Estornar faturamento',
+    message: 'Tem certeza que deseja estornar o faturamento desta OS?',
+    confirmText: 'Sim, estornar',
+  })
+  if (!confirm) return
+
+  try {
+    await OrdensServicoRepository.estornar(id)
+    store.updateTable()
+    toast.success('OS estornada com sucesso')
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error.response?.data?.message || 'Erro ao estornar a OS')
+  }
 }
 
+watch(
+  () => store.filters.update,
+  () => {
+    renderMobile()
+  },
+)
 
-onMounted(() => renderMobile());
+onMounted(() => renderMobile())
 </script>

@@ -17,6 +17,7 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   const openModal = ref(false)
   const openModalChecklist = ref(false)
   const openModalPropor = ref(false)
+  const openModalFaturar = ref(false)
   const openModalDetalheOs = ref(false)
   const loadingDetalhe = ref(false)
   const ordemDetalhe = ref<IDetalheOrdemServico>()
@@ -164,6 +165,7 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
     openModal,
     openModalChecklist,
     openModalPropor,
+    openModalFaturar,
     openModalDetalheOs,
     loadingDetalhe,
     openDetalhes,

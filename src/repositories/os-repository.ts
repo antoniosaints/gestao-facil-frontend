@@ -1,10 +1,21 @@
 import type {
   IDetalheOrdemServico,
   ItensOrdensServico,
+  MetodoPagamento,
   OrdensServico,
   SaveOrdemServico,
 } from '@/types/schemas'
 import http from '@/utils/axios'
+
+export interface OrdemServicoEfetivarPayload {
+  pagamento: MetodoPagamento
+  dataPagamento: Date | string
+  categoria: number | null
+  conta: number | null
+  lancamentoManual: boolean
+  cancelarCobrancaExterna?: boolean
+}
+
 export class OrdensServicoRepository {
   static async get(
     id: number,
@@ -58,6 +69,14 @@ export class OrdensServicoRepository {
   }
   static async remove(id: number) {
     await http.delete(`/servicos/ordens/${id}`)
+  }
+  static async efetivar(id: number, data: OrdemServicoEfetivarPayload) {
+    const response = await http.post(`/servicos/ordens/${id}/efetivar`, data)
+    return response.data
+  }
+  static async estornar(id: number) {
+    const response = await http.get(`/servicos/ordens/${id}/estornar`)
+    return response.data
   }
   static async update(data: Partial<SaveOrdemServico>, id: number) {
     await http.post(`/servicos/ordens?id=${id}`, data)

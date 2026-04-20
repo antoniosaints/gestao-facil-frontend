@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
-import { BadgePlus, Layers3, RefreshCcw, Search, Trash2 } from 'lucide-vue-next'
+import { BadgePlus, Layers3, RefreshCcw } from 'lucide-vue-next'
 
 import ModalView from '@/components/formulario/ModalView.vue'
-import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import {
@@ -21,31 +19,25 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   AssinaturaRepository,
   type PlanoAssinaturaListItem,
-  type PlanoAssinaturaPayload,
 } from '@/repositories/assinatura-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { formatCurrencyBR } from '@/utils/formatters'
+import { useAssinaturasStore } from '@/stores/assinaturas/useAssinaturas'
 import {
   createEmptyItem,
   gatewayOptions,
-  getPeriodicidadeLabel,
-  getStatusPlanoMeta,
   modoValorOptions,
   periodicidadeOptions,
   statusPlanoOptions,
   tipoCobrancaOptions,
 } from './shared'
+import PlanosTabela from './components/PlanosTabela.vue'
+import PlanosMobile from './components/PlanosMobile.vue'
 
 const toast = useToast()
 const uiStore = useUiStore()
+const store = useAssinaturasStore()
 
-const loading = ref(false)
 const saving = ref(false)
-const showSearchModal = ref(false)
-const showFormModal = ref(false)
-const search = ref('')
-const status = ref<'TODOS' | 'ATIVO' | 'INATIVO'>('TODOS')
-const planos = ref<PlanoAssinaturaListItem[]>([])
 
 const form = reactive<any>({
   nome: '',
@@ -60,6 +52,13 @@ const form = reactive<any>({
   itens: [createEmptyItem()],
 })
 
+const modalTitle = computed(() => (store.editingPlano ? 'Editar plano' : 'Novo plano'))
+const modalDescription = computed(() =>
+  store.editingPlano
+    ? 'Ajuste itens padrão, cobrança e periodicidade diretamente da listagem.'
+    : 'Defina itens padrão e política de cobrança.',
+)
+
 function resetForm() {
   form.id = undefined
   form.nome = ''
@@ -70,8 +69,22 @@ function resetForm() {
   form.valorBase = 0
   form.modoValorPadrao = 'DINAMICO'
   form.gatewayPadrao = 'mercadopago'
-  form.tipoCobrancaPadrao = 'LINK'
+  form.tipoCobrancaPadrao = 'PIX'
   form.itens = [createEmptyItem()]
+}
+
+function hydrateForm(plano: PlanoAssinaturaListItem) {
+  form.id = plano.id
+  form.nome = plano.nome
+  form.descricao = plano.descricao || ''
+  form.status = plano.status
+  form.periodicidadePadrao = plano.periodicidadePadrao
+  form.intervaloDiasPadrao = plano.intervaloDiasPadrao || 30
+  form.valorBase = plano.valorBase
+  form.modoValorPadrao = plano.modoValorPadrao
+  form.gatewayPadrao = plano.gatewayPadrao || 'mercadopago'
+  form.tipoCobrancaPadrao = plano.tipoCobrancaPadrao || 'PIX'
+  form.itens = plano.itens.length ? plano.itens.map((item) => ({ ...item })) : [createEmptyItem()]
 }
 
 function addItem() {
@@ -87,33 +100,14 @@ function removeItem(index: number) {
   form.itens.splice(index, 1)
 }
 
-async function loadPlanos(showFeedback = false) {
-  try {
-    loading.value = true
-    const response = await AssinaturaRepository.listarPlanos({
-      search: search.value || undefined,
-      status: status.value,
-    })
-    planos.value = response.data
-
-    if (showFeedback) {
-      toast.success('Lista de planos atualizada.')
-    }
-  } catch (error) {
-    console.error(error)
-    toast.error('Erro ao carregar os planos.')
-  } finally {
-    loading.value = false
-  }
-}
-
 async function save() {
   try {
     saving.value = true
     await AssinaturaRepository.salvarPlano({
       ...form,
       valorBase: Number(form.valorBase || 0),
-      intervaloDiasPadrao: form.periodicidadePadrao === 'PERSONALIZADO' ? Number(form.intervaloDiasPadrao || 30) : undefined,
+      intervaloDiasPadrao:
+        form.periodicidadePadrao === 'PERSONALIZADO' ? Number(form.intervaloDiasPadrao || 30) : undefined,
       itens: form.itens.map((item: any) => ({
         ...item,
         servicoId: item.tipoItem === 'SERVICO' ? Number(item.servicoId || 0) || undefined : undefined,
@@ -123,10 +117,10 @@ async function save() {
       })),
     })
 
-    toast.success('Plano salvo com sucesso.')
-    showFormModal.value = false
+    toast.success(store.editingPlano ? 'Plano atualizado com sucesso.' : 'Plano salvo com sucesso.')
+    store.closePlanoModal()
     resetForm()
-    await loadPlanos()
+    store.refreshPlanos()
   } catch (error) {
     console.error(error)
     toast.error('Erro ao salvar o plano.')
@@ -135,9 +129,22 @@ async function save() {
   }
 }
 
-onMounted(() => {
-  loadPlanos()
-})
+watch(
+  () => store.openPlanoModal,
+  (isOpen) => {
+    if (!isOpen) {
+      resetForm()
+      return
+    }
+
+    if (store.editingPlano) {
+      hydrateForm(store.editingPlano)
+      return
+    }
+
+    resetForm()
+  },
+)
 </script>
 
 <template>
@@ -149,116 +156,43 @@ onMounted(() => {
           Planos de assinatura
         </h2>
         <p class="text-sm text-muted-foreground">
-          Padronize itens recorrentes, periodicidade e gateway para reaproveitar nas assinaturas.
+          Visão principal em tabela/mobile, com edição no mesmo modal da listagem.
         </p>
       </div>
 
       <div class="flex flex-wrap gap-2">
-        <Button variant="outline" class="gap-2" @click="showSearchModal = true">
-          <Search class="h-4 w-4" /> Buscar
+        <Select v-model="store.planosFilters.status">
+          <SelectTrigger class="w-[180px] bg-card">
+            <SelectValue placeholder="Filtrar status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="item in statusPlanoOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" class="gap-2" @click="store.refreshPlanos()">
+          <RefreshCcw class="h-4 w-4" /> Atualizar
         </Button>
-        <Button class="gap-2" @click="resetForm(); showFormModal = true">
+        <Button class="gap-2" @click="store.openCreatePlano()">
           <BadgePlus class="h-4 w-4" /> Novo plano
         </Button>
-        <Button variant="outline" class="gap-2" @click="loadPlanos(true)">
-          <RefreshCcw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" /> Atualizar
-        </Button>
       </div>
     </div>
 
-    <Card class="border-border/70 bg-card shadow-sm">
-      <CardContent class="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-        <div class="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">{{ planos.length }} plano(s)</Badge>
-          <Badge v-if="status !== 'TODOS'" variant="outline">Status: {{ status }}</Badge>
-          <Badge v-if="search" variant="outline">Busca: {{ search }}</Badge>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <Select v-model="status">
-            <SelectTrigger class="w-[180px] bg-card">
-              <SelectValue placeholder="Filtrar status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="item in statusPlanoOptions" :key="item.value" :value="item.value">
-                {{ item.label }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" @click="loadPlanos(true)">Aplicar</Button>
-        </div>
-      </CardContent>
-    </Card>
-
-    <div v-if="loading" class="rounded-2xl border border-border/70 bg-card p-8 text-center text-sm text-muted-foreground">
-      Carregando planos...
+    <div v-if="!uiStore.isMobile" class="overflow-x-auto rounded-lg">
+      <PlanosTabela />
+    </div>
+    <div v-else class="overflow-x-auto rounded-lg">
+      <PlanosMobile />
     </div>
 
-    <div v-else-if="!planos.length" class="rounded-2xl border border-dashed border-border/70 bg-card p-8 text-center">
-      <p class="font-medium text-foreground">Nenhum plano cadastrado</p>
-      <p class="mt-1 text-sm text-muted-foreground">Crie seus pacotes base antes de massificar a operação recorrente.</p>
-      <Button class="mt-4 gap-2" @click="resetForm(); showFormModal = true">
-        <BadgePlus class="h-4 w-4" /> Criar plano
-      </Button>
-    </div>
-
-    <div v-else class="grid gap-4 xl:grid-cols-2">
-      <Card v-for="item in planos" :key="item.id" class="border-border/70 bg-card shadow-sm">
-        <CardHeader class="space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <CardTitle class="text-lg">{{ item.nome }}</CardTitle>
-              <p class="text-sm text-muted-foreground">{{ item.Uid }}</p>
-            </div>
-            <Badge :class="getStatusPlanoMeta(item.status).className">
-              {{ getStatusPlanoMeta(item.status).label }}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent class="space-y-4">
-          <div class="grid gap-3 md:grid-cols-3">
-            <div class="rounded-xl border border-border/60 bg-muted/10 p-3">
-              <p class="text-xs uppercase tracking-wide text-muted-foreground">Valor base</p>
-              <p class="mt-1 text-base font-semibold text-foreground">{{ formatCurrencyBR(item.valorBase) }}</p>
-            </div>
-            <div class="rounded-xl border border-border/60 bg-muted/10 p-3">
-              <p class="text-xs uppercase tracking-wide text-muted-foreground">Periodicidade</p>
-              <p class="mt-1 text-sm font-medium text-foreground">{{ getPeriodicidadeLabel(item.periodicidadePadrao) }}</p>
-            </div>
-            <div class="rounded-xl border border-border/60 bg-muted/10 p-3">
-              <p class="text-xs uppercase tracking-wide text-muted-foreground">Modo</p>
-              <p class="mt-1 text-sm font-medium text-foreground">{{ item.modoValorPadrao }}</p>
-            </div>
-          </div>
-
-          <div class="text-sm text-muted-foreground">
-            {{ item.descricao || 'Sem descrição operacional.' }}
-          </div>
-
-          <div class="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <span>{{ item.resumo.itens }} item(ns)</span>
-            <span>•</span>
-            <span>{{ item.resumo.itensCobrados }} item(ns) cobrados</span>
-            <span>•</span>
-            <span>{{ item.resumo.assinaturasVinculadas }} assinatura(s) vinculada(s)</span>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-
-    <ModalView v-model:open="showSearchModal" title="Buscar planos" description="Refine por nome, UID ou descrição.">
-      <div class="space-y-4 px-4">
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-foreground">Busca</label>
-          <Input v-model="search" placeholder="Nome, UID ou descrição" @keyup.enter="loadPlanos(true); showSearchModal = false" />
-        </div>
-        <div class="flex gap-2">
-          <Button variant="outline" class="flex-1" @click="search = ''; status = 'TODOS'">Limpar</Button>
-          <Button class="flex-1" @click="loadPlanos(true); showSearchModal = false">Aplicar</Button>
-        </div>
-      </div>
-    </ModalView>
-
-    <ModalView v-model:open="showFormModal" title="Novo plano" description="Defina itens padrão e política de cobrança." size="4xl">
+    <ModalView
+      v-model:open="store.openPlanoModal"
+      :title="modalTitle"
+      :description="modalDescription"
+      size="4xl"
+    >
       <div class="grid gap-4 px-4 md:grid-cols-2">
         <div class="space-y-2 md:col-span-2">
           <label class="text-sm font-medium">Nome do plano</label>
@@ -398,8 +332,8 @@ onMounted(() => {
                     <Checkbox :checked="item.comodato" @update:checked="item.comodato = Boolean($event)" />
                     Comodato padrão
                   </label>
-                  <Button type="button" variant="ghost" size="sm" class="ml-auto text-rose-600" @click="removeItem(index)">
-                    <Trash2 class="mr-2 h-4 w-4" /> Remover
+                  <Button type="button" variant="ghost" size="sm" class="ml-auto text-rose-600" @click="removeItem(index as number)">
+                    Remover
                   </Button>
                 </div>
               </div>
@@ -408,32 +342,13 @@ onMounted(() => {
         </div>
 
         <div class="flex justify-end gap-2 md:col-span-2">
-          <Button variant="outline" @click="showFormModal = false">Cancelar</Button>
+          <Button variant="outline" @click="store.closePlanoModal()">Cancelar</Button>
           <Button :disabled="saving" @click="save">
             <RefreshCcw v-if="saving" class="mr-2 h-4 w-4 animate-spin" />
-            Salvar plano
+            {{ store.editingPlano ? 'Salvar alterações' : 'Salvar plano' }}
           </Button>
         </div>
       </div>
     </ModalView>
-
-    <MobileBottomBar v-if="uiStore.isMobile">
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="showSearchModal = true">
-        <Search class="h-5 w-5" />
-        <span class="text-xs">Busca</span>
-      </button>
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="resetForm(); showFormModal = true">
-        <BadgePlus class="h-5 w-5" />
-        <span class="text-xs">Novo</span>
-      </button>
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="loadPlanos(true)">
-        <RefreshCcw class="h-5 w-5" />
-        <span class="text-xs">Atualizar</span>
-      </button>
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="status = 'TODOS'; search = ''; loadPlanos(true)">
-        <Layers3 class="h-5 w-5" />
-        <span class="text-xs">Limpar</span>
-      </button>
-    </MobileBottomBar>
   </div>
 </template>

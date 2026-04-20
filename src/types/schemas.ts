@@ -644,6 +644,7 @@ export type IDetalheOrdemServico = OrdensServico & {
   Cliente: ClientesFornecedores
   MensagensInteracoesOrdemServico: MensagensInteracoesOrdemServico[]
   Operador: Usuarios
+  CobrancasFinanceiras?: CobrancaFinanceira[]
 }
 
 export type ArenaAgendamentoStatus =

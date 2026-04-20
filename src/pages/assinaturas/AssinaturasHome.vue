@@ -1,22 +1,12 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import {
-  BadgePlus,
-  CalendarClock,
-  Layers3,
-  RefreshCcw,
-  Search,
-  Sparkles,
-  Trash2,
-} from 'lucide-vue-next'
+import { BadgePlus, Layers3, RefreshCcw, Sparkles } from 'lucide-vue-next'
 
 import ModalView from '@/components/formulario/ModalView.vue'
-import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import {
@@ -29,38 +19,33 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import {
   AssinaturaRepository,
-  type AssinaturaClienteListItem,
   type AssinaturaClientePayload,
   type AssinaturaOption,
   type PlanoAssinaturaListItem,
 } from '@/repositories/assinatura-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
+import { useAssinaturasStore } from '@/stores/assinaturas/useAssinaturas'
 import {
   createEmptyItem,
   gatewayOptions,
-  getPeriodicidadeLabel,
-  getStatusAssinaturaMeta,
   modoValorOptions,
   periodicidadeOptions,
   statusAssinaturaOptions,
   tipoCobrancaOptions,
 } from './shared'
+import AssinaturasTabela from './components/AssinaturasTabela.vue'
+import AssinaturasMobile from './components/AssinaturasMobile.vue'
 
 const toast = useToast()
 const uiStore = useUiStore()
+const store = useAssinaturasStore()
 
-const loading = ref(false)
 const saving = ref(false)
-const showSearchModal = ref(false)
-const showFormModal = ref(false)
-const search = ref('')
-const status = ref<'TODOS' | 'ATIVA' | 'SUSPENSA' | 'CANCELADA' | 'ENCERRADA'>('TODOS')
-const assinaturas = ref<AssinaturaClienteListItem[]>([])
-const planos = ref<PlanoAssinaturaListItem[]>([])
+const loadingModal = ref(false)
 const clientes = ref<AssinaturaOption[]>([])
 const servicos = ref<AssinaturaOption[]>([])
 const produtos = ref<AssinaturaOption[]>([])
+const planos = ref<PlanoAssinaturaListItem[]>([])
 
 const form = reactive<any>({
   clienteId: 0,
@@ -77,12 +62,19 @@ const form = reactive<any>({
   proximaCobranca: new Date().toISOString().slice(0, 16),
   cobrancaAutomatica: false,
   gateway: 'mercadopago',
-  tipoCobranca: 'LINK',
+  tipoCobranca: 'PIX',
   gerarLancamentoFinanceiro: false,
   observacoes: '',
   itens: [createEmptyItem()],
   gerarPrimeiroCiclo: true,
 })
+
+const modalTitle = computed(() => (store.editingAssinaturaId ? 'Editar assinatura' : 'Nova assinatura'))
+const modalDescription = computed(() =>
+  store.editingAssinaturaId
+    ? 'Atualize contrato, cobrança e itens recorrentes no mesmo fluxo da listagem.'
+    : 'Cadastre o contrato, defina cobrança e vincule itens recorrentes.',
+)
 
 function resetForm() {
   form.id = undefined
@@ -107,6 +99,58 @@ function resetForm() {
   form.gerarPrimeiroCiclo = true
 }
 
+function hydrateFormFromDetalhe(data: any) {
+  form.id = data.id
+  form.clienteId = data.cliente?.id || 0
+  form.planoId = data.plano?.id || 0
+  form.nomeContrato = data.nomeContrato
+  form.status = data.status
+  form.modoValor = data.modoValor
+  form.valorManual = data.valorManual || 0
+  form.periodicidade = data.periodicidade
+  form.intervaloDiasPersonalizado = data.intervaloDiasPersonalizado || 30
+  form.inicio = new Date(data.inicio).toISOString().slice(0, 16)
+  form.fim = data.fim ? new Date(data.fim).toISOString().slice(0, 16) : ''
+  form.recorrenciaIndefinida = !data.fim
+  form.proximaCobranca = new Date(data.proximaCobranca).toISOString().slice(0, 16)
+  form.cobrancaAutomatica = data.cobrancaAutomatica
+  form.gateway = data.gateway || 'mercadopago'
+  form.tipoCobranca = data.tipoCobranca || 'PIX'
+  form.gerarLancamentoFinanceiro = data.gerarLancamentoFinanceiro
+  form.observacoes = data.observacoes || ''
+  form.itens = data.itens.length
+    ? data.itens.map((item: any) => ({
+        tipoItem: item.tipoItem,
+        servicoId: item.servicoId || 0,
+        produtoId: item.produtoId || 0,
+        descricaoSnapshot: item.descricaoSnapshot,
+        quantidade: item.quantidade,
+        valorUnitario: item.valorUnitario,
+        cobrar: item.cobrar,
+        comodato: item.comodato,
+        ativo: item.ativo,
+        identificacao: item.comodatos?.[0]?.identificacao || '',
+        dataPrevistaDevolucao: item.comodatos?.[0]?.dataPrevistaDevolucao
+          ? new Date(item.comodatos[0].dataPrevistaDevolucao).toISOString().slice(0, 16)
+          : '',
+        observacoes: item.comodatos?.[0]?.observacoes || '',
+      }))
+    : [createEmptyItem()]
+  form.gerarPrimeiroCiclo = false
+}
+
+async function loadOptions() {
+  const [optionsResponse, planosResponse] = await Promise.all([
+    AssinaturaRepository.opcoes(),
+    AssinaturaRepository.listarPlanos({ status: 'ATIVO' }),
+  ])
+
+  clientes.value = optionsResponse.data.clientes
+  servicos.value = optionsResponse.data.servicos
+  produtos.value = optionsResponse.data.produtos
+  planos.value = planosResponse.data
+}
+
 function addItem() {
   form.itens.push(createEmptyItem())
 }
@@ -123,7 +167,7 @@ function removeItem(index: number) {
 watch(
   () => form.planoId,
   (value) => {
-    if (!value || Number(value) === 0) return
+    if (!value || Number(value) === 0 || store.editingAssinaturaId) return
     const plano = planos.value.find((item) => item.id === Number(value))
     if (!plano) return
 
@@ -148,50 +192,34 @@ watch(
   },
 )
 
-async function loadOptions() {
-  const [optionsResponse, planosResponse] = await Promise.all([
-    AssinaturaRepository.opcoes(),
-    AssinaturaRepository.listarPlanos(),
-  ])
-
-  clientes.value = optionsResponse.data.clientes
-  servicos.value = optionsResponse.data.servicos
-  produtos.value = optionsResponse.data.produtos
-  planos.value = planosResponse.data
-}
-
-async function loadAssinaturas(showFeedback = false) {
-  try {
-    loading.value = true
-    const response = await AssinaturaRepository.listarAssinaturas({
-      search: search.value || undefined,
-      status: status.value,
-    })
-    assinaturas.value = response.data
-
-    if (showFeedback) {
-      toast.success('Lista de assinaturas atualizada.')
+watch(
+  () => store.openAssinaturaModal,
+  async (isOpen) => {
+    if (!isOpen) {
+      resetForm()
+      loadingModal.value = false
+      return
     }
-  } catch (error) {
-    console.error(error)
-    toast.error('Erro ao carregar as assinaturas.')
-  } finally {
-    loading.value = false
-  }
-}
 
-async function openCreateModal() {
-  try {
-    resetForm()
-    if (!clientes.value.length) {
+    try {
+      loadingModal.value = true
       await loadOptions()
+
+      if (store.editingAssinaturaId) {
+        const response = await AssinaturaRepository.detalhes(store.editingAssinaturaId)
+        hydrateFormFromDetalhe(response.data)
+      } else {
+        resetForm()
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('Erro ao preparar o formulário da assinatura.')
+      store.closeAssinaturaModal()
+    } finally {
+      loadingModal.value = false
     }
-    showFormModal.value = true
-  } catch (error) {
-    console.error(error)
-    toast.error('Erro ao preparar o formulário.')
-  }
-}
+  },
+)
 
 async function save() {
   try {
@@ -201,7 +229,7 @@ async function save() {
     }
 
     saving.value = true
-    await AssinaturaRepository.salvarAssinatura({
+    const payload: AssinaturaClientePayload = {
       ...form,
       clienteId: Number(form.clienteId),
       planoId: Number(form.planoId || 0) > 0 ? Number(form.planoId) : undefined,
@@ -218,11 +246,13 @@ async function save() {
         quantidade: Number(item.quantidade || 1),
         valorUnitario: Number(item.valorUnitario || 0),
       })),
-    })
+    }
 
-    toast.success('Assinatura salva com sucesso.')
-    showFormModal.value = false
-    await loadAssinaturas()
+    await AssinaturaRepository.salvarAssinatura(payload)
+    toast.success(store.editingAssinaturaId ? 'Assinatura atualizada com sucesso.' : 'Assinatura salva com sucesso.')
+    store.closeAssinaturaModal()
+    resetForm()
+    store.refreshAssinaturas()
   } catch (error) {
     console.error(error)
     toast.error('Erro ao salvar a assinatura.')
@@ -230,14 +260,6 @@ async function save() {
     saving.value = false
   }
 }
-
-onMounted(async () => {
-  try {
-    await Promise.all([loadOptions(), loadAssinaturas()])
-  } catch (error) {
-    console.error(error)
-  }
-})
 </script>
 
 <template>
@@ -249,126 +271,53 @@ onMounted(async () => {
           Assinaturas
         </h2>
         <p class="text-sm text-muted-foreground">
-          Cadastre contratos recorrentes, gere ciclos e acompanhe clientes ativos.
+          Contratos recorrentes em tabela/mobile, com edição e geração operacional no mesmo fluxo.
         </p>
       </div>
 
       <div class="flex flex-wrap gap-2">
-        <Button variant="outline" class="gap-2" @click="showSearchModal = true">
-          <Search class="h-4 w-4" /> Buscar
-        </Button>
+        <Select v-model="store.assinaturasFilters.status">
+          <SelectTrigger class="w-[180px] bg-card">
+            <SelectValue placeholder="Filtrar status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="item in statusAssinaturaOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
         <RouterLink to="/assinaturas/planos">
           <Button variant="outline" class="gap-2">
             <Layers3 class="h-4 w-4" /> Planos
           </Button>
         </RouterLink>
-        <Button class="gap-2" @click="openCreateModal">
+        <Button variant="outline" class="gap-2" @click="store.refreshAssinaturas()">
+          <RefreshCcw class="h-4 w-4" /> Atualizar
+        </Button>
+        <Button class="gap-2" @click="store.openCreateAssinatura()">
           <BadgePlus class="h-4 w-4" /> Nova assinatura
         </Button>
-        <Button variant="outline" class="gap-2" @click="loadAssinaturas(true)">
-          <RefreshCcw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" /> Atualizar
-        </Button>
       </div>
     </div>
 
-    <Card class="border-border/70 bg-card shadow-sm">
-      <CardContent class="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-        <div class="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">{{ assinaturas.length }} contrato(s)</Badge>
-          <Badge v-if="status !== 'TODOS'" variant="outline">Status: {{ status }}</Badge>
-          <Badge v-if="search" variant="outline">Busca: {{ search }}</Badge>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <Select v-model="status">
-            <SelectTrigger class="w-[180px] bg-card">
-              <SelectValue placeholder="Filtrar status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="item in statusAssinaturaOptions" :key="item.value" :value="item.value">
-                {{ item.label }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" @click="loadAssinaturas(true)">Aplicar</Button>
-        </div>
-      </CardContent>
-    </Card>
-
-    <div v-if="loading" class="rounded-2xl border border-border/70 bg-card p-8 text-center text-sm text-muted-foreground">
-      Carregando assinaturas...
+    <div v-if="!uiStore.isMobile" class="overflow-x-auto rounded-lg">
+      <AssinaturasTabela />
+    </div>
+    <div v-else class="overflow-x-auto rounded-lg">
+      <AssinaturasMobile />
     </div>
 
-    <div v-else-if="!assinaturas.length" class="rounded-2xl border border-dashed border-border/70 bg-card p-8 text-center">
-      <p class="font-medium text-foreground">Nenhuma assinatura encontrada</p>
-      <p class="mt-1 text-sm text-muted-foreground">Crie o primeiro contrato recorrente para começar a operar o módulo.</p>
-      <Button class="mt-4 gap-2" @click="openCreateModal">
-        <BadgePlus class="h-4 w-4" /> Criar assinatura
-      </Button>
-    </div>
-
-    <div v-else class="grid gap-4 xl:grid-cols-2">
-      <RouterLink
-        v-for="item in assinaturas"
-        :key="item.id"
-        :to="`/assinaturas/assinaturas/${item.id}`"
-        class="block"
-      >
-        <Card class="h-full border-border/70 bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md">
-          <CardHeader class="space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <CardTitle class="text-lg">{{ item.nomeContrato }}</CardTitle>
-                <p class="text-sm text-muted-foreground">{{ item.cliente?.nome || 'Cliente não informado' }} • {{ item.Uid }}</p>
-              </div>
-              <Badge :class="getStatusAssinaturaMeta(item.status).className">
-                {{ getStatusAssinaturaMeta(item.status).label }}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent class="space-y-4">
-            <div class="grid gap-3 md:grid-cols-3">
-              <div class="rounded-xl border border-border/60 bg-muted/10 p-3">
-                <p class="text-xs uppercase tracking-wide text-muted-foreground">Valor atual</p>
-                <p class="mt-1 text-base font-semibold text-foreground">{{ formatCurrencyBR(item.valorAtual) }}</p>
-              </div>
-              <div class="rounded-xl border border-border/60 bg-muted/10 p-3">
-                <p class="text-xs uppercase tracking-wide text-muted-foreground">Periodicidade</p>
-                <p class="mt-1 text-sm font-medium text-foreground">{{ getPeriodicidadeLabel(item.periodicidade) }}</p>
-              </div>
-              <div class="rounded-xl border border-border/60 bg-muted/10 p-3">
-                <p class="text-xs uppercase tracking-wide text-muted-foreground">Próxima cobrança</p>
-                <p class="mt-1 text-sm font-medium text-foreground">{{ formatDateToPtBR(item.proximaCobranca) }}</p>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span>{{ item.resumo.itens }} item(ns)</span>
-              <span>•</span>
-              <span>{{ item.resumo.ciclosRecentes }} ciclo(s) recente(s)</span>
-              <span>•</span>
-              <span>{{ item.resumo.pendencias }} pendência(s)</span>
-              <span v-if="item.plano?.nome">• Plano {{ item.plano.nome }}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </RouterLink>
-    </div>
-
-    <ModalView v-model:open="showSearchModal" title="Buscar assinaturas" description="Refine por cliente, contrato ou UID.">
-      <div class="space-y-4 px-4">
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-foreground">Busca</label>
-          <Input v-model="search" placeholder="Cliente, contrato ou UID" @keyup.enter="loadAssinaturas(true); showSearchModal = false" />
-        </div>
-        <div class="flex gap-2">
-          <Button variant="outline" class="flex-1" @click="search = ''; status = 'TODOS'">Limpar</Button>
-          <Button class="flex-1" @click="loadAssinaturas(true); showSearchModal = false">Aplicar</Button>
-        </div>
+    <ModalView
+      v-model:open="store.openAssinaturaModal"
+      :title="modalTitle"
+      :description="modalDescription"
+      size="4xl"
+    >
+      <div v-if="loadingModal" class="px-4 py-8 text-center text-sm text-muted-foreground">
+        Preparando formulário da assinatura...
       </div>
-    </ModalView>
 
-    <ModalView v-model:open="showFormModal" title="Nova assinatura" description="Cadastre o contrato, defina cobrança e vincule itens recorrentes." size="4xl">
-      <div class="grid gap-4 px-4 md:grid-cols-2">
+      <div v-else class="grid gap-4 px-4 md:grid-cols-2">
         <div class="space-y-2">
           <label class="text-sm font-medium">Cliente</label>
           <Select v-model="form.clienteId">
@@ -388,7 +337,7 @@ onMounted(async () => {
               <SelectValue placeholder="Opcional" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="0">Sem plano</SelectItem>
+              <SelectItem :value="0">Sem plano</SelectItem>
               <SelectItem v-for="item in planos" :key="item.id" :value="item.id">{{ item.nome }}</SelectItem>
             </SelectContent>
           </Select>
@@ -561,8 +510,8 @@ onMounted(async () => {
                     <Checkbox :checked="item.ativo ?? true" @update:checked="item.ativo = Boolean($event)" />
                     Item ativo
                   </label>
-                  <Button type="button" variant="ghost" size="sm" class="ml-auto text-rose-600" @click="removeItem(index)">
-                    <Trash2 class="mr-2 h-4 w-4" /> Remover
+                  <Button type="button" variant="ghost" size="sm" class="ml-auto text-rose-600" @click="removeItem(index as number)">
+                    Remover
                   </Button>
                 </div>
               </div>
@@ -586,32 +535,13 @@ onMounted(async () => {
         </div>
 
         <div class="flex justify-end gap-2 md:col-span-2">
-          <Button variant="outline" @click="showFormModal = false">Cancelar</Button>
+          <Button variant="outline" @click="store.closeAssinaturaModal()">Cancelar</Button>
           <Button :disabled="saving" @click="save">
             <RefreshCcw v-if="saving" class="mr-2 h-4 w-4 animate-spin" />
-            Salvar assinatura
+            {{ store.editingAssinaturaId ? 'Salvar alterações' : 'Salvar assinatura' }}
           </Button>
         </div>
       </div>
     </ModalView>
-
-    <MobileBottomBar v-if="uiStore.isMobile">
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="showSearchModal = true">
-        <Search class="h-5 w-5" />
-        <span class="text-xs">Busca</span>
-      </button>
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="openCreateModal">
-        <BadgePlus class="h-5 w-5" />
-        <span class="text-xs">Nova</span>
-      </button>
-      <RouterLink to="/assinaturas/painel" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
-        <CalendarClock class="h-5 w-5" />
-        <span class="text-xs">Painel</span>
-      </RouterLink>
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="loadAssinaturas(true)">
-        <RefreshCcw class="h-5 w-5" />
-        <span class="text-xs">Atualizar</span>
-      </button>
-    </MobileBottomBar>
   </div>
 </template>
