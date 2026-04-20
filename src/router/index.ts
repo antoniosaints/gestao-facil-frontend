@@ -416,6 +416,67 @@ const routes: RouteInterface[] = [
     ],
   },
   {
+    path: '/assinaturas',
+    name: 'assinaturas',
+    redirect: { name: 'assinaturas-painel' },
+    children: [
+      {
+        path: 'painel',
+        name: 'assinaturas-painel',
+        component: () => import('@/pages/assinaturas/Painel.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
+        path: 'assinaturas',
+        name: 'assinaturas-home',
+        component: () => import('@/pages/assinaturas/AssinaturasHome.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
+        path: 'assinaturas/:id',
+        name: 'assinaturas-detalhes',
+        component: () => import('@/pages/assinaturas/DetalhesAssinatura.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
+        path: 'planos',
+        name: 'assinaturas-planos',
+        component: () => import('@/pages/assinaturas/PlanosHome.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
+        path: 'cobrancas',
+        name: 'assinaturas-cobrancas',
+        component: () => import('@/pages/assinaturas/CobrancasHome.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
+        path: 'comodatos',
+        name: 'assinaturas-comodatos',
+        component: () => import('@/pages/assinaturas/ComodatosHome.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+    ],
+  },
+  {
     path: '/assinatura',
     name: 'assinatura',
     redirect: { name: 'assinatura-resumo' },

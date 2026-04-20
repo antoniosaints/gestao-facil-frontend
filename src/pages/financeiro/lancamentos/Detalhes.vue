@@ -53,6 +53,7 @@ import GerarCobranca from './modais/GerarCobranca.vue'
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import FormularioEfertivar from './modais/FormularioEfertivar.vue'
 import ModalParcela from './modais/ModalParcela.vue'
+import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 
 type ParcelaDetalhe = ParcelaFinanceiro & {
   ContaFinanceira?: ContasFinanceiro | null
@@ -589,23 +590,42 @@ watch(() => store.filters.update, loadLancamento)
       </CardContent>
     </Card>
 
-    <nav v-if="uiStore.isMobile" class="fixed bottom-0 left-0 right-0 z-20 border-t bg-card/95 px-3 py-3 backdrop-blur">
-      <div class="grid grid-cols-4 gap-2">
-        <Button variant="outline" class="w-full" @click="goBack">
-          <ArrowLeft class="h-4 w-4" />
-        </Button>
-        <Button variant="outline" class="w-full" @click="loadLancamento">
-          <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
-        </Button>
-        <Button class="w-full bg-success text-white hover:bg-success/80"
-          :disabled="!parcelasOrdenadas.some((parcela) => !parcela.pago)" @click="gerarCobrancaFatura">
-          <CircleDollarSign class="h-4 w-4" />
-        </Button>
-        <Button variant="destructive" class="w-full" :disabled="!lancamento?.id" @click="deletar(lancamento?.id!)">
-          <Trash2 class="h-4 w-4" />
-        </Button>
-      </div>
-    </nav>
+    <MobileBottomBar v-if="uiStore.isMobile">
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="goBack"
+      >
+        <ArrowLeft class="h-5 w-5" />
+        <span class="text-xs">Voltar</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="loadLancamento"
+      >
+        <RotateCw class="h-5 w-5" :class="{ 'animate-spin': loading }" />
+        <span class="text-xs">Atualizar</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300 disabled:text-gray-300 dark:disabled:text-gray-600"
+        :disabled="!parcelasOrdenadas.some((parcela) => !parcela.pago)"
+        @click="gerarCobrancaFatura"
+      >
+        <CircleDollarSign class="h-5 w-5" />
+        <span class="text-xs">Cobrar</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-red-600 transition hover:text-red-500 disabled:text-gray-300 dark:disabled:text-gray-600"
+        :disabled="!lancamento?.id"
+        @click="deletar(lancamento?.id!)"
+      >
+        <Trash2 class="h-5 w-5" />
+        <span class="text-xs">Excluir</span>
+      </button>
+    </MobileBottomBar>
 
     <GerarCobranca />
     <ClientesModal />

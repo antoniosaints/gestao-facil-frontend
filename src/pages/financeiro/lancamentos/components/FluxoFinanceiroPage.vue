@@ -69,6 +69,7 @@ import LancamentoModal from '../formulario/LancamentoModal.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import FinanceiroCalendario from './FinanceiroCalendario.vue'
+import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 
 type FiltroTipo = 'TODOS' | 'RECEITA' | 'DESPESA'
 type FiltroStatus = 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
@@ -877,19 +878,40 @@ onMounted(async () => {
       </TabsContent>
     </Tabs>
 
-    <div v-if="uiStore.isMobile" class="fixed bottom-0 left-0 right-0 z-20 border-t bg-card/95 px-3 py-3 backdrop-blur">
-      <div class="grid grid-cols-3 gap-2">
-        <Button variant="outline" class="w-full" @click="goTo('/financeiro/lancamentos')">
-          <ArrowLeft class="h-4 w-4" />
-        </Button>
-        <Button class="w-full" @click="handleNewLancamento">
-          <BadgePlus class="h-4 w-4" />
-        </Button>
-        <Button variant="outline" class="w-full" @click="goBack">
-          <Undo2 class="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+    <MobileBottomBar v-if="uiStore.isMobile">
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="goTo('/financeiro/lancamentos')"
+      >
+        <ArrowLeft class="h-5 w-5" />
+        <span class="text-xs">Lista</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="handleNewLancamento"
+      >
+        <BadgePlus class="h-5 w-5" />
+        <span class="text-xs">Novo</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="goBack"
+      >
+        <Undo2 class="h-5 w-5" />
+        <span class="text-xs">Voltar</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="carregarLancamentos(true)"
+      >
+        <RotateCw class="h-5 w-5" :class="{ 'animate-spin': carregando }" />
+        <span class="text-xs">Atualizar</span>
+      </button>
+    </MobileBottomBar>
 
     <ModalView v-if="!tipoTravado" v-model:open="openModalLancar" title="Novo lançamento" size="sm">
       <div class="grid grid-cols-2 gap-4 p-4">
