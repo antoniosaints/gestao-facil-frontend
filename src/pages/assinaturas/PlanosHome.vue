@@ -363,13 +363,12 @@ watch(
                 <div class="flex flex-wrap items-center gap-4 rounded-md border border-border/60 bg-card px-2 py-1">
                   <label
                     class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md border-border text-foreground">
-                    <Checkbox :checked="item.cobrar" @update:checked="item.cobrar = Boolean($event)" />
+                    <Checkbox v-model="item.cobrar" />
                     Cobrar no ciclo
                   </label>
                   <label
                     class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md border-border text-foreground">
-                    <Checkbox :checked="item.comodato" :disabled="item.tipoItem !== 'PRODUTO'"
-                      @update:checked="item.comodato = Boolean($event)" />
+                    <Checkbox v-model="item.comodato" :disabled="item.tipoItem !== 'PRODUTO'" />
                     Comodato padrão
                   </label>
                   <Button type="button" variant="outline" size="sm" class="ml-auto text-rose-600"

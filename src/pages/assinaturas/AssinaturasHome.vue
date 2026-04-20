@@ -466,16 +466,15 @@ async function save() {
 
         <div class="grid gap-3 md:grid-cols-3">
           <label class="flex items-center gap-2 rounded-md cursor-pointer border border-border/60 bg-card px-3 py-2 text-sm text-foreground">
-            <Checkbox :checked="form.cobrancaAutomatica" @update:checked="form.cobrancaAutomatica = Boolean($event)" />
+            <Checkbox v-model="form.cobrancaAutomatica" />
             Cobrança automática
           </label>
           <label class="flex items-center gap-2 rounded-md cursor-pointer border border-border/60 bg-card px-3 py-2 text-sm text-foreground">
-            <Checkbox :checked="form.gerarLancamentoFinanceiro"
-              @update:checked="form.gerarLancamentoFinanceiro = Boolean($event)" />
+            <Checkbox v-model="form.gerarLancamentoFinanceiro" />
             Gerar lançamento financeiro
           </label>
           <label class="flex items-center gap-2 rounded-md cursor-pointer border border-border/60 bg-card px-3 py-2 text-sm text-foreground">
-            <Checkbox :checked="form.gerarPrimeiroCiclo" @update:checked="form.gerarPrimeiroCiclo = Boolean($event)" />
+            <Checkbox v-model="form.gerarPrimeiroCiclo" />
             Gerar primeiro ciclo agora
           </label>
         </div>
@@ -529,28 +528,6 @@ async function save() {
                   <Input v-model="item.valorUnitario" type="number" min="0" step="0.01" />
                 </div>
 
-                <div class="space-y-1 xl:col-span-4">
-                  <div class="flex flex-wrap items-center gap-4 rounded-md border border-border/60 bg-card px-2 py-1">
-                    <label class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md cursor-pointer border-border text-foreground">
-                      <Checkbox :checked="item.cobrar" @update:checked="item.cobrar = Boolean($event)" />
-                      Cobrar no valor recorrente
-                    </label>
-                    <label class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md cursor-pointer border-border text-foreground">
-                      <Checkbox :checked="item.comodato" :disabled="item.tipoItem !== 'PRODUTO'"
-                        @update:checked="item.comodato = Boolean($event)" />
-                      Item em comodato
-                    </label>
-                    <label class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md cursor-pointer border-border text-foreground">
-                      <Checkbox :checked="item.ativo ?? true" @update:checked="item.ativo = Boolean($event)" />
-                      Item ativo
-                    </label>
-                    <Button type="button" variant="ghost" size="sm" class="ml-auto text-rose-600"
-                      @click="removeItem(index as number)">
-                      Remover
-                    </Button>
-                  </div>
-                </div>
-
                 <template v-if="item.tipoItem === 'PRODUTO' && item.comodato">
                   <div class="space-y-1">
                     <Label>Identificação</Label>
@@ -562,10 +539,31 @@ async function save() {
                   </div>
                   <div class="space-y-1 md:col-span-2 xl:col-span-2">
                     <Label>Observações do comodato</Label>
-                    <Textarea v-model="item.observacoes" rows="3"
+                    <Input v-model="item.observacoes"
                       placeholder="Condição, observações de entrega, restrições..." />
                   </div>
                 </template>
+
+                <div class="space-y-1 xl:col-span-4">
+                  <div class="flex flex-wrap items-center gap-4 rounded-md border border-border/60 bg-card px-2 py-1">
+                    <label class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md cursor-pointer border-border text-foreground">
+                      <Checkbox v-model="item.cobrar" />
+                      Cobrar no valor recorrente
+                    </label>
+                    <label class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md cursor-pointer border-border text-foreground">
+                      <Checkbox v-model="item.comodato" :disabled="item.tipoItem !== 'PRODUTO'" />
+                      Item em comodato
+                    </label>
+                    <label class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md cursor-pointer border-border text-foreground">
+                      <Checkbox v-model="item.ativo" />
+                      Item ativo
+                    </label>
+                    <Button type="button" variant="ghost" size="sm" class="ml-auto text-rose-600"
+                      @click="removeItem(index as number)">
+                      Remover
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
         </Card>
