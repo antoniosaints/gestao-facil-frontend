@@ -53,6 +53,7 @@
               <Eye class="h-5 w-5" />
             </button>
             <button
+              v-if="row.status !== 'FATURADA'"
               class="rounded-md bg-slate-200 px-2 py-1 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
               @click="store.openUpdate(row.id!)"
             >

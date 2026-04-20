@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import { CalendarClock, RefreshCcw, Search } from 'lucide-vue-next'
+import { CalendarClock, ExternalLink, RefreshCcw, Search } from 'lucide-vue-next'
 import http from '@/utils/axios'
 import { useToast } from 'vue-toastification'
 import type { AssinaturaCicloListItem } from '@/repositories/assinatura-repository'
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { useAssinaturasStore } from '@/stores/assinaturas/useAssinaturas'
+import CobrancasActions from './CobrancasActions.vue'
 
 const toast = useToast()
 const store = useAssinaturasStore()
@@ -103,10 +104,27 @@ onMounted(() => loadMobile())
         <div class="text-xs text-gray-500 dark:text-gray-400">
           Criada em {{ formatDateToPtBR(row.createdAt, true) }}
         </div>
+        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          {{ row.cobranca?.gateway || 'Sem cobrança no gateway' }} • {{ row.tipoCobrancaUsado || '-' }}
+        </div>
 
-        <RouterLink :to="`/assinaturas/assinaturas/${row.assinatura.id}`" class="mt-3 block">
-          <Button variant="outline" class="w-full">Abrir assinatura</Button>
-        </RouterLink>
+        <a
+          v-if="row.cobranca?.externalLink"
+          :href="row.cobranca.externalLink"
+          target="_blank"
+          rel="noreferrer"
+          class="mt-2 inline-flex items-center gap-1 text-xs text-primary underline underline-offset-2"
+        >
+          <ExternalLink class="h-3.5 w-3.5" />
+          Abrir cobrança
+        </a>
+
+        <div class="mt-3 flex items-center justify-between gap-2">
+          <RouterLink :to="`/assinaturas/assinaturas/${row.assinatura.id}`" class="block flex-1">
+            <Button variant="outline" class="w-full">Abrir assinatura</Button>
+          </RouterLink>
+          <CobrancasActions :data="row" :on-changed="() => loadMobile(currentPage)" />
+        </div>
       </article>
     </div>
 

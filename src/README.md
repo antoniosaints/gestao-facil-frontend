@@ -37,8 +37,15 @@
 - As barras inferiores mobile dessas telas operacionais devem reutilizar `components/mobile/MobileBottomBar.vue` para manter o mesmo padrão visual e de navegação usado na dashboard principal, em vendas e nas demais listagens móveis.
 - O domínio `assinaturas` reutiliza esse mesmo repertório de UI para cadastro de planos e contratos, além de padronizar os selects de gateway e tipo de pagamento com o mesmo conjunto visível no gerador de cobrança do financeiro.
 - As páginas `assinaturas/AssinaturasHome.vue` e `assinaturas/PlanosHome.vue` passaram a seguir o padrão maduro do projeto: `DataTable` no desktop, cards paginados no mobile e edição via modal no mesmo contexto da listagem.
+- Os detalhes de assinatura agora devem separar `Cobranças`, `Comodatos` e `Histórico` em tabs com o mesmo padrão visual e estrutural já usado em `produtos/others/DetalhesProduto.vue`, inclusive com scroll horizontal natural em telas menores.
+- No domínio de assinaturas, a exclusão de plano só é permitida sem assinaturas vinculadas; a exclusão de assinatura bloqueia comodatos em uso, cobranças ativas e ciclos já pagos para preservar consistência operacional e financeira.
+- Cobranças recorrentes desse domínio agora expõem geração direta no gateway com PIX, boleto e link de pagamento, mantendo no próprio ciclo a referência do gateway e o link retornado para uso posterior.
+- Cancelamento e estorno no fluxo recorrente seguem as mesmas restrições do financeiro: cancelamento apenas para cobrança pendente e estorno apenas para cobrança efetivada, ambos somente em PIX/boleto quando o gateway suportar a operação.
+- O reajuste de cobrança recorrente agora cancela a cobrança pendente anterior no gateway, atualiza o valor do ciclo e recria automaticamente a nova cobrança, preservando rastreabilidade no histórico da assinatura.
+- A geração manual de ciclo recorrente exige confirmação explícita em modal antes da execução, com loading e prevenção de clique duplicado durante o envio.
 - Telas financeiras de acompanhamento, contas a pagar e contas a receber devem expor filtros operacionais claros, criação rápida de lançamento, abas compactas para lista/KPI/calendário e cálculos de saldo, pendências e atrasos sempre baseados nas parcelas do lançamento, não apenas no cabeçalho.
 - O domínio de ordens de serviço agora também deve tratar faturamento e geração de cobrança como fluxos operacionais de primeira classe, reaproveitando os modais e stores do financeiro quando houver aderência em vez de criar uma UX paralela.
+- Ordens de serviço faturadas não devem abrir fluxo de edição no frontend; a UI precisa bloquear essa entrada antes do usuário entrar em um formulário inválido.
 - Componentes de tabs devem permitir scroll horizontal nativo em telas menores quando a quantidade de abas ultrapassar a largura disponível.
 - Comportamento transversal ou reutilizável vai para `composables`.
 - Infraestrutura e detalhes técnicos ficam em `utils` ou `lib`.

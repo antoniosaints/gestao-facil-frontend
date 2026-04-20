@@ -126,7 +126,7 @@ function abrirCobranca(id: number) {
         <Info class="mr-2 h-4 w-4" />
         Detalhes
       </DropdownMenuItem>
-      <DropdownMenuItem @click="store.openUpdate(data.id!)">
+      <DropdownMenuItem v-if="data.status !== 'FATURADA'" @click="store.openUpdate(data.id!)">
         <Pencil class="mr-2 h-4 w-4" />
         Editar
       </DropdownMenuItem>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import { Layers3, PenLine, RefreshCcw, Search } from 'lucide-vue-next'
+import { Layers3, PenLine, RefreshCcw, Search, Trash2 } from 'lucide-vue-next'
 import http from '@/utils/axios'
 import { useToast } from 'vue-toastification'
 import type { PlanoAssinaturaListItem } from '@/repositories/assinatura-repository'
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { useAssinaturasStore } from '@/stores/assinaturas/useAssinaturas'
+import { AssinaturaRepository } from '@/repositories/assinatura-repository'
+import { useConfirm } from '@/composables/useConfirm'
 
 const toast = useToast()
 const store = useAssinaturasStore()
@@ -21,6 +23,7 @@ const totalPages = ref(1)
 const loading = ref(false)
 const searchQuery = ref('')
 const showSearchModal = ref(false)
+const processingId = ref<number | null>(null)
 
 async function loadMobile(page = 1) {
   loading.value = true
@@ -53,6 +56,27 @@ function previousPage() {
 
 function nextPage() {
   if (currentPage.value < totalPages.value) loadMobile(currentPage.value + 1)
+}
+
+async function excluir(row: PlanoAssinaturaListItem) {
+  const ok = await useConfirm().confirm({
+    title: 'Excluir plano',
+    message: 'Tem certeza que deseja excluir este plano de assinatura?',
+    confirmText: 'Sim, excluir',
+  })
+  if (!ok) return
+
+  try {
+    processingId.value = row.id
+    await AssinaturaRepository.deletarPlano(row.id)
+    toast.success('Plano excluído com sucesso.')
+    await loadMobile(currentPage.value)
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao excluir o plano.')
+  } finally {
+    processingId.value = null
+  }
 }
 
 watch(
@@ -107,9 +131,17 @@ onMounted(() => loadMobile())
         <div class="mt-3 flex justify-between gap-2">
           <button
             class="rounded-md bg-slate-200 px-2 py-1 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+            :disabled="processingId === row.id"
             @click="store.openEditPlano(row)"
           >
             <PenLine class="h-5 w-5" />
+          </button>
+          <button
+            class="rounded-md bg-red-200 px-2 py-1 text-sm text-red-900 dark:bg-red-800 dark:text-red-100"
+            :disabled="processingId === row.id"
+            @click="excluir(row)"
+          >
+            <Trash2 class="h-5 w-5" />
           </button>
         </div>
       </article>

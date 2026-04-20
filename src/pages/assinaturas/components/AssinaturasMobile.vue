@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { CalendarClock, PenLine, ReceiptText, RefreshCcw, Search } from 'lucide-vue-next'
+import { onMounted, ref, watch } from 'vue'
+import { CalendarClock, PenLine, ReceiptText, RefreshCcw, Search, Trash2 } from 'lucide-vue-next'
 import http from '@/utils/axios'
 import { useToast } from 'vue-toastification'
 import type { AssinaturaClienteListItem } from '@/repositories/assinatura-repository'
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { useAssinaturasStore } from '@/stores/assinaturas/useAssinaturas'
 import { AssinaturaRepository } from '@/repositories/assinatura-repository'
+import { useConfirm } from '@/composables/useConfirm'
 
 const toast = useToast()
 const store = useAssinaturasStore()
@@ -22,6 +23,7 @@ const totalPages = ref(1)
 const loading = ref(false)
 const searchQuery = ref('')
 const showSearchModal = ref(false)
+const processingId = ref<number | null>(null)
 
 async function loadMobile(page = 1) {
   loading.value = true
@@ -56,14 +58,47 @@ function nextPage() {
   if (currentPage.value < totalPages.value) loadMobile(currentPage.value + 1)
 }
 
-async function gerarCiclo(id: number) {
+async function gerarCiclo(row: AssinaturaClienteListItem) {
+  const ok = await useConfirm().confirm({
+    title: 'Gerar ciclo manual',
+    message: 'Tem certeza que deseja gerar um novo ciclo para esta assinatura agora?',
+    confirmText: 'Sim, gerar ciclo',
+    cancelText: 'Cancelar',
+    colorButton: 'primary',
+  })
+  if (!ok) return
+
   try {
-    await AssinaturaRepository.gerarCiclo(id)
+    processingId.value = row.id
+    await AssinaturaRepository.gerarCiclo(row.id)
     toast.success('Ciclo gerado com sucesso.')
     await loadMobile(currentPage.value)
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
-    toast.error('Erro ao gerar o ciclo da assinatura.')
+    toast.error(error?.response?.data?.message || 'Erro ao gerar o ciclo da assinatura.')
+  } finally {
+    processingId.value = null
+  }
+}
+
+async function excluir(row: AssinaturaClienteListItem) {
+  const ok = await useConfirm().confirm({
+    title: 'Excluir assinatura',
+    message: 'Tem certeza que deseja excluir esta assinatura?',
+    confirmText: 'Sim, excluir',
+  })
+  if (!ok) return
+
+  try {
+    processingId.value = row.id
+    await AssinaturaRepository.deletarAssinatura(row.id)
+    toast.success('Assinatura excluída com sucesso.')
+    await loadMobile(currentPage.value)
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao excluir a assinatura.')
+  } finally {
+    processingId.value = null
   }
 }
 
@@ -120,6 +155,7 @@ onMounted(() => loadMobile())
           <div class="flex gap-2">
             <button
               class="rounded-md bg-slate-200 px-2 py-1 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+              :disabled="processingId === row.id"
               @click="store.openEditAssinatura(row.id)"
             >
               <PenLine class="h-5 w-5" />
@@ -129,12 +165,20 @@ onMounted(() => loadMobile())
                 <ReceiptText class="h-5 w-5" />
               </button>
             </RouterLink>
+            <button
+              class="rounded-md bg-red-200 px-2 py-1 text-sm text-red-900 dark:bg-red-800 dark:text-red-100"
+              :disabled="processingId === row.id"
+              @click="excluir(row)"
+            >
+              <Trash2 class="h-5 w-5" />
+            </button>
           </div>
           <button
             class="rounded-md bg-emerald-200 px-2 py-1 text-sm text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100"
-            @click="gerarCiclo(row.id)"
+            :disabled="processingId === row.id"
+            @click="gerarCiclo(row)"
           >
-            <CalendarClock class="h-5 w-5" />
+            <RefreshCcw class="h-5 w-5" :class="processingId === row.id ? 'animate-spin' : ''" />
           </button>
         </div>
       </article>

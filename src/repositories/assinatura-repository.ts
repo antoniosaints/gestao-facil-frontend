@@ -16,9 +16,22 @@ export type ModoValorAssinatura = 'MANUAL' | 'DINAMICO'
 export type TipoItemAssinatura = 'SERVICO' | 'PRODUTO'
 export type StatusCicloAssinatura = 'PENDENTE' | 'COBRADO' | 'PAGO' | 'ATRASADO' | 'CANCELADO' | 'FALHA'
 export type StatusComodatoAssinatura = 'EM_USO' | 'DEVOLVIDO' | 'PERDIDO' | 'AVARIADO'
+export type StatusCobrancaGateway = 'PENDENTE' | 'EFETIVADO' | 'ESTORNADO' | 'CANCELADO'
 
 export type GatewayAssinatura = 'mercadopago' | 'pagseguro' | 'asaas'
 export type TipoCobrancaAssinatura = 'PIX' | 'BOLETO' | 'LINK'
+
+export interface AssinaturaGatewayChargeInfo {
+  id: number
+  idCobranca: string
+  Uid?: string | null
+  status: StatusCobrancaGateway
+  externalLink?: string | null
+  gateway: string
+  valor: number
+  dataVencimento?: string | Date | null
+  dataCadastro?: string | Date | null
+}
 
 export interface AssinaturaOption {
   id: number
@@ -221,6 +234,7 @@ export interface AssinaturaDetalheResponse {
       gatewayUsado?: string | null
       tipoCobrancaUsado?: string | null
       createdAt: string
+      cobranca?: AssinaturaGatewayChargeInfo | null
     }>
     historico: Array<{
       id: number
@@ -249,6 +263,7 @@ export interface AssinaturaCicloListItem {
     nomeContrato: string
     cliente: string
   }
+  cobranca?: AssinaturaGatewayChargeInfo | null
 }
 
 export interface AssinaturaComodatoListItem {
@@ -290,6 +305,11 @@ export class AssinaturaRepository {
     return data
   }
 
+  static async deletarPlano(id: number) {
+    const { data } = await http.delete(`/assinaturas/planos/${id}`)
+    return data
+  }
+
   static async listarAssinaturas(params?: Record<string, any>): Promise<{ data: AssinaturaClienteListItem[] }> {
     const { data } = await http.get('/assinaturas/assinaturas', { params })
     return data
@@ -297,6 +317,11 @@ export class AssinaturaRepository {
 
   static async salvarAssinatura(payload: AssinaturaClientePayload) {
     const { data } = await http.post('/assinaturas/assinaturas', payload)
+    return data
+  }
+
+  static async deletarAssinatura(id: number) {
+    const { data } = await http.delete(`/assinaturas/assinaturas/${id}`)
     return data
   }
 
@@ -312,6 +337,26 @@ export class AssinaturaRepository {
 
   static async gerarCiclo(id: number) {
     const { data } = await http.post(`/assinaturas/assinaturas/${id}/gerar-ciclo`)
+    return data
+  }
+
+  static async gerarCobrancaGateway(cicloId: number) {
+    const { data } = await http.post(`/assinaturas/cobrancas/${cicloId}/gerar-gateway`)
+    return data
+  }
+
+  static async cancelarCobranca(cicloId: number) {
+    const { data } = await http.post(`/assinaturas/cobrancas/${cicloId}/cancelar`)
+    return data
+  }
+
+  static async estornarCobranca(cicloId: number) {
+    const { data } = await http.post(`/assinaturas/cobrancas/${cicloId}/estornar`)
+    return data
+  }
+
+  static async reajustarCobranca(cicloId: number, valor: number) {
+    const { data } = await http.post(`/assinaturas/cobrancas/${cicloId}/reajustar`, { valor })
     return data
   }
 

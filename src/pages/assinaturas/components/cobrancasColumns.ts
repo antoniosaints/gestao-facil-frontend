@@ -4,9 +4,17 @@ import { render } from '@/lib/utils'
 import type { AssinaturaCicloListItem } from '@/repositories/assinatura-repository'
 import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, CalendarClock, CircleDollarSign, ReceiptText, UserRound } from 'lucide-vue-next'
+import {
+  ArrowUpDown,
+  CalendarClock,
+  CircleDollarSign,
+  ExternalLink,
+  ReceiptText,
+  UserRound,
+} from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import { getStatusCicloMeta } from '../shared'
+import CobrancasActions from './CobrancasActions.vue'
 
 export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = [
   {
@@ -90,25 +98,44 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
         () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render(BadgeCell, {
-        label: formatCurrencyBR(row.original.valorCobrado),
-        color: 'green',
-        icon: CircleDollarSign,
-        capitalize: false,
-      }),
+      render('div', { class: 'space-y-1' }, [
+        render(BadgeCell, {
+          label: formatCurrencyBR(row.original.valorCobrado),
+          color: 'green',
+          icon: CircleDollarSign,
+          capitalize: false,
+        }),
+        row.original.cobranca?.idCobranca
+          ? render('div', { class: 'text-xs text-muted-foreground' }, `Ref. gateway: ${row.original.cobranca.idCobranca}`)
+          : null,
+      ]),
   },
   {
-    accessorKey: 'inicioPeriodo',
-    header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Período inicial', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
-    cell: ({ row }) => render('div', {}, formatDateToPtBR(row.original.inicioPeriodo)),
+    accessorKey: 'cobranca',
+    header: () => render('div', {}, 'Gateway / link'),
+    cell: ({ row }) => {
+      if (!row.original.cobranca) {
+        return render('div', { class: 'text-sm text-muted-foreground' }, 'Sem cobrança vinculada')
+      }
+
+      return render('div', { class: 'space-y-1' }, [
+        render('div', { class: 'text-sm font-medium text-foreground' }, row.original.cobranca.gateway),
+        render('div', { class: 'text-xs text-muted-foreground' }, row.original.tipoCobrancaUsado || '-'),
+        row.original.cobranca.externalLink
+          ? render(
+              'a',
+              {
+                href: row.original.cobranca.externalLink,
+                target: '_blank',
+                rel: 'noreferrer',
+                class: 'inline-flex items-center gap-1 text-xs text-primary underline underline-offset-2',
+              },
+              [render(ExternalLink, { class: 'h-3.5 w-3.5' }), 'Abrir cobrança'],
+            )
+          : null,
+      ])
+    },
+    enableSorting: false,
   },
   {
     accessorKey: 'createdAt',
@@ -130,12 +157,13 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
     enableHiding: false,
     header: () => render('div', { class: 'text-right' }, 'Ações'),
     cell: ({ row }) =>
-      render('div', { class: 'text-right' }, [
+      render('div', { class: 'flex items-center justify-end gap-2' }, [
         render(
           RouterLink,
           { to: `/assinaturas/assinaturas/${row.original.assinatura.id}` },
           () => render(Button, { variant: 'outline', size: 'sm' }, () => 'Abrir assinatura'),
         ),
+        render(CobrancasActions, { data: row.original }),
       ]),
   },
 ]

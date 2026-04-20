@@ -53,7 +53,7 @@ async function gerarCobrancaLancamento() {
         storeCobranca.form.loading = true
         submitText.value = 'Gerando cobrança...'
         const response = await LancamentosRepository.gerarCobranca(storeCobranca.form.tipo, Number(storeCobranca.form.valor), storeCobranca.form.gateway, storeCobranca.form.clienteId, storeCobranca.vinculoCobranca)
-        linkPayment.value = response.message
+        linkPayment.value = response.data?.paymentLink || response.message
         storeCobranca.form.linkExists = true
         toast.success('Cobrança gerada com sucesso.', {
             timeout: 5000

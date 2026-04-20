@@ -117,6 +117,10 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   }
   const openUpdate = async (id: number) => {
     const response = await OrdensServicoRepository.get(id)
+    if (response.status === 'FATURADA') {
+      toast.info('OS faturada não pode ser editada.')
+      return
+    }
     carrinho.value = []
     form.value = {
       id: response.id,
