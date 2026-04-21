@@ -14,7 +14,7 @@
             <!-- <TopMenu /> -->
             <div>
                 <NavUserSidebar />
-                <SidebarMenu :menu="sidebarMenuOptions(store.permissoes)" />
+                <SidebarMenu :menu="sidebarMenuOptions(store.permissoes, store.appModules)" />
             </div>
             <div>
                 <div class="grid grid-cols-12 gap-2 items-center justify-center">

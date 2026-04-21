@@ -1,6 +1,7 @@
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ContaRepository } from '@/repositories/conta-repository'
+import { StoreRepository } from '@/repositories/store-repository'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
 import type { Contas, Usuarios } from '@/types/schemas'
 import { hasPermission } from '@/hooks/authorize'
@@ -32,6 +33,8 @@ export const useUiStore = defineStore('uiStore', () => {
   const isMobile = ref(window.innerWidth < 768)
   const usuarioLogged = ref<Usuarios>({} as Usuarios)
   const contaInfo = ref<Contas>({} as Contas)
+  const appModules = ref<Record<string, boolean>>({})
+  const appModulesLoaded = ref(false)
   const status = ref(localStorage.getItem('gestao_facil:status') || 'INATIVO')
   const diasParaVencer = ref<number>(
     Number(localStorage.getItem('gestao_facil:diasParaVencer')) || 0,
@@ -173,6 +176,31 @@ export const useUiStore = defineStore('uiStore', () => {
     }
   })
 
+  async function loadAppModules(force = false) {
+    if (appModulesLoaded.value && !force) {
+      return appModules.value
+    }
+
+    try {
+      const response = await StoreRepository.listar()
+      appModules.value = response.data.reduce<Record<string, boolean>>((acc, item) => {
+        acc[item.codigo] = item.ativo
+        return acc
+      }, {})
+      appModulesLoaded.value = true
+    } catch (error) {
+      console.log(error)
+      appModules.value = {}
+      appModulesLoaded.value = false
+    }
+
+    return appModules.value
+  }
+
+  function hasActiveModule(codigo: string) {
+    return Boolean(appModules.value[codigo])
+  }
+
   async function getDataUsuario() {
     try {
       const data = await UsuarioRepository.whoami()
@@ -180,6 +208,7 @@ export const useUiStore = defineStore('uiStore', () => {
       usuarioLogged.value = data.data
       contaInfo.value = conta
       populatePermissoes()
+      await loadAppModules(true)
       return data
     } catch (error) {
       console.log(error)
@@ -215,9 +244,13 @@ export const useUiStore = defineStore('uiStore', () => {
     permissoes,
     usuarioLogged,
     contaInfo,
+    appModules,
+    appModulesLoaded,
     getDataUsuario,
     diasParaVencer,
     getStatus,
+    loadAppModules,
+    hasActiveModule,
     toggleSidebar,
     isMobile,
     logoProfile,

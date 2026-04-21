@@ -3,7 +3,6 @@ import type { RouteLocationNormalizedGeneric } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { hasPermission } from '@/hooks/authorize'
 import { ContaRepository } from '@/repositories/conta-repository'
-import { StoreRepository } from '@/repositories/store-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 
 export const useControlRouter = async () => {
@@ -60,10 +59,9 @@ export async function handleRouteGuard(to: typed, from: typed) {
 
   if (to.meta?.modulo) {
     try {
-      const response = await StoreRepository.listar()
-      const modulo = response.data.find((item) => item.codigo === to.meta?.modulo)
+      await storeUi.loadAppModules()
 
-      if (!modulo?.ativo) {
+      if (!storeUi.hasActiveModule(String(to.meta.modulo))) {
         toast.info('Este app não está ativo na sua mensalidade.')
         return { name: 'loja-home' }
       }

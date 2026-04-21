@@ -231,6 +231,16 @@ const routes: RouteInterface[] = [
     ],
   },
   {
+    path: '/whatsapp',
+    name: 'whatsapp',
+    component: () => import('@/pages/whatsapp/WhatsAppPage.vue'),
+    meta: {
+      layout: 'main',
+      permissao: 5,
+      modulo: 'whatsapp',
+    },
+  },
+  {
     path: '/arena',
     name: 'arena',
     children: [
@@ -424,6 +434,9 @@ const routes: RouteInterface[] = [
     path: '/assinaturas',
     name: 'assinaturas',
     redirect: { name: 'assinaturas-painel' },
+    meta: {
+      modulo: 'assinaturas',
+    },
     children: [
       {
         path: 'painel',

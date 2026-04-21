@@ -16,8 +16,8 @@ import {
   GitBranchPlus,
   HandCoins,
   Layers3,
-  Lock,
   MapPinned,
+  MessageCircle,
   Package,
   ReceiptText,
   Sparkles,
@@ -28,11 +28,21 @@ import {
   TrendingUp,
   User,
   UserStar,
-  Wallet,
   Wrench,
 } from 'lucide-vue-next'
 
-export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] => {
+export const sidebarMenuOptions = (
+  permissions: Permissoes,
+  appModules: Record<string, boolean> = {},
+): SidebarMenuType[] => {
+  const hasAssinaturasApp = Boolean(appModules.assinaturas)
+  const hasCoreIaApp = Boolean(appModules['core-ia'])
+  const hasWhatsappApp = Boolean(appModules.whatsapp)
+  const hasVisibleAppsSection =
+    (permissions.financeiro.visualizar && hasAssinaturasApp) ||
+    (permissions.vendas.visualizar && hasCoreIaApp) ||
+    (permissions.configuracoes.visualizar && hasWhatsappApp)
+
   return [
     {
       nome: 'Dashboard',
@@ -140,44 +150,6 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
       ],
     },
     {
-      nome: 'Assinaturas',
-      icone: Sparkles,
-      color: 'violet',
-      show: permissions.financeiro.visualizar,
-      children: [
-        {
-          nome: 'Painel',
-          link: '/assinaturas/painel',
-          icone: ChartPie,
-          color: 'violet',
-        },
-        {
-          nome: 'Assinaturas',
-          link: '/assinaturas/assinaturas',
-          icone: Sparkles,
-          color: 'violet',
-        },
-        {
-          nome: 'Planos',
-          link: '/assinaturas/planos',
-          icone: Layers3,
-          color: 'violet',
-        },
-        {
-          nome: 'Cobranças',
-          link: '/assinaturas/cobrancas',
-          icone: ReceiptText,
-          color: 'violet',
-        },
-        {
-          nome: 'Comodatos',
-          link: '/assinaturas/comodatos',
-          icone: Package,
-          color: 'violet',
-        },
-      ],
-    },
-    {
       nome: 'Produtos',
       icone: Box,
       color: 'blue',
@@ -226,10 +198,7 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
       show: false,
       color: 'cyan',
       link: '/notas-fiscais',
-      children: [
-        // { nome: "Painel", link: "/financeiro/painel", icone: "fa-solid fa-chart-pie" },
-        // { nome: "Lançamentos", link: "/financeiro/lancamentos", icone: "fa-solid fa-coins" },
-      ],
+      children: [],
     },
     {
       nome: 'Clientes',
@@ -241,14 +210,59 @@ export const sidebarMenuOptions = (permissions: Permissoes): SidebarMenuType[] =
     {
       nome: 'Apps',
       divisor: true,
-      show: true,
+      show: hasVisibleAppsSection,
+    },
+    {
+      nome: 'Assinaturas',
+      icone: Sparkles,
+      color: 'violet',
+      show: permissions.financeiro.visualizar && hasAssinaturasApp,
+      children: [
+        {
+          nome: 'Painel',
+          link: '/assinaturas/painel',
+          icone: ChartPie,
+          color: 'violet',
+        },
+        {
+          nome: 'Assinaturas',
+          link: '/assinaturas/assinaturas',
+          icone: Sparkles,
+          color: 'violet',
+        },
+        {
+          nome: 'Planos',
+          link: '/assinaturas/planos',
+          icone: Layers3,
+          color: 'violet',
+        },
+        {
+          nome: 'Cobranças',
+          link: '/assinaturas/cobrancas',
+          icone: ReceiptText,
+          color: 'violet',
+        },
+        {
+          nome: 'Comodatos',
+          link: '/assinaturas/comodatos',
+          icone: Package,
+          color: 'violet',
+        },
+      ],
     },
     {
       nome: 'Core IA',
       icone: Bot,
-      show: permissions.vendas.visualizar,
+      show: permissions.vendas.visualizar && hasCoreIaApp,
       color: 'purple',
       link: '/chat/ia',
+    },
+    {
+      nome: 'WhatsApp',
+      icone: MessageCircle,
+      show: permissions.configuracoes.visualizar && hasWhatsappApp,
+      color: 'green',
+      link: '/whatsapp',
     },
     {
       nome: 'Administração',

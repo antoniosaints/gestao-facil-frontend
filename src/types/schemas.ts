@@ -466,6 +466,9 @@ export interface UpdateParametrosConta {
   MercadoPagoEnv?: string | null
   AbacatePayApiKey?: string | null
   AbacatePaySecret?: string | null
+  WhatsappAPIToken?: string | null
+  WhatsappAPISession?: string | null
+  WhatsappAPINumber?: string | null
   chavePix?: string | null
 }
 

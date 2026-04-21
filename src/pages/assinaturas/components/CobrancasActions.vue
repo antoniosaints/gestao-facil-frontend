@@ -8,6 +8,7 @@ import {
   ReceiptText,
   RefreshCcw,
   RotateCcw,
+  Trash2,
 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 
@@ -40,7 +41,7 @@ const props = defineProps<{
 
 const toast = useToast()
 const store = useAssinaturasStore()
-const processing = ref<'gateway' | 'cancelar' | 'estornar' | 'reajustar' | null>(null)
+const processing = ref<'gateway' | 'cancelar' | 'estornar' | 'reajustar' | 'deletar' | null>(null)
 const openReajuste = ref(false)
 const valorReajuste = ref<string>('')
 
@@ -57,6 +58,16 @@ const canCancel = computed(() =>
 const canRefund = computed(() =>
   Boolean(props.data.cobranca && props.data.cobranca.status === 'EFETIVADO' && tipoOperavel.value),
 )
+const canDelete = computed(() => {
+  if (!props.data.cobranca) return false
+  if (props.data.status === 'PAGO' || props.data.cobranca.status === 'EFETIVADO') return false
+
+  if (tipoOperavel.value) {
+    return ['CANCELADO', 'ESTORNADO'].includes(props.data.cobranca.status)
+  }
+
+  return true
+})
 const canReprice = computed(() => {
   if (props.data.status === 'PAGO') return false
   if (!props.data.cobranca) return true
@@ -142,6 +153,27 @@ async function estornar() {
   }
 }
 
+async function deletar() {
+  const ok = await useConfirm().confirm({
+    title: 'Apagar cobrança',
+    message: 'Tem certeza que deseja apagar a cobrança vinculada a este ciclo? Esta ação remove o vínculo atual e permite gerar uma nova cobrança depois.',
+    confirmText: 'Sim, apagar',
+  })
+  if (!ok) return
+
+  try {
+    processing.value = 'deletar'
+    const response = await AssinaturaRepository.deletarCobranca(props.data.id)
+    toast.success(response.message || 'Cobrança apagada com sucesso.')
+    await notifyChanged()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao apagar a cobrança.')
+  } finally {
+    processing.value = null
+  }
+}
+
 function abrirReajuste() {
   resetReajuste()
   openReajuste.value = true
@@ -196,6 +228,10 @@ async function confirmarReajuste() {
         <DropdownMenuItem v-if="canRefund" :disabled="processing !== null" @click="estornar">
           <RotateCcw class="mr-2 h-4 w-4" />
           Estornar pagamento
+        </DropdownMenuItem>
+        <DropdownMenuItem v-if="canDelete" :disabled="processing !== null" @click="deletar">
+          <Trash2 class="mr-2 h-4 w-4" />
+          Apagar cobrança
         </DropdownMenuItem>
         <DropdownMenuSeparator v-if="canReprice" />
         <DropdownMenuItem v-if="canReprice" :disabled="processing !== null" @click="abrirReajuste">

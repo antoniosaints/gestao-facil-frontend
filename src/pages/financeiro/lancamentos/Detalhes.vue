@@ -504,7 +504,7 @@ watch(() => store.filters.update, loadLancamento)
                 <div class="min-w-0">
                   <p class="text-sm font-semibold text-foreground flex items-center gap-1">
                     {{ formatCurrencyBR(parcela.valor || 0) }}
-                  <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="flex flex-wrap items-center gap-1.5">
                     <span class="px-2 py-0 text-[10px] border border-border rounded-md">{{ getNumeroParcelaLabel(parcela) }}</span>
                     <Badge class="border-0 px-2 py-0 text-[10px]"
                       :class="parcela.pago ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : parcelasVencidas.some((item) => item.id === parcela.id) ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'">
@@ -513,7 +513,7 @@ watch(() => store.filters.update, loadLancamento)
                     </Badge>
                     <Badge v-if="parcela.CobrancasFinanceiras?.length" variant="outline" class="px-2 py-0 text-[10px]">
                       Cobrança</Badge>
-                  </div>
+                  </span>
                   </p>
                   <div class="flex items-center gap-1">
                     <p class="truncate text-xs text-muted-foreground">

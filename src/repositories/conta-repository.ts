@@ -36,6 +36,46 @@ export interface UpdateAssinanteAdminPayload {
   vencimento?: string
 }
 
+export interface AssinanteAdminAppItem {
+  id: number
+  codigo: string
+  nome: string
+  descricao?: string | null
+  categoria: string
+  preco: number
+  ativo: boolean
+  pendenteAtivacao: boolean
+  cancelamentoAgendado: boolean
+  cobrancaPendenteAtual: boolean
+  vigenciaAte?: string | Date | null
+  statusVinculo?: string | null
+  cobrancaAtual?: {
+    id: number
+    status: string
+    gateway: string
+    linkPagamento?: string | null
+    vencimento?: string | Date | null
+  } | null
+}
+
+export interface AssinanteAdminAppsResponse {
+  data: AssinanteAdminAppItem[]
+  resumo: {
+    contaId: number
+    contaNome: string
+    contaStatus: string
+    mensalidadeAtual: number
+    valorBasePlano: number
+    totalAppsAtivos: number
+    totalAppsPendentes: number
+    vencimento: string | Date
+  }
+}
+
+export interface ToggleAssinanteAdminAppPayload {
+  ativo: boolean
+}
+
 export interface FaturaContaAdmin {
   id: number
   Uid: string
@@ -219,6 +259,16 @@ export class ContaRepository {
 
   static async gerenciarAssinante(id: number, payload: UpdateAssinanteAdminPayload) {
     const res = await http.post(`/admin/assinantes/${id}/controle`, payload)
+    return res.data
+  }
+
+  static async listarAppsAssinante(id: number): Promise<AssinanteAdminAppsResponse> {
+    const res = await http.get(`/admin/assinantes/${id}/apps`)
+    return res.data
+  }
+
+  static async alternarAppAssinante(id: number, moduleId: number, payload: ToggleAssinanteAdminAppPayload) {
+    const res = await http.post(`/admin/assinantes/${id}/apps/${moduleId}`, payload)
     return res.data
   }
 

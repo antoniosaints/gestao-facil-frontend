@@ -355,6 +355,11 @@ export class AssinaturaRepository {
     return data
   }
 
+  static async deletarCobranca(cicloId: number) {
+    const { data } = await http.delete(`/assinaturas/cobrancas/${cicloId}`)
+    return data
+  }
+
   static async reajustarCobranca(cicloId: number, valor: number) {
     const { data } = await http.post(`/assinaturas/cobrancas/${cicloId}/reajustar`, { valor })
     return data
