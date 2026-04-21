@@ -26,12 +26,10 @@
                 </TabsList>
             </div>
 
-            <!-- EMPRESA -->
             <TabsContent value="empresa">
                 <EmpresaPage />
             </TabsContent>
 
-            <!-- NOTIFICAÇÕES -->
             <TabsContent value="notificacoes">
                 <Card class="rounded-t-none bg-background">
                     <form @submit.prevent="submit(formularioNotificacoes)">
@@ -94,54 +92,69 @@
                 </Card>
             </TabsContent>
 
-            <!-- INTEGRAÇÕES -->
             <TabsContent value="integracoes">
                 <Card class="rounded-t-none bg-background">
                     <form @submit.prevent="submit(formularioIntegracoes)">
                         <CardHeader>
                             <CardTitle class="font-normal">Integrações</CardTitle>
-                            <CardDescription>Conecte serviços externos (Mercado Pago, Asaas).</CardDescription>
+                            <CardDescription>Conecte serviços externos operacionais da sua conta.</CardDescription>
                         </CardHeader>
-                        <CardContent class="space-y-3">
-                            <div class="grid md:grid-cols-4 gap-6">
-                                <div class="p-6 bg-body/70 border rounded-lg flex flex-col justify-between">
-                                    <h1>
-                                        <Link class="inline w-4"
-                                            :class="[formularioIntegracoesMercadoPago.MercadoPagoApiKey ? 'text-green-500' : 'text-red-500']" />
-                                        Mercado Pago
-                                    </h1>
-                                    <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
-                                        clientes.</p>
+                        <CardContent class="space-y-4">
+                            <div class="grid md:grid-cols-3 gap-6">
+                                <div class="p-6 bg-body/70 border rounded-lg flex flex-col justify-between gap-3">
+                                    <div>
+                                        <h1>
+                                            <Link class="inline w-4"
+                                                :class="[formularioIntegracoesMercadoPago.MercadoPagoApiKey ? 'text-green-500' : 'text-red-500']" />
+                                            Mercado Pago
+                                        </h1>
+                                        <p class="text-sm text-muted-foreground">Usado para cobranças internas da sua conta.</p>
+                                    </div>
                                     <Button class="mt-2" variant="outline" type="button"
                                         @click="openModalMercadoPago = true">Configurar</Button>
                                 </div>
-                                <div class="p-6 bg-body/70 border rounded-lg flex flex-col justify-between">
-                                    <h1>Asaas</h1>
-                                    <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
-                                        clientes.</p>
+                                <div class="p-6 bg-body/70 border rounded-lg flex flex-col justify-between gap-3">
+                                    <div>
+                                        <h1>
+                                            <Link class="inline w-4"
+                                                :class="[(formularioIntegracoesAbacatePay.AbacatePayApiKey && formularioIntegracoesAbacatePay.AbacatePaySecret) ? 'text-green-500' : 'text-red-500']" />
+                                            AbacatePay
+                                        </h1>
+                                        <p class="text-sm text-muted-foreground">Usado para cobranças internas da sua conta via chave própria do tenant.</p>
+                                    </div>
+                                    <Button class="mt-2" variant="outline" type="button"
+                                        @click="openModalAbacatePay = true">Configurar</Button>
+                                </div>
+                                <div class="p-6 bg-body/70 border rounded-lg flex flex-col justify-between gap-3">
+                                    <div>
+                                        <h1>Asaas</h1>
+                                        <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e clientes.</p>
+                                    </div>
                                     <Button class="mt-2" type="button" disabled variant="outline">Em breve...</Button>
                                 </div>
-                                <div class="p-6 bg-body/70 border rounded-lg flex flex-col justify-between">
-                                    <h1>WhatsApp</h1>
-                                    <p class="text-sm text-muted-foreground">
-                                        Usado para notificações de pedidos, links de pagamento e clientes.
-                                    </p>
-                                    <Button class="mt-2" type="button" disabled variant="outline">Em breve...</Button>
-                                </div>
+                            </div>
+
+                            <div class="rounded-lg border bg-body/50 p-4 text-sm text-muted-foreground">
+                                <p>
+                                    A mensalidade do SaaS da conta continua separada destas credenciais. Esse gateway global é controlado apenas pelo superadmin em
+                                    <strong>/admin/configuracoes</strong>.
+                                </p>
                             </div>
                         </CardContent>
                     </form>
                 </Card>
             </TabsContent>
+
             <TabsContent value="impressao">
                 <ImpressaoPage />
             </TabsContent>
+
             <TabsContent value="financeiro">
                 <Card class="rounded-t-none bg-background">
                     <form @submit.prevent="submit(formularioFinanceiro)">
                         <CardHeader>
                             <CardTitle class="font-normal">Financeiro</CardTitle>
-                            <CardDescription>Configure chave PIX e opções de financeiro.</CardDescription>
+                            <CardDescription>Configure apenas os parâmetros financeiros operacionais da sua conta.</CardDescription>
                         </CardHeader>
                         <CardContent class="space-y-6">
                             <div class="grid md:grid-cols-2 gap-3">
@@ -163,6 +176,7 @@
                 </Card>
             </TabsContent>
         </Tabs>
+
         <ModalView v-model:open="openModalMercadoPago" description="Configuração do mercado pago"
             title="Configurar Mercado Pago" size="md">
             <div class="space-y-2 px-4">
@@ -171,7 +185,7 @@
                     v-model="(formularioIntegracoesMercadoPago.MercadoPagoApiKey as string)" type="password"
                     name="mercadoPagoKey" placeholder="Sua chave de acesso" />
                 <p class="text-sm text-muted-foreground">Usado para cobranças, links de pagamento e
-                    clientes.</p>
+                    clientes da sua conta.</p>
             </div>
             <Button :disabled="loading" class="mt-2 mx-4 text-white" type="button"
                 @click="submit(formularioIntegracoesMercadoPago)" variant="default">
@@ -180,6 +194,34 @@
                 {{ loading ? 'Salvando...' : 'Salvar' }}
             </Button>
         </ModalView>
+
+        <ModalView v-model:open="openModalAbacatePay" description="Configuração do AbacatePay da conta"
+            title="Configurar AbacatePay" size="md">
+            <div class="space-y-4 px-4">
+                <div class="space-y-2">
+                    <Label for="abacatePayKey">AbacatePay API Key</Label>
+                    <Input id="abacatePayKey" autocomplete="off" autocapitalize="off" spellcheck="false"
+                        v-model="(formularioIntegracoesAbacatePay.AbacatePayApiKey as string)" type="password"
+                        name="abacatePayKey" placeholder="Sua chave da AbacatePay" />
+                </div>
+                <div class="space-y-2">
+                    <Label for="abacatePaySecret">AbacatePay Webhook Secret</Label>
+                    <Input id="abacatePaySecret" autocomplete="off" autocapitalize="off" spellcheck="false"
+                        v-model="(formularioIntegracoesAbacatePay.AbacatePaySecret as string)" type="password"
+                        name="abacatePaySecret" placeholder="Seu secret do webhook" />
+                </div>
+                <p class="text-sm text-muted-foreground">
+                    Essas credenciais pertencem à sua conta e são usadas apenas nas cobranças internas do ERP.
+                </p>
+            </div>
+            <Button :disabled="loading" class="mt-2 mx-4 text-white" type="button"
+                @click="submit(formularioIntegracoesAbacatePay)" variant="default">
+                <CircleCheck v-if="!loading" />
+                <LoaderIcon v-if="loading" class="animate-spin" />
+                {{ loading ? 'Salvando...' : 'Salvar' }}
+            </Button>
+        </ModalView>
+
         <nav v-if="storeUi.isMobile"
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20">
             <button type="button" @click="storeUi.openSidebar = true"
@@ -220,6 +262,7 @@ const tab = ref<'empresa' | 'notificacoes' | 'integracoes' | 'impressao' | 'fina
 const toast = useToast()
 const storeUi = useUiStore()
 const openModalMercadoPago = ref(false)
+const openModalAbacatePay = ref(false)
 const loading = ref(false)
 
 const formularioIntegracoes = reactive<UpdateParametrosConta>({
@@ -229,6 +272,10 @@ const formularioIntegracoes = reactive<UpdateParametrosConta>({
 const formularioIntegracoesMercadoPago = reactive<UpdateParametrosConta>({
     MercadoPagoApiKey: '',
     MercadoPagoEnv: '',
+})
+const formularioIntegracoesAbacatePay = reactive<UpdateParametrosConta>({
+    AbacatePayApiKey: '',
+    AbacatePaySecret: '',
 })
 const formularioNotificacoes = reactive<UpdateParametrosConta>({
     eventoEstoqueBaixo: false,
@@ -243,8 +290,21 @@ const formularioFinanceiro = reactive<UpdateParametrosConta>({
 async function submit(data: UpdateParametrosConta) {
     try {
         loading.value = true
-        await ContaRepository.parametros(data)
+        const response = await ContaRepository.parametros(data)
         toast.success('Configurações salvas com sucesso')
+        if (data === formularioIntegracoesAbacatePay) {
+            const webhookStatus = response?.data?.abacatePayWebhookStatus
+            if (webhookStatus === 'created') {
+                toast.info('Webhook da AbacatePay sincronizada automaticamente para esta conta.')
+            } else if (webhookStatus === 'non-https-base-url') {
+                toast.info('Credenciais salvas. A webhook da AbacatePay não foi criada automaticamente porque a BASE_URL atual não é HTTPS.')
+            } else if (webhookStatus === 'sync-failed') {
+                toast.warning('Credenciais salvas, mas a sincronização automática da webhook da AbacatePay falhou. Revise a chave da conta ou configure a webhook no painel da AbacatePay.')
+            }
+        }
+        if (data === formularioIntegracoesMercadoPago) openModalMercadoPago.value = false
+        if (data === formularioIntegracoesAbacatePay) openModalAbacatePay.value = false
+        await getParametros()
     } catch (error) {
         console.error(error)
         toast.error('Erro ao salvar as configurações')
@@ -264,6 +324,10 @@ async function getParametros() {
             Object.assign(formularioIntegracoesMercadoPago, {
                 MercadoPagoApiKey: response.data.MercadoPagoApiKey,
                 MercadoPagoEnv: response.data.MercadoPagoEnv,
+            })
+            Object.assign(formularioIntegracoesAbacatePay, {
+                AbacatePayApiKey: response.data.AbacatePayApiKey,
+                AbacatePaySecret: response.data.AbacatePaySecret,
             })
             Object.assign(formularioNotificacoes, {
                 eventoEstoqueBaixo: response.data.eventoEstoqueBaixo,

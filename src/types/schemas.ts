@@ -9,6 +9,7 @@ export enum StatusFatura {
 
 export enum GatewayConta {
   mercadopago = 'mercadopago',
+  abacatepay = 'abacatepay',
   asaass = 'asaass',
 }
 
@@ -463,6 +464,8 @@ export interface UpdateParametrosConta {
   eventoVendaConcluida?: boolean | null
   MercadoPagoApiKey?: string | null
   MercadoPagoEnv?: string | null
+  AbacatePayApiKey?: string | null
+  AbacatePaySecret?: string | null
   chavePix?: string | null
 }
 

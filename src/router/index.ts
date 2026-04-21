@@ -100,6 +100,11 @@ const routes: RouteInterface[] = [
         name: 'admin-faturas',
         component: () => import('@/pages/admin/faturas/Home.vue'),
       },
+      {
+        path: 'configuracoes',
+        name: 'admin-configuracoes',
+        component: () => import('@/pages/admin/configuracoes/Home.vue'),
+      },
     ],
   },
   {

@@ -18,7 +18,7 @@ export type StatusCicloAssinatura = 'PENDENTE' | 'COBRADO' | 'PAGO' | 'ATRASADO'
 export type StatusComodatoAssinatura = 'EM_USO' | 'DEVOLVIDO' | 'PERDIDO' | 'AVARIADO'
 export type StatusCobrancaGateway = 'PENDENTE' | 'EFETIVADO' | 'ESTORNADO' | 'CANCELADO'
 
-export type GatewayAssinatura = 'mercadopago' | 'pagseguro' | 'asaas'
+export type GatewayAssinatura = 'mercadopago' | 'abacatepay' | 'pagseguro' | 'asaas'
 export type TipoCobrancaAssinatura = 'PIX' | 'BOLETO' | 'LINK'
 
 export interface AssinaturaGatewayChargeInfo {

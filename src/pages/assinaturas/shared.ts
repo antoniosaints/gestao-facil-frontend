@@ -32,6 +32,7 @@ export const modoValorOptions: Array<{ value: ModoValorAssinatura; label: string
 
 export const gatewayOptions: Array<{ value: GatewayAssinatura; label: string; disabled?: boolean }> = [
   { value: 'mercadopago', label: 'Mercado Pago' },
+  { value: 'abacatepay', label: 'AbacatePay' },
   { value: 'asaas', label: 'Asaas', disabled: true },
   { value: 'pagseguro', label: 'PagSeguro', disabled: true },
 ]

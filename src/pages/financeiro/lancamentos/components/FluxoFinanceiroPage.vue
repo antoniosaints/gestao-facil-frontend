@@ -18,6 +18,7 @@ import {
   CalendarDays,
   CheckCircle2,
   CircleDollarSign,
+  ExternalLink,
   FileText,
   Filter,
   HandCoins,
@@ -804,7 +805,7 @@ onMounted(async () => {
                       </Button>
                       <Button v-if="item.cobrancaLink" variant="outline" size="icon" class="h-8 w-8"
                         @click="openLinkCobranca(item.cobrancaLink)">
-                        <Info class="h-4 w-4" />
+                        <ExternalLink class="h-4 w-4" />
                       </Button>
                       <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
                         <Button variant="outline" size="icon" class="h-8 w-8">

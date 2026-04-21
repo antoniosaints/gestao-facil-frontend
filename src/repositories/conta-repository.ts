@@ -110,6 +110,19 @@ export interface DashboardAdminResponse {
   }
 }
 
+export interface AdminGatewayConfigResponse {
+  data: {
+    gateway: 'mercadopago' | 'abacatepay'
+    mercadoPagoConfigured: boolean
+    abacatePayConfigured: boolean
+    updatedAccounts?: number
+  }
+}
+
+export interface UpdateAdminGatewayPayload {
+  gateway: 'mercadopago' | 'abacatepay'
+}
+
 export interface StatusContaFatura {
   id: string
   asaasPaymentId: string
@@ -184,7 +197,7 @@ export class ContaRepository {
     await http.post(`/contas/atualizar`, data)
   }
   static async gerarLink(): Promise<{ link: string }> {
-    const data = await http.get(`/contas/assinatura/mercadopago`)
+    const data = await http.get(`/contas/assinatura/checkout`)
     return data.data
   }
   static async uploadPerfil(file: File) {
@@ -223,6 +236,16 @@ export class ContaRepository {
 
   static async getDashboardAdmin(): Promise<DashboardAdminResponse> {
     const res = await http.get('/admin/faturas/dashboard')
+    return res.data
+  }
+
+  static async getAdminGatewayConfig(): Promise<AdminGatewayConfigResponse> {
+    const res = await http.get('/admin/configuracoes/gateway')
+    return res.data
+  }
+
+  static async saveAdminGatewayConfig(payload: UpdateAdminGatewayPayload): Promise<AdminGatewayConfigResponse> {
+    const res = await http.post('/admin/configuracoes/gateway', payload)
     return res.data
   }
 }

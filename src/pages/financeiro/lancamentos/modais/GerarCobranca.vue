@@ -100,6 +100,7 @@ function acessarLink() {
                             <SelectContent>
                                 <SelectGroup>
                                     <SelectItem value="mercadopago">Mercado pago</SelectItem>
+                                    <SelectItem value="abacatepay">AbacatePay</SelectItem>
                                     <SelectItem value="asaas" disabled>Asaas</SelectItem>
                                     <SelectItem value="pagseguro" disabled>Pagseguro</SelectItem>
                                 </SelectGroup>
@@ -170,6 +171,8 @@ function acessarLink() {
                             pagamento,
                             envie para seu cliente e peça o comprovante.
                         </p>
+                        <p v-else-if="storeCobranca.form.gateway === 'abacatepay'"
+                            class="text-xs text-muted-foreground text-center">No AbacatePay deste modal, a cobrança operacional usa as credenciais salvas pela própria conta em /configuracoes, separadas do gateway global da mensalidade SaaS.</p>
                         <p v-else class="text-xs text-muted-foreground text-center">Consulte as taxas de
                             cobrança {{ storeCobranca.form.tipo }} em cada
                             gateway, elas

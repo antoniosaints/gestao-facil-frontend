@@ -6,7 +6,7 @@ import { ServicoRepository } from '@/repositories/servico-repository'
 export interface CobrancaOperacao {
   linkExists: boolean
   loading: boolean
-  gateway: 'mercadopago' | 'pagseguro' | 'asaas' | undefined
+  gateway: 'mercadopago' | 'abacatepay' | 'pagseguro' | 'asaas' | undefined
   valor: string
   vencimento: Date
   criterio: 'avulso'
