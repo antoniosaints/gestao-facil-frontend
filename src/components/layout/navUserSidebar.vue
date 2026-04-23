@@ -6,13 +6,13 @@ import {
   Image,
   LogOut,
   Sparkles,
-} from "lucide-vue-next"
+} from 'lucide-vue-next'
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/ui/avatar"
+} from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,21 +21,22 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useUiStore } from "@/stores/ui/uiStore";
-import { computed, onMounted } from "vue";
-import { env } from "@/utils/dotenv";
-import ModalUploadPerfil from "@/pages/configs/ModalUploadPerfil.vue";
-import { useAuthStore } from "@/stores/login/useAuthStore";
-import { useToast } from "vue-toastification";
-import { getLettersName } from "@/utils/formatters";
+} from '@/components/ui/dropdown-menu'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { computed, onMounted } from 'vue'
+import { env } from '@/utils/dotenv'
+import ModalUploadPerfil from '@/pages/configs/ModalUploadPerfil.vue'
+import { useAuthStore } from '@/stores/login/useAuthStore'
+import { useToast } from 'vue-toastification'
+import { getLettersName } from '@/utils/formatters'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 const uiStore = useUiStore()
-const store = useAuthStore();
+const store = useAuthStore()
 const toast = useToast()
 
 onMounted(() => {
-  uiStore.setLogoProfile(env.VITE_BACKEND_URL + '/' + uiStore.contaInfo.profile + '?_t=' + Date.now())
+  uiStore.setLogoProfile(resolveFileUrl(uiStore.contaInfo.profile, { bustCache: true }))
 })
 
 const openModal = () => {
@@ -46,15 +47,13 @@ const openModal = () => {
 
 function logOut() {
   store.logout()
-  toast.info("Logout efetuado com sucesso!")
+  toast.info('Logout efetuado com sucesso!')
 }
-
 
 const colorTheme = computed(() => {
   if (env.VITE_MODE_SYSTEM === 'arena') return 'bg-teal-900/40'
   return 'bg-blue-900/40'
 })
-
 </script>
 
 <template>

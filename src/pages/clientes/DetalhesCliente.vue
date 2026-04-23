@@ -10,7 +10,6 @@
 
         <div v-else class="space-y-6">
 
-            <!-- Header -->
             <Card>
                 <CardHeader class="flex flex-col md:flex-row items-start md:items-center gap-4">
                     <Avatar class="h-16 w-16 border bg-muted">
@@ -28,10 +27,7 @@
                 </CardHeader>
             </Card>
 
-            <!-- Grid de Estatísticas -->
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-
-                <!-- Vendas ou Compras -->
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle class="text-sm font-medium">
@@ -41,17 +37,14 @@
                     </CardHeader>
                     <CardContent>
                         <div class="text-2xl font-bold">
-                            {{ formatCurrency(stats?.cliente?.tipo === 'FORNECEDOR' ? stats?.compras?.total :
-                                stats?.vendas?.total) }}
+                            {{ formatCurrency(stats?.cliente?.tipo === 'FORNECEDOR' ? stats?.compras?.total : stats?.vendas?.total) }}
                         </div>
                         <p class="text-xs text-muted-foreground">
-                            {{ stats?.cliente?.tipo === 'FORNECEDOR' ? stats?.compras?.quantidade :
-                                stats?.vendas?.quantidade }} operações registradas
+                            {{ stats?.cliente?.tipo === 'FORNECEDOR' ? stats?.compras?.quantidade : stats?.vendas?.quantidade }} operações registradas
                         </p>
                     </CardContent>
                 </Card>
 
-                <!-- Lucro (Apenas Clientes) -->
                 <Card v-if="stats?.cliente?.tipo !== 'FORNECEDOR'">
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle class="text-sm font-medium">Lucro Estimado</CardTitle>
@@ -65,7 +58,6 @@
                     </CardContent>
                 </Card>
 
-                <!-- Ordens de Serviço -->
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle class="text-sm font-medium">Ordens de Serviço</CardTitle>
@@ -79,7 +71,6 @@
                     </CardContent>
                 </Card>
 
-                <!-- Financeiro Pendente -->
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle class="text-sm font-medium">Pendente</CardTitle>
@@ -87,18 +78,15 @@
                     </CardHeader>
                     <CardContent>
                         <div class="text-2xl font-bold text-yellow-600">
-                            {{ formatCurrency(stats?.financeiro?.pendenteReceber - stats?.financeiro?.pendentePagar) }}
+                            {{ formatCurrency((stats?.financeiro?.pendenteReceber || 0) - (stats?.financeiro?.pendentePagar || 0)) }}
                         </div>
                         <div class="text-xs text-muted-foreground mt-1">
-                            <span class="text-green-600">Receber: {{ formatCurrency(stats?.financeiro?.pendenteReceber)
-                            }}</span>
+                            <span class="text-green-600">Receber: {{ formatCurrency(stats?.financeiro?.pendenteReceber || 0) }}</span>
                             <span class="mx-1">|</span>
-                            <span class="text-red-600">Pagar: {{ formatCurrency(stats?.financeiro?.pendentePagar)
-                            }}</span>
+                            <span class="text-red-600">Pagar: {{ formatCurrency(stats?.financeiro?.pendentePagar || 0) }}</span>
                         </div>
                     </CardContent>
                 </Card>
-
             </div>
         </div>
     </div>
@@ -112,6 +100,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { formatCurrencyBR as formatCurrency } from '@/utils/formatters'
 import {
     ShoppingCart as ShoppingCartIcon,
     Wrench as WrenchIcon,
@@ -124,11 +113,6 @@ const loading = ref(true)
 const error = ref('')
 const stats = ref<any>(null)
 
-function formatCurrency(value: any) {
-    if (!value && value !== 0) return 'R$ 0,00'
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))
-}
-
 function initials(name: string) {
     return name ? name.substring(0, 2).toUpperCase() : '??'
 }
@@ -136,11 +120,11 @@ function initials(name: string) {
 onMounted(async () => {
     try {
         const id = Number(route.params.id)
-        if (!id) throw new Error("ID inválido")
+        if (!id) throw new Error('ID inválido')
         stats.value = await ClienteRepository.getStats(id)
     } catch (e: any) {
         console.error(e)
-        error.value = "Falha ao carregar estatísticas"
+        error.value = 'Falha ao carregar estatísticas'
     } finally {
         loading.value = false
     }

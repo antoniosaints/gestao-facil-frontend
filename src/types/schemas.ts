@@ -459,9 +459,14 @@ export interface UpdateParametrosConta {
   AsaasApiSecret?: string | null
   AsaasEnv?: string | null
   eventoEstoqueBaixo?: boolean | null
+  eventoProdutoAlterado?: boolean | null
   emailAvisos?: string | null
   eventoSangria?: boolean | null
   eventoVendaConcluida?: boolean | null
+  permitirLancamentoRetroativo?: boolean | null
+  permitirEfetivacaoFutura?: boolean | null
+  permitirTransferenciaContaFinanceira?: boolean | null
+  permitirCriacaoCobranca?: boolean | null
   MercadoPagoApiKey?: string | null
   MercadoPagoEnv?: string | null
   AbacatePayApiKey?: string | null
@@ -498,6 +503,7 @@ export interface ContasFinanceiro {
   Uid?: string
   nome: string
   saldoInicial: number | string
+  saldoAtual?: number | string
 }
 
 export type FiltroStatusFinanceiro = 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'

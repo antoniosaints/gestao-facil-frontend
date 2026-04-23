@@ -153,6 +153,7 @@ import { vMaska } from 'maska/vue'
 import { type Contas } from '@/types/schemas'
 import http from '@/utils/axios'
 import { HashGenerator } from '@/utils/generators'
+import { resolveFileUrl } from '@/utils/fileUrl'
 import { BadgeCheck, Copy, Eraser, FileSymlink, LoaderIcon, Save, ShieldX } from 'lucide-vue-next'
 import { reactive, ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -212,10 +213,7 @@ const yourId = ref(null)
 const cadastroEfetuado = ref(false)
 const notAcceptId = ref(false)
 
-const logo = computed(() => {
-  const url = import.meta.env.VITE_BACKEND_URL
-  return url + '/' + conta.value?.profile + '?_t=' + Date.now()
-})
+const logo = computed(() => resolveFileUrl(conta.value?.profile, { bustCache: true }))
 
 function validateField(value: any, config: string | any) {
   if (config.required && (!value || String(value).trim() === '')) {

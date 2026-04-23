@@ -56,6 +56,7 @@ import { onMounted, ref } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import { sidebarMenuOptionsAdmin } from './optionsAdmin'
 import { updateMetaTags } from '@/utils/theme'
+import { useSocketEvent } from '@/composables/useSocketEvent'
 const store = useUiStore()
 const loading = ref(false)
 window.addEventListener('resize', () => {
@@ -74,6 +75,10 @@ async function initialize() {
         loading.value = false
     }
 }
+
+useSocketEvent('sessao:updated', async () => {
+    await Promise.all([store.getDataUsuario(), store.getStatus()])
+})
 
 onMounted(() => {
     initialize()

@@ -29,7 +29,8 @@ Cada domínio tende a repetir esta estrutura:
 - As listagens principais de contratos, planos, cobranças e comodatos em `assinaturas` devem seguir explicitamente o padrão `DataTable` + cards mobile paginados + modal de edição/ação no mesmo contexto, em vez dos cards soltos como visão principal.
 - Formulários e modais de `assinaturas` devem seguir o padrão global do projeto: header/description consistentes, corpo organizado por seções, ações de salvar/cancelar no rodapé e feedback/loading explícitos.
 - As telas financeiras operacionais devem permitir criação rápida por dia, edição em cascata de parcelas por escopo (atual, todas, pagas, pendentes ou direção relativa), persistência de campos recorrentes no formulário, edição rápida dos metadados do lançamento sem reabrir valores já lançados, importação em lote por CSV com download de modelo e filtros avançados estruturados na listagem principal de lançamentos.
-- A página de contas financeiras deve oferecer não só o cadastro da conta, mas também um modal de detalhe com visão consolidada do saldo da conta, entradas, saídas, pendências, listagem filtrável das movimentações vinculadas e ações de transferência entre contas e ajuste manual de saldo.
+- A página de contas financeiras deve oferecer não só o cadastro da conta, mas também saldo atual calculado já na listagem, um modal de detalhe com visão consolidada do saldo da conta, entradas, saídas, pendências, listagem filtrável das movimentações vinculadas e ações de transferência entre contas e ajuste manual de saldo.
+- O painel financeiro deve reutilizar as mesmas ações disponíveis na listagem de contas para evitar divergência entre dashboard e CRUD operacional.
 - O domínio `servicos/os` agora também expõe faturamento e geração de cobrança na própria listagem e no modal de detalhes, reaproveitando o fluxo de vendas/financeiro e bloqueando exclusões quando houver vínculo financeiro ativo.
 
 ## Regras

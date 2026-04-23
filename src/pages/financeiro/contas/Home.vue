@@ -25,6 +25,8 @@ import ModalConta from './ModalConta.vue'
 import ModalDetalhesConta from './ModalDetalhesConta.vue'
 import Tabela from './tabela/Tabela.vue'
 import { useContasFinanceirasStore } from '@/stores/lancamentos/useContasFinanceiras'
+import { useSocketEvent } from '@/composables/useSocketEvent'
+import { formatCurrencyBR } from '@/utils/formatters'
 
 const uiStore = useUiStore()
 const store = useContasFinanceirasStore()
@@ -51,6 +53,7 @@ async function loadContas() {
       Uid: item.Uid,
       nome: item.nome,
       saldoInicial: item.saldoInicial ?? 0,
+      saldoAtual: item.saldoAtual ?? item.saldoInicial ?? 0,
     }))
   } catch (error) {
     console.log(error)
@@ -98,6 +101,10 @@ watch(
   },
 )
 
+useSocketEvent('financeiro:updated', () => {
+  loadContas()
+})
+
 onMounted(loadContas)
 </script>
 
@@ -113,6 +120,7 @@ onMounted(loadContas)
       </div>
       <div class="hidden items-center justify-between gap-2 md:flex">
         <button
+          v-if="uiStore.permissoes.financeiro.criar"
           @click="store.openSave"
           class="flex items-center gap-1 rounded-md bg-primary px-2 py-1.5 text-sm text-white"
         >
@@ -167,10 +175,14 @@ onMounted(loadContas)
             <div class="text-xs text-muted-foreground">Conta</div>
           </div>
           <div class="text-sm font-medium text-foreground">{{ item.nome }}</div>
-          <div class="text-xs text-muted-foreground">Saldo inicial: {{ Number(item.saldoInicial || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</div>
+          <div class="text-xs text-muted-foreground">Saldo inicial: {{ formatCurrencyBR(Number(item.saldoInicial || 0)) }}</div>
+          <div class="text-sm font-semibold" :class="Number(item.saldoAtual || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+            Saldo atual: {{ formatCurrencyBR(Number(item.saldoAtual || 0)) }}
+          </div>
           <div class="text-xs text-muted-foreground">Use os detalhes para acompanhar entradas, saídas e pendências da conta.</div>
           <div class="mt-3 flex items-center justify-between gap-2">
             <button
+              v-if="uiStore.permissoes.financeiro.visualizar"
               @click="store.openDetails(item)"
               class="rounded-md border border-border px-3 py-1.5 text-sm text-foreground"
             >
@@ -178,12 +190,14 @@ onMounted(loadContas)
             </button>
             <div class="flex items-center gap-2">
               <button
+                v-if="uiStore.permissoes.financeiro.editar"
                 @click="store.openUpdate(item)"
                 class="rounded-md bg-slate-200 px-3 py-1.5 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
               >
                 Editar
               </button>
               <button
+                v-if="uiStore.permissoes.financeiro.excluir"
                 @click="removeConta(item)"
                 class="inline-flex items-center gap-1 rounded-md bg-red-200 px-3 py-1.5 text-sm text-red-900 dark:bg-red-800 dark:text-red-100"
               >
@@ -229,6 +243,7 @@ onMounted(loadContas)
         <span class="text-xs">Limpar</span>
       </button>
       <button
+        v-if="uiStore.permissoes.financeiro.criar"
         type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
         @click="store.openSave"

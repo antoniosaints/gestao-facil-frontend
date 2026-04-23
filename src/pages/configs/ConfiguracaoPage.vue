@@ -74,7 +74,8 @@
                                             class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
                                             <span>Alteração de produto <p class="text-xs text-muted-foreground">
                                                     (reposição, edição)</p></span>
-                                            <Switch id="produtoEditadoReposicao" />
+                                            <Switch id="produtoEditadoReposicao"
+                                                v-model="formularioNotificacoes.eventoProdutoAlterado" />
                                         </label>
                                     </div>
                                 </div>
@@ -109,6 +110,46 @@
                                     <Input id="chavePixSistema" v-model="(formularioFinanceiro.chavePix as string)"
                                         type="text" placeholder="Sua chave aqui..." />
                                 </div>
+                            </div>
+
+                            <Separator />
+
+                            <div class="grid gap-3 md:grid-cols-2">
+                                <label for="permitirLancamentoRetroativo"
+                                    class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                    <span>Lançamento retroativo
+                                        <p class="text-xs text-muted-foreground">Permite criar lançamentos com data anterior a hoje.</p>
+                                    </span>
+                                    <Switch id="permitirLancamentoRetroativo"
+                                        v-model="formularioFinanceiro.permitirLancamentoRetroativo" />
+                                </label>
+
+                                <label for="permitirEfetivacaoFutura"
+                                    class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                    <span>Efetivação futura
+                                        <p class="text-xs text-muted-foreground">Permite baixar/efetivar lançamentos com data futura.</p>
+                                    </span>
+                                    <Switch id="permitirEfetivacaoFutura"
+                                        v-model="formularioFinanceiro.permitirEfetivacaoFutura" />
+                                </label>
+
+                                <label for="permitirTransferenciaContaFinanceira"
+                                    class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                    <span>Transferências entre contas
+                                        <p class="text-xs text-muted-foreground">Libera transferências financeiras e remanejamento entre contas.</p>
+                                    </span>
+                                    <Switch id="permitirTransferenciaContaFinanceira"
+                                        v-model="formularioFinanceiro.permitirTransferenciaContaFinanceira" />
+                                </label>
+
+                                <label for="permitirCriacaoCobranca"
+                                    class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                    <span>Criação de cobranças
+                                        <p class="text-xs text-muted-foreground">Bloqueia ou permite gerar cobranças em toda a aplicação.</p>
+                                    </span>
+                                    <Switch id="permitirCriacaoCobranca"
+                                        v-model="formularioFinanceiro.permitirCriacaoCobranca" />
+                                </label>
                             </div>
                         </CardContent>
                         <CardFooter class="justify-end">
@@ -165,18 +206,24 @@ const loading = ref(false)
 
 const formularioNotificacoes = reactive<UpdateParametrosConta>({
     eventoEstoqueBaixo: false,
+    eventoProdutoAlterado: true,
     eventoVendaConcluida: false,
     eventoSangria: false,
     emailAvisos: '',
 })
 const formularioFinanceiro = reactive<UpdateParametrosConta>({
     chavePix: '',
+    permitirLancamentoRetroativo: true,
+    permitirEfetivacaoFutura: true,
+    permitirTransferenciaContaFinanceira: true,
+    permitirCriacaoCobranca: true,
 })
 
 async function submit(data: UpdateParametrosConta) {
     try {
         loading.value = true
         await ContaRepository.parametros(data)
+        await Promise.all([storeUi.getDataUsuario(), storeUi.getStatus()])
         toast.success('Configurações salvas com sucesso')
         await getParametros()
     } catch (error) {
@@ -193,12 +240,17 @@ async function getParametros() {
         if (response.data != null) {
             Object.assign(formularioNotificacoes, {
                 eventoEstoqueBaixo: response.data.eventoEstoqueBaixo,
+                eventoProdutoAlterado: response.data.eventoProdutoAlterado ?? true,
                 eventoVendaConcluida: response.data.eventoVendaConcluida,
                 eventoSangria: response.data.eventoSangria,
                 emailAvisos: response.data.emailAvisos,
             })
             Object.assign(formularioFinanceiro, {
                 chavePix: response.data.chavePix,
+                permitirLancamentoRetroativo: response.data.permitirLancamentoRetroativo ?? true,
+                permitirEfetivacaoFutura: response.data.permitirEfetivacaoFutura ?? true,
+                permitirTransferenciaContaFinanceira: response.data.permitirTransferenciaContaFinanceira ?? true,
+                permitirCriacaoCobranca: response.data.permitirCriacaoCobranca ?? true,
             })
         }
     } catch (error) {

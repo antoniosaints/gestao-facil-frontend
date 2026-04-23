@@ -41,6 +41,11 @@ import { useUiStore } from '@/stores/ui/uiStore'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { goBack, goTo } from '@/hooks/links'
 import ModalView from '@/components/formulario/ModalView.vue'
+import { useSocketEvent } from '@/composables/useSocketEvent'
+import { useContasFinanceirasStore } from '@/stores/lancamentos/useContasFinanceiras'
+import ModalConta from '@/pages/financeiro/contas/ModalConta.vue'
+import ModalDetalhesConta from '@/pages/financeiro/contas/ModalDetalhesConta.vue'
+import ContaActions from '@/pages/financeiro/contas/tabela/Actions.vue'
 
 type DashboardFinanceiroResponse = {
   data: {
@@ -77,6 +82,7 @@ type FiltroTipo = 'TODOS' | 'RECEITA' | 'DESPESA'
 
 const toast = useToast()
 const uiStore = useUiStore()
+const contasFinanceirasStore = useContasFinanceirasStore()
 
 const loading = ref(true)
 const openModalFiltros = ref(false)
@@ -310,6 +316,16 @@ const indicadores = computed(() => [
   },
 ])
 
+function handleContaSaved() {
+  carregarFiltros()
+  carregarDashboard()
+}
+
+useSocketEvent('financeiro:updated', () => {
+  carregarFiltros()
+  carregarDashboard()
+})
+
 onMounted(async () => {
   await Promise.all([carregarFiltros(), carregarDashboard()])
 })
@@ -423,16 +439,27 @@ onMounted(async () => {
           <div
             v-for="conta in contasResumo"
             :key="conta.contaId"
-            class="rounded-2xl border bg-muted/20 px-4 py-2"
+            class="rounded-xl border bg-muted/20 px-4 py-3 transition hover:bg-muted/30"
           >
             <div class="flex items-start justify-between gap-3">
               <div>
                 <p class="font-semibold text-foreground">{{ conta.conta }}</p>
                 <p class="text-xs text-muted-foreground">Saldo inicial {{ formatCurrencyBR(conta.saldoInicial) }}</p>
               </div>
-              <Badge class="border-0" :class="conta.saldoPrevisto >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'">
-                Previsto {{ formatCurrencyBR(conta.saldoPrevisto) }}
-              </Badge>
+              <div class="flex items-start gap-2">
+                <Badge class="border-0" :class="conta.saldoPrevisto >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'">
+                  Previsto {{ formatCurrencyBR(conta.saldoPrevisto) }}
+                </Badge>
+                <ContaActions
+                  v-if="uiStore.permissoes.financeiro.visualizar"
+                  :data="{
+                    id: conta.contaId,
+                    nome: conta.conta,
+                    saldoInicial: conta.saldoInicial,
+                    saldoAtual: conta.saldoAtual,
+                  }"
+                />
+              </div>
             </div>
 
             <div class="mt-4 grid gap-3 sm:grid-cols-3">
@@ -545,5 +572,8 @@ onMounted(async () => {
         </div>
       </div>
     </ModalView>
+
+    <ModalConta v-model:open="contasFinanceirasStore.openModal" :conta="contasFinanceirasStore.selectedConta" @saved="handleContaSaved" />
+    <ModalDetalhesConta v-model:open="contasFinanceirasStore.openDetailsModal" :conta="contasFinanceirasStore.selectedContaDetalhes" />
   </div>
 </template>

@@ -19,6 +19,7 @@
 - `stores/`: estado global e por domínio.
 - `types/`: contratos TypeScript consumidos pelo app.
 - `utils/`: infraestrutura transversal.
+- URLs de arquivos renderizáveis no frontend devem passar por `utils/fileUrl.ts`, para aceitar tanto caminhos locais servidos pelo backend quanto URLs públicas absolutas retornadas pelo storage remoto.
 - `__tests__/`: testes do frontend.
 
 ## Fluxo recomendado
@@ -52,6 +53,7 @@
 - Quando a mensalidade do SaaS usa AbacatePay, a experiência final de pagamento oferece PIX e cartão no mesmo link de renovação, sem expor chaves da plataforma na UI da conta.
 - Nas cobranças internas do ERP, Mercado Pago e AbacatePay usam credenciais salvas em `ParametrosConta`, preservando a separação entre tenant e plataforma; no caso da AbacatePay, o backend ainda tenta sincronizar a webhook da conta automaticamente quando a `BASE_URL` é HTTPS.
 - Telas financeiras de acompanhamento, contas a pagar e contas a receber devem expor filtros operacionais claros, criação rápida de lançamento, abas compactas para lista/KPI/calendário e cálculos de saldo, pendências e atrasos sempre baseados nas parcelas do lançamento, não apenas no cabeçalho.
+- A listagem de contas financeiras e o painel financeiro devem mostrar o saldo atual calculado por movimentação e reagir a eventos de socket do domínio financeiro para manter os números sincronizados após lançamentos, ajustes, transferências e liquidações por webhook.
 - O domínio de ordens de serviço agora também deve tratar faturamento e geração de cobrança como fluxos operacionais de primeira classe, reaproveitando os modais e stores do financeiro quando houver aderência em vez de criar uma UX paralela.
 - Ordens de serviço faturadas não devem abrir fluxo de edição no frontend; a UI precisa bloquear essa entrada antes do usuário entrar em um formulário inválido.
 - Componentes de tabs devem permitir scroll horizontal nativo em telas menores quando a quantidade de abas ultrapassar a largura disponível.

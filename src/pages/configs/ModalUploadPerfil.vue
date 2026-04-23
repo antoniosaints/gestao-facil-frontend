@@ -4,10 +4,6 @@
             <div class="bg-background dark:bg-background-dark rounded-md w-full h-full">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                     <div class="md:col-span-12">
-                        <!-- <Label for="profile_account"> Nova foto de perfil<span class="text-danger">*</span>
-                        </Label> -->
-                        <!-- <Input ref="file" id="profile_account" @change="onFileChange" required accept="image/*"
-                            type="file" class="w-full dark:file:text-white bg-card py-2 h-auto" /> -->
                         <FileUpload accept="image/*" @update:file="onFileSelected" />
                     </div>
                 </div>
@@ -25,14 +21,14 @@
 </template>
 
 <script lang="ts" setup>
-import { Button } from "@/components/ui/button"
-import { useToast } from "vue-toastification"
-import { ref } from "vue"
-import ModalView from "@/components/formulario/ModalView.vue"
-import { useUiStore } from "@/stores/ui/uiStore"
-import { ContaRepository } from "@/repositories/conta-repository"
-import FileUpload from "@/components/formulario/fileUpload.vue"
-import { env } from "@/utils/dotenv"
+import { ref } from 'vue'
+import { useToast } from 'vue-toastification'
+import { Button } from '@/components/ui/button'
+import ModalView from '@/components/formulario/ModalView.vue'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { ContaRepository } from '@/repositories/conta-repository'
+import FileUpload from '@/components/formulario/fileUpload.vue'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 const title = ref('Alterar foto da conta')
 const description = ref('Selecione uma imagem')
@@ -41,13 +37,6 @@ const store = useUiStore()
 const toast = useToast()
 
 const file = ref<File | null>(null)
-
-const onFileChange = (event: Event) => {
-    const target = event.target as HTMLInputElement
-    if (target.files && target.files.length > 0) {
-        file.value = target.files[0]
-    }
-}
 
 function onFileSelected(archive: File | null) {
     file.value = archive
@@ -74,7 +63,7 @@ async function submit() {
         await store.getDataUsuario()
         toast.success('Foto da conta atualizada')
         store.openModalProfile = false
-        store.setLogoProfile(env.VITE_BACKEND_URL + '/' + store.contaInfo?.profile + '?_t=' + Date.now())
+        store.setLogoProfile(resolveFileUrl(store.contaInfo?.profile, { bustCache: true }))
     } catch (error: any) {
         console.log(error)
         toast.error('Erro ao atualizar a foto da conta')

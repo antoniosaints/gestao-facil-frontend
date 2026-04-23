@@ -53,7 +53,25 @@ export const columnsContasFinanceiras: ColumnDef<ContasFinanceiro>[] = [
     cell: ({ row }) =>
       render(BadgeCell, {
         label: formatCurrencyBR(Number(row.original.saldoInicial || 0)),
-        color: 'green',
+        color: 'gray',
+        capitalize: false,
+      }),
+  },
+  {
+    accessorKey: 'saldoAtual',
+    header: ({ column }) =>
+      render(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['Saldo atual', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
+    cell: ({ row }) =>
+      render(BadgeCell, {
+        label: formatCurrencyBR(Number(row.original.saldoAtual || 0)),
+        color: Number(row.original.saldoAtual || 0) >= 0 ? 'green' : 'red',
         capitalize: false,
       }),
   },

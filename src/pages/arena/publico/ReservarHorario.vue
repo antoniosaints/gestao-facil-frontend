@@ -11,6 +11,7 @@ import { ArenaQuadrasRepository } from "@/repositories/quadras-repository"
 import { HashGenerator } from "@/utils/generators"
 import http from "@/utils/axios"
 import { env } from "@/utils/dotenv"
+import { resolveFileUrl } from "@/utils/fileUrl"
 import { formatCurrencyBR, formatToCapitalize, formatToUpperCase } from "@/utils/formatters"
 import { ArenaReservasRepository, type SaveReservaPublico } from "@/repositories/reservas-repository"
 import { addDays, addHours, endOfDay, format, isSameDay, setHours, startOfDay, startOfWeek, subHours } from "date-fns"
@@ -59,10 +60,7 @@ const dadosReserva = ref<Partial<SaveReservaPublico>>({
   modoPagamento: "TOTAL"
 })
 
-const logo = computed(() => {
-  const url = env.VITE_BACKEND_URL
-  return url + '/' + conta.value?.profile + '?_t=' + Date.now()
-})
+const logo = computed(() => resolveFileUrl(conta.value?.profile, { bustCache: true }))
 
 const openLinkPagamento = () => {
   localStorage.setItem('linkPagamento_arenaErp', linkPagamento.value as string)
@@ -286,9 +284,6 @@ function generateWhatsAppLink() {
   const telefoneLimpo = telefone.replace(/\D/g, "")
   const telefonePadraoInternacional = `55${telefoneLimpo}`
 
-  const formatBR = (valor: number) =>
-    valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-
   const linhas = mergedCart.value.map(item => {
     const date = item.date.toLocaleDateString("pt-BR")
     const horaInicio = new Date(item.startTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
@@ -298,7 +293,7 @@ function generateWhatsAppLink() {
     return `${date} | de ${horaInicio} até ${horaFim} | ${preco}`
   })
 
-  const total = formatBR(cartItems.value.reduce((t, i) => t + Number(i.price), 0))
+  const total = formatCurrencyBR(cartItems.value.reduce((t, i) => t + Number(i.price), 0))
 
   const msg =
     `Olá! Gostaria de reservar os seguintes horários na quadra ${selectedQuadra.value?.name}:%0A%0A` +

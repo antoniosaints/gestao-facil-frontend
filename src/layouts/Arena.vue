@@ -71,6 +71,7 @@ import SidebarMenuArena from '@/components/layout/sidebarMenuArena.vue'
 import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
 import { updateMetaTags } from '@/utils/theme'
 import { env } from '@/utils/dotenv'
+import { useSocketEvent } from '@/composables/useSocketEvent'
 const loading = ref(false)
 const store = useUiStore()
 window.addEventListener('resize', () => {
@@ -126,6 +127,10 @@ async function initialize() {
         loading.value = false
     }
 }
+
+useSocketEvent('sessao:updated', async () => {
+    await Promise.all([store.getDataUsuario(), store.getStatus()])
+})
 
 onMounted(() => {
     initialize()

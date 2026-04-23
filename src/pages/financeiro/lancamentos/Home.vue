@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/select'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import type { CategoriaFinanceiro, ContasFinanceiro } from '@/types/schemas'
+import { useSocketEvent } from '@/composables/useSocketEvent'
 
 const store = useLancamentosStore()
 const uiStore = useUiStore()
@@ -136,6 +137,11 @@ function goToContas() {
 }
 
 onMounted(() => {
+  loadFilterOptions()
+})
+
+useSocketEvent('financeiro:updated', () => {
+  store.updateTable()
   loadFilterOptions()
 })
 </script>

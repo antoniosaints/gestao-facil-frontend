@@ -61,14 +61,15 @@ Na prática:
 - A geração manual de ciclo em assinaturas deve passar por confirmação explícita em modal, com loading no botão de confirmação e bloqueio de duplo clique enquanto a ação estiver em andamento.
 - Ações destrutivas em assinaturas e planos devem reutilizar o fluxo de confirmação já existente e refletir imediatamente a atualização da listagem após exclusão, respeitando bloqueios de negócio retornados pelo backend.
 - Cobranças recorrentes precisam tratar referência do gateway e link retornado como parte do estado visível do ciclo, permitindo gerar, cancelar, estornar e reajustar a cobrança a partir do mesmo contexto operacional.
-- A tela `configs/ConfiguracaoPage.vue` continua concentrando integrações financeiras operacionais da conta, incluindo as credenciais próprias de Mercado Pago e AbacatePay do tenant.
+- A tela `configs/ConfiguracaoPage.vue` continua concentrando preferências operacionais da conta, incluindo eventos de notificação, flags globais do financeiro e os parâmetros remanescentes que não pertencem à App Store.
 - A decisão do gateway da mensalidade SaaS agora vive em `admin/configuracoes/Home.vue`, exclusiva de superadmin, e sincroniza `Contas.gateway` para refletir o comportamento real das próximas cobranças da plataforma.
 - Quando a renovação do SaaS usar AbacatePay, a UI continua tratando o pagamento como checkout hospedado, mas o link passa a oferecer PIX e cartão no mesmo fluxo, sem criar uma UX paralela fora da jornada já existente da assinatura da conta.
 - No financeiro operacional e na automação recorrente interna, o AbacatePay usa as credenciais salvas em `ParametrosConta`, mantendo separado o contexto global do SaaS e o contexto do cliente.
 - Em financeiro, contas e categorias continuam como fluxos auxiliares de configuração, enquanto a navegação operacional principal pode expor `lancamentos`, `acompanhamento`, `contas a receber` e `contas a pagar` como entradas separadas quando isso reduzir fricção para o usuário final.
 - O módulo financeiro deve tratar dashboards, acompanhamentos, calendários operacionais e telas de detalhe com base em parcelas reais, separando saldo realizado, saldo previsto, pendências e atrasos, sempre respeitando o `contaId` autenticado em toda consulta e filtro.
 - O lançamento financeiro deve aceitar parcelamento mensal, semanal, diário, quinzenal ou personalizado em dias, permitir valor total dividido ou valor fixo por parcela, manter campos operacionais recorrentes preenchidos entre lançamentos em lote manual, expor importação em massa por CSV no próprio domínio e oferecer edição rápida restrita a descrição, categoria, conta, cliente/fornecedor e forma de pagamento padrão, preservando valores, datas e parcelamento já lançados.
-- A tela de contas financeiras deve combinar CRUD do cadastro com uma visão detalhada por modal, incluindo resumo da conta, entradas, saídas, pendências, lista filtrável de movimentações vinculadas, transferência entre contas com opção de gerar financeiro ou apenas mover os lançamentos filtrados com prévia de parcelas/lançamentos afetados e ajuste manual de saldo com modo financeiro ou ajuste interno invisível nas listagens.
+- A tela de contas financeiras deve combinar CRUD do cadastro com uma visão detalhada por modal, incluindo resumo da conta, entradas, saídas, pendências, lista filtrável de movimentações vinculadas, saldo atual calculado em tempo de consulta, transferência entre contas com opção de gerar financeiro ou apenas mover os lançamentos filtrados com prévia de parcelas/lançamentos afetados e ajuste manual de saldo com modo financeiro ou ajuste interno invisível nas listagens.
+- Os cards de resumo por conta no painel financeiro devem reaproveitar o mesmo repertório de ações da listagem de contas, sem criar uma segunda convenção de UI para editar, detalhar, transferir ou ajustar saldo.
 - O mesmo domínio costuma combinar página, store e repository próprios.
 - O frontend usa contrato tipado local em `src/types/schemas.ts`, espelhando os domínios principais do backend.
 - O guard de rotas consulta dados do usuário, status da conta e permissão antes de liberar navegação.
@@ -86,4 +87,6 @@ Na prática:
 - Reutilizar componentes de `components/ui`, `components/layout` e `components/formulario` antes de criar novos.
 - Não introduzir novo padrão de acesso HTTP fora de `repositories` sem motivo forte.
 - Manter `meta.layout`, `meta.permissao` e `meta.isPublic` coerentes com as regras existentes do router.
+- Tratar `arena` como variação real do produto, não como exceção pontual.
+s regras existentes do router.
 - Tratar `arena` como variação real do produto, não como exceção pontual.

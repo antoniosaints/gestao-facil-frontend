@@ -72,6 +72,7 @@ import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
 import { getLettersName } from '@/utils/formatters'
 import { updateMetaTags } from '@/utils/theme'
 import { env } from '@/utils/dotenv'
+import { useSocketEvent } from '@/composables/useSocketEvent'
 const store = useUiStore()
 const loading = ref(false)
 window.addEventListener('resize', () => {
@@ -127,6 +128,10 @@ async function initialize() {
         loading.value = false
     }
 }
+
+useSocketEvent('sessao:updated', async () => {
+    await Promise.all([store.getDataUsuario(), store.getStatus()])
+})
 
 onMounted(() => {
     initialize()

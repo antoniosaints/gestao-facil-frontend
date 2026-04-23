@@ -9,7 +9,7 @@
           {{ store.contaInfo.nome }}
         </h1>
         <p class="text-xs overflow-hidden text-ellipsis whitespace-nowrap truncate text-gray-300 dark:text-gray-400">
-          {{ store.usuarioLogged.email || "Login necessário" }}
+          {{ store.usuarioLogged.email || 'Login necessário' }}
         </p>
       </div>
     </div>
@@ -18,16 +18,15 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import ModalUploadPerfil from '@/pages/configs/ModalUploadPerfil.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { env } from '@/utils/dotenv'
-import { computed } from 'vue'
+import { resolveFileUrl } from '@/utils/fileUrl'
+
 const store = useUiStore()
 
-const logo = computed(() => {
-  const url = import.meta.env.VITE_BACKEND_URL
-  return url + '/' + store.contaInfo.profile + '?_t=' + Date.now()
-})
+const logo = computed(() => resolveFileUrl(store.contaInfo.profile, { bustCache: true }))
 
 const openModal = () => {
   if (store.permissoes.admin) {

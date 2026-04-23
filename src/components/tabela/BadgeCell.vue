@@ -1,50 +1,45 @@
 <script setup lang="ts">
-import { computed, type Component } from "vue"
+import { computed, type Component } from 'vue'
+import { formatToCapitalize } from '@/utils/formatters'
 
 interface Props {
   label: string
-  color: "cyan" | "yellow" | "gray" | "violet" | "purple" | "green" | "emerald" | "orange" | "red" | "blue"
+  color: 'cyan' | 'yellow' | 'gray' | 'violet' | 'purple' | 'green' | 'emerald' | 'orange' | 'red' | 'blue'
   icon?: string | Component
   capitalize?: boolean
-  size?: "sm" | "md" | "lg",
+  size?: 'sm' | 'md' | 'lg'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   capitalize: true,
-  size: "lg",
+  size: 'lg',
 })
 
-function formatToCapitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
-}
-
 const formattedLabel = computed(() =>
-  props.capitalize ? formatToCapitalize(props.label) : props.label
+  props.capitalize ? formatToCapitalize(props.label) : props.label,
 )
 
 const baseClasses = computed(() => {
-  if (props.size === "sm") {
-    // Versão compacta, usada apenas quando size="sm" for informado
-    return "inline-flex items-center gap-1 px-1.5 py-[1px] border rounded-md w-max text-[11px]"
+  if (props.size === 'sm') {
+    return 'inline-flex items-center gap-1 px-1.5 py-[1px] border rounded-md w-max text-[11px]'
   }
-  // Padrão anterior (mantido para compatibilidade)
-  return "inline-flex items-center gap-1 px-2 py-1 border rounded-lg w-max"
+
+  return 'inline-flex items-center gap-1 px-2 py-1 border rounded-lg w-max'
 })
 
-const iconClasses = computed(() => (props.size === "sm" ? "h-3 w-3" : "h-4 w-4"))
-
+const iconClasses = computed(() => (props.size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'))
 
 const colors = {
-  cyan: "text-cyan-800 border-cyan-400 dark:border-cyan-700 dark:text-cyan-300",
-  yellow: "text-yellow-800 border-yellow-400 dark:border-yellow-700 dark:text-yellow-300",
-  gray: "text-gray-800 border-gray-400 dark:border-gray-700 dark:text-gray-300",
-  violet: "text-violet-800 border-violet-400 dark:border-violet-700 dark:text-violet-300",
-  purple: "text-purple-800 border-purple-400 dark:border-purple-700 dark:text-purple-300",
-  green: "text-green-800 border-green-400 dark:border-green-700 dark:text-green-300",
-  emerald: "text-emerald-800 border-emerald-400 dark:border-emerald-700 dark:text-emerald-300",
-  orange: "text-orange-800 border-orange-400 dark:border-orange-700 dark:text-orange-300",
-  blue: "text-blue-800 border-blue-400 dark:border-blue-700 dark:text-blue-300",
-  red: "text-red-800 border-red-400 dark:border-red-700 dark:text-red-300",
+  cyan: 'text-cyan-800 border-cyan-400 dark:border-cyan-700 dark:text-cyan-300',
+  yellow: 'text-yellow-800 border-yellow-400 dark:border-yellow-700 dark:text-yellow-300',
+  gray: 'text-gray-800 border-gray-400 dark:border-gray-700 dark:text-gray-300',
+  violet: 'text-violet-800 border-violet-400 dark:border-violet-700 dark:text-violet-300',
+  purple: 'text-purple-800 border-purple-400 dark:border-purple-700 dark:text-purple-300',
+  green: 'text-green-800 border-green-400 dark:border-green-700 dark:text-green-300',
+  emerald: 'text-emerald-800 border-emerald-400 dark:border-emerald-700 dark:text-emerald-300',
+  orange: 'text-orange-800 border-orange-400 dark:border-orange-700 dark:text-orange-300',
+  blue: 'text-blue-800 border-blue-400 dark:border-blue-700 dark:text-blue-300',
+  red: 'text-red-800 border-red-400 dark:border-red-700 dark:text-red-300',
 }
 </script>
 

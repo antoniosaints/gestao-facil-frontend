@@ -13,11 +13,13 @@ import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useContasFinanceirasStore } from '@/stores/lancamentos/useContasFinanceiras'
+import { useUiStore } from '@/stores/ui/uiStore'
 import type { ContasFinanceiro } from '@/types/schemas'
 import ModalAjusteSaldoConta from '../ModalAjusteSaldoConta.vue'
 import ModalTransferenciaConta from '../ModalTransferenciaConta.vue'
 
 const store = useContasFinanceirasStore()
+const uiStore = useUiStore()
 const toast = useToast()
 const openTransferModal = ref(false)
 const openAjusteModal = ref(false)
@@ -55,24 +57,24 @@ async function deletar(id: number) {
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
-      <DropdownMenuItem @click="store.openDetails(props.data)">
+      <DropdownMenuItem v-if="uiStore.permissoes.financeiro.visualizar" @click="store.openDetails(props.data)">
         <i class="fa-regular fa-eye mr-1"></i>
         Detalhes
       </DropdownMenuItem>
-      <DropdownMenuItem @click="openTransferModal = true">
+      <DropdownMenuItem v-if="uiStore.permissoes.financeiro.editar" @click="openTransferModal = true">
         <i class="fa-solid fa-right-left mr-1"></i>
         Transferir
       </DropdownMenuItem>
-      <DropdownMenuItem @click="openAjusteModal = true">
+      <DropdownMenuItem v-if="uiStore.permissoes.financeiro.editar" @click="openAjusteModal = true">
         <i class="fa-solid fa-scale-balanced mr-1"></i>
         Ajustar saldo
       </DropdownMenuItem>
-      <DropdownMenuItem @click="store.openUpdate(props.data)">
+      <DropdownMenuItem v-if="uiStore.permissoes.financeiro.editar" @click="store.openUpdate(props.data)">
         <i class="fa-regular fa-pen-to-square mr-1"></i>
         Editar
       </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem class="text-danger" @click="deletar(props.data.id!)">
+      <DropdownMenuSeparator v-if="uiStore.permissoes.financeiro.excluir" />
+      <DropdownMenuItem v-if="uiStore.permissoes.financeiro.excluir" class="text-danger" @click="deletar(props.data.id!)">
         <i class="fa-regular fa-trash-can mr-1"></i>
         Excluir
       </DropdownMenuItem>
