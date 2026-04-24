@@ -332,7 +332,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 pb-24 md:pb-0">
     <div>
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -385,7 +385,7 @@ onMounted(async () => {
       </Card>
     </section>
 
-    <div class="grid gap-4 md:grind-cols-2 xl:grid-cols-4">
+    <div class="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
       <Card class="shadow-sm">
         <CardHeader>
           <CardTitle class="text-lg">Evolução do saldo</CardTitle>
