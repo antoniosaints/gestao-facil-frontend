@@ -332,8 +332,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-4 pb-24 md:pb-0">
-    <div class="">
+  <div>
+    <div>
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
