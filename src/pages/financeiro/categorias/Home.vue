@@ -212,7 +212,7 @@ onMounted(loadCategorias)
         </Empty>
       </div>
 
-      <div v-else class="flex flex-col gap-2 pb-20">
+      <div v-else class="flex flex-col gap-2">
         <div v-if="!loading && !categoriasFiltradas.length" class="rounded-2xl border border-border p-6">
           <Empty>
             <EmptyHeader>

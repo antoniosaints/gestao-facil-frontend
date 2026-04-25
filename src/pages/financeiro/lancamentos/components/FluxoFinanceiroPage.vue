@@ -630,20 +630,20 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl space-y-4 pb-24 md:pb-0">
+  <div class="mx-auto max-w-7xl space-y-4">
     <div class="rounded-lg border bg-card p-4 shadow-sm">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center justify-center lg:justify-between">
         <div class="space-y-1">
-          <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
-            <component :is="headerIcon" class="h-6 w-6 text-primary dark:text-blue-500" />
+          <h2 class="flex items-center gap-2 text-base lg:text-2xl font-bold text-foreground">
+            <component :is="headerIcon" class="h-5 w-5 lg:h-6 lg:w-6 text-primary dark:text-blue-500" />
             {{ title }}
           </h2>
-          <p class="text-xs text-muted-foreground truncate">
+          <p class="text-xs text-muted-foreground truncate hidden lg:block">
             {{ description }}
           </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+        <div class="flex flex-wrap items-center justify-center lg:justify-between gap-2 self-center lg:self-auto">
           <Button variant="outline" size="icon" @click="navigateMonth('prev')">
             <ArrowLeft class="h-4 w-4" />
           </Button>
@@ -659,12 +659,12 @@ onMounted(async () => {
             <ArrowRight class="h-4 w-4" />
           </Button>
           <Button variant="outline" @click="openModalFiltros = true">
-            <Filter class="h-4 w-4" /> Filtros
+            <Filter class="h-4 w-4" /> <span>Filtrar</span>
           </Button>
-          <Button class="dark:text-white" @click="handleNewLancamento">
+          <Button class="dark:text-white hidden lg:inline-flex" @click="handleNewLancamento">
             <BadgePlus class="h-4 w-4" /> {{ launchLabel }}
           </Button>
-          <Button variant="outline" size="icon" @click="carregarLancamentos(true)">
+          <Button class="hidden lg:inline-flex" variant="outline" size="icon" @click="carregarLancamentos(true)">
             <RotateCw class="h-4 w-4" :class="{ 'animate-spin': carregando }" />
           </Button>
         </div>
@@ -858,7 +858,7 @@ onMounted(async () => {
       </TabsContent>
 
       <TabsContent value="resumo">
-        <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <section class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           <Card v-for="item in indicadores" :key="item.titulo" class="rounded-xl shadow transition">
             <CardHeader class="p-2 px-4">
               <CardTitle class="flex flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">

@@ -28,9 +28,9 @@
             </div>
         </aside>
         <main id="container-main-app-sistema"
-            class="overflow-y-auto h-[calc(100vh-5rem)] text-gray-700 dark:text-gray-300 md:h-[calc(100vh-4.3rem)] p-6 mt-0 transition-all duration-300 ease-in-out"
+            class="min-h-0 flex-1 overflow-y-auto p-6 mt-0 text-gray-700 transition-all duration-300 ease-in-out dark:text-gray-300"
             :class="{ 'md:ml-64': store.openSidebar }">
-            <div class="max-w-7xl mx-auto" id="content">
+            <div class="max-w-7xl mx-auto pb-16 md:pb-0" id="content">
                 <AlertTopbar />
                 <div v-if="store.loading || progress > 0"
                     class="absolute hidden md:block top-14 h-2 transition-all duration-100 ease-linear"

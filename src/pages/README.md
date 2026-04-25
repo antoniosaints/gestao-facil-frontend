@@ -32,6 +32,7 @@ Cada domínio tende a repetir esta estrutura:
 - A página de contas financeiras deve oferecer não só o cadastro da conta, mas também saldo atual calculado já na listagem, um modal de detalhe com visão consolidada do saldo da conta, entradas, saídas, pendências, listagem filtrável das movimentações vinculadas e ações de transferência entre contas e ajuste manual de saldo.
 - O painel financeiro deve reutilizar as mesmas ações disponíveis na listagem de contas para evitar divergência entre dashboard e CRUD operacional.
 - O domínio `servicos/os` agora também expõe faturamento e geração de cobrança na própria listagem e no modal de detalhes, reaproveitando o fluxo de vendas/financeiro e bloqueando exclusões quando houver vínculo financeiro ativo.
+- A página `perfil/PerfilUsuario.vue` deve permitir ao usuário autenticado atualizar seus próprios dados, trocar avatar com upload imediato via serviço central de storage, e alterar a senha informando senha atual, nova senha e confirmação com validação explícita na UI e no backend.
 
 ## Regras
 - Ao criar funcionalidade nova, encaixar dentro do domínio correto antes de abrir uma nova área.

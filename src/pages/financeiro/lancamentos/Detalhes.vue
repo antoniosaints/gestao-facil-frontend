@@ -272,7 +272,7 @@ watch(() => store.filters.update, loadLancamento)
 </script>
 
 <template>
-  <div class="mx-auto space-y-4 pb-24 md:pb-0">
+  <div class="mx-auto space-y-4 pb-20 md:pb-0">
     <div
       class="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
       <div class="space-y-2">

@@ -4,7 +4,7 @@
       <div class="h-16 w-16 animate-spin rounded-full border-b-2 border-primary dark:border-primary-dark"></div>
     </div>
 
-    <div v-else class="flex flex-col gap-2 pb-20">
+    <div v-else class="flex flex-col gap-2">
       <div
         v-if="dataMobile.length === 0"
         class="flex h-[calc(100vh-13rem)] items-center justify-center rounded-md bg-card dark:bg-card-dark"

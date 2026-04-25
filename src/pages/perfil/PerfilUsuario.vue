@@ -1,245 +1,664 @@
-<template>
-    <div class="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
-        <div class="flex flex-col md:flex-row gap-6">
-            <!-- Coluna Esquerda: Resumo do Perfil -->
-            <aside class="w-full md:w-1/3 lg:w-1/4 space-y-6">
-                <Card>
-                    <CardHeader class="pb-2">
-                        <div class="flex flex-col items-center">
-                            <div class="relative group cursor-pointer" @click="openAvatarInput">
-                                <Avatar
-                                    class="w-24 h-24 mb-4 border-2 border-border group-hover:opacity-80 transition-opacity">
-                                    <img :src="storeUi.usuarioLogged.profile || defaultAvatar" alt="Avatar do usuário"
-                                        class="object-cover w-full h-full" />
-                                    <div
-                                        class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <CameraIcon class="w-8 h-8 text-white" />
-                                    </div>
-                                </Avatar>
-                                <input ref="avatarInput" type="file" accept="image/*" @change="onAvatarChange"
-                                    class="hidden" />
-                            </div>
-                            <CardTitle class="text-xl text-center">{{ storeUi.usuarioLogged.nome }}</CardTitle>
-                            <CardDescription class="text-center break-all">{{ storeUi.usuarioLogged.email }}
-                            </CardDescription>
-                            <div class="flex justify-center w-full mt-2">
-                                <BadgeCell color="emerald" :label="(storeUi.usuarioLogged.permissao as string)" />
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent class="text-sm text-muted-foreground text-center">
-                        <p v-if="storeUi.usuarioLogged.biografia" class="italic">"{{ storeUi.usuarioLogged.biografia }}"
-                        </p>
-                        <p v-else class="italic">Sem biografia definida.</p>
-                    </CardContent>
-                </Card>
-            </aside>
-
-            <!-- Coluna Direita: Conteúdo e Edição -->
-            <main class="flex-1 space-y-6">
-                <!-- Seção de Dados e Configurações -->
-                <Tabs default-value="pessoal" class="w-full">
-                    <TabsList class="grid w-full grid-cols-2">
-                        <TabsTrigger value="pessoal">Dados Pessoais</TabsTrigger>
-                        <TabsTrigger value="seguranca">Segurança</TabsTrigger>
-                    </TabsList>
-
-                    <!-- Aba: Dados Pessoais -->
-                    <TabsContent value="pessoal">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Informações do Perfil</CardTitle>
-                                <CardDescription>
-                                    Atualize suas informações de contato e detalhes pessoais.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent class="space-y-4">
-                                <div class="grid gap-2">
-                                    <Label htmlFor="nome">Nome Completo</Label>
-                                    <Input id="nome" v-model="usuarioProfile.nome" placeholder="Seu nome completo" />
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div class="grid gap-2">
-                                        <Label htmlFor="email">Email</Label>
-                                        <Input id="email" v-model="usuarioProfile.email" type="email" disabled
-                                            class="bg-muted" />
-                                    </div>
-                                    <div class="grid gap-2">
-                                        <Label htmlFor="telefone">Telefone</Label>
-                                        <Input id="telefone" v-model="usuarioProfile.telefone"
-                                            placeholder="(00) 00000-0000" />
-                                    </div>
-                                </div>
-                                <div class="grid gap-2">
-                                    <Label htmlFor="endereco">Endereço</Label>
-                                    <Input id="endereco" v-model="usuarioProfile.endereco"
-                                        placeholder="Rua, número, bairro..." />
-                                </div>
-                                <div class="grid gap-2">
-                                    <Label htmlFor="biografia">Biografia</Label>
-                                    <Textarea id="biografia" v-model="usuarioProfile.biografia"
-                                        placeholder="Conte um pouco sobre você..." rows="4" />
-                                </div>
-                            </CardContent>
-                            <CardFooter>
-                                <Button @click="saveProfile" :disabled="isLoading">
-                                    <SaveIcon v-if="!isLoading" class="w-4 h-4 mr-2" />
-                                    <span v-else class="mr-2">Salvando...</span>
-                                    Salvar Alterações
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    </TabsContent>
-
-                    <!-- Aba: Segurança -->
-                    <TabsContent value="seguranca">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Segurança da Conta</CardTitle>
-                                <CardDescription>
-                                    Gerencie sua senha e acesso à conta.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent class="space-y-4">
-                                <div class="grid gap-2">
-                                    <Label htmlFor="current-password">Senha Atual</Label>
-                                    <Input id="current-password" v-model="password.old" type="password" />
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div class="grid gap-2">
-                                        <Label htmlFor="new-password">Nova Senha</Label>
-                                        <Input id="new-password" v-model="password.new" type="password" />
-                                    </div>
-                                    <div class="grid gap-2">
-                                        <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
-                                        <Input id="confirm-password" v-model="password.confirm" type="password" />
-                                    </div>
-                                </div>
-                            </CardContent>
-                            <CardFooter>
-                                <Button @click="changePassword" variant="destructive" :disabled="isLoading">
-                                    Alterar Senha
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
-            </main>
-        </div>
-
-        <nav v-if="storeUi.isMobile"
-            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark flex justify-around pt-4 h-20 shadow-lg z-20 md:hidden">
-            <button type="button" @click="storeUi.openSidebar = true"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <Menu />
-                <span class="text-xs">Menu</span>
-            </button>
-        </nav>
-    </div>
-</template>
-
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { Camera as CameraIcon, Save as SaveIcon, Menu } from 'lucide-vue-next'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import {
+  Camera as CameraIcon,
+  CheckCircle2,
+  CircleAlert,
+  Eye,
+  EyeOff,
+  KeyRound,
+  LoaderCircle,
+  Mail,
+  MapPin,
+  Menu,
+  PenLine,
+  Phone,
+  Save as SaveIcon,
+  ShieldCheck,
+  Sparkles,
+  UserRound,
+} from 'lucide-vue-next'
+import { useToast } from 'vue-toastification'
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Avatar } from '@/components/ui/avatar'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import type { Usuarios } from '@/types/schemas'
-import { useUiStore } from '@/stores/ui/uiStore'
+import { Textarea } from '@/components/ui/textarea'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
-import { useToast } from 'vue-toastification'
-import BadgeCell from '@/components/tabela/BadgeCell.vue'
+import { useUiStore } from '@/stores/ui/uiStore'
+import type { Usuarios } from '@/types/schemas'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 const storeUi = useUiStore()
 const toast = useToast()
-const defaultAvatar = '/imgs/logo.png' // Consider using a better default avatar or empty state
-const isLoading = ref(false)
+const defaultAvatar = '/imgs/logo.png'
+
+const activeTab = ref('pessoal')
+const profileLoading = ref(false)
+const passwordLoading = ref(false)
+const avatarUploading = ref(false)
+const avatarPreviewUrl = ref<string | null>(null)
+const avatarVersion = ref(0)
+const avatarInput = ref<HTMLInputElement | null>(null)
 
 const usuarioProfile = ref<Partial<Usuarios>>({
-    ...storeUi.usuarioLogged
+  ...storeUi.usuarioLogged,
 })
 
-const avatarInput = ref<HTMLInputElement | null>(null)
-const password = reactive({ old: '', new: '', confirm: '' })
+const password = reactive({
+  current: '',
+  next: '',
+  confirm: '',
+})
+
+const showPassword = reactive({
+  current: false,
+  next: false,
+  confirm: false,
+})
+
+watch(
+  () => storeUi.usuarioLogged,
+  (value) => {
+    usuarioProfile.value = { ...value }
+  },
+  { deep: true },
+)
+
+const userInitials = computed(() => {
+  const nome = storeUi.usuarioLogged.nome?.trim()
+  if (!nome) return 'GF'
+  return nome
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+})
+
+const avatarUrl = computed(() => {
+  if (avatarPreviewUrl.value) {
+    return avatarPreviewUrl.value
+  }
+
+  const source = resolveFileUrl(usuarioProfile.value.profile || storeUi.usuarioLogged.profile, {
+    fallback: defaultAvatar,
+  })
+
+  if (!avatarVersion.value) {
+    return source
+  }
+
+  const separator = source.includes('?') ? '&' : '?'
+  return `${source}${separator}_t=${avatarVersion.value}`
+})
+
+const profileCompletion = computed(() => {
+  const fields = [
+    usuarioProfile.value.nome,
+    usuarioProfile.value.email,
+    usuarioProfile.value.telefone,
+    usuarioProfile.value.endereco,
+    usuarioProfile.value.biografia,
+    usuarioProfile.value.profile,
+  ]
+
+  const filled = fields.filter((value) => String(value ?? '').trim().length > 0).length
+  return Math.round((filled / fields.length) * 100)
+})
+
+const biographyLength = computed(() => usuarioProfile.value.biografia?.trim().length ?? 0)
+
+const passwordChecks = computed(() => [
+  {
+    label: 'Senha atual informada',
+    valid: password.current.trim().length > 0,
+  },
+  {
+    label: 'Nova senha com pelo menos 6 caracteres',
+    valid: password.next.trim().length >= 6,
+  },
+  {
+    label: 'Nova senha diferente da atual',
+    valid: password.next.trim().length > 0 && password.next !== password.current,
+  },
+  {
+    label: 'Confirmação igual à nova senha',
+    valid: password.confirm.trim().length > 0 && password.confirm === password.next,
+  },
+])
+
+const passwordStrength = computed(() => {
+  const value = password.next.trim()
+  if (!value) {
+    return {
+      label: 'Aguardando nova senha',
+      className: 'text-muted-foreground',
+      meterClass: 'w-0 bg-border',
+    }
+  }
+
+  const score = [value.length >= 6, /[A-Z]/.test(value), /\d/.test(value), /[^A-Za-z0-9]/.test(value)].filter(Boolean).length
+
+  if (score <= 1) {
+    return {
+      label: 'Força baixa',
+      className: 'text-rose-600 dark:text-rose-400',
+      meterClass: 'w-1/3 bg-rose-500',
+    }
+  }
+
+  if (score <= 3) {
+    return {
+      label: 'Força média',
+      className: 'text-amber-600 dark:text-amber-400',
+      meterClass: 'w-2/3 bg-amber-500',
+    }
+  }
+
+  return {
+    label: 'Força alta',
+    className: 'text-emerald-600 dark:text-emerald-400',
+    meterClass: 'w-full bg-emerald-500',
+  }
+})
+
+const canSubmitPassword = computed(() => passwordChecks.value.every((item) => item.valid))
 
 function openAvatarInput() {
-    avatarInput.value?.click()
+  if (avatarUploading.value) return
+  avatarInput.value?.click()
 }
 
-async function onAvatarChange(e: Event) {
-    const input = e.target as HTMLInputElement
-    if (!input.files?.length) return
-    const file = input.files[0]
+function resetAvatarPreview() {
+  if (avatarPreviewUrl.value?.startsWith('blob:')) {
+    URL.revokeObjectURL(avatarPreviewUrl.value)
+  }
+  avatarPreviewUrl.value = null
+}
 
-    // Preview
-    const reader = new FileReader()
-    reader.onload = () => {
-        usuarioProfile.value.profile = String(reader.result)
-        // Aqui você poderia já subir a imagem ou esperar o "Salvar"
-        // Para UX imediata, salvar o avatar separadamente pode ser melhor,
-        // mas vamos manter simples por agora e salvar junto se desejar, 
-        // ou implementar upload direto aqui.
-    }
-    reader.readAsDataURL(file)
+onBeforeUnmount(() => {
+  resetAvatarPreview()
+})
+
+function getErrorMessage(error: unknown, fallback: string) {
+  const axiosError = error as { response?: { data?: { message?: string } } }
+  return axiosError.response?.data?.message || fallback
+}
+
+async function onAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files?.length) return
+
+  const file = input.files[0]
+
+  if (file.size > 2 * 1024 * 1024) {
+    toast.error('A imagem deve ter no máximo 2MB.')
+    input.value = ''
+    return
+  }
+
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    toast.error('A imagem deve estar no formato JPEG, PNG ou WebP.')
+    input.value = ''
+    return
+  }
+
+  resetAvatarPreview()
+  avatarPreviewUrl.value = URL.createObjectURL(file)
+  avatarUploading.value = true
+
+  try {
+    await UsuarioRepository.uploadProfileImage(file)
+    await storeUi.getDataUsuario()
+    usuarioProfile.value = { ...storeUi.usuarioLogged }
+    avatarVersion.value = Date.now()
+    toast.success('Foto do perfil atualizada com sucesso.')
+  } catch (error) {
+    toast.error(getErrorMessage(error, 'Erro ao atualizar a foto do perfil.'))
+  } finally {
+    avatarUploading.value = false
+    resetAvatarPreview()
+    input.value = ''
+  }
+}
+
+function resetPasswordForm() {
+  password.current = ''
+  password.next = ''
+  password.confirm = ''
 }
 
 async function changePassword() {
-    if (!password.old || !password.new || !password.confirm) {
-        toast.warning('Preencha todos os campos de senha')
-        return
-    }
+  if (!canSubmitPassword.value) {
+    toast.warning('Revise os campos da nova senha antes de continuar.')
+    return
+  }
 
-    if (password.new !== password.confirm) {
-        toast.error('A nova senha e a confirmação não conferem')
-        return
-    }
+  passwordLoading.value = true
 
-    isLoading.value = true
-    try {
-        // Simulação de chamada de API
-        // await UsuarioRepository.changePassword(password.old, password.new) 
-        // Implementar no repositório se necessário
+  try {
+    await UsuarioRepository.updatePassword({
+      senhaAtual: password.current,
+      novaSenha: password.next,
+      confirmarSenha: password.confirm,
+    })
 
-        // Mock de sucesso para feedback visual
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        toast.success('Senha alterada com sucesso!')
-        password.old = ''
-        password.new = ''
-        password.confirm = ''
-    } catch (error) {
-        console.error(error)
-        toast.error('Erro ao alterar senha. Verifique sua senha atual.')
-    } finally {
-        isLoading.value = false
-    }
+    resetPasswordForm()
+    toast.success('Senha atualizada com sucesso.')
+  } catch (error) {
+    toast.error(getErrorMessage(error, 'Erro ao atualizar a senha.'))
+  } finally {
+    passwordLoading.value = false
+  }
 }
 
 async function saveProfile() {
-    isLoading.value = true
-    try {
-        await UsuarioRepository.updateProfile({
-            biografia: usuarioProfile.value.biografia,
-            endereco: usuarioProfile.value.endereco,
-            telefone: usuarioProfile.value.telefone,
-            nome: usuarioProfile.value.nome,
-            profile: usuarioProfile.value.profile // Se o backend aceitar atualização de perfil aqui
-        })
-        await storeUi.getDataUsuario();
-        toast.success('Perfil atualizado com sucesso')
-    } catch (error) {
-        console.error(error)
-        toast.error('Erro ao atualizar perfil, tente novamente')
-    } finally {
-        isLoading.value = false
-    }
+  profileLoading.value = true
+
+  try {
+    await UsuarioRepository.updateProfile({
+      nome: usuarioProfile.value.nome,
+      telefone: usuarioProfile.value.telefone,
+      biografia: usuarioProfile.value.biografia,
+      endereco: usuarioProfile.value.endereco,
+      profile: usuarioProfile.value.profile,
+    })
+
+    await storeUi.getDataUsuario()
+    toast.success('Perfil atualizado com sucesso.')
+  } catch (error) {
+    toast.error(getErrorMessage(error, 'Erro ao atualizar o perfil.'))
+  } finally {
+    profileLoading.value = false
+  }
 }
 </script>
 
-<style scoped>
-/* Scoped styles if needed, mostly using tailwind utilities */
-</style>
+<template>
+  <div class="mx-auto max-w-7xl space-y-6 p-4 pb-20 md:p-8 md:pb-8">
+    <section class="relative overflow-hidden rounded-[28px] border border-border/70 bg-gradient-to-br from-primary/10 via-background to-emerald-500/10 p-6 shadow-sm">
+      <div class="absolute -right-10 top-0 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+      <div class="absolute bottom-0 left-0 h-32 w-32 rounded-full bg-emerald-500/10 blur-3xl" />
+
+      <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-col gap-5 md:flex-row md:items-center">
+          <div class="relative w-fit">
+            <button
+              type="button"
+              class="group relative rounded-full focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-wait"
+              :disabled="avatarUploading"
+              @click="openAvatarInput"
+            >
+              <Avatar class="h-24 w-24 border-4 border-background shadow-lg md:h-28 md:w-28">
+                <AvatarImage :src="avatarUrl" alt="Avatar do usuário" />
+                <AvatarFallback class="bg-primary/10 text-lg font-semibold text-primary">
+                  {{ userInitials }}
+                </AvatarFallback>
+              </Avatar>
+              <div class="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 opacity-0 transition-opacity group-hover:opacity-100 group-disabled:opacity-100">
+                <LoaderCircle v-if="avatarUploading" class="h-7 w-7 animate-spin text-white" />
+                <CameraIcon v-else class="h-7 w-7 text-white" />
+              </div>
+            </button>
+
+            <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="onAvatarChange" />
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <p class="text-sm font-medium uppercase tracking-[0.24em] text-primary/80">Minha conta</p>
+              <h1 class="mt-1 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+                {{ storeUi.usuarioLogged.nome }}
+              </h1>
+              <p class="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                Atualize seus dados pessoais, organize como sua conta aparece no sistema e mantenha a senha sob controle em um fluxo mais claro.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <Badge variant="outline" class="gap-2 rounded-full px-3 py-1 text-xs">
+                <ShieldCheck class="h-3.5 w-3.5" />
+                {{ storeUi.usuarioLogged.permissao }}
+              </Badge>
+              <Badge variant="outline" class="gap-2 rounded-full px-3 py-1 text-xs">
+                <Mail class="h-3.5 w-3.5" />
+                {{ storeUi.usuarioLogged.email }}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-3 lg:w-[420px]">
+          <div class="rounded-2xl border bg-background/80 p-4 backdrop-blur-sm">
+            <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">Perfil</p>
+            <p class="mt-2 text-2xl font-semibold text-foreground">{{ profileCompletion }}%</p>
+            <p class="mt-1 text-xs text-muted-foreground">Campos principais preenchidos.</p>
+          </div>
+          <div class="rounded-2xl border bg-background/80 p-4 backdrop-blur-sm">
+            <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">Senha</p>
+            <p class="mt-2 text-sm font-semibold text-foreground">Proteção ativa</p>
+            <p class="mt-1 text-xs text-muted-foreground">Atualize quando precisar revogar acessos antigos.</p>
+          </div>
+          <div class="rounded-2xl border bg-background/80 p-4 backdrop-blur-sm">
+            <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">Avatar</p>
+            <p class="mt-2 text-sm font-semibold text-foreground">Foto opcional</p>
+            <p class="mt-1 text-xs text-muted-foreground">Clique na imagem para trocar a prévia.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <aside class="space-y-6">
+        <Card class="overflow-hidden border-border/70 shadow-sm">
+          <CardHeader class="pb-4">
+            <CardTitle class="flex items-center gap-2 text-lg">
+              <Sparkles class="h-5 w-5 text-primary" />
+              Resumo do perfil
+            </CardTitle>
+            <CardDescription>
+              Um panorama rápido do que já está configurado na sua conta.
+            </CardDescription>
+          </CardHeader>
+          <CardContent class="space-y-4">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-muted-foreground">Preenchimento</span>
+                <span class="font-medium text-foreground">{{ profileCompletion }}%</span>
+              </div>
+              <div class="h-2 overflow-hidden rounded-full bg-muted">
+                <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${profileCompletion}%` }" />
+              </div>
+            </div>
+
+            <div class="grid gap-3">
+              <div class="rounded-2xl border bg-muted/25 p-3">
+                <div class="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <UserRound class="h-4 w-4 text-primary" />
+                  Nome público
+                </div>
+                <p class="mt-1 text-sm text-muted-foreground">{{ usuarioProfile.nome || 'Não informado' }}</p>
+              </div>
+
+              <div class="rounded-2xl border bg-muted/25 p-3">
+                <div class="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Phone class="h-4 w-4 text-primary" />
+                  Telefone
+                </div>
+                <p class="mt-1 text-sm text-muted-foreground">{{ usuarioProfile.telefone || 'Adicione um telefone para contato rápido.' }}</p>
+              </div>
+
+              <div class="rounded-2xl border bg-muted/25 p-3">
+                <div class="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <MapPin class="h-4 w-4 text-primary" />
+                  Endereço
+                </div>
+                <p class="mt-1 text-sm text-muted-foreground">{{ usuarioProfile.endereco || 'Nenhum endereço cadastrado.' }}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card class="border-border/70 shadow-sm">
+          <CardHeader class="pb-4">
+            <CardTitle class="flex items-center gap-2 text-lg">
+              <ShieldCheck class="h-5 w-5 text-primary" />
+              Segurança rápida
+            </CardTitle>
+            <CardDescription>
+              Verifique o básico antes de trocar sua senha.
+            </CardDescription>
+          </CardHeader>
+          <CardContent class="space-y-3 text-sm">
+            <div class="flex items-start gap-3 rounded-2xl border bg-muted/20 p-3">
+              <CheckCircle2 class="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+              <p class="text-muted-foreground">Use uma senha diferente da atual e evite repetir combinações que você usa em outros sistemas.</p>
+            </div>
+            <div class="flex items-start gap-3 rounded-2xl border bg-muted/20 p-3">
+              <CircleAlert class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+              <p class="text-muted-foreground">Ao concluir a troca, mantenha a nova senha salva no seu gerenciador para não depender de memória.</p>
+            </div>
+            <Button variant="outline" class="w-full justify-center gap-2" @click="activeTab = 'seguranca'">
+              <KeyRound class="h-4 w-4" />
+              Abrir painel de senha
+            </Button>
+          </CardContent>
+        </Card>
+      </aside>
+
+      <main class="min-w-0">
+        <Tabs v-model="activeTab" default-value="pessoal" class="space-y-4">
+          <TabsList class="grid h-auto w-full grid-cols-2 rounded-2xl bg-muted/60 p-1">
+            <TabsTrigger value="pessoal" class="rounded-xl py-2.5">Dados pessoais</TabsTrigger>
+            <TabsTrigger value="seguranca" class="rounded-xl py-2.5">Segurança</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pessoal" class="space-y-4">
+            <Card class="border-border/70 shadow-sm">
+              <CardHeader class="gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <CardTitle class="flex items-center gap-2 text-xl">
+                    <PenLine class="h-5 w-5 text-primary" />
+                    Informações do perfil
+                  </CardTitle>
+                  <CardDescription class="mt-1 max-w-2xl">
+                    Atualize os dados que aparecem para você e para o time. Os placeholders já indicam o formato esperado em cada campo.
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" class="rounded-full px-3 py-1 text-xs">
+                  {{ biographyLength }}/240 caracteres na biografia
+                </Badge>
+              </CardHeader>
+
+              <CardContent class="grid gap-6">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="grid gap-2 md:col-span-2">
+                    <Label htmlFor="nome">Nome completo</Label>
+                    <Input id="nome" v-model="usuarioProfile.nome" placeholder="Ex.: Antonio Silva Ferreira" />
+                  </div>
+
+                  <div class="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      :model-value="usuarioProfile.email"
+                      type="email"
+                      disabled
+                      class="bg-muted/70"
+                      placeholder="seuemail@empresa.com"
+                    />
+                  </div>
+
+                  <div class="grid gap-2">
+                    <Label htmlFor="telefone">Telefone</Label>
+                    <Input id="telefone" v-model="usuarioProfile.telefone" placeholder="Ex.: (11) 99999-1234" />
+                  </div>
+
+                  <div class="grid gap-2 md:col-span-2">
+                    <Label htmlFor="endereco">Endereço</Label>
+                    <Input id="endereco" v-model="usuarioProfile.endereco" placeholder="Ex.: Rua das Flores, 120 • Centro • Belo Horizonte" />
+                  </div>
+                </div>
+
+                <div class="grid gap-2">
+                  <Label htmlFor="biografia">Biografia</Label>
+                  <Textarea
+                    id="biografia"
+                    v-model="usuarioProfile.biografia"
+                    rows="5"
+                    maxlength="240"
+                    placeholder="Ex.: Responsável pelo financeiro, conferência diária de caixa e fechamento do mês."
+                  />
+                  <p class="text-xs text-muted-foreground">
+                    Use a biografia para contextualizar sua função, responsabilidades ou preferências operacionais.
+                  </p>
+                </div>
+              </CardContent>
+
+              <CardFooter class="flex flex-col gap-3 border-t bg-muted/20 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-sm text-muted-foreground">
+                  A foto do perfil é enviada na hora; nome, telefone, endereço e biografia continuam sendo salvos aqui.
+                </p>
+                <Button class="gap-2" :disabled="profileLoading" @click="saveProfile">
+                  <SaveIcon class="h-4 w-4" />
+                  {{ profileLoading ? 'Salvando...' : 'Salvar alterações' }}
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="seguranca" class="space-y-4">
+            <Card class="border-border/70 shadow-sm">
+              <CardHeader class="gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <CardTitle class="flex items-center gap-2 text-xl">
+                    <ShieldCheck class="h-5 w-5 text-primary" />
+                    Segurança da conta
+                  </CardTitle>
+                  <CardDescription class="mt-1 max-w-2xl">
+                    Informe a senha atual, defina uma nova combinação e confirme antes de salvar. O painel abaixo mostra em tempo real o que ainda falta.
+                  </CardDescription>
+                </div>
+                <div class="min-w-[180px] rounded-2xl border bg-muted/30 p-3">
+                  <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">Força da senha</p>
+                  <p class="mt-2 text-sm font-semibold" :class="passwordStrength.className">{{ passwordStrength.label }}</p>
+                  <div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                    <div class="h-full rounded-full transition-all" :class="passwordStrength.meterClass" />
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+                <div class="space-y-4">
+                  <div class="grid gap-2">
+                    <Label htmlFor="current-password">Senha atual</Label>
+                    <div class="relative">
+                      <Input
+                        id="current-password"
+                        v-model="password.current"
+                        :type="showPassword.current ? 'text' : 'password'"
+                        placeholder="Digite sua senha atual"
+                        class="pr-11"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        class="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                        @click="showPassword.current = !showPassword.current"
+                      >
+                        <Eye v-if="!showPassword.current" class="h-4 w-4" />
+                        <EyeOff v-else class="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div class="grid gap-2">
+                      <Label htmlFor="new-password">Nova senha</Label>
+                      <div class="relative">
+                        <Input
+                          id="new-password"
+                          v-model="password.next"
+                          :type="showPassword.next ? 'text' : 'password'"
+                          placeholder="Crie uma senha com pelo menos 6 caracteres"
+                          class="pr-11"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          class="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                          @click="showPassword.next = !showPassword.next"
+                        >
+                          <Eye v-if="!showPassword.next" class="h-4 w-4" />
+                          <EyeOff v-else class="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div class="grid gap-2">
+                      <Label htmlFor="confirm-password">Confirmar nova senha</Label>
+                      <div class="relative">
+                        <Input
+                          id="confirm-password"
+                          v-model="password.confirm"
+                          :type="showPassword.confirm ? 'text' : 'password'"
+                          placeholder="Repita exatamente a nova senha"
+                          class="pr-11"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          class="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                          @click="showPassword.confirm = !showPassword.confirm"
+                        >
+                          <Eye v-if="!showPassword.confirm" class="h-4 w-4" />
+                          <EyeOff v-else class="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl border bg-muted/20 p-4 text-sm text-muted-foreground">
+                    A sessão atual continua ativa após a troca, mas qualquer senha antiga deixa de ser válida imediatamente.
+                  </div>
+                </div>
+
+                <div class="rounded-3xl border bg-muted/20 p-4">
+                  <p class="text-sm font-semibold text-foreground">Checklist antes de salvar</p>
+                  <div class="mt-4 space-y-3">
+                    <div
+                      v-for="item in passwordChecks"
+                      :key="item.label"
+                      class="flex items-start gap-3 rounded-2xl border bg-background/70 p-3"
+                    >
+                      <CheckCircle2 v-if="item.valid" class="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                      <CircleAlert v-else class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                      <p :class="item.valid ? 'text-foreground' : 'text-muted-foreground'" class="text-sm">
+                        {{ item.label }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+
+              <CardFooter class="flex flex-col gap-3 border-t bg-muted/20 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-sm text-muted-foreground">
+                  Quanto mais exclusiva for a nova senha, menor a chance de acesso indevido.
+                </p>
+                <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                  <Button variant="outline" @click="resetPasswordForm">Limpar campos</Button>
+                  <Button class="gap-2" :disabled="passwordLoading || !canSubmitPassword" @click="changePassword">
+                    <KeyRound class="h-4 w-4" />
+                    {{ passwordLoading ? 'Atualizando...' : 'Atualizar senha' }}
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+
+    <nav
+      v-if="storeUi.isMobile"
+      class="fixed bottom-0 left-0 z-20 flex h-20 w-full justify-around border-t border-border bg-card pt-4 shadow-lg dark:border-border-dark dark:bg-card-dark md:hidden"
+    >
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="storeUi.openSidebar = true"
+      >
+        <Menu class="h-5 w-5" />
+        <span class="text-xs">Menu</span>
+      </button>
+    </nav>
+  </div>
+</template>

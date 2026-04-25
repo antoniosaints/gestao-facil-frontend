@@ -332,20 +332,20 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-4 pb-24 md:pb-0">
-    <div>
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
+  <div class="w-full min-w-0 space-y-4 overflow-x-hidden">
+    <div class="min-w-0">
+      <div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="min-w-0 flex-1">
           <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
-            <Landmark class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
-            Painel financeiro
+            <Landmark class="h-6 w-6 shrink-0 text-primary dark:text-white" :stroke-width="2.5" />
+            <span class="truncate">Painel financeiro</span>
           </h2>
           <p class="text-sm text-muted-foreground">
             Indicadores calculados por parcela, pagamentos efetivos, vencimentos e conta financeira com uso de espaço mais enxuto.
           </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 self-start lg:self-auto">
           <Button variant="outline" @click="openModalFiltros = true">
             <Filter class="h-4 w-4" /> Filtros
           </Button>
@@ -356,82 +356,88 @@ onMounted(async () => {
       </div>
 
       <div class="mt-1 flex flex-wrap gap-2">
-        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
+        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="max-w-full text-xs whitespace-normal break-words text-left">
           {{ item }}
         </Badge>
       </div>
     </div>
 
-    <section v-if="loading" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <Skeleton v-for="item in 8" :key="item" class="h-[140px] rounded-2xl" />
+    <section v-if="loading" class="grid w-full min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <Skeleton v-for="item in 8" :key="item" class="h-[140px] w-full rounded-2xl" />
     </section>
 
-    <section v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <Card v-for="item in indicadores" :key="item.titulo" class="shadow rounded-xl transition">
-        <CardHeader class="pb-2 py-3">
-          <CardTitle class="flex flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <div class="rounded-md p-2" :class="item.colorClass">
+    <section v-else class="grid w-full min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <Card v-for="item in indicadores" :key="item.titulo" class="w-full min-w-0 rounded-xl shadow transition">
+        <CardHeader class="px-4 py-3 pb-2 sm:px-6">
+          <CardTitle class="flex min-w-0 flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <div class="rounded-md p-2 shrink-0" :class="item.colorClass">
               <component :is="item.icone" class="h-4 w-4" />
             </div>
-            <span>{{ item.titulo }}</span>
+            <span class="truncate">{{ item.titulo }}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent class="space-y-1 pb-3">
-          <p class="text-base md:text-lg font-semibold text-gray-700 dark:text-gray-200">
+        <CardContent class="space-y-1 px-4 pb-3 sm:px-6">
+          <p class="break-words text-base font-semibold text-gray-700 dark:text-gray-200 md:text-lg">
             {{ formatCurrencyBR(item.valor) }}
           </p>
-          <p class="text-xs text-muted-foreground leading-relaxed">{{ item.detalhe }}</p>
+          <p class="text-xs leading-relaxed text-muted-foreground">{{ item.detalhe }}</p>
         </CardContent>
       </Card>
     </section>
 
-    <div class="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-      <Card class="shadow-sm">
-        <CardHeader>
+    <div class="grid w-full min-w-0 gap-4 xl:grid-cols-[1.4fr_1fr]">
+      <Card class="w-full min-w-0 overflow-hidden shadow-sm">
+        <CardHeader class="min-w-0">
           <CardTitle class="text-lg">Evolução do saldo</CardTitle>
           <CardDescription>
             Comparação entre o saldo realizado acumulado e a projeção prevista para o período filtrado.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <LineChart class="max-h-80" :data="fluxoChart" :options="optionsChartLine" />
+        <CardContent class="min-w-0 px-4 pb-4 sm:px-6">
+          <div class="w-full min-w-0 overflow-hidden">
+            <LineChart class="max-h-80 w-full" :data="fluxoChart" :options="optionsChartLine" />
+          </div>
         </CardContent>
       </Card>
 
-      <Card class="shadow-sm">
-        <CardHeader>
+      <Card class="w-full min-w-0 overflow-hidden shadow-sm">
+        <CardHeader class="min-w-0">
           <CardTitle class="text-lg">Saúde financeira do período</CardTitle>
           <CardDescription>
             Valores consolidados por situação financeira para ajudar a priorizar cobranças e pagamentos.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <BarChart class="max-h-80" :data="statusChart" :options="optionsChartBarDefault" />
+        <CardContent class="min-w-0 px-4 pb-4 sm:px-6">
+          <div class="w-full min-w-0 overflow-hidden">
+            <BarChart class="max-h-80 w-full" :data="statusChart" :options="optionsChartBarDefault" />
+          </div>
         </CardContent>
       </Card>
     </div>
 
-    <div class="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-      <Card class="shadow-sm">
-        <CardHeader>
+    <div class="grid w-full min-w-0 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <Card class="w-full min-w-0 overflow-hidden shadow-sm">
+        <CardHeader class="min-w-0">
           <CardTitle class="text-lg">Categorias com maior impacto</CardTitle>
           <CardDescription>
             Receitas e despesas previstas agrupadas por categoria no período selecionado.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <BarChart class="max-h-80" :data="categoriasChart" :options="optionsChartBarDefault" />
+        <CardContent class="min-w-0 px-4 pb-4 sm:px-6">
+          <div class="w-full min-w-0 overflow-hidden">
+            <BarChart class="max-h-80 w-full" :data="categoriasChart" :options="optionsChartBarDefault" />
+          </div>
         </CardContent>
       </Card>
 
-      <Card class="shadow-sm">
-        <CardHeader>
+      <Card class="w-full min-w-0 overflow-hidden shadow-sm">
+        <CardHeader class="min-w-0">
           <CardTitle class="text-lg">Resumo por conta financeira</CardTitle>
           <CardDescription>
             Saldo atual, saldo previsto e pendências separadas por conta financeira.
           </CardDescription>
         </CardHeader>
-        <CardContent class="space-y-3">
+        <CardContent class="space-y-3 px-4 pb-4 sm:px-6">
           <div v-if="!contasResumo.length" class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             Nenhuma conta financeira encontrada para os filtros aplicados.
           </div>
@@ -439,15 +445,15 @@ onMounted(async () => {
           <div
             v-for="conta in contasResumo"
             :key="conta.contaId"
-            class="rounded-xl border bg-muted/20 px-4 py-3 transition hover:bg-muted/30"
+            class="w-full min-w-0 rounded-xl border bg-muted/20 px-4 py-3 transition hover:bg-muted/30"
           >
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <p class="font-semibold text-foreground">{{ conta.conta }}</p>
+            <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div class="min-w-0 flex-1">
+                <p class="break-words font-semibold text-foreground">{{ conta.conta }}</p>
                 <p class="text-xs text-muted-foreground">Saldo inicial {{ formatCurrencyBR(conta.saldoInicial) }}</p>
               </div>
-              <div class="flex items-start gap-2">
-                <Badge class="border-0" :class="conta.saldoPrevisto >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'">
+              <div class="flex flex-wrap items-start gap-2 sm:max-w-[50%] sm:justify-end">
+                <Badge class="max-w-full whitespace-normal border-0 text-right break-words" :class="conta.saldoPrevisto >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'">
                   Previsto {{ formatCurrencyBR(conta.saldoPrevisto) }}
                 </Badge>
                 <ContaActions
@@ -463,17 +469,17 @@ onMounted(async () => {
             </div>
 
             <div class="mt-4 grid gap-3 sm:grid-cols-3">
-              <div>
+              <div class="min-w-0">
                 <p class="text-xs text-muted-foreground">Saldo atual</p>
-                <p class="font-semibold text-foreground">{{ formatCurrencyBR(conta.saldoAtual) }}</p>
+                <p class="break-words font-semibold text-foreground">{{ formatCurrencyBR(conta.saldoAtual) }}</p>
               </div>
-              <div>
+              <div class="min-w-0">
                 <p class="text-xs text-muted-foreground">A receber pendente</p>
-                <p class="font-semibold text-amber-600">{{ formatCurrencyBR(conta.pendenteReceber) }}</p>
+                <p class="break-words font-semibold text-amber-600">{{ formatCurrencyBR(conta.pendenteReceber) }}</p>
               </div>
-              <div>
+              <div class="min-w-0">
                 <p class="text-xs text-muted-foreground">A pagar pendente</p>
-                <p class="font-semibold text-orange-600">{{ formatCurrencyBR(conta.pendentePagar) }}</p>
+                <p class="break-words font-semibold text-orange-600">{{ formatCurrencyBR(conta.pendentePagar) }}</p>
               </div>
             </div>
           </div>
