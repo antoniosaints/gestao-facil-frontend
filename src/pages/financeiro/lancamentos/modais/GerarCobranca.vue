@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { Copy, ExternalLink, FilePlus, Receipt } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { vMaska } from "maska/vue"
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
@@ -18,9 +18,11 @@ import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { addHours, isBefore } from 'date-fns'
 import { Textarea } from '@/components/ui/textarea'
+import { useUiStore } from '@/stores/ui/uiStore'
 
 const storeCobranca = useCobrancasFinanceirasStore()
 const storeClientes = useClientesStore()
+const uiStore = useUiStore()
 const toast = useToast()
 const submitText = ref('Gerar cobrança')
 const linkPayment = ref('')
@@ -79,6 +81,15 @@ function copiarLink() {
 function acessarLink() {
     window.open(linkPayment.value, '_blank')
 }
+
+watch(
+    () => uiStore.canCreateCharge,
+    (enabled) => {
+        if (enabled) return
+        storeCobranca.openModal = false
+    },
+    { immediate: true },
+)
 
 </script>
 

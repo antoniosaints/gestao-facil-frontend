@@ -83,7 +83,7 @@
                     <DrawerTitle>Cobranças</DrawerTitle>
                 </DrawerHeader>
                 <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
-                    <div @click="openSave"
+                    <div v-if="uiStore.canCreateCharge" @click="openSave"
                         class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
                         <div
                             class="flex justify-center items-center p-2 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
@@ -143,8 +143,10 @@ import { watch } from "vue";
 import { formatCurrencyBR, formatToCapitalize } from "@/utils/formatters";
 import { LancamentosRepository } from "@/repositories/lancamento-repository";
 import { useCobrancasFinanceirasStore } from "@/stores/lancamentos/useCobrancas";
+import { useUiStore } from '@/stores/ui/uiStore';
 
 const store = useCobrancasFinanceirasStore();
+const uiStore = useUiStore();
 const toast = useToast();
 const dataMobile = ref<CobrancaFinanceira[]>([]);
 const currentPage = ref(1);

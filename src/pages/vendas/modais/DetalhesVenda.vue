@@ -65,7 +65,7 @@
                     <div class="flex gap-2 items-center justify-between">
                         <span class="text-sm font-medium text-gray-800 dark:text-gray-200">Nenhuma cobrança
                             encontrada</span>
-                        <p @click="storeCobranca.openSave({
+                        <p v-if="uiStore.canCreateCharge" @click="storeCobranca.openSave({
                             id: store.venda?.id!,
                             tipo: 'venda',
                             valor: store.venda?.valor
@@ -206,8 +206,10 @@ import { FileText } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
 import { gerarCupomVenda } from '../ActionsVendas';
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas';
+import { useUiStore } from '@/stores/ui/uiStore';
 const store = useVendasStore()
 const storeCobranca = useCobrancasFinanceirasStore()
+const uiStore = useUiStore()
 const subtotal = computed(() => {
     return store.venda?.ItensVendas.reduce((acc, item) => acc + item.quantidade * item.valor, 0)
 })

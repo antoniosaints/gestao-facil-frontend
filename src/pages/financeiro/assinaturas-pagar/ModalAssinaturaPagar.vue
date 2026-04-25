@@ -356,7 +356,7 @@ onBeforeUnmount(() => {
     </div>
 
     <form v-else class="space-y-4 px-4 pb-4" @submit.prevent="save">
-      <div class="grid grid-cols-1 gap-4 xl:grid-cols-[1.6fr_1fr]">
+      <div class="grid grid-cols-1 gap-4">
         <Card>
           <CardHeader>
             <CardTitle class="flex items-center gap-2 text-base">
@@ -365,7 +365,7 @@ onBeforeUnmount(() => {
             </CardTitle>
             <CardDescription>Cadastre a despesa recorrente com visual e recorrência próprios.</CardDescription>
           </CardHeader>
-          <CardContent class="space-y-4">
+          <CardContent class="space-y-2">
             <div class="grid gap-4 md:grid-cols-[auto_1fr]">
               <div class="space-y-3">
                 <div
@@ -433,7 +433,7 @@ onBeforeUnmount(() => {
                   <Label for="assinaturaPagarFim">Data final</Label>
                   <Calendarpicker id="assinaturaPagarFim" v-model="form.fim" :teleport="true" :required="false" />
                 </div>
-                <div>
+                <div class="md:col-span-2">
                   <Label for="assinaturaPagarCor" class="flex items-center gap-2">
                     <PaintBucket class="h-4 w-4" />
                     Cor de destaque

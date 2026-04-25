@@ -104,6 +104,14 @@
                 </div>
                 <div class="font-medium text-center text-gray-500 dark:text-gray-400">Cadastrar</div>
             </div>
+            <div @click="openFilter = true"
+                class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
+                <div
+                    class="flex justify-center items-center p-1 mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
+                    <i class="fa-solid fa-filter text-2xl text-gray-500 dark:text-gray-400"></i>
+                </div>
+                <div class="font-medium text-center text-gray-500 dark:text-gray-400">Filtros</div>
+            </div>
         </div>
         <div class="flex px-4 w-full">
             <Button @click="showDrawerVendas = false" variant="outline" class="w-full">
@@ -139,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, inject } from "vue";
 import http from "@/utils/axios";
 import type { Vendas } from "@/types/schemas";
 import { deletarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from "../ActionsVendas";
@@ -148,6 +156,7 @@ import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
 import { BadgeCheck, BadgePlus, Eye, FileChartLine, PenLine, ShoppingBasket, Trash, Undo2 } from "lucide-vue-next";
 const store = useVendasStore();
+const openFilter = inject('openModalFiltroVendas', ref(false));
 const vendas = ref<Vendas[]>([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
@@ -168,7 +177,14 @@ function renderListaVendas(page: number = 1) {
         params: {
             search: searchQuery.value,
             limit: 10,
-            page
+            page,
+            status: store.filters.status || undefined,
+            clienteId: store.filters.clienteId || undefined,
+            produtoId: store.filters.produtoId || undefined,
+            servicoId: store.filters.servicoId || undefined,
+            vendedorId: store.filters.vendedorId || undefined,
+            desconto: store.filters.desconto || undefined,
+            periodo: store.filters.periodo,
         }
     }).then(response => {
         vendas.value = response.data.data;

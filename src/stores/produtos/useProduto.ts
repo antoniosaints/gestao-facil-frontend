@@ -236,7 +236,18 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     openModalRelatorio.value = true
   }
 
-  const filters = ref<{ status?: Status | string; listingMode: 'base' | 'variante'; update: boolean }>({
+  const filters = ref<{
+    status?: Status | string
+    categoriaId?: number | null
+    estoqueBaixo?: 'TODOS' | 'SIM' | 'NAO'
+    maisVendas?: 'TODOS' | 'SIM'
+    listingMode: 'base' | 'variante'
+    update: boolean
+  }>({
+    status: '',
+    categoriaId: null,
+    estoqueBaixo: 'TODOS',
+    maisVendas: 'TODOS',
     listingMode: 'base',
     update: false,
   })

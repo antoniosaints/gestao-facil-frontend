@@ -6,7 +6,7 @@ import { useToast } from 'vue-toastification'
 import ModalProdutos from './formulario/ModalProdutos.vue'
 import ModalCriarLote from './others/ModalCriarLote.vue'
 import { ProdutoRepository } from '@/repositories/produto-repository'
-import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, FolderTree, Layers3, Package, RotateCw, Tags, Trash } from 'lucide-vue-next'
+import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, FolderTree, Funnel, Layers3, Package, RotateCw, Tags, Trash } from 'lucide-vue-next'
 import ModalReposicao from './formulario/ModalReposicao.vue'
 import {
   DropdownMenu,
@@ -21,10 +21,15 @@ import ModalRelatorio from './formulario/ModalRelatorio.vue'
 import ModalVariante from './formulario/ModalVariante.vue'
 import GerarEtiquetas from './others/GerarEtiquetas.vue'
 import ModalTipoCadastroProduto from './others/ModalTipoCadastroProduto.vue'
+import ModalFiltroProdutos from './formulario/ModalFiltroProdutos.vue'
 import router from '@/router'
+import { provide, ref } from 'vue'
 
 const toast = useToast()
 const store = useProdutoStore()
+const openFilter = ref(false)
+
+provide('openModalFiltroProdutos', openFilter)
 
 const relatorioGeral = async () => {
     store.openReportModal({ reportType: 'catalogo' })
@@ -102,6 +107,10 @@ async function excluirEmLote() {
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
+                <button @click="openFilter = true"
+                    class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
+                    <Funnel class="w-4 h-4" />
+                </button>
                 <button @click="relatorioGeral()" class="bg-orange-600 text-white px-2 py-1.5 text-sm rounded-md">
                     <FileChartLine class="w-5 h-5" />
                 </button>
@@ -133,6 +142,7 @@ async function excluirEmLote() {
         <ModalReposicao />
         <ModalRelatorio />
         <ModalVariante />
+        <ModalFiltroProdutos />
         <GerarEtiquetas />
         <ModalTipoCadastroProduto />
     </div>

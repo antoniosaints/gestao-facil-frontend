@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, inject } from 'vue'
 import http from '@/utils/axios'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
@@ -27,6 +27,7 @@ import {
 import router from '@/router'
 
 const store = useProdutoStore()
+const openFilter = inject('openModalFiltroProdutos', ref(false))
 const toast = useToast()
 
 const dataMobile = ref<Array<ProdutoBase | ProdutoVariante>>([])
@@ -67,6 +68,10 @@ async function renderMobile(page = 1) {
         limit: 10,
         page,
         listingMode: store.filters.listingMode,
+        status: store.filters.status || undefined,
+        categoriaId: store.filters.categoriaId || undefined,
+        estoqueBaixo: store.filters.estoqueBaixo !== 'TODOS' ? store.filters.estoqueBaixo : undefined,
+        maisVendas: store.filters.maisVendas !== 'TODOS' ? store.filters.maisVendas : undefined,
       },
     })
     dataMobile.value = response.data.data
@@ -404,6 +409,16 @@ onMounted(() => renderMobile())
             <Plus class="h-10 w-10 text-gray-500 dark:text-gray-400" />
           </div>
           <div class="text-center font-medium text-gray-500 dark:text-gray-400">Variante</div>
+        </div>
+
+        <div
+          @click="openFilter = true"
+          class="rounded-lg border-2 bg-gray-50 p-4 cursor-pointer hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
+        >
+          <div class="mx-auto mb-2 flex h-[30px] w-[30px] items-center justify-center rounded-full p-1">
+            <Search class="h-10 w-10 text-gray-500 dark:text-gray-400" />
+          </div>
+          <div class="text-center font-medium text-gray-500 dark:text-gray-400">Filtros</div>
         </div>
 
         <div

@@ -21,6 +21,8 @@ export const useContasFinanceirasStore = defineStore('contasFinanceirasStore', (
       id: conta.id,
       Uid: conta.Uid,
       nome: conta.nome,
+      icone: conta.icone ?? null,
+      corDestaque: conta.corDestaque ?? null,
       saldoInicial: conta.saldoInicial ?? 0,
     }
     openModal.value = true
@@ -31,6 +33,8 @@ export const useContasFinanceirasStore = defineStore('contasFinanceirasStore', (
       id: conta.id,
       Uid: conta.Uid,
       nome: conta.nome,
+      icone: conta.icone ?? null,
+      corDestaque: conta.corDestaque ?? null,
       saldoInicial: conta.saldoInicial ?? 0,
     }
     openDetailsModal.value = true

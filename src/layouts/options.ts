@@ -141,7 +141,7 @@ export const sidebarMenuOptions = (
           color: 'emerald',
         },
         {
-          nome: 'Assinaturas a pagar',
+          nome: 'Assinaturas',
           link: '/financeiro/assinaturas-a-pagar',
           icone: ReceiptText,
           color: 'emerald',
@@ -220,7 +220,7 @@ export const sidebarMenuOptions = (
     },
     {
       nome: 'Assinaturas',
-      icone: Sparkles,
+      icone: FileCheck2,
       color: 'violet',
       show: permissions.financeiro.visualizar && hasAssinaturasApp,
       children: [

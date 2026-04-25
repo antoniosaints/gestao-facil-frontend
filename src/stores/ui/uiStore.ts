@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { StoreRepository } from '@/repositories/store-repository'
@@ -25,6 +25,13 @@ export interface Permissoes {
   usuarios: TipoPermissao
 }
 
+export interface FinanceiroFlags {
+  permitirLancamentoRetroativo: boolean
+  permitirEfetivacaoFutura: boolean
+  permitirTransferenciaContaFinanceira: boolean
+  permitirCriacaoCobranca: boolean
+}
+
 export const useUiStore = defineStore('uiStore', () => {
   const openSidebar = ref(true)
   const loading = ref(false)
@@ -33,6 +40,13 @@ export const useUiStore = defineStore('uiStore', () => {
   const isMobile = ref(window.innerWidth < 768)
   const usuarioLogged = ref<Usuarios>({} as Usuarios)
   const contaInfo = ref<Contas>({} as Contas)
+  const financeiroFlags = ref<FinanceiroFlags>({
+    permitirLancamentoRetroativo: true,
+    permitirEfetivacaoFutura: true,
+    permitirTransferenciaContaFinanceira: true,
+    permitirCriacaoCobranca: true,
+  })
+  const canCreateCharge = computed(() => financeiroFlags.value.permitirCriacaoCobranca !== false)
   const appModules = ref<Record<string, boolean>>({})
   const appModulesLoaded = ref(false)
   const status = ref(localStorage.getItem('gestao_facil:status') || 'INATIVO')
@@ -201,10 +215,32 @@ export const useUiStore = defineStore('uiStore', () => {
     return Boolean(appModules.value[codigo])
   }
 
+  async function loadFinanceiroFlags() {
+    try {
+      const response = await ContaRepository.getParametros()
+      financeiroFlags.value = {
+        permitirLancamentoRetroativo: response.data?.permitirLancamentoRetroativo ?? true,
+        permitirEfetivacaoFutura: response.data?.permitirEfetivacaoFutura ?? true,
+        permitirTransferenciaContaFinanceira: response.data?.permitirTransferenciaContaFinanceira ?? true,
+        permitirCriacaoCobranca: response.data?.permitirCriacaoCobranca ?? true,
+      }
+      return financeiroFlags.value
+    } catch (error) {
+      console.log(error)
+      financeiroFlags.value = {
+        permitirLancamentoRetroativo: true,
+        permitirEfetivacaoFutura: true,
+        permitirTransferenciaContaFinanceira: true,
+        permitirCriacaoCobranca: true,
+      }
+      return financeiroFlags.value
+    }
+  }
+
   async function getDataUsuario() {
     try {
       const data = await UsuarioRepository.whoami()
-      const conta = await ContaRepository.info()
+      const [conta] = await Promise.all([ContaRepository.info(), loadFinanceiroFlags()])
       usuarioLogged.value = data.data
       contaInfo.value = conta
       populatePermissoes()
@@ -244,9 +280,12 @@ export const useUiStore = defineStore('uiStore', () => {
     permissoes,
     usuarioLogged,
     contaInfo,
+    financeiroFlags,
+    canCreateCharge,
     appModules,
     appModulesLoaded,
     getDataUsuario,
+    loadFinanceiroFlags,
     diasParaVencer,
     getStatus,
     loadAppModules,

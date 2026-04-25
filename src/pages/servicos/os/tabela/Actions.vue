@@ -14,9 +14,11 @@ import { useConfirm } from '@/composables/useConfirm'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
+import { useUiStore } from '@/stores/ui/uiStore'
 
 const store = useOrdemServicoStore()
 const storeCobranca = useCobrancasFinanceirasStore()
+const uiStore = useUiStore()
 const toast = useToast()
 
 const { data } = defineProps<{
@@ -138,7 +140,7 @@ function abrirCobranca(id: number) {
         <RotateCcw class="mr-2 h-4 w-4" />
         Estornar faturamento
       </DropdownMenuItem>
-      <DropdownMenuItem @click="abrirCobranca(data.id!)">
+      <DropdownMenuItem v-if="uiStore.canCreateCharge" @click="abrirCobranca(data.id!)">
         <CircleDollarSign class="mr-2 h-4 w-4" />
         Gerar cobrança
       </DropdownMenuItem>

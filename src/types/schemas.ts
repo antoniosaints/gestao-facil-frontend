@@ -502,6 +502,8 @@ export interface ContasFinanceiro {
   id?: number
   Uid?: string
   nome: string
+  icone?: string | null
+  corDestaque?: string | null
   saldoInicial: number | string
   saldoAtual?: number | string
 }

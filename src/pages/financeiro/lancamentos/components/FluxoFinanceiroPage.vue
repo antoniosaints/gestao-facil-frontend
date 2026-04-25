@@ -798,7 +798,7 @@ onMounted(async () => {
                         @click="estornarParcela(item.parcelaId)">
                         <Undo2 class="h-4 w-4" />
                       </Button>
-                      <Button v-if="!item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink" size="icon"
+                      <Button v-if="uiStore.canCreateCharge && !item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink" size="icon"
                         class="h-8 w-8 bg-success text-white hover:bg-success/80"
                         @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
                         <CircleDollarSign class="h-4 w-4" />
@@ -835,7 +835,7 @@ onMounted(async () => {
                         <DropdownMenuItem v-else @click="estornarParcela(item.parcelaId)">
                           <Undo2 class="mr-2 h-4 w-4" /> Estornar
                         </DropdownMenuItem>
-                        <DropdownMenuItem v-if="!item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink"
+                        <DropdownMenuItem v-if="uiStore.canCreateCharge && !item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink"
                           @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
                           <CircleDollarSign class="mr-2 h-4 w-4" /> Cobrança
                         </DropdownMenuItem>
@@ -1000,7 +1000,7 @@ onMounted(async () => {
             <Undo2 class="h-4 w-4" /> Estornar
           </Button>
           <Button
-            v-if="!eventoSelecionado.pago && eventoSelecionado.tipo === 'RECEITA' && !eventoSelecionado.cobrancaLink"
+            v-if="uiStore.canCreateCharge && !eventoSelecionado.pago && eventoSelecionado.tipo === 'RECEITA' && !eventoSelecionado.cobrancaLink"
             class="bg-success text-white hover:bg-success/80" @click="handleGerarCobrancaFromModal(eventoSelecionado)">
             <CircleDollarSign class="h-4 w-4" /> Cobrança
           </Button>

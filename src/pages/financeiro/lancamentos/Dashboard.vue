@@ -70,6 +70,8 @@ type DashboardFinanceiroResponse = {
     contas: Array<{
       contaId: number
       conta: string
+      icone: string | null
+      corDestaque: string | null
       saldoInicial: number
       saldoAtual: number
       saldoPrevisto: number
@@ -194,7 +196,7 @@ async function carregarDashboard(showFeedback = false) {
     loading.value = true
     const response = (await LancamentosRepository.getDashboardVisaoGeral(
       getRequestFilters(),
-    )) as DashboardFinanceiroResponse
+    )) as DashboardFinanceiroResponse 
 
     cards.value = response.data.cards
     fluxoChart.value = {
@@ -388,7 +390,8 @@ onMounted(async () => {
             <span class="truncate">Painel financeiro</span>
           </h2>
           <p class="text-sm text-muted-foreground">
-            Indicadores calculados por parcela, pagamentos efetivos, vencimentos e conta financeira com uso de espaço mais enxuto.
+            Indicadores calculados por parcela, pagamentos efetivos, vencimentos e conta financeira com uso de espaço
+            mais enxuto.
           </p>
         </div>
 
@@ -403,7 +406,8 @@ onMounted(async () => {
       </div>
 
       <div class="mt-1 flex flex-wrap gap-2">
-        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="max-w-full text-xs whitespace-normal break-words text-left">
+        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline"
+          class="max-w-full text-xs whitespace-normal break-words text-left">
           {{ item }}
         </Badge>
       </div>
@@ -436,7 +440,8 @@ onMounted(async () => {
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
         <CardHeader class="min-w-0 max-w-full">
           <CardTitle class="text-lg">Evolução do saldo</CardTitle>
-          <CardDescription class="truncate" :title="'Comparação entre o saldo realizado acumulado e a projeção prevista para o período filtrado.'">
+          <CardDescription class="truncate"
+            :title="'Comparação entre o saldo realizado acumulado e a projeção prevista para o período filtrado.'">
             Comparação entre o saldo realizado acumulado e a projeção prevista para o período filtrado.
           </CardDescription>
         </CardHeader>
@@ -450,7 +455,8 @@ onMounted(async () => {
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
         <CardHeader class="min-w-0 max-w-full">
           <CardTitle class="text-lg">Saúde financeira do período</CardTitle>
-          <CardDescription class="truncate" :title="'Valores consolidados por situação financeira para ajudar a priorizar cobranças e pagamentos.'">
+          <CardDescription class="truncate"
+            :title="'Valores consolidados por situação financeira para ajudar a priorizar cobranças e pagamentos.'">
             Valores consolidados por situação financeira para ajudar a priorizar cobranças e pagamentos.
           </CardDescription>
         </CardHeader>
@@ -466,7 +472,8 @@ onMounted(async () => {
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
         <CardHeader class="min-w-0 max-w-full">
           <CardTitle class="text-lg">Categorias com maior impacto</CardTitle>
-          <CardDescription class="truncate" :title="'Receitas e despesas previstas agrupadas por categoria no período selecionado.'">
+          <CardDescription class="truncate"
+            :title="'Receitas e despesas previstas agrupadas por categoria no período selecionado.'">
             Receitas e despesas previstas agrupadas por categoria no período selecionado.
           </CardDescription>
         </CardHeader>
@@ -480,47 +487,43 @@ onMounted(async () => {
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
         <CardHeader class="min-w-0 max-w-full">
           <CardTitle class="text-lg">Assinaturas a pagar</CardTitle>
-          <CardDescription class="truncate" :title="'Próximos vencimentos e assinaturas já atrasadas dentro do contexto financeiro filtrado.'">
+          <CardDescription class="truncate"
+            :title="'Próximos vencimentos e assinaturas já atrasadas dentro do contexto financeiro filtrado.'">
             Próximos vencimentos e assinaturas já atrasadas dentro do contexto financeiro filtrado.
           </CardDescription>
         </CardHeader>
         <CardContent class="space-y-3 px-4 pb-4 sm:px-6">
           <div class="rounded-xl border bg-violet-50/70 px-4 py-3 dark:bg-violet-950/20">
-            <p class="text-xs uppercase tracking-wide text-violet-700 dark:text-violet-300">Total previsto em assinaturas</p>
+            <p class="text-xs uppercase tracking-wide text-violet-700 dark:text-violet-300">Total previsto em
+              assinaturas</p>
             <p class="text-lg font-semibold text-violet-900 dark:text-violet-100">
               {{ formatCurrencyBR(assinaturasPagarResumo.totalPrevistoPeriodo) }}
             </p>
           </div>
 
-          <div v-if="!assinaturasPagarLista.length" class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          <div v-if="!assinaturasPagarLista.length"
+            class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             Nenhuma assinatura a pagar encontrada para os filtros aplicados.
           </div>
 
-          <div
-            v-for="assinatura in assinaturasPagarLista"
-            :key="assinatura.id"
-            class="flex items-center gap-3 rounded-xl border bg-muted/20 px-4 py-3"
-          >
-            <div
-              class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border"
-              :style="{ backgroundColor: `${assinatura.corDestaque || '#7C3AED'}14`, borderColor: assinatura.corDestaque || undefined }"
-            >
-              <img
-                v-if="assinatura.icone"
-                :src="resolveFileUrl(assinatura.icone, { fallback: '/imgs/logo.png' })"
-                alt="Ícone da assinatura"
-                class="h-full w-full object-cover"
-              />
+          <div v-for="assinatura in assinaturasPagarLista" :key="assinatura.id"
+            class="flex items-center gap-3 rounded-xl border bg-muted/20 px-4 py-3">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border"
+              :style="{ backgroundColor: `${assinatura.corDestaque || '#7C3AED'}14`, borderColor: assinatura.corDestaque || undefined }">
+              <img v-if="assinatura.icone" :src="resolveFileUrl(assinatura.icone, { fallback: '/imgs/logo.png' })"
+                alt="Ícone da assinatura" class="h-full w-full object-cover" />
               <HandCoins v-else class="h-5 w-5" :style="{ color: assinatura.corDestaque || '#7C3AED' }" />
             </div>
 
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
                 <p class="truncate font-medium text-foreground">{{ assinatura.nomeServico }}</p>
-                <Badge variant="outline" class="border-violet-200 border-none px-0 text-violet-700 dark:border-violet-800 dark:text-violet-300">
+                <Badge variant="outline"
+                  class="border-violet-200 border-none px-0 text-violet-700 dark:border-violet-800 dark:text-violet-300">
                   Assinatura
                 </Badge>
-                <Badge v-if="assinatura.atrasada" class="bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                <Badge v-if="assinatura.atrasada"
+                  class="bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
                   Vencida
                 </Badge>
               </div>
@@ -540,42 +543,45 @@ onMounted(async () => {
     <Card class="w-full min-w-0 overflow-hidden shadow-sm">
       <CardHeader class="min-w-0 max-w-full">
         <CardTitle class="text-lg">Resumo por conta financeira</CardTitle>
-        <CardDescription class="truncate" :title="'Saldo atual, saldo previsto e pendências separadas por conta financeira.'">
+        <CardDescription class="truncate"
+          :title="'Saldo atual, saldo previsto e pendências separadas por conta financeira.'">
           Saldo atual, saldo previsto e pendências separadas por conta financeira.
         </CardDescription>
       </CardHeader>
       <CardContent class="px-4 pb-4 sm:px-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div v-if="!contasResumo.length" class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+        <div v-if="!contasResumo.length"
+          class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
           Nenhuma conta financeira encontrada para os filtros aplicados.
         </div>
 
-        <div
-          v-for="conta in contasResumo"
-          :key="conta.contaId"
-          class="w-full min-w-0 rounded-xl border bg-muted/20 px-4 py-3 transition hover:bg-muted/30"
-        >
-          <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div class="min-w-0 flex-1">
-              <p class="break-words font-semibold text-foreground">{{ conta.conta }}</p>
-              <p class="text-xs text-muted-foreground">Saldo inicial {{ formatCurrencyBR(conta.saldoInicial) }}</p>
+        <div v-for="conta in contasResumo" :key="conta.contaId"
+          class="w-full min-w-0 rounded-xl border bg-muted/20 px-4 py-3 transition hover:bg-muted/30">
+          <div class="flex min-w-0 flex-row gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0 flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border">
+                <img v-if="conta.icone" class="h-full w-full rounded-md object-cover" :src="resolveFileUrl(conta.icone, { fallback: '/imgs/logo.png' })" alt="iconname">
+                <Wallet class="h-4 w-4" v-else />
+              </div>
+              <div>
+                <p class="break-words font-semibold text-foreground">{{ conta.conta }}</p>
+                <p class="text-xs text-muted-foreground">Saldo inicial {{ formatCurrencyBR(conta.saldoInicial) }}</p>
+              </div>
             </div>
-            <div class="flex flex-wrap items-start gap-2 sm:max-w-[50%] sm:justify-end">
-              <span class="max-w-full text-xs py-2 px-2 rounded-md whitespace-normal border-0 text-right break-words" :class="conta.saldoPrevisto >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'">
+            <div class="flex flex-wrap items-start justify-end gap-2 sm:max-w-[50%] sm:justify-end">
+              <span class="max-w-full text-xs py-2 px-2 rounded-md whitespace-normal border-0 text-right break-words"
+                :class="conta.saldoPrevisto >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'">
                 Previsto {{ formatCurrencyBR(conta.saldoPrevisto) }}
               </span>
-              <ContaActions
-                v-if="uiStore.permissoes.financeiro.visualizar"
-                :data="{
-                  id: conta.contaId,
-                  nome: conta.conta,
-                  saldoInicial: conta.saldoInicial,
-                  saldoAtual: conta.saldoAtual,
-                }"
-              />
+              <ContaActions v-if="uiStore.permissoes.financeiro.visualizar" :data="{
+                id: conta.contaId,
+                nome: conta.conta,
+                saldoInicial: conta.saldoInicial,
+                saldoAtual: conta.saldoAtual,
+              }" />
             </div>
           </div>
 
-          <div class="mt-4 grid gap-3 sm:grid-cols-3">
+          <div class="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-3">
             <div class="min-w-0">
               <p class="text-xs text-muted-foreground">Saldo atual</p>
               <p class="break-words font-semibold text-foreground">{{ formatCurrencyBR(conta.saldoAtual) }}</p>
@@ -593,17 +599,21 @@ onMounted(async () => {
       </CardContent>
     </Card>
 
-    <nav v-if="uiStore.isMobile" class="fixed bottom-0 left-0 w-full border-t bg-card/95 pt-4 shadow-lg backdrop-blur z-20 h-20">
+    <nav v-if="uiStore.isMobile"
+      class="fixed bottom-0 left-0 w-full border-t bg-card/95 pt-4 shadow-lg backdrop-blur z-20 h-20">
       <div class="flex justify-around">
-        <button type="button" @click="goTo('/financeiro/lancamentos')" class="flex flex-col items-center text-muted-foreground hover:text-primary transition">
+        <button type="button" @click="goTo('/financeiro/lancamentos')"
+          class="flex flex-col items-center text-muted-foreground hover:text-primary transition">
           <Wallet class="h-5 w-5" />
           <span class="text-xs">Lançamentos</span>
         </button>
-        <button type="button" @click="carregarDashboard(true)" class="flex flex-col items-center text-muted-foreground hover:text-primary transition">
+        <button type="button" @click="carregarDashboard(true)"
+          class="flex flex-col items-center text-muted-foreground hover:text-primary transition">
           <RotateCw class="h-5 w-5" />
           <span class="text-xs">Atualizar</span>
         </button>
-        <button type="button" @click="goBack" class="flex flex-col items-center text-muted-foreground hover:text-primary transition">
+        <button type="button" @click="goBack"
+          class="flex flex-col items-center text-muted-foreground hover:text-primary transition">
           <Undo2 class="h-5 w-5" />
           <span class="text-xs">Voltar</span>
         </button>
@@ -630,7 +640,8 @@ onMounted(async () => {
         <div class="space-y-2 md:col-span-2">
           <label class="text-sm font-medium">Busca</label>
           <div class="relative">
-            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search
+              class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input v-model="filtros.search" class="pl-9" placeholder="Descrição, UID, categoria ou cliente" />
           </div>
         </div>
@@ -638,7 +649,9 @@ onMounted(async () => {
         <div class="space-y-2">
           <label class="text-sm font-medium">Tipo</label>
           <Select v-model="filtros.tipo">
-            <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="TODOS">Todos os tipos</SelectItem>
               <SelectItem value="RECEITA">Somente receitas</SelectItem>
@@ -650,7 +663,9 @@ onMounted(async () => {
         <div class="space-y-2">
           <label class="text-sm font-medium">Conta financeira</label>
           <Select v-model="filtros.contaFinanceiraId">
-            <SelectTrigger><SelectValue placeholder="Conta financeira" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Conta financeira" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as contas</SelectItem>
               <SelectItem v-for="conta in contas" :key="conta.id" :value="String(conta.id)">
@@ -663,7 +678,9 @@ onMounted(async () => {
         <div class="space-y-2 md:col-span-2">
           <label class="text-sm font-medium">Categoria</label>
           <Select v-model="filtros.categoriaId">
-            <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as categorias</SelectItem>
               <SelectItem v-for="categoria in categorias" :key="categoria.id" :value="String(categoria.id)">
@@ -685,7 +702,9 @@ onMounted(async () => {
       </div>
     </ModalView>
 
-    <ModalConta v-model:open="contasFinanceirasStore.openModal" :conta="contasFinanceirasStore.selectedConta" @saved="handleContaSaved" />
-    <ModalDetalhesConta v-model:open="contasFinanceirasStore.openDetailsModal" :conta="contasFinanceirasStore.selectedContaDetalhes" />
+    <ModalConta v-model:open="contasFinanceirasStore.openModal" :conta="contasFinanceirasStore.selectedConta"
+      @saved="handleContaSaved" />
+    <ModalDetalhesConta v-model:open="contasFinanceirasStore.openDetailsModal"
+      :conta="contasFinanceirasStore.selectedContaDetalhes" />
   </div>
 </template>

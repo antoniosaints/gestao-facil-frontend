@@ -2,6 +2,8 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { type CobrancaFinanceira } from '@/types/schemas'
 import { ServicoRepository } from '@/repositories/servico-repository'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { useToast } from 'vue-toastification'
 
 export interface CobrancaOperacao {
   linkExists: boolean
@@ -16,6 +18,8 @@ export interface CobrancaOperacao {
 }
 
 export const useCobrancasFinanceirasStore = defineStore('cobrancasFinanceirasStore', () => {
+  const uiStore = useUiStore()
+  const toast = useToast()
   const openModal = ref(false)
   const idMutation = ref<number | null>(null)
   const vinculoCobranca = ref<{ id: number; tipo: 'parcela' | 'venda' | 'os' } | undefined>(
@@ -50,6 +54,11 @@ export const useCobrancasFinanceirasStore = defineStore('cobrancasFinanceirasSto
   }
 
   const openSave = (vinculo?: { id: number; tipo: 'parcela' | 'venda' | 'os'; valor?: number }) => {
+    if (!uiStore.canCreateCharge) {
+      toast.info('A criação de cobranças está desativada nas configurações financeiras da conta.')
+      return
+    }
+
     reset()
     vinculoCobranca.value = vinculo
     if (vinculo?.valor) form.value.valor = String(vinculo?.valor).replace('.', ',')

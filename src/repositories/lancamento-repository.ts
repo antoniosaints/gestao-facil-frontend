@@ -72,8 +72,25 @@ export class LancamentosRepository {
     const data = await http.get(`/lancamentos/relatorios/valor-conta`)
     return data.data
   }
-  static async criarConta(data: Pick<ContasFinanceiro, 'nome'> & { id?: number; saldoInicial?: number }) {
-    await http.post(`/lancamentos/contas`, data)
+  static async criarConta(data: Pick<ContasFinanceiro, 'nome'> & {
+    id?: number
+    saldoInicial?: number
+    corDestaque?: string | null
+    removeIcon?: boolean
+  }) {
+    const response = await http.post(`/lancamentos/contas`, data)
+    return response.data
+  }
+
+  static async uploadContaFinanceiraIcon(id: number, file: File) {
+    const data = new FormData()
+    data.append('accountIcon', file)
+    const response = await http.post(`/uploads/financial-accounts/${id}/icon`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
   }
   static async getContaFinanceiraDetalhes(
     id: number,

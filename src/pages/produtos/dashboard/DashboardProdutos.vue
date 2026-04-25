@@ -46,14 +46,8 @@ function getPeriodoSelecionado() {
   return { inicio, fim }
 }
 
-function applyPreset(preset: 'today' | 'current-month') {
-  if (preset === 'today') {
-    filtroPeriodo.value = [startOfDay(new Date()), endOfDay(new Date())]
-  }
-
-  if (preset === 'current-month') {
-    filtroPeriodo.value = [startOfMonth(new Date()), endOfMonth(new Date())]
-  }
+function resetFiltros() {
+  filtroPeriodo.value = [startOfMonth(new Date()), endOfMonth(new Date())]
 }
 
 const filtrosAtivos = computed(() => {
@@ -378,20 +372,12 @@ onMounted(() => {
     <ModalView v-model:open="openModalFiltros" title="Filtros do painel de produtos" size="lg">
       <div class="grid gap-4 p-4">
         <div class="space-y-2">
-          <label class="text-sm font-medium">Atalhos rápidos</label>
-          <div class="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" @click="applyPreset('today')">Hoje</Button>
-            <Button type="button" variant="outline" size="sm" @click="applyPreset('current-month')">Este mês</Button>
-          </div>
-        </div>
-
-        <div class="space-y-2">
           <label class="text-sm font-medium">Período</label>
           <Calendarpicker class="w-full" :range="true" v-model="filtroPeriodo" />
         </div>
 
         <div class="flex justify-end gap-2">
-          <Button variant="outline" @click="applyPreset('current-month')">Resetar</Button>
+          <Button variant="outline" @click="resetFiltros">Resetar</Button>
           <Button variant="outline" @click="openModalFiltros = false">Cancelar</Button>
           <Button @click="openModalFiltros = false; getDataDashboard(true)">
             <Filter class="w-4 h-4" /> Aplicar filtros

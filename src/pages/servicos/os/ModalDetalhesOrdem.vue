@@ -16,6 +16,7 @@ import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos'
+import { useUiStore } from '@/stores/ui/uiStore'
 import { formatCurrencyBR } from '@/utils/formatters'
 import {
   BadgeCheck,
@@ -48,6 +49,7 @@ type BadgeColor = 'cyan' | 'yellow' | 'gray' | 'violet' | 'purple' | 'green' | '
 
 const store = useOrdemServicoStore()
 const storeCobranca = useCobrancasFinanceirasStore()
+const uiStore = useUiStore()
 const toast = useToast()
 const confirm = useConfirm()
 
@@ -396,7 +398,7 @@ watch(
             <ReceiptText class="mr-2 h-4 w-4" />
             Estornar faturamento
           </Button>
-          <Button type="button" variant="outline" @click="abrirCobranca">
+          <Button v-if="uiStore.canCreateCharge" type="button" variant="outline" @click="abrirCobranca">
             <CircleDollarSign class="mr-2 h-4 w-4 text-emerald-500" />
             Gerar cobrança
           </Button>
@@ -503,7 +505,7 @@ watch(
                     <CircleDollarSign class="h-4 w-4 text-blue-500" />
                     Cobranças vinculadas
                   </div>
-                  <Button type="button" variant="outline" size="sm" @click="abrirCobranca">
+                  <Button v-if="uiStore.canCreateCharge" type="button" variant="outline" size="sm" @click="abrirCobranca">
                     Nova cobrança
                   </Button>
                 </div>

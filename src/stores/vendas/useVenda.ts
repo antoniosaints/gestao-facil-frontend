@@ -13,6 +13,11 @@ const toast = useToast()
 interface filtroVendas {
   periodo: { inicio: string | null; fim: string | null }
   status: string
+  clienteId: number | null
+  produtoId: number | null
+  servicoId: number | null
+  vendedorId: number | null
+  desconto: string
   update: boolean
 }
 
@@ -78,6 +83,13 @@ export const useVendasStore = defineStore('vendasStore', () => {
   }
 
   const filters = ref<Partial<filtroVendas>>({
+    periodo: { inicio: null, fim: null },
+    status: '',
+    clienteId: null,
+    produtoId: null,
+    servicoId: null,
+    vendedorId: null,
+    desconto: '',
     update: false,
   })
 

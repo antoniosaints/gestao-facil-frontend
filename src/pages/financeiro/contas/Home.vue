@@ -27,6 +27,7 @@ import Tabela from './tabela/Tabela.vue'
 import { useContasFinanceirasStore } from '@/stores/lancamentos/useContasFinanceiras'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { formatCurrencyBR } from '@/utils/formatters'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 const uiStore = useUiStore()
 const store = useContasFinanceirasStore()
@@ -52,6 +53,8 @@ async function loadContas() {
       id: Number(item.id),
       Uid: item.Uid,
       nome: item.nome,
+      icone: item.icone ?? null,
+      corDestaque: item.corDestaque ?? null,
       saldoInicial: item.saldoInicial ?? 0,
       saldoAtual: item.saldoAtual ?? item.saldoInicial ?? 0,
     }))
@@ -170,13 +173,29 @@ onMounted(loadContas)
           :key="item.id"
           class="rounded-2xl border border-border bg-card p-4 shadow-sm"
         >
-          <div class="flex justify-between gap-3">
-            <div class="text-sm font-semibold text-foreground">{{ item.Uid || `#${item.id}` }}</div>
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <div
+                class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border"
+                :style="{ backgroundColor: `${item.corDestaque || '#2563EB'}14`, borderColor: item.corDestaque || undefined }"
+              >
+                <img
+                  v-if="item.icone"
+                  :src="resolveFileUrl(item.icone, { fallback: '/imgs/logo.png' })"
+                  alt="Ícone da conta"
+                  class="h-full w-full object-cover"
+                />
+                <Wallet v-else class="h-5 w-5" :style="{ color: item.corDestaque || '#2563EB' }" />
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-foreground">{{ item.Uid || `#${item.id}` }}</div>
+                <div class="text-sm font-medium text-foreground">{{ item.nome }}</div>
+                <div class="text-xs text-muted-foreground">Saldo inicial: {{ formatCurrencyBR(Number(item.saldoInicial || 0)) }}</div>
+              </div>
+            </div>
             <div class="text-xs text-muted-foreground">Conta</div>
           </div>
-          <div class="text-sm font-medium text-foreground">{{ item.nome }}</div>
-          <div class="text-xs text-muted-foreground">Saldo inicial: {{ formatCurrencyBR(Number(item.saldoInicial || 0)) }}</div>
-          <div class="text-sm font-semibold" :class="Number(item.saldoAtual || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+          <div class="mt-3 text-sm font-semibold" :class="Number(item.saldoAtual || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
             Saldo atual: {{ formatCurrencyBR(Number(item.saldoAtual || 0)) }}
           </div>
           <div class="text-xs text-muted-foreground">Use os detalhes para acompanhar entradas, saídas e pendências da conta.</div>

@@ -74,6 +74,7 @@
               <RotateCcw class="h-5 w-5" />
             </button>
             <button
+              v-if="uiStore.canCreateCharge"
               class="rounded-md bg-blue-200 px-2 py-1 text-sm text-blue-900 dark:bg-blue-800 dark:text-blue-100"
               @click="abrirCobranca(row)"
             >
@@ -180,9 +181,11 @@ import { formatCurrencyBR } from '@/utils/formatters'
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
+import { useUiStore } from '@/stores/ui/uiStore'
 
 const store = useOrdemServicoStore()
 const storeCobranca = useCobrancasFinanceirasStore()
+const uiStore = useUiStore()
 const toast = useToast()
 const dataMobile = ref<Array<OrdensServico & { ItensOrdensServico: ItensOrdensServico[] }>>([])
 const currentPage = ref(1)

@@ -308,7 +308,7 @@ watch(() => store.filters.update, loadLancamento)
         <Button variant="outline" @click="loadLancamento">
           <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" /> Atualizar
         </Button>
-        <Button class="bg-success text-white hover:bg-success/80"
+        <Button v-if="uiStore.canCreateCharge" class="bg-success text-white hover:bg-success/80"
           :disabled="!parcelasOrdenadas.some((parcela) => !parcela.pago)" @click="gerarCobrancaFatura">
           <CircleDollarSign class="h-4 w-4" /> Gerar cobrança
         </Button>
@@ -537,7 +537,7 @@ watch(() => store.filters.update, loadLancamento)
                 <Button v-if="!parcela.pago" variant="outline" size="icon" class="h-8 w-8" @click="editarParcela(parcela)">
                   <PenLine class="h-4 w-4" />
                 </Button>
-                <Button v-if="!parcela.pago && !parcela.CobrancasFinanceiras?.length" size="icon"
+                <Button v-if="uiStore.canCreateCharge && !parcela.pago && !parcela.CobrancasFinanceiras?.length" size="icon"
                   class="h-8 w-8 bg-success text-white hover:bg-success/80"
                   @click="gerarCobrancaParcela(parcela.id!, Number(parcela.valor || 0))">
                   <CircleDollarSign class="h-4 w-4" />
@@ -574,7 +574,7 @@ watch(() => store.filters.update, loadLancamento)
                     @click="estornarParcela(parcela.id!)">
                     <Undo2 class="mr-2 h-4 w-4" /> Estornar
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="!parcela.pago && !parcela.CobrancasFinanceiras?.length"
+                  <DropdownMenuItem v-if="uiStore.canCreateCharge && !parcela.pago && !parcela.CobrancasFinanceiras?.length"
                     @click="gerarCobrancaParcela(parcela.id!, Number(parcela.valor || 0))">
                     <CircleDollarSign class="mr-2 h-4 w-4" /> Gerar cobrança
                   </DropdownMenuItem>
@@ -608,6 +608,7 @@ watch(() => store.filters.update, loadLancamento)
         <span class="text-xs">Atualizar</span>
       </button>
       <button
+        v-if="uiStore.canCreateCharge"
         type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300 disabled:text-gray-300 dark:disabled:text-gray-600"
         :disabled="!parcelasOrdenadas.some((parcela) => !parcela.pago)"

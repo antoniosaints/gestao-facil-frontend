@@ -20,7 +20,7 @@ const uiStore = useUiStore()
                 <p class="text-sm text-muted-foreground">Cobranças cadastrados no sistema</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <button @click.prevent="store.openSave()"
+                <button v-if="uiStore.canCreateCharge" @click.prevent="store.openSave()"
                     class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova cobrança</span>
                 </button>
