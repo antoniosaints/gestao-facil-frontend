@@ -141,6 +141,12 @@ export const sidebarMenuOptions = (
           color: 'emerald',
         },
         {
+          nome: 'Assinaturas a pagar',
+          link: '/financeiro/assinaturas-a-pagar',
+          icone: ReceiptText,
+          color: 'emerald',
+        },
+        {
           nome: 'Cobranças',
           link: '/financeiro/cobrancas',
           icone: HandCoins,

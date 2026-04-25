@@ -20,7 +20,13 @@
           class="rounded-2xl border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
         >
           <div class="flex justify-between gap-3">
-            <div class="text-sm font-semibold dark:text-white">{{ row.descricao }}</div>
+            <div class="min-w-0">
+              <div class="truncate text-sm font-semibold dark:text-white">{{ row.descricao }}</div>
+              <div v-if="row.origemSistema === 'ASSINATURA_PAGAR' && row.assinaturaPagar" class="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                <span class="rounded-md border border-violet-300 px-2 py-0.5 text-violet-700 dark:border-violet-800 dark:text-violet-300">Assinatura</span>
+                <span class="truncate text-muted-foreground">{{ row.assinaturaPagar.nomeServico }}</span>
+              </div>
+            </div>
             <div
               :class="[
                 'flex items-center justify-center text-sm',
@@ -257,6 +263,7 @@ function renderListaVendas(page = 1) {
         page,
         tipo: store.filters.tipo,
         status: store.filters.status,
+        origem: store.filters.origem,
         contaFinanceiraId: store.filters.contaFinanceiraId,
         categoriaId: store.filters.categoriaId,
         clienteId: store.filters.clienteId,

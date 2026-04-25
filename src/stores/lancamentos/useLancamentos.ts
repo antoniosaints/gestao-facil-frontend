@@ -7,6 +7,7 @@ interface filtro {
   periodo?: { inicio: string | null; fim: string | null }
   tipo?: 'TODOS' | 'RECEITA' | 'DESPESA'
   status?: 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
+  origem?: 'TODOS' | 'ASSINATURA_PAGAR'
   contaFinanceiraId?: number | null
   categoriaId?: number | null
   clienteId?: number | null

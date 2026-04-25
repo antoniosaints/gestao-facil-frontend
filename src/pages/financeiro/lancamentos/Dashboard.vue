@@ -39,6 +39,7 @@ import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import type { CategoriaFinanceiro, ContasFinanceiro } from '@/types/schemas'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { formatCurrencyBR } from '@/utils/formatters'
+import { resolveFileUrl } from '@/utils/fileUrl'
 import { goBack, goTo } from '@/hooks/links'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { useSocketEvent } from '@/composables/useSocketEvent'
@@ -75,6 +76,31 @@ type DashboardFinanceiroResponse = {
       pendenteReceber: number
       pendentePagar: number
     }>
+    assinaturasPagar: {
+      totalPrevistoPeriodo: number
+      proximas: Array<{
+        id: number
+        Uid: string
+        nomeServico: string
+        valor: number
+        proximoVencimento: string
+        status: string
+        icone?: string | null
+        corDestaque?: string | null
+        atrasada: boolean
+      }>
+      vencidas: Array<{
+        id: number
+        Uid: string
+        nomeServico: string
+        valor: number
+        proximoVencimento: string
+        status: string
+        icone?: string | null
+        corDestaque?: string | null
+        atrasada: boolean
+      }>
+    }
   }
 }
 
@@ -118,6 +144,11 @@ const fluxoChart = ref<any>({ labels: [], datasets: [] })
 const categoriasChart = ref<any>({ labels: [], datasets: [] })
 const statusChart = ref<any>({ labels: [], datasets: [] })
 const contasResumo = ref<DashboardFinanceiroResponse['data']['contas']>([])
+const assinaturasPagarResumo = ref<DashboardFinanceiroResponse['data']['assinaturasPagar']>({
+  totalPrevistoPeriodo: 0,
+  proximas: [],
+  vencidas: [],
+})
 
 function getPeriodoSelecionado() {
   const inicio = filtroPeriodo.value?.[0]
@@ -179,6 +210,11 @@ async function carregarDashboard(showFeedback = false) {
       datasets: [...(response.data.graficos.status.datasets || [])],
     }
     contasResumo.value = response.data.contas || []
+    assinaturasPagarResumo.value = response.data.assinaturasPagar || {
+      totalPrevistoPeriodo: 0,
+      proximas: [],
+      vencidas: [],
+    }
 
     if (showFeedback) {
       toast.info('Painel financeiro atualizado!')
@@ -257,64 +293,75 @@ const filtrosAtivos = computed(() => {
   return items
 })
 
+const saldoAtualAndPrevistoConcatebed = computed(() => {
+  return `${formatCurrencyBR(cards.value.saldoAtual || 0)} / ${formatCurrencyBR(
+    cards.value.saldoPrevisto || 0,
+  )}`
+})
+
 const indicadores = computed(() => [
   {
-    titulo: 'Saldo atual',
-    valor: cards.value.saldoAtual,
-    detalhe: 'Saldo realizado com pagamentos confirmados.',
+    titulo: 'Saldo atual / Previsto',
+    valor: saldoAtualAndPrevistoConcatebed.value,
+    detalhe: 'Saldo realizado e previsto com base no filtro.',
     icone: Wallet,
     colorClass: 'text-blue-600 bg-blue-500/10',
   },
   {
-    titulo: 'Saldo previsto',
-    valor: cards.value.saldoPrevisto,
-    detalhe: 'Projeção até o fim do período filtrado.',
-    icone: TrendingUp,
-    colorClass: 'text-emerald-600 bg-emerald-500/10',
-  },
-  {
     titulo: 'Receitas realizadas',
-    valor: cards.value.receitasRealizadas,
+    valor: formatCurrencyBR(cards.value.receitasRealizadas || 0),
     detalhe: `Previstas: ${formatCurrencyBR(cards.value.receitasPrevistas)}`,
     icone: TrendingUp,
     colorClass: 'text-green-600 bg-green-500/10',
   },
   {
     titulo: 'Despesas realizadas',
-    valor: cards.value.despesasRealizadas,
+    valor: formatCurrencyBR(cards.value.despesasRealizadas || 0),
     detalhe: `Previstas: ${formatCurrencyBR(cards.value.despesasPrevistas)}`,
     icone: TrendingDown,
     colorClass: 'text-rose-600 bg-rose-500/10',
   },
   {
     titulo: 'A receber pendente',
-    valor: cards.value.aReceberPendente,
+    valor: formatCurrencyBR(cards.value.aReceberPendente || 0),
     detalhe: 'Receitas ainda abertas no período.',
     icone: CalendarDays,
     colorClass: 'text-amber-600 bg-amber-500/10',
   },
   {
     titulo: 'A pagar pendente',
-    valor: cards.value.aPagarPendente,
+    valor: formatCurrencyBR(cards.value.aPagarPendente || 0),
     detalhe: 'Despesas ainda abertas no período.',
     icone: HandCoins,
     colorClass: 'text-orange-600 bg-orange-500/10',
   },
   {
+    titulo: 'Assinaturas no período',
+    valor: formatCurrencyBR(assinaturasPagarResumo.value.totalPrevistoPeriodo || 0),
+    detalhe: `${assinaturasPagarResumo.value.vencidas.length} vencida(s) • ${assinaturasPagarResumo.value.proximas.length} próxima(s)`,
+    icone: CalendarDays,
+    colorClass: 'text-violet-600 bg-violet-500/10',
+  },
+  {
     titulo: 'Atrasado para receber',
-    valor: cards.value.atrasadoReceber,
+    valor: formatCurrencyBR(cards.value.atrasadoReceber || 0),
     detalhe: 'Receitas vencidas e sem baixa financeira.',
     icone: AlertTriangle,
     colorClass: 'text-yellow-600 bg-yellow-500/10',
   },
   {
     titulo: 'Atrasado para pagar',
-    valor: cards.value.atrasadoPagar,
+    valor: formatCurrencyBR(cards.value.atrasadoPagar || 0),
     detalhe: 'Despesas vencidas e ainda não pagas.',
     icone: AlertTriangle,
     colorClass: 'text-rose-600 bg-rose-500/10',
   },
 ])
+
+const assinaturasPagarLista = computed(() => [
+  ...assinaturasPagarResumo.value.vencidas,
+  ...assinaturasPagarResumo.value.proximas,
+].slice(0, 6))
 
 function handleContaSaved() {
   carregarFiltros()
@@ -378,7 +425,7 @@ onMounted(async () => {
         </CardHeader>
         <CardContent class="space-y-1 px-4 pb-3 sm:px-6">
           <p class="break-words text-base font-semibold text-gray-700 dark:text-gray-200 md:text-lg">
-            {{ formatCurrencyBR(item.valor) }}
+            {{ item.valor }}
           </p>
           <p class="text-xs leading-relaxed text-muted-foreground">{{ item.detalhe }}</p>
         </CardContent>
@@ -387,29 +434,29 @@ onMounted(async () => {
 
     <div class="grid w-full min-w-0 gap-4 xl:grid-cols-[1.4fr_1fr]">
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
-        <CardHeader class="min-w-0">
+        <CardHeader class="min-w-0 max-w-full">
           <CardTitle class="text-lg">Evolução do saldo</CardTitle>
-          <CardDescription>
+          <CardDescription class="truncate" :title="'Comparação entre o saldo realizado acumulado e a projeção prevista para o período filtrado.'">
             Comparação entre o saldo realizado acumulado e a projeção prevista para o período filtrado.
           </CardDescription>
         </CardHeader>
         <CardContent class="min-w-0 px-4 pb-4 sm:px-6">
           <div class="w-full min-w-0 overflow-hidden">
-            <LineChart class="max-h-80 w-full" :data="fluxoChart" :options="optionsChartLine" />
+            <LineChart class="max-h-60 w-full" :data="fluxoChart" :options="optionsChartLine" />
           </div>
         </CardContent>
       </Card>
 
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
-        <CardHeader class="min-w-0">
+        <CardHeader class="min-w-0 max-w-full">
           <CardTitle class="text-lg">Saúde financeira do período</CardTitle>
-          <CardDescription>
+          <CardDescription class="truncate" :title="'Valores consolidados por situação financeira para ajudar a priorizar cobranças e pagamentos.'">
             Valores consolidados por situação financeira para ajudar a priorizar cobranças e pagamentos.
           </CardDescription>
         </CardHeader>
         <CardContent class="min-w-0 px-4 pb-4 sm:px-6">
           <div class="w-full min-w-0 overflow-hidden">
-            <BarChart class="max-h-80 w-full" :data="statusChart" :options="optionsChartBarDefault" />
+            <BarChart class="max-h-60 w-full" :data="statusChart" :options="optionsChartBarDefault" />
           </div>
         </CardContent>
       </Card>
@@ -417,9 +464,9 @@ onMounted(async () => {
 
     <div class="grid w-full min-w-0 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
-        <CardHeader class="min-w-0">
+        <CardHeader class="min-w-0 max-w-full">
           <CardTitle class="text-lg">Categorias com maior impacto</CardTitle>
-          <CardDescription>
+          <CardDescription class="truncate" :title="'Receitas e despesas previstas agrupadas por categoria no período selecionado.'">
             Receitas e despesas previstas agrupadas por categoria no período selecionado.
           </CardDescription>
         </CardHeader>
@@ -431,61 +478,120 @@ onMounted(async () => {
       </Card>
 
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
-        <CardHeader class="min-w-0">
-          <CardTitle class="text-lg">Resumo por conta financeira</CardTitle>
-          <CardDescription>
-            Saldo atual, saldo previsto e pendências separadas por conta financeira.
+        <CardHeader class="min-w-0 max-w-full">
+          <CardTitle class="text-lg">Assinaturas a pagar</CardTitle>
+          <CardDescription class="truncate" :title="'Próximos vencimentos e assinaturas já atrasadas dentro do contexto financeiro filtrado.'">
+            Próximos vencimentos e assinaturas já atrasadas dentro do contexto financeiro filtrado.
           </CardDescription>
         </CardHeader>
         <CardContent class="space-y-3 px-4 pb-4 sm:px-6">
-          <div v-if="!contasResumo.length" class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-            Nenhuma conta financeira encontrada para os filtros aplicados.
+          <div class="rounded-xl border bg-violet-50/70 px-4 py-3 dark:bg-violet-950/20">
+            <p class="text-xs uppercase tracking-wide text-violet-700 dark:text-violet-300">Total previsto em assinaturas</p>
+            <p class="text-lg font-semibold text-violet-900 dark:text-violet-100">
+              {{ formatCurrencyBR(assinaturasPagarResumo.totalPrevistoPeriodo) }}
+            </p>
+          </div>
+
+          <div v-if="!assinaturasPagarLista.length" class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+            Nenhuma assinatura a pagar encontrada para os filtros aplicados.
           </div>
 
           <div
-            v-for="conta in contasResumo"
-            :key="conta.contaId"
-            class="w-full min-w-0 rounded-xl border bg-muted/20 px-4 py-3 transition hover:bg-muted/30"
+            v-for="assinatura in assinaturasPagarLista"
+            :key="assinatura.id"
+            class="flex items-center gap-3 rounded-xl border bg-muted/20 px-4 py-3"
           >
-            <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div class="min-w-0 flex-1">
-                <p class="break-words font-semibold text-foreground">{{ conta.conta }}</p>
-                <p class="text-xs text-muted-foreground">Saldo inicial {{ formatCurrencyBR(conta.saldoInicial) }}</p>
-              </div>
-              <div class="flex flex-wrap items-start gap-2 sm:max-w-[50%] sm:justify-end">
-                <Badge class="max-w-full whitespace-normal border-0 text-right break-words" :class="conta.saldoPrevisto >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'">
-                  Previsto {{ formatCurrencyBR(conta.saldoPrevisto) }}
-                </Badge>
-                <ContaActions
-                  v-if="uiStore.permissoes.financeiro.visualizar"
-                  :data="{
-                    id: conta.contaId,
-                    nome: conta.conta,
-                    saldoInicial: conta.saldoInicial,
-                    saldoAtual: conta.saldoAtual,
-                  }"
-                />
-              </div>
+            <div
+              class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border"
+              :style="{ backgroundColor: `${assinatura.corDestaque || '#7C3AED'}14`, borderColor: assinatura.corDestaque || undefined }"
+            >
+              <img
+                v-if="assinatura.icone"
+                :src="resolveFileUrl(assinatura.icone, { fallback: '/imgs/logo.png' })"
+                alt="Ícone da assinatura"
+                class="h-full w-full object-cover"
+              />
+              <HandCoins v-else class="h-5 w-5" :style="{ color: assinatura.corDestaque || '#7C3AED' }" />
             </div>
 
-            <div class="mt-4 grid gap-3 sm:grid-cols-3">
-              <div class="min-w-0">
-                <p class="text-xs text-muted-foreground">Saldo atual</p>
-                <p class="break-words font-semibold text-foreground">{{ formatCurrencyBR(conta.saldoAtual) }}</p>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <p class="truncate font-medium text-foreground">{{ assinatura.nomeServico }}</p>
+                <Badge variant="outline" class="border-violet-200 border-none px-0 text-violet-700 dark:border-violet-800 dark:text-violet-300">
+                  Assinatura
+                </Badge>
+                <Badge v-if="assinatura.atrasada" class="bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                  Vencida
+                </Badge>
               </div>
-              <div class="min-w-0">
-                <p class="text-xs text-muted-foreground">A receber pendente</p>
-                <p class="break-words font-semibold text-amber-600">{{ formatCurrencyBR(conta.pendenteReceber) }}</p>
-              </div>
-              <div class="min-w-0">
-                <p class="text-xs text-muted-foreground">A pagar pendente</p>
-                <p class="break-words font-semibold text-orange-600">{{ formatCurrencyBR(conta.pendentePagar) }}</p>
-              </div>
+              <p class="text-xs text-muted-foreground">
+                {{ new Date(assinatura.proximoVencimento).toLocaleDateString('pt-BR') }} • {{ assinatura.Uid }}
+              </p>
+            </div>
+
+            <div class="text-right">
+              <p class="font-semibold text-foreground">{{ formatCurrencyBR(assinatura.valor) }}</p>
             </div>
           </div>
         </CardContent>
       </Card>
     </div>
+
+    <Card class="w-full min-w-0 overflow-hidden shadow-sm">
+      <CardHeader class="min-w-0 max-w-full">
+        <CardTitle class="text-lg">Resumo por conta financeira</CardTitle>
+        <CardDescription class="truncate" :title="'Saldo atual, saldo previsto e pendências separadas por conta financeira.'">
+          Saldo atual, saldo previsto e pendências separadas por conta financeira.
+        </CardDescription>
+      </CardHeader>
+      <CardContent class="px-4 pb-4 sm:px-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div v-if="!contasResumo.length" class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          Nenhuma conta financeira encontrada para os filtros aplicados.
+        </div>
+
+        <div
+          v-for="conta in contasResumo"
+          :key="conta.contaId"
+          class="w-full min-w-0 rounded-xl border bg-muted/20 px-4 py-3 transition hover:bg-muted/30"
+        >
+          <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0 flex-1">
+              <p class="break-words font-semibold text-foreground">{{ conta.conta }}</p>
+              <p class="text-xs text-muted-foreground">Saldo inicial {{ formatCurrencyBR(conta.saldoInicial) }}</p>
+            </div>
+            <div class="flex flex-wrap items-start gap-2 sm:max-w-[50%] sm:justify-end">
+              <span class="max-w-full text-xs py-2 px-2 rounded-md whitespace-normal border-0 text-right break-words" :class="conta.saldoPrevisto >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'">
+                Previsto {{ formatCurrencyBR(conta.saldoPrevisto) }}
+              </span>
+              <ContaActions
+                v-if="uiStore.permissoes.financeiro.visualizar"
+                :data="{
+                  id: conta.contaId,
+                  nome: conta.conta,
+                  saldoInicial: conta.saldoInicial,
+                  saldoAtual: conta.saldoAtual,
+                }"
+              />
+            </div>
+          </div>
+
+          <div class="mt-4 grid gap-3 sm:grid-cols-3">
+            <div class="min-w-0">
+              <p class="text-xs text-muted-foreground">Saldo atual</p>
+              <p class="break-words font-semibold text-foreground">{{ formatCurrencyBR(conta.saldoAtual) }}</p>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs text-muted-foreground">A receber pendente</p>
+              <p class="break-words font-semibold text-amber-600">{{ formatCurrencyBR(conta.pendenteReceber) }}</p>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs text-muted-foreground">A pagar pendente</p>
+              <p class="break-words font-semibold text-orange-600">{{ formatCurrencyBR(conta.pendentePagar) }}</p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
 
     <nav v-if="uiStore.isMobile" class="fixed bottom-0 left-0 w-full border-t bg-card/95 pt-4 shadow-lg backdrop-blur z-20 h-20">
       <div class="flex justify-around">

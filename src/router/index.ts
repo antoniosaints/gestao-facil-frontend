@@ -342,6 +342,15 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'assinaturas-a-pagar',
+        name: 'financeiro-assinaturas-pagar',
+        component: () => import('@/pages/financeiro/assinaturas-pagar/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
         path: 'cobrancas',
         name: 'lancamentos-cobrancas',
         component: () => import('@/pages/financeiro/cobrancas/Home.vue'),

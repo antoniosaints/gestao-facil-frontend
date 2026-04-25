@@ -609,12 +609,20 @@ export interface LancamentoFinanceiro {
   formaPagamento: MetodoPagamento
   status: StatusPagamentoFinanceiro
   recorrente: boolean
+  origemSistema?: 'MANUAL' | 'ASSINATURA_PAGAR'
+  referenciaRecorrencia?: string | null
   dataLancamento: Date
   dataEntrada?: Date
   clienteId?: number
   categoriaId: number
   vendaId?: number
   contasFinanceiroId?: number
+  assinaturaPagar?: {
+    id: number
+    nomeServico: string
+    icone?: string | null
+    corDestaque?: string | null
+  } | null
 }
 
 export interface ParcelaFinanceiro {

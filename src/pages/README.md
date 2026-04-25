@@ -21,7 +21,8 @@ Cada domínio tende a repetir esta estrutura:
 - `VITE_MODE_SYSTEM` altera a escolha de algumas telas, principalmente entre ERP e `arena`.
 - Rotas privadas dependem de autenticação, status da conta e `permissao`.
 - Páginas de dashboard devem refletir filtros operacionais reais do domínio, como período e agregações segregadas por conta.
-- No financeiro, o domínio pode combinar uma listagem geral de lançamentos com telas operacionais separadas para acompanhamento, contas a pagar e contas a receber, reutilizando a mesma base de parcelas, filtros e ações rápidas quando a segmentação melhorar a UX.
+- No financeiro, o domínio pode combinar uma listagem geral de lançamentos com telas operacionais separadas para acompanhamento, contas a pagar, contas a receber e assinaturas a pagar, reutilizando a mesma base de parcelas, filtros e ações rápidas quando a segmentação melhorar a UX.
+- A página `financeiro/assinaturas-pagar/Home.vue` deve seguir o padrão do restante do domínio financeiro: `DataTable` no desktop, cards compactos no mobile, edição via modal, `Select2Ajax` para conta/categoria e integração explícita com o painel financeiro e a listagem padrão de lançamentos.
 - O novo domínio `assinaturas` deve permanecer separado de `assinatura`: `assinatura` continua representando o plano da própria conta do ERP, enquanto `assinaturas` concentra contratos recorrentes dos clientes com painel, planos, ciclos/cobranças, comodatos e automação recorrente.
 - As telas e formulários de `assinaturas` devem reaproveitar o padrão do financeiro para gateway e tipo de pagamento, hoje com Mercado Pago ativo e opções futuras preservadas no select.
 - Nos formulários de `assinaturas`, é obrigatório usar o select com busca padrão do projeto (`Select2Ajax`) para relações com cliente, plano, serviço e produto; não usar select simples nesses campos dinâmicos.

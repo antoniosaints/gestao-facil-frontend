@@ -141,15 +141,29 @@ export const columnsLancamentos: ColumnDef<
         () => ['Descrição', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render(
-        'div',
-        {
-          class: 'text-left w-full truncate max-w-[450px] p-1 px-2 rounded-md',
-        },
-        row.original.vendaId
-          ? `🏷️ ${row.getValue('descricao')}`
-          : `${row.getValue('descricao') as string}`,
-      ),
+      render('div', { class: 'min-w-0 p-1 px-2' }, [
+        render(
+          'div',
+          {
+            class: 'truncate max-w-[420px] font-medium text-left',
+          },
+          row.original.vendaId
+            ? `🏷️ ${row.getValue('descricao')}`
+            : `${row.getValue('descricao') as string}`,
+        ),
+        row.original.origemSistema === 'ASSINATURA_PAGAR' && row.original.assinaturaPagar
+          ? render('div', { class: 'mt-1 flex flex-wrap items-center gap-2' }, [
+              render(BadgeCell, {
+                label: 'Assinatura',
+                color: 'violet',
+                icon: Tag,
+                capitalize: false,
+                size: 'sm',
+              }),
+              render('span', { class: 'text-xs text-muted-foreground truncate max-w-[260px]' }, row.original.assinaturaPagar.nomeServico),
+            ])
+          : null,
+      ]),
   },
   {
     accessorKey: 'valorTotal',
