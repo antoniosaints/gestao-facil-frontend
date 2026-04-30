@@ -20,4 +20,8 @@ export class ClienteRepository {
     const { data } = await http.get(`/clientes/${id}/estatisticas`)
     return data.data
   }
+  static async select2(search?: string) {
+    const { data } = await http.get('/clientes/select2', { params: { search } })
+    return data.results as Array<{ id: number; label: string }>
+  }
 }

@@ -5,7 +5,7 @@
 
 ## Organização atual
 - Domínios principais: `dashboard`, `clientes`, `produtos`, `servicos`, `financeiro`, `usuarios`, `configs`, `perfil`, `vendas`.
-- Áreas complementares: `site`, `auth`, `assinatura`, `assinaturas`, `agente`, `chats`.
+- Áreas complementares: `site`, `auth`, `assinatura`, `assinaturas`, `agente`, `chats`, `whatsapp`.
 - Modo alternativo do produto: `arena`, com rotas, telas e fluxos próprios.
 - Administração separada: `admin`.
 
@@ -34,6 +34,8 @@ Cada domínio tende a repetir esta estrutura:
 - O painel financeiro deve reutilizar as mesmas ações disponíveis na listagem de contas para evitar divergência entre dashboard e CRUD operacional.
 - O domínio `servicos/os` agora também expõe faturamento e geração de cobrança na própria listagem e no modal de detalhes, reaproveitando o fluxo de vendas/financeiro e bloqueando exclusões quando houver vínculo financeiro ativo.
 - A página `perfil/PerfilUsuario.vue` deve permitir ao usuário autenticado atualizar seus próprios dados, trocar avatar com upload imediato via serviço central de storage, e alterar a senha informando senha atual, nova senha e confirmação com validação explícita na UI e no backend.
+
+- A página `whatsapp/WhatsAppPage.vue` concentra a operação do app WhatsApp: inbox, histórico, envio de texto/mídias, vínculo com cliente ERP e gestão de instâncias W-API por conta. A configuração de webhooks abre um modal com as URLs do backend já preenchidas por instância, permite copiar/conferir os callbacks e só envia para a W-API após confirmação do usuário. Ela deve preservar o padrão visual do ERP e consumir `repositories/whatsapp-repository.ts`, não chamadas HTTP soltas fora de casos auxiliares pontuais.
 
 ## Regras
 - Ao criar funcionalidade nova, encaixar dentro do domínio correto antes de abrir uma nova área.

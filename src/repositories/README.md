@@ -17,7 +17,8 @@
 - Quando a UI depende de dados atualizados logo após uma mutação, a store deve reutilizar o repository para recarregar o detalhe em vez de manter estado local paralelo.
 
 ## Relação com o backend
-- As rotas seguem os domínios do backend, como `clientes`, `contas`, `vendas`, `lancamentos`, `servicos`, `arena` e `gemini`.
+- As rotas seguem os domínios do backend, como `clientes`, `contas`, `vendas`, `lancamentos`, `servicos`, `arena`, `whatsapp` e `gemini`.
+- `whatsapp-repository.ts` concentra contratos do atendimento WhatsApp: instâncias, ações W-API, prévia/sincronização de webhooks por instância, conversas, mensagens, marcação de leitura e atualização de status/vínculo.
 - Os contracts consumidos normalmente são tipados em `src/types/schemas.ts`.
 
 ## Regras

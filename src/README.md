@@ -14,7 +14,7 @@
 - `lib/`: helpers utilitários de baixo nível.
 - `pages/`: telas por domínio.
 - `pluguins/`: integrações como socket.
-- `repositories/`: acesso à API, incluindo o novo `assinatura-repository.ts` para o domínio recorrente `/assinaturas`.
+- `repositories/`: acesso à API, incluindo `assinatura-repository.ts` para o domínio recorrente `/assinaturas` e `whatsapp-repository.ts` para o atendimento WhatsApp.
 - `router/`: definição de rotas.
 - `stores/`: estado global e por domínio.
 - `types/`: contratos TypeScript consumidos pelo app.
@@ -54,6 +54,7 @@
 - A tela `configs/ConfiguracaoPage.vue` voltou a concentrar apenas preferências operacionais gerais, notificações, impressão e parâmetros financeiros que não pertencem à App Store.
 - O gateway da mensalidade SaaS agora é controlado pelo superadmin em `pages/admin/configuracoes/Home.vue`; a renovação continua abrindo checkout hospedado, mas o backend passa a escolher o provedor a partir de `Contas.gateway` sincronizado globalmente.
 - O frontend agora também expõe a página `pages/whatsapp/WhatsAppPage.vue` como ponto dedicado de configuração do app WhatsApp quando o módulo estiver ativo.
+- O frontend agora também expõe a página `pages/whatsapp/WhatsAppPage.vue` como central do atendimento WhatsApp quando o módulo estiver ativo: inbox, mensagens, vínculo com clientes e gestão de instâncias W-API por conta. O acesso HTTP fica em `repositories/whatsapp-repository.ts`, incluindo prévia e sincronização confirmada de webhooks por instância, e a atualização em tempo real consome eventos Socket.IO `whatsapp:instancia:updated`, `whatsapp:conversa:updated` e `whatsapp:mensagem:created`.
 - Quando a mensalidade do SaaS usa AbacatePay, a experiência final de pagamento oferece PIX e cartão no mesmo link de renovação, sem expor chaves da plataforma na UI da conta.
 - Nas cobranças internas do ERP, Mercado Pago e AbacatePay usam credenciais salvas em `ParametrosConta`, preservando a separação entre tenant e plataforma; no caso da AbacatePay, o backend ainda tenta sincronizar a webhook da conta automaticamente quando a `BASE_URL` é HTTPS.
 - Telas financeiras de acompanhamento, contas a pagar e contas a receber devem expor filtros operacionais claros, criação rápida de lançamento, abas compactas para lista/KPI/calendário e cálculos de saldo, pendências e atrasos sempre baseados nas parcelas do lançamento, não apenas no cabeçalho.
