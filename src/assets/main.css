@@ -8,6 +8,8 @@
   --scrollbar-thumb: #555555;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
 @font-face {
   font-family: 'Roboto';
   src: url('/fonts/Roboto-Bold.ttf') format('truetype');
@@ -21,14 +23,14 @@
   src: url('/fonts/Montserrat/Montserrat-SemiBold.ttf') format('truetype');
 }
 @font-face {
-  font-family: 'Satoshi';
-  src: url('/fonts/Satoshi/Satoshi-Bold.otf') format('truetype');
+  font-family: 'Inter';
+  src: url('/fonts/Inter/Inter_18pt-Bold.ttf') format('truetype');
 }
 
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-  font-family: 'Roboto', 'Poppins', 'Satoshi', 'Montserrat', sans-serif;
+  font-family: 'Inter', 'Roboto', 'Poppins', 'Satoshi', 'Montserrat', sans-serif;
 }
 
 ::-webkit-scrollbar {
