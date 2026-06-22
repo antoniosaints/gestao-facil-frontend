@@ -44,7 +44,7 @@
                                 <Ban class="w-5 h-5" />
                             </button>
                         </div>
-                        <button :disabled="!['ESTORNADO', 'CANCELADO'].includes(row.status)" @click="deletar(row.id!)"
+                        <button :disabled="!canDeleteCharge(row.status)" @click="deletar(row.id!)"
                             class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 disabled:opacity-50 px-2 py-1 rounded-md text-sm">
                             <Trash class="w-5 h-5" />
                         </button>
@@ -135,7 +135,7 @@ import { ref, onMounted } from "vue";
 import http from "@/utils/axios";
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import type { CobrancaFinanceira } from "@/types/schemas";
+import type { CobrancaFinanceira, StatusPagamentoType } from "@/types/schemas";
 import { Ban, Eye, Trash, Undo2 } from "lucide-vue-next";
 import { useConfirm } from "@/composables/useConfirm";
 import { useToast } from "vue-toastification";
@@ -200,6 +200,15 @@ const getColorStatus = (status: string) => {
     if (status === 'PENDENTE') return 'text-yellow-500';
     if (status === 'ESTORNADO') return 'text-blue-500';
     return 'text-red-500';
+}
+
+function isRootUser() {
+    return uiStore.usuarioLogged?.permissao === 'root'
+}
+
+function canDeleteCharge(status: StatusPagamentoType) {
+    if (['ESTORNADO', 'CANCELADO'].includes(status)) return true
+    return isRootUser() && status !== 'EFETIVADO'
 }
 
 async function cancelar(id: number) {

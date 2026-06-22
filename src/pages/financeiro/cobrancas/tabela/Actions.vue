@@ -2,19 +2,30 @@
 import { Ban, Eye, Menu, Undo2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import type { CobrancaFinanceira } from '@/types/schemas';
+import type { CobrancaFinanceira, StatusPagamentoType } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
 import { useConfirm } from '@/composables/useConfirm';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas';
+import { useUiStore } from '@/stores/ui/uiStore';
 
 const store = useCobrancasFinanceirasStore()
+const uiStore = useUiStore()
 
 const { data } = defineProps<{
     data: CobrancaFinanceira,
 }>()
 
 const toast = useToast()
+
+function isRootUser() {
+    return uiStore.usuarioLogged?.permissao === 'root'
+}
+
+function canDeleteCharge(status: StatusPagamentoType) {
+    if (['ESTORNADO', 'CANCELADO'].includes(status)) return true
+    return isRootUser() && status !== 'EFETIVADO'
+}
 
 async function cancelar(id: number) {
     if (!id) return toast.error('ID não informado!')
@@ -94,7 +105,7 @@ function accessLink(link: string) {
                 <Undo2 />
                 Estornar
             </DropdownMenuItem>
-            <DropdownMenuItem :disabled="!['ESTORNADO', 'CANCELADO'].includes(data.status)" class="text-danger"
+            <DropdownMenuItem :disabled="!canDeleteCharge(data.status)" class="text-danger"
                 @click="deletar(data.id!)">
                 <i class="fa-regular fa-trash-can mr-1"></i>
                 Excluir

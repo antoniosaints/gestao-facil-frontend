@@ -74,6 +74,23 @@ const paymentOptions = [
   { value: 'OUTRO', label: 'Outro' },
 ]
 
+type AssinaturaPagarFormLink = {
+  key: string
+  titulo: string
+  url: string
+}
+
+let linkKeySeed = 0
+
+function createFormLink(data?: Partial<Pick<AssinaturaPagarFormLink, 'titulo' | 'url'>>): AssinaturaPagarFormLink {
+  linkKeySeed += 1
+  return {
+    key: `assinatura-pagar-link-${linkKeySeed}`,
+    titulo: data?.titulo ?? '',
+    url: data?.url ?? '',
+  }
+}
+
 const form = reactive<{
   id?: number
   nomeServico: string
@@ -92,7 +109,7 @@ const form = reactive<{
   corDestaque: string
   observacoes: string
   icone: string | null
-  links: Array<{ titulo: string; url: string }>
+  links: AssinaturaPagarFormLink[]
 }>({
   nomeServico: '',
   valor: 0,
@@ -110,7 +127,7 @@ const form = reactive<{
   corDestaque: '#6366F1',
   observacoes: '',
   icone: null,
-  links: [{ titulo: '', url: '' }],
+  links: [createFormLink()],
 })
 
 const modalTitle = computed(() => (store.editingId ? 'Editar assinatura a pagar' : 'Nova assinatura a pagar'))
@@ -151,7 +168,7 @@ function resetForm() {
   form.corDestaque = '#6366F1'
   form.observacoes = ''
   form.icone = null
-  form.links = [{ titulo: '', url: '' }]
+  form.links = [createFormLink()]
   iconFile.value = null
   iconVersion.value = 0
   resetIconPreview()
@@ -196,12 +213,12 @@ function onIconChange(event: Event) {
 }
 
 function addLink() {
-  form.links.push({ titulo: '', url: '' })
+  form.links.push(createFormLink())
 }
 
 function removeLink(index: number) {
   if (form.links.length === 1) {
-    form.links = [{ titulo: '', url: '' }]
+    form.links = [createFormLink()]
     return
   }
   form.links.splice(index, 1)
@@ -228,7 +245,7 @@ async function loadDetail(id: number) {
   form.corDestaque = data.corDestaque || '#6366F1'
   form.observacoes = data.observacoes || ''
   form.icone = data.icone || null
-  form.links = data.links.length ? data.links.map((item) => ({ titulo: item.titulo, url: item.url })) : [{ titulo: '', url: '' }]
+  form.links = data.links.length ? data.links.map((item) => createFormLink(item)) : [createFormLink()]
   iconFile.value = null
   iconVersion.value = 0
   resetIconPreview()
@@ -534,7 +551,7 @@ onBeforeUnmount(() => {
           <CardDescription>Cadastre o portal do fornecedor, link de pagamento, boleto, painel ou qualquer URL operacional relacionada.</CardDescription>
         </CardHeader>
         <CardContent class="space-y-3">
-          <div v-for="(link, index) in form.links" :key="`${index}-${link.titulo}`" class="grid gap-3 rounded-xl border border-border p-3 md:grid-cols-[1fr_1.4fr_auto]">
+          <div v-for="(link, index) in form.links" :key="link.key" class="grid gap-3 rounded-xl border border-border p-3 md:grid-cols-[1fr_1.4fr_auto]">
             <div>
               <Label :for="`assinaturaPagarLinkTitulo-${index}`">Título</Label>
               <Input :id="`assinaturaPagarLinkTitulo-${index}`" v-model="link.titulo" placeholder="Ex.: Portal, boleto, painel, fatura" />

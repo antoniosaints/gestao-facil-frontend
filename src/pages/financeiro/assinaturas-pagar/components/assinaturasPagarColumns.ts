@@ -39,11 +39,11 @@ export const columnsAssinaturasPagar: ColumnDef<AssinaturaPagarListItem>[] = [
         () => ['Serviço', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render('div', { class: 'min-w-0' }, [
+      render('div', { class: 'min-w-0 flex items-center gap-2' }, [
         render('div', { class: 'truncate font-medium text-foreground' }, row.original.nomeServico),
-        render('div', { class: 'mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground' }, [
+        render('div', { class: 'flex flex-wrap items-center gap-2 text-xs text-muted-foreground' }, [
           row.original.links.length
-            ? render(Badge, { variant: 'outline' }, () => [render(Link2, { class: 'mr-1 h-3.5 w-3.5' }), `${row.original.links.length} link(s)`])
+            ? render(Badge, { variant: 'outline' }, () => [render(Link2, { class: 'mr-0.5 h-3.5 w-3.5' }), `${row.original.links.length}`])
             : null,
           row.original.lancamentoAtual
             ? render(Badge, { variant: 'secondary' }, () => [
