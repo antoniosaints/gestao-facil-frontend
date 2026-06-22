@@ -84,17 +84,17 @@ async function deletar(id: number) {
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuItem @click="router.push(`/produtos/detalhes?id=${data.produtoBaseId}&varianteId=${data.id}`)">Ver produto</DropdownMenuItem>
-      <DropdownMenuItem @click="store.openUpdateVariante(data.id!)">Editar variante</DropdownMenuItem>
-      <DropdownMenuItem @click="openModalReposicao(data.id)">Repor variante</DropdownMenuItem>
-      <DropdownMenuItem @click="gerarRelatorio(data.id)">Central de relatórios</DropdownMenuItem>
-      <DropdownMenuItem @click="abrirEtiquetas(data.id)">Etiquetas da variante</DropdownMenuItem>
+      <DropdownMenuItem @click="store.openUpdateVariante(data.id!)">Editar</DropdownMenuItem>
+      <DropdownMenuItem @click="openModalReposicao(data.id)">Reposição</DropdownMenuItem>
+      <DropdownMenuItem @click="gerarRelatorio(data.id)">Relatórios</DropdownMenuItem>
+      <DropdownMenuItem @click="abrirEtiquetas(data.id)">Etiquetas</DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem
         class="text-danger"
         :disabled="data.ehPadrao === true"
         @click="deletar(data.id!)"
       >
-        {{ data.ehPadrao ? 'Variante padrão não pode ser excluída' : 'Excluir variante' }}
+        {{ data.ehPadrao ? 'Variante padrão não pode ser excluída' : 'Excluir' }}
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

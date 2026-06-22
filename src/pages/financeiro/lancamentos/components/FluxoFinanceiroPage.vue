@@ -62,6 +62,7 @@ import { goBack, goTo } from '@/hooks/links'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import { useUiStore } from '@/stores/ui/uiStore'
+import { runWithPreservedWindowScroll } from '@/composables/usePreservedWindowScroll'
 
 import FormularioEfertivar from '../modais/FormularioEfertivar.vue'
 import GerarCobranca from '../modais/GerarCobranca.vue'
@@ -76,6 +77,10 @@ type FiltroTipo = 'TODOS' | 'RECEITA' | 'DESPESA'
 type FiltroStatus = 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
 type FluxoMode = 'all' | 'receitas' | 'despesas'
 type Preset = 'all' | 'today' | 'dueToday'
+type CarregarLancamentosOptions = {
+  preserveScroll?: boolean
+  silent?: boolean
+}
 
 type LancamentoDia = {
   id: number
@@ -243,26 +248,44 @@ async function carregarOpcoes() {
   }
 }
 
-async function carregarLancamentos(showFeedback = false) {
-  try {
-    carregando.value = true
-    const response = await LancamentosRepository.getLancamentosMensais(
-      store.currentMonth.toISOString().slice(0, 7),
-      getRequestFilters(),
-    )
+async function carregarLancamentos(showFeedback = false, options: CarregarLancamentosOptions = {}) {
+  const load = async () => {
+    try {
+      if (!options.silent) {
+        carregando.value = true
+      }
 
-    dias.value = response.data?.dias ?? []
-    resumo.value = response.data?.resumo ?? resumo.value
+      const response = await LancamentosRepository.getLancamentosMensais(
+        store.currentMonth.toISOString().slice(0, 7),
+        getRequestFilters(),
+      )
 
-    if (showFeedback) {
-      toast.info('Fluxo financeiro atualizado!')
+      dias.value = response.data?.dias ?? []
+      resumo.value = response.data?.resumo ?? resumo.value
+
+      if (showFeedback) {
+        toast.info('Fluxo financeiro atualizado!')
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('Erro ao carregar o fluxo financeiro.')
+    } finally {
+      if (!options.silent) {
+        carregando.value = false
+      }
     }
-  } catch (error) {
-    console.error(error)
-    toast.error('Erro ao carregar o fluxo financeiro.')
-  } finally {
-    carregando.value = false
   }
+
+  if (options.preserveScroll) {
+    await runWithPreservedWindowScroll(load)
+    return
+  }
+
+  await load()
+}
+
+function recarregarMantendoPosicao(showFeedback = false) {
+  return carregarLancamentos(showFeedback, { preserveScroll: true, silent: true })
 }
 
 function navigateMonth(direction: 'prev' | 'next') {
@@ -396,8 +419,8 @@ async function estornarParcela(id: number) {
   try {
     await LancamentosRepository.estornarParcela(id)
     toast.success('Parcela estornada com sucesso')
-    carregarLancamentos()
     openModalEvento.value = false
+    await recarregarMantendoPosicao()
   } catch (error: any) {
     console.error(error)
     toast.error(error.response?.data?.message || 'Erro ao estornar a parcela')
@@ -409,9 +432,13 @@ function openLinkCobranca(link?: string | null) {
   window.open(link, '_blank')
 }
 
-function openEventoCalendario(evento: any) {
-  eventoSelecionado.value = evento.payload as LancamentoDia
+function openResumoParcela(item: LancamentoDia) {
+  eventoSelecionado.value = item
   openModalEvento.value = true
+}
+
+function openEventoCalendario(evento: any) {
+  openResumoParcela(evento.payload as LancamentoDia)
 }
 
 function handleEfetivarFromModal(item: LancamentoDia) {
@@ -593,7 +620,7 @@ const mapStatus = (status: 'PAGO' | 'PENDENTE' | 'ATRASADO', tipo: 'RECEITA' | '
 
 watch(
   () => store.filters.update,
-  () => carregarLancamentos(),
+  () => recarregarMantendoPosicao(),
 )
 
 watch(
@@ -664,7 +691,7 @@ onMounted(async () => {
           <Button class="dark:text-white hidden lg:inline-flex" @click="handleNewLancamento">
             <BadgePlus class="h-4 w-4" /> {{ launchLabel }}
           </Button>
-          <Button class="hidden lg:inline-flex" variant="outline" size="icon" @click="carregarLancamentos(true)">
+          <Button class="hidden lg:inline-flex" variant="outline" size="icon" @click="recarregarMantendoPosicao(true)">
             <RotateCw class="h-4 w-4" :class="{ 'animate-spin': carregando }" />
           </Button>
         </div>
@@ -740,7 +767,13 @@ onMounted(async () => {
 
             <div class="grid gap-0 md:pl-4">
               <div v-for="item in dia.lancamentos" :key="item.parcelaId"
-                class="relative overflow-hidden border-t bg-card px-3 py-1 shadow-sm fist:rounded-t-none last:rounded-b-md">
+                role="button"
+                tabindex="0"
+                :data-testid="`lancamento-row-${item.parcelaId}`"
+                class="relative cursor-pointer overflow-hidden border-t bg-card px-3 py-1 shadow-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 fist:rounded-t-none last:rounded-b-md"
+                @click="openResumoParcela(item)"
+                @keydown.enter.prevent="openResumoParcela(item)"
+                @keydown.space.prevent="openResumoParcela(item)">
                 <div class="absolute left-0 top-0 h-full w-1"
                   :class="item.tipo === 'DESPESA' ? 'bg-rose-500' : 'bg-emerald-500'" />
 
@@ -786,25 +819,27 @@ onMounted(async () => {
                     </div>
                   </div>
 
-                  <div class="flex items-center gap-1">
+                  <div class="flex items-center gap-1" @click.stop>
                     <div class="hidden items-center gap-1 lg:flex">
-                      <Button v-if="!item.pago" variant="outline" size="icon" class="h-8 w-8" @click="editarParcela(item)">
+                      <Button v-if="!item.pago" variant="outline" size="icon" class="h-8 w-8"
+                        :data-testid="`editar-parcela-${item.parcelaId}`" @click="editarParcela(item)">
                         <PenLine class="h-4 w-4" />
                       </Button>
-                      <Button v-if="!item.pago" size="icon" class="h-8 w-8 dark:text-white" @click="efetivarParcela(item.parcelaId)">
+                      <Button v-if="!item.pago" size="icon" class="h-8 w-8 dark:text-white"
+                        :data-testid="`efetivar-parcela-${item.parcelaId}`" @click="efetivarParcela(item.parcelaId)">
                         <CheckCircle2 class="h-4 w-4" />
                       </Button>
                       <Button v-else size="icon" class="h-8 w-8 bg-warning text-white hover:bg-warning/80"
-                        @click="estornarParcela(item.parcelaId)">
+                        :data-testid="`estornar-parcela-${item.parcelaId}`" @click="estornarParcela(item.parcelaId)">
                         <Undo2 class="h-4 w-4" />
                       </Button>
                       <Button v-if="uiStore.canCreateCharge && !item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink" size="icon"
                         class="h-8 w-8 bg-success text-white hover:bg-success/80"
-                        @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
+                        :data-testid="`cobranca-parcela-${item.parcelaId}`" @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
                         <CircleDollarSign class="h-4 w-4" />
                       </Button>
                       <Button v-if="item.cobrancaLink" variant="outline" size="icon" class="h-8 w-8"
-                        @click="openLinkCobranca(item.cobrancaLink)">
+                        :data-testid="`abrir-cobranca-${item.parcelaId}`" @click="openLinkCobranca(item.cobrancaLink)">
                         <ExternalLink class="h-4 w-4" />
                       </Button>
                       <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
@@ -907,7 +942,7 @@ onMounted(async () => {
       <button
         type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        @click="carregarLancamentos(true)"
+        @click="recarregarMantendoPosicao(true)"
       >
         <RotateCw class="h-5 w-5" :class="{ 'animate-spin': carregando }" />
         <span class="text-xs">Atualizar</span>
@@ -932,7 +967,7 @@ onMounted(async () => {
       </div>
     </ModalView>
 
-    <ModalView v-model:open="openModalEvento" :title="eventoSelecionado?.descricao || 'Lançamento do calendário'"
+    <ModalView v-model:open="openModalEvento" :title="eventoSelecionado?.descricao || 'Resumo da parcela'"
       size="lg">
       <div v-if="eventoSelecionado" class="space-y-4 p-4">
         <div class="flex flex-wrap gap-2">
@@ -954,6 +989,13 @@ onMounted(async () => {
               :class="eventoSelecionado.tipo === 'DESPESA' ? 'text-rose-600' : 'text-emerald-600'">
               {{ eventoSelecionado.tipo === 'DESPESA' ? '-' : '+' }}{{ formatCurrencyBR(eventoSelecionado.valor) }}
             </p>
+          </div>
+          <div class="rounded-xl border p-3">
+            <p class="text-xs uppercase tracking-wide text-muted-foreground">Parcela</p>
+            <p class="mt-1 text-sm font-medium text-foreground">
+              {{ eventoSelecionado.numero === 0 ? 'Entrada' : `Parcela ${eventoSelecionado.numero}` }}
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">{{ eventoSelecionado.uid }}</p>
           </div>
           <div class="rounded-xl border p-3">
             <p class="text-xs uppercase tracking-wide text-muted-foreground">Vencimento</p>
@@ -983,14 +1025,19 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="flex flex-wrap justify-end gap-2">
+        <div class="grid grid-cols-4 space-x-4">
           <RouterLink :to="`/financeiro/detalhes?id=${eventoSelecionado.id}`">
             <Button variant="outline" @click="openModalEvento = false">
-              <Info class="h-4 w-4" /> Ver detalhes
+              <Info class="h-4 w-4" /> Gerenciar
+            </Button>
+          </RouterLink>
+          <RouterLink to="/financeiro/contas">
+            <Button variant="outline" @click="openModalEvento = false">
+              <Wallet class="h-4 w-4" /> Contas
             </Button>
           </RouterLink>
           <Button variant="outline" @click="handleEditarFromModal(eventoSelecionado)">
-            <PenLine class="h-4 w-4" /> Editar parcela
+            <PenLine class="h-4 w-4" /> Editar
           </Button>
           <Button v-if="!eventoSelecionado.pago" @click="handleEfetivarFromModal(eventoSelecionado)">
             <CheckCircle2 class="h-4 w-4" /> {{ eventoSelecionado.tipo === 'DESPESA' ? 'Pagar' : 'Receber' }}
@@ -1107,7 +1154,7 @@ onMounted(async () => {
       </div>
     </ModalView>
 
-    <FormularioEfertivar @success="carregarLancamentos" />
+    <FormularioEfertivar />
     <GerarCobranca />
     <ModalParcela />
     <LancamentoModal />
