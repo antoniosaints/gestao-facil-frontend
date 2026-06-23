@@ -14,10 +14,11 @@
                                     PONTO DE VENDA
                                 </span>
                                 <span class="text-xs ml-2 bg-card rounded-xl px-2 flex items-center uppercase">
-                                    {{ `CAIXA 01` }}
-                                    <Dot class="w-8 h-7 inline-flex" :class="['text-green-600 dark:text-green-400']" />
+                                    {{ caixaStore.caixaAtivo?.codigo || 'Sem caixa' }}
+                                    <Dot class="w-8 h-7 inline-flex"
+                                        :class="[caixaStore.caixaAtivo ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']" />
                                     <span>
-                                        {{ "ABERTO" }}
+                                        {{ caixaStore.caixaAtivo?.status || 'FECHADO' }}
                                     </span>
                                 </span>
                             </div>
@@ -228,7 +229,7 @@
                     <!-- Forma de Pagamento -->
                     <div class="mb-4 flex flex-col gap-2">
                         <label class="block text-sm font-medium text-gray-700 dark:text-white">Pagamento</label>
-                        <div class="grid grid-cols-7 md:grid-cols-7 gap-2">
+                        <div class="grid grid-cols-8 md:grid-cols-8 gap-2">
                             <div class="col-span-6">
                                 <Select v-model="paymentMethod">
                                     <SelectTrigger>
@@ -250,11 +251,11 @@
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <!-- <Button type="button" variant="outline"
+                            <Button type="button" variant="outline"
                                 class="bg-success hover:bg-success text-white hover:text-white"
                                 @click="openModalAcoes = true">
-                                <Cog />
-                            </Button> -->
+                                <HandCoins />
+                            </Button>
                             <Button type="button" class="text-white" @click="openModalDesconto = true">
                                 <CirclePercent />
                             </Button>
@@ -511,18 +512,131 @@
             size="sm">
             <!-- Desconto -->
             <div class="px-4 gap-4 grid grid-cols-2">
-                <div
+                <div @click="abrirMovimento('SANGRIA')"
                     class="flex cursor-pointer hover:bg-secondary/80 transition flex-col items-center gap-2 mb-2 text-yellow-700 dark:text-yellow-400 border rounded-md py-7">
                     <HandGrab />
                     <h1>Sangria</h1>
                 </div>
-                <div
+                <div @click="abrirMovimento('REFORCO')"
                     class="flex cursor-pointer hover:bg-secondary/80 transition  flex-col items-center gap-2 mb-2 text-green-700 dark:text-green-400 border rounded-md py-7">
                     <HandCoins />
                     <h1>Reforço</h1>
                 </div>
+                <div @click="fecharCaixa"
+                    class="col-span-2 flex cursor-pointer hover:bg-secondary/80 transition flex-col items-center gap-2 text-blue-700 dark:text-blue-400 border rounded-md py-5">
+                    <MonitorDown />
+                    <h1>Fechar caixa</h1>
+                    <span class="text-xs text-muted-foreground">
+                        Saldo esperado: {{ formatCurrencyBR(caixaStore.caixaAtivo?.saldoEsperado || 0) }}
+                    </span>
+                </div>
             </div>
         </ModalView>
+
+        <ModalView v-model:open="caixaStore.openModalSelecionarCaixa" title="Caixa do PDV"
+            description="Abra um caixa ou entre em um caixa aberto para vender." size="lg">
+            <div class="grid gap-4 px-4">
+                <div class="rounded-md border bg-card p-4">
+                    <h3 class="text-sm font-semibold">Abrir novo caixa</h3>
+                    <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-muted-foreground">PDV</label>
+                            <select v-model="abrirCaixaForm.pdvId"
+                                class="h-10 rounded-md border bg-background px-3 text-sm">
+                                <option :value="null">Sem PDV especifico</option>
+                                <option v-for="pdv in caixaStore.pdvs" :key="pdv.id" :value="pdv.id">
+                                    {{ pdv.nome }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-muted-foreground">Saldo inicial</label>
+                            <Input v-model="abrirCaixaForm.valorInicial" placeholder="0,00" />
+                        </div>
+                        <div class="md:col-span-2 flex flex-col gap-1">
+                            <label class="text-xs text-muted-foreground">Observacao</label>
+                            <Input v-model="abrirCaixaForm.observacao" placeholder="Ex.: Abertura do turno" />
+                        </div>
+                    </div>
+                    <div class="mt-3 flex justify-end">
+                        <Button type="button" :disabled="caixaStore.loading" @click="submitAbrirCaixa">
+                            Abrir caixa
+                        </Button>
+                    </div>
+                </div>
+
+                <div class="rounded-md border bg-card p-4">
+                    <h3 class="text-sm font-semibold">Caixas abertos</h3>
+                    <div v-if="!caixaStore.caixasAbertos.length" class="mt-3 text-sm text-muted-foreground">
+                        Nenhum caixa aberto no momento.
+                    </div>
+                    <div v-else class="mt-3 grid gap-2">
+                        <button v-for="caixa in caixaStore.caixasAbertos" :key="caixa.id" type="button"
+                            class="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-left hover:bg-muted/40"
+                            :disabled="caixaStore.loading" @click="caixaStore.entrarCaixa(caixa.id)">
+                            <span>
+                                <span class="block text-sm font-medium">{{ caixa.codigo }}</span>
+                                <span class="text-xs text-muted-foreground">
+                                    Aberto por {{ caixa.abertoPor?.nome || 'usuario' }}
+                                </span>
+                            </span>
+                            <span class="text-sm font-semibold">{{ formatCurrencyBR(caixa.saldoEsperado || 0) }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </ModalView>
+
+        <ModalView v-model:open="caixaStore.openModalMovimento" :title="movimentoForm.tipo"
+            description="Registre uma movimentacao manual no caixa." size="sm">
+            <form class="grid gap-3 px-4" @submit.prevent="submitMovimentoCaixa">
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-muted-foreground">Valor</label>
+                    <Input v-model="movimentoForm.valor" placeholder="0,00" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-muted-foreground">Descricao</label>
+                    <Input v-model="movimentoForm.descricao" placeholder="Motivo da movimentacao" />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <Button type="button" variant="outline" @click="caixaStore.openModalMovimento = false">
+                        Cancelar
+                    </Button>
+                    <Button type="submit" :disabled="caixaStore.loading">
+                        Registrar
+                    </Button>
+                </div>
+            </form>
+        </ModalView>
+
+        <ModalView v-model:open="caixaStore.openModalFechamento" title="Fechar caixa"
+            description="Informe o saldo contado para concluir o caixa." size="sm">
+            <form class="grid gap-3 px-4" @submit.prevent="submitFechamentoCaixa">
+                <div class="rounded-md border bg-card p-3 text-sm">
+                    <div class="flex justify-between">
+                        <span>Saldo esperado</span>
+                        <strong>{{ formatCurrencyBR(caixaStore.caixaAtivo?.saldoEsperado || 0) }}</strong>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-muted-foreground">Saldo contado</label>
+                    <Input v-model="fechamentoForm.valorFechamento" placeholder="0,00" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-muted-foreground">Observacao</label>
+                    <Input v-model="fechamentoForm.descricao" placeholder="Conferencia do fechamento" />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <Button type="button" variant="outline" @click="caixaStore.openModalFechamento = false">
+                        Cancelar
+                    </Button>
+                    <Button type="submit" :disabled="caixaStore.loading">
+                        Fechar caixa
+                    </Button>
+                </div>
+            </form>
+        </ModalView>
+
         <ClientesModal />
         <!-- <ModalFechamento v-model:open="openModalFechamento" /> -->
         <nav
@@ -547,6 +661,7 @@ import { POSITION, useToast } from 'vue-toastification';
 import { useUiStore } from '@/stores/ui/uiStore';
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
 import { useClientesStore } from '@/stores/clientes/useClientes';
+import { useCaixaStore } from '@/stores/vendas/useCaixa';
 import { ClienteRepository } from '@/repositories/cliente-repository';
 import { VendaRepository } from '@/repositories/venda-repository';
 import { Button } from '@/components/ui/button';
@@ -563,8 +678,8 @@ import { useConfirm } from '@/composables/useConfirm';
 const toast = useToast()
 const useConf = useConfirm()
 const uiStore = useUiStore()
-const openModalFechamento = ref(false)
 const storeCliente = useClientesStore()
+const caixaStore = useCaixaStore()
 const podeFinalizarPDV = ref(false)
 const openModalDesconto = ref(false)
 const openModalAcoes = ref(false)
@@ -595,6 +710,20 @@ const vendaRecibo = ref<{
 const clienteEnvio = ref<number | null>(null)
 const numeroPreview = ref<string>('')
 const searchInputField = ref<HTMLInputElement | null>(null)
+const abrirCaixaForm = ref({
+    pdvId: null as number | null,
+    valorInicial: '0',
+    observacao: '',
+})
+const movimentoForm = ref({
+    tipo: 'SANGRIA' as 'SANGRIA' | 'REFORCO',
+    valor: '',
+    descricao: '',
+})
+const fechamentoForm = ref({
+    valorFechamento: '',
+    descricao: '',
+})
 function aplicarDesconto() {
     if (discountValue.value === null) return toast.error('Informe o desconto a ser aplicado')
     openModalDesconto.value = false
@@ -616,6 +745,10 @@ const subtotal = computed(() =>
     cart.value.reduce((t, item) => t + Number(item.preco) * item.quantity, 0)
 )
 
+function syncPodeFinalizarPDV() {
+    podeFinalizarPDV.value = cart.value.length > 0 && Boolean(caixaStore.caixaAtivo?.id)
+}
+
 async function sairCaixa() {
     const result = await useConf.confirm({
         cancelText: 'Cancelar',
@@ -629,6 +762,10 @@ async function sairCaixa() {
 }
 
 async function fecharCaixa() {
+    if (!caixaStore.caixaAtivo?.id) {
+        toast.error('Nenhum caixa aberto')
+        return
+    }
     const result = await useConf.confirm({
         cancelText: 'Cancelar',
         confirmText: 'Sim, fechar caixa!',
@@ -637,10 +774,57 @@ async function fecharCaixa() {
         title: 'Fechar caixa'
     })
     if (!result) return
-    openModalFechamento.value = true
-    // mock.mockCaixas.find(caixa => caixa.id === Number(caixaId.value))!.status = 'FECHADO'
-    // toast.error('Caixa fechado com sucesso!')
-    // router.push(`/vendas/pontos/caixas?pdv=${HashGenerator.encode(Number(pdvId.value))}`)
+    fechamentoForm.value.valorFechamento = String(caixaStore.caixaAtivo.saldoEsperado || '')
+    caixaStore.openModalFechamento = true
+    openModalAcoes.value = false
+}
+
+async function submitAbrirCaixa() {
+    await caixaStore.abrirCaixa({
+        pdvId: abrirCaixaForm.value.pdvId,
+        valorInicial: formatToNumberValue(abrirCaixaForm.value.valorInicial),
+        observacao: abrirCaixaForm.value.observacao || undefined,
+    })
+    abrirCaixaForm.value = { pdvId: null, valorInicial: '0', observacao: '' }
+    syncPodeFinalizarPDV()
+    searchInputField.value?.focus()
+}
+
+function abrirMovimento(tipo: 'SANGRIA' | 'REFORCO') {
+    if (!caixaStore.caixaAtivo?.id) {
+        toast.error('Abra um caixa antes de movimentar')
+        return
+    }
+    movimentoForm.value = {
+        tipo,
+        valor: '',
+        descricao: '',
+    }
+    caixaStore.openModalMovimento = true
+    openModalAcoes.value = false
+}
+
+async function submitMovimentoCaixa() {
+    if (!caixaStore.caixaAtivo?.id) return toast.error('Nenhum caixa aberto')
+    await caixaStore.registrarMovimento({
+        caixaId: caixaStore.caixaAtivo.id,
+        tipoMovimento: movimentoForm.value.tipo,
+        categoria: movimentoForm.value.tipo,
+        valor: formatToNumberValue(movimentoForm.value.valor),
+        descricao: movimentoForm.value.descricao || undefined,
+    })
+    movimentoForm.value = { tipo: 'SANGRIA', valor: '', descricao: '' }
+}
+
+async function submitFechamentoCaixa() {
+    if (!caixaStore.caixaAtivo?.id) return toast.error('Nenhum caixa aberto')
+    await caixaStore.fecharCaixa({
+        caixaId: caixaStore.caixaAtivo.id,
+        valorFechamento: formatToNumberValue(fechamentoForm.value.valorFechamento),
+        descricao: fechamentoForm.value.descricao || undefined,
+    })
+    fechamentoForm.value = { valorFechamento: '', descricao: '' }
+    syncPodeFinalizarPDV()
 }
 
 watch(() => searchTerm.value, () => {
@@ -649,7 +833,12 @@ watch(() => searchTerm.value, () => {
 
 watch(() => cart.value, () => {
     searchTerm.value = ""
+    syncPodeFinalizarPDV()
 }, { deep: true })
+
+watch(() => caixaStore.caixaAtivo?.id, () => {
+    syncPodeFinalizarPDV()
+})
 
 watch(() => clienteEnvio.value, (value) => {
     atualizarNumeroPreview(value)
@@ -733,9 +922,7 @@ async function fetchProducts() {
             params: { search: searchTerm.value, limit: 12, pdv: true },
         })
         products.value = data.data;
-        if (cart.value.length > 0) {
-            podeFinalizarPDV.value = true
-        }
+        syncPodeFinalizarPDV()
     } catch {
         alert("Erro ao buscar produtos")
     }
@@ -744,7 +931,7 @@ async function fetchProducts() {
 // ---- Carrinho ----
 function saveCart() {
     localStorage.setItem("gestao_facil:cartPDV", JSON.stringify(cart.value))
-    if (cart.value.length > 0) podeFinalizarPDV.value = true
+    syncPodeFinalizarPDV()
 }
 
 function adicionarAoCarrinho(product: ProdutoVariante) {
@@ -897,21 +1084,29 @@ async function finalizarVendaPDV(options?: { print?: boolean }) {
         toast.error("Carrinho vazio!")
         return
     }
+    if (!caixaStore.caixaAtivo?.id) {
+        toast.error("Abra ou selecione um caixa para finalizar a venda")
+        caixaStore.openModalSelecionarCaixa = true
+        return
+    }
     if (paymentMethod.value === "DINHEIRO" && (receivedAmount.value ? parseFloat(receivedAmount.value?.replace(",", ".")) : 0) < total.value) {
         toast.error("Valor recebido insuficiente!")
         return
     }
 
     const data = {
+        caixaId: caixaStore.caixaAtivo.id,
         clienteId: cliente.value,
-        data: new Date().toISOString().split("T")[0],
+        data: new Date().toISOString(),
         desconto: discount.value,
+        pagamento: paymentMethod.value,
+        valorRecebido: paymentMethod.value === 'DINHEIRO' ? receivedAmount.value : null,
         itens: cart.value.map((i) => ({
-            id: i.id,
+            id: Number(i.id),
             nome: `${i.nome}${i.nomeVariante ? ` / ${i.nomeVariante}` : ''}`,
             quantidade: i.quantity,
             preco: formatToNumberValue(i.preco),
-            tipo: 'PRODUTO',
+            tipo: 'PRODUTO' as const,
         })),
     }
 
@@ -935,10 +1130,10 @@ async function finalizarVendaPDV(options?: { print?: boolean }) {
     }
 
     try {
-        const response = await http.post("/vendas/criar", data)
-        const vendaCriada = response.data?.data ?? response.data
+        const vendaCriada = await VendaRepository.finalizarVendaPdv(data)
         limparCarrinho()
         await fetchProducts()
+        await caixaStore.loadContexto()
         toast.success("Venda realizada com sucesso!")
         prepararComprovante(vendaCriada, resumoRecibo)
         if (options?.print && vendaCriada?.id) {
@@ -957,8 +1152,9 @@ const resumoVenda = computed(() => ({
     change: change.value,
 }))
 
-onMounted(() => {
-    fetchProducts()
+onMounted(async () => {
+    await caixaStore.loadContexto().catch(() => null)
+    await fetchProducts()
     cart.value = [];
     saveCart();
     uiStore.openSidebar = false

@@ -33,6 +33,15 @@ function openModalReposicao(varianteId?: number | null) {
   store.openModalReposicao = true
 }
 
+function openModalDescarte(varianteId?: number | null) {
+  if (!varianteId) {
+    toast.error('Variante nao encontrada')
+    return
+  }
+  store.idMutation = varianteId
+  store.openModalDescarte = true
+}
+
 function gerarRelatorio(varianteId?: number | null) {
   if (!varianteId) {
     toast.error('Variante não encontrada')
@@ -86,6 +95,7 @@ async function deletar(id: number) {
       <DropdownMenuItem @click="router.push(`/produtos/detalhes?id=${data.produtoBaseId}&varianteId=${data.id}`)">Ver produto</DropdownMenuItem>
       <DropdownMenuItem @click="store.openUpdateVariante(data.id!)">Editar</DropdownMenuItem>
       <DropdownMenuItem @click="openModalReposicao(data.id)">Reposição</DropdownMenuItem>
+      <DropdownMenuItem @click="openModalDescarte(data.id)">Descarte</DropdownMenuItem>
       <DropdownMenuItem @click="gerarRelatorio(data.id)">Relatórios</DropdownMenuItem>
       <DropdownMenuItem @click="abrirEtiquetas(data.id)">Etiquetas</DropdownMenuItem>
       <DropdownMenuSeparator />

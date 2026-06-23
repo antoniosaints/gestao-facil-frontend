@@ -148,34 +148,34 @@ const resumoStatus = computed(() => {
   if (status === 'PAGO') {
     return {
       label: 'Quitado',
-      classes: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+      classes: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-200 hover:text-emerald-900',
     }
   }
 
   if (status === 'ATRASADO') {
     return {
       label: 'Atrasado',
-      classes: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+      classes: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 hover:bg-rose-200 hover:text-rose-900',
     }
   }
 
   if (status === 'PARCIAL') {
     return {
       label: 'Parcial',
-      classes: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+      classes: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 hover:bg-amber-200 hover:text-amber-900',
     }
   }
 
   return {
     label: 'Pendente',
-    classes: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
+    classes: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 hover:bg-sky-200 hover:text-sky-900',
   }
 })
 
 function getTipoClasses(tipo?: string) {
   return tipo === 'DESPESA'
-    ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
-    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+    ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 hover:bg-rose-200 hover:text-rose-900'
+    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-200 hover:text-emerald-900'
 }
 
 function copiarUid() {
@@ -357,7 +357,7 @@ watch(() => store.filters.update, loadLancamento)
         <CardHeader class="pb-2">
           <CardDescription>Próximo passo</CardDescription>
           <CardTitle class="text-base md:text-lg">
-            {{ proximaParcela ? getNumeroParcelaLabel(proximaParcela) : 'Sem pendências' }}
+            {{ proximaParcela ? `${getNumeroParcelaLabel(proximaParcela)} de ${parcelasOrdenadas.length}` : '✅ Sem pendências' }}
           </CardTitle>
         </CardHeader>
         <CardContent>

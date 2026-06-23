@@ -21,6 +21,7 @@ import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import ModalProdutos from '../formulario/ModalProdutos.vue'
 import ModalVariante from '../formulario/ModalVariante.vue'
 import ModalReposicao from '../formulario/ModalReposicao.vue'
+import ModalDescarte from '../formulario/ModalDescarte.vue'
 import ModalRelatorio from '../formulario/ModalRelatorio.vue'
 import GerarEtiquetas from './GerarEtiquetas.vue'
 import {
@@ -37,6 +38,7 @@ import {
   FileText,
   Package,
   PackagePlus,
+  PackageX,
   PencilLine,
   ReceiptText,
   RefreshCw,
@@ -311,6 +313,12 @@ function openReposicao() {
   store.openModalReposicao = true
 }
 
+function openDescarte() {
+  if (!selectedVariant.value?.id) return toast.error('Selecione uma variante')
+  store.idMutation = selectedVariant.value.id
+  store.openModalDescarte = true
+}
+
 function openRelatorio(defaultType: 'movimentacoes' | 'vendas' | 'lucro' = 'movimentacoes') {
   if (!selectedVariant.value?.id) return toast.error('Selecione uma variante')
 
@@ -374,12 +382,16 @@ watch(selectedVariantId, () => {
 })
 
 watch(
-  () => [store.openModal, store.openModalVariante, store.openModalReposicao, store.openModalRelatorio],
-  ([produtoModal, varianteModal, reposicaoModal, relatorioModal], [prevProduto, prevVariante, prevReposicao, prevRelatorio]) => {
+  () => [store.openModal, store.openModalVariante, store.openModalReposicao, store.openModalDescarte, store.openModalRelatorio],
+  (
+    [produtoModal, varianteModal, reposicaoModal, descarteModal, relatorioModal],
+    [prevProduto, prevVariante, prevReposicao, prevDescarte, prevRelatorio],
+  ) => {
     const closedAny =
       (prevProduto && !produtoModal) ||
       (prevVariante && !varianteModal) ||
       (prevReposicao && !reposicaoModal) ||
+      (prevDescarte && !descarteModal) ||
       (prevRelatorio && !relatorioModal)
 
     if (closedAny) {
@@ -603,10 +615,14 @@ onMounted(async () => {
 
                 <Separator />
 
-                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
                   <Button variant="outline" @click="openReposicao">
                     <ArchiveRestore class="mr-2 h-4 w-4" />
                     Reposição
+                  </Button>
+                  <Button variant="outline" @click="openDescarte">
+                    <PackageX class="mr-2 h-4 w-4" />
+                    Descarte
                   </Button>
                   <Button variant="outline" @click="openEtiquetas">
                     <Tag class="mr-2 h-4 w-4" />
@@ -818,6 +834,16 @@ onMounted(async () => {
                             type="button"
                             variant="ghost"
                             size="icon"
+                            class="h-8 w-8"
+                            :title="'Descarte de estoque'"
+                            @click="store.idMutation = item.id!; store.openModalDescarte = true"
+                          >
+                            <PackageX class="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
                             class="h-8 w-8 text-red-600 hover:text-red-700"
                             :title="item.ehPadrao ? 'Variante padrão não pode ser excluída' : 'Excluir variante'"
                             :disabled="item.ehPadrao"
@@ -1010,6 +1036,7 @@ onMounted(async () => {
     <ModalProdutos />
     <ModalVariante />
     <ModalReposicao />
+    <ModalDescarte />
     <ModalRelatorio />
     <GerarEtiquetas />
   </div>

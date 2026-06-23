@@ -375,8 +375,10 @@ export interface Vendas {
   faturado: boolean
   observacoes?: string
   desconto: number
+  caixaId?: number | null
   cliente?: ClientesFornecedores
   vendedor?: Usuarios
+  caixa?: CaixaSessao | null
   CobrancasFinanceiras?: CobrancaFinanceira[]
   ItensVendas?: ItensVendas[]
   ComandaItens?: ComandaItem[]
@@ -496,6 +498,102 @@ export interface PagamentoVendas {
   valor: number
   data?: Date
   status: StatusPagamento
+}
+
+export type CaixaStatus = 'ABERTO' | 'FECHADO' | 'CANCELADO'
+
+export type CaixaMovimentoTipo =
+  | 'ABERTURA'
+  | 'VENDA'
+  | 'SANGRIA'
+  | 'REFORCO'
+  | 'ESTORNO'
+  | 'FECHAMENTO'
+
+export interface PdvPonto {
+  id?: number
+  nome: string
+  localizacao?: string | null
+  descricao?: string | null
+  status?: Status
+}
+
+export interface CaixaOperador {
+  id?: number
+  caixaId: number
+  usuarioId: number
+  ativo: boolean
+  entrouEm: string | Date
+  saiuEm?: string | Date | null
+  usuario?: Pick<Usuarios, 'id' | 'nome'>
+}
+
+export interface CaixaSessao {
+  id: number
+  codigo: string
+  status: CaixaStatus
+  pdvId?: number | null
+  pdv?: PdvPonto | null
+  saldoInicial: number
+  saldoEsperado: number
+  saldoContado?: number | null
+  diferenca?: number | null
+  abertoEm: string | Date
+  fechadoEm?: string | Date | null
+  abertoPor?: Pick<Usuarios, 'id' | 'nome'>
+  fechadoPor?: Pick<Usuarios, 'id' | 'nome'> | null
+  operadores?: CaixaOperador[]
+}
+
+export interface CaixaMovimento {
+  id: number
+  caixaId: number
+  usuarioId: number
+  vendaId?: number | null
+  tipo: CaixaMovimentoTipo
+  metodoPagamento?: MetodoPagamento | null
+  valor: number
+  descricao?: string | null
+  createdAt: string | Date
+}
+
+export interface CaixaRelatorioResumo {
+  totalVendido: number
+  totalVendas: number
+  totalSangrias: number
+  totalReforcos: number
+  saldoEsperado: number
+  diferenca: number
+  porMetodo: Record<string, number>
+  caixasAbertos: number
+  caixasFechados: number
+}
+
+export interface CaixaRelatorioResponse {
+  periodo: {
+    inicio: string | Date
+    fim: string | Date
+  }
+  resumo: CaixaRelatorioResumo
+  produtosMaisVendidos: Array<{
+    nome: string
+    quantidade: number
+    total: number
+  }>
+  caixas: Array<{
+    caixa: CaixaSessao
+    resumo: CaixaRelatorioResumo & {
+      saldoInicial: number
+      saldoContado?: number | null
+    }
+    produtosMaisVendidos: Array<{
+      nome: string
+      quantidade: number
+      total: number
+    }>
+    movimentos: CaixaMovimento[]
+    vendas: Vendas[]
+  }>
 }
 
 export interface ContasFinanceiro {

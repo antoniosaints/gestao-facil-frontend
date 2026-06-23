@@ -99,10 +99,11 @@ function togglePasswordVisibility() {
             </div>
 
             <div class="relative z-10">
-                <div class="flex items-center gap-2 mb-12">
-                    <div
+                <div class="flex items-center gap-4 mb-12">
+                    <!-- <div
                         class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-white border border-white/20">
-                        G</div>
+                        G</div> -->
+                    <img src="/imgs/logo.png" alt="Logo" class="w-12 h-12 rounded-lg">
                     <span class="font-bold text-xl tracking-tight">Gestão Fácil</span>
                 </div>
 
@@ -198,13 +199,13 @@ function togglePasswordVisibility() {
                     </Button>
                 </form>
 
-                <div class="text-center text-sm text-muted-foreground">
+                <!-- <div class="text-center text-sm text-muted-foreground">
                     Não tem uma conta?
                     <RouterLink to="/site/cadastro"
                         class="font-medium text-primary hover:text-primary/80 underline underline-offset-4">
                         Cadastre-se gratuitamente
                     </RouterLink>
-                </div>
+                </div> -->
             </div>
         </div>
 

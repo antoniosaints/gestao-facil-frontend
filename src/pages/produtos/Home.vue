@@ -8,6 +8,7 @@ import ModalCriarLote from './others/ModalCriarLote.vue'
 import { ProdutoRepository } from '@/repositories/produto-repository'
 import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, FolderTree, Funnel, Layers3, Package, RotateCw, Tags, Trash } from 'lucide-vue-next'
 import ModalReposicao from './formulario/ModalReposicao.vue'
+import ModalDescarte from './formulario/ModalDescarte.vue'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -140,6 +141,7 @@ async function excluirEmLote() {
         <ModalProdutos />
         <ModalCriarLote />
         <ModalReposicao />
+        <ModalDescarte />
         <ModalRelatorio />
         <ModalVariante />
         <ModalFiltroProdutos />

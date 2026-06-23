@@ -1,6 +1,12 @@
 import type { MetodoPagamento, Vendas } from '@/types/schemas'
 import http from '@/utils/axios'
 import qzTray from '@/utils/qzTray'
+import {
+  CaixaRepository,
+  type AbrirCaixaPayload,
+  type FecharCaixaPayload,
+  type MovimentarCaixaPayload,
+} from './caixa-repository'
 
 export interface VendaEfetivar {
   pagamento: MetodoPagamento
@@ -10,6 +16,23 @@ export interface VendaEfetivar {
   lancamentoManual: boolean
   cancelarCobrancaExterna?: boolean
 }
+
+export interface FinalizarVendaPdvPayload {
+  caixaId: number
+  clienteId?: number | null
+  data: string
+  desconto: number
+  pagamento: MetodoPagamento | string
+  valorRecebido?: number | string | null
+  itens: Array<{
+    id: number
+    nome?: string
+    quantidade: number
+    preco: number
+    tipo: 'PRODUTO' | 'SERVICO'
+  }>
+}
+
 export class VendaRepository {
   static async gerarRelatorioPDF(inicio: string, fim: string) {
     const data = await http.get(`/vendas/relatorios/resumo-pdf`, {
@@ -149,50 +172,30 @@ export class VendaRepository {
     await qzTray.printTermal(data.data)
   }
 
-  static async abrirCaixa(data: { pdvId: number; valorInicial: number }) {
-    const resp = await http.post(`/vendas/pdv/abrirCaixa`, data)
-    return resp.data
+  static async finalizarVendaPdv(data: FinalizarVendaPdvPayload) {
+    const resp = await http.post(`/vendas/pdv/finalizarVenda`, data)
+    return resp.data.data
   }
-  static async movimentarCaixa(data: {
-    caixaId: number
-    tipoMovimento: 'ENTRADA' | 'SAIDA'
-    categoria: 'AJUSTE' | 'DEVOLUCAO' | 'REFORCO' | 'SANGRIA' | 'OUTROS'
-    descricao: string
-    valor: number
-  }) {
-    const resp = await http.post(`/vendas/pdv/movimentarCaixa`, data)
-    return resp.data
+
+  static async abrirCaixa(data: AbrirCaixaPayload) {
+    return CaixaRepository.abrirCaixa(data)
   }
-  static async fecharCaixa(data: { caixaId: number; valorFechamento: number; descricao: string }) {
-    const resp = await http.put(`/vendas/pdv/fecharCaixa`, data)
-    return resp.data
+  static async movimentarCaixa(data: MovimentarCaixaPayload) {
+    return CaixaRepository.movimentarCaixa(data)
+  }
+  static async fecharCaixa(data: FecharCaixaPayload) {
+    return CaixaRepository.fecharCaixa(data)
   }
   static async criarPdv(data: { nome: string; localizacao: string; descricao: string }) {
-    const resp = await http.post(`/vendas/pdv/criarPdv`, data)
-    return resp.data
+    return CaixaRepository.criarPdv(data)
   }
   static async buscarPdv(id?: number) {
-    const resp = await http.get(`/vendas/pdv/buscarPdv`, {
-      params: {
-        id: id,
-      },
-    })
-    return resp.data
+    return CaixaRepository.buscarPdv(id)
   }
   static async buscarCaixa(id?: number) {
-    const resp = await http.get(`/vendas/pdv/buscarCaixa`, {
-      params: {
-        id: id,
-      },
-    })
-    return resp.data
+    return CaixaRepository.buscarCaixa(id ? { id } : undefined)
   }
   static async resumoCaixa(id: number) {
-    const resp = await http.get(`/vendas/pdv/resumoCaixa`, {
-      params: {
-        id: id,
-      },
-    })
-    return resp.data
+    return CaixaRepository.resumoCaixa(id)
   }
 }
