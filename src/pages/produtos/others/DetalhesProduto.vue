@@ -634,7 +634,7 @@ onMounted(async () => {
                   </Button>
                   <Button variant="outline" @click="store.openUpdateVariante(selectedVariant.id!)">
                     <PencilLine class="mr-2 h-4 w-4" />
-                    Editar variante
+                    Editar
                   </Button>
                 </div>
               </div>

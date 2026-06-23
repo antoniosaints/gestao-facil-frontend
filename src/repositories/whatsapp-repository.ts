@@ -5,6 +5,26 @@ export type WhatsAppConversationStatus = 'ABERTA' | 'PENDENTE' | 'FINALIZADA'
 export type WhatsAppMessageDirection = 'ENTRADA' | 'SAIDA'
 export type WhatsAppMessageType = 'TEXTO' | 'IMAGEM' | 'AUDIO' | 'VIDEO' | 'DOCUMENTO' | 'OUTRO'
 export type WhatsAppMessageStatus = 'PENDENTE' | 'ENVIADA' | 'ENTREGUE' | 'LIDA' | 'ERRO' | 'RECEBIDA'
+export type WhatsAppPaymentMethod = 'PIX' | 'CARTAO'
+export type WhatsAppPaymentStatus = 'PENDENTE' | 'PAGO' | 'FALHOU' | 'CANCELADO'
+
+export interface WhatsAppInstancePayment {
+  id: number
+  instanciaId: number
+  metodo: WhatsAppPaymentMethod
+  status: WhatsAppPaymentStatus
+  payerEmail: string
+  webhookPaymentUrl?: string | null
+  paymentId?: string | null
+  sessionId?: string | null
+  qrCodeBase64?: string | null
+  qrCodeCopyPaste?: string | null
+  ticketUrl?: string | null
+  checkoutUrl?: string | null
+  pagoEm?: string | null
+  createdAt: string
+  updatedAt: string
+}
 
 export interface WhatsAppInstance {
   id: number
@@ -16,6 +36,7 @@ export interface WhatsAppInstance {
   tokenConfigurado: boolean
   lastSyncAt?: string | null
   ultimoErro?: string | null
+  pagamentos?: WhatsAppInstancePayment[]
   createdAt: string
   updatedAt: string
 }
@@ -128,6 +149,11 @@ export class WhatsAppRepository {
     return data.data as WhatsAppInstance
   }
 
+  static async removeInstance(id: number) {
+    const { data } = await http.delete(`/whatsapp/instances/${id}`)
+    return data.data as WhatsAppInstance
+  }
+
   static async getInstanceWebhooks(id: number) {
     const { data } = await http.get(`/whatsapp/instances/${id}/webhooks`)
     return data.data as WhatsAppWebhookConfig
@@ -141,6 +167,16 @@ export class WhatsAppRepository {
   static async instanceAction(id: number, action: 'qrCode' | 'pairingCode' | 'restart' | 'disconnect' | 'status' | 'device' | 'setupWebhooks', payload?: Record<string, unknown>) {
     const { data } = await http.post(`/whatsapp/instances/${id}/${action}`, payload || {})
     return data.data
+  }
+
+  static async createPixPayment(id: number) {
+    const { data } = await http.post(`/whatsapp/instances/${id}/payments/pix`, {})
+    return data.data as WhatsAppInstancePayment
+  }
+
+  static async createCardSubscription(id: number) {
+    const { data } = await http.post(`/whatsapp/instances/${id}/payments/card-subscription`, {})
+    return data.data as WhatsAppInstancePayment
   }
 
   static async listConversations(params: { search?: string; status?: WhatsAppConversationStatus; take?: number; cursor?: number } = {}) {

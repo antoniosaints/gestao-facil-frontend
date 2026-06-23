@@ -23,8 +23,7 @@
     </div>
 
     <Tabs v-model="tab" class="w-full">
-      <TabsList class="grid w-full max-w-md grid-cols-2">
-        <TabsTrigger value="inbox">Inbox</TabsTrigger>
+      <TabsList class="grid w-full max-w-xs grid-cols-1">
         <TabsTrigger value="instances">Instâncias</TabsTrigger>
       </TabsList>
 
@@ -206,6 +205,34 @@
           </CardContent>
         </Card>
 
+        <Card v-if="instances.length">
+          <CardHeader>
+            <CardTitle class="font-normal">Gerenciar instancia</CardTitle>
+            <CardDescription>Edite dados, gere pagamento ou remova uma instancia fora dos botoes operacionais do card.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div class="grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
+              <select v-model.number="managedInstanceId" class="h-10 rounded-md border bg-background px-3 text-sm">
+                <option v-for="instance in instances" :key="instance.id" :value="instance.id">
+                  {{ instance.nome }} - {{ instance.instanceId }}
+                </option>
+              </select>
+              <Button variant="outline" :disabled="!selectedManagedInstance" @click="selectedManagedInstance && openEditInstance(selectedManagedInstance)">
+                <PencilLine class="mr-2 h-4 w-4" />
+                Editar
+              </Button>
+              <Button variant="outline" :disabled="!selectedManagedInstance" @click="selectedManagedInstance && openPaymentModal(selectedManagedInstance)">
+                <CreditCard class="mr-2 h-4 w-4" />
+                Pagamento
+              </Button>
+              <Button variant="destructive" :disabled="!selectedManagedInstance" @click="selectedManagedInstance && openDeleteModal(selectedManagedInstance)">
+                <Trash2 class="mr-2 h-4 w-4" />
+                Remover
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <div class="grid gap-4 xl:grid-cols-2">
           <Card v-for="instance in instances" :key="instance.id" class="overflow-hidden">
             <CardHeader>
@@ -232,27 +259,39 @@
                 <AlertTriangle class="mr-1 inline h-4 w-4" />
                 {{ instance.ultimoErro }}
               </div>
+              <div class="rounded-lg border p-3">
+                <div class="mb-2 flex items-center justify-between gap-2">
+                  <div>
+                    <p class="text-sm font-medium">Mensalidades</p>
+                    <p class="text-xs text-muted-foreground">Historico de pagamentos gerados para esta instancia.</p>
+                  </div>
+                  <span
+                    v-if="latestPayment(instance)"
+                    class="rounded-full border px-2 py-0.5 text-xs"
+                    :class="paymentStatusClass(latestPayment(instance)?.status)"
+                  >
+                    {{ latestPayment(instance)?.status }}
+                  </span>
+                </div>
+                <div v-if="instance.pagamentos?.length" class="space-y-2">
+                  <div v-for="payment in instance.pagamentos.slice(0, 3)" :key="payment.id" class="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-2 py-1.5 text-xs">
+                    <span>{{ paymentMethodLabel(payment.metodo) }} - {{ formatTime(payment.createdAt) }}</span>
+                    <span class="font-medium">{{ payment.status }}</span>
+                  </div>
+                </div>
+                <p v-else class="text-xs text-muted-foreground">Nenhuma cobranca gerada ainda.</p>
+              </div>
               <div class="space-y-3">
                 <div class="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'qrCode')">
+                  <Button v-if="instance.status !== 'CONECTADA'" variant="outline" size="sm" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'qrCode')">
                     <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'qrCode')" class="mr-2 h-4 w-4 animate-spin" />
                     <QrCode v-else class="mr-2 h-4 w-4" />
                     QR Code
-                  </Button>
-                  <Button variant="outline" size="sm" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'pairingCode')">
-                    <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'pairingCode')" class="mr-2 h-4 w-4 animate-spin" />
-                    <Link2 v-else class="mr-2 h-4 w-4" />
-                    Código
                   </Button>
                   <Button variant="outline" size="sm" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'status')">
                     <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'status')" class="mr-2 h-4 w-4 animate-spin" />
                     <Wifi v-else class="mr-2 h-4 w-4" />
                     Status
-                  </Button>
-                  <Button variant="outline" size="sm" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'device')">
-                    <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'device')" class="mr-2 h-4 w-4 animate-spin" />
-                    <Smartphone v-else class="mr-2 h-4 w-4" />
-                    Device
                   </Button>
                   <Button variant="outline" size="sm" :disabled="loadingWebhookConfig || isAnyInstanceActionLoading(instance.id)" @click="openWebhookModal(instance)">
                     <LoaderIcon v-if="loadingWebhookConfig && webhookInstance?.id === instance.id" class="mr-2 h-4 w-4 animate-spin" />
@@ -346,6 +385,151 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <Dialog v-model:open="editInstanceModalOpen">
+      <DialogContent class="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Editar instancia</DialogTitle>
+          <DialogDescription>Atualize nome, Instance ID ou informe um novo token W-API.</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4">
+          <div class="space-y-1">
+            <Label>Nome</Label>
+            <Input v-model="editInstanceForm.nome" />
+          </div>
+          <div class="space-y-1">
+            <Label>Instance ID</Label>
+            <Input v-model="editInstanceForm.instanceId" />
+          </div>
+          <div class="space-y-1">
+            <Label>Novo token</Label>
+            <Input v-model="editInstanceForm.token" type="password" placeholder="Deixe vazio para manter o token atual" autocomplete="off" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" :disabled="savingInstanceEdit" @click="editInstanceModalOpen = false">Cancelar</Button>
+          <Button class="text-white" :disabled="savingInstanceEdit" @click="saveInstanceEdit">
+            <LoaderIcon v-if="savingInstanceEdit" class="mr-2 h-4 w-4 animate-spin" />
+            Salvar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog v-model:open="paymentModalOpen">
+      <DialogContent class="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Pagamento da instancia</DialogTitle>
+          <DialogDescription>
+            Escolha PIX ou cartao para gerar a mensalidade da instancia {{ paymentInstance?.nome || '' }}.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              class="rounded-lg border p-3 text-left transition hover:bg-muted"
+              :class="paymentMethod === 'PIX' ? 'border-primary bg-primary/5' : ''"
+              @click="paymentMethod = 'PIX'; paymentResult = null"
+            >
+              <Landmark class="mb-2 h-5 w-5" />
+              <p class="font-medium">PIX</p>
+              <p class="text-xs text-muted-foreground">Gera QR Code, copia e cola e link do ticket.</p>
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border p-3 text-left transition hover:bg-muted"
+              :class="paymentMethod === 'CARTAO' ? 'border-primary bg-primary/5' : ''"
+              @click="paymentMethod = 'CARTAO'; paymentResult = null"
+            >
+              <CreditCard class="mb-2 h-5 w-5" />
+              <p class="font-medium">Cartao</p>
+              <p class="text-xs text-muted-foreground">Abre o checkout Stripe para renovacao automatica.</p>
+            </button>
+          </div>
+
+          <Button class="w-full text-white" :disabled="creatingPayment || !paymentInstance" @click="createPayment">
+            <LoaderIcon v-if="creatingPayment" class="mr-2 h-4 w-4 animate-spin" />
+            Gerar pagamento
+          </Button>
+
+          <div v-if="paymentResult" class="rounded-lg border p-4">
+            <div class="mb-3 flex items-center justify-between gap-2">
+              <div>
+                <p class="font-medium">{{ paymentMethodLabel(paymentResult.metodo) }}</p>
+                <p class="text-xs text-muted-foreground">Status: {{ paymentResult.status }}</p>
+              </div>
+              <span class="rounded-full border px-2 py-0.5 text-xs" :class="paymentStatusClass(paymentResult.status)">
+                {{ paymentResult.status }}
+              </span>
+            </div>
+
+            <div v-if="paymentResult.metodo === 'PIX'" class="grid gap-4 md:grid-cols-[180px_1fr]">
+              <div class="flex h-[180px] items-center justify-center rounded-lg border bg-white p-2">
+                <img v-if="pixQrCodeSrc(paymentResult)" :src="pixQrCodeSrc(paymentResult)" alt="QR Code PIX" class="max-h-full max-w-full" />
+                <QrCode v-else class="h-12 w-12 text-muted-foreground" />
+              </div>
+              <div class="space-y-2">
+                <Textarea :model-value="paymentResult.qrCodeCopyPaste || ''" readonly class="min-h-[96px] font-mono text-xs" />
+                <div class="flex flex-wrap gap-2">
+                  <Button variant="outline" :disabled="!paymentResult.qrCodeCopyPaste" @click="copyToClipboard(paymentResult.qrCodeCopyPaste || '', 'PIX copiado.')">
+                    <Copy class="mr-2 h-4 w-4" />
+                    Copiar PIX
+                  </Button>
+                  <Button v-if="paymentResult.ticketUrl" variant="outline" @click="openExternalUrl(paymentResult.ticketUrl)">
+                    <ExternalLink class="mr-2 h-4 w-4" />
+                    Abrir ticket
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="space-y-3">
+              <p class="text-sm text-muted-foreground">Checkout Stripe criado para assinatura automatica.</p>
+              <Button v-if="paymentResult.checkoutUrl" class="text-white" @click="openExternalUrl(paymentResult.checkoutUrl)">
+                <ExternalLink class="mr-2 h-4 w-4" />
+                Abrir checkout
+              </Button>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" :disabled="creatingPayment" @click="paymentModalOpen = false">Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog v-model:open="deleteModalOpen">
+      <DialogContent class="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Remover instancia</DialogTitle>
+          <DialogDescription>
+            Para evitar remover uma instancia conectada, clique em desconectar antes de confirmar a exclusao.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="space-y-3">
+          <div class="rounded-lg border p-3">
+            <p class="text-sm font-medium">{{ deleteInstanceTarget?.nome }}</p>
+            <p class="text-xs text-muted-foreground">{{ deleteInstanceTarget?.instanceId }} - {{ deleteInstanceTarget?.status }}</p>
+          </div>
+          <Button variant="outline" class="w-full" :disabled="!deleteInstanceTarget || isAnyInstanceActionLoading(deleteInstanceTarget.id)" @click="disconnectBeforeDelete">
+            <LoaderIcon v-if="deleteInstanceTarget && isInstanceActionLoading(deleteInstanceTarget.id, 'disconnect')" class="mr-2 h-4 w-4 animate-spin" />
+            <WifiOff v-else class="mr-2 h-4 w-4" />
+            {{ deleteInstanceTarget?.status === 'DESCONECTADA' ? 'Confirmar desconexao' : 'Desconectar instancia' }}
+          </Button>
+          <p class="text-xs text-muted-foreground">
+            O botao de remover so fica disponivel depois da etapa de desconexao.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" :disabled="removingInstance" @click="deleteModalOpen = false">Cancelar</Button>
+          <Button variant="destructive" :disabled="removingInstance || !deleteDisconnectClicked" @click="removeInstance">
+            <LoaderIcon v-if="removingInstance" class="mr-2 h-4 w-4 animate-spin" />
+            Remover
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -357,10 +541,14 @@ import {
   CheckCheck,
   CheckCircle2,
   Copy,
+  CreditCard,
+  ExternalLink,
   Inbox,
+  Landmark,
   Link2,
   LoaderIcon,
   MessageCircle,
+  PencilLine,
   Plus,
   QrCode,
   RefreshCw,
@@ -368,6 +556,7 @@ import {
   Search,
   Send,
   Smartphone,
+  Trash2,
   Webhook,
   Wifi,
   WifiOff,
@@ -389,6 +578,7 @@ import {
   type WhatsAppConversation,
   type WhatsAppConversationStatus,
   type WhatsAppInstance,
+  type WhatsAppInstancePayment,
   type WhatsAppMessage,
   type WhatsAppWebhookCallback,
   type WhatsAppWebhookSyncResult,
@@ -396,10 +586,13 @@ import {
 } from '@/repositories/whatsapp-repository'
 
 const toast = useToast()
-const tab = ref<'inbox' | 'instances'>('inbox')
+const tab = ref<'instances'>('instances')
 const loading = ref(false)
 const savingInstance = ref(false)
+const savingInstanceEdit = ref(false)
 const sending = ref(false)
+const creatingPayment = ref(false)
+const removingInstance = ref(false)
 
 const instances = ref<WhatsAppInstance[]>([])
 const conversations = ref<WhatsAppConversation[]>([])
@@ -422,6 +615,7 @@ const webhookSyncResults = ref<WhatsAppWebhookSyncResult[]>([])
 const webhookUrls = reactive<WhatsAppWebhookUrls>({})
 
 const instanceForm = reactive({ nome: '', instanceId: '', token: '' })
+const editInstanceForm = reactive({ nome: '', instanceId: '', token: '' })
 const conversationForm = reactive<{ status: WhatsAppConversationStatus; setor: string }>({ status: 'ABERTA', setor: '' })
 const messageForm = reactive<{ tipo: 'text' | 'image' | 'audio' | 'video' | 'document'; conteudo: string; mediaUrl: string }>({
   tipo: 'text',
@@ -430,6 +624,17 @@ const messageForm = reactive<{ tipo: 'text' | 'image' | 'audio' | 'video' | 'doc
 })
 
 const connectedInstances = computed(() => instances.value.filter((instance) => instance.status === 'CONECTADA').length)
+const managedInstanceId = ref<number | null>(null)
+const selectedManagedInstance = computed(() => instances.value.find((instance) => instance.id === managedInstanceId.value) || null)
+const editInstanceModalOpen = ref(false)
+const editInstanceTarget = ref<WhatsAppInstance | null>(null)
+const paymentModalOpen = ref(false)
+const paymentInstance = ref<WhatsAppInstance | null>(null)
+const paymentMethod = ref<'PIX' | 'CARTAO'>('PIX')
+const paymentResult = ref<WhatsAppInstancePayment | null>(null)
+const deleteModalOpen = ref(false)
+const deleteInstanceTarget = ref<WhatsAppInstance | null>(null)
+const deleteDisconnectClicked = ref(false)
 const canSendMessage = computed(() => {
   if (!selectedConversation.value) return false
   if (selectedConversation.value.Instancia?.status !== 'CONECTADA') return false
@@ -475,8 +680,40 @@ function mediaLabel(message: WhatsAppMessage) {
   return labels[message.tipo] || 'Mídia'
 }
 
+function paymentMethodLabel(method?: string | null) {
+  if (method === 'PIX') return 'PIX'
+  if (method === 'CARTAO') return 'Cartao'
+  return '-'
+}
+
+function paymentStatusClass(status?: string | null) {
+  if (status === 'PAGO') return 'border-green-200 bg-green-50 text-green-700'
+  if (status === 'FALHOU') return 'border-red-200 bg-red-50 text-red-700'
+  if (status === 'CANCELADO') return 'border-slate-200 bg-slate-50 text-slate-700'
+  return 'border-amber-200 bg-amber-50 text-amber-700'
+}
+
+function latestPayment(instance: WhatsAppInstance) {
+  return instance.pagamentos?.[0] || null
+}
+
+function pixQrCodeSrc(payment?: WhatsAppInstancePayment | null) {
+  if (!payment?.qrCodeBase64) return ''
+  return payment.qrCodeBase64.startsWith('data:')
+    ? payment.qrCodeBase64
+    : `data:image/png;base64,${payment.qrCodeBase64}`
+}
+
+function openExternalUrl(url?: string | null) {
+  if (!url) return
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 async function loadInstances() {
   instances.value = await WhatsAppRepository.listInstances()
+  if (!managedInstanceId.value || !instances.value.some((instance) => instance.id === managedInstanceId.value)) {
+    managedInstanceId.value = instances.value[0]?.id || null
+  }
 }
 
 async function loadConversations() {
@@ -494,12 +731,112 @@ async function loadConversations() {
 async function refreshAll() {
   try {
     loading.value = true
-    await Promise.all([loadInstances(), loadConversations()])
+    await loadInstances()
   } catch (error) {
     console.error(error)
     toast.error('Erro ao atualizar atendimento WhatsApp.')
   } finally {
     loading.value = false
+  }
+}
+
+function openEditInstance(instance: WhatsAppInstance) {
+  editInstanceTarget.value = instance
+  Object.assign(editInstanceForm, {
+    nome: instance.nome,
+    instanceId: instance.instanceId,
+    token: '',
+  })
+  editInstanceModalOpen.value = true
+}
+
+async function saveInstanceEdit() {
+  if (!editInstanceTarget.value) return
+  if (!editInstanceForm.nome.trim() || !editInstanceForm.instanceId.trim()) {
+    toast.warning('Informe nome e Instance ID.')
+    return
+  }
+
+  try {
+    savingInstanceEdit.value = true
+    await WhatsAppRepository.updateInstance(editInstanceTarget.value.id, {
+      nome: editInstanceForm.nome,
+      instanceId: editInstanceForm.instanceId,
+      ...(editInstanceForm.token.trim() ? { token: editInstanceForm.token } : {}),
+    })
+    toast.success('Instancia atualizada.')
+    editInstanceModalOpen.value = false
+    await loadInstances()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao atualizar instancia.')
+  } finally {
+    savingInstanceEdit.value = false
+  }
+}
+
+function openPaymentModal(instance: WhatsAppInstance) {
+  paymentInstance.value = instance
+  paymentMethod.value = 'PIX'
+  paymentResult.value = null
+  paymentModalOpen.value = true
+}
+
+async function createPayment() {
+  if (!paymentInstance.value) return
+  try {
+    creatingPayment.value = true
+    paymentResult.value =
+      paymentMethod.value === 'PIX'
+        ? await WhatsAppRepository.createPixPayment(paymentInstance.value.id)
+        : await WhatsAppRepository.createCardSubscription(paymentInstance.value.id)
+    await loadInstances()
+    toast.success(paymentMethod.value === 'PIX' ? 'PIX gerado.' : 'Checkout de cartao gerado.')
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao gerar pagamento da instancia.')
+  } finally {
+    creatingPayment.value = false
+  }
+}
+
+function openDeleteModal(instance: WhatsAppInstance) {
+  deleteInstanceTarget.value = instance
+  deleteDisconnectClicked.value = false
+  deleteModalOpen.value = true
+}
+
+async function disconnectBeforeDelete() {
+  if (!deleteInstanceTarget.value) return
+
+  if (deleteInstanceTarget.value.status !== 'DESCONECTADA') {
+    await runInstanceAction(deleteInstanceTarget.value, 'disconnect')
+    const updated = instances.value.find((instance) => instance.id === deleteInstanceTarget.value?.id)
+    if (updated) deleteInstanceTarget.value = updated
+  }
+
+  if (deleteInstanceTarget.value.status === 'DESCONECTADA') {
+    deleteDisconnectClicked.value = true
+    return
+  }
+
+  deleteDisconnectClicked.value = false
+  toast.warning('A instancia ainda nao foi marcada como desconectada.')
+}
+
+async function removeInstance() {
+  if (!deleteInstanceTarget.value || !deleteDisconnectClicked.value) return
+  try {
+    removingInstance.value = true
+    await WhatsAppRepository.removeInstance(deleteInstanceTarget.value.id)
+    toast.success('Instancia removida.')
+    deleteModalOpen.value = false
+    await loadInstances()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao remover instancia.')
+  } finally {
+    removingInstance.value = false
   }
 }
 
