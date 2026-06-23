@@ -10,6 +10,7 @@ import PieChart from "@/components/graficos/PieChart.vue"
 import { useToast } from "vue-toastification"
 import { endOfDay, endOfMonth, startOfDay, startOfMonth } from "date-fns"
 import { VendaRepository } from "@/repositories/venda-repository"
+import { CaixaRepository } from "@/repositories/caixa-repository"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -57,7 +58,10 @@ function toCurrency(value: string | number | null | undefined) {
 const getIndicadores = async (inicio?: string, fim?: string) => {
   try {
     loading.value = true
-    const { data }: any = await VendaRepository.resumo(inicio, fim)
+    const [{ data }, caixas]: any = await Promise.all([
+      VendaRepository.resumo(inicio, fim),
+      CaixaRepository.relatorio({ inicio, fim }),
+    ])
     indicadores.value = [
       {
         titulo: 'Total geral',
@@ -100,6 +104,20 @@ const getIndicadores = async (inicio?: string, fim?: string) => {
         detalhe: 'Média financeira por venda no período',
         icone: ReceiptText,
         colorClass: 'text-sky-600 bg-sky-500/10',
+      },
+      {
+        titulo: 'Caixas fechados',
+        valor: String(caixas?.resumo?.caixasFechados || 0),
+        detalhe: `${caixas?.resumo?.caixasAbertos || 0} caixa(s) aberto(s)`,
+        icone: CheckCircle2,
+        colorClass: 'text-emerald-600 bg-emerald-500/10',
+      },
+      {
+        titulo: 'Dif. caixas',
+        valor: toCurrency(caixas?.resumo?.diferenca || 0),
+        detalhe: `${toCurrency(caixas?.resumo?.totalSangrias || 0)} em sangrias`,
+        icone: CreditCard,
+        colorClass: 'text-amber-600 bg-amber-500/10',
       },
     ]
 
@@ -171,7 +189,7 @@ onMounted(() => {
     </div>
 
     <section v-if="!loading">
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card v-for="(kpi, i) in indicadores" :key="i" class="shadow rounded-xl transition">
           <CardHeader class="py-2">
             <CardTitle class="flex flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">

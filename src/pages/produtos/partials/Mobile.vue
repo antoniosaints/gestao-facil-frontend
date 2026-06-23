@@ -19,6 +19,7 @@ import {
   FolderTree,
   Layers3,
   Package2,
+  PackageX,
   PenLine,
   Plus,
   Search,
@@ -128,6 +129,12 @@ function openModalReposicao(varianteId?: number | null) {
   if (!varianteId) return toast.error('Variante padrão não encontrada')
   store.idMutation = varianteId
   store.openModalReposicao = true
+}
+
+function openModalDescarte(varianteId?: number | null) {
+  if (!varianteId) return toast.error('Variante nao encontrada')
+  store.idMutation = varianteId
+  store.openModalDescarte = true
 }
 
 function gerarRelatorioVariante(varianteId?: number | null) {
@@ -258,6 +265,12 @@ onMounted(() => renderMobile())
                 <ArchiveRestore class="h-5 w-5" />
               </button>
               <button
+                @click="openModalDescarte((row as ProdutoBase).variantePadraoId)"
+                class="rounded-md bg-amber-200 px-2 py-1 text-sm text-amber-900 dark:bg-amber-800 dark:text-amber-100"
+              >
+                <PackageX class="h-5 w-5" />
+              </button>
+              <button
                 @click="store.openUpdate(row.id!)"
                 class="rounded-md bg-slate-200 px-2 py-1 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
               >
@@ -313,6 +326,12 @@ onMounted(() => renderMobile())
                 class="rounded-md bg-emerald-200 px-2 py-1 text-sm text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100"
               >
                 <ArchiveRestore class="h-5 w-5" />
+              </button>
+              <button
+                @click="openModalDescarte(row.id)"
+                class="rounded-md bg-amber-200 px-2 py-1 text-sm text-amber-900 dark:bg-amber-800 dark:text-amber-100"
+              >
+                <PackageX class="h-5 w-5" />
               </button>
               <button
                 @click="store.openUpdateVariante(row.id!)"

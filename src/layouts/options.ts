@@ -101,6 +101,13 @@ export const sidebarMenuOptions = (
           icone: Tags,
           color: 'green',
         },
+        {
+          nome: 'Caixas',
+          link: '/vendas/caixas',
+          show: permissions.vendas.visualizar,
+          icone: HandCoins,
+          color: 'green',
+        },
       ],
     },
     {

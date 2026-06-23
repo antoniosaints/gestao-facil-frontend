@@ -15,6 +15,12 @@ type ReposicaoEstoque = {
   vendaId?: number
 }
 
+type DescarteEstoque = {
+  produtoId: number
+  quantidade: number
+  motivo?: string
+}
+
 type ProductReportType = 'catalogo' | 'movimentacoes' | 'vendas' | 'lucro'
 type ProductReportScope = 'produto-base' | 'variante'
 
@@ -290,6 +296,10 @@ export class ProdutoVarianteRepository {
 
   static async repor(reposicao: ReposicaoEstoque) {
     await http.post(`/produtos/reposicao`, reposicao)
+  }
+
+  static async descartar(descarte: DescarteEstoque) {
+    await http.post(`/produtos/descarte`, descarte)
   }
 
   static async gerarEtiquetas(id: number, quantidade?: number) {

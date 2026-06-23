@@ -1,0 +1,368 @@
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { endOfDay, endOfMonth, startOfDay, startOfMonth } from 'date-fns'
+import { useToast } from 'vue-toastification'
+import {
+  BanknoteArrowDown,
+  BanknoteArrowUp,
+  CalendarDays,
+  CheckCircle2,
+  Eye,
+  FileDown,
+  Filter,
+  HandCoins,
+  RefreshCw,
+  TrendingUp,
+} from 'lucide-vue-next'
+import Calendarpicker from '@/components/formulario/calendarpicker.vue'
+import ModalView from '@/components/formulario/ModalView.vue'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  CaixaRepository,
+  type CaixaRelatorioParams,
+} from '@/repositories/caixa-repository'
+import type { CaixaRelatorioResponse } from '@/types/schemas'
+import { formatCurrencyBR } from '@/utils/formatters'
+
+const toast = useToast()
+const loading = ref(false)
+const openModalFiltros = ref(false)
+const openModalDetalhes = ref(false)
+const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
+const filtroStatus = ref<'TODOS' | 'ABERTO' | 'FECHADO' | 'CANCELADO'>('TODOS')
+const relatorio = ref<CaixaRelatorioResponse | null>(null)
+const caixaSelecionado = ref<CaixaRelatorioResponse['caixas'][number] | null>(null)
+const exportingPdfId = ref<number | null>(null)
+
+const filtrosAtivos = computed(() => {
+  const inicio = filtroPeriodo.value[0]?.toLocaleDateString('pt-BR')
+  const fim = filtroPeriodo.value[1]?.toLocaleDateString('pt-BR')
+  const status = filtroStatus.value === 'TODOS' ? 'Todos' : filtroStatus.value
+  return [`Periodo: ${inicio} ate ${fim}`, `Status: ${status}`]
+})
+
+const indicadores = computed(() => {
+  const resumo = relatorio.value?.resumo
+  return [
+    {
+      titulo: 'Vendido',
+      valor: formatCurrencyBR(resumo?.totalVendido || 0),
+      detalhe: `${resumo?.totalVendas || 0} venda(s) vinculadas`,
+      icon: TrendingUp,
+      colorClass: 'text-emerald-600 bg-emerald-500/10',
+    },
+    {
+      titulo: 'Sangrias',
+      valor: formatCurrencyBR(resumo?.totalSangrias || 0),
+      detalhe: 'Saidas manuais registradas',
+      icon: BanknoteArrowDown,
+      colorClass: 'text-amber-600 bg-amber-500/10',
+    },
+    {
+      titulo: 'Reforcos',
+      valor: formatCurrencyBR(resumo?.totalReforcos || 0),
+      detalhe: 'Entradas manuais registradas',
+      icon: BanknoteArrowUp,
+      colorClass: 'text-blue-600 bg-blue-500/10',
+    },
+    {
+      titulo: 'Diferenca',
+      valor: formatCurrencyBR(resumo?.diferenca || 0),
+      detalhe: 'Diferenca total dos fechamentos',
+      icon: CheckCircle2,
+      colorClass: 'text-rose-600 bg-rose-500/10',
+    },
+  ]
+})
+
+function buildParams(): CaixaRelatorioParams {
+  return {
+    inicio: startOfDay(filtroPeriodo.value[0] || new Date()).toISOString(),
+    fim: endOfDay(filtroPeriodo.value[1] || new Date()).toISOString(),
+    status: filtroStatus.value === 'TODOS' ? null : filtroStatus.value,
+  }
+}
+
+async function carregarRelatorio() {
+  try {
+    loading.value = true
+    relatorio.value = await CaixaRepository.relatorio(buildParams())
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error.response?.data?.message || 'Erro ao carregar relatorio de caixas')
+  } finally {
+    loading.value = false
+  }
+}
+
+function applyPreset(preset: 'today' | 'current-month') {
+  if (preset === 'today') {
+    filtroPeriodo.value = [startOfDay(new Date()), endOfDay(new Date())]
+  }
+
+  if (preset === 'current-month') {
+    filtroPeriodo.value = [startOfMonth(new Date()), endOfMonth(new Date())]
+  }
+}
+
+function getPaymentMethodLabel(method?: string | null) {
+  switch (method) {
+    case 'DINHEIRO':
+      return 'Dinheiro'
+    case 'CARTAO':
+      return 'Cartao'
+    case 'PIX':
+      return 'PIX'
+    case 'BOLETO':
+      return 'Boleto'
+    default:
+      return '-'
+  }
+}
+
+function abrirDetalhes(caixa: CaixaRelatorioResponse['caixas'][number]) {
+  caixaSelecionado.value = caixa
+  openModalDetalhes.value = true
+}
+
+async function exportarPdf(caixaId: number) {
+  try {
+    exportingPdfId.value = caixaId
+    await CaixaRepository.exportarPdf(caixaId)
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error.response?.data?.message || 'Erro ao exportar PDF do caixa')
+  } finally {
+    exportingPdfId.value = null
+  }
+}
+
+onMounted(() => {
+  carregarRelatorio()
+})
+</script>
+
+<template>
+  <div class="space-y-4">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+          <HandCoins class="h-6 w-6 text-primary" />
+          Caixas do PDV
+        </h2>
+        <p class="text-sm text-muted-foreground">Conferencia operacional de aberturas, vendas e fechamentos.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <Button variant="outline" @click="openModalFiltros = true">
+          <Filter class="h-4 w-4" /> Filtros
+        </Button>
+        <Button variant="outline" size="icon" :disabled="loading" @click="carregarRelatorio">
+          <RefreshCw class="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
+        {{ item }}
+      </Badge>
+    </div>
+
+    <section class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <Card v-for="item in indicadores" :key="item.titulo" class="rounded-xl shadow">
+        <CardHeader class="py-2">
+          <CardTitle class="flex items-center gap-2 text-sm">
+            <span class="rounded-md p-2" :class="item.colorClass">
+              <component :is="item.icon" class="h-4 w-4" />
+            </span>
+            {{ item.titulo }}
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="pb-3">
+          <p class="text-lg font-semibold">{{ item.valor }}</p>
+          <p class="truncate text-xs text-muted-foreground" :title="item.detalhe">{{ item.detalhe }}</p>
+        </CardContent>
+      </Card>
+    </section>
+
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      <section class="rounded-md border bg-card p-4 xl:col-span-2">
+        <div class="mb-3 flex items-center justify-between">
+          <h3 class="font-semibold">Caixas</h3>
+          <span class="text-xs text-muted-foreground">{{ relatorio?.caixas.length || 0 }} registro(s)</span>
+        </div>
+        <div v-if="loading" class="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
+        <div v-else-if="!relatorio?.caixas.length" class="py-8 text-center text-sm text-muted-foreground">
+          Nenhum caixa encontrado no periodo.
+        </div>
+        <div v-else class="overflow-auto">
+          <table class="w-full min-w-[760px] text-sm">
+            <thead class="border-b text-left text-xs text-muted-foreground">
+              <tr>
+                <th class="py-2">Caixa</th>
+                <th class="py-2">Operador</th>
+                <th class="py-2">Abertura</th>
+                <th class="py-2">Status</th>
+                <th class="py-2 text-right">Vendido</th>
+                <th class="py-2 text-right">Esperado</th>
+                <th class="py-2 text-right">Diferenca</th>
+                <th class="py-2 text-right">Acoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in relatorio.caixas" :key="item.caixa.id" class="border-b last:border-b-0">
+                <td class="py-3 font-medium">{{ item.caixa.codigo }}</td>
+                <td class="py-3">{{ item.caixa.abertoPor?.nome || '-' }}</td>
+                <td class="py-3">{{ new Date(item.caixa.abertoEm).toLocaleString('pt-BR') }}</td>
+                <td class="py-3">
+                  <Badge variant="outline">{{ item.caixa.status }}</Badge>
+                </td>
+                <td class="py-3 text-right">{{ formatCurrencyBR(item.resumo.totalVendido || 0) }}</td>
+                <td class="py-3 text-right">{{ formatCurrencyBR(item.resumo.saldoEsperado || 0) }}</td>
+                <td class="py-3 text-right">{{ formatCurrencyBR(item.resumo.diferenca || 0) }}</td>
+                <td class="py-3 text-right">
+                  <div class="inline-flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      :disabled="exportingPdfId === item.caixa.id"
+                      @click="exportarPdf(item.caixa.id)"
+                    >
+                      <FileDown class="h-4 w-4" /> PDF
+                    </Button>
+                    <Button variant="outline" size="sm" @click="abrirDetalhes(item)">
+                      <Eye class="h-4 w-4" /> Detalhes
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="rounded-md border bg-card p-4">
+        <h3 class="mb-3 font-semibold">Produtos mais vendidos</h3>
+        <div v-if="!relatorio?.produtosMaisVendidos.length" class="py-8 text-center text-sm text-muted-foreground">
+          Sem produtos vendidos.
+        </div>
+        <div v-else class="space-y-2">
+          <div v-for="produto in relatorio.produtosMaisVendidos" :key="produto.nome"
+            class="flex items-center justify-between rounded-md border bg-background p-3">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium" :title="produto.nome">{{ produto.nome }}</p>
+              <p class="text-xs text-muted-foreground">{{ produto.quantidade }} unidade(s)</p>
+            </div>
+            <span class="text-sm font-semibold">{{ formatCurrencyBR(produto.total) }}</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <ModalView v-model:open="openModalFiltros" title="Filtros de caixas" size="lg">
+      <div class="grid gap-4 p-4">
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Atalhos</label>
+          <div class="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" @click="applyPreset('today')">
+              <CalendarDays class="h-4 w-4" /> Hoje
+            </Button>
+            <Button type="button" variant="outline" size="sm" @click="applyPreset('current-month')">
+              Mes atual
+            </Button>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Periodo</label>
+          <Calendarpicker class="w-full" :range="true" v-model="filtroPeriodo" />
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Status</label>
+          <select v-model="filtroStatus" class="h-10 w-full rounded-md border bg-background px-3 text-sm">
+            <option value="TODOS">Todos</option>
+            <option value="ABERTO">Aberto</option>
+            <option value="FECHADO">Fechado</option>
+            <option value="CANCELADO">Cancelado</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" @click="openModalFiltros = false">Cancelar</Button>
+          <Button @click="openModalFiltros = false; carregarRelatorio()">
+            Aplicar
+          </Button>
+        </div>
+      </div>
+    </ModalView>
+
+    <ModalView v-model:open="openModalDetalhes" title="Detalhes do caixa" size="3xl">
+      <div v-if="caixaSelecionado" class="grid gap-4 p-4">
+        <div class="flex justify-end">
+          <Button
+            variant="outline"
+            :disabled="exportingPdfId === caixaSelecionado.caixa.id"
+            @click="exportarPdf(caixaSelecionado.caixa.id)"
+          >
+            <FileDown class="h-4 w-4" /> Exportar PDF
+          </Button>
+        </div>
+        <section class="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div class="rounded-md border bg-card p-3">
+            <p class="text-xs text-muted-foreground">Vendido</p>
+            <p class="font-semibold">{{ formatCurrencyBR(caixaSelecionado.resumo.totalVendido || 0) }}</p>
+          </div>
+          <div class="rounded-md border bg-card p-3">
+            <p class="text-xs text-muted-foreground">Sangrias</p>
+            <p class="font-semibold">{{ formatCurrencyBR(caixaSelecionado.resumo.totalSangrias || 0) }}</p>
+          </div>
+          <div class="rounded-md border bg-card p-3">
+            <p class="text-xs text-muted-foreground">Reforcos</p>
+            <p class="font-semibold">{{ formatCurrencyBR(caixaSelecionado.resumo.totalReforcos || 0) }}</p>
+          </div>
+          <div class="rounded-md border bg-card p-3">
+            <p class="text-xs text-muted-foreground">Diferenca</p>
+            <p class="font-semibold">{{ formatCurrencyBR(caixaSelecionado.resumo.diferenca || 0) }}</p>
+          </div>
+        </section>
+
+        <section class="rounded-md border bg-card p-3">
+          <h3 class="mb-2 text-sm font-semibold">Por metodo de pagamento</h3>
+          <div class="grid gap-2 md:grid-cols-2">
+            <div v-for="(valor, metodo) in caixaSelecionado.resumo.porMetodo" :key="metodo"
+              class="flex justify-between rounded-md border bg-background px-3 py-2 text-sm">
+              <span>{{ metodo }}</span>
+              <strong>{{ formatCurrencyBR(valor) }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="rounded-md border bg-card p-3">
+          <h3 class="mb-2 text-sm font-semibold">Movimentos</h3>
+          <div class="max-h-72 overflow-auto">
+            <table class="w-full min-w-[660px] text-sm">
+              <thead class="border-b text-left text-xs text-muted-foreground">
+                <tr>
+                  <th class="py-2">Data</th>
+                  <th class="py-2">Tipo</th>
+                  <th class="py-2">Metodo</th>
+                  <th class="py-2">Descricao</th>
+                  <th class="py-2 text-right">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="movimento in caixaSelecionado.movimentos" :key="movimento.id" class="border-b last:border-b-0">
+                  <td class="py-2">{{ new Date(movimento.createdAt).toLocaleString('pt-BR') }}</td>
+                  <td class="py-2">{{ movimento.tipo }}</td>
+                  <td class="py-2">{{ getPaymentMethodLabel(movimento.metodoPagamento) }}</td>
+                  <td class="py-2">{{ movimento.descricao || '-' }}</td>
+                  <td class="py-2 text-right">{{ formatCurrencyBR(movimento.valor || 0) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </ModalView>
+  </div>
+</template>

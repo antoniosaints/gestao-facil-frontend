@@ -175,6 +175,15 @@ const routes: RouteInterface[] = [
           permissao: 2,
         },
       },
+      {
+        path: 'caixas',
+        name: 'vendas-caixas',
+        component: () => import('@/pages/vendas/caixas/CaixasHome.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 2,
+        },
+      },
     ],
   },
   {

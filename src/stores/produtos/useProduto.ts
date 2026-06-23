@@ -145,6 +145,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   const openModalCadastroTipo = ref(false)
   const openModalLote = ref(false)
   const openModalReposicao = ref(false)
+  const openModalDescarte = ref(false)
   const openModalEtiquetas = ref(false)
   const openModalRelatorio = ref(false)
   const openModalRelatorioGeral = ref(false)
@@ -355,6 +356,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     openModal,
     openModalCadastroTipo,
     openModalReposicao,
+    openModalDescarte,
     openModalEtiquetas,
     openModalRelatorio,
     openModalRelatorioGeral,
