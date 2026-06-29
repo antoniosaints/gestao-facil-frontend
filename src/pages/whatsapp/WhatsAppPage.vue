@@ -305,6 +305,25 @@
                       Copiar
                     </Button>
                   </div>
+                  <div v-if="instanceQrCodeImage[instance.id]" class="grid gap-3 border-b p-3 md:grid-cols-[180px_1fr]">
+                    <div class="flex h-[180px] items-center justify-center rounded-lg border bg-white p-2">
+                      <img
+                        :src="instanceQrCodeImage[instance.id]"
+                        alt="QR Code para conectar WhatsApp"
+                        class="max-h-full max-w-full"
+                      />
+                    </div>
+                    <div class="flex flex-col justify-center gap-2 text-sm">
+                      <p class="font-medium">Leia este QR Code no WhatsApp para conectar a instancia.</p>
+                      <p class="text-xs text-muted-foreground">
+                        Abra o WhatsApp no celular, acesse aparelhos conectados e aponte a camera para o codigo.
+                      </p>
+                      <Button variant="outline" size="sm" class="w-fit" @click="copyToClipboard(instanceQrCodeImage[instance.id], 'QR Code copiado.')">
+                        <Copy class="mr-2 h-4 w-4" />
+                        Copiar QR Code
+                      </Button>
+                    </div>
+                  </div>
                   <pre class="max-h-72 overflow-auto bg-slate-950 p-3 text-xs text-slate-50">{{ instanceActionResult[instance.id] }}</pre>
                 </div>
               </div>
@@ -686,6 +705,7 @@ const customerOptions = ref<Array<{ id: number; label: string }>>([])
 const instanceActionResult = reactive<Record<number, string>>({})
 const instanceActionSummary = reactive<Record<number, string>>({})
 const instanceActionLoading = reactive<Record<string, boolean>>({})
+const instanceQrCodeImage = reactive<Record<number, string>>({})
 
 const webhookModalOpen = ref(false)
 const loadingWebhookConfig = ref(false)
@@ -785,6 +805,42 @@ function pixQrCodeSrc(payment?: WhatsAppInstancePayment | null) {
   return payment.qrCodeBase64.startsWith('data:')
     ? payment.qrCodeBase64
     : `data:image/png;base64,${payment.qrCodeBase64}`
+}
+
+function normalizeQrCodeImage(value?: string | null) {
+  const qrCode = value?.trim()
+  if (!qrCode) return ''
+  return qrCode.startsWith('data:image/')
+    ? qrCode
+    : `data:image/png;base64,${qrCode.replace(/^data:image\/png;base64,/, '')}`
+}
+
+function extractQrCodeImage(value: unknown): string {
+  if (!value || typeof value !== 'object') return ''
+
+  const payload = value as Record<string, any>
+  const candidates = [
+    payload.qrcode,
+    payload.qrCode,
+    payload.qr_code,
+    payload.qrCodeBase64,
+    payload.base64,
+    payload.data?.qrcode,
+    payload.data?.qrCode,
+    payload.data?.qr_code,
+    payload.data?.qrCodeBase64,
+    payload.result?.qrcode,
+    payload.result?.qrCode,
+    payload.result?.qr_code,
+    payload.result?.qrCodeBase64,
+    payload.result?.data?.qrcode,
+    payload.result?.data?.qrCode,
+    payload.result?.data?.qr_code,
+    payload.result?.data?.qrCodeBase64,
+  ]
+
+  const qrCode = candidates.find((candidate) => typeof candidate === 'string' && candidate.trim())
+  return normalizeQrCodeImage(qrCode)
 }
 
 function openExternalUrl(url?: string | null) {
@@ -1061,18 +1117,24 @@ async function runInstanceAction(instance: WhatsAppInstance, action: Parameters<
   const key = actionKey(instance.id, action)
   try {
     instanceActionLoading[key] = true
+    instanceQrCodeImage[instance.id] = ''
     instanceActionSummary[instance.id] = `${actionLabels[action] || 'Ação'} em andamento...`
     instanceActionResult[instance.id] = 'Aguardando resposta da W-API...'
     const result = await WhatsAppRepository.instanceAction(instance.id, action)
+    const qrCodeImage = action === 'qrCode' ? extractQrCodeImage(result) : ''
     instanceActionResult[instance.id] = stringifyResult(result)
-    instanceActionSummary[instance.id] = `${actionLabels[action] || 'Ação'} executado com sucesso.`
-    toast.success(`${actionLabels[action] || 'Ação'} executado.`)
+    instanceQrCodeImage[instance.id] = qrCodeImage
+    instanceActionSummary[instance.id] = qrCodeImage
+      ? 'QR Code gerado. Leia pelo WhatsApp para conectar.'
+      : `${actionLabels[action] || 'Ação'} executado com sucesso.`
+    toast.success(qrCodeImage ? 'QR Code gerado para leitura.' : `${actionLabels[action] || 'Ação'} executado.`)
     await loadInstances()
   } catch (error: any) {
     console.error(error)
     const message = error?.response?.data?.message || 'Erro ao executar ação da instância.'
     instanceActionSummary[instance.id] = `${actionLabels[action] || 'Ação'} falhou.`
     instanceActionResult[instance.id] = message
+    instanceQrCodeImage[instance.id] = ''
     toast.error(message)
   } finally {
     instanceActionLoading[key] = false
