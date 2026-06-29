@@ -477,6 +477,7 @@ export interface UpdateParametrosConta {
   WhatsappAPISession?: string | null
   WhatsappAPINumber?: string | null
   chavePix?: string | null
+  menusVisiveis?: string[] | null
 }
 
 export interface ItensVendas {

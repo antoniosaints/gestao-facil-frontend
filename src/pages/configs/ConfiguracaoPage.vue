@@ -12,7 +12,7 @@
 
         <Tabs v-model="tab" class="w-auto">
             <div class="overflow-auto max-w-full">
-                <TabsList class="grid w-max grid-cols-4">
+                <TabsList class="grid w-max" :class="isRootUser ? 'grid-cols-5' : 'grid-cols-4'">
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i>
@@ -21,6 +21,9 @@
                     <TabsTrigger value="financeiro" class="flex items-center">
                         <Banknote class="inline-flex mr-1 w-5 h-5" />
                         Financeiro
+                    </TabsTrigger>
+                    <TabsTrigger v-if="isRootUser" value="menus" class="flex items-center">
+                        <i class="fa-solid fa-list-check mr-2"></i> Menus
                     </TabsTrigger>
                 </TabsList>
             </div>
@@ -162,6 +165,47 @@
                     </form>
                 </Card>
             </TabsContent>
+
+            <TabsContent v-if="isRootUser" value="menus">
+                <Card class="rounded-t-none bg-background">
+                    <form @submit.prevent="submit(formularioMenus)">
+                        <CardHeader>
+                            <CardTitle class="font-normal">Menus</CardTitle>
+                            <CardDescription>Escolha quais atalhos aparecem na sidebar do sistema.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                <label v-for="menu in MAIN_MENU_VISIBILITY_OPTIONS" :key="menu.key" :for="`menu-${menu.key}`"
+                                    class="flex min-h-28 cursor-pointer flex-col justify-between rounded-lg border bg-body/70 p-4 transition hover:border-primary/60"
+                                    :class="{
+                                        'border-primary bg-primary/5': isMenuSelected(menu.key),
+                                        'cursor-not-allowed opacity-80': isMenuLocked(menu.key),
+                                    }">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="space-y-1">
+                                            <p class="font-medium leading-none">{{ menu.nome }}</p>
+                                            <p class="text-xs text-muted-foreground">{{ menu.descricao }}</p>
+                                        </div>
+                                        <Switch :id="`menu-${menu.key}`" :model-value="isMenuSelected(menu.key)"
+                                            :disabled="isMenuLocked(menu.key)"
+                                            @update:model-value="(checked) => toggleMenu(menu.key, Boolean(checked))" />
+                                    </div>
+                                    <p v-if="isMenuLocked(menu.key)" class="text-xs text-muted-foreground">
+                                        Mantido para acesso do root.
+                                    </p>
+                                </label>
+                            </div>
+                        </CardContent>
+                        <CardFooter class="justify-end">
+                            <Button :disabled="loading" class="ml-2 text-white" type="submit">
+                                <CircleCheck v-if="!loading" />
+                                <LoaderIcon v-if="loading" class="animate-spin" />
+                                {{ loading ? 'Salvando...' : 'Salvar' }}
+                            </Button>
+                        </CardFooter>
+                    </form>
+                </Card>
+            </TabsContent>
         </Tabs>
 
         <nav v-if="storeUi.isMobile"
@@ -181,7 +225,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -198,11 +242,21 @@ import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import ImpressaoPage from './ImpressaoPage.vue'
 import { goBack } from '@/hooks/links'
+import {
+    MAIN_MENU_VISIBILITY_OPTIONS,
+    ROOT_ALWAYS_VISIBLE_MENU_KEYS,
+    type MainMenuVisibilityKey,
+} from '@/layouts/options'
 
-const tab = ref<'empresa' | 'notificacoes' | 'impressao' | 'financeiro'>('empresa')
+const tab = ref<'empresa' | 'notificacoes' | 'impressao' | 'financeiro' | 'menus'>('empresa')
 const toast = useToast()
 const storeUi = useUiStore()
 const loading = ref(false)
+const isRootUser = computed(() => storeUi.usuarioLogged.permissao === 'root')
+
+function getDefaultVisibleMenuKeys() {
+    return MAIN_MENU_VISIBILITY_OPTIONS.map((menu) => menu.key)
+}
 
 const formularioNotificacoes = reactive<UpdateParametrosConta>({
     eventoEstoqueBaixo: false,
@@ -218,6 +272,31 @@ const formularioFinanceiro = reactive<UpdateParametrosConta>({
     permitirTransferenciaContaFinanceira: true,
     permitirCriacaoCobranca: true,
 })
+const formularioMenus = reactive<UpdateParametrosConta>({
+    menusVisiveis: getDefaultVisibleMenuKeys(),
+})
+
+function isMenuLocked(key: MainMenuVisibilityKey) {
+    return ROOT_ALWAYS_VISIBLE_MENU_KEYS.includes(key as (typeof ROOT_ALWAYS_VISIBLE_MENU_KEYS)[number])
+}
+
+function isMenuSelected(key: MainMenuVisibilityKey) {
+    return formularioMenus.menusVisiveis?.includes(key) === true
+}
+
+function toggleMenu(key: MainMenuVisibilityKey, checked: boolean) {
+    if (isMenuLocked(key)) return
+
+    const selected = new Set(formularioMenus.menusVisiveis ?? [])
+    if (checked) selected.add(key)
+    else selected.delete(key)
+
+    for (const lockedKey of ROOT_ALWAYS_VISIBLE_MENU_KEYS) {
+        selected.add(lockedKey)
+    }
+
+    formularioMenus.menusVisiveis = Array.from(selected)
+}
 
 async function submit(data: UpdateParametrosConta) {
     try {
@@ -251,6 +330,11 @@ async function getParametros() {
                 permitirEfetivacaoFutura: response.data.permitirEfetivacaoFutura ?? true,
                 permitirTransferenciaContaFinanceira: response.data.permitirTransferenciaContaFinanceira ?? true,
                 permitirCriacaoCobranca: response.data.permitirCriacaoCobranca ?? true,
+            })
+            Object.assign(formularioMenus, {
+                menusVisiveis: Array.isArray(response.data.menusVisiveis)
+                    ? response.data.menusVisiveis
+                    : getDefaultVisibleMenuKeys(),
             })
         }
     } catch (error) {
