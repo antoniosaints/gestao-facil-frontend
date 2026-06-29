@@ -226,10 +226,7 @@ export const useComandasStore = defineStore('comandasStore', () => {
         await loadDetalhes(id)
       }
       const config = await loadConfiguracao()
-      resetFaturarForm(
-        config,
-        getItensAbertos(selectedComanda.value).map((item) => item.id),
-      )
+      resetFaturarForm(config)
       openFaturarModal.value = true
     } catch (error) {
       console.log(error)
@@ -316,6 +313,22 @@ export const useComandasStore = defineStore('comandasStore', () => {
       return response.data
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Erro ao remover item.')
+      throw error
+    }
+  }
+
+  async function removeComanda(comandaId: number, devolverEstoque?: boolean) {
+    try {
+      const response = await ComandaOperacaoRepository.removeComanda(comandaId, { devolverEstoque })
+      if (selectedComanda.value?.id === comandaId) {
+        selectedComanda.value = null
+        openDetalhesModal.value = false
+      }
+      updateTable()
+      toast.success(response.message || 'Comanda excluida.')
+      return response.data
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Erro ao excluir comanda.')
       throw error
     }
   }
@@ -412,6 +425,7 @@ export const useComandasStore = defineStore('comandasStore', () => {
     addItem,
     updateItem,
     removeItem,
+    removeComanda,
     fechar,
     faturar,
     cancelar,

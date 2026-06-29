@@ -8,6 +8,7 @@ const repositoryMock = vi.hoisted(() => ({
   create: vi.fn(),
   faturar: vi.fn(),
   removeItem: vi.fn(),
+  removeComanda: vi.fn(),
 }))
 
 const toastMock = vi.hoisted(() => ({
@@ -96,9 +97,10 @@ describe('useComandasStore', () => {
     repositoryMock.create.mockResolvedValue({ message: 'ok', data: comandaPendente })
     repositoryMock.faturar.mockResolvedValue({ message: 'ok', data: comandaPendente })
     repositoryMock.removeItem.mockResolvedValue({ message: 'ok', data: { total: 0 } })
+    repositoryMock.removeComanda.mockResolvedValue({ message: 'ok', data: { id: 10, Uid: 'AB12CD' } })
   })
 
-  it('prefills faturamento with default finance account and category', async () => {
+  it('prefills faturamento finance fields without preselecting items', async () => {
     const store = useComandasStore()
 
     await store.openFaturar(10)
@@ -107,7 +109,7 @@ describe('useComandasStore', () => {
     expect(repositoryMock.getConfiguracao).toHaveBeenCalled()
     expect(store.faturarForm.contaFinanceiraId).toBe(22)
     expect(store.faturarForm.categoriaFinanceiraId).toBe(33)
-    expect(store.faturarForm.itemIds).toEqual([101, 102])
+    expect(store.faturarForm.itemIds).toEqual([])
     expect(store.faturarForm.lancarFinanceiro).toBe(true)
     expect(store.openFaturarModal).toBe(true)
   })
@@ -135,6 +137,18 @@ describe('useComandasStore', () => {
 
     expect(repositoryMock.removeItem).toHaveBeenCalledWith(10, 99, { devolverEstoque: true })
     expect(repositoryMock.get).toHaveBeenCalledWith(10)
+  })
+
+  it('sends the stock return decision when deleting a comanda', async () => {
+    const store = useComandasStore()
+    store.selectedComanda = comandaPendente
+    store.openDetalhesModal = true
+
+    await store.removeComanda(10, false)
+
+    expect(repositoryMock.removeComanda).toHaveBeenCalledWith(10, { devolverEstoque: false })
+    expect(store.selectedComanda).toBeNull()
+    expect(store.openDetalhesModal).toBe(false)
   })
 
   it('normalizes create payload with public item origin fields', async () => {

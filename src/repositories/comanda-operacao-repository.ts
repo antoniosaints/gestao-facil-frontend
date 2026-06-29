@@ -177,6 +177,11 @@ export class ComandaOperacaoRepository {
     return response.data as ApiResponse<{ total: DecimalLike }>
   }
 
+  static async removeComanda(comandaId: number, payload: { devolverEstoque?: boolean }) {
+    const response = await http.delete(`/comandas/${comandaId}`, { data: payload })
+    return response.data as ApiResponse<{ id: number; Uid: string; devolverEstoque?: boolean }>
+  }
+
   static async fechar(comandaId: number) {
     const response = await http.post(`/comandas/${comandaId}/fechar`)
     return response.data as ApiResponse<ComandaOperacao>

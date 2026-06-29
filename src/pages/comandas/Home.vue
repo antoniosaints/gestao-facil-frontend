@@ -52,7 +52,7 @@ const searchModalOpen = ref(false)
 const cancelObservation = ref('')
 const stockDecision = ref<{
   open: boolean
-  action: 'remove-item' | 'cancel-comanda'
+  action: 'remove-item' | 'cancel-comanda' | 'delete-comanda'
   comandaId: number
   item?: ComandaOperacaoItem
   title: string
@@ -73,6 +73,7 @@ const selectedPaidItems = computed(() => selectedItems.value.filter((item) => it
 const selectedCanChange = computed(() => store.selectedComanda?.status === 'ABERTA')
 const selectedCanFaturar = computed(() => store.selectedComanda?.status === 'PENDENTE')
 const selectedCanCancel = computed(() => ['ABERTA', 'PENDENTE'].includes(store.selectedComanda?.status || '') && selectedPaidItems.value.length === 0)
+const canAdminDeleteComandas = computed(() => Boolean(uiStore.permissoes.admin || uiStore.permissoes.superadmin))
 const selectedHasStockProducts = computed(() =>
   selectedItems.value.some((item) => item.origemTipo === 'PRODUTO' && item.estoqueDebitado),
 )
@@ -284,6 +285,11 @@ async function openComprovante(comanda: ComandaOperacao) {
 }
 
 function askRemoveItem(comandaId: number, item: ComandaOperacaoItem) {
+  if (!selectedCanChange.value && !canAdminDeleteComandas.value) {
+    toast.warning('Somente usuarios admin podem remover itens de comandas fechadas ou faturadas.')
+    return
+  }
+
   if (item.origemTipo === 'PRODUTO' && item.estoqueDebitado) {
     stockDecision.value = {
       open: true,
@@ -296,6 +302,28 @@ function askRemoveItem(comandaId: number, item: ComandaOperacaoItem) {
     return
   }
   store.removeItem(comandaId, item.id).then(loadComandas)
+}
+
+function askDeleteComanda(comanda: ComandaOperacao) {
+  if (!canAdminDeleteComandas.value) {
+    toast.warning('Somente usuarios admin podem excluir comandas.')
+    return
+  }
+
+  const hasStockProducts = (comanda.itens || []).some((item) => item.origemTipo === 'PRODUTO' && item.estoqueDebitado)
+  if (hasStockProducts) {
+    stockDecision.value = {
+      open: true,
+      action: 'delete-comanda',
+      comandaId: comanda.id,
+      title: 'Excluir comanda',
+      description: 'Esta comanda possui produtos com estoque debitado. Deseja devolver as quantidades ao estoque antes de excluir?',
+    }
+    return
+  }
+
+  if (!window.confirm(`Excluir a comanda ${comanda.Uid}?`)) return
+  store.removeComanda(comanda.id, false).then(loadComandas)
 }
 
 function askCancelComanda(comanda: ComandaOperacao) {
@@ -328,6 +356,10 @@ async function confirmStockDecision(devolverEstoque: boolean) {
 
   if (decision.action === 'cancel-comanda') {
     await store.cancelar(decision.comandaId, devolverEstoque, cancelObservation.value || null)
+  }
+
+  if (decision.action === 'delete-comanda') {
+    await store.removeComanda(decision.comandaId, devolverEstoque)
   }
 
   await loadComandas()
@@ -489,6 +521,10 @@ onMounted(loadComandas)
           <Button v-if="comanda.status === 'FATURADA'" variant="outline" size="sm" @click="openComprovante(comanda)">
             PDF
           </Button>
+          <Button v-if="canAdminDeleteComandas" variant="outline" size="sm" class="text-danger" @click="askDeleteComanda(comanda)">
+            <Trash2 class="mr-2 h-4 w-4" />
+            Excluir
+          </Button>
         </div>
       </article>
     </div>
@@ -620,6 +656,10 @@ onMounted(loadComandas)
           <Button v-if="selectedCanCancel" variant="outline" class="text-danger" @click="askCancelComanda(store.selectedComanda)">
             Cancelar
           </Button>
+          <Button v-if="canAdminDeleteComandas" variant="outline" class="text-danger" @click="askDeleteComanda(store.selectedComanda)">
+            <Trash2 class="mr-2 h-4 w-4" />
+            Excluir
+          </Button>
         </div>
 
         <div class="overflow-hidden rounded-lg border border-border">
@@ -644,7 +684,7 @@ onMounted(loadComandas)
             <div class="col-span-2">{{ formatCurrencyBR(Number(item.valorUnitarioSnapshot || 0)) }}</div>
             <div class="col-span-2 font-medium">{{ formatCurrencyBR(getItemTotal(item)) }}</div>
             <div class="col-span-1 text-right">
-              <Button v-if="selectedCanChange && !item.pagamentoId" variant="outline" size="sm" @click="askRemoveItem(store.selectedComanda!.id, item)">
+              <Button v-if="(selectedCanChange && !item.pagamentoId) || canAdminDeleteComandas" variant="outline" size="sm" @click="askRemoveItem(store.selectedComanda!.id, item)">
                 <Trash2 class="h-4 w-4" />
               </Button>
             </div>
