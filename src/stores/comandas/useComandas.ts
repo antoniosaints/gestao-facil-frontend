@@ -18,7 +18,7 @@ export type ComandaItemForm = {
   origemTipo: ComandaOrigemTipo
   origemId: number | string | null
   nome: string
-  valorUnitario: number | null
+  valorUnitario: number | undefined
   quantidade: number
   devolverDiferencaEstoque?: boolean
 }
@@ -52,7 +52,7 @@ export function getDefaultItemForm(overrides?: Partial<ComandaItemForm>): Comand
     origemTipo: overrides?.origemTipo ?? 'PRODUTO',
     origemId: overrides?.origemId ?? null,
     nome: overrides?.nome ?? '',
-    valorUnitario: overrides?.valorUnitario ?? null,
+    valorUnitario: overrides?.valorUnitario,
     quantidade: overrides?.quantidade ?? 1,
     devolverDiferencaEstoque: overrides?.devolverDiferencaEstoque,
   }

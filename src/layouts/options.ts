@@ -9,6 +9,7 @@ import {
   CalendarClock,
   ChartPie,
   CircleDollarSign,
+  ClipboardList,
   Cog,
   FileBox,
   FileCheck2,
@@ -109,6 +110,13 @@ export const sidebarMenuOptions = (
           color: 'green',
         },
       ],
+    },
+    {
+      nome: 'Comandas',
+      icone: ClipboardList,
+      color: 'cyan',
+      show: permissions.vendas.visualizar,
+      link: '/comandas',
     },
     {
       nome: 'Financeiro',
