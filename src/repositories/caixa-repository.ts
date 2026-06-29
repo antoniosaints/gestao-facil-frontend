@@ -131,4 +131,9 @@ export class CaixaRepository {
 
     downloadBlob(response.data, filename)
   }
+
+  static async deletarCaixa(caixaId: number) {
+    const { data } = await http.delete(`/vendas/pdv/caixa/${caixaId}`)
+    return data.data as CaixaSessao
+  }
 }

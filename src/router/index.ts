@@ -630,7 +630,7 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/configs/ConfiguracaoPage.vue'),
         meta: {
           layout: 'main',
-          permissao: 5,
+          permissao: 4,
         },
       },
     ],

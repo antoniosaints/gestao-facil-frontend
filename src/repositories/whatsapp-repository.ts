@@ -179,6 +179,11 @@ export class WhatsAppRepository {
     return data.data as WhatsAppInstancePayment
   }
 
+  static async removePayment(instanceId: number, paymentId: number) {
+    const { data } = await http.delete(`/whatsapp/instances/${instanceId}/payments/${paymentId}`)
+    return data.data as WhatsAppInstancePayment
+  }
+
   static async listConversations(params: { search?: string; status?: WhatsAppConversationStatus; take?: number; cursor?: number } = {}) {
     const { data } = await http.get('/whatsapp/conversas', { params })
     return data.data as PaginatedResponse<WhatsAppConversation>

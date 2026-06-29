@@ -163,6 +163,18 @@ export interface UpdateAdminGatewayPayload {
   gateway: 'mercadopago' | 'abacatepay'
 }
 
+export interface WhatsAppNotificationInstanceOption {
+  id: number
+  nome: string
+  instanceId: string
+  status: string
+  numeroConectado?: string | null
+  ativo: boolean
+  lastSyncAt?: string | Date | null
+  createdAt: string | Date
+  updatedAt: string | Date
+}
+
 export interface StatusContaFatura {
   id: string
   asaasPaymentId: string
@@ -228,6 +240,10 @@ export class ContaRepository {
   static async getParametros(): Promise<any> {
     const res = await http.get(`/contas/parametros`)
     return res.data
+  }
+  static async listarInstanciasWhatsappNotificacao(): Promise<WhatsAppNotificationInstanceOption[]> {
+    const res = await http.get('/contas/parametros/whatsapp-instancias')
+    return res.data.data
   }
   static async detalhes(): Promise<Contas> {
     const data = await http.get(`/contas/detalhes`)

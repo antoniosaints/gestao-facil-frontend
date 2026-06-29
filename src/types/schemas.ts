@@ -478,6 +478,15 @@ export interface UpdateParametrosConta {
   WhatsappAPINumber?: string | null
   chavePix?: string | null
   menusVisiveis?: string[] | null
+  whatsappNotificacoesAtivo?: boolean | null
+  whatsappNotificacoesInstanciaId?: number | null
+  whatsappEventoNovaVenda?: boolean | null
+  whatsappEventoNovaOs?: boolean | null
+  whatsappEventoNovoLancamento?: boolean | null
+  whatsappEventoNovoCliente?: boolean | null
+  whatsappEventoComandaFaturada?: boolean | null
+  whatsappEventoCaixaAberto?: boolean | null
+  whatsappEventoCaixaFechado?: boolean | null
 }
 
 export interface ItensVendas {

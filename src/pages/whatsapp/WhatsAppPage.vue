@@ -19,14 +19,18 @@
           <RotateCw class="mr-2 h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           Atualizar
         </Button>
+        <Button class="text-white" @click="createInstanceModalOpen = true">
+          <Plus class="mr-2 h-4 w-4" />
+          Nova instancia
+        </Button>
+        <Button v-if="instances.length" variant="outline" @click="manageInstanceModalOpen = true">
+          <Smartphone class="mr-2 h-4 w-4" />
+          Gerenciar
+        </Button>
       </div>
     </div>
 
     <Tabs v-model="tab" class="w-full">
-      <TabsList class="grid w-full max-w-xs grid-cols-1">
-        <TabsTrigger value="instances">Instâncias</TabsTrigger>
-      </TabsList>
-
       <TabsContent value="inbox" class="mt-4">
         <div class="grid min-h-[680px] overflow-hidden rounded-xl border bg-background lg:grid-cols-[360px_1fr]">
           <aside class="border-r bg-body/40">
@@ -187,83 +191,37 @@
       </TabsContent>
 
       <TabsContent value="instances" class="mt-4 space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle class="font-normal">Nova instância W-API</CardTitle>
-            <CardDescription>O token é salvo no backend e nunca é exibido novamente na interface.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div class="grid gap-3 md:grid-cols-[1fr_1fr_1.2fr_auto]">
-              <Input v-model="instanceForm.nome" placeholder="Nome amigável" />
-              <Input v-model="instanceForm.instanceId" placeholder="Instance ID" />
-              <Input v-model="instanceForm.token" type="password" placeholder="Token W-API" autocomplete="off" />
-              <Button class="text-white" :disabled="savingInstance" @click="saveInstance">
-                <Plus class="mr-2 h-4 w-4" />
-                Cadastrar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card v-if="instances.length">
-          <CardHeader>
-            <CardTitle class="font-normal">Gerenciar instancia</CardTitle>
-            <CardDescription>Edite dados, gere pagamento ou remova uma instancia fora dos botoes operacionais do card.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div class="grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
-              <select v-model.number="managedInstanceId" class="h-10 rounded-md border bg-background px-3 text-sm">
-                <option v-for="instance in instances" :key="instance.id" :value="instance.id">
-                  {{ instance.nome }} - {{ instance.instanceId }}
-                </option>
-              </select>
-              <Button variant="outline" :disabled="!selectedManagedInstance" @click="selectedManagedInstance && openEditInstance(selectedManagedInstance)">
-                <PencilLine class="mr-2 h-4 w-4" />
-                Editar
-              </Button>
-              <Button variant="outline" :disabled="!selectedManagedInstance" @click="selectedManagedInstance && openPaymentModal(selectedManagedInstance)">
-                <CreditCard class="mr-2 h-4 w-4" />
-                Pagamento
-              </Button>
-              <Button variant="destructive" :disabled="!selectedManagedInstance" @click="selectedManagedInstance && openDeleteModal(selectedManagedInstance)">
-                <Trash2 class="mr-2 h-4 w-4" />
-                Remover
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div class="grid gap-4 xl:grid-cols-2">
+        <div class="grid gap-3 xl:grid-cols-3">
           <Card v-for="instance in instances" :key="instance.id" class="overflow-hidden">
-            <CardHeader>
+            <CardHeader class="pb-3">
               <div class="flex items-start justify-between gap-3">
-                <div>
-                  <CardTitle class="font-normal">{{ instance.nome }}</CardTitle>
-                  <CardDescription>{{ instance.instanceId }}</CardDescription>
+                <div class="min-w-0">
+                  <CardTitle class="truncate text-base font-medium">{{ instance.nome }}</CardTitle>
+                  <CardDescription class="truncate text-xs">{{ instance.instanceId }}</CardDescription>
                 </div>
                 <Badge :variant="instance.status === 'CONECTADA' ? 'default' : 'outline'">{{ instance.status }}</Badge>
               </div>
             </CardHeader>
-            <CardContent class="space-y-4">
-              <div class="grid gap-3 md:grid-cols-2">
-                <div class="rounded-lg border p-3">
+            <CardContent class="space-y-3">
+              <div class="grid gap-2 md:grid-cols-2">
+                <div class="rounded-md border p-2">
                   <p class="text-xs text-muted-foreground">Número conectado</p>
-                  <p class="font-medium">{{ instance.numeroConectado || 'Não identificado' }}</p>
+                  <p class="truncate text-sm font-medium">{{ instance.numeroConectado || 'Não identificado' }}</p>
                 </div>
-                <div class="rounded-lg border p-3">
+                <div class="rounded-md border p-2">
                   <p class="text-xs text-muted-foreground">Última sincronização</p>
-                  <p class="font-medium">{{ formatTime(instance.lastSyncAt) || 'Nunca' }}</p>
+                  <p class="truncate text-sm font-medium">{{ formatTime(instance.lastSyncAt) || 'Nunca' }}</p>
                 </div>
               </div>
               <div v-if="instance.ultimoErro" class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
                 <AlertTriangle class="mr-1 inline h-4 w-4" />
                 {{ instance.ultimoErro }}
               </div>
-              <div class="rounded-lg border p-3">
+              <div class="rounded-md border p-2">
                 <div class="mb-2 flex items-center justify-between gap-2">
-                  <div>
+                  <div class="min-w-0">
                     <p class="text-sm font-medium">Mensalidades</p>
-                    <p class="text-xs text-muted-foreground">Historico de pagamentos gerados para esta instancia.</p>
+                    <p class="truncate text-xs text-muted-foreground">Pagamentos gerados para esta instancia.</p>
                   </div>
                   <span
                     v-if="latestPayment(instance)"
@@ -274,14 +232,44 @@
                   </span>
                 </div>
                 <div v-if="instance.pagamentos?.length" class="space-y-2">
-                  <div v-for="payment in instance.pagamentos.slice(0, 3)" :key="payment.id" class="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-2 py-1.5 text-xs">
-                    <span>{{ paymentMethodLabel(payment.metodo) }} - {{ formatTime(payment.createdAt) }}</span>
-                    <span class="font-medium">{{ payment.status }}</span>
+                  <div v-for="payment in instance.pagamentos.slice(0, 3)" :key="payment.id" class="flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1.5 text-xs">
+                    <button type="button" class="min-w-0 flex-1 text-left" @click="openExistingPayment(instance, payment)">
+                      <span class="block truncate font-medium">{{ paymentMethodLabel(payment.metodo) }} - {{ formatTime(payment.createdAt) }}</span>
+                      <span class="block text-muted-foreground">{{ payment.status }}</span>
+                    </button>
+                    <Button v-if="payment.status === 'PENDENTE'" variant="ghost" size="icon" class="h-7 w-7" @click="openExistingPayment(instance, payment)">
+                      <ExternalLink class="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      v-if="payment.status === 'PENDENTE'"
+                      variant="ghost"
+                      size="icon"
+                      class="h-7 w-7 text-destructive hover:text-destructive"
+                      :disabled="deletingPaymentId === payment.id"
+                      @click="deletePendingPayment(instance, payment)"
+                    >
+                      <LoaderIcon v-if="deletingPaymentId === payment.id" class="h-3.5 w-3.5 animate-spin" />
+                      <Trash2 v-else class="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
                 <p v-else class="text-xs text-muted-foreground">Nenhuma cobranca gerada ainda.</p>
               </div>
               <div class="space-y-3">
+                <div class="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" @click="openEditInstance(instance)">
+                    <PencilLine class="mr-2 h-4 w-4" />
+                    Editar
+                  </Button>
+                  <Button variant="outline" size="sm" @click="openPaymentModal(instance)">
+                    <CreditCard class="mr-2 h-4 w-4" />
+                    Pagamento
+                  </Button>
+                  <Button variant="destructive" size="sm" @click="openDeleteModal(instance)">
+                    <Trash2 class="mr-2 h-4 w-4" />
+                    Remover
+                  </Button>
+                </div>
                 <div class="flex flex-wrap gap-2">
                   <Button v-if="instance.status !== 'CONECTADA'" variant="outline" size="sm" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'qrCode')">
                     <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'qrCode')" class="mr-2 h-4 w-4 animate-spin" />
@@ -386,6 +374,77 @@
       </DialogContent>
     </Dialog>
 
+    <Dialog v-model:open="createInstanceModalOpen">
+      <DialogContent class="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Nova instancia W-API</DialogTitle>
+          <DialogDescription>O token e salvo no backend e nao volta a ser exibido na interface.</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4">
+          <div class="space-y-1">
+            <Label>Nome</Label>
+            <Input v-model="instanceForm.nome" placeholder="Nome amigavel" />
+          </div>
+          <div class="space-y-1">
+            <Label>Instance ID</Label>
+            <Input v-model="instanceForm.instanceId" placeholder="Instance ID" />
+          </div>
+          <div class="space-y-1">
+            <Label>Token W-API</Label>
+            <Input v-model="instanceForm.token" type="password" placeholder="Token W-API" autocomplete="off" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" :disabled="savingInstance" @click="createInstanceModalOpen = false">Cancelar</Button>
+          <Button class="text-white" :disabled="savingInstance" @click="saveInstance">
+            <LoaderIcon v-if="savingInstance" class="mr-2 h-4 w-4 animate-spin" />
+            <Plus v-else class="mr-2 h-4 w-4" />
+            Cadastrar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog v-model:open="manageInstanceModalOpen">
+      <DialogContent class="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Gerenciar instancia</DialogTitle>
+          <DialogDescription>Selecione uma instancia para editar dados, abrir pagamento ou remover.</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-3">
+          <Label>Instancia</Label>
+          <select v-model.number="managedInstanceId" class="h-10 rounded-md border bg-background px-3 text-sm">
+            <option v-for="instance in instances" :key="instance.id" :value="instance.id">
+              {{ instance.nome }} - {{ instance.instanceId }}
+            </option>
+          </select>
+          <div v-if="selectedManagedInstance" class="rounded-md border p-3 text-sm">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate font-medium">{{ selectedManagedInstance.nome }}</p>
+                <p class="truncate text-xs text-muted-foreground">{{ selectedManagedInstance.instanceId }}</p>
+              </div>
+              <Badge :variant="selectedManagedInstance.status === 'CONECTADA' ? 'default' : 'outline'">{{ selectedManagedInstance.status }}</Badge>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" :disabled="!selectedManagedInstance" @click="selectedManagedInstance && openEditInstance(selectedManagedInstance)">
+            <PencilLine class="mr-2 h-4 w-4" />
+            Editar
+          </Button>
+          <Button variant="outline" :disabled="!selectedManagedInstance" @click="selectedManagedInstance && openPaymentModal(selectedManagedInstance)">
+            <CreditCard class="mr-2 h-4 w-4" />
+            Pagamento
+          </Button>
+          <Button variant="destructive" :disabled="!selectedManagedInstance" @click="selectedManagedInstance && openDeleteModal(selectedManagedInstance)">
+            <Trash2 class="mr-2 h-4 w-4" />
+            Remover
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <Dialog v-model:open="editInstanceModalOpen">
       <DialogContent class="max-w-xl">
         <DialogHeader>
@@ -421,7 +480,7 @@
         <DialogHeader>
           <DialogTitle>Pagamento da instancia</DialogTitle>
           <DialogDescription>
-            Escolha PIX ou cartao para gerar a mensalidade da instancia {{ paymentInstance?.nome || '' }}.
+            Gere uma nova cobranca ou continue um pagamento pendente da instancia {{ paymentInstance?.nome || '' }}.
           </DialogDescription>
         </DialogHeader>
         <div class="space-y-4">
@@ -504,7 +563,7 @@
         <DialogHeader>
           <DialogTitle>Remover instancia</DialogTitle>
           <DialogDescription>
-            Para evitar remover uma instancia conectada, clique em desconectar antes de confirmar a exclusao.
+            A instancia sera removida do ERP e o identificador externo sera liberado para novo cadastro.
           </DialogDescription>
         </DialogHeader>
         <div class="space-y-3">
@@ -512,18 +571,11 @@
             <p class="text-sm font-medium">{{ deleteInstanceTarget?.nome }}</p>
             <p class="text-xs text-muted-foreground">{{ deleteInstanceTarget?.instanceId }} - {{ deleteInstanceTarget?.status }}</p>
           </div>
-          <Button variant="outline" class="w-full" :disabled="!deleteInstanceTarget || isAnyInstanceActionLoading(deleteInstanceTarget.id)" @click="disconnectBeforeDelete">
-            <LoaderIcon v-if="deleteInstanceTarget && isInstanceActionLoading(deleteInstanceTarget.id, 'disconnect')" class="mr-2 h-4 w-4 animate-spin" />
-            <WifiOff v-else class="mr-2 h-4 w-4" />
-            {{ deleteInstanceTarget?.status === 'DESCONECTADA' ? 'Confirmar desconexao' : 'Desconectar instancia' }}
-          </Button>
-          <p class="text-xs text-muted-foreground">
-            O botao de remover so fica disponivel depois da etapa de desconexao.
-          </p>
+          <p class="text-xs text-muted-foreground">Use esta acao somente quando a instancia nao deve mais aparecer no ERP.</p>
         </div>
         <DialogFooter>
           <Button variant="outline" :disabled="removingInstance" @click="deleteModalOpen = false">Cancelar</Button>
-          <Button variant="destructive" :disabled="removingInstance || !deleteDisconnectClicked" @click="removeInstance">
+          <Button variant="destructive" :disabled="removingInstance" @click="removeInstance">
             <LoaderIcon v-if="removingInstance" class="mr-2 h-4 w-4 animate-spin" />
             Remover
           </Button>
@@ -545,7 +597,6 @@ import {
   ExternalLink,
   Inbox,
   Landmark,
-  Link2,
   LoaderIcon,
   MessageCircle,
   PencilLine,
@@ -569,7 +620,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { ClienteRepository } from '@/repositories/cliente-repository'
@@ -626,15 +677,17 @@ const messageForm = reactive<{ tipo: 'text' | 'image' | 'audio' | 'video' | 'doc
 const connectedInstances = computed(() => instances.value.filter((instance) => instance.status === 'CONECTADA').length)
 const managedInstanceId = ref<number | null>(null)
 const selectedManagedInstance = computed(() => instances.value.find((instance) => instance.id === managedInstanceId.value) || null)
+const createInstanceModalOpen = ref(false)
+const manageInstanceModalOpen = ref(false)
 const editInstanceModalOpen = ref(false)
 const editInstanceTarget = ref<WhatsAppInstance | null>(null)
 const paymentModalOpen = ref(false)
 const paymentInstance = ref<WhatsAppInstance | null>(null)
 const paymentMethod = ref<'PIX' | 'CARTAO'>('PIX')
 const paymentResult = ref<WhatsAppInstancePayment | null>(null)
+const deletingPaymentId = ref<number | null>(null)
 const deleteModalOpen = ref(false)
 const deleteInstanceTarget = ref<WhatsAppInstance | null>(null)
-const deleteDisconnectClicked = ref(false)
 const canSendMessage = computed(() => {
   if (!selectedConversation.value) return false
   if (selectedConversation.value.Instancia?.status !== 'CONECTADA') return false
@@ -747,6 +800,7 @@ function openEditInstance(instance: WhatsAppInstance) {
     instanceId: instance.instanceId,
     token: '',
   })
+  manageInstanceModalOpen.value = false
   editInstanceModalOpen.value = true
 }
 
@@ -779,6 +833,15 @@ function openPaymentModal(instance: WhatsAppInstance) {
   paymentInstance.value = instance
   paymentMethod.value = 'PIX'
   paymentResult.value = null
+  manageInstanceModalOpen.value = false
+  paymentModalOpen.value = true
+}
+
+function openExistingPayment(instance: WhatsAppInstance, payment: WhatsAppInstancePayment) {
+  paymentInstance.value = instance
+  paymentMethod.value = payment.metodo
+  paymentResult.value = payment
+  manageInstanceModalOpen.value = false
   paymentModalOpen.value = true
 }
 
@@ -802,30 +865,12 @@ async function createPayment() {
 
 function openDeleteModal(instance: WhatsAppInstance) {
   deleteInstanceTarget.value = instance
-  deleteDisconnectClicked.value = false
+  manageInstanceModalOpen.value = false
   deleteModalOpen.value = true
 }
 
-async function disconnectBeforeDelete() {
-  if (!deleteInstanceTarget.value) return
-
-  if (deleteInstanceTarget.value.status !== 'DESCONECTADA') {
-    await runInstanceAction(deleteInstanceTarget.value, 'disconnect')
-    const updated = instances.value.find((instance) => instance.id === deleteInstanceTarget.value?.id)
-    if (updated) deleteInstanceTarget.value = updated
-  }
-
-  if (deleteInstanceTarget.value.status === 'DESCONECTADA') {
-    deleteDisconnectClicked.value = true
-    return
-  }
-
-  deleteDisconnectClicked.value = false
-  toast.warning('A instancia ainda nao foi marcada como desconectada.')
-}
-
 async function removeInstance() {
-  if (!deleteInstanceTarget.value || !deleteDisconnectClicked.value) return
+  if (!deleteInstanceTarget.value) return
   try {
     removingInstance.value = true
     await WhatsAppRepository.removeInstance(deleteInstanceTarget.value.id)
@@ -837,6 +882,24 @@ async function removeInstance() {
     toast.error(error?.response?.data?.message || 'Erro ao remover instancia.')
   } finally {
     removingInstance.value = false
+  }
+}
+
+async function deletePendingPayment(instance: WhatsAppInstance, payment: WhatsAppInstancePayment) {
+  if (payment.status !== 'PENDENTE') return
+  try {
+    deletingPaymentId.value = payment.id
+    await WhatsAppRepository.removePayment(instance.id, payment.id)
+    if (paymentResult.value?.id === payment.id) {
+      paymentResult.value = null
+    }
+    toast.success('Pagamento pendente removido.')
+    await loadInstances()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao remover pagamento pendente.')
+  } finally {
+    deletingPaymentId.value = null
   }
 }
 
@@ -867,6 +930,7 @@ async function saveInstance() {
     await WhatsAppRepository.createInstance({ ...instanceForm })
     Object.assign(instanceForm, { nome: '', instanceId: '', token: '' })
     toast.success('Instância cadastrada.')
+    createInstanceModalOpen.value = false
     await loadInstances()
   } catch (error) {
     console.error(error)

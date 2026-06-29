@@ -12,21 +12,29 @@ import {
   Filter,
   HandCoins,
   RefreshCw,
+  Trash2,
   TrendingUp,
 } from 'lucide-vue-next'
+import BarChart from '@/components/graficos/BarChart.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
+import PieChart from '@/components/graficos/PieChart.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useConfirm } from '@/composables/useConfirm'
+import { optionsChartBarDefault, optionsChartPie } from '@/composables/useChartOptions'
 import {
   CaixaRepository,
   type CaixaRelatorioParams,
 } from '@/repositories/caixa-repository'
+import { useUiStore } from '@/stores/ui/uiStore'
 import type { CaixaRelatorioResponse } from '@/types/schemas'
 import { formatCurrencyBR } from '@/utils/formatters'
 
 const toast = useToast()
+const confirm = useConfirm()
+const storeUi = useUiStore()
 const loading = ref(false)
 const openModalFiltros = ref(false)
 const openModalDetalhes = ref(false)
@@ -35,6 +43,8 @@ const filtroStatus = ref<'TODOS' | 'ABERTO' | 'FECHADO' | 'CANCELADO'>('TODOS')
 const relatorio = ref<CaixaRelatorioResponse | null>(null)
 const caixaSelecionado = ref<CaixaRelatorioResponse['caixas'][number] | null>(null)
 const exportingPdfId = ref<number | null>(null)
+const deletingCaixaId = ref<number | null>(null)
+const canDeleteCaixas = computed(() => storeUi.permissoes.admin)
 
 const filtrosAtivos = computed(() => {
   const inicio = filtroPeriodo.value[0]?.toLocaleDateString('pt-BR')
@@ -76,6 +86,42 @@ const indicadores = computed(() => {
     },
   ]
 })
+
+const metodoPagamentoChart = computed(() => {
+  const porMetodo = relatorio.value?.resumo.porMetodo || {}
+  const entries = Object.entries(porMetodo).filter(([, valor]) => Number(valor) > 0)
+
+  return {
+    labels: entries.map(([metodo]) => getPaymentMethodLabel(metodo)),
+    datasets: [
+      {
+        data: entries.map(([, valor]) => Number(valor)),
+        backgroundColor: ['#16a34a', '#2563eb', '#f59e0b', '#7c3aed', '#0f766e', '#dc2626'],
+      },
+    ],
+  }
+})
+
+const resumoOperacionalChart = computed(() => {
+  const resumo = relatorio.value?.resumo
+  return {
+    labels: ['Vendido', 'Sangrias', 'Reforços', 'Diferença'],
+    datasets: [
+      {
+        label: 'Valor',
+        data: [
+          resumo?.totalVendido || 0,
+          resumo?.totalSangrias || 0,
+          resumo?.totalReforcos || 0,
+          resumo?.diferenca || 0,
+        ],
+        backgroundColor: ['#16a34a', '#f59e0b', '#2563eb', '#e11d48'],
+      },
+    ],
+  }
+})
+
+const hasPaymentChartData = computed(() => metodoPagamentoChart.value.datasets[0].data.length > 0)
 
 function buildParams(): CaixaRelatorioParams {
   return {
@@ -139,6 +185,35 @@ async function exportarPdf(caixaId: number) {
   }
 }
 
+function canDeleteCaixaItem(item: CaixaRelatorioResponse['caixas'][number]) {
+  return canDeleteCaixas.value && item.resumo.totalVendas === 0
+}
+
+async function deletarCaixa(item: CaixaRelatorioResponse['caixas'][number]) {
+  if (!canDeleteCaixaItem(item)) return
+
+  const confirmed = await confirm.confirm({
+    title: 'Apagar caixa',
+    message: `Deseja apagar o caixa ${item.caixa.codigo}? Essa ação remove abertura, movimentos e operadores vinculados.`,
+    confirmText: 'Sim, apagar',
+    colorButton: 'danger',
+  })
+
+  if (!confirmed) return
+
+  try {
+    deletingCaixaId.value = item.caixa.id
+    await CaixaRepository.deletarCaixa(item.caixa.id)
+    toast.success('Caixa apagado com sucesso')
+    await carregarRelatorio()
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error.response?.data?.message || 'Erro ao apagar caixa')
+  } finally {
+    deletingCaixaId.value = null
+  }
+}
+
 onMounted(() => {
   carregarRelatorio()
 })
@@ -183,6 +258,38 @@ onMounted(() => {
         <CardContent class="pb-3">
           <p class="text-lg font-semibold">{{ item.valor }}</p>
           <p class="truncate text-xs text-muted-foreground" :title="item.detalhe">{{ item.detalhe }}</p>
+        </CardContent>
+      </Card>
+    </section>
+
+    <section class="grid grid-cols-1 gap-4 xl:grid-cols-5">
+      <Card class="rounded-xl shadow xl:col-span-2">
+        <CardHeader class="pb-2">
+          <CardTitle class="text-sm font-medium">Métodos de pagamento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div v-if="hasPaymentChartData" class="grid items-center gap-3 md:grid-cols-[minmax(0,1fr)_160px]">
+            <PieChart class="max-h-52" :data="metodoPagamentoChart" :options="optionsChartPie" />
+            <div class="space-y-2">
+              <div v-for="(valor, index) in metodoPagamentoChart.datasets[0].data" :key="metodoPagamentoChart.labels[index]"
+                class="flex items-center justify-between gap-2 rounded-md border bg-background px-2 py-1.5 text-xs">
+                <span class="truncate">{{ metodoPagamentoChart.labels[index] }}</span>
+                <strong>{{ formatCurrencyBR(valor) }}</strong>
+              </div>
+            </div>
+          </div>
+          <div v-else class="flex h-52 items-center justify-center text-sm text-muted-foreground">
+            Sem pagamentos no período.
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card class="rounded-xl shadow xl:col-span-3">
+        <CardHeader class="pb-2">
+          <CardTitle class="text-sm font-medium">Resumo operacional</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <BarChart class="max-h-52" :data="resumoOperacionalChart" :options="optionsChartBarDefault" />
         </CardContent>
       </Card>
     </section>
@@ -234,6 +341,16 @@ onMounted(() => {
                     </Button>
                     <Button variant="outline" size="sm" @click="abrirDetalhes(item)">
                       <Eye class="h-4 w-4" /> Detalhes
+                    </Button>
+                    <Button
+                      v-if="canDeleteCaixas"
+                      variant="destructive"
+                      size="sm"
+                      :disabled="!canDeleteCaixaItem(item) || deletingCaixaId === item.caixa.id"
+                      :title="item.resumo.totalVendas > 0 ? 'Caixas com vendas vinculadas não podem ser apagados.' : 'Apagar caixa'"
+                      @click="deletarCaixa(item)"
+                    >
+                      <Trash2 class="h-4 w-4" /> Apagar
                     </Button>
                   </div>
                 </td>
