@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto max-w-7xl space-y-6 p-4">
+  <div class="mx-auto max-w-7xl space-y-6 p-4 pb-24 md:pb-4">
     <div v-if="loading" class="flex h-64 items-center justify-center">
       <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
     </div>
@@ -270,6 +270,28 @@
         </div>
       </form>
     </ModalView>
+    <MobileBottomBar>
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="$router.push({ name: 'clientes-tabela' })">
+        <ChevronLeft class="h-5 w-5" />
+        <span class="text-xs">Voltar</span>
+      </button>
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="editarCliente">
+        <Pencil class="h-5 w-5" />
+        <span class="text-xs">Editar</span>
+      </button>
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="openReminderModal()">
+        <MessageCircleMore class="h-5 w-5" />
+        <span class="text-xs">Lembrete</span>
+      </button>
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="clearFilters">
+        <Filter class="h-5 w-5" />
+        <span class="text-xs">Limpar</span>
+      </button>
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="refreshClienteDetalhes">
+        <RefreshCcw class="h-5 w-5" />
+        <span class="text-xs">Atualizar</span>
+      </button>
+    </MobileBottomBar>
     <ClientesModal />
   </div>
 </template>
@@ -293,6 +315,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import ModalView from '@/components/formulario/ModalView.vue'
+import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { formatCurrencyBR as formatCurrency, formatDateToPtBR } from '@/utils/formatters'
 import {
   AlertCircle as AlertCircleIcon,
@@ -305,6 +328,7 @@ import {
   Power,
   PowerOff,
   Receipt,
+  RefreshCcw,
   Search,
   Send,
   ShoppingCart as ShoppingCartIcon,
@@ -522,6 +546,10 @@ function clearFilters() {
 
 function changePage(page: number) {
   loadOperationalDetails(page)
+}
+
+async function refreshClienteDetalhes() {
+  await Promise.all([reloadClienteStats(), loadOperationalDetails(activeMeta.value.page)])
 }
 
 function openReminderModal(tipo: ReminderType = 'COBRANCA', cobrancaId?: number, vendaId?: number) {

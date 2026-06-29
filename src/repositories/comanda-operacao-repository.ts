@@ -214,4 +214,12 @@ export class ComandaOperacaoRepository {
     })
     openBlob(response.data, `comanda-${comanda.Uid}.pdf`)
   }
+
+  static async obterComprovantePos(comandaId: number) {
+    const response = await http.get(`/comandas/${comandaId}/comprovante-pos`, {
+      responseType: 'text',
+      headers: { Accept: 'text/plain' },
+    })
+    return response.data as string
+  }
 }

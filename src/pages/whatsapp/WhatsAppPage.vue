@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto space-y-5">
+  <div class="container mx-auto space-y-5 pb-24 md:pb-0">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div>
         <h1 class="flex items-center gap-2 text-2xl font-bold tracking-tight">
@@ -582,6 +582,35 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <MobileBottomBar>
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="refreshAll">
+        <RotateCw class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
+        <span class="text-xs">Atualizar</span>
+      </button>
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="createInstanceModalOpen = true">
+        <Plus class="h-5 w-5" />
+        <span class="text-xs">Nova</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:opacity-50 dark:text-gray-300"
+        :disabled="!instances.length"
+        @click="manageInstanceModalOpen = true"
+      >
+        <Smartphone class="h-5 w-5" />
+        <span class="text-xs">Gerenciar</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:opacity-50 dark:text-gray-300"
+        :disabled="!instances.length"
+        @click="instances[0] && openPaymentModal(instances[0])"
+      >
+        <CreditCard class="h-5 w-5" />
+        <span class="text-xs">Pagar</span>
+      </button>
+    </MobileBottomBar>
   </div>
 </template>
 
@@ -622,6 +651,7 @@ import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { ClienteRepository } from '@/repositories/cliente-repository'
 import {

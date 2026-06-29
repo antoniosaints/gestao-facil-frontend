@@ -12,6 +12,7 @@ import {
   Filter,
   HandCoins,
   ReceiptText,
+  RefreshCcw,
   RefreshCw,
   ShoppingCart,
   Trash2,
@@ -21,6 +22,7 @@ import {
 import BarChart from '@/components/graficos/BarChart.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
+import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue'
 import PieChart from '@/components/graficos/PieChart.vue'
 import { Badge } from '@/components/ui/badge'
@@ -234,7 +236,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 pb-24 md:pb-0">
     <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
       <div>
         <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
@@ -428,12 +430,12 @@ onMounted(() => {
     </ModalView>
 
     <ModalView v-model:open="openModalDetalhes" title="Detalhes do caixa" size="5xl">
-      <div v-if="caixaSelecionado" class="grid gap-4 p-4">
+      <div v-if="caixaSelecionado" class="grid gap-3 px-3 pb-4 md:gap-4 md:p-4">
         <div class="rounded-md border bg-background p-4">
           <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
+            <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
-                <h3 class="text-lg font-semibold">{{ caixaSelecionado.caixa.codigo }}</h3>
+                <h3 class="truncate text-lg font-semibold">{{ caixaSelecionado.caixa.codigo }}</h3>
                 <Badge variant="outline">{{ caixaSelecionado.caixa.status }}</Badge>
               </div>
               <p class="mt-1 text-sm text-muted-foreground">
@@ -447,6 +449,7 @@ onMounted(() => {
             </div>
             <Button
               variant="outline"
+              class="w-full md:w-auto"
               :disabled="exportingPdfId === caixaSelecionado.caixa.id"
               @click="exportarPdf(caixaSelecionado.caixa.id)"
             >
@@ -455,7 +458,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <section class="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <section class="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4 md:gap-3">
           <div class="rounded-md border bg-card p-3">
             <p class="text-xs text-muted-foreground">Vendido</p>
             <p class="font-semibold">{{ formatCurrencyBR(caixaSelecionado.resumo.totalVendido || 0) }}</p>
@@ -474,7 +477,7 @@ onMounted(() => {
           </div>
         </section>
 
-        <section class="grid gap-3 md:grid-cols-3">
+        <section class="grid gap-2 md:grid-cols-3 md:gap-3">
           <div class="rounded-md border bg-card p-3">
             <div class="flex items-center gap-2 text-xs text-muted-foreground">
               <ShoppingCart class="h-4 w-4" />
@@ -500,7 +503,7 @@ onMounted(() => {
 
         <section class="rounded-md border bg-card p-3">
           <h3 class="mb-2 text-sm font-semibold">Por metodo de pagamento</h3>
-          <div class="grid gap-2 md:grid-cols-2">
+          <div class="grid gap-2 sm:grid-cols-2">
             <div v-for="(valor, metodo) in caixaSelecionado.resumo.porMetodo" :key="metodo"
               class="flex justify-between rounded-md border bg-background px-3 py-2 text-sm">
               <span>{{ metodo }}</span>
@@ -517,7 +520,36 @@ onMounted(() => {
           <div v-if="!caixaSelecionado.vendas.length" class="py-6 text-center text-sm text-muted-foreground">
             Nenhuma venda vinculada a este caixa.
           </div>
-          <div v-else class="max-h-72 overflow-auto">
+          <div v-if="caixaSelecionado.vendas.length" class="space-y-2 md:hidden">
+            <article
+              v-for="venda in caixaSelecionado.vendas"
+              :key="venda.id"
+              class="rounded-md border bg-background p-3"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold">{{ venda.Uid || `#${venda.id}` }}</p>
+                  <p class="text-xs text-muted-foreground">{{ new Date(venda.data).toLocaleString('pt-BR') }}</p>
+                </div>
+                <Badge variant="outline">{{ venda.status }}</Badge>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div class="rounded-md bg-muted/40 p-2">
+                  <span class="block text-muted-foreground">Pagamento</span>
+                  <strong>{{ getPaymentMethodLabel(venda.PagamentoVendas?.metodo) }}</strong>
+                </div>
+                <div class="rounded-md bg-muted/40 p-2 text-right">
+                  <span class="block text-muted-foreground">Valor</span>
+                  <strong>{{ formatCurrencyBR(venda.valor || 0) }}</strong>
+                </div>
+              </div>
+              <Button type="button" variant="outline" size="sm" class="mt-3 w-full" @click="abrirDetalhesVenda(venda.id)">
+                <Eye class="h-4 w-4" />
+                Detalhes da venda
+              </Button>
+            </article>
+          </div>
+          <div v-if="caixaSelecionado.vendas.length" class="hidden max-h-72 overflow-auto md:block">
             <table class="w-full min-w-[760px] text-sm">
               <thead class="border-b text-left text-xs text-muted-foreground">
                 <tr>
@@ -550,7 +582,46 @@ onMounted(() => {
 
         <section class="rounded-md border bg-card p-3">
           <h3 class="mb-2 text-sm font-semibold">Movimentos</h3>
-          <div class="max-h-72 overflow-auto">
+          <div v-if="!caixaSelecionado.movimentos.length" class="py-6 text-center text-sm text-muted-foreground">
+            Nenhum movimento registrado neste caixa.
+          </div>
+          <div v-if="caixaSelecionado.movimentos.length" class="space-y-2 md:hidden">
+            <article
+              v-for="movimento in caixaSelecionado.movimentos"
+              :key="movimento.id"
+              class="rounded-md border bg-background p-3"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold">{{ movimento.descricao || movimento.tipo }}</p>
+                  <p class="text-xs text-muted-foreground">{{ new Date(movimento.createdAt).toLocaleString('pt-BR') }}</p>
+                </div>
+                <span class="text-sm font-semibold">{{ formatCurrencyBR(movimento.valor || 0) }}</span>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div class="rounded-md bg-muted/40 p-2">
+                  <span class="block text-muted-foreground">Tipo</span>
+                  <strong>{{ movimento.tipo }}</strong>
+                </div>
+                <div class="rounded-md bg-muted/40 p-2">
+                  <span class="block text-muted-foreground">Metodo</span>
+                  <strong>{{ getPaymentMethodLabel(movimento.metodoPagamento) }}</strong>
+                </div>
+              </div>
+              <Button
+                v-if="movimento.vendaId"
+                type="button"
+                variant="outline"
+                size="sm"
+                class="mt-3 w-full"
+                @click="abrirDetalhesVenda(movimento.vendaId)"
+              >
+                <Eye class="h-4 w-4" />
+                Ver venda
+              </Button>
+            </article>
+          </div>
+          <div v-if="caixaSelecionado.movimentos.length" class="hidden max-h-72 overflow-auto md:block">
             <table class="w-full min-w-[660px] text-sm">
               <thead class="border-b text-left text-xs text-muted-foreground">
                 <tr>
@@ -588,6 +659,24 @@ onMounted(() => {
         </section>
       </div>
     </ModalView>
+    <MobileBottomBar v-if="storeUi.isMobile">
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="openModalFiltros = true">
+        <Filter class="h-5 w-5" />
+        <span class="text-xs">Filtros</span>
+      </button>
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="applyPreset('today'); carregarRelatorio()">
+        <CalendarDays class="h-5 w-5" />
+        <span class="text-xs">Hoje</span>
+      </button>
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="applyPreset('current-month'); carregarRelatorio()">
+        <HandCoins class="h-5 w-5" />
+        <span class="text-xs">Mes</span>
+      </button>
+      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="carregarRelatorio">
+        <RefreshCcw class="h-5 w-5" />
+        <span class="text-xs">Atualizar</span>
+      </button>
+    </MobileBottomBar>
     <DetalhesVenda />
   </div>
 </template>

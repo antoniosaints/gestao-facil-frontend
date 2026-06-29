@@ -121,9 +121,20 @@ function hasPaidItems(comanda: ComandaOperacao) {
   return (comanda.itens || []).some((item) => item.pagamentoId)
 }
 
-function togglePaymentItem(itemId: number, checked: boolean | 'indeterminate') {
+function normalizeCheckedValue(checked: unknown) {
+  if (checked === true) return true
+  if (checked === false || checked === 'indeterminate') return false
+
+  if (checked && typeof checked === 'object' && 'target' in checked) {
+    return Boolean((checked as Event).target && ((checked as Event).target as HTMLInputElement).checked)
+  }
+
+  return Boolean(checked)
+}
+
+function togglePaymentItem(itemId: number, checked: boolean) {
   const ids = new Set(store.faturarForm.itemIds)
-  if (checked === true) {
+  if (checked) {
     ids.add(itemId)
   } else {
     ids.delete(itemId)
@@ -131,8 +142,8 @@ function togglePaymentItem(itemId: number, checked: boolean | 'indeterminate') {
   store.faturarForm.itemIds = Array.from(ids)
 }
 
-function handlePaymentItemChecked(itemId: number, checked: boolean | 'indeterminate') {
-  togglePaymentItem(itemId, checked)
+function handlePaymentItemChecked(itemId: number, checked: unknown) {
+  togglePaymentItem(itemId, normalizeCheckedValue(checked))
 }
 
 function selectAllPaymentItems() {
@@ -770,7 +781,10 @@ onMounted(loadComandas)
               :key="item.id"
               class="flex cursor-pointer items-center gap-3 border-t border-border px-3 py-2 first:border-t-0"
             >
-              <Checkbox :checked="store.faturarForm.itemIds.includes(item.id)" @update:checked="handlePaymentItemChecked(item.id, $event)" />
+              <Checkbox
+                :model-value="store.faturarForm.itemIds.includes(item.id)"
+                @update:model-value="handlePaymentItemChecked(item.id, $event)"
+              />
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-medium text-foreground">{{ item.nomeSnapshot }}</span>
                 <span class="block text-xs text-muted-foreground">{{ Number(item.quantidade || 0) }} x {{ formatCurrencyBR(Number(item.valorUnitarioSnapshot || 0)) }}</span>
