@@ -49,6 +49,7 @@ export const useUiStore = defineStore('uiStore', () => {
   const canCreateCharge = computed(() => financeiroFlags.value.permitirCriacaoCobranca !== false)
   const appModules = ref<Record<string, boolean>>({})
   const appModulesLoaded = ref(false)
+  const visibleMenuKeys = ref<string[] | null>(null)
   const status = ref(localStorage.getItem('gestao_facil:status') || 'INATIVO')
   const diasParaVencer = ref<number>(
     Number(localStorage.getItem('gestao_facil:diasParaVencer')) || 0,
@@ -224,6 +225,9 @@ export const useUiStore = defineStore('uiStore', () => {
         permitirTransferenciaContaFinanceira: response.data?.permitirTransferenciaContaFinanceira ?? true,
         permitirCriacaoCobranca: response.data?.permitirCriacaoCobranca ?? true,
       }
+      visibleMenuKeys.value = Array.isArray(response.data?.menusVisiveis)
+        ? response.data.menusVisiveis
+        : null
       return financeiroFlags.value
     } catch (error) {
       console.log(error)
@@ -233,6 +237,7 @@ export const useUiStore = defineStore('uiStore', () => {
         permitirTransferenciaContaFinanceira: true,
         permitirCriacaoCobranca: true,
       }
+      visibleMenuKeys.value = null
       return financeiroFlags.value
     }
   }
@@ -284,6 +289,7 @@ export const useUiStore = defineStore('uiStore', () => {
     canCreateCharge,
     appModules,
     appModulesLoaded,
+    visibleMenuKeys,
     getDataUsuario,
     loadFinanceiroFlags,
     diasParaVencer,

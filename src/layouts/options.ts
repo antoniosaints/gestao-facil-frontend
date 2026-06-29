@@ -32,6 +32,44 @@ import {
   Wrench,
 } from 'lucide-vue-next'
 
+export const ROOT_ALWAYS_VISIBLE_MENU_KEYS = ['configuracoes'] as const
+
+export const MAIN_MENU_VISIBILITY_OPTIONS = [
+  { key: 'dashboard', nome: 'Dashboard', descricao: 'Painel inicial do sistema.' },
+  { key: 'vendas', nome: 'Vendas', descricao: 'Painel, vendas e caixas.' },
+  { key: 'comandas', nome: 'Comandas', descricao: 'Comandas operacionais e faturamento parcial.' },
+  { key: 'financeiro', nome: 'Financeiro', descricao: 'Lançamentos, contas e cobranças.' },
+  { key: 'produtos', nome: 'Produtos', descricao: 'Cadastro e painel de produtos.' },
+  { key: 'servicos', nome: 'Serviços', descricao: 'Ordens de serviço e cadastro de serviços.' },
+  { key: 'clientes', nome: 'Clientes', descricao: 'Clientes e fornecedores.' },
+  { key: 'assinaturas', nome: 'Assinaturas', descricao: 'Módulo adicional de assinaturas.' },
+  { key: 'core-ia', nome: 'Core IA', descricao: 'Módulo adicional de inteligência artificial.' },
+  { key: 'whatsapp', nome: 'WhatsApp', descricao: 'Módulo adicional de atendimento.' },
+  { key: 'usuarios', nome: 'Usuários', descricao: 'Administração de usuários.' },
+  { key: 'configuracoes', nome: 'Configurações', descricao: 'Preferências da empresa e do sistema.' },
+  { key: 'changelog', nome: 'Atualizações', descricao: 'Histórico de novidades do sistema.' },
+  { key: 'perfil', nome: 'Perfil', descricao: 'Dados do usuario logado.' },
+  { key: 'loja', nome: 'App Store', descricao: 'Complementos disponíveis para a conta.' },
+] as const
+
+export type MainMenuVisibilityKey = (typeof MAIN_MENU_VISIBILITY_OPTIONS)[number]['key']
+
+export function filterSidebarMenuByVisibility(
+  menu: SidebarMenuType[],
+  visibleMenuKeys: string[] | null | undefined,
+  isRoot = false,
+): SidebarMenuType[] {
+  if (!Array.isArray(visibleMenuKeys)) return menu
+
+  const visibleSet = new Set(visibleMenuKeys)
+  const rootAlwaysVisible = new Set<string>(isRoot ? ROOT_ALWAYS_VISIBLE_MENU_KEYS : [])
+  return menu.filter((item) => {
+    if (item.divisor) return false
+    if (!item.key) return true
+    return visibleSet.has(item.key) || rootAlwaysVisible.has(item.key)
+  })
+}
+
 export const sidebarMenuOptions = (
   permissions: Permissoes,
   appModules: Record<string, boolean> = {},
@@ -46,6 +84,7 @@ export const sidebarMenuOptions = (
 
   return [
     {
+      key: 'dashboard',
       nome: 'Dashboard',
       icone: ChartPie,
       color: 'orange',
@@ -84,6 +123,7 @@ export const sidebarMenuOptions = (
       ],
     },
     {
+      key: 'vendas',
       nome: 'Vendas',
       icone: Tags,
       color: 'green',
@@ -112,6 +152,7 @@ export const sidebarMenuOptions = (
       ],
     },
     {
+      key: 'comandas',
       nome: 'Comandas',
       icone: ClipboardList,
       color: 'cyan',
@@ -119,6 +160,7 @@ export const sidebarMenuOptions = (
       link: '/comandas',
     },
     {
+      key: 'financeiro',
       nome: 'Financeiro',
       icone: CircleDollarSign,
       color: 'emerald',
@@ -171,6 +213,7 @@ export const sidebarMenuOptions = (
       ],
     },
     {
+      key: 'produtos',
       nome: 'Produtos',
       icone: Box,
       color: 'blue',
@@ -197,6 +240,7 @@ export const sidebarMenuOptions = (
       show: false,
     },
     {
+      key: 'servicos',
       nome: 'Serviços',
       icone: FileBox,
       show: permissions.servicos.visualizar,
@@ -222,6 +266,7 @@ export const sidebarMenuOptions = (
       children: [],
     },
     {
+      key: 'clientes',
       nome: 'Clientes',
       icone: UserStar,
       show: permissions.clientes.visualizar,
@@ -234,6 +279,7 @@ export const sidebarMenuOptions = (
       show: hasVisibleAppsSection,
     },
     {
+      key: 'assinaturas',
       nome: 'Assinaturas',
       icone: FileCheck2,
       color: 'violet',
@@ -272,6 +318,7 @@ export const sidebarMenuOptions = (
       ],
     },
     {
+      key: 'core-ia',
       nome: 'Core IA',
       icone: Bot,
       show: permissions.vendas.visualizar && hasCoreIaApp,
@@ -279,6 +326,7 @@ export const sidebarMenuOptions = (
       link: '/chat/ia',
     },
     {
+      key: 'whatsapp',
       nome: 'WhatsApp',
       icone: MessageCircle,
       show: permissions.configuracoes.visualizar && hasWhatsappApp,
@@ -291,6 +339,7 @@ export const sidebarMenuOptions = (
       show: permissions.admin,
     },
     {
+      key: 'usuarios',
       nome: 'Usuários',
       icone: User,
       show: permissions.admin,
@@ -298,6 +347,7 @@ export const sidebarMenuOptions = (
       link: '/administracao/usuarios',
     },
     {
+      key: 'configuracoes',
       nome: 'Configurações',
       icone: Cog,
       show: permissions.configuracoes.visualizar,
@@ -305,6 +355,7 @@ export const sidebarMenuOptions = (
       link: '/configuracoes',
     },
     {
+      key: 'changelog',
       nome: 'Atualizações',
       color: 'blue',
       show: true,
@@ -312,6 +363,7 @@ export const sidebarMenuOptions = (
       link: '/changelog',
     },
     {
+      key: 'perfil',
       nome: 'Perfil',
       color: 'blue',
       icone: User,
@@ -323,6 +375,7 @@ export const sidebarMenuOptions = (
       show: true,
     },
     {
+      key: 'loja',
       nome: 'App Store',
       color: 'blue',
       icone: Store,

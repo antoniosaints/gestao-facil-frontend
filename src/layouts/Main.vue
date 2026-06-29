@@ -14,7 +14,7 @@
             <!-- <TopMenu /> -->
             <div>
                 <NavUserSidebar />
-                <SidebarMenu :menu="sidebarMenuOptions(store.permissoes, store.appModules)" />
+                <SidebarMenu :menu="sidebarMenu" />
             </div>
             <div>
                 <div class="grid grid-cols-12 gap-2 items-center justify-center">
@@ -59,14 +59,14 @@
 import ColorToggle from '@/components/layout/colorToggle.vue'
 import HeaderMenu from '@/components/layout/headerMenu.vue'
 import SidebarMenu from '@/components/layout/sidebarMenu.vue'
-import { sidebarMenuOptions } from './options'
+import { filterSidebarMenuByVisibility, sidebarMenuOptions } from './options'
 import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import InstallPrompt from '@/components/layout/installPrompt.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
 import { PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
 import { getLettersName } from '@/utils/formatters'
@@ -75,6 +75,13 @@ import { env } from '@/utils/dotenv'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 const store = useUiStore()
 const loading = ref(false)
+const sidebarMenu = computed(() => {
+    return filterSidebarMenuByVisibility(
+        sidebarMenuOptions(store.permissoes, store.appModules),
+        store.visibleMenuKeys,
+        store.usuarioLogged.permissao === 'root',
+    )
+})
 window.addEventListener('resize', () => {
     if (window.innerWidth < 768) {
         store.openSidebar = false

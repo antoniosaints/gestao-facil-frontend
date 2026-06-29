@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 
 export type SidebarMenuType = {
+  key?: string
   nome: string
   icone?: string | Component
   show?: boolean
