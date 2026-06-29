@@ -20,6 +20,7 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -67,10 +68,18 @@ const stockDecision = ref<{
 const pageInfo = computed(() => `Pagina ${store.filters.page} de ${totalPages.value}`)
 const hasComandas = computed(() => comandas.value.length > 0)
 const selectedItems = computed(() => store.selectedComanda?.itens || [])
+const selectedOpenItems = computed(() => selectedItems.value.filter((item) => !item.pagamentoId))
+const selectedPaidItems = computed(() => selectedItems.value.filter((item) => item.pagamentoId))
 const selectedCanChange = computed(() => store.selectedComanda?.status === 'ABERTA')
 const selectedCanFaturar = computed(() => store.selectedComanda?.status === 'PENDENTE')
+const selectedCanCancel = computed(() => ['ABERTA', 'PENDENTE'].includes(store.selectedComanda?.status || '') && selectedPaidItems.value.length === 0)
 const selectedHasStockProducts = computed(() =>
   selectedItems.value.some((item) => item.origemTipo === 'PRODUTO' && item.estoqueDebitado),
+)
+const selectedPaymentTotal = computed(() =>
+  selectedOpenItems.value
+    .filter((item) => store.faturarForm.itemIds.includes(item.id))
+    .reduce((acc, item) => acc + getItemTotal(item), 0),
 )
 
 function statusLabel(status: string) {
@@ -101,6 +110,36 @@ function itemTypeLabel(type: string) {
 
 function getItemTotal(item: ComandaOperacaoItem) {
   return Number(item.subtotal || 0)
+}
+
+function getClienteLabel(comanda: ComandaOperacao) {
+  return comanda.clienteNomeSnapshot || 'Sem cliente vinculado'
+}
+
+function hasPaidItems(comanda: ComandaOperacao) {
+  return (comanda.itens || []).some((item) => item.pagamentoId)
+}
+
+function togglePaymentItem(itemId: number, checked: boolean | 'indeterminate') {
+  const ids = new Set(store.faturarForm.itemIds)
+  if (checked === true) {
+    ids.add(itemId)
+  } else {
+    ids.delete(itemId)
+  }
+  store.faturarForm.itemIds = Array.from(ids)
+}
+
+function handlePaymentItemChecked(itemId: number, checked: boolean | 'indeterminate') {
+  togglePaymentItem(itemId, checked)
+}
+
+function selectAllPaymentItems() {
+  store.faturarForm.itemIds = selectedOpenItems.value.map((item) => item.id)
+}
+
+function clearPaymentItems() {
+  store.faturarForm.itemIds = []
 }
 
 async function loadComandas() {
@@ -232,6 +271,10 @@ async function openFaturar(comanda: ComandaOperacao) {
 }
 
 async function submitFaturar() {
+  if (!store.faturarForm.itemIds.length) {
+    toast.warning('Selecione ao menos um item para faturar.')
+    return
+  }
   await store.faturar()
   await loadComandas()
 }
@@ -256,6 +299,11 @@ function askRemoveItem(comandaId: number, item: ComandaOperacaoItem) {
 }
 
 function askCancelComanda(comanda: ComandaOperacao) {
+  if (hasPaidItems(comanda)) {
+    toast.warning('Comanda com itens faturados nao pode ser cancelada por este fluxo.')
+    return
+  }
+
   const hasStockProducts = (comanda.itens || []).some((item) => item.origemTipo === 'PRODUTO' && item.estoqueDebitado)
   if (hasStockProducts) {
     stockDecision.value = {
@@ -313,11 +361,11 @@ onMounted(loadComandas)
           <ClipboardList class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
           Comandas
         </h2>
-        <p class="text-sm text-muted-foreground">Controle operacional de comandas com baixa de estoque e faturamento opcional no financeiro.</p>
+        <p class="text-sm text-muted-foreground">Controle operacional de comandas.</p>
       </div>
 
       <div class="hidden items-center gap-2 md:flex">
-        <Input v-model="store.filters.search" type="search" placeholder="Buscar numero, observacao ou item" class="w-72" @keyup.enter="applySearch" />
+        <Input v-model="store.filters.search" type="search" placeholder="Buscar numero, cliente, observacao ou item" class="w-72" @keyup.enter="applySearch" />
         <Select v-model="store.filters.status">
           <SelectTrigger class="w-[190px]">
             <SelectValue placeholder="Status" />
@@ -409,6 +457,7 @@ onMounted(loadComandas)
           <button type="button" class="text-left" @click="openDetalhes(comanda)">
             <div class="font-semibold text-foreground">#{{ comanda.Uid }}</div>
             <div class="text-xs text-muted-foreground">{{ formatDateToPtBR(comanda.abertura, true) }}</div>
+            <div class="truncate text-xs text-muted-foreground">{{ getClienteLabel(comanda) }}</div>
           </button>
         </div>
 
@@ -418,6 +467,7 @@ onMounted(loadComandas)
 
         <div class="text-sm text-muted-foreground md:col-span-2">
           {{ comanda.itens?.length || 0 }} item(ns)
+          <span v-if="hasPaidItems(comanda)" class="block text-xs text-emerald-600">parcial faturado</span>
         </div>
 
         <div class="font-semibold text-foreground md:col-span-2">
@@ -453,6 +503,11 @@ onMounted(loadComandas)
 
     <ModalView v-model:open="store.openFormModal" title="Nova comanda" description="Inclua pelo menos um item. Produtos debitam o estoque assim que entram na comanda." size="4xl">
       <form class="space-y-4 px-4 pb-2" @submit.prevent="submitCreate">
+        <div>
+          <label class="mb-1 block text-sm font-medium">Cliente</label>
+          <Select2Ajax v-model="store.comandaForm.clienteId" url="/clientes/select2" :allow-clear="true" placeholder="Cliente opcional" />
+        </div>
+
         <div>
           <label class="mb-1 block text-sm font-medium">Observacao</label>
           <Input v-model="store.comandaForm.observacao" placeholder="Mesa, cliente, referencia interna..." />
@@ -527,7 +582,7 @@ onMounted(loadComandas)
 
     <ModalView v-model:open="store.openDetalhesModal" :title="store.selectedComanda ? `Comanda ${store.selectedComanda.Uid}` : 'Comanda'" size="5xl">
       <div v-if="store.selectedComanda" class="space-y-4 px-4 pb-2">
-        <div class="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <div class="grid grid-cols-2 gap-2 md:grid-cols-5">
           <div class="rounded-lg border border-border bg-card p-3">
             <div class="text-xs text-muted-foreground">Status</div>
             <Badge variant="outline" :class="statusClass(store.selectedComanda.status)">{{ statusLabel(store.selectedComanda.status) }}</Badge>
@@ -537,8 +592,13 @@ onMounted(loadComandas)
             <div class="text-sm font-medium">{{ formatDateToPtBR(store.selectedComanda.abertura, true) }}</div>
           </div>
           <div class="rounded-lg border border-border bg-card p-3">
+            <div class="text-xs text-muted-foreground">Cliente</div>
+            <div class="truncate text-sm font-medium">{{ getClienteLabel(store.selectedComanda) }}</div>
+          </div>
+          <div class="rounded-lg border border-border bg-card p-3">
             <div class="text-xs text-muted-foreground">Itens</div>
             <div class="text-sm font-medium">{{ selectedItems.length }}</div>
+            <div class="text-xs text-muted-foreground">{{ selectedPaidItems.length }} faturado(s)</div>
           </div>
           <div class="rounded-lg border border-border bg-card p-3">
             <div class="text-xs text-muted-foreground">Total</div>
@@ -557,7 +617,7 @@ onMounted(loadComandas)
             Faturar
           </Button>
           <Button v-if="store.selectedComanda.status === 'FATURADA'" variant="outline" @click="openComprovante(store.selectedComanda)">Abrir PDF</Button>
-          <Button v-if="['ABERTA', 'PENDENTE'].includes(store.selectedComanda.status)" variant="outline" class="text-danger" @click="askCancelComanda(store.selectedComanda)">
+          <Button v-if="selectedCanCancel" variant="outline" class="text-danger" @click="askCancelComanda(store.selectedComanda)">
             Cancelar
           </Button>
         </div>
@@ -576,13 +636,15 @@ onMounted(loadComandas)
               <div class="text-xs text-muted-foreground">
                 {{ itemTypeLabel(item.origemTipo) }}
                 <span v-if="item.estoqueDebitado"> - estoque debitado</span>
+                <span v-if="item.pagamentoId" class="ml-1 text-emerald-600">- faturado</span>
+                <span v-else-if="store.selectedComanda.status === 'PENDENTE'" class="ml-1 text-amber-600">- em aberto</span>
               </div>
             </div>
             <div class="col-span-2">{{ Number(item.quantidade || 0) }}</div>
             <div class="col-span-2">{{ formatCurrencyBR(Number(item.valorUnitarioSnapshot || 0)) }}</div>
             <div class="col-span-2 font-medium">{{ formatCurrencyBR(getItemTotal(item)) }}</div>
             <div class="col-span-1 text-right">
-              <Button v-if="selectedCanChange" variant="outline" size="sm" @click="askRemoveItem(store.selectedComanda!.id, item)">
+              <Button v-if="selectedCanChange && !item.pagamentoId" variant="outline" size="sm" @click="askRemoveItem(store.selectedComanda!.id, item)">
                 <Trash2 class="h-4 w-4" />
               </Button>
             </div>
@@ -644,8 +706,45 @@ onMounted(loadComandas)
       </form>
     </ModalView>
 
-    <ModalView v-model:open="store.openFaturarModal" title="Faturar comanda" description="Os campos financeiros sao preenchidos pela configuracao padrao, mas podem ser alterados nesta tela." size="lg">
+    <ModalView v-model:open="store.openFaturarModal" title="Faturar comanda" description="Os campos financeiros sao preenchidos pela configuracao padrao, mas podem ser alterados nesta tela." size="xl">
       <form class="grid grid-cols-1 gap-4 px-4 pb-2 md:grid-cols-2" @submit.prevent="submitFaturar">
+        <div class="space-y-3 md:col-span-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div class="text-sm font-medium">Itens para faturar</div>
+              <div class="text-xs text-muted-foreground">Itens ja faturados ficam fora desta selecao.</div>
+            </div>
+            <div class="flex gap-2">
+              <Button type="button" variant="outline" size="sm" @click="selectAllPaymentItems">Todos</Button>
+              <Button type="button" variant="outline" size="sm" @click="clearPaymentItems">Limpar</Button>
+            </div>
+          </div>
+
+          <div class="overflow-hidden rounded-lg border border-border">
+            <div v-if="!selectedOpenItems.length" class="p-3 text-sm text-muted-foreground">
+              Nenhum item em aberto para faturar.
+            </div>
+            <label
+              v-for="item in selectedOpenItems"
+              v-else
+              :key="item.id"
+              class="flex cursor-pointer items-center gap-3 border-t border-border px-3 py-2 first:border-t-0"
+            >
+              <Checkbox :checked="store.faturarForm.itemIds.includes(item.id)" @update:checked="handlePaymentItemChecked(item.id, $event)" />
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-medium text-foreground">{{ item.nomeSnapshot }}</span>
+                <span class="block text-xs text-muted-foreground">{{ Number(item.quantidade || 0) }} x {{ formatCurrencyBR(Number(item.valorUnitarioSnapshot || 0)) }}</span>
+              </span>
+              <span class="text-sm font-semibold text-foreground">{{ formatCurrencyBR(getItemTotal(item)) }}</span>
+            </label>
+          </div>
+
+          <div class="flex justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+            <span class="text-muted-foreground">Total selecionado</span>
+            <span class="font-semibold text-foreground">{{ formatCurrencyBR(selectedPaymentTotal) }}</span>
+          </div>
+        </div>
+
         <div>
           <label class="mb-1 block text-sm font-medium">Pagamento</label>
           <Select v-model="store.faturarForm.metodo">
@@ -682,7 +781,7 @@ onMounted(loadComandas)
         </div>
         <div class="flex justify-end gap-2 md:col-span-2">
           <Button type="button" variant="secondary" @click="store.openFaturarModal = false">Fechar</Button>
-          <Button type="submit">Faturar</Button>
+          <Button type="submit" :disabled="!store.faturarForm.itemIds.length">Faturar selecionados</Button>
         </div>
       </form>
     </ModalView>
@@ -723,7 +822,7 @@ onMounted(loadComandas)
 
     <ModalView v-model:open="searchModalOpen" title="Buscar comandas" size="lg">
       <div class="space-y-3 px-4 pb-2">
-        <Input v-model="store.filters.search" type="search" placeholder="Numero, observacao ou item" @keyup.enter="applySearch" />
+        <Input v-model="store.filters.search" type="search" placeholder="Numero, cliente, observacao ou item" @keyup.enter="applySearch" />
         <Select v-model="store.filters.status">
           <SelectTrigger>
             <SelectValue />

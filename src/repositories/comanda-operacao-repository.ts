@@ -14,6 +14,7 @@ export type DecimalLike = string | number
 export interface ComandaOperacaoItem {
   id: number
   comandaId: number
+  pagamentoId?: number | null
   origemTipo: ComandaOrigemTipo
   origemId: string | null
   nomeSnapshot: string
@@ -38,6 +39,7 @@ export interface ComandaOperacaoPagamento {
   financeiroLancamentoIdSnapshot?: number | null
   contaFinanceiraIdSnapshot?: number | null
   categoriaFinanceiraIdSnapshot?: number | null
+  itens?: ComandaOperacaoItem[]
 }
 
 export interface ComandaOperacaoHistorico {
@@ -53,6 +55,8 @@ export interface ComandaOperacao {
   id: number
   Uid: string
   contaId: number
+  clienteId?: number | null
+  clienteNomeSnapshot?: string | null
   status: ComandaOperacaoStatus
   total: DecimalLike
   abertura: string
@@ -83,6 +87,7 @@ export type ComandaItemPayload = {
 }
 
 export type CreateComandaPayload = {
+  clienteId?: number | null
   observacao?: string | null
   itens: ComandaItemPayload[]
 }
@@ -90,6 +95,7 @@ export type CreateComandaPayload = {
 export type FaturarComandaPayload = {
   metodo: ComandaPagamentoMetodo
   dataPagamento: string
+  itemIds?: number[]
   lancarFinanceiro: boolean
   contaFinanceiraId?: number | null
   categoriaFinanceiraId?: number | null

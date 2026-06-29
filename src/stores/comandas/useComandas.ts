@@ -24,6 +24,7 @@ export type ComandaItemForm = {
 }
 
 export type ComandaForm = {
+  clienteId: number | null
   observacao: string
   itens: ComandaItemForm[]
 }
@@ -31,6 +32,7 @@ export type ComandaForm = {
 export type FaturarComandaForm = {
   metodo: ComandaPagamentoMetodo
   dataPagamento: string
+  itemIds: number[]
   lancarFinanceiro: boolean
   contaFinanceiraId: number | null
   categoriaFinanceiraId: number | null
@@ -60,18 +62,20 @@ export function getDefaultItemForm(overrides?: Partial<ComandaItemForm>): Comand
 
 export function getDefaultComandaForm(): ComandaForm {
   return {
+    clienteId: null,
     observacao: '',
     itens: [getDefaultItemForm()],
   }
 }
 
-export function getDefaultFaturarForm(config?: ComandaConfiguracao | null): FaturarComandaForm {
+export function getDefaultFaturarForm(config?: ComandaConfiguracao | null, itemIds: number[] = []): FaturarComandaForm {
   const contaFinanceiraId = config?.contaFinanceiraIdPadrao ?? null
   const categoriaFinanceiraId = config?.categoriaFinanceiraIdPadrao ?? null
 
   return {
     metodo: 'DINHEIRO',
     dataPagamento: getTodayInputValue(),
+    itemIds,
     lancarFinanceiro: Boolean(contaFinanceiraId && categoriaFinanceiraId),
     contaFinanceiraId,
     categoriaFinanceiraId,
@@ -146,8 +150,12 @@ export const useComandasStore = defineStore('comandasStore', () => {
     itemForm.value = getDefaultItemForm(overrides)
   }
 
-  function resetFaturarForm(config?: ComandaConfiguracao | null) {
-    faturarForm.value = getDefaultFaturarForm(config)
+  function getItensAbertos(comanda?: ComandaOperacao | null) {
+    return (comanda?.itens || []).filter((item) => !item.pagamentoId)
+  }
+
+  function resetFaturarForm(config?: ComandaConfiguracao | null, itemIds: number[] = []) {
+    faturarForm.value = getDefaultFaturarForm(config, itemIds)
   }
 
   function hydrateConfiguracao(config?: ComandaConfiguracao | null) {
@@ -218,7 +226,10 @@ export const useComandasStore = defineStore('comandasStore', () => {
         await loadDetalhes(id)
       }
       const config = await loadConfiguracao()
-      resetFaturarForm(config)
+      resetFaturarForm(
+        config,
+        getItensAbertos(selectedComanda.value).map((item) => item.id),
+      )
       openFaturarModal.value = true
     } catch (error) {
       console.log(error)
@@ -239,6 +250,7 @@ export const useComandasStore = defineStore('comandasStore', () => {
   async function createComanda() {
     try {
       const payload: CreateComandaPayload = {
+        clienteId: comandaForm.value.clienteId || null,
         observacao: comandaForm.value.observacao || null,
         itens: comandaForm.value.itens.map((item) => normalizeComandaItemForm(item)),
       }
@@ -325,7 +337,10 @@ export const useComandasStore = defineStore('comandasStore', () => {
     if (!selectedComanda.value?.id) throw new Error('Selecione uma comanda.')
 
     try {
-      const payload: FaturarComandaPayload = { ...faturarForm.value }
+      const payload: FaturarComandaPayload = {
+        ...faturarForm.value,
+        itemIds: [...faturarForm.value.itemIds],
+      }
       const response = await ComandaOperacaoRepository.faturar(selectedComanda.value.id, payload)
       selectedComanda.value = response.data
       openFaturarModal.value = false
@@ -383,6 +398,7 @@ export const useComandasStore = defineStore('comandasStore', () => {
     resetComandaForm,
     resetItemForm,
     resetFaturarForm,
+    getItensAbertos,
     hydrateConfiguracao,
     loadDetalhes,
     reloadDetalhes,
