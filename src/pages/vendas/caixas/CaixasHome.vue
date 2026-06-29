@@ -11,13 +11,17 @@ import {
   FileDown,
   Filter,
   HandCoins,
+  ReceiptText,
   RefreshCw,
+  ShoppingCart,
   Trash2,
   TrendingUp,
+  UserRound,
 } from 'lucide-vue-next'
 import BarChart from '@/components/graficos/BarChart.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
+import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue'
 import PieChart from '@/components/graficos/PieChart.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,12 +33,14 @@ import {
   type CaixaRelatorioParams,
 } from '@/repositories/caixa-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
+import { useVendasStore } from '@/stores/vendas/useVenda'
 import type { CaixaRelatorioResponse } from '@/types/schemas'
 import { formatCurrencyBR } from '@/utils/formatters'
 
 const toast = useToast()
 const confirm = useConfirm()
 const storeUi = useUiStore()
+const vendasStore = useVendasStore()
 const loading = ref(false)
 const openModalFiltros = ref(false)
 const openModalDetalhes = ref(false)
@@ -171,6 +177,14 @@ function getPaymentMethodLabel(method?: string | null) {
 function abrirDetalhes(caixa: CaixaRelatorioResponse['caixas'][number]) {
   caixaSelecionado.value = caixa
   openModalDetalhes.value = true
+}
+
+function abrirDetalhesVenda(vendaId?: number | null) {
+  if (!vendaId) {
+    toast.error('Movimento sem venda vinculada')
+    return
+  }
+  vendasStore.openDetalhes(vendaId)
 }
 
 async function exportarPdf(caixaId: number) {
@@ -413,17 +427,34 @@ onMounted(() => {
       </div>
     </ModalView>
 
-    <ModalView v-model:open="openModalDetalhes" title="Detalhes do caixa" size="3xl">
+    <ModalView v-model:open="openModalDetalhes" title="Detalhes do caixa" size="5xl">
       <div v-if="caixaSelecionado" class="grid gap-4 p-4">
-        <div class="flex justify-end">
-          <Button
-            variant="outline"
-            :disabled="exportingPdfId === caixaSelecionado.caixa.id"
-            @click="exportarPdf(caixaSelecionado.caixa.id)"
-          >
-            <FileDown class="h-4 w-4" /> Exportar PDF
-          </Button>
+        <div class="rounded-md border bg-background p-4">
+          <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-lg font-semibold">{{ caixaSelecionado.caixa.codigo }}</h3>
+                <Badge variant="outline">{{ caixaSelecionado.caixa.status }}</Badge>
+              </div>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Aberto em {{ new Date(caixaSelecionado.caixa.abertoEm).toLocaleString('pt-BR') }}
+                por {{ caixaSelecionado.caixa.abertoPor?.nome || '-' }}
+              </p>
+              <p v-if="caixaSelecionado.caixa.fechadoEm" class="text-sm text-muted-foreground">
+                Fechado em {{ new Date(caixaSelecionado.caixa.fechadoEm).toLocaleString('pt-BR') }}
+                por {{ caixaSelecionado.caixa.fechadoPor?.nome || '-' }}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              :disabled="exportingPdfId === caixaSelecionado.caixa.id"
+              @click="exportarPdf(caixaSelecionado.caixa.id)"
+            >
+              <FileDown class="h-4 w-4" /> Exportar PDF
+            </Button>
+          </div>
         </div>
+
         <section class="grid grid-cols-2 gap-3 md:grid-cols-4">
           <div class="rounded-md border bg-card p-3">
             <p class="text-xs text-muted-foreground">Vendido</p>
@@ -443,6 +474,30 @@ onMounted(() => {
           </div>
         </section>
 
+        <section class="grid gap-3 md:grid-cols-3">
+          <div class="rounded-md border bg-card p-3">
+            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+              <ShoppingCart class="h-4 w-4" />
+              Vendas vinculadas
+            </div>
+            <p class="mt-1 text-lg font-semibold">{{ caixaSelecionado.resumo.totalVendas }}</p>
+          </div>
+          <div class="rounded-md border bg-card p-3">
+            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+              <UserRound class="h-4 w-4" />
+              Operadores
+            </div>
+            <p class="mt-1 text-lg font-semibold">{{ caixaSelecionado.caixa.operadores?.length || 1 }}</p>
+          </div>
+          <div class="rounded-md border bg-card p-3">
+            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+              <ReceiptText class="h-4 w-4" />
+              Movimentos
+            </div>
+            <p class="mt-1 text-lg font-semibold">{{ caixaSelecionado.movimentos.length }}</p>
+          </div>
+        </section>
+
         <section class="rounded-md border bg-card p-3">
           <h3 class="mb-2 text-sm font-semibold">Por metodo de pagamento</h3>
           <div class="grid gap-2 md:grid-cols-2">
@@ -451,6 +506,45 @@ onMounted(() => {
               <span>{{ metodo }}</span>
               <strong>{{ formatCurrencyBR(valor) }}</strong>
             </div>
+          </div>
+        </section>
+
+        <section class="rounded-md border bg-card p-3">
+          <div class="mb-2 flex items-center justify-between">
+            <h3 class="text-sm font-semibold">Vendas vinculadas</h3>
+            <span class="text-xs text-muted-foreground">{{ caixaSelecionado.vendas.length }} registro(s)</span>
+          </div>
+          <div v-if="!caixaSelecionado.vendas.length" class="py-6 text-center text-sm text-muted-foreground">
+            Nenhuma venda vinculada a este caixa.
+          </div>
+          <div v-else class="max-h-72 overflow-auto">
+            <table class="w-full min-w-[760px] text-sm">
+              <thead class="border-b text-left text-xs text-muted-foreground">
+                <tr>
+                  <th class="py-2">Venda</th>
+                  <th class="py-2">Data</th>
+                  <th class="py-2">Status</th>
+                  <th class="py-2">Pagamento</th>
+                  <th class="py-2 text-right">Valor</th>
+                  <th class="py-2 text-right">Acoes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="venda in caixaSelecionado.vendas" :key="venda.id" class="border-b last:border-b-0">
+                  <td class="py-2 font-medium">{{ venda.Uid || `#${venda.id}` }}</td>
+                  <td class="py-2">{{ new Date(venda.data).toLocaleString('pt-BR') }}</td>
+                  <td class="py-2"><Badge variant="outline">{{ venda.status }}</Badge></td>
+                  <td class="py-2">{{ getPaymentMethodLabel(venda.PagamentoVendas?.metodo) }}</td>
+                  <td class="py-2 text-right">{{ formatCurrencyBR(venda.valor || 0) }}</td>
+                  <td class="py-2 text-right">
+                    <Button type="button" variant="outline" size="sm" @click="abrirDetalhesVenda(venda.id)">
+                      <Eye class="h-4 w-4" />
+                      Detalhes
+                    </Button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 
@@ -465,6 +559,7 @@ onMounted(() => {
                   <th class="py-2">Metodo</th>
                   <th class="py-2">Descricao</th>
                   <th class="py-2 text-right">Valor</th>
+                  <th class="py-2 text-right">Venda</th>
                 </tr>
               </thead>
               <tbody>
@@ -474,6 +569,18 @@ onMounted(() => {
                   <td class="py-2">{{ getPaymentMethodLabel(movimento.metodoPagamento) }}</td>
                   <td class="py-2">{{ movimento.descricao || '-' }}</td>
                   <td class="py-2 text-right">{{ formatCurrencyBR(movimento.valor || 0) }}</td>
+                  <td class="py-2 text-right">
+                    <Button
+                      v-if="movimento.vendaId"
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      @click="abrirDetalhesVenda(movimento.vendaId)"
+                    >
+                      <Eye class="h-4 w-4" />
+                    </Button>
+                    <span v-else class="text-xs text-muted-foreground">-</span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -481,5 +588,6 @@ onMounted(() => {
         </section>
       </div>
     </ModalView>
+    <DetalhesVenda />
   </div>
 </template>

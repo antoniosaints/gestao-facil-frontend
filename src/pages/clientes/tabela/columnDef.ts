@@ -5,6 +5,7 @@ import type { ColumnDef } from '@tanstack/vue-table'
 import { ArrowUpDown, Ban, Building, CircleCheck, UserSearch } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from '@/pages/clientes/tabela/Actions.vue'
+import router from '@/router'
 
 export const columnsClientes: ColumnDef<ClientesFornecedores>[] = [
   {
@@ -13,12 +14,22 @@ export const columnsClientes: ColumnDef<ClientesFornecedores>[] = [
     header: () => render('div', { class: 'ml-2 h-4 w-4' }, 'ID'),
     cell: ({ row }) => {
       const tipo = row.original.tipo == 'CLIENTE' ? UserSearch : Building
-      return render(BadgeCell, {
-        label: row.getValue('Uid') as string,
-        color: 'gray',
-        icon: tipo,
-        capitalize: false,
-      })
+      return render(
+        'button',
+        {
+          class: 'inline-flex cursor-pointer transition hover:opacity-80',
+          title: 'Abrir detalhes do cliente',
+          onClick: () => router.push({ name: 'clientes-detalhes', params: { id: row.original.id } }),
+        },
+        [
+          render(BadgeCell, {
+            label: row.getValue('Uid') as string,
+            color: 'gray',
+            icon: tipo,
+            capitalize: false,
+          }),
+        ],
+      )
     },
   },
   {

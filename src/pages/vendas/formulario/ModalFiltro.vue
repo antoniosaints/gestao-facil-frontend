@@ -16,6 +16,7 @@ const clienteId = ref<string | number | null>(null)
 const produtoId = ref<string | number | null>(null)
 const servicoId = ref<string | number | null>(null)
 const vendedorId = ref<string | number | null>(null)
+const caixaId = ref<string | number | null>(null)
 const desconto = ref<string | number | null>(null)
 
 function parseDate(value?: string | null) {
@@ -34,6 +35,7 @@ function syncFromStore() {
   produtoId.value = store.filters.produtoId || null
   servicoId.value = store.filters.servicoId || null
   vendedorId.value = store.filters.vendedorId || null
+  caixaId.value = store.filters.caixaId || null
   desconto.value = store.filters.desconto || null
 }
 
@@ -64,6 +66,7 @@ function aplicarFiltro() {
   store.filters.produtoId = produtoId.value ? Number(produtoId.value) : null
   store.filters.servicoId = servicoId.value ? Number(servicoId.value) : null
   store.filters.vendedorId = vendedorId.value ? Number(vendedorId.value) : null
+  store.filters.caixaId = caixaId.value ? Number(caixaId.value) : null
   store.filters.desconto = (desconto.value as string) || ''
   store.updateTable()
   open.value = false
@@ -76,6 +79,7 @@ function limparFiltro() {
   produtoId.value = null
   servicoId.value = null
   vendedorId.value = null
+  caixaId.value = null
   desconto.value = null
 
   store.filters.periodo = { inicio: null, fim: null }
@@ -84,6 +88,7 @@ function limparFiltro() {
   store.filters.produtoId = null
   store.filters.servicoId = null
   store.filters.vendedorId = null
+  store.filters.caixaId = null
   store.filters.desconto = ''
   store.updateTable()
   open.value = false
@@ -134,6 +139,18 @@ function limparFiltro() {
             class="w-full"
             url="/usuarios/select2"
             placeholder="Selecione o vendedor"
+            allow-clear
+          />
+        </div>
+
+        <div class="md:col-span-6">
+          <label class="mb-1 block text-sm">Caixa</label>
+          <Select2Ajax
+            v-model="caixaId"
+            class="w-full"
+            url="/vendas/filtros/select2"
+            :params="[{ key: 'kind', value: 'caixa' }]"
+            placeholder="Selecione o caixa"
             allow-clear
           />
         </div>

@@ -291,7 +291,7 @@
             </div>
         </div>
         <ModalView v-model:open="openModalVendaFinalizada" title="Comprovante da venda"
-            description="Ticket da venda pronto para imprimir, baixar ou enviar." size="md">
+            description="Ticket da venda pronto para imprimir, baixar ou enviar." size="lg">
             <div class="p-4 space-y-4">
                 
                 <div class="mx-auto w-full rounded-3xl border border-dashed border-border bg-card px-6 py-5 shadow-sm">
@@ -367,11 +367,11 @@
                     </div>
                 </div>
 
-                <Card class="border-border/70 shadow-sm rounded-3xl">
-                    <CardHeader class="pb-3">
+                <Card class="border-border/70 shadow-sm rounded-xl">
+                    <CardHeader class="py-2 -mb-2">
                         <CardTitle class="text-base">Destino do envio</CardTitle>
                     </CardHeader>
-                    <CardContent class="space-y-3">
+                    <CardContent class="space-y-1 px-6 py-3">
                         <div class="grid grid-cols-7 gap-2">
                             <Select2Ajax class="col-span-6" placeholder="Selecione o cliente" :url="'/clientes/select2'"
                                 v-model:model-value="clienteEnvio" :allowClear="true" />
@@ -452,7 +452,8 @@
                     </button>
 
                     <button type="button" @click="enviarComprovanteViaApi"
-                        class="rounded-xl border border-dashed border-border bg-card p-4 text-left transition hover:bg-muted/30">
+                        class="rounded-xl border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-muted/30"
+                        :disabled="!numeroPreview || sendingCupomWhatsapp">
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <div class="font-medium text-foreground flex items-center gap-2">
@@ -460,10 +461,10 @@
                                     Enviar via API
                                 </div>
                                 <p class="mt-1 text-xs text-muted-foreground">
-                                    Integração futura para envio automatizado direto pela aplicação.
+                                    Envia o comprovante direto pela instancia principal configurada.
                                 </p>
                             </div>
-                            <BadgeCell label="Em desenvolvimento" color="orange" :icon="Clock3"
+                            <BadgeCell :label="sendingCupomWhatsapp ? 'Enviando' : 'Disponivel'" color="green" :icon="Send"
                                 :capitalize="false" size="sm" />
                         </div>
                     </button>
@@ -668,7 +669,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import BadgeCell from '@/components/tabela/BadgeCell.vue';
-import { CirclePercent, Clock3, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Plus, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
+import { CirclePercent, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Plus, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import type { ProdutoVariante } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
@@ -687,6 +688,7 @@ const openModalVendaFinalizada = ref(false)
 const openModalEnvioComprovante = ref(false)
 const printingCupom = ref(false)
 const downloadingCupom = ref(false)
+const sendingCupomWhatsapp = ref(false)
 const vendaRecibo = ref<{
     id: number
     uid?: string | null
@@ -1074,8 +1076,30 @@ function enviarComprovanteViaLink() {
     toast.success('Link de envio aberto com sucesso!')
 }
 
-function enviarComprovanteViaApi() {
-    toast.info('Envio via API em desenvolvimento.')
+async function enviarComprovanteViaApi() {
+    if (!vendaRecibo.value?.id) {
+        toast.error('Nenhum comprovante disponivel para envio')
+        return
+    }
+    if (!clienteEnvio.value) {
+        toast.error('Selecione um cliente para enviar o comprovante')
+        return
+    }
+
+    try {
+        sendingCupomWhatsapp.value = true
+        await ClienteRepository.enviarWhatsapp(Number(clienteEnvio.value), {
+            tipo: 'COMPROVANTE_VENDA',
+            vendaId: vendaRecibo.value.id,
+        })
+        toast.success('Comprovante enviado pelo WhatsApp')
+        openModalEnvioComprovante.value = false
+    } catch (error: any) {
+        console.log(error)
+        toast.error(error?.response?.data?.message || 'Erro ao enviar comprovante pelo WhatsApp')
+    } finally {
+        sendingCupomWhatsapp.value = false
+    }
 }
 
 // ---- Venda ----

@@ -183,6 +183,7 @@ function renderListaVendas(page: number = 1) {
             produtoId: store.filters.produtoId || undefined,
             servicoId: store.filters.servicoId || undefined,
             vendedorId: store.filters.vendedorId || undefined,
+            caixaId: store.filters.caixaId || undefined,
             desconto: store.filters.desconto || undefined,
             periodo: store.filters.periodo,
         }

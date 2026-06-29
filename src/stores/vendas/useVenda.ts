@@ -17,6 +17,7 @@ interface filtroVendas {
   produtoId: number | null
   servicoId: number | null
   vendedorId: number | null
+  caixaId: number | null
   desconto: string
   update: boolean
 }
@@ -89,6 +90,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
     produtoId: null,
     servicoId: null,
     vendedorId: null,
+    caixaId: null,
     desconto: '',
     update: false,
   })
