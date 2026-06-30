@@ -10,6 +10,7 @@ import {
   ClockAlert,
   FlagTriangleRight,
   Loader,
+  MessageCircle,
   Tag,
   TrendingDown,
   TrendingUp,
@@ -141,7 +142,12 @@ export const columnsLancamentos: ColumnDef<
         () => ['Descrição', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render('div', { class: 'min-w-0 p-1 px-2' }, [
+      render('div', { class: 'min-w-0 p-1 px-2 flex items-center gap-2' }, [
+        row.original.notificarVencimento
+          ? render('div', { class: 'flex flex-wrap items-center gap-2' }, [
+              render('i', { class: 'fa-solid fa-bell text-yellow-600' }),
+            ])
+          : null,
         render(
           'div',
           {
@@ -160,7 +166,11 @@ export const columnsLancamentos: ColumnDef<
                 capitalize: false,
                 size: 'sm',
               }),
-              render('span', { class: 'text-xs text-muted-foreground truncate max-w-[260px]' }, row.original.assinaturaPagar.nomeServico),
+              render(
+                'span',
+                { class: 'text-xs text-muted-foreground truncate max-w-[260px]' },
+                row.original.assinaturaPagar.nomeServico,
+              ),
             ])
           : null,
       ]),
