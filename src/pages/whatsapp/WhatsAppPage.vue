@@ -297,15 +297,31 @@
                     Desconectar
                   </Button>
                 </div>
-                <div v-if="instanceActionResult[instance.id]" class="overflow-hidden rounded-lg border bg-muted/30">
-                  <div class="flex items-center justify-between border-b px-3 py-2 text-xs text-muted-foreground">
-                    <span>{{ instanceActionSummary[instance.id] || 'Último retorno da W-API' }}</span>
-                    <Button variant="ghost" size="sm" class="h-7 px-2" @click="copyToClipboard(instanceActionResult[instance.id], 'Retorno copiado.')">
-                      <Copy class="mr-1 h-3.5 w-3.5" />
-                      Copiar
+                <div
+                  v-if="instanceActionResult[instance.id]"
+                  class="overflow-hidden rounded-lg border bg-background"
+                  :class="instanceActionCardClass(instance.id)"
+                >
+                  <div class="flex items-start justify-between gap-3 p-3">
+                    <div class="flex min-w-0 gap-3">
+                      <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full" :class="instanceActionIconClass(instance.id)">
+                        <CheckCircle2 v-if="instanceActionTone[instance.id] === 'success'" class="h-4 w-4" />
+                        <WifiOff v-else-if="instanceActionTone[instance.id] === 'warning'" class="h-4 w-4" />
+                        <AlertTriangle v-else-if="instanceActionTone[instance.id] === 'danger'" class="h-4 w-4" />
+                        <Wifi v-else class="h-4 w-4" />
+                      </span>
+                      <div class="min-w-0">
+                        <p class="text-sm font-medium">{{ instanceActionSummary[instance.id] || 'Retorno recebido da W-API' }}</p>
+                        <p v-if="instanceActionDetail[instance.id]" class="mt-1 text-xs text-muted-foreground">
+                          {{ instanceActionDetail[instance.id] }}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" class="h-8 w-8 shrink-0" title="Ver JSON" @click="openRawResultModal(instance)">
+                      <Terminal class="h-4 w-4" />
                     </Button>
                   </div>
-                  <div v-if="instanceQrCodeImage[instance.id]" class="grid gap-3 border-b p-3 md:grid-cols-[180px_1fr]">
+                  <div v-if="instanceQrCodeImage[instance.id]" class="grid gap-3 border-t p-3 md:grid-cols-[180px_1fr]">
                     <div class="flex h-[180px] items-center justify-center rounded-lg border bg-white p-2">
                       <img
                         :src="instanceQrCodeImage[instance.id]"
@@ -324,7 +340,6 @@
                       </Button>
                     </div>
                   </div>
-                  <pre class="max-h-72 overflow-auto bg-slate-950 p-3 text-xs text-slate-50">{{ instanceActionResult[instance.id] }}</pre>
                 </div>
               </div>
             </CardContent>
@@ -602,6 +617,25 @@
       </DialogContent>
     </Dialog>
 
+    <Dialog v-model:open="rawResultModalOpen">
+      <DialogContent class="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{{ rawResultTitle }}</DialogTitle>
+          <DialogDescription>Retorno tecnico completo da W-API para suporte e conferencia.</DialogDescription>
+        </DialogHeader>
+        <div class="overflow-hidden rounded-lg border bg-slate-950">
+          <div class="flex items-center justify-between border-b border-slate-800 px-3 py-2 text-xs text-slate-300">
+            <span>JSON</span>
+            <Button variant="ghost" size="sm" class="h-7 px-2 text-slate-100 hover:text-slate-950" @click="copyToClipboard(rawResultBody, 'Retorno copiado.')">
+              <Copy class="mr-1 h-3.5 w-3.5" />
+              Copiar
+            </Button>
+          </div>
+          <pre class="max-h-[60vh] overflow-auto p-3 text-xs text-slate-50">{{ rawResultBody }}</pre>
+        </div>
+      </DialogContent>
+    </Dialog>
+
     <MobileBottomBar>
       <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="refreshAll">
         <RotateCw class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
@@ -655,6 +689,7 @@ import {
   Search,
   Send,
   Smartphone,
+  Terminal,
   Trash2,
   Webhook,
   Wifi,
@@ -704,8 +739,13 @@ const customerSearch = ref('')
 const customerOptions = ref<Array<{ id: number; label: string }>>([])
 const instanceActionResult = reactive<Record<number, string>>({})
 const instanceActionSummary = reactive<Record<number, string>>({})
+const instanceActionDetail = reactive<Record<number, string>>({})
+const instanceActionTone = reactive<Record<number, 'success' | 'warning' | 'danger' | 'info'>>({})
 const instanceActionLoading = reactive<Record<string, boolean>>({})
 const instanceQrCodeImage = reactive<Record<number, string>>({})
+const rawResultModalOpen = ref(false)
+const rawResultTitle = ref('Retorno da W-API')
+const rawResultBody = ref('')
 
 const webhookModalOpen = ref(false)
 const loadingWebhookConfig = ref(false)
@@ -1036,6 +1076,9 @@ const actionLabels: Record<string, string> = {
   setupWebhooks: 'Webhooks',
 }
 
+type InstanceActionTone = 'success' | 'warning' | 'danger' | 'info'
+type InstanceActionName = Parameters<typeof WhatsAppRepository.instanceAction>[1]
+
 function actionKey(instanceId: number, action: string) {
   return `${instanceId}:${action}`
 }
@@ -1054,6 +1097,121 @@ function stringifyResult(value: unknown) {
   } catch {
     return String(value)
   }
+}
+
+function firstBoolean(values: unknown[]) {
+  return values.find((value): value is boolean => typeof value === 'boolean')
+}
+
+function connectionFlagFromResult(value: any) {
+  return firstBoolean([
+    value?.connected,
+    value?.result?.connected,
+    value?.data?.connected,
+    value?.instance?.connected,
+    value?.connection?.connected,
+  ])
+}
+
+function statusFromActionResult(value: any) {
+  return value?.instance?.status || value?.status || value?.data?.status || value?.result?.status
+}
+
+function buildInstanceActionFeedback(action: InstanceActionName, result: any, hasQrCode: boolean) {
+  if (hasQrCode) {
+    return {
+      tone: 'info' as InstanceActionTone,
+      summary: 'QR Code gerado para conexao.',
+      detail: 'Leia o codigo no WhatsApp pelo menu de aparelhos conectados.',
+    }
+  }
+
+  if (action === 'disconnect') {
+    return {
+      tone: 'warning' as InstanceActionTone,
+      summary: 'Instancia desconectada.',
+      detail: 'A instancia nao enviara mensagens ate ser conectada novamente.',
+    }
+  }
+
+  if (action === 'restart') {
+    return {
+      tone: 'info' as InstanceActionTone,
+      summary: 'Reinicio enviado para a W-API.',
+      detail: 'Aguarde alguns instantes e consulte o status novamente.',
+    }
+  }
+
+  if (action === 'device') {
+    return {
+      tone: 'success' as InstanceActionTone,
+      summary: 'Dados do aparelho sincronizados.',
+      detail: 'As informacoes tecnicas da instancia foram atualizadas.',
+    }
+  }
+
+  const connected = connectionFlagFromResult(result)
+  const status = statusFromActionResult(result)
+
+  if (connected === true || status === 'CONECTADA') {
+    return {
+      tone: 'success' as InstanceActionTone,
+      summary: 'Instancia conectada.',
+      detail: 'A sessao esta pronta para enviar e receber mensagens.',
+    }
+  }
+
+  if (connected === false || status === 'DESCONECTADA') {
+    return {
+      tone: 'warning' as InstanceActionTone,
+      summary: 'Instancia desconectada.',
+      detail: 'Use o QR Code para reconectar antes de iniciar atendimentos.',
+    }
+  }
+
+  if (status === 'ERRO') {
+    return {
+      tone: 'danger' as InstanceActionTone,
+      summary: 'A W-API retornou erro para a instancia.',
+      detail: 'Abra o JSON tecnico se precisar conferir o detalhe do provedor.',
+    }
+  }
+
+  if (status === 'CONECTANDO' || status === 'PENDENTE') {
+    return {
+      tone: 'info' as InstanceActionTone,
+      summary: 'Instancia aguardando conexao.',
+      detail: 'A sessao ainda nao foi confirmada como conectada pela W-API.',
+    }
+  }
+
+  return {
+    tone: 'success' as InstanceActionTone,
+    summary: `${actionLabels[action] || 'Acao'} executada com sucesso.`,
+    detail: 'Retorno recebido e sincronizado com o ERP.',
+  }
+}
+
+function instanceActionCardClass(instanceId: number) {
+  const tone = instanceActionTone[instanceId]
+  if (tone === 'success') return 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20'
+  if (tone === 'warning') return 'border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20'
+  if (tone === 'danger') return 'border-destructive/40 bg-destructive/5'
+  return 'border-sky-200 bg-sky-50/50 dark:border-sky-900 dark:bg-sky-950/20'
+}
+
+function instanceActionIconClass(instanceId: number) {
+  const tone = instanceActionTone[instanceId]
+  if (tone === 'success') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200'
+  if (tone === 'warning') return 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200'
+  if (tone === 'danger') return 'bg-destructive/10 text-destructive'
+  return 'bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-200'
+}
+
+function openRawResultModal(instance: WhatsAppInstance) {
+  rawResultTitle.value = `Retorno tecnico - ${instance.nome}`
+  rawResultBody.value = instanceActionResult[instance.id] || ''
+  rawResultModalOpen.value = true
 }
 
 async function copyToClipboard(value: string, message: string) {
@@ -1102,6 +1260,10 @@ async function confirmWebhooks() {
     instanceActionSummary[webhookInstance.value.id] = result.success
       ? 'Webhooks sincronizados com sucesso.'
       : 'Webhooks sincronizados parcialmente; revise os itens abaixo.'
+    instanceActionDetail[webhookInstance.value.id] = result.success
+      ? 'Todos os eventos configurados foram aceitos pela W-API.'
+      : 'Abra o JSON tecnico para conferir quais eventos precisam de ajuste.'
+    instanceActionTone[webhookInstance.value.id] = result.success ? 'success' : 'warning'
     if (result.success) toast.success('Webhooks enviados para a W-API.')
     else toast.warning('Alguns webhooks não foram aceitos pela W-API.')
     await loadInstances()
@@ -1113,26 +1275,33 @@ async function confirmWebhooks() {
   }
 }
 
-async function runInstanceAction(instance: WhatsAppInstance, action: Parameters<typeof WhatsAppRepository.instanceAction>[1]) {
+async function runInstanceAction(instance: WhatsAppInstance, action: InstanceActionName) {
   const key = actionKey(instance.id, action)
   try {
     instanceActionLoading[key] = true
     instanceQrCodeImage[instance.id] = ''
-    instanceActionSummary[instance.id] = `${actionLabels[action] || 'Ação'} em andamento...`
+    instanceActionTone[instance.id] = 'info'
+    instanceActionSummary[instance.id] = `${actionLabels[action] || 'Acao'} em andamento...`
+    instanceActionDetail[instance.id] = 'Consultando a W-API e sincronizando o ERP.'
     instanceActionResult[instance.id] = 'Aguardando resposta da W-API...'
     const result = await WhatsAppRepository.instanceAction(instance.id, action)
     const qrCodeImage = action === 'qrCode' ? extractQrCodeImage(result) : ''
+    const feedback = buildInstanceActionFeedback(action, result, Boolean(qrCodeImage))
     instanceActionResult[instance.id] = stringifyResult(result)
     instanceQrCodeImage[instance.id] = qrCodeImage
-    instanceActionSummary[instance.id] = qrCodeImage
-      ? 'QR Code gerado. Leia pelo WhatsApp para conectar.'
-      : `${actionLabels[action] || 'Ação'} executado com sucesso.`
-    toast.success(qrCodeImage ? 'QR Code gerado para leitura.' : `${actionLabels[action] || 'Ação'} executado.`)
+    instanceActionTone[instance.id] = feedback.tone
+    instanceActionSummary[instance.id] = feedback.summary
+    instanceActionDetail[instance.id] = feedback.detail
+    if (feedback.tone === 'warning') toast.warning(feedback.summary)
+    else if (feedback.tone === 'danger') toast.error(feedback.summary)
+    else toast.success(feedback.summary)
     await loadInstances()
   } catch (error: any) {
     console.error(error)
     const message = error?.response?.data?.message || 'Erro ao executar ação da instância.'
-    instanceActionSummary[instance.id] = `${actionLabels[action] || 'Ação'} falhou.`
+    instanceActionTone[instance.id] = 'danger'
+    instanceActionSummary[instance.id] = `${actionLabels[action] || 'Acao'} falhou.`
+    instanceActionDetail[instance.id] = 'Nao foi possivel concluir a consulta na W-API.'
     instanceActionResult[instance.id] = message
     instanceQrCodeImage[instance.id] = ''
     toast.error(message)

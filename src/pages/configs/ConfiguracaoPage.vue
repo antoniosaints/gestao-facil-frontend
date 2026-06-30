@@ -106,7 +106,7 @@
                                             class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer"
                                             :class="!whatsappInstances.length ? 'opacity-70' : ''">
                                             <span>Notificações por WhatsApp
-                                                <p class="text-xs text-muted-foreground">Usa fila BullMQ/Redis e envia para admin, gerente e root.</p>
+                                                <p class="text-xs text-muted-foreground">Usa a api do WhatsApp W-API para envio de notificações para admins.</p>
                                             </span>
                                             <Switch id="whatsappNotificacoesAtivo"
                                                 v-model="formularioNotificacoes.whatsappNotificacoesAtivo"
