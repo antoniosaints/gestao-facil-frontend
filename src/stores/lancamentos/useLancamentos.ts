@@ -37,6 +37,7 @@ function createDefaultForm(
       | 'periodoParcelamento'
       | 'intervaloDiasPersonalizado'
       | 'modoValorParcelamento'
+      | 'notificarVencimento'
     >
   >,
 ): FormularioLancamento {
@@ -57,6 +58,7 @@ function createDefaultForm(
     periodoParcelamento: overrides?.periodoParcelamento ?? 'MENSAL',
     intervaloDiasPersonalizado: overrides?.intervaloDiasPersonalizado ?? null,
     modoValorParcelamento: overrides?.modoValorParcelamento ?? 'TOTAL',
+    notificarVencimento: overrides?.notificarVencimento ?? false,
   }
 }
 
@@ -195,6 +197,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
       tipo: data.tipo,
       valorEntrada: data.valorEntrada,
       valorTotal: data.valorTotal,
+      notificarVencimento: Boolean(data.notificarVencimento),
     }
     openModal.value = true
   }

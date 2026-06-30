@@ -83,6 +83,17 @@
                                     </div>
                                 </div>
                             </div>
+                            <Separator />
+                            <div class="grid gap-3">
+                                <label for="financeiroVencimentosNotificacoesAtivo"
+                                    class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
+                                    <span>Alertas de vencimentos financeiros
+                                        <p class="text-xs text-muted-foreground">Avisos 3 dias antes, 1 dia antes, no dia e 1 dia depois para itens marcados.</p>
+                                    </span>
+                                    <Switch id="financeiroVencimentosNotificacoesAtivo"
+                                        v-model="formularioNotificacoes.financeiroVencimentosNotificacoesAtivo" />
+                                </label>
+                            </div>
                             <template v-if="hasWhatsAppModule">
                                 <Separator />
                                 <div class="space-y-4">
@@ -384,6 +395,7 @@ const formularioNotificacoes = reactive<UpdateParametrosConta>({
     whatsappEventoComandaFaturada: true,
     whatsappEventoCaixaAberto: true,
     whatsappEventoCaixaFechado: true,
+    financeiroVencimentosNotificacoesAtivo: true,
 })
 const formularioFinanceiro = reactive<UpdateParametrosConta>({
     chavePix: '',
@@ -469,6 +481,7 @@ async function getParametros() {
                 whatsappEventoNovoCliente: response.data.whatsappEventoNovoCliente ?? true,
                 whatsappEventoComandaFaturada: response.data.whatsappEventoComandaFaturada ?? true,
                 whatsappEventoCaixaAberto: response.data.whatsappEventoCaixaAberto ?? true,
+                financeiroVencimentosNotificacoesAtivo: response.data.financeiroVencimentosNotificacoesAtivo ?? true,
                 whatsappEventoCaixaFechado: response.data.whatsappEventoCaixaFechado ?? true,
             })
             Object.assign(formularioFinanceiro, {

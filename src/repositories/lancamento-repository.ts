@@ -40,6 +40,10 @@ export class LancamentosRepository {
   static async save(data: Omit<FormularioLancamento, 'id'>) {
     await http.post(`/lancamentos`, data)
   }
+  static async atualizarNotificacaoVencimento(id: number, ativo: boolean) {
+    const response = await http.post(`/lancamentos/${id}/notificacao-vencimento`, { ativo })
+    return response.data
+  }
   static async reciboParcela(idParcela: number) {
     const recibo = await http.post(`/lancamentos/parcelas/${idParcela}/recibo`)
     return recibo

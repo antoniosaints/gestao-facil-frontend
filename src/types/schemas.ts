@@ -453,9 +453,10 @@ export interface FormularioLancamento {
   parcelas: number | undefined
   descricao: string
   periodoParcelamento?: 'MENSAL' | 'SEMANAL' | 'DIARIO' | 'QUINZENAL' | 'PERSONALIZADO'
-  intervaloDiasPersonalizado?: number | string | null
-  modoValorParcelamento?: 'TOTAL' | 'FIXO_PARCELA'
-}
+    intervaloDiasPersonalizado?: number | string | null
+    modoValorParcelamento?: 'TOTAL' | 'FIXO_PARCELA'
+    notificarVencimento?: boolean
+  }
 export interface UpdateParametrosConta {
   AsaasApiKey?: string | null
   AsaasApiSecret?: string | null
@@ -484,10 +485,11 @@ export interface UpdateParametrosConta {
   whatsappEventoNovaOs?: boolean | null
   whatsappEventoNovoLancamento?: boolean | null
   whatsappEventoNovoCliente?: boolean | null
-  whatsappEventoComandaFaturada?: boolean | null
-  whatsappEventoCaixaAberto?: boolean | null
-  whatsappEventoCaixaFechado?: boolean | null
-}
+    whatsappEventoComandaFaturada?: boolean | null
+    whatsappEventoCaixaAberto?: boolean | null
+    whatsappEventoCaixaFechado?: boolean | null
+    financeiroVencimentosNotificacoesAtivo?: boolean | null
+  }
 
 export interface ItensVendas {
   id?: number
@@ -717,9 +719,10 @@ export interface LancamentoFinanceiro {
   desconto: number
   tipo: TipoLancamentoFinanceiro
   formaPagamento: MetodoPagamento
-  status: StatusPagamentoFinanceiro
-  recorrente: boolean
-  origemSistema?: 'MANUAL' | 'ASSINATURA_PAGAR'
+    status: StatusPagamentoFinanceiro
+    recorrente: boolean
+    notificarVencimento?: boolean
+    origemSistema?: 'MANUAL' | 'ASSINATURA_PAGAR'
   referenciaRecorrencia?: string | null
   dataLancamento: Date
   dataEntrada?: Date

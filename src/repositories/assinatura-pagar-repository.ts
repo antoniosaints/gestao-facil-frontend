@@ -21,6 +21,7 @@ export interface AssinaturaPagarPayload {
   status: StatusAssinaturaPagar
   gerarFinanceiro: boolean
   gerarAutomatico: boolean
+  notificarVencimento: boolean
   contaFinanceiraId?: number | null
   categoriaId?: number | null
   formaPagamento?: 'DINHEIRO' | 'DEBITO' | 'CREDITO' | 'BOLETO' | 'TRANSFERENCIA' | 'CHEQUE' | 'PIX' | 'GATEWAY' | 'OUTRO' | null
@@ -42,6 +43,7 @@ export interface AssinaturaPagarListItem {
   status: StatusAssinaturaPagar
   gerarFinanceiro: boolean
   gerarAutomatico: boolean
+  notificarVencimento: boolean
   contaFinanceiraId?: number | null
   categoriaId?: number | null
   formaPagamento?: string | null
@@ -86,6 +88,11 @@ export class AssinaturaPagarRepository {
 
   static async atualizarStatus(id: number, status: StatusAssinaturaPagar) {
     const response = await http.post(`/lancamentos/assinaturas-pagar/${id}/status`, { status })
+    return response.data
+  }
+
+  static async atualizarNotificacaoVencimento(id: number, ativo: boolean) {
+    const response = await http.post(`/lancamentos/assinaturas-pagar/${id}/notificacao-vencimento`, { ativo })
     return response.data
   }
 

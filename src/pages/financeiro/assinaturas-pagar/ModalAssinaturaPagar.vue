@@ -103,6 +103,7 @@ const form = reactive<{
   status: StatusAssinaturaPagar
   gerarFinanceiro: boolean
   gerarAutomatico: boolean
+  notificarVencimento: boolean
   contaFinanceiraId: number | null
   categoriaId: number | null
   formaPagamento: string | null
@@ -121,6 +122,7 @@ const form = reactive<{
   status: 'ATIVA',
   gerarFinanceiro: true,
   gerarAutomatico: true,
+  notificarVencimento: false,
   contaFinanceiraId: null,
   categoriaId: null,
   formaPagamento: 'PIX',
@@ -162,6 +164,7 @@ function resetForm() {
   form.status = 'ATIVA'
   form.gerarFinanceiro = true
   form.gerarAutomatico = true
+  form.notificarVencimento = false
   form.contaFinanceiraId = null
   form.categoriaId = null
   form.formaPagamento = 'PIX'
@@ -239,6 +242,7 @@ async function loadDetail(id: number) {
   form.status = data.status
   form.gerarFinanceiro = data.gerarFinanceiro
   form.gerarAutomatico = data.gerarAutomatico
+  form.notificarVencimento = Boolean(data.notificarVencimento)
   form.contaFinanceiraId = data.contaFinanceiraId || null
   form.categoriaId = data.categoriaId || null
   form.formaPagamento = data.formaPagamento || 'PIX'
@@ -332,6 +336,7 @@ async function save() {
     status: form.status,
     gerarFinanceiro: form.gerarFinanceiro,
     gerarAutomatico: form.gerarFinanceiro ? form.gerarAutomatico : false,
+    notificarVencimento: form.notificarVencimento,
     contaFinanceiraId: form.gerarFinanceiro ? form.contaFinanceiraId : null,
     categoriaId: form.gerarFinanceiro ? form.categoriaId : null,
     formaPagamento: form.gerarFinanceiro ? (form.formaPagamento as any) : null,
@@ -496,6 +501,14 @@ onBeforeUnmount(() => {
               <div>
                 <p class="font-medium text-foreground">Gerar automático</p>
                 <p class="text-sm text-muted-foreground">Quando o lançamento atual for quitado, o próximo ciclo é criado automaticamente sem duplicar competência.</p>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-3 rounded-xl border border-border p-3">
+              <Checkbox v-model="form.notificarVencimento" />
+              <div>
+                <p class="font-medium text-foreground">Notificar vencimento</p>
+                <p class="text-sm text-muted-foreground">Avisa admins nos marcos configurados enquanto a assinatura estiver ativa.</p>
               </div>
             </label>
 

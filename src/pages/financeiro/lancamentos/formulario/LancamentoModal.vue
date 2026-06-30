@@ -154,6 +154,7 @@ async function submitFormulario() {
         : null,
     modoValorParcelamento:
       params.value.metodo === 'PARCELADO' ? store.form.modoValorParcelamento : 'TOTAL',
+    notificarVencimento: Boolean(store.form.notificarVencimento),
   } as FormularioLancamento & {
     lancamentoEfetivado: boolean
     tipoLancamentoModo: 'AVISTA' | 'PARCELADO'
@@ -576,9 +577,22 @@ watch(
         </div>
       </template>
 
-      <div class="mt-4 flex justify-end gap-2">
-        <Button type="button" variant="secondary" @click="store.openModal = false">Fechar</Button>
-        <Button class="text-white" type="submit">{{ isEditMode ? 'Salvar alterações' : 'Registrar' }}</Button>
+      <div class="mt-4 flex flex-col gap-3 border-t pt-4 md:flex-row md:items-center md:justify-between">
+        <label
+          v-if="!isEditMode"
+          for="notificarVencimentoLancamento"
+          class="flex cursor-pointer items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm md:min-w-[320px]"
+        >
+          <span>
+            Notificar vencimento
+            <span class="block text-xs text-muted-foreground">Avisar sobre o vencimento desse lançamento.</span>
+          </span>
+          <Switch id="notificarVencimentoLancamento" v-model="store.form.notificarVencimento" />
+        </label>
+        <div class="flex justify-end gap-2">
+          <Button type="button" variant="secondary" @click="store.openModal = false">Fechar</Button>
+          <Button class="text-white" type="submit">{{ isEditMode ? 'Salvar alterações' : 'Registrar' }}</Button>
+        </div>
       </div>
     </form>
   </ModalView>

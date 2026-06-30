@@ -6,6 +6,8 @@ import {
   ArrowLeft,
   BadgeDollarSign,
   BadgeInfo,
+  Bell,
+  BellOff,
   CalendarDays,
   CheckCircle2,
   CircleDollarSign,
@@ -260,6 +262,21 @@ async function deletar(id: number) {
   }
 }
 
+async function toggleNotificacaoVencimento() {
+  if (!lancamento.value?.id) return
+
+  const ativo = !lancamento.value.notificarVencimento
+
+  try {
+    const response = await LancamentosRepository.atualizarNotificacaoVencimento(lancamento.value.id, ativo)
+    lancamento.value.notificarVencimento = Boolean(response?.data?.notificarVencimento ?? ativo)
+    store.updateTable()
+    toast.success(response?.message || (ativo ? 'Notificação ativada.' : 'Notificação desativada.'))
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Erro ao atualizar notificação.')
+  }
+}
+
 function getNumeroParcelaLabel(parcela: ParcelaDetalhe) {
   if (parcela.numero === 0) return 'Entrada'
   if (parcela.numero === 1 && parcelasOrdenadas.value.length === 1) return 'À vista'
@@ -307,6 +324,11 @@ watch(() => store.filters.update, loadLancamento)
         </Button>
         <Button variant="outline" @click="loadLancamento">
           <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" /> Atualizar
+        </Button>
+        <Button variant="outline" :disabled="!lancamento?.id" @click="toggleNotificacaoVencimento">
+          <BellOff v-if="lancamento?.notificarVencimento" class="h-4 w-4" />
+          <Bell v-else class="h-4 w-4" />
+          {{ lancamento?.notificarVencimento ? 'Desativar notificação' : 'Ativar notificação' }}
         </Button>
         <Button v-if="uiStore.canCreateCharge" class="bg-success text-white hover:bg-success/80"
           :disabled="!parcelasOrdenadas.some((parcela) => !parcela.pago)" @click="gerarCobrancaFatura">
@@ -606,6 +628,16 @@ watch(() => store.filters.update, loadLancamento)
       >
         <RotateCw class="h-5 w-5" :class="{ 'animate-spin': loading }" />
         <span class="text-xs">Atualizar</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
+        :disabled="!lancamento?.id"
+        @click="toggleNotificacaoVencimento"
+      >
+        <BellOff v-if="lancamento?.notificarVencimento" class="h-5 w-5" />
+        <Bell v-else class="h-5 w-5" />
+        <span class="text-xs">{{ lancamento?.notificarVencimento ? 'Desativar' : 'Ativar' }}</span>
       </button>
       <button
         v-if="uiStore.canCreateCharge"

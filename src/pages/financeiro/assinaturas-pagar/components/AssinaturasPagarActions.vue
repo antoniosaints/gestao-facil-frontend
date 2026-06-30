@@ -11,7 +11,7 @@ import type { AssinaturaPagarListItem } from '@/repositories/assinatura-pagar-re
 import { AssinaturaPagarRepository } from '@/repositories/assinatura-pagar-repository'
 import { useAssinaturasPagarStore } from '@/stores/lancamentos/useAssinaturasPagar'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { Menu, Pencil, ReceiptText, Trash2 } from 'lucide-vue-next'
+import { Bell, BellOff, Menu, Pencil, ReceiptText, Trash2 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
 
@@ -49,6 +49,18 @@ async function gerarFinanceiro() {
     toast.error(error?.response?.data?.message || 'Erro ao gerar o financeiro.')
   }
 }
+
+async function toggleNotificacaoVencimento() {
+  const ativo = !props.data.notificarVencimento
+
+  try {
+    const response = await AssinaturaPagarRepository.atualizarNotificacaoVencimento(props.data.id, ativo)
+    toast.success(response?.message || (ativo ? 'Notificação ativada.' : 'Notificação desativada.'))
+    store.updateTable()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Erro ao atualizar a notificação.')
+  }
+}
 </script>
 
 <template>
@@ -67,6 +79,11 @@ async function gerarFinanceiro() {
       <DropdownMenuItem v-if="uiStore.permissoes.financeiro.editar" @click="gerarFinanceiro">
         <ReceiptText class="mr-2 h-4 w-4" />
         Gerar financeiro
+      </DropdownMenuItem>
+      <DropdownMenuItem v-if="uiStore.permissoes.financeiro.editar" @click="toggleNotificacaoVencimento">
+        <BellOff v-if="props.data.notificarVencimento" class="mr-2 h-4 w-4" />
+        <Bell v-else class="mr-2 h-4 w-4" />
+        {{ props.data.notificarVencimento ? 'Desativar notificação' : 'Ativar notificação' }}
       </DropdownMenuItem>
       <DropdownMenuSeparator v-if="uiStore.permissoes.financeiro.excluir" />
       <DropdownMenuItem v-if="uiStore.permissoes.financeiro.excluir" class="text-danger" @click="excluir">
