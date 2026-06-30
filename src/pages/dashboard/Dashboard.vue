@@ -451,27 +451,21 @@ onMounted(() => {
         </RouterLink>
       </div>
       <div class="flex gap-3 overflow-x-auto pb-1">
-        <RouterLink
-          v-for="meta in metasSlider"
-          :key="meta.id"
-          to="/metas"
-          class="min-w-[240px] flex-1 rounded-xl border bg-background/60 p-3 transition hover:border-primary/40"
-        >
+        <RouterLink v-for="meta in metasSlider" :key="meta.id" to="/metas"
+          class="min-w-[240px] flex-1 rounded-xl border bg-background/60 p-3 transition hover:border-primary/40">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <p class="truncate text-sm font-medium text-foreground">{{ meta.nome }}</p>
               <p class="text-xs text-muted-foreground">{{ getMetaTipoLabel(meta) }} • {{ meta.periodoAtual.label }}</p>
             </div>
-            <Badge :class="meta.atingida ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'bg-amber-100 text-amber-700 hover:bg-amber-100'">
+            <Badge class="px-2 rounded-sm" :class="meta.atingida ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
+              : 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'">
               {{ meta.atingida ? '100%' : `${meta.percentual}%` }}
             </Badge>
           </div>
           <div class="mt-3 h-2 rounded-full bg-muted">
-            <div
-              class="h-2 rounded-full"
-              :class="meta.atingida ? 'bg-emerald-500' : 'bg-primary'"
-              :style="{ width: `${Math.min(meta.percentual, 100)}%` }"
-            />
+            <div class="h-2 rounded-full" :class="meta.atingida ? 'bg-emerald-500' : 'bg-primary'"
+              :style="{ width: `${Math.min(meta.percentual, 100)}%` }" />
           </div>
           <p class="mt-2 text-xs text-muted-foreground">
             {{ formatMetaValue(meta, meta.valorAtual) }} de {{ formatMetaValue(meta, meta.valorAlvo) }}
@@ -486,7 +480,8 @@ onMounted(() => {
 
     <section v-else class="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-4">
       <RouterLink v-for="item in kpis" :key="item.titulo" :to="item.link || '/'">
-        <Card class="h-full rounded-2xl border-border/70 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
+        <Card
+          class="h-full rounded-2xl border-border/70 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
           <CardHeader class="py-3">
             <CardTitle class="flex items-center gap-3 text-sm text-foreground">
               <span class="rounded-xl p-2" :class="item.colorClass">
@@ -498,7 +493,7 @@ onMounted(() => {
           <CardContent class="space-y-1 pb-3">
             <p class="text-lg font-semibold text-foreground md:text-xl">
               <component v-if="(typeof item.valor !== 'string')" :is="item.valor" class="h-5 w-5 my-1.5" />
-              <span v-else>{{ item.valor }}</span> 
+              <span v-else>{{ item.valor }}</span>
             </p>
             <p class="text-xs leading-relaxed text-muted-foreground">{{ item.detalhe }}</p>
           </CardContent>
@@ -516,12 +511,8 @@ onMounted(() => {
           <CardDescription>Prioridades operacionais para revisão rápida.</CardDescription>
         </CardHeader>
         <CardContent class="grid gap-3 md:grid-cols-2">
-          <div
-            v-for="alert in alerts"
-            :key="alert.titulo"
-            class="rounded-xl border px-4 py-2"
-            :class="getAlertClasses(alert.tone)"
-          >
+          <div v-for="alert in alerts" :key="alert.titulo" class="rounded-xl border px-4 py-2"
+            :class="getAlertClasses(alert.tone)">
             <div class="flex items-start justify-between gap-3">
               <div>
                 <p class="font-medium text-foreground">{{ alert.titulo }}</p>
@@ -529,7 +520,8 @@ onMounted(() => {
               </div>
               <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             </div>
-            <RouterLink v-if="alert.link" :to="alert.link" class="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary dark:text-blue-500">
+            <RouterLink v-if="alert.link" :to="alert.link"
+              class="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary dark:text-blue-500">
               {{ alert.cta || 'Abrir' }}
               <ChevronRight class="h-4 w-4" />
             </RouterLink>
@@ -576,11 +568,7 @@ onMounted(() => {
     </div>
 
     <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <Card
-        v-for="block in summaryBlocks"
-        :key="block.titulo"
-        class="border-border/70 bg-card shadow-sm"
-      >
+      <Card v-for="block in summaryBlocks" :key="block.titulo" class="border-border/70 bg-card shadow-sm">
         <CardHeader>
           <CardTitle class="flex items-center gap-2 text-base">
             <component :is="block.icone" class="h-5 w-5 text-primary" />
@@ -589,11 +577,8 @@ onMounted(() => {
           <CardDescription>{{ block.descricao }}</CardDescription>
         </CardHeader>
         <CardContent class="space-y-3">
-          <div
-            v-for="metric in block.metrics"
-            :key="metric.label"
-            class="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 px-3 py-2 text-sm"
-          >
+          <div v-for="metric in block.metrics" :key="metric.label"
+            class="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 px-3 py-2 text-sm">
             <span class="text-muted-foreground">{{ metric.label }}</span>
             <component v-if="(typeof metric.value !== 'string')" :is="metric.value" class="h-5 w-5" />
             <span v-else class="font-medium text-foreground">{{ metric.value }}</span>
@@ -661,37 +646,28 @@ onMounted(() => {
 
     <MobileBottomBar v-if="uiStore.isMobile">
       <RouterLink to="/vendas">
-        <button
-          type="button"
-          class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        >
+        <button type="button"
+          class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
           <Tags class="h-5 w-5" />
           <span class="text-xs">Vendas</span>
         </button>
       </RouterLink>
       <RouterLink to="/servicos/os">
-        <button
-          type="button"
-          class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        >
+        <button type="button"
+          class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
           <FileDigit class="h-5 w-5" />
           <span class="text-xs">Serviços</span>
         </button>
       </RouterLink>
       <RouterLink to="/produtos">
-        <button
-          type="button"
-          class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        >
+        <button type="button"
+          class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
           <Boxes class="h-5 w-5" />
           <span class="text-xs">Produtos</span>
         </button>
       </RouterLink>
-      <button
-        type="button"
-        @click="uiStore.openSidebar = true"
-        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-      >
+      <button type="button" @click="uiStore.openSidebar = true"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
         <Menu class="h-5 w-5" />
         <span class="text-xs">Menu</span>
       </button>
