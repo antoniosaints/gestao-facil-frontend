@@ -24,6 +24,7 @@ import {
   Sparkles,
   Store,
   Tags,
+  Target,
   TicketCheck,
   TrendingDown,
   TrendingUp,
@@ -36,6 +37,7 @@ export const ROOT_ALWAYS_VISIBLE_MENU_KEYS = ['configuracoes'] as const
 
 export const MAIN_MENU_VISIBILITY_OPTIONS = [
   { key: 'dashboard', nome: 'Dashboard', descricao: 'Painel inicial do sistema.' },
+  { key: 'metas', nome: 'Metas', descricao: 'Alvos comerciais, financeiros e de serviços.' },
   { key: 'vendas', nome: 'Vendas', descricao: 'Painel, vendas e caixas.' },
   { key: 'comandas', nome: 'Comandas', descricao: 'Comandas operacionais e faturamento parcial.' },
   { key: 'financeiro', nome: 'Financeiro', descricao: 'Lançamentos, contas e cobranças.' },
@@ -121,6 +123,13 @@ export const sidebarMenuOptions = (
           color: 'blue',
         },
       ],
+    },
+    {
+      key: 'metas',
+      nome: 'Metas',
+      icone: Target,
+      color: 'yellow',
+      link: '/metas',
     },
     {
       key: 'vendas',

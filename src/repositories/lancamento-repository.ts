@@ -44,6 +44,21 @@ export class LancamentosRepository {
     const response = await http.post(`/lancamentos/${id}/notificacao-vencimento`, { ativo })
     return response.data
   }
+  static async adicionarParcela(
+    lancamentoId: number,
+    data: {
+      valor: number
+      vencimento: string
+      descricao?: string | null
+    },
+  ) {
+    const response = await http.post(`/lancamentos/${lancamentoId}/parcelas`, data)
+    return response.data
+  }
+  static async deletarParcela(id: number) {
+    const response = await http.delete(`/lancamentos/parcelas/${id}`)
+    return response.data
+  }
   static async reciboParcela(idParcela: number) {
     const recibo = await http.post(`/lancamentos/parcelas/${idParcela}/recibo`)
     return recibo

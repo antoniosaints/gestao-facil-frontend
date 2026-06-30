@@ -196,6 +196,15 @@ const routes: RouteInterface[] = [
     },
   },
   {
+    path: '/metas',
+    name: 'metas',
+    component: () => import('@/pages/metas/Home.vue'),
+    meta: {
+      layout: 'main',
+      permissao: 1,
+    },
+  },
+  {
     path: '/agendamento/:conta',
     name: 'reservar-horario',
     component: () => {

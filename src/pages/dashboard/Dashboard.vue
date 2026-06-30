@@ -18,6 +18,7 @@ import {
   Receipt,
   ShoppingCart,
   Tags,
+  Target,
   TrendingUp,
   Users,
   Wallet,
@@ -33,6 +34,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton'
 import { optionsChartBar, optionsChartBarDefault, optionsChartLine } from '@/composables/useChartOptions'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
+import { MetasRepository, type MetaResumo } from '@/repositories/metas-repository'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { ProdutoRepository } from '@/repositories/produto-repository'
 import { VendaRepository } from '@/repositories/venda-repository'
@@ -83,6 +85,7 @@ const financeiroResumo = ref<any>(null)
 const financeiroStatus = ref<any>(null)
 const produtoResumo = ref<any>(null)
 const servicosResumo = ref<any>(null)
+const metasResumo = ref<MetaResumo[]>([])
 
 const periodoDescricao = computed(() => {
   if (!filtroPeriodo.value) return 'Mês atual'
@@ -298,6 +301,8 @@ const quickActions = [
   { titulo: 'Nova OS', link: '/servicos/os', icon: Wrench },
 ]
 
+const metasSlider = computed(() => metasResumo.value.slice(0, 8))
+
 function getPeriodoSelecionado() {
   const inicio = filtroPeriodo.value === null
     ? startOfMonth(new Date()).toISOString()
@@ -322,6 +327,16 @@ function getAlertClasses(tone: AlertCard['tone']) {
   }
 }
 
+function formatMetaValue(meta: Pick<MetaResumo, 'metrica'>, value: number) {
+  return meta.metrica === 'QUANTIDADE' ? String(Math.round(value || 0)) : formatCurrencyBR(value || 0)
+}
+
+function getMetaTipoLabel(meta: MetaResumo) {
+  if (meta.tipo === 'SERVICOS') return 'ServiÃ§os'
+  if (meta.tipo === 'FINANCEIRO') return meta.financeiroTipo === 'DESPESA' ? 'Despesas' : 'Receitas'
+  return 'Vendas'
+}
+
 async function getDataDashboard(showFeedback = false) {
   try {
     loading.value = true
@@ -338,6 +353,7 @@ async function getDataDashboard(showFeedback = false) {
       resumoFinanceiroStatus,
       resumoProdutos,
       resumoServicos,
+      resumoMetas,
     ] = await Promise.all([
       store.getResumo(inicio, fim),
       VendaRepository.resumo(inicio, fim),
@@ -349,6 +365,7 @@ async function getDataDashboard(showFeedback = false) {
       LancamentosRepository.resumoStatusTotal(),
       ProdutoRepository.getResumoGeral(inicio, fim),
       OrdensServicoRepository.getResumo(),
+      MetasRepository.resumo(),
     ])
 
     dashboardResumo.value = resumoDashboard
@@ -357,6 +374,7 @@ async function getDataDashboard(showFeedback = false) {
     financeiroStatus.value = resumoFinanceiroStatus
     produtoResumo.value = resumoProdutos
     servicosResumo.value = resumoServicos
+    metasResumo.value = resumoMetas.data || []
 
     dataVendasMensais.value = { labels: [...vendasMensais.data.labels], datasets: [...vendasMensais.data.datasets] }
     dataSaldoMensal.value = { labels: [...saldoMensal.labels], datasets: [...saldoMensal.datasets] }
@@ -415,6 +433,52 @@ onMounted(() => {
         </div>
       </CardContent>
     </Card>
+
+    <section v-if="metasSlider.length" class="rounded-2xl border border-border/70 bg-card p-3 shadow-sm">
+      <div class="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <p class="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Target class="h-4 w-4 text-primary" />
+            Metas em andamento
+          </p>
+          <p class="text-xs text-muted-foreground">Acompanhamento discreto do período atual.</p>
+        </div>
+        <RouterLink to="/metas">
+          <Button variant="outline" size="sm" class="gap-1">
+            Ver metas
+            <ChevronRight class="h-4 w-4" />
+          </Button>
+        </RouterLink>
+      </div>
+      <div class="flex gap-3 overflow-x-auto pb-1">
+        <RouterLink
+          v-for="meta in metasSlider"
+          :key="meta.id"
+          to="/metas"
+          class="min-w-[240px] flex-1 rounded-xl border bg-background/60 p-3 transition hover:border-primary/40"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-foreground">{{ meta.nome }}</p>
+              <p class="text-xs text-muted-foreground">{{ getMetaTipoLabel(meta) }} • {{ meta.periodoAtual.label }}</p>
+            </div>
+            <Badge :class="meta.atingida ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'bg-amber-100 text-amber-700 hover:bg-amber-100'">
+              {{ meta.atingida ? '100%' : `${meta.percentual}%` }}
+            </Badge>
+          </div>
+          <div class="mt-3 h-2 rounded-full bg-muted">
+            <div
+              class="h-2 rounded-full"
+              :class="meta.atingida ? 'bg-emerald-500' : 'bg-primary'"
+              :style="{ width: `${Math.min(meta.percentual, 100)}%` }"
+            />
+          </div>
+          <p class="mt-2 text-xs text-muted-foreground">
+            {{ formatMetaValue(meta, meta.valorAtual) }} de {{ formatMetaValue(meta, meta.valorAlvo) }}
+          </p>
+        </RouterLink>
+      </div>
+    </section>
 
     <section v-if="loading" class="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-4">
       <Skeleton v-for="item in 8" :key="item" class="h-[152px] rounded-2xl" />

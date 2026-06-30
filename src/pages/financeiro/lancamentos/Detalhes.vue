@@ -17,6 +17,7 @@ import {
   Landmark,
   MoreVertical,
   PenLine,
+  Plus,
   RotateCw,
   Tags,
   Trash2,
@@ -29,13 +30,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import Calendarpicker from '@/components/formulario/calendarpicker.vue'
+import ModalView from '@/components/formulario/ModalView.vue'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
+import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useConfirm } from '@/composables/useConfirm'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
@@ -56,6 +61,8 @@ import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import FormularioEfertivar from './modais/FormularioEfertivar.vue'
 import ModalParcela from './modais/ModalParcela.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 
 type ParcelaDetalhe = ParcelaFinanceiro & {
   ContaFinanceira?: ContasFinanceiro | null
@@ -76,7 +83,14 @@ const storeCobranca = useCobrancasFinanceirasStore()
 const uiStore = useUiStore()
 
 const loading = ref(false)
+const salvandoParcela = ref(false)
+const openAdicionarParcela = ref(false)
 const lancamento = ref<LancamentoDetalhe | null>(null)
+const novaParcela = ref({
+  descricao: '',
+  valor: '',
+  vencimento: new Date(),
+})
 
 function getRouteId() {
   const id = Number(route.query.id)
@@ -196,6 +210,72 @@ function editarParcela(parcela: ParcelaDetalhe) {
     escopo: 'ATUAL',
   }
   store.openModalParcela = true
+}
+
+function abrirAdicionarParcela() {
+  novaParcela.value = {
+    descricao: '',
+    valor: '',
+    vencimento: proximaParcela.value?.vencimento
+      ? new Date(proximaParcela.value.vencimento)
+      : new Date(),
+  }
+  openAdicionarParcela.value = true
+}
+
+async function adicionarParcela() {
+  if (!lancamento.value?.id) return
+
+  const valor = formatToNumberValue(novaParcela.value.valor)
+  if (!valor || valor <= 0) {
+    toast.error('Informe um valor vÃ¡lido para a parcela')
+    return
+  }
+
+  if (!novaParcela.value.vencimento || Number.isNaN(new Date(novaParcela.value.vencimento).getTime())) {
+    toast.error('Informe uma data de vencimento vÃ¡lida')
+    return
+  }
+
+  try {
+    salvandoParcela.value = true
+    const response = await LancamentosRepository.adicionarParcela(lancamento.value.id, {
+      valor,
+      vencimento: novaParcela.value.vencimento.toISOString(),
+      descricao: novaParcela.value.descricao.trim() || null,
+    })
+    toast.success(response?.message || 'Parcela adicionada com sucesso')
+    openAdicionarParcela.value = false
+    store.updateTable()
+    await loadLancamento()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao adicionar a parcela')
+  } finally {
+    salvandoParcela.value = false
+  }
+}
+
+async function excluirParcela(parcela: ParcelaDetalhe) {
+  if (!parcela.id) return
+
+  const confirm = await useConfirm().confirm({
+    title: 'Excluir parcela',
+    message: 'Deseja excluir esta parcela pendente? O total do lançamento será recalculado pelas parcelas restantes.',
+    confirmText: 'Sim, excluir',
+  })
+
+  if (!confirm) return
+
+  try {
+    const response = await LancamentosRepository.deletarParcela(parcela.id)
+    toast.success(response?.message || 'Parcela excluÃ­da com sucesso')
+    store.updateTable()
+    await loadLancamento()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao excluir a parcela')
+  }
 }
 
 function efetivarParcela(id: number) {
@@ -324,6 +404,9 @@ watch(() => store.filters.update, loadLancamento)
         </Button>
         <Button variant="outline" @click="loadLancamento">
           <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" /> Atualizar
+        </Button>
+        <Button variant="outline" :disabled="!lancamento?.id || Boolean(lancamento?.vendaId)" @click="abrirAdicionarParcela">
+          <Plus class="h-4 w-4" /> Adicionar parcela
         </Button>
         <Button variant="outline" :disabled="!lancamento?.id" @click="toggleNotificacaoVencimento">
           <BellOff v-if="lancamento?.notificarVencimento" class="h-4 w-4" />
@@ -508,11 +591,14 @@ watch(() => store.filters.update, loadLancamento)
     </div>
 
     <Card class="shadow-sm" v-if="parcelasOrdenadas.length">
-      <CardHeader class="px-4 py-2">
+      <CardHeader class="flex flex-row items-center justify-between gap-3 px-4 py-2">
         <CardTitle class="text-lg flex items-center gap-2">
           <BadgeInfo class="h-4 w-4" />
           Parcelas e cobranças
         </CardTitle>
+        <Button variant="outline" size="sm" :disabled="!lancamento?.id || Boolean(lancamento?.vendaId)" @click="abrirAdicionarParcela">
+          <Plus class="h-4 w-4" /> Adicionar
+        </Button>
       </CardHeader>
       <CardContent class="space-y-2.5 px-4">
         <div v-for="parcela in parcelasOrdenadas" :key="parcela.id"
@@ -559,6 +645,10 @@ watch(() => store.filters.update, loadLancamento)
                 <Button v-if="!parcela.pago" variant="outline" size="icon" class="h-8 w-8" @click="editarParcela(parcela)">
                   <PenLine class="h-4 w-4" />
                 </Button>
+                <Button v-if="!parcela.pago" variant="outline" size="icon" class="h-8 w-8 text-rose-600 hover:text-rose-700"
+                  :disabled="Boolean(lancamento?.vendaId)" @click="excluirParcela(parcela)">
+                  <Trash2 class="h-4 w-4" />
+                </Button>
                 <Button v-if="uiStore.canCreateCharge && !parcela.pago && !parcela.CobrancasFinanceiras?.length" size="icon"
                   class="h-8 w-8 bg-success text-white hover:bg-success/80"
                   @click="gerarCobrancaParcela(parcela.id!, Number(parcela.valor || 0))">
@@ -587,6 +677,10 @@ watch(() => store.filters.update, loadLancamento)
                 <DropdownMenuContent align="end" class="w-44">
                   <DropdownMenuItem v-if="!parcela.pago" @click="editarParcela(parcela)">
                     <PenLine class="mr-2 h-4 w-4" /> Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem v-if="!parcela.pago" :disabled="Boolean(lancamento?.vendaId)"
+                    @click="excluirParcela(parcela)">
+                    <Trash2 class="mr-2 h-4 w-4" /> Excluir
                   </DropdownMenuItem>
                   <DropdownMenuItem v-if="!parcela.pago" :disabled="Boolean(lancamento?.vendaId)"
                     @click="efetivarParcela(parcela.id!)">
@@ -632,6 +726,15 @@ watch(() => store.filters.update, loadLancamento)
       <button
         type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
+        :disabled="!lancamento?.id || Boolean(lancamento?.vendaId)"
+        @click="abrirAdicionarParcela"
+      >
+        <Plus class="h-5 w-5" />
+        <span class="text-xs">Parcela</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
         :disabled="!lancamento?.id"
         @click="toggleNotificacaoVencimento"
       >
@@ -663,6 +766,41 @@ watch(() => store.filters.update, loadLancamento)
     <GerarCobranca />
     <ClientesModal />
     <ModalParcela />
+    <ModalView
+      v-model:open="openAdicionarParcela"
+      size="md"
+      title="Adicionar parcela"
+      description="Inclua uma nova parcela pendente neste lançamento. O total será recalculado pelas parcelas."
+    >
+      <form class="grid grid-cols-1 gap-3 px-4" @submit.prevent="adicionarParcela">
+        <div>
+          <Label>Descrição</Label>
+          <Input v-model="novaParcela.descricao" placeholder="Opcional" />
+        </div>
+        <div>
+          <Label>Vencimento</Label>
+          <Calendarpicker required :teleport="true" v-model="novaParcela.vencimento" />
+        </div>
+        <div>
+          <Label>Valor</Label>
+          <Input
+            v-model="novaParcela.valor"
+            type="text"
+            required
+            placeholder="R$ 0,00"
+            v-maska="moneyMaskOptions"
+          />
+        </div>
+        <div class="mt-2 flex justify-end gap-2">
+          <Button type="button" variant="secondary" :disabled="salvandoParcela" @click="openAdicionarParcela = false">
+            Cancelar
+          </Button>
+          <Button type="submit" class="text-white" :disabled="salvandoParcela">
+            {{ salvandoParcela ? 'Salvando...' : 'Adicionar' }}
+          </Button>
+        </div>
+      </form>
+    </ModalView>
     <FormularioEfertivar @success="loadLancamento" />
   </div>
 </template>
