@@ -456,6 +456,7 @@ export interface FormularioLancamento {
     intervaloDiasPersonalizado?: number | string | null
     modoValorParcelamento?: 'TOTAL' | 'FIXO_PARCELA'
     notificarVencimento?: boolean
+    notificarClienteVencimento?: boolean
   }
 export interface UpdateParametrosConta {
   AsaasApiKey?: string | null
@@ -722,6 +723,7 @@ export interface LancamentoFinanceiro {
     status: StatusPagamentoFinanceiro
     recorrente: boolean
     notificarVencimento?: boolean
+    notificarClienteVencimento?: boolean
     origemSistema?: 'MANUAL' | 'ASSINATURA_PAGAR'
   referenciaRecorrencia?: string | null
   dataLancamento: Date

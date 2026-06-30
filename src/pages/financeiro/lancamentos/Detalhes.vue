@@ -127,6 +127,8 @@ const parcelasOrdenadas = computed(() => {
   })
 })
 
+const podeNotificarCliente = computed(() => lancamento.value?.tipo === 'RECEITA' && Boolean(lancamento.value?.clienteId))
+
 const valorTotal = computed(() =>
   parcelasOrdenadas.value.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0),
 )
@@ -357,6 +359,21 @@ async function toggleNotificacaoVencimento() {
   }
 }
 
+async function toggleNotificacaoClienteVencimento() {
+  if (!lancamento.value?.id || !podeNotificarCliente.value) return
+
+  const ativo = !lancamento.value.notificarClienteVencimento
+
+  try {
+    const response = await LancamentosRepository.atualizarNotificacaoClienteVencimento(lancamento.value.id, ativo)
+    lancamento.value.notificarClienteVencimento = Boolean(response?.data?.notificarClienteVencimento ?? ativo)
+    store.updateTable()
+    toast.success(response?.message || (ativo ? 'Cobranca ao cliente ativada.' : 'Cobranca ao cliente desativada.'))
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Erro ao atualizar cobranca ao cliente.')
+  }
+}
+
 function getNumeroParcelaLabel(parcela: ParcelaDetalhe) {
   if (parcela.numero === 0) return 'Entrada'
   if (parcela.numero === 1 && parcelasOrdenadas.value.length === 1) return 'À vista'
@@ -412,6 +429,11 @@ watch(() => store.filters.update, loadLancamento)
           <BellOff v-if="lancamento?.notificarVencimento" class="h-4 w-4" />
           <Bell v-else class="h-4 w-4" />
           {{ lancamento?.notificarVencimento ? 'Desativar notificação' : 'Ativar notificação' }}
+        </Button>
+        <Button v-if="podeNotificarCliente" variant="outline" :disabled="!lancamento?.id" @click="toggleNotificacaoClienteVencimento">
+          <BellOff v-if="lancamento?.notificarClienteVencimento" class="h-4 w-4" />
+          <Bell v-else class="h-4 w-4" />
+          {{ lancamento?.notificarClienteVencimento ? 'Desativar cliente' : 'Notificar cliente' }}
         </Button>
         <Button v-if="uiStore.canCreateCharge" class="bg-success text-white hover:bg-success/80"
           :disabled="!parcelasOrdenadas.some((parcela) => !parcela.pago)" @click="gerarCobrancaFatura">
@@ -741,6 +763,17 @@ watch(() => store.filters.update, loadLancamento)
         <BellOff v-if="lancamento?.notificarVencimento" class="h-5 w-5" />
         <Bell v-else class="h-5 w-5" />
         <span class="text-xs">{{ lancamento?.notificarVencimento ? 'Desativar' : 'Ativar' }}</span>
+      </button>
+      <button
+        v-if="podeNotificarCliente"
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
+        :disabled="!lancamento?.id"
+        @click="toggleNotificacaoClienteVencimento"
+      >
+        <BellOff v-if="lancamento?.notificarClienteVencimento" class="h-5 w-5" />
+        <Bell v-else class="h-5 w-5" />
+        <span class="text-xs">{{ lancamento?.notificarClienteVencimento ? 'Cliente off' : 'Cliente' }}</span>
       </button>
       <button
         v-if="uiStore.canCreateCharge"

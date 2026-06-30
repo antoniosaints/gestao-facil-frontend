@@ -4,7 +4,13 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { computed, ref, watch } from 'vue'
@@ -34,11 +40,16 @@ const params = ref<{
 })
 
 const isEditMode = computed(() => Boolean(store.form.id))
+const podeNotificarCliente = computed(
+  () => store.form.tipo === 'RECEITA' && Boolean(store.form.clienteId),
+)
 
 const title = computed(() => {
   if (isEditMode.value) return 'Editar lançamento'
   const tipo = store.form.tipo === 'RECEITA' ? 'receita' : 'despesa'
-  return params.value.metodo === 'AVISTA' ? `Lançamento de ${tipo}` : `Lançamento parcelado (${tipo})`
+  return params.value.metodo === 'AVISTA'
+    ? `Lançamento de ${tipo}`
+    : `Lançamento parcelado (${tipo})`
 })
 
 const description = computed(() =>
@@ -61,6 +72,10 @@ const descontoDesabilitado = computed(
 const intervaloPersonalizadoAtivo = computed(
   () => params.value.metodo === 'PARCELADO' && store.form.periodoParcelamento === 'PERSONALIZADO',
 )
+
+watch(podeNotificarCliente, (enabled) => {
+  if (!enabled) store.form.notificarClienteVencimento = false
+})
 
 const valorInformado = computed(() => formatToNumberValue(store.form.valorTotal))
 const valorEntrada = computed(() => formatToNumberValue(store.form.valorEntrada))
@@ -147,7 +162,8 @@ async function submitFormulario() {
     valorEntrada: params.value.hasEntrada ? formatToNumberValue(store.form.valorEntrada) : 0,
     tipo: store.form.tipo,
     valorTotal: formatToNumberValue(store.form.valorTotal),
-    periodoParcelamento: params.value.metodo === 'PARCELADO' ? store.form.periodoParcelamento : 'MENSAL',
+    periodoParcelamento:
+      params.value.metodo === 'PARCELADO' ? store.form.periodoParcelamento : 'MENSAL',
     intervaloDiasPersonalizado:
       params.value.metodo === 'PARCELADO' && store.form.periodoParcelamento === 'PERSONALIZADO'
         ? Number(store.form.intervaloDiasPersonalizado || 0)
@@ -155,6 +171,8 @@ async function submitFormulario() {
     modoValorParcelamento:
       params.value.metodo === 'PARCELADO' ? store.form.modoValorParcelamento : 'TOTAL',
     notificarVencimento: Boolean(store.form.notificarVencimento),
+    notificarClienteVencimento:
+      podeNotificarCliente.value && Boolean(store.form.notificarClienteVencimento),
   } as FormularioLancamento & {
     lancamentoEfetivado: boolean
     tipoLancamentoModo: 'AVISTA' | 'PARCELADO'
@@ -173,7 +191,8 @@ const validar = () => {
 
   if (!store.form.descricao?.trim()) erros.value.descricao = 'A descrição é obrigatória.'
   if (!store.form.categoriaId) erros.value.categoriaId = 'A categoria é obrigatória.'
-  if (!store.form.contasFinanceiroId) erros.value.contasFinanceiroId = 'A conta financeira é obrigatória.'
+  if (!store.form.contasFinanceiroId)
+    erros.value.contasFinanceiroId = 'A conta financeira é obrigatória.'
 
   if (isEditMode.value) return
 
@@ -250,19 +269,29 @@ watch(
     <form class="space-y-4 px-4" @submit.prevent="submit">
       <template v-if="isEditMode">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div class="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-            Recomendado para manter consistência contábil: valores, datas, parcelamento e status ficam congelados após o lançamento.
-            Se for necessário corrigir valor, o ideal é estornar/ajustar com rastreabilidade em vez de reescrever o histórico.
+          <div
+            class="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+          >
+            Recomendado para manter consistência contábil: valores, datas, parcelamento e status
+            ficam congelados após o lançamento. Se for necessário corrigir valor, o ideal é
+            estornar/ajustar com rastreabilidade em vez de reescrever o histórico.
           </div>
 
           <div class="md:col-span-2">
             <label for="descricao-edicao" class="mb-1 block text-sm font-medium">Descrição *</label>
-            <Input id="descricao-edicao" v-model="store.form.descricao" type="text" placeholder="Ex: Mensalidade do cliente XPTO" />
+            <Input
+              id="descricao-edicao"
+              v-model="store.form.descricao"
+              type="text"
+              placeholder="Ex: Mensalidade do cliente XPTO"
+            />
             <p v-if="erros.descricao" class="text-sm text-red-600">{{ erros.descricao }}</p>
           </div>
 
           <div>
-            <label for="formaPagamentoEdicao" class="mb-1 block text-sm font-medium">Forma de pagamento padrão *</label>
+            <label for="formaPagamentoEdicao" class="mb-1 block text-sm font-medium"
+              >Forma de pagamento padrão *</label
+            >
             <Select v-model="store.form.formaPagamento">
               <SelectTrigger>
                 <SelectValue placeholder="Forma de pagamento" />
@@ -285,15 +314,26 @@ watch(
               {{ store.form.tipo === 'RECEITA' ? 'Cliente' : 'Fornecedor' }}
               <a @click="storeCliente.openSave" class="cursor-pointer px-2 text-blue-500">+ Novo</a>
             </label>
-            <Select2Ajax id="clienteIdLancamentoEdicao" v-model="store.form.clienteId" url="/clientes/select2" allowClear />
+            <Select2Ajax
+              id="clienteIdLancamentoEdicao"
+              v-model="store.form.clienteId"
+              url="/clientes/select2"
+              allowClear
+            />
           </div>
 
           <div>
             <label for="categoriaIdLancamentoEdicao" class="mb-1 block text-sm font-medium">
               Categoria *
-              <FormularioCategorias class="cursor-pointer px-2 text-blue-500">+ Nova</FormularioCategorias>
+              <FormularioCategorias class="cursor-pointer px-2 text-blue-500"
+                >+ Nova</FormularioCategorias
+              >
             </label>
-            <Select2Ajax id="categoriaIdLancamentoEdicao" v-model="store.form.categoriaId" url="lancamentos/categorias/select2" />
+            <Select2Ajax
+              id="categoriaIdLancamentoEdicao"
+              v-model="store.form.categoriaId"
+              url="lancamentos/categorias/select2"
+            />
             <p v-if="erros.categoriaId" class="text-sm text-red-600">{{ erros.categoriaId }}</p>
           </div>
 
@@ -302,8 +342,14 @@ watch(
               Conta *
               <FormularioContas class="cursor-pointer px-2 text-blue-500">+ Nova</FormularioContas>
             </label>
-            <Select2Ajax id="contasFinanceiroIdEdicao" v-model="store.form.contasFinanceiroId" url="lancamentos/contas/select2" />
-            <p v-if="erros.contasFinanceiroId" class="text-sm text-red-600">{{ erros.contasFinanceiroId }}</p>
+            <Select2Ajax
+              id="contasFinanceiroIdEdicao"
+              v-model="store.form.contasFinanceiroId"
+              url="lancamentos/contas/select2"
+            />
+            <p v-if="erros.contasFinanceiroId" class="text-sm text-red-600">
+              {{ erros.contasFinanceiroId }}
+            </p>
           </div>
         </div>
       </template>
@@ -334,11 +380,15 @@ watch(
                 name="dataLancamento"
                 v-model="store.form.dataLancamento"
               />
-              <p v-if="erros.dataLancamento" class="text-sm text-red-600">{{ erros.dataLancamento }}</p>
+              <p v-if="erros.dataLancamento" class="text-sm text-red-600">
+                {{ erros.dataLancamento }}
+              </p>
             </div>
 
             <div class="col-span-6 md:col-span-4">
-              <label for="tipoLancamentoFinanceiro" class="mb-1 block text-sm font-medium">Tipo/Natureza *</label>
+              <label for="tipoLancamentoFinanceiro" class="mb-1 block text-sm font-medium"
+                >Tipo/Natureza *</label
+              >
               <Select disabled v-model="store.form.tipo" required>
                 <SelectTrigger>
                   <SelectValue placeholder="Natureza" />
@@ -351,7 +401,9 @@ watch(
             </div>
 
             <div class="col-span-6 md:col-span-4">
-              <label for="valorTotalLancamento" class="mb-1 block text-sm font-medium">{{ valorInputLabel }}</label>
+              <label for="valorTotalLancamento" class="mb-1 block text-sm font-medium">{{
+                valorInputLabel
+              }}</label>
               <Input
                 id="valorTotalLancamento"
                 v-model="store.form.valorTotal"
@@ -366,7 +418,9 @@ watch(
             <div class="col-span-6 md:col-span-4">
               <label for="descontoFormularioLancamento" class="mb-1 block text-sm font-medium">
                 Desconto
-                <span v-if="descontoDesabilitado" class="text-xs text-muted-foreground">(indisponível com valor fixo)</span>
+                <span v-if="descontoDesabilitado" class="text-xs text-muted-foreground"
+                  >(indisponível com valor fixo)</span
+                >
               </label>
               <Input
                 id="descontoFormularioLancamento"
@@ -379,8 +433,16 @@ watch(
               />
             </div>
 
-            <div :class="[params.metodo === 'AVISTA' ? 'col-span-6 md:col-span-6' : 'col-span-6 md:col-span-3']">
-              <label for="metodoLancamentoModoLancamento" class="mb-1 block text-sm font-medium">Método *</label>
+            <div
+              :class="[
+                params.metodo === 'AVISTA'
+                  ? 'col-span-6 md:col-span-6'
+                  : 'col-span-6 md:col-span-3',
+              ]"
+            >
+              <label for="metodoLancamentoModoLancamento" class="mb-1 block text-sm font-medium"
+                >Método *</label
+              >
               <Select v-model="params.metodo" required id="metodoLancamentoModoLancamento">
                 <SelectTrigger>
                   <SelectValue placeholder="Forma de pagamento" />
@@ -394,7 +456,14 @@ watch(
 
             <div v-if="params.metodo === 'PARCELADO'" class="col-span-6 md:col-span-3">
               <label for="parcelas" class="mb-1 block text-sm font-medium">Parcelas *</label>
-              <Input id="parcelas" v-model="store.form.parcelas" type="number" min="1" required placeholder="1" />
+              <Input
+                id="parcelas"
+                v-model="store.form.parcelas"
+                type="number"
+                min="1"
+                required
+                placeholder="1"
+              />
               <p v-if="erros.parcelas" class="text-sm text-red-600">{{ erros.parcelas }}</p>
             </div>
 
@@ -413,7 +482,9 @@ watch(
                   <div class="flex items-center">
                     <label class="relative inline-flex cursor-pointer items-center">
                       <Switch id="lancamentoEfetivadoTotal" v-model="params.lancamentoEfetivado" />
-                      <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Efetivado</span>
+                      <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                        >Efetivado</span
+                      >
                     </label>
                   </div>
                 </label>
@@ -448,7 +519,9 @@ watch(
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="TOTAL">Dividir o valor total entre as parcelas</SelectItem>
-                    <SelectItem value="FIXO_PARCELA">Usar o valor informado em todas as parcelas</SelectItem>
+                    <SelectItem value="FIXO_PARCELA"
+                      >Usar o valor informado em todas as parcelas</SelectItem
+                    >
                   </SelectContent>
                 </Select>
               </div>
@@ -473,7 +546,9 @@ watch(
                 <label class="mb-1 block text-sm font-medium">Quantidade de dias *</label>
                 <Input
                   :model-value="store.form.intervaloDiasPersonalizado ?? ''"
-                  @update:model-value="(value) => (store.form.intervaloDiasPersonalizado = value as string | number)"
+                  @update:model-value="
+                    (value) => (store.form.intervaloDiasPersonalizado = value as string | number)
+                  "
                   type="number"
                   min="1"
                   placeholder="Ex: 10"
@@ -484,9 +559,14 @@ watch(
               </div>
             </template>
 
-            <div v-if="params.metodo === 'PARCELADO' && params.hasEntrada" class="col-span-12 grid grid-cols-2 gap-3">
+            <div
+              v-if="params.metodo === 'PARCELADO' && params.hasEntrada"
+              class="col-span-12 grid grid-cols-2 gap-3"
+            >
               <div>
-                <label for="valorEntradaLancamento" class="mb-1 block text-sm font-medium">Valor Entrada</label>
+                <label for="valorEntradaLancamento" class="mb-1 block text-sm font-medium"
+                  >Valor Entrada</label
+                >
                 <Input
                   id="valorEntradaLancamento"
                   v-model="store.form.valorEntrada"
@@ -499,7 +579,9 @@ watch(
               </div>
 
               <div>
-                <label for="dataEntradaLancamento" class="mb-1 block text-sm font-medium">Data Entrada</label>
+                <label for="dataEntradaLancamento" class="mb-1 block text-sm font-medium"
+                  >Data Entrada</label
+                >
                 <Calendarpicker
                   id="dataEntradaLancamento"
                   :teleport="true"
@@ -511,7 +593,9 @@ watch(
             </div>
 
             <div class="col-span-6">
-              <label for="formaPagamentoLancamento" class="mb-1 block text-sm font-medium">Forma de Pagamento *</label>
+              <label for="formaPagamentoLancamento" class="mb-1 block text-sm font-medium"
+                >Forma de Pagamento *</label
+              >
               <Select v-model="store.form.formaPagamento" required>
                 <SelectTrigger>
                   <SelectValue placeholder="Forma de pagamento" />
@@ -530,34 +614,57 @@ watch(
             <div class="col-span-6">
               <label for="clienteIdLancamento" class="mb-1 block text-sm font-medium">
                 {{ store.form.tipo === 'RECEITA' ? 'Cliente' : 'Fornecedor' }}
-                <a @click="storeCliente.openSave" class="cursor-pointer px-2 text-blue-500">+ Novo</a>
+                <a @click="storeCliente.openSave" class="cursor-pointer px-2 text-blue-500"
+                  >+ Novo</a
+                >
               </label>
-              <Select2Ajax id="clienteIdLancamento" v-model="store.form.clienteId" url="/clientes/select2" allowClear />
+              <Select2Ajax
+                id="clienteIdLancamento"
+                v-model="store.form.clienteId"
+                url="/clientes/select2"
+                allowClear
+              />
             </div>
 
             <div class="col-span-6">
               <label for="categoriaIdLancamento" class="mb-1 block text-sm font-medium">
                 Categoria *
-                <FormularioCategorias class="cursor-pointer px-2 text-blue-500">+ Nova</FormularioCategorias>
+                <FormularioCategorias class="cursor-pointer px-2 text-blue-500"
+                  >+ Nova</FormularioCategorias
+                >
               </label>
-              <Select2Ajax id="categoriaIdLancamento" v-model="store.form.categoriaId" url="lancamentos/categorias/select2" />
+              <Select2Ajax
+                id="categoriaIdLancamento"
+                v-model="store.form.categoriaId"
+                url="lancamentos/categorias/select2"
+              />
               <p v-if="erros.categoriaId" class="text-sm text-red-600">{{ erros.categoriaId }}</p>
             </div>
 
             <div class="col-span-6">
               <label for="contasFinanceiroId" class="mb-1 block text-sm font-medium">
                 Conta *
-                <FormularioContas class="cursor-pointer px-2 text-blue-500">+ Nova</FormularioContas>
+                <FormularioContas class="cursor-pointer px-2 text-blue-500"
+                  >+ Nova</FormularioContas
+                >
               </label>
-              <Select2Ajax id="contasFinanceiroId" v-model="store.form.contasFinanceiroId" url="lancamentos/contas/select2" />
-              <p v-if="erros.contasFinanceiroId" class="text-sm text-red-600">{{ erros.contasFinanceiroId }}</p>
+              <Select2Ajax
+                id="contasFinanceiroId"
+                v-model="store.form.contasFinanceiroId"
+                url="lancamentos/contas/select2"
+              />
+              <p v-if="erros.contasFinanceiroId" class="text-sm text-red-600">
+                {{ erros.contasFinanceiroId }}
+              </p>
             </div>
           </div>
 
           <div class="flex flex-col rounded-md border bg-gray-50 px-4 py-2 dark:bg-gray-900">
             <span class="text-muted-foreground">Resumo do lançamento</span>
             <span class="text-sm">Total previsto: {{ formatCurrencyBR(totalResumo) }}</span>
-            <span v-if="desconto && !descontoDesabilitado" class="text-sm">Desconto aplicado: {{ formatCurrencyBR(desconto) }}</span>
+            <span v-if="desconto && !descontoDesabilitado" class="text-sm"
+              >Desconto aplicado: {{ formatCurrencyBR(desconto) }}</span
+            >
             <span v-if="params.metodo === 'PARCELADO' && params.hasEntrada" class="text-sm">
               Entrada de: {{ formatCurrencyBR(store.form.valorEntrada) }}
             </span>
@@ -577,21 +684,47 @@ watch(
         </div>
       </template>
 
-      <div class="mt-4 flex flex-col gap-3 border-t pt-4 md:flex-row md:items-center md:justify-between">
-        <label
-          v-if="!isEditMode"
-          for="notificarVencimentoLancamento"
-          class="flex cursor-pointer items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm md:min-w-[320px]"
-        >
-          <span>
-            Notificar vencimento
-            <span class="block text-xs text-muted-foreground">Avisar sobre o vencimento desse lançamento.</span>
-          </span>
-          <Switch id="notificarVencimentoLancamento" v-model="store.form.notificarVencimento" />
-        </label>
+      <div class="mt-4 grid gap-3 border-t pt-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div v-if="!isEditMode" class="grid min-w-0 gap-2 sm:grid-cols-2">
+          <label
+            for="notificarVencimentoLancamento"
+            class="flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm"
+          >
+            <span class="min-w-0">
+              <span class="block truncate font-medium">Notificar vencimento</span>
+              <span class="block text-xs text-muted-foreground"
+                >Avisar sobre o vencimento desse lançamento.</span
+              >
+            </span>
+            <Switch
+              id="notificarVencimentoLancamento"
+              v-model="store.form.notificarVencimento"
+              class="shrink-0"
+            />
+          </label>
+          <label
+            v-if="podeNotificarCliente"
+            for="notificarClienteVencimentoLancamento"
+            class="flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm"
+          >
+            <span class="min-w-0">
+              <span class="block truncate font-medium">Notificar cliente</span>
+              <span class="block text-xs text-muted-foreground"
+                >Enviar lembretes de cobrança por WhatsApp.</span
+              >
+            </span>
+            <Switch
+              id="notificarClienteVencimentoLancamento"
+              v-model="store.form.notificarClienteVencimento"
+              class="shrink-0"
+            />
+          </label>
+        </div>
         <div class="flex justify-end gap-2">
           <Button type="button" variant="secondary" @click="store.openModal = false">Fechar</Button>
-          <Button class="text-white" type="submit">{{ isEditMode ? 'Salvar alterações' : 'Registrar' }}</Button>
+          <Button class="text-white" type="submit">{{
+            isEditMode ? 'Salvar alterações' : 'Registrar'
+          }}</Button>
         </div>
       </div>
     </form>

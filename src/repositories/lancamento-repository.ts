@@ -44,6 +44,10 @@ export class LancamentosRepository {
     const response = await http.post(`/lancamentos/${id}/notificacao-vencimento`, { ativo })
     return response.data
   }
+  static async atualizarNotificacaoClienteVencimento(id: number, ativo: boolean) {
+    const response = await http.post(`/lancamentos/${id}/notificacao-cliente-vencimento`, { ativo })
+    return response.data
+  }
   static async adicionarParcela(
     lancamentoId: number,
     data: {
