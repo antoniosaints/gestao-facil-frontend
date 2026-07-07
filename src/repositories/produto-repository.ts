@@ -302,14 +302,21 @@ export class ProdutoVarianteRepository {
     await http.post(`/produtos/descarte`, descarte)
   }
 
-  static async gerarEtiquetas(id: number, quantidade?: number) {
-    const data = await http.get(
-      `/produtos/${id}/etiquetas${quantidade ? `?quantidade=${quantidade}` : ''}`,
-      {
-        responseType: 'blob',
-        headers: { 'Content-Type': 'application/pdf' },
-      },
-    )
+  static async gerarEtiquetas(
+    id: number,
+    quantidade?: number,
+    opcoes?: { nome?: boolean; preco?: boolean },
+  ) {
+    const params = new URLSearchParams()
+    if (quantidade) params.set('quantidade', String(quantidade))
+    if (opcoes?.nome) params.set('nome', 'true')
+    if (opcoes?.preco) params.set('preco', 'true')
+    const query = params.toString()
+
+    const data = await http.get(`/produtos/${id}/etiquetas${query ? `?${query}` : ''}`, {
+      responseType: 'blob',
+      headers: { 'Content-Type': 'application/pdf' },
+    })
 
     downloadBlob(data.data, `etiquetas-produto-${id}-${getTodayFileSuffix()}.pdf`)
   }

@@ -3,12 +3,33 @@
         <div class="grid items-start gap-4 px-4 ">
             <div class="bg-background dark:bg-background-dark rounded-md w-full h-full">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <!-- Nome -->
+                    <!-- Quantidade -->
                     <div class="md:col-span-12">
                         <Label for="quantidade"> Quantidade<span class="text-danger">*</span>
                         </Label>
                         <Input id="quantidade" v-model="quantidade" type="number" placeholder="Quantidade"
                             class="w-full dark:file:text-white bg-card py-2 h-auto" />
+                    </div>
+                    <!-- Nome do produto -->
+                    <div class="md:col-span-12 flex items-center justify-between gap-2">
+                        <div>
+                            <Label for="incluirNome">Incluir nome do produto</Label>
+                            <p class="text-xs text-muted-foreground">
+                                O nome aparece acima do código e é cortado para não passar da largura do código de
+                                barras.
+                            </p>
+                        </div>
+                        <Switch id="incluirNome" v-model="incluirNome" />
+                    </div>
+                    <!-- Preco -->
+                    <div class="md:col-span-12 flex items-center justify-between gap-2">
+                        <div>
+                            <Label for="incluirPreco">Incluir preço</Label>
+                            <p class="text-xs text-muted-foreground">
+                                Exibe o preço de venda abaixo do código de barras.
+                            </p>
+                        </div>
+                        <Switch id="incluirPreco" v-model="incluirPreco" />
                     </div>
                 </div>
             </div>
@@ -32,6 +53,7 @@ import { useToast } from "vue-toastification"
 import { ref } from "vue"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import ModalView from "@/components/formulario/ModalView.vue"
 import { ProdutoVarianteRepository } from "@/repositories/produto-repository"
 import { FilePlus } from "lucide-vue-next"
@@ -43,10 +65,15 @@ const store = useProdutoStore()
 const toast = useToast()
 
 const quantidade = ref<number | undefined>(undefined)
+const incluirNome = ref(false)
+const incluirPreco = ref(false)
 
 const gerarEtiquetas = async (id: number) => {
     try {
-        await ProdutoVarianteRepository.gerarEtiquetas(id, quantidade.value)
+        await ProdutoVarianteRepository.gerarEtiquetas(id, quantidade.value, {
+            nome: incluirNome.value,
+            preco: incluirPreco.value,
+        })
         toast.success('Etiquetas geradas com sucesso')
     } catch (error) {
         toast.error('Erro ao gerar as etiquetas')
