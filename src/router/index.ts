@@ -101,6 +101,16 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/admin/faturas/Home.vue'),
       },
       {
+        path: 'financeiro/painel',
+        name: 'admin-financeiro-painel',
+        component: () => import('@/pages/admin/financeiro/PainelFinanceiro.vue'),
+      },
+      {
+        path: 'insights',
+        name: 'admin-insights',
+        component: () => import('@/pages/admin/monitoramento/Home.vue'),
+      },
+      {
         path: 'configuracoes',
         name: 'admin-configuracoes',
         component: () => import('@/pages/admin/configuracoes/Home.vue'),

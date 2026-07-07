@@ -43,6 +43,26 @@ export async function handleRouteGuard(to: typed, from: typed) {
 
   if (to.path === '/login' && token) return home
 
+  // ----- Modo CEO persistente -----
+  // Ao entrar no /admin o root fica no modo CEO (inclusive apos recarregar a
+  // pagina) ate navegar explicitamente de volta para o ERP a partir do admin.
+  const CEO_MODE_KEY = 'gestao_facil:ceo_mode'
+  const isSuperAdmin = Boolean((storeUi.usuarioLogged as any)?.superAdmin)
+  if (isSuperAdmin) {
+    if (to.path.startsWith('/admin')) {
+      localStorage.setItem(CEO_MODE_KEY, '1')
+    } else if (localStorage.getItem(CEO_MODE_KEY) === '1') {
+      if (from.path.startsWith('/admin')) {
+        // Saida explicita (ex: clique em "Modo ERP" dentro do admin)
+        localStorage.removeItem(CEO_MODE_KEY)
+      } else if (!allowedRouteNames.includes(to.name as string)) {
+        return { name: 'admin-home' }
+      }
+    }
+  } else if (localStorage.getItem(CEO_MODE_KEY) === '1') {
+    localStorage.removeItem(CEO_MODE_KEY)
+  }
+
   if (!allowedRouteNames.includes(to.name as string)) {
     if (isBefore(new Date(storeUi.contaInfo.vencimento), new Date())) {
       toast.info('Sua conta está inativa, realize o pagamento para ativá-la.')

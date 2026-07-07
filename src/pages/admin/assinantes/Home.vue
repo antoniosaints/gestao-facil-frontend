@@ -20,17 +20,19 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   SquarePen,
+  UserPlus,
   UserStar,
 } from 'lucide-vue-next'
 import { reactive, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import ModalGerenciarAssinante from './ModalGerenciarAssinante.vue'
+import ModalNovoAssinante from './ModalNovoAssinante.vue'
 import Tabela from './tabela/Tabela.vue'
 import { useAssinantesAdmin } from './useAssinantesAdmin'
 
 const uiStore = useUiStore()
 const toast = useToast()
-const { openModal, selectedConta, openManage } = useAssinantesAdmin()
+const { openModal, selectedConta, openManage, openCreate, refreshKey } = useAssinantesAdmin()
 
 const status = ref('TODOS')
 const search = ref('')
@@ -163,6 +165,10 @@ watch(
   },
   { immediate: true },
 )
+
+watch(refreshKey, () => {
+  refreshAll()
+})
 </script>
 
 <template>
@@ -179,6 +185,10 @@ watch(
       </div>
 
       <div class="hidden flex-col gap-2 sm:flex-row sm:items-center md:flex">
+        <Button class="gap-2 text-white" @click="openCreate">
+          <UserPlus class="h-4 w-4" />
+          Novo assinante
+        </Button>
         <Select v-model="status">
           <SelectTrigger class="w-full bg-card sm:w-[180px]">
             <SelectValue placeholder="Filtrar status" />
@@ -323,6 +333,10 @@ watch(
             </SelectContent>
           </Select>
         </div>
+        <Button class="w-full gap-2 text-white" @click="showActionsModal = false; openCreate()">
+          <UserPlus class="h-4 w-4" />
+          Novo assinante
+        </Button>
         <div class="grid grid-cols-2 gap-2">
           <Button variant="outline" @click="refreshAll">
             <RefreshCcw class="mr-2 h-4 w-4" />
@@ -375,5 +389,6 @@ watch(
       :conta="selectedConta"
       @saved="handleSaved"
     />
+    <ModalNovoAssinante />
   </div>
 </template>

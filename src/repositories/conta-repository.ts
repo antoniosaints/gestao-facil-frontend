@@ -163,6 +163,63 @@ export interface UpdateAdminGatewayPayload {
   gateway: 'mercadopago' | 'abacatepay'
 }
 
+export interface CreateAssinanteAdminPayload {
+  conta: string
+  nomeUsuario: string
+  email: string
+  senha: string
+  telefone: string
+  tipo?: string
+  funcionarios?: number
+  valorBasePlano?: number
+  diasTeste?: number
+}
+
+export interface AdminFinanceiroPainelResponse {
+  resumo: {
+    mrrEstimado: number
+    contasAtivas: number
+    totalContas: number
+    recebidoMes: number
+    faturasPagasMes: number
+    pendenteTotal: number
+    faturasPendentes: number
+    atrasadoTotal: number
+    faturasAtrasadas: number
+  }
+  receitaMensal: Array<{ mes: string; recebido: number; gerado: number }>
+  statusDistribuicao: Array<{ status: string; quantidade: number; valor: number }>
+  topInadimplentes: Array<{
+    contaId: number
+    nome: string
+    email: string | null
+    status: string | null
+    faturas: number
+    valor: number
+  }>
+}
+
+export interface AdminMonitoramentoResponse {
+  geradoEm: string
+  servidor: {
+    hostname: string
+    plataforma: string
+    nodeVersion: string
+    uptimeSegundos: number
+    processoUptimeSegundos: number
+    cpus: number
+    loadAvg: number[]
+    memoriaTotalMb: number
+    memoriaLivreMb: number
+    memoriaUsoPercent: number
+    processoRssMb: number
+    processoHeapMb: number
+  }
+  banco: { ok: boolean; latencyMs: number; error: string | null }
+  redis: { ok: boolean; latencyMs: number; error: string | null; status: string }
+  filas: Array<Record<string, any>>
+}
+
 export interface WhatsAppNotificationInstanceOption {
   id: number
   nome: string
@@ -286,6 +343,26 @@ export class ContaRepository {
   static async alternarAppAssinante(id: number, moduleId: number, payload: ToggleAssinanteAdminAppPayload) {
     const res = await http.post(`/admin/assinantes/${id}/apps/${moduleId}`, payload)
     return res.data
+  }
+
+  static async criarAssinanteAdmin(payload: CreateAssinanteAdminPayload) {
+    const res = await http.post('/admin/assinantes', payload)
+    return res.data
+  }
+
+  static async deletarAssinanteAdmin(id: number) {
+    const res = await http.delete(`/admin/assinantes/${id}`)
+    return res.data
+  }
+
+  static async getFinanceiroPainelAdmin(): Promise<AdminFinanceiroPainelResponse> {
+    const res = await http.get('/admin/financeiro/painel')
+    return res.data.data
+  }
+
+  static async getMonitoramentoAdmin(): Promise<AdminMonitoramentoResponse> {
+    const res = await http.get('/admin/monitoramento')
+    return res.data.data
   }
 
   static async listarFaturasAdmin(params?: Record<string, any>): Promise<PaginatedAdminResponse<FaturaContaAdmin>> {

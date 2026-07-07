@@ -159,7 +159,7 @@ async function submit() {
     v-model:open="open"
     :title="title"
     description="Ajuste manualmente o status, o vencimento e os apps da conta selecionada."
-    size="lg"
+    size="4xl"
     :icon="UserCog"
   >
     <form class="grid gap-4 px-4" @submit.prevent="submit">
