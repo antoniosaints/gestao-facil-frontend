@@ -691,7 +691,7 @@ watch(
             class="flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm"
           >
             <span class="min-w-0">
-              <span class="block truncate font-medium">Notificar vencimento</span>
+              <span class="block truncate font-medium">Notificar</span>
               <span class="block text-xs text-muted-foreground"
                 >Avisar sobre o vencimento desse lançamento.</span
               >
@@ -708,7 +708,7 @@ watch(
             class="flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm"
           >
             <span class="min-w-0">
-              <span class="block truncate font-medium">Notificar cliente</span>
+              <span class="block truncate font-medium">Cliente</span>
               <span class="block text-xs text-muted-foreground"
                 >Enviar lembretes de cobrança por WhatsApp.</span
               >

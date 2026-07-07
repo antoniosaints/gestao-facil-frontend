@@ -420,15 +420,12 @@ watch(() => store.filters.update, loadLancamento)
           <ArrowLeft class="h-4 w-4" /> Voltar
         </Button>
         <Button variant="outline" @click="loadLancamento">
-          <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" /> Atualizar
-        </Button>
-        <Button variant="outline" :disabled="!lancamento?.id || Boolean(lancamento?.vendaId)" @click="abrirAdicionarParcela">
-          <Plus class="h-4 w-4" /> Adicionar parcela
+          <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
         </Button>
         <Button variant="outline" :disabled="!lancamento?.id" @click="toggleNotificacaoVencimento">
           <BellOff v-if="lancamento?.notificarVencimento" class="h-4 w-4" />
           <Bell v-else class="h-4 w-4" />
-          {{ lancamento?.notificarVencimento ? 'Desativar notificação' : 'Ativar notificação' }}
+          {{ lancamento?.notificarVencimento ? 'Não lembrar' : 'Lembrar' }}
         </Button>
         <Button v-if="podeNotificarCliente" variant="outline" :disabled="!lancamento?.id" @click="toggleNotificacaoClienteVencimento">
           <BellOff v-if="lancamento?.notificarClienteVencimento" class="h-4 w-4" />
