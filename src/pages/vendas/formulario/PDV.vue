@@ -291,7 +291,7 @@
             </div>
         </div>
         <ModalView v-model:open="openModalVendaFinalizada" title="Comprovante da venda"
-            description="Ticket da venda pronto para imprimir, baixar ou enviar." size="lg">
+            description="Ticket da venda pronto para imprimir, baixar ou enviar." size="xl">
             <div class="p-4 space-y-4">
                 
                 <div class="mx-auto w-full rounded-3xl border border-dashed border-border bg-card px-6 py-5 shadow-sm">
@@ -329,7 +329,7 @@
                     <div class="space-y-3 font-mono text-xs text-foreground">
                         <div v-if="vendaRecibo?.items?.length" class="space-y-2">
                             <div v-for="item in vendaRecibo.items" :key="item.id" class="space-y-1">
-                                <div class="truncate font-medium">{{ item.label }}</div>
+                                <div class="truncate font-medium max-w-[25rem]">{{ item.label }}</div>
                                 <div class="flex items-center justify-between gap-3 text-muted-foreground">
                                     <span>{{ item.quantity }}x {{ formatCurrencyBR(item.unitPrice) }}</span>
                                     <span>{{ formatCurrencyBR(item.total) }}</span>
