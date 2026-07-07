@@ -330,7 +330,7 @@ onMounted(() => {
       </Card>
     </section>
 
-    <section class="grid grid-cols-1 gap-4 xl:grid-cols-5">
+    <section class="grid grid-cols-1 gap-4 xl:grid-cols-6">
       <Card class="rounded-xl shadow xl:col-span-2">
         <CardHeader class="pb-2">
           <CardTitle class="text-sm font-medium">Métodos de pagamento</CardTitle>
@@ -339,7 +339,8 @@ onMounted(() => {
           <div v-if="hasPaymentChartData" class="grid items-center gap-3 md:grid-cols-[minmax(0,1fr)_160px]">
             <PieChart class="max-h-52" :data="metodoPagamentoChart" :options="optionsChartPie" />
             <div class="space-y-2">
-              <div v-for="(valor, index) in metodoPagamentoChart.datasets[0].data" :key="metodoPagamentoChart.labels[index]"
+              <div v-for="(valor, index) in metodoPagamentoChart.datasets[0].data"
+                :key="metodoPagamentoChart.labels[index]"
                 class="flex items-center justify-between gap-2 rounded-md border bg-background px-2 py-1.5 text-xs">
                 <span class="truncate">{{ metodoPagamentoChart.labels[index] }}</span>
                 <strong>{{ formatCurrencyBR(valor) }}</strong>
@@ -352,7 +353,7 @@ onMounted(() => {
         </CardContent>
       </Card>
 
-      <Card class="rounded-xl shadow xl:col-span-3">
+      <Card class="rounded-xl shadow xl:col-span-2">
         <CardHeader class="pb-2">
           <CardTitle class="text-sm font-medium">Resumo operacional</CardTitle>
         </CardHeader>
@@ -360,10 +361,27 @@ onMounted(() => {
           <BarChart class="max-h-52" :data="resumoOperacionalChart" :options="optionsChartBarDefault" />
         </CardContent>
       </Card>
+      
+      <section class="rounded-md border bg-card p-4 xl:col-span-2">
+        <h3 class="mb-3 font-semibold">Produtos mais vendidos</h3>
+        <div v-if="!relatorio?.produtosMaisVendidos.length" class="py-8 text-center text-sm text-muted-foreground">
+          Sem produtos vendidos.
+        </div>
+        <div v-else class="space-y-2">
+          <div v-for="produto in relatorio.produtosMaisVendidos" :key="produto.nome"
+            class="flex items-center justify-between rounded-md border bg-background p-3">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium" :title="produto.nome">{{ produto.nome }}</p>
+              <p class="text-xs text-muted-foreground">{{ produto.quantidade }} unidade(s)</p>
+            </div>
+            <span class="text-sm font-semibold">{{ formatCurrencyBR(produto.total) }}</span>
+          </div>
+        </div>
+      </section>
     </section>
 
     <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
-      <section class="rounded-md border bg-card p-4 xl:col-span-2">
+      <section class="rounded-md border bg-card p-4 xl:col-span-3">
         <div class="mb-3 flex items-center justify-between">
           <h3 class="font-semibold">Caixas</h3>
           <span class="text-xs text-muted-foreground">{{ relatorio?.caixas.length || 0 }} registro(s)</span>
@@ -399,25 +417,17 @@ onMounted(() => {
                 <td class="py-3 text-right">{{ formatCurrencyBR(item.resumo.diferenca || 0) }}</td>
                 <td class="py-3 text-right">
                   <div class="inline-flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      :disabled="exportingPdfId === item.caixa.id"
-                      @click="exportarPdf(item.caixa.id)"
-                    >
+                    <Button variant="outline" size="sm" :disabled="exportingPdfId === item.caixa.id"
+                      @click="exportarPdf(item.caixa.id)">
                       <FileDown class="h-4 w-4" /> PDF
                     </Button>
                     <Button variant="outline" size="sm" @click="abrirDetalhes(item)">
                       <Eye class="h-4 w-4" /> Detalhes
                     </Button>
-                    <Button
-                      v-if="canDeleteCaixas"
-                      variant="destructive"
-                      size="sm"
+                    <Button v-if="canDeleteCaixas" variant="destructive" size="sm"
                       :disabled="!canDeleteCaixaItem(item) || deletingCaixaId === item.caixa.id"
                       :title="item.resumo.totalVendas > 0 ? 'Caixas com vendas vinculadas não podem ser apagados.' : 'Apagar caixa'"
-                      @click="deletarCaixa(item)"
-                    >
+                      @click="deletarCaixa(item)">
                       <Trash2 class="h-4 w-4" /> Apagar
                     </Button>
                   </div>
@@ -425,23 +435,6 @@ onMounted(() => {
               </tr>
             </tbody>
           </table>
-        </div>
-      </section>
-
-      <section class="rounded-md border bg-card p-4">
-        <h3 class="mb-3 font-semibold">Produtos mais vendidos</h3>
-        <div v-if="!relatorio?.produtosMaisVendidos.length" class="py-8 text-center text-sm text-muted-foreground">
-          Sem produtos vendidos.
-        </div>
-        <div v-else class="space-y-2">
-          <div v-for="produto in relatorio.produtosMaisVendidos" :key="produto.nome"
-            class="flex items-center justify-between rounded-md border bg-background p-3">
-            <div class="min-w-0">
-              <p class="truncate text-sm font-medium" :title="produto.nome">{{ produto.nome }}</p>
-              <p class="text-xs text-muted-foreground">{{ produto.quantidade }} unidade(s)</p>
-            </div>
-            <span class="text-sm font-semibold">{{ formatCurrencyBR(produto.total) }}</span>
-          </div>
         </div>
       </section>
     </div>
@@ -500,20 +493,12 @@ onMounted(() => {
               </p>
             </div>
             <div class="flex w-full flex-col gap-2 md:w-auto md:flex-row">
-              <Button
-                v-if="canResendWhatsapp"
-                variant="outline"
-                class="w-full md:w-auto"
-                @click="abrirModalReenvio"
-              >
+              <Button v-if="canResendWhatsapp" variant="outline" class="w-full md:w-auto" @click="abrirModalReenvio">
                 <MessageCircleMore class="h-4 w-4" /> Reenviar WhatsApp
               </Button>
-              <Button
-                variant="outline"
-                class="w-full md:w-auto"
+              <Button variant="outline" class="w-full md:w-auto"
                 :disabled="exportingPdfId === caixaSelecionado.caixa.id"
-                @click="exportarPdf(caixaSelecionado.caixa.id)"
-              >
+                @click="exportarPdf(caixaSelecionado.caixa.id)">
                 <FileDown class="h-4 w-4" /> Exportar PDF
               </Button>
             </div>
@@ -583,11 +568,8 @@ onMounted(() => {
             Nenhuma venda vinculada a este caixa.
           </div>
           <div v-if="caixaSelecionado.vendas.length" class="space-y-2 md:hidden">
-            <article
-              v-for="venda in caixaSelecionado.vendas"
-              :key="venda.id"
-              class="rounded-md border bg-background p-3"
-            >
+            <article v-for="venda in caixaSelecionado.vendas" :key="venda.id"
+              class="rounded-md border bg-background p-3">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
                   <p class="truncate text-sm font-semibold">{{ venda.Uid || `#${venda.id}` }}</p>
@@ -605,7 +587,8 @@ onMounted(() => {
                   <strong>{{ formatCurrencyBR(venda.valor || 0) }}</strong>
                 </div>
               </div>
-              <Button type="button" variant="outline" size="sm" class="mt-3 w-full" @click="abrirDetalhesVenda(venda.id)">
+              <Button type="button" variant="outline" size="sm" class="mt-3 w-full"
+                @click="abrirDetalhesVenda(venda.id)">
                 <Eye class="h-4 w-4" />
                 Detalhes da venda
               </Button>
@@ -627,7 +610,9 @@ onMounted(() => {
                 <tr v-for="venda in caixaSelecionado.vendas" :key="venda.id" class="border-b last:border-b-0">
                   <td class="py-2 font-medium">{{ venda.Uid || `#${venda.id}` }}</td>
                   <td class="py-2">{{ new Date(venda.data).toLocaleString('pt-BR') }}</td>
-                  <td class="py-2"><Badge variant="outline">{{ venda.status }}</Badge></td>
+                  <td class="py-2">
+                    <Badge variant="outline">{{ venda.status }}</Badge>
+                  </td>
                   <td class="py-2">{{ getPaymentMethodLabel(venda.PagamentoVendas?.metodo) }}</td>
                   <td class="py-2 text-right">{{ formatCurrencyBR(venda.valor || 0) }}</td>
                   <td class="py-2 text-right">
@@ -648,15 +633,13 @@ onMounted(() => {
             Nenhum movimento registrado neste caixa.
           </div>
           <div v-if="caixaSelecionado.movimentos.length" class="space-y-2 md:hidden">
-            <article
-              v-for="movimento in caixaSelecionado.movimentos"
-              :key="movimento.id"
-              class="rounded-md border bg-background p-3"
-            >
+            <article v-for="movimento in caixaSelecionado.movimentos" :key="movimento.id"
+              class="rounded-md border bg-background p-3">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
                   <p class="truncate text-sm font-semibold">{{ movimento.descricao || movimento.tipo }}</p>
-                  <p class="text-xs text-muted-foreground">{{ new Date(movimento.createdAt).toLocaleString('pt-BR') }}</p>
+                  <p class="text-xs text-muted-foreground">{{ new Date(movimento.createdAt).toLocaleString('pt-BR') }}
+                  </p>
                 </div>
                 <span class="text-sm font-semibold">{{ formatCurrencyBR(movimento.valor || 0) }}</span>
               </div>
@@ -670,14 +653,8 @@ onMounted(() => {
                   <strong>{{ getPaymentMethodLabel(movimento.metodoPagamento) }}</strong>
                 </div>
               </div>
-              <Button
-                v-if="movimento.vendaId"
-                type="button"
-                variant="outline"
-                size="sm"
-                class="mt-3 w-full"
-                @click="abrirDetalhesVenda(movimento.vendaId)"
-              >
+              <Button v-if="movimento.vendaId" type="button" variant="outline" size="sm" class="mt-3 w-full"
+                @click="abrirDetalhesVenda(movimento.vendaId)">
                 <Eye class="h-4 w-4" />
                 Ver venda
               </Button>
@@ -696,20 +673,16 @@ onMounted(() => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="movimento in caixaSelecionado.movimentos" :key="movimento.id" class="border-b last:border-b-0">
+                <tr v-for="movimento in caixaSelecionado.movimentos" :key="movimento.id"
+                  class="border-b last:border-b-0">
                   <td class="py-2">{{ new Date(movimento.createdAt).toLocaleString('pt-BR') }}</td>
                   <td class="py-2">{{ movimento.tipo }}</td>
                   <td class="py-2">{{ getPaymentMethodLabel(movimento.metodoPagamento) }}</td>
                   <td class="py-2">{{ movimento.descricao || '-' }}</td>
                   <td class="py-2 text-right">{{ formatCurrencyBR(movimento.valor || 0) }}</td>
                   <td class="py-2 text-right">
-                    <Button
-                      v-if="movimento.vendaId"
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      @click="abrirDetalhesVenda(movimento.vendaId)"
-                    >
+                    <Button v-if="movimento.vendaId" type="button" variant="outline" size="sm"
+                      @click="abrirDetalhesVenda(movimento.vendaId)">
                       <Eye class="h-4 w-4" />
                     </Button>
                     <span v-else class="text-xs text-muted-foreground">-</span>
@@ -745,19 +718,27 @@ onMounted(() => {
       </div>
     </ModalView>
     <MobileBottomBar v-if="storeUi.isMobile">
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="openModalFiltros = true">
+      <button type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="openModalFiltros = true">
         <Filter class="h-5 w-5" />
         <span class="text-xs">Filtros</span>
       </button>
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="applyPreset('today'); carregarRelatorio()">
+      <button type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="applyPreset('today'); carregarRelatorio()">
         <CalendarDays class="h-5 w-5" />
         <span class="text-xs">Hoje</span>
       </button>
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="applyPreset('current-month'); carregarRelatorio()">
+      <button type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="applyPreset('current-month'); carregarRelatorio()">
         <HandCoins class="h-5 w-5" />
         <span class="text-xs">Mes</span>
       </button>
-      <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="carregarRelatorio">
+      <button type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="carregarRelatorio">
         <RefreshCcw class="h-5 w-5" />
         <span class="text-xs">Atualizar</span>
       </button>
