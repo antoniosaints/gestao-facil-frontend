@@ -58,6 +58,11 @@ export class CaixaRepository {
     return data.data as CaixaContextoResponse
   }
 
+  static async reenviarWhatsapp(caixaId: number, instanciaId: number) {
+    const { data } = await http.post(`/vendas/pdv/caixa/${caixaId}/whatsapp`, { instanciaId })
+    return data.data as { recipients: number }
+  }
+
   static async abrirCaixa(payload: AbrirCaixaPayload) {
     const { data } = await http.post('/vendas/pdv/abrirCaixa', payload)
     return data.data as CaixaSessao

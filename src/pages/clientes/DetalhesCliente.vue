@@ -130,7 +130,13 @@
                       <div class="flex items-center gap-2">
                         <Badge variant="outline">{{ cobranca.status }}</Badge>
                         <span class="font-semibold">{{ formatCurrency(cobranca.valor) }}</span>
-                        <Button type="button" variant="outline" size="sm" @click="openReminderModal('COBRANCA', cobranca.id)">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          title="Enviar lembrete desta cobrança"
+                          @click="openQuickSend({ tipo: 'COBRANCA', cobrancaId: cobranca.id }, `a cobrança ${cobranca.Uid || cobranca.idCobranca} de ${formatCurrency(cobranca.valor)}`)"
+                        >
                           <Send class="h-4 w-4" />
                         </Button>
                       </div>
@@ -152,6 +158,16 @@
                       <div class="flex items-center gap-2">
                         <Badge variant="outline">{{ lancamento.status }}</Badge>
                         <span class="font-semibold">{{ formatCurrency(lancamento.valorTotal) }}</span>
+                        <Button
+                          v-if="lancamento.tipo === 'RECEITA' && lancamento.status !== 'PAGO'"
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          title="Enviar pendência deste lançamento"
+                          @click="openQuickSend({ tipo: 'LANCAMENTO', lancamentoId: lancamento.id }, `a pendência do lançamento ${lancamento.descricao} de ${formatCurrency(lancamento.valorTotal)}`)"
+                        >
+                          <Send class="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -226,27 +242,43 @@
           <label class="text-sm font-medium">Tipo de envio</label>
           <select v-model="reminderForm.tipo" class="h-10 rounded-md border bg-background px-3 text-sm">
             <option value="COBRANCA">Lembrete de cobrança</option>
+            <option value="LANCAMENTO">Pendência de lançamento (receita)</option>
             <option value="MENSAGEM">Mensagem avulsa</option>
             <option value="ORCAMENTO_VENDA">Orçamento de venda</option>
             <option value="COMPROVANTE_VENDA">Comprovante de venda</option>
           </select>
         </div>
 
+        <p v-if="reminderOptionsLoading" class="text-xs text-muted-foreground">Carregando registros do cliente...</p>
+
         <div v-if="reminderForm.tipo === 'COBRANCA'" class="grid gap-2">
           <label class="text-sm font-medium">Cobrança</label>
           <select v-model.number="reminderForm.cobrancaId" class="h-10 rounded-md border bg-background px-3 text-sm">
             <option :value="null">Selecione uma cobrança</option>
-            <option v-for="cobranca in operational.cobrancas" :key="cobranca.id" :value="cobranca.id">
+            <option v-for="cobranca in reminderOptions.cobrancas" :key="cobranca.id" :value="cobranca.id">
               {{ cobranca.Uid || cobranca.idCobranca }} - {{ formatCurrency(cobranca.valor) }}
             </option>
           </select>
+        </div>
+
+        <div v-if="reminderForm.tipo === 'LANCAMENTO'" class="grid gap-2">
+          <label class="text-sm font-medium">Lançamento (receitas pendentes)</label>
+          <select v-model.number="reminderForm.lancamentoId" class="h-10 rounded-md border bg-background px-3 text-sm">
+            <option :value="null">Selecione um lançamento</option>
+            <option v-for="lancamento in reminderOptions.lancamentos" :key="lancamento.id" :value="lancamento.id">
+              {{ lancamento.descricao }} - {{ formatCurrency(lancamento.valorTotal) }}
+            </option>
+          </select>
+          <p v-if="!reminderOptionsLoading && !reminderOptions.lancamentos.length" class="text-xs text-muted-foreground">
+            Nenhuma receita pendente encontrada para este cliente.
+          </p>
         </div>
 
         <div v-if="['ORCAMENTO_VENDA', 'COMPROVANTE_VENDA'].includes(reminderForm.tipo)" class="grid gap-2">
           <label class="text-sm font-medium">Venda</label>
           <select v-model.number="reminderForm.vendaId" class="h-10 rounded-md border bg-background px-3 text-sm">
             <option :value="null">Selecione uma venda</option>
-            <option v-for="venda in operational.vendas" :key="venda.id" :value="venda.id">
+            <option v-for="venda in reminderOptions.vendas" :key="venda.id" :value="venda.id">
               {{ venda.Uid }} - {{ formatCurrency(totalVenda(venda)) }}
             </option>
           </select>
@@ -269,6 +301,22 @@
           </Button>
         </div>
       </form>
+    </ModalView>
+
+    <ModalView v-model:open="quickSend.open" title="Enviar via WhatsApp" description="Confirme o envio para o WhatsApp do cliente." size="md">
+      <div class="space-y-4 px-4 pb-4">
+        <div class="rounded-md border bg-muted/30 p-3 text-sm">
+          Enviar {{ quickSend.resumo }} para
+          <strong>{{ contatoPrincipal || 'cliente sem telefone cadastrado' }}</strong>?
+        </div>
+        <div class="flex justify-end gap-2">
+          <Button type="button" variant="outline" :disabled="quickSend.sending" @click="quickSend.open = false">Cancelar</Button>
+          <Button type="button" class="text-white" :disabled="quickSend.sending" @click="confirmQuickSend">
+            <Send class="h-4 w-4" />
+            {{ quickSend.sending ? 'Enviando...' : 'Confirmar envio' }}
+          </Button>
+        </div>
+      </div>
     </ModalView>
     <MobileBottomBar>
       <button type="button" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300" @click="$router.push({ name: 'clientes-tabela' })">
@@ -393,12 +441,31 @@ const reminderForm = ref<{
   tipo: ReminderType
   cobrancaId: number | null
   vendaId: number | null
+  lancamentoId: number | null
   mensagem: string
 }>({
   tipo: 'COBRANCA',
   cobrancaId: null,
   vendaId: null,
+  lancamentoId: null,
   mensagem: '',
+})
+const reminderOptions = ref<{ cobrancas: any[]; vendas: any[]; lancamentos: any[] }>({
+  cobrancas: [],
+  vendas: [],
+  lancamentos: [],
+})
+const reminderOptionsLoading = ref(false)
+const quickSend = ref<{
+  open: boolean
+  sending: boolean
+  payload: ClienteWhatsappPayload | null
+  resumo: string
+}>({
+  open: false,
+  sending: false,
+  payload: null,
+  resumo: '',
 })
 
 const clienteId = computed(() => Number(route.params.id))
@@ -552,14 +619,75 @@ async function refreshClienteDetalhes() {
   await Promise.all([reloadClienteStats(), loadOperationalDetails(activeMeta.value.page)])
 }
 
-function openReminderModal(tipo: ReminderType = 'COBRANCA', cobrancaId?: number, vendaId?: number) {
+async function loadReminderOptions() {
+  reminderOptionsLoading.value = true
+  try {
+    // Listas proprias do modal: independentes dos filtros e da tab ativa.
+    const [cobrancas, vendas, lancamentos] = await Promise.all([
+      ClienteRepository.getDetalhesOperacionais(clienteId.value, { tab: 'cobrancas', page: 1, limit: 30 }),
+      ClienteRepository.getDetalhesOperacionais(clienteId.value, { tab: 'vendas', page: 1, limit: 30 }),
+      ClienteRepository.getDetalhesOperacionais(clienteId.value, { tab: 'lancamentos', page: 1, limit: 30 }),
+    ])
+
+    reminderOptions.value = {
+      cobrancas: cobrancas.items || [],
+      vendas: vendas.items || [],
+      lancamentos: (lancamentos.items || []).filter(
+        (lancamento: any) => lancamento.tipo === 'RECEITA' && lancamento.status !== 'PAGO',
+      ),
+    }
+
+    if (!reminderForm.value.cobrancaId) {
+      reminderForm.value.cobrancaId = reminderOptions.value.cobrancas[0]?.id ?? null
+    }
+    if (!reminderForm.value.vendaId) {
+      reminderForm.value.vendaId = reminderOptions.value.vendas[0]?.id ?? null
+    }
+    if (!reminderForm.value.lancamentoId) {
+      reminderForm.value.lancamentoId = reminderOptions.value.lancamentos[0]?.id ?? null
+    }
+  } catch (e) {
+    console.error(e)
+    toast.error('Falha ao carregar registros do cliente para o lembrete')
+  } finally {
+    reminderOptionsLoading.value = false
+  }
+}
+
+function openReminderModal(
+  tipo: ReminderType = 'COBRANCA',
+  cobrancaId?: number,
+  vendaId?: number,
+  lancamentoId?: number,
+) {
   reminderForm.value = {
     tipo,
-    cobrancaId: cobrancaId ?? operational.value.cobrancas[0]?.id ?? null,
-    vendaId: vendaId ?? operational.value.vendas[0]?.id ?? null,
+    cobrancaId: cobrancaId ?? null,
+    vendaId: vendaId ?? null,
+    lancamentoId: lancamentoId ?? null,
     mensagem: '',
   }
   reminderOpen.value = true
+  loadReminderOptions()
+}
+
+function openQuickSend(payload: ClienteWhatsappPayload, resumo: string) {
+  quickSend.value = { open: true, sending: false, payload, resumo }
+}
+
+async function confirmQuickSend() {
+  if (!quickSend.value.payload) return
+
+  try {
+    quickSend.value.sending = true
+    await ClienteRepository.enviarWhatsapp(clienteId.value, quickSend.value.payload)
+    toast.success('Mensagem enviada pelo WhatsApp')
+    quickSend.value.open = false
+  } catch (e: any) {
+    toast.error(e?.response?.data?.message || 'Erro ao enviar mensagem')
+  } finally {
+    quickSend.value.sending = false
+  }
 }
 
 function buildReminderPayload(): ClienteWhatsappPayload | null {
@@ -577,6 +705,14 @@ function buildReminderPayload(): ClienteWhatsappPayload | null {
       return null
     }
     return { tipo: 'COBRANCA', cobrancaId: reminderForm.value.cobrancaId }
+  }
+
+  if (reminderForm.value.tipo === 'LANCAMENTO') {
+    if (!reminderForm.value.lancamentoId) {
+      toast.error('Selecione um lançamento')
+      return null
+    }
+    return { tipo: 'LANCAMENTO', lancamentoId: reminderForm.value.lancamentoId }
   }
 
   if (!reminderForm.value.vendaId) {

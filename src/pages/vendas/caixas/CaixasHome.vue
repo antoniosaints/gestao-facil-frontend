@@ -11,6 +11,7 @@ import {
   FileDown,
   Filter,
   HandCoins,
+  MessageCircleMore,
   ReceiptText,
   RefreshCcw,
   RefreshCw,
@@ -34,6 +35,10 @@ import {
   CaixaRepository,
   type CaixaRelatorioParams,
 } from '@/repositories/caixa-repository'
+import {
+  ContaRepository,
+  type WhatsAppNotificationInstanceOption,
+} from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { useVendasStore } from '@/stores/vendas/useVenda'
 import type { CaixaRelatorioResponse } from '@/types/schemas'
@@ -52,6 +57,16 @@ const relatorio = ref<CaixaRelatorioResponse | null>(null)
 const caixaSelecionado = ref<CaixaRelatorioResponse['caixas'][number] | null>(null)
 const exportingPdfId = ref<number | null>(null)
 const deletingCaixaId = ref<number | null>(null)
+const whatsappInstances = ref<WhatsAppNotificationInstanceOption[]>([])
+const openModalReenvio = ref(false)
+const instanciaReenvioId = ref<number | null>(null)
+const reenviandoWhatsapp = ref(false)
+const connectedInstances = computed(() =>
+  whatsappInstances.value.filter((instancia) => instancia.status === 'CONECTADA'),
+)
+const canResendWhatsapp = computed(() =>
+  caixaSelecionado.value?.caixa.status === 'FECHADO' && connectedInstances.value.length > 0,
+)
 const canDeleteCaixas = computed(() => storeUi.permissoes.admin)
 
 const filtrosAtivos = computed(() => {
@@ -230,8 +245,45 @@ async function deletarCaixa(item: CaixaRelatorioResponse['caixas'][number]) {
   }
 }
 
+async function carregarInstanciasWhatsapp() {
+  try {
+    whatsappInstances.value = await ContaRepository.listarInstanciasWhatsappNotificacao()
+  } catch {
+    // Sem permissao ou modulo inativo: apenas oculta o botao de reenvio.
+    whatsappInstances.value = []
+  }
+}
+
+function abrirModalReenvio() {
+  instanciaReenvioId.value = connectedInstances.value[0]?.id ?? null
+  openModalReenvio.value = true
+}
+
+async function reenviarWhatsapp() {
+  if (!caixaSelecionado.value || !instanciaReenvioId.value) {
+    toast.error('Selecione a instância WhatsApp para o envio')
+    return
+  }
+
+  try {
+    reenviandoWhatsapp.value = true
+    const resultado = await CaixaRepository.reenviarWhatsapp(
+      caixaSelecionado.value.caixa.id,
+      instanciaReenvioId.value,
+    )
+    toast.success(`Resumo do caixa enviado para ${resultado.recipients} destinatário(s)`)
+    openModalReenvio.value = false
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error.response?.data?.message || 'Erro ao reenviar resumo via WhatsApp')
+  } finally {
+    reenviandoWhatsapp.value = false
+  }
+}
+
 onMounted(() => {
   carregarRelatorio()
+  carregarInstanciasWhatsapp()
 })
 </script>
 
@@ -447,14 +499,24 @@ onMounted(() => {
                 por {{ caixaSelecionado.caixa.fechadoPor?.nome || '-' }}
               </p>
             </div>
-            <Button
-              variant="outline"
-              class="w-full md:w-auto"
-              :disabled="exportingPdfId === caixaSelecionado.caixa.id"
-              @click="exportarPdf(caixaSelecionado.caixa.id)"
-            >
-              <FileDown class="h-4 w-4" /> Exportar PDF
-            </Button>
+            <div class="flex w-full flex-col gap-2 md:w-auto md:flex-row">
+              <Button
+                v-if="canResendWhatsapp"
+                variant="outline"
+                class="w-full md:w-auto"
+                @click="abrirModalReenvio"
+              >
+                <MessageCircleMore class="h-4 w-4" /> Reenviar WhatsApp
+              </Button>
+              <Button
+                variant="outline"
+                class="w-full md:w-auto"
+                :disabled="exportingPdfId === caixaSelecionado.caixa.id"
+                @click="exportarPdf(caixaSelecionado.caixa.id)"
+              >
+                <FileDown class="h-4 w-4" /> Exportar PDF
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -657,6 +719,29 @@ onMounted(() => {
             </table>
           </div>
         </section>
+      </div>
+    </ModalView>
+    <ModalView v-model:open="openModalReenvio" title="Reenviar resumo via WhatsApp" size="md">
+      <div class="grid gap-4 p-4">
+        <p class="text-sm text-muted-foreground">
+          O resumo completo do caixa <strong>{{ caixaSelecionado?.caixa.codigo }}</strong> será enviado
+          para os administradores da conta pela instância selecionada.
+        </p>
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Instância WhatsApp (conectadas)</label>
+          <select v-model.number="instanciaReenvioId" class="h-10 w-full rounded-md border bg-background px-3 text-sm">
+            <option v-for="instancia in connectedInstances" :key="instancia.id" :value="instancia.id">
+              {{ instancia.nome }}{{ instancia.numeroConectado ? ` (${instancia.numeroConectado})` : '' }}
+            </option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" :disabled="reenviandoWhatsapp" @click="openModalReenvio = false">Cancelar</Button>
+          <Button class="text-white" :disabled="reenviandoWhatsapp || !instanciaReenvioId" @click="reenviarWhatsapp">
+            <MessageCircleMore class="h-4 w-4" />
+            {{ reenviandoWhatsapp ? 'Enviando...' : 'Confirmar envio' }}
+          </Button>
+        </div>
       </div>
     </ModalView>
     <MobileBottomBar v-if="storeUi.isMobile">
