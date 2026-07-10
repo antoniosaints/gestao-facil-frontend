@@ -83,6 +83,16 @@ export class VendaRepository {
     return await http.get(`/vendas/resumo/dashboard${query}`)
   }
 
+  static async painel(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/vendas/resumo/painel`, {
+      params: {
+        ...(inicio ? { inicio } : {}),
+        ...(fim ? { fim } : {}),
+      },
+    })
+    return data
+  }
+
   static async save(data: Omit<Vendas, 'id'>) {
     await http.post(`/vendas`, data)
   }

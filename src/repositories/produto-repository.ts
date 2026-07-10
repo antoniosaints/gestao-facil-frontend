@@ -190,6 +190,16 @@ export class ProdutoRepository {
     return data
   }
 
+  static async getPainel(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/produtos/graficos/painel`, {
+      params: {
+        ...(inicio ? { inicio } : {}),
+        ...(fim ? { fim } : {}),
+      },
+    })
+    return data
+  }
+
   static async getReposicoesMensais(inicio?: string, fim?: string) {
     const { data } = await http.get(`/produtos/graficos/reposicao-mensal`, {
       params: {
