@@ -1,6 +1,6 @@
 <template>
   <div
-    class="cursor-pointer truncate w-full flex px-3 py-2 justify-between items-center gap-2 rounded-xl dark:border-gray-500 transition-all"
+    class="cursor-pointer truncate w-full flex px-3 py-2 justify-between items-center gap-2 rounded-xl dark:border-gray-500 transition-[background-color,transform]"
     :class="colorTheme">
     <div class="flex gap-2 justify-between items-center">
       <img @click="openModal" :src="logo" alt="PR" class="rounded-full w-10 h-10 bg-gray-500" />
@@ -21,7 +21,6 @@
 import { computed } from 'vue'
 import ModalUploadPerfil from '@/pages/configs/ModalUploadPerfil.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { env } from '@/utils/dotenv'
 import { resolveFileUrl } from '@/utils/fileUrl'
 
 const store = useUiStore()
@@ -35,7 +34,6 @@ const openModal = () => {
 }
 
 const colorTheme = computed(() => {
-  if (env.VITE_MODE_SYSTEM === 'arena') return 'bg-teal-900/40'
-  return 'bg-blue-900/40'
+  return 'bg-black/10 text-sidebar-foreground'
 })
 </script>

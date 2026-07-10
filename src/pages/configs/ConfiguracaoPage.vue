@@ -12,11 +12,19 @@
 
         <Tabs v-model="tab" class="w-auto">
             <div class="overflow-auto max-w-full">
-                <TabsList class="grid w-max" :class="isRootUser ? 'grid-cols-5' : 'grid-cols-4'">
+                <TabsList class="grid w-max" :class="isRootUser ? 'grid-cols-7' : 'grid-cols-6'">
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i>
                         Impressão
+                    </TabsTrigger>
+                    <TabsTrigger value="vendas" class="flex items-center">
+                        <ShoppingCart class="inline-flex mr-1 h-5 w-5" />
+                        Vendas
+                    </TabsTrigger>
+                    <TabsTrigger value="aparencia" class="flex items-center">
+                        <Palette class="inline-flex mr-1 h-5 w-5" />
+                        Aparência
                     </TabsTrigger>
                     <TabsTrigger value="financeiro" class="flex items-center">
                         <Banknote class="inline-flex mr-1 w-5 h-5" />
@@ -170,6 +178,60 @@
                 <ImpressaoPage />
             </TabsContent>
 
+            <TabsContent value="vendas">
+                <Card class="rounded-t-none bg-background">
+                    <form @submit.prevent="submit(formularioVendas)">
+                        <CardHeader>
+                            <CardTitle class="font-normal">Modelo do ponto de venda</CardTitle>
+                            <CardDescription>Escolha a experiência usada ao abrir o PDV. A troca não altera vendas, estoque ou caixas.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div class="grid gap-4 lg:grid-cols-2">
+                                <button v-for="modelo in modelosPdv" :key="modelo.value" type="button"
+                                    class="group relative overflow-hidden rounded-2xl border p-5 text-left transition-all"
+                                    :class="formularioVendas.modeloPdv === modelo.value
+                                        ? 'border-primary bg-primary/5 shadow-md ring-1 ring-primary'
+                                        : 'bg-body/60 hover:border-primary/50 hover:bg-body'"
+                                    @click="formularioVendas.modeloPdv = modelo.value">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div class="flex gap-3">
+                                            <div class="rounded-xl border bg-background p-3 text-primary shadow-sm">
+                                                <component :is="modelo.icon" class="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <p class="font-semibold">PDV {{ modelo.label }}</p>
+                                                    <span v-if="modelo.value === 'PRO'" class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">Novo</span>
+                                                </div>
+                                                <p class="mt-1 text-sm text-muted-foreground">{{ modelo.description }}</p>
+                                            </div>
+                                        </div>
+                                        <CircleCheck v-if="formularioVendas.modeloPdv === modelo.value" class="h-5 w-5 shrink-0 text-primary" />
+                                        <span v-else class="h-5 w-5 shrink-0 rounded-full border-2" />
+                                    </div>
+                                    <div class="mt-5 flex flex-wrap gap-2">
+                                        <span v-for="feature in modelo.features" :key="feature" class="rounded-full border bg-background/80 px-2.5 py-1 text-xs text-muted-foreground">
+                                            {{ feature }}
+                                        </span>
+                                    </div>
+                                </button>
+                            </div>
+                        </CardContent>
+                        <CardFooter class="justify-end">
+                            <Button :disabled="loading" class="ml-2 text-white" type="submit">
+                                <CircleCheck v-if="!loading" />
+                                <LoaderIcon v-else class="animate-spin" />
+                                {{ loading ? 'Salvando...' : 'Salvar modelo do PDV' }}
+                            </Button>
+                        </CardFooter>
+                    </form>
+                </Card>
+            </TabsContent>
+
+            <TabsContent value="aparencia">
+                <TemaPage />
+            </TabsContent>
+
             <TabsContent value="financeiro">
                 <Card class="rounded-t-none bg-background">
                     <form @submit.prevent="submit(formularioFinanceiro)">
@@ -307,11 +369,12 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Banknote, CircleCheck, Cog, LoaderIcon, Menu, Undo2 } from 'lucide-vue-next'
+import { Banknote, CircleCheck, Cog, Keyboard, LayoutGrid, LoaderIcon, Menu, Palette, ShoppingCart, Undo2 } from 'lucide-vue-next'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { ContaRepository, type WhatsAppNotificationInstanceOption } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import ImpressaoPage from './ImpressaoPage.vue'
+import TemaPage from './TemaPage.vue'
 import { goBack } from '@/hooks/links'
 import {
     MAIN_MENU_VISIBILITY_OPTIONS,
@@ -319,7 +382,7 @@ import {
     type MainMenuVisibilityKey,
 } from '@/layouts/options'
 
-const tab = ref<'empresa' | 'notificacoes' | 'impressao' | 'financeiro' | 'menus'>('empresa')
+const tab = ref<'empresa' | 'notificacoes' | 'impressao' | 'vendas' | 'aparencia' | 'financeiro' | 'menus'>('empresa')
 const toast = useToast()
 const storeUi = useUiStore()
 const loading = ref(false)
@@ -404,6 +467,25 @@ const formularioFinanceiro = reactive<UpdateParametrosConta>({
     permitirTransferenciaContaFinanceira: true,
     permitirCriacaoCobranca: true,
 })
+const formularioVendas = reactive<UpdateParametrosConta>({
+    modeloPdv: 'BASICO',
+})
+const modelosPdv = [
+    {
+        value: 'BASICO' as const,
+        label: 'Básico',
+        description: 'Mantém a tela atual, leve e familiar para operações por toque ou mouse.',
+        icon: LayoutGrid,
+        features: ['Grade de produtos', 'Carrinho lateral', 'Responsivo'],
+    },
+    {
+        value: 'PRO' as const,
+        label: 'PRO',
+        description: 'Terminal mais denso, com status do caixa e atalhos pelas teclas de função.',
+        icon: Keyboard,
+        features: ['Atalhos F1-F12', 'Status em tempo real', 'Operação de balcão'],
+    },
+]
 const formularioMenus = reactive<UpdateParametrosConta>({
     menusVisiveis: getDefaultVisibleMenuKeys(),
 })
@@ -490,6 +572,9 @@ async function getParametros() {
                 permitirEfetivacaoFutura: response.data.permitirEfetivacaoFutura ?? true,
                 permitirTransferenciaContaFinanceira: response.data.permitirTransferenciaContaFinanceira ?? true,
                 permitirCriacaoCobranca: response.data.permitirCriacaoCobranca ?? true,
+            })
+            Object.assign(formularioVendas, {
+                modeloPdv: response.data.modeloPdv === 'PRO' ? 'PRO' : 'BASICO',
             })
             Object.assign(formularioMenus, {
                 menusVisiveis: Array.isArray(response.data.menusVisiveis)

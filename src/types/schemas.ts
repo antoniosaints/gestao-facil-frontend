@@ -459,6 +459,8 @@ export interface FormularioLancamento {
     notificarClienteVencimento?: boolean
   }
 export interface UpdateParametrosConta {
+  modeloPdv?: 'BASICO' | 'PRO' | null
+  temaPersonalizado?: ThemeCustomization | null
   AsaasApiKey?: string | null
   AsaasApiSecret?: string | null
   AsaasEnv?: string | null
@@ -491,6 +493,15 @@ export interface UpdateParametrosConta {
     whatsappEventoCaixaFechado?: boolean | null
     financeiroVencimentosNotificacoesAtivo?: boolean | null
   }
+
+export interface ThemeCustomization {
+  primariaLight: string
+  primariaDark: string
+  sidebarLight: string
+  sidebarDark: string
+  fundoLight: string
+  fundoDark: string
+}
 
 export interface ItensVendas {
   id?: number

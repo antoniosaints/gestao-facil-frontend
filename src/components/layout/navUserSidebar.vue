@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { computed, onMounted } from 'vue'
-import { env } from '@/utils/dotenv'
 import ModalUploadPerfil from '@/pages/configs/ModalUploadPerfil.vue'
 import { useAuthStore } from '@/stores/login/useAuthStore'
 import { useToast } from 'vue-toastification'
@@ -51,8 +50,7 @@ function logOut() {
 }
 
 const colorTheme = computed(() => {
-  if (env.VITE_MODE_SYSTEM === 'arena') return 'bg-teal-900/40'
-  return 'bg-blue-900/40'
+  return 'bg-black/10 text-sidebar-foreground'
 })
 </script>
 
@@ -75,10 +73,8 @@ const colorTheme = computed(() => {
           <ChevronsUpDown class="ml-auto size-4" />
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent class="min-w-56 rounded-lg" :class="{
-        'bg-teal-700 dark:bg-teal-950 text-white border-teal-800 dark:border-teal-800': env.VITE_MODE_SYSTEM === 'arena',
-        'bg-blue-700 dark:bg-blue-950 text-white border-blue-800 dark:border-blue-800': env.VITE_MODE_SYSTEM === 'erp',
-      }" :side="uiStore.isMobile ? 'bottom' : 'right'">
+      <DropdownMenuContent class="min-w-56 rounded-lg border-white/10 bg-sidebar text-sidebar-foreground"
+        :side="uiStore.isMobile ? 'bottom' : 'right'">
         <DropdownMenuLabel class="p-0 font-normal">
           <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <Avatar class="h-8 w-8 rounded-lg">
@@ -93,10 +89,7 @@ const colorTheme = computed(() => {
             </div>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator :class="{
-          'bg-teal-800 dark:bg-teal-800': env.VITE_MODE_SYSTEM === 'arena',
-          'bg-blue-800 dark:bg-blue-800': env.VITE_MODE_SYSTEM === 'erp',
-        }" />
+        <DropdownMenuSeparator class="bg-white/15" />
         <DropdownMenuGroup>
           <RouterLink to="/assinatura/resumo">
             <DropdownMenuItem>
@@ -105,10 +98,7 @@ const colorTheme = computed(() => {
             </DropdownMenuItem>
           </RouterLink>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator :class="{
-          'bg-teal-800 dark:bg-teal-800': env.VITE_MODE_SYSTEM === 'arena',
-          'bg-blue-800 dark:bg-blue-800': env.VITE_MODE_SYSTEM === 'erp',
-        }" />
+        <DropdownMenuSeparator class="bg-white/15" />
         <DropdownMenuGroup>
           <RouterLink v-if="uiStore.permissoes.superadmin" to="/admin">
             <DropdownMenuItem>
@@ -127,10 +117,7 @@ const colorTheme = computed(() => {
             Foto do perfil
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator :class="{
-          'bg-teal-800 dark:bg-teal-800': env.VITE_MODE_SYSTEM === 'arena',
-          'bg-blue-800 dark:bg-blue-800': env.VITE_MODE_SYSTEM === 'erp',
-        }" />
+        <DropdownMenuSeparator class="bg-white/15" />
         <DropdownMenuItem @click="logOut">
           <LogOut />
           Sair

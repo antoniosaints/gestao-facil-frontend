@@ -1,6 +1,14 @@
 import { useColorMode } from '@vueuse/core'
-import { watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { env } from './dotenv'
+import type { ThemeCustomization } from '@/types/schemas'
+import {
+  DEFAULT_THEME_CUSTOMIZATION,
+  applyThemeVariables,
+  getThemePalette,
+  normalizeThemeCustomization,
+  type ThemeMode,
+} from './themeCustomization'
 
 export const colorTheme = useColorMode({
   emitAuto: true,
@@ -12,19 +20,27 @@ export const colorTheme = useColorMode({
   },
 })
 
+export const activeThemeCustomization = ref<ThemeCustomization>({ ...DEFAULT_THEME_CUSTOMIZATION })
+
+function resolvedThemeMode(): ThemeMode {
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
+export function setThemeCustomization(value?: Partial<ThemeCustomization> | null) {
+  activeThemeCustomization.value = normalizeThemeCustomization(value)
+  applyThemeVariables(activeThemeCustomization.value, resolvedThemeMode())
+  updateMetaTags()
+}
+
 export function updateMetaTags() {
   const themeMeta = document.querySelector<HTMLMetaElement>('#meta-theme')
   const bgMeta = document.querySelector<HTMLMetaElement>('#meta-background')
 
   if (!themeMeta || !bgMeta) return
 
-  if (colorTheme.value === 'dark') {
-    themeMeta.setAttribute('content', '#0c0a09') // cor do tema dark
-    bgMeta.setAttribute('content', '#0c0a09')
-  } else {
-    themeMeta.setAttribute('content', '#f2f2f2') // cor do tema light
-    bgMeta.setAttribute('content', '#f2f2f2')
-  }
+  const palette = getThemePalette(activeThemeCustomization.value, resolvedThemeMode())
+  themeMeta.setAttribute('content', palette.background)
+  bgMeta.setAttribute('content', palette.background)
 
   const iconUrl = env.VITE_MODE_SYSTEM === 'arena' ? '/imgs/favicon_arena.png' : '/imgs/logo.png'
 
@@ -38,4 +54,8 @@ export function updateMetaTags() {
   if (shortcutIcon) shortcutIcon.href = iconUrl
 }
 
-watch(colorTheme, updateMetaTags, { immediate: true })
+watch(colorTheme, async () => {
+  await nextTick()
+  applyThemeVariables(activeThemeCustomization.value, resolvedThemeMode())
+  updateMetaTags()
+}, { immediate: true })

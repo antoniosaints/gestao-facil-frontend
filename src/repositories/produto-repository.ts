@@ -57,6 +57,17 @@ export class ProdutoRepository {
     return res.data
   }
 
+  static async gerarSku(params: { nome?: string; nomeVariante?: string; produtoBaseId?: number | null }) {
+    const { data } = await http.get(`/produtos/gerar-sku`, {
+      params: {
+        nome: params.nome?.trim() || undefined,
+        nomeVariante: params.nomeVariante?.trim() || undefined,
+        produtoBaseId: params.produtoBaseId ?? undefined,
+      },
+    })
+    return (data?.data?.sku ?? '') as string
+  }
+
   static async remove(id: number) {
     await http.delete(`/produtos/${id}`)
   }

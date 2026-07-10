@@ -31,6 +31,7 @@ type ProdutoForm = {
   materiaPrima: boolean
   custoMedioProducao?: number
   nomeVariante: string
+  skuBloqueado?: boolean
 }
 
 type ProdutoVarianteForm = {
@@ -54,6 +55,7 @@ type ProdutoVarianteForm = {
   custoMedioProducao?: number
   nomeVariante: string
   categoriaId: number | null
+  skuBloqueado?: boolean
 }
 
 type ProdutoCategoriaForm = {
@@ -94,6 +96,7 @@ function getDefaultProdutoForm(): ProdutoForm {
     mostrarNoPdv: true,
     materiaPrima: false,
     custoMedioProducao: undefined,
+    skuBloqueado: false,
   }
 }
 
@@ -119,6 +122,7 @@ function getDefaultVarianteForm(produtoBaseId: number | null = null): ProdutoVar
     materiaPrima: false,
     custoMedioProducao: undefined,
     categoriaId: null,
+    skuBloqueado: false,
   }
 }
 
@@ -287,6 +291,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
         materiaPrima: data?.materiaPrima ?? false,
         custoMedioProducao: data?.custoMedioProducao || undefined,
         nomeVariante: data?.nomeVariante || 'Padrão',
+        skuBloqueado: data?.skuBloqueado ?? false,
       }
       baseMutationId.value = data?.id ?? id
       if (data?.variantePadraoId) {
@@ -323,12 +328,54 @@ export const useProdutoStore = defineStore('produtoStore', () => {
         materiaPrima: data.materiaPrima ?? false,
         custoMedioProducao: data.custoMedioProducao || undefined,
         categoriaId: data.categoriaId ?? null,
+        skuBloqueado: data.skuBloqueado ?? false,
       }
       idMutation.value = data.id ?? id
       openModalVariante.value = true
     } catch (error) {
       console.log(error)
       toast.error('Erro ao editar a variante')
+    }
+  }
+
+  const gerarSkuProduto = async () => {
+    if (!form.value.nome?.trim()) {
+      toast.error('Informe o nome do produto antes de gerar o SKU')
+      return
+    }
+    try {
+      const sku = await ProdutoRepository.gerarSku({
+        nome: form.value.nome,
+        nomeVariante: form.value.nomeVariante,
+      })
+      if (sku) {
+        form.value.codigo = sku
+        toast.success('SKU gerado automaticamente')
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error('Erro ao gerar o SKU')
+    }
+  }
+
+  const gerarSkuVariante = async () => {
+    if (!varianteForm.value.produtoBaseId && !varianteForm.value.nomeVariante?.trim()) {
+      toast.error('Selecione o produto base e informe a variante antes de gerar o SKU')
+      return
+    }
+    try {
+      const sku = await ProdutoRepository.gerarSku({
+        nome: varianteForm.value.nome,
+        nomeVariante: varianteForm.value.nomeVariante,
+        produtoBaseId: varianteForm.value.produtoBaseId,
+      })
+      if (sku) {
+        varianteForm.value.codigo = sku
+        toast.success('SKU gerado automaticamente')
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error('Erro ao gerar o SKU')
     }
   }
 
@@ -371,6 +418,8 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     openUpdate,
     openUpdateVariante,
     openUpdateCategoria,
+    gerarSkuProduto,
+    gerarSkuVariante,
     updateTable,
     updateListingMode,
     filters,

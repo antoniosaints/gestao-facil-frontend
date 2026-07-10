@@ -38,6 +38,8 @@ const emit = defineEmits<{
 }>()
 
 const items = ref<Item[]>([])
+const isOpen = ref(false)
+const searchInputRef = ref<{ $el?: HTMLElement } | null>(null)
 const selectedId = ref<string | number | null>(props.modelValue ?? null)
 const selectedItem = ref<Item | null>(null)
 const label = defineModel('label', {
@@ -116,14 +118,36 @@ watch(search, (val) => {
     timeout = setTimeout(fetchItems, 300)
 })
 
+// Foca o campo de busca ao abrir o dropdown (usado pelo atalho de cliente no PDV)
+function focusSearchField() {
+    setTimeout(() => {
+        const input = searchInputRef.value?.$el as HTMLInputElement | undefined
+        input?.focus()
+        input?.select?.()
+    }, 60)
+}
+
+watch(isOpen, (open) => {
+    if (open) {
+        fetchItems()
+        focusSearchField()
+    }
+})
+
+// Abre o dropdown programaticamente com o campo de busca focado
+function open() {
+    isOpen.value = true
+}
+
+defineExpose({ open, focus: open })
+
 // Carrega inicial
 onMounted(fetchItems)
 </script>
 
 <template>
     <div class="flex items-center w-full max-w-full gap-2">
-        <Select v-model="selectedId" :disabled="disabled" :required="required"
-            @update:open="(open) => open && fetchItems()">
+        <Select v-model="selectedId" v-model:open="isOpen" :disabled="disabled" :required="required">
             <SelectTrigger class="bg-card dark:bg-card-dark"
                 :class="{ 'w-[calc(100%-2.5rem)]': allowClear && selectedId }">
                 <SelectValue :value="selectedId" :placeholder="placeholder">
@@ -133,7 +157,8 @@ onMounted(fetchItems)
 
             <SelectContent class="w-min">
                 <div class="p-1">
-                    <Input v-model="search" placeholder="Buscar..." class="w-full" @keydown.stop />
+                    <Input ref="searchInputRef" v-model="search" placeholder="Buscar..." class="w-full"
+                        @keydown.stop />
                 </div>
                 <hr class="m-1">
                 <SelectGroup class="max-h-60 overflow-y-auto">

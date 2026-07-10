@@ -5,6 +5,7 @@ import { StoreRepository } from '@/repositories/store-repository'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
 import type { Contas, Usuarios } from '@/types/schemas'
 import { hasPermission } from '@/hooks/authorize'
+import { setThemeCustomization } from '@/utils/theme'
 interface TipoPermissao {
   editar: boolean
   visualizar: boolean
@@ -228,6 +229,7 @@ export const useUiStore = defineStore('uiStore', () => {
       visibleMenuKeys.value = Array.isArray(response.data?.menusVisiveis)
         ? response.data.menusVisiveis
         : null
+      setThemeCustomization(response.data?.temaPersonalizado)
       return financeiroFlags.value
     } catch (error) {
       console.log(error)
@@ -238,6 +240,7 @@ export const useUiStore = defineStore('uiStore', () => {
         permitirCriacaoCobranca: true,
       }
       visibleMenuKeys.value = null
+      setThemeCustomization(null)
       return financeiroFlags.value
     }
   }

@@ -63,6 +63,15 @@ export const useAuthStore = defineStore('authStore', () => {
     router.push('/login')
   }
 
+  const verificarSenha = async (senha: string): Promise<boolean> => {
+    try {
+      await http.post('/auth/senha', { senha })
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const refresh = async (): Promise<boolean> => {
     const rfToken = localStorage.getItem('gestao_facil:refreshToken')
     if (!rfToken) return false
@@ -82,5 +91,5 @@ export const useAuthStore = defineStore('authStore', () => {
     }
   }
 
-  return { token, refreshToken, user, login, logout, refresh }
+  return { token, refreshToken, user, login, logout, refresh, verificarSenha }
 })
