@@ -474,6 +474,15 @@ const routes: RouteInterface[] = [
           permissao: 4,
         },
       },
+      {
+        path: 'movimentacoes',
+        name: 'produtos-movimentacoes',
+        component: () => import('@/pages/produtos/movimentacoes/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 4,
+        },
+      },
     ],
   },
   {

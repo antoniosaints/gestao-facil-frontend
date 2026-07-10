@@ -111,8 +111,10 @@
                             class="border border-border bg-background shadow-md rounded p-3 card-hover cursor-pointer product-card flex flex-col justify-between"
                             data-product-id="${product.id}">
                             <div class="text-center">
-                                <img src="/imgs/logo.png" alt="logopng"
-                                    class="w-16 h-16 object-cover mx-auto mb-2 rounded-md">
+                                <div
+                                    class="w-16 h-16 mx-auto mb-2 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground">
+                                    <Package class="w-8 h-8" />
+                                </div>
                                 <div class="text-center flex flex-col">
                                     <h3 class="text-gray-800 dark:text-white text-xs">
                                         {{ `${p.nome}${p.nomeVariante ? ` / ${p.nomeVariante}` : ''}` }}
@@ -737,7 +739,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import BadgeCell from '@/components/tabela/BadgeCell.vue';
-import { CirclePercent, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Plus, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
+import { CirclePercent, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Package, Plus, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import type { ProdutoVariante } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';

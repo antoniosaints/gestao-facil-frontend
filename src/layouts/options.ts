@@ -1,6 +1,7 @@
 import { type Permissoes } from '@/stores/ui/uiStore'
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
+  ArrowRightLeft,
   Bot,
   Box,
   Boxes,
@@ -239,6 +240,12 @@ export const sidebarMenuOptions = (
           nome: 'Produtos',
           link: '/produtos',
           icone: Boxes,
+          color: 'blue',
+        },
+        {
+          nome: 'Movimentações',
+          link: '/produtos/movimentacoes',
+          icone: ArrowRightLeft,
           color: 'blue',
         },
       ],

@@ -200,6 +200,11 @@ export class ProdutoRepository {
     return data
   }
 
+  static async getMovimentacoesResumo(params: Record<string, any>) {
+    const { data } = await http.get(`/produtos/movimentacoes/resumo`, { params })
+    return data
+  }
+
   static async getReposicoesMensais(inicio?: string, fim?: string) {
     const { data } = await http.get(`/produtos/graficos/reposicao-mensal`, {
       params: {

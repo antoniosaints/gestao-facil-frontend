@@ -109,7 +109,7 @@ async function excluirEmLote() {
                     </DropdownMenuContent>
                 </DropdownMenu>
                 <button @click="openFilter = true"
-                    class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
+                    class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-2 text-sm rounded-lg">
                     <Funnel class="w-4 h-4" />
                 </button>
                 <button @click="relatorioGeral()" class="bg-orange-600 text-white px-2 py-1.5 text-sm rounded-md">
