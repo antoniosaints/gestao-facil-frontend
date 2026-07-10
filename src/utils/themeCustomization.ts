@@ -9,12 +9,39 @@ export const DEFAULT_THEME_CUSTOMIZATION: ThemeCustomization = {
   sidebarDark: '#172554',
   fundoLight: '#F8FAFC',
   fundoDark: '#020617',
+  radius: '0.5rem',
+  fonte: 'Inter',
 }
 
+// Fontes instaladas no sistema (declaradas via @font-face em main.css).
+export const FONT_OPTIONS = [
+  { value: 'Inter', label: 'Inter' },
+  { value: 'Roboto', label: 'Roboto' },
+  { value: 'Poppins', label: 'Poppins' },
+  { value: 'Montserrat', label: 'Montserrat' },
+  { value: 'Sora', label: 'Sora' },
+] as const
+
+// Opções de arredondamento dos cartões (aplicado à variável --radius).
+export const RADIUS_OPTIONS = [
+  { value: '0rem', label: 'Reto' },
+  { value: '0.375rem', label: 'Leve' },
+  { value: '0.5rem', label: 'Padrão' },
+  { value: '0.75rem', label: 'Médio' },
+  { value: '1rem', label: 'Arredondado' },
+  { value: '1.5rem', label: 'Bem arredondado' },
+] as const
+
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/
+const FONT_VALUES = FONT_OPTIONS.map((option) => option.value) as readonly string[]
+const RADIUS_VALUES = RADIUS_OPTIONS.map((option) => option.value) as readonly string[]
 
 function normalizeHex(value: unknown, fallback: string) {
   return typeof value === 'string' && HEX_COLOR.test(value) ? value.toUpperCase() : fallback
+}
+
+function normalizeFromList(value: unknown, allowed: readonly string[], fallback: string) {
+  return typeof value === 'string' && allowed.includes(value) ? value : fallback
 }
 
 export function normalizeThemeCustomization(value?: Partial<ThemeCustomization> | null): ThemeCustomization {
@@ -25,6 +52,8 @@ export function normalizeThemeCustomization(value?: Partial<ThemeCustomization> 
     sidebarDark: normalizeHex(value?.sidebarDark, DEFAULT_THEME_CUSTOMIZATION.sidebarDark),
     fundoLight: normalizeHex(value?.fundoLight, DEFAULT_THEME_CUSTOMIZATION.fundoLight),
     fundoDark: normalizeHex(value?.fundoDark, DEFAULT_THEME_CUSTOMIZATION.fundoDark),
+    radius: normalizeFromList(value?.radius, RADIUS_VALUES, DEFAULT_THEME_CUSTOMIZATION.radius),
+    fonte: normalizeFromList(value?.fonte, FONT_VALUES, DEFAULT_THEME_CUSTOMIZATION.fonte),
   }
 }
 
@@ -156,6 +185,10 @@ export function applyThemeVariables(theme: Partial<ThemeCustomization> | null | 
   for (const [property, hex] of Object.entries(variables)) {
     root.style.setProperty(property, hexToHslValue(hex))
   }
+
+  const normalized = normalizeThemeCustomization(theme)
+  root.style.setProperty('--radius', normalized.radius)
+  root.style.setProperty('--app-font', normalized.fonte)
 
   return palette
 }

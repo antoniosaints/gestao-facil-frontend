@@ -501,6 +501,8 @@ export interface ThemeCustomization {
   sidebarDark: string
   fundoLight: string
   fundoDark: string
+  radius: string
+  fonte: string
 }
 
 export interface ItensVendas {

@@ -79,6 +79,52 @@
           </section>
         </div>
 
+        <Separator />
+
+        <section class="space-y-4">
+          <div>
+            <h3 class="font-medium">Fonte e cantos</h3>
+            <p class="text-sm text-muted-foreground">Escolha a fonte do sistema e o arredondamento dos cartões. A mudança é aplicada em toda a interface.</p>
+          </div>
+          <div class="grid gap-6 lg:grid-cols-2">
+            <div class="space-y-2 rounded-2xl bg-card p-4 shadow-[var(--shadow-theme-card)]">
+              <div class="flex items-center gap-2">
+                <Type class="h-4 w-4 text-primary" />
+                <span class="text-sm font-semibold">Fonte do sistema</span>
+              </div>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <button v-for="fonte in FONT_OPTIONS" :key="fonte.value" type="button"
+                  @click="selecionarFonte(fonte.value)"
+                  class="flex items-center justify-between rounded-lg border bg-background p-3 text-left transition active:scale-[0.98]"
+                  :class="form.fonte === fonte.value ? 'border-primary ring-2 ring-primary/30' : 'hover:bg-muted/40'"
+                  :style="{ fontFamily: fonte.value }">
+                  <span class="text-sm font-semibold">{{ fonte.label }}</span>
+                  <span class="text-xs text-muted-foreground">Aa Bb 123</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-2 rounded-2xl bg-card p-4 shadow-[var(--shadow-theme-card)]">
+              <div class="flex items-center gap-2">
+                <Squircle class="h-4 w-4 text-primary" />
+                <span class="text-sm font-semibold">Arredondamento dos cartões</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <button v-for="raio in RADIUS_OPTIONS" :key="raio.value" type="button"
+                  @click="selecionarRadius(raio.value)"
+                  class="flex flex-col items-center gap-2 border bg-background p-3 transition active:scale-[0.98]"
+                  :style="{ borderRadius: raio.value }"
+                  :class="form.radius === raio.value ? 'border-primary ring-2 ring-primary/30' : 'hover:bg-muted/40'">
+                  <span class="h-8 w-full border border-primary/40 bg-primary/15" :style="{ borderRadius: raio.value }" />
+                  <span class="text-[11px] font-medium">{{ raio.label }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <Separator />
+
         <section class="space-y-3">
           <div>
             <h3 class="font-medium">Pré-visualização completa</h3>
@@ -146,7 +192,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Check, LoaderCircle, Moon, Paintbrush, Palette, RotateCcw, Save, Sun } from 'lucide-vue-next'
+import { Check, LoaderCircle, Moon, Paintbrush, Palette, RotateCcw, Save, Squircle, Sun, Type } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -156,6 +202,8 @@ import type { ThemeCustomization } from '@/types/schemas'
 import { setThemeCustomization } from '@/utils/theme'
 import {
   DEFAULT_THEME_CUSTOMIZATION,
+  FONT_OPTIONS,
+  RADIUS_OPTIONS,
   getThemePalette,
   normalizeThemeCustomization,
   type ThemeMode,
@@ -188,7 +236,7 @@ const colorGroups = [
   },
 ]
 
-const presets: Array<{ nome: string; tema: ThemeCustomization }> = [
+const presets: Array<{ nome: string; tema: Partial<ThemeCustomization> }> = [
   { nome: 'Azul original', tema: { ...DEFAULT_THEME_CUSTOMIZATION } },
   { nome: 'Esmeralda', tema: { primariaLight: '#059669', primariaDark: '#10B981', sidebarLight: '#065F46', sidebarDark: '#022C22', fundoLight: '#F8FAFC', fundoDark: '#02140F' } },
   { nome: 'Violeta', tema: { primariaLight: '#7C3AED', primariaDark: '#8B5CF6', sidebarLight: '#5B21B6', sidebarDark: '#2E1065', fundoLight: '#FAF9FF', fundoDark: '#0C0618' } },
@@ -202,7 +250,7 @@ const previewSidebarStyle = (mode: ThemeMode) => ({ backgroundColor: palette(mod
 const previewPrimaryStyle = (mode: ThemeMode) => ({ backgroundColor: palette(mode).primary, color: palette(mode).primaryForeground })
 const previewCardStyle = (mode: ThemeMode) => ({ backgroundColor: palette(mode).card, boxShadow: `0 0 0 1px ${palette(mode).border}` })
 
-function assignTheme(theme: ThemeCustomization) {
+function assignTheme(theme: Partial<ThemeCustomization>) {
   Object.assign(form, normalizeThemeCustomization(theme))
   aplicarPreview()
 }
@@ -211,8 +259,19 @@ function aplicarPreview() {
   setThemeCustomization(themeSnapshot.value)
 }
 
-function aplicarPreset(theme: ThemeCustomization) {
-  assignTheme(theme)
+function aplicarPreset(theme: Partial<ThemeCustomization>) {
+  // Mantém a fonte e o arredondamento escolhidos ao trocar apenas a paleta de cores.
+  assignTheme({ ...theme, radius: form.radius, fonte: form.fonte })
+}
+
+function selecionarFonte(fonte: string) {
+  form.fonte = fonte
+  aplicarPreview()
+}
+
+function selecionarRadius(radius: string) {
+  form.radius = radius
+  aplicarPreview()
 }
 
 function usarPadrao() {
