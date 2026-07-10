@@ -55,14 +55,15 @@ async function exportarRelatorio() {
   <ModalView
     v-model:open="openModel"
     title="Exportar relatório de vendas"
-    description="Selecione o período para gerar um PDF com resumo de vendas e visão financeira."
+    description="Selecione o período para gerar um PDF focado nos registros de vendas."
     size="md"
   >
     <div class="space-y-4 px-4">
       <div class="rounded-xl border border-border bg-muted/30 p-4">
         <div class="font-medium text-foreground">Período do relatório</div>
         <div class="mt-1 text-sm text-muted-foreground">
-          O PDF incluirá vendas, cobranças vinculadas, custos estimados, receitas, despesas e resultado líquido.
+          O PDF traz as vendas do período, custos e lucro estimado, além de cobranças e lançamentos financeiros
+          <strong>apenas quando vinculados às vendas</strong>.
         </div>
       </div>
 
