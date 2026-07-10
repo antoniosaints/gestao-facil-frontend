@@ -501,7 +501,22 @@ onMounted(() => {
       </RouterLink>
     </section>
 
-    <div class="grid grid-cols-1 gap-4 lg:grid-cols-6">
+    <div v-if="loading" class="grid grid-cols-1 gap-4 lg:grid-cols-6">
+      <div class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm lg:col-span-4">
+        <Skeleton class="h-6 w-44 rounded-lg" />
+        <div class="grid gap-3 md:grid-cols-2">
+          <Skeleton v-for="i in 4" :key="i" class="h-20 rounded-xl" />
+        </div>
+      </div>
+      <div class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm lg:col-span-2">
+        <Skeleton class="h-6 w-40 rounded-lg" />
+        <Skeleton class="h-9 w-24 rounded-lg" />
+        <Skeleton class="h-24 w-full rounded-xl" />
+        <Skeleton class="h-9 w-full rounded-lg" />
+      </div>
+    </div>
+
+    <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-6">
       <Card class="border-border/70 bg-card shadow-sm lg:col-span-4">
         <CardHeader>
           <CardTitle class="flex items-center gap-2 text-lg">
@@ -567,7 +582,16 @@ onMounted(() => {
       </Card>
     </div>
 
-    <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <section v-if="loading" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div v-for="i in 4" :key="i" class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
+        <Skeleton class="h-6 w-32 rounded-lg" />
+        <Skeleton class="h-4 w-40 rounded" />
+        <Skeleton v-for="j in 3" :key="j" class="h-10 w-full rounded-lg" />
+        <Skeleton class="h-9 w-full rounded-lg" />
+      </div>
+    </section>
+
+    <section v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       <Card v-for="block in summaryBlocks" :key="block.titulo" class="border-border/70 bg-card shadow-sm">
         <CardHeader>
           <CardTitle class="flex items-center gap-2 text-base">
@@ -590,7 +614,15 @@ onMounted(() => {
       </Card>
     </section>
 
-    <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+    <div v-if="loading" class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+      <div v-for="i in 4" :key="i" class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm lg:col-span-2">
+        <Skeleton class="h-6 w-44 rounded-lg" />
+        <Skeleton class="h-4 w-56 rounded" />
+        <Skeleton class="h-64 w-full rounded-xl" />
+      </div>
+    </div>
+
+    <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-4">
       <Card class="border-border/70 bg-card shadow-sm lg:col-span-2">
         <CardHeader>
           <CardTitle class="flex items-center gap-2 text-lg">
