@@ -87,16 +87,17 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
         () => ['Assinante', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render('div', { class: 'space-y-1 min-w-[250px]' }, [
-        render('div', { class: 'font-medium text-foreground' }, row.original.nome),
+      render('div', { class: 'leading-tight max-w-[240px]' }, [
         render(
           'div',
-          { class: 'text-xs text-muted-foreground' },
-          row.original.nomeFantasia || row.original.email,
+          { class: 'font-medium text-foreground truncate', title: row.original.nome },
+          row.original.nomeFantasia || row.original.nome,
         ),
-        row.original.nomeFantasia
-          ? render('div', { class: 'text-xs text-muted-foreground' }, row.original.email)
-          : null,
+        render(
+          'div',
+          { class: 'text-xs text-muted-foreground truncate', title: row.original.email },
+          row.original.email,
+        ),
       ]),
   },
   {
@@ -159,15 +160,11 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
         () => ['Plano', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render('div', { class: 'space-y-1 min-w-[140px]' }, [
-        render(BadgeCell, {
-          label: formatCurrencyBR(row.original.valor),
-          color: 'green',
-          icon: CircleDollarSign,
-          capitalize: false,
-        }),
-        render('div', { class: 'text-xs text-muted-foreground uppercase' }, row.original.gateway),
-      ]),
+      render(
+        'div',
+        { class: 'text-sm font-medium text-foreground text-nowrap' },
+        formatCurrencyBR(row.original.valor),
+      ),
   },
   {
     accessorKey: 'usuariosTotal',

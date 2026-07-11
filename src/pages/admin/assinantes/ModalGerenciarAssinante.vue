@@ -51,6 +51,21 @@ const status = ref<'ATIVO' | 'INATIVO' | 'BLOQUEADO'>('ATIVO')
 const vencimento = ref<Date | null>(new Date())
 const apps = ref<AssinanteAdminAppItem[]>([])
 
+const dados = ref({
+  nome: '',
+  nomeFantasia: '',
+  email: '',
+  telefone: '',
+  documento: '',
+})
+const valorBasePlano = ref<number>(0)
+
+// valor total = base + apps ativos (para exibir o efeito da mensalidade base)
+const valorAppsAtivos = computed(() =>
+  apps.value.filter((app) => app.ativo).reduce((total, app) => total + Number(app.preco || 0), 0),
+)
+const valorTotalEstimado = computed(() => Number(valorBasePlano.value || 0) + valorAppsAtivos.value)
+
 const novaSenhaRoot = ref('')
 const showSenhaRoot = ref(false)
 const resettingSenha = ref(false)
@@ -67,6 +82,14 @@ watch(
     if (!value) return
     status.value = (value.status as 'ATIVO' | 'INATIVO' | 'BLOQUEADO') || 'ATIVO'
     vencimento.value = value.vencimento ? new Date(value.vencimento) : new Date()
+    dados.value = {
+      nome: value.nome || '',
+      nomeFantasia: value.nomeFantasia || '',
+      email: value.email || '',
+      telefone: value.telefone || '',
+      documento: value.documento || '',
+    }
+    valorBasePlano.value = Number(value.valorBasePlano ?? value.valor ?? 0)
   },
   { immediate: true },
 )
@@ -189,11 +212,26 @@ async function submit() {
     return
   }
 
+  if (!dados.value.nome.trim()) {
+    toast.error('Informe o nome do assinante')
+    return
+  }
+  if (!/^\S+@\S+\.\S+$/.test(dados.value.email.trim())) {
+    toast.error('Informe um e-mail válido')
+    return
+  }
+
   try {
     loading.value = true
     await ContaRepository.gerenciarAssinante(props.conta.id, {
       status: status.value,
       vencimento: vencimento.value.toISOString(),
+      nome: dados.value.nome.trim(),
+      nomeFantasia: dados.value.nomeFantasia.trim() || null,
+      email: dados.value.email.trim(),
+      telefone: dados.value.telefone.trim() || null,
+      documento: dados.value.documento.trim() || null,
+      valorBasePlano: Number(valorBasePlano.value || 0),
     })
     toast.success('Conta atualizada com sucesso')
     open.value = false
@@ -233,6 +271,66 @@ async function submit() {
           </div>
         </CardContent>
       </Card>
+
+      <div class="grid gap-4 md:grid-cols-[1.2fr_1fr]">
+        <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
+          <CardContent class="space-y-3 p-4">
+            <div class="text-sm font-medium text-foreground">Dados do assinante</div>
+            <div class="grid gap-3 md:grid-cols-2">
+              <div class="space-y-1">
+                <Label>Nome</Label>
+                <Input v-model="dados.nome" placeholder="Nome da conta" />
+              </div>
+              <div class="space-y-1">
+                <Label>Nome fantasia</Label>
+                <Input v-model="dados.nomeFantasia" placeholder="Opcional" />
+              </div>
+              <div class="space-y-1">
+                <Label>E-mail</Label>
+                <Input v-model="dados.email" type="email" placeholder="email@cliente.com" />
+              </div>
+              <div class="space-y-1">
+                <Label>Telefone</Label>
+                <Input v-model="dados.telefone" placeholder="Opcional" />
+              </div>
+              <div class="space-y-1 md:col-span-2">
+                <Label>Documento (CPF/CNPJ)</Label>
+                <Input v-model="dados.documento" placeholder="Opcional" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
+          <CardContent class="space-y-3 p-4">
+            <div class="text-sm font-medium text-foreground">Mensalidade</div>
+            <div class="space-y-1">
+              <Label>Valor base do plano (R$)</Label>
+              <Input v-model.number="valorBasePlano" type="number" min="0" step="0.01" />
+              <p class="text-xs text-muted-foreground">
+                Este é o valor base cobrado do cliente. O total soma os apps ativos.
+              </p>
+            </div>
+            <div class="rounded-lg border border-border/70 bg-background/70 p-3 text-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">Base</span>
+                <span class="font-medium">{{ formatCurrencyBR(Number(valorBasePlano || 0)) }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">Apps ativos</span>
+                <span class="font-medium">{{ formatCurrencyBR(valorAppsAtivos) }}</span>
+              </div>
+              <div class="mt-1 flex items-center justify-between border-t border-border/70 pt-1">
+                <span class="font-medium text-foreground">Total estimado / mês</span>
+                <span class="font-semibold text-primary">{{ formatCurrencyBR(valorTotalEstimado) }}</span>
+              </div>
+              <p v-if="Number(conta?.creditoIndicacao || 0) > 0" class="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
+                Crédito de indicação: {{ formatCurrencyBR(Number(conta?.creditoIndicacao || 0)) }} (abate da próxima mensalidade)
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <div class="grid gap-4 md:grid-cols-[1.2fr_1fr]">
         <Card class="border-border/70 bg-card shadow-sm dark:bg-card">

@@ -34,6 +34,17 @@ export async function handleRouteGuard(to: typed, from: typed) {
     storeUi.openSidebar = false
   }
 
+  // ----- Bloqueio do PDV PRO (modo quiosque) -----
+  // Enquanto o terminal estiver bloqueado (flag por navegador), o operador não pode
+  // sair da tela do PDV — nem burlando pela URL. A única saída é desbloquear no próprio
+  // PDV, o que exige a senha do usuário logado. Aplicado antes até das rotas públicas
+  // para não permitir fuga via /login ou /site.
+  const pdvBloqueado = localStorage.getItem('gestao_facil:pdvBloqueado') === 'true'
+  if (pdvBloqueado && token && to.name !== 'vendas-pdv') {
+    toast.info('Terminal bloqueado. Desbloqueie no PDV para sair.')
+    return { name: 'vendas-pdv' }
+  }
+
   if (to.meta?.isPublic) return true
 
   if (!to.meta?.isPublic && !token) {

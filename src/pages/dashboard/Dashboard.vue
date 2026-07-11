@@ -12,10 +12,10 @@ import {
   EyeClosed,
   FileDigit,
   HandCoins,
-  LayoutDashboard,
   Menu,
   PackageSearch,
   Receipt,
+  RotateCw,
   ShoppingCart,
   Tags,
   Target,
@@ -426,7 +426,7 @@ onMounted(() => {
       <div class="flex items-center gap-2 w-content">
         <Calendarpicker :range="true" v-model="filtroPeriodo" @update:model-value="getDataDashboard(true)" />
         <Button variant="outline" size="icon" @click="getDataDashboard(true)">
-          <LayoutDashboard class="h-4 w-4" />
+          <RotateCw class="h-4 w-4" />
         </Button>
       </div>
     </div>

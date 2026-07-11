@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
+import IndicacaoPanel from '@/components/indicacao/IndicacaoPanel.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import type { Usuarios } from '@/types/schemas'
 import { resolveFileUrl } from '@/utils/fileUrl'
@@ -352,6 +353,8 @@ async function saveProfile() {
         </div>
       </div>
     </section>
+
+    <IndicacaoPanel />
 
     <div class="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
       <aside class="space-y-6">

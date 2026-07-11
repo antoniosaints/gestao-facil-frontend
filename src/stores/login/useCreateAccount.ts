@@ -14,6 +14,7 @@ export const useAccountCreateStore = defineStore('accountCreateStore', () => {
     employees: '',
     terms: false,
     newsletter: false,
+    indicacao: '',
   })
   return { form }
 })

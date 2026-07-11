@@ -141,6 +141,12 @@
                             <p class="text-xs text-muted-foreground text-right">{{ strengthText }}</p>
                         </div>
 
+                        <div class="space-y-2">
+                            <Label for="indicacao">Código de indicação <span class="text-muted-foreground">(opcional)</span></Label>
+                            <Input id="indicacao" v-model="store.form.indicacao" placeholder="Recebeu um convite? Digite o código"
+                                class="uppercase" />
+                        </div>
+
                         <Button type="button" class="w-full" @click="nextStep">Continuar
                             <ArrowRight class="ml-2 w-4 h-4" />
                         </Button>
@@ -260,7 +266,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { vMaska } from 'maska/vue'
 import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
@@ -279,6 +285,7 @@ import {
 import { Rocket, ShieldCheck, ArrowRight, Star, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const toast = useToast()
 const store = useAccountCreateStore()
 
@@ -367,7 +374,8 @@ const submitForm = async () => {
             email: store.form.email,
             senha: store.form.password,
             funcionarios: Number(store.form.employees),
-            tipo: store.form.segment
+            tipo: store.form.segment,
+            indicacao: store.form.indicacao?.trim() || undefined,
         })
         toast.success("Conta criada com sucesso! Faça login para continuar.")
         router.push("/login")
@@ -380,6 +388,10 @@ const submitForm = async () => {
 }
 
 onMounted(() => {
-    // Reset or init logic if needed
+    // Captura o código de indicação do link (?ref=CODIGO) automaticamente.
+    const ref = route.query.ref
+    if (typeof ref === 'string' && ref.trim()) {
+        store.form.indicacao = ref.trim().toUpperCase()
+    }
 })
 </script>

@@ -30,7 +30,7 @@
         <main id="container-main-app-sistema"
             class="min-h-0 flex-1 overflow-y-auto p-6 mt-0 text-gray-700 transition-all duration-300 ease-in-out dark:text-gray-300"
             :class="{ 'md:ml-64': store.openSidebar }">
-            <div class="max-w-7xl mx-auto pb-16 md:pb-0" id="content">
+            <div class="max-w-[85rem] mx-auto pb-16 md:pb-0" id="content">
                 <AlertTopbar />
                 <div v-if="store.loading || progress > 0"
                     class="absolute hidden md:block top-14 h-2 transition-all duration-100 ease-linear"
@@ -43,7 +43,7 @@
 
                 <slot v-if="!loading" />
                 <div v-else
-                    class="flex flex-col gap-4 max-w-7xl mx-auto items-center justify-center h-[calc(100vh-12rem)]">
+                    class="flex flex-col gap-4 max-w-[85rem] mx-auto items-center justify-center h-[calc(100vh-12rem)]">
                     <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark">
                     </div>
                     <p class="ml-2 text-primary dark:text-primary-dark">Carregando informações do usuário...</p>

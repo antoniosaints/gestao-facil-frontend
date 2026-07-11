@@ -84,7 +84,7 @@
         :class="{ 'pdv-pro__shortcut--primary': atalho.primary }"
         @click="executarAcao(atalho.action)">
         <kbd>{{ atalho.key }}</kbd>
-        <component :is="atalho.icon" class="h-5 w-5" />
+        <component :is="atalho.icon" class="h-6 w-6" />
         <span>{{ atalho.label }}</span>
       </button>
     </footer>
@@ -272,6 +272,10 @@ async function executarAcao(acao: AcaoAtalho) {
   if (!pdv) return
   if (acao === 'sair') {
     const sair = async () => {
+      // Sair desbloqueia o terminal. Escrevemos no localStorage de forma síncrona
+      // (antes do router.push) para o guard global não bloquear esta navegação.
+      caixaBloqueado.value = false
+      localStorage.setItem('gestao_facil:pdvBloqueado', 'false')
       isLeavingPdv.value = true
       await router.push('/vendas')
     }
@@ -361,9 +365,18 @@ onMounted(async () => {
   try {
     const response = await ContaRepository.getParametros()
     modeloPdv.value = response.data?.modeloPdv === 'PRO' ? 'PRO' : 'BASICO'
-    if (modeloPdv.value === 'PRO') activateFullscreenPdv()
+    if (modeloPdv.value === 'PRO') {
+      activateFullscreenPdv()
+    } else {
+      // O bloqueio de quiosque só existe no modo PRO. Limpa qualquer flag legada
+      // para não prender o operador no PDV BÁSICO (que não tem botão de desbloqueio).
+      caixaBloqueado.value = false
+      localStorage.setItem('gestao_facil:pdvBloqueado', 'false')
+    }
   } catch {
     modeloPdv.value = 'BASICO'
+    caixaBloqueado.value = false
+    localStorage.setItem('gestao_facil:pdvBloqueado', 'false')
   } finally {
     loading.value = false
   }

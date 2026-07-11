@@ -12,6 +12,10 @@ export interface ContaAssinanteAdmin {
   status: string
   vencimento: Date | string
   valor: number
+  valorBasePlano?: number
+  creditoIndicacao?: number
+  codigoIndicacao?: string | null
+  indicadoPorContaId?: number | null
   data: Date | string
   funcionarios: number
   gateway: string
@@ -34,6 +38,46 @@ export interface PaginatedAdminResponse<T> {
 export interface UpdateAssinanteAdminPayload {
   status: 'ATIVO' | 'INATIVO' | 'BLOQUEADO'
   vencimento?: string
+  nome?: string
+  nomeFantasia?: string | null
+  email?: string
+  telefone?: string | null
+  documento?: string | null
+  valorBasePlano?: number
+}
+
+export interface AdminModuloItem {
+  id: number
+  codigo: string
+  nome: string
+  descricao?: string | null
+  categoria: string
+  preco: number
+  desconto: number
+  status: boolean
+  contasAtivas: number
+}
+
+export interface AdminIndicacaoConfig {
+  ativa: boolean
+  tipoRecompensa: 'PERCENTUAL' | 'VALOR'
+  valorRecompensa: number
+  tipoBonusIndicado: 'PERCENTUAL' | 'VALOR'
+  valorBonusIndicado: number
+}
+
+export interface MinhaIndicacaoResponse {
+  codigo: string
+  creditoIndicacao: number
+  contaAtiva: boolean
+  programa: AdminIndicacaoConfig & { ativo: boolean }
+  indicados: Array<{
+    id: number
+    nome: string
+    status: string
+    recompensado: boolean
+    createdAt: string
+  }>
 }
 
 export interface AssinanteAdminAppItem {
@@ -276,6 +320,7 @@ export interface CreateConta {
   funcionarios: number
   dicasNovidades: boolean
   cpfCnpj: string
+  indicacao?: string
 }
 export class ContaRepository {
   static async status(): Promise<{ data: StatusConta }> {
@@ -398,5 +443,33 @@ export class ContaRepository {
   static async saveAdminGatewayConfig(payload: UpdateAdminGatewayPayload): Promise<AdminGatewayConfigResponse> {
     const res = await http.post('/admin/configuracoes/gateway', payload)
     return res.data
+  }
+
+  static async listarModulosAdmin(): Promise<{ data: AdminModuloItem[] }> {
+    const res = await http.get('/admin/modulos')
+    return res.data
+  }
+
+  static async atualizarModuloAdmin(
+    id: number,
+    payload: { preco: number; desconto?: number; status?: boolean },
+  ) {
+    const res = await http.patch(`/admin/modulos/${id}`, payload)
+    return res.data
+  }
+
+  static async getAdminIndicacaoConfig(): Promise<{ data: AdminIndicacaoConfig }> {
+    const res = await http.get('/admin/configuracoes/indicacao')
+    return res.data
+  }
+
+  static async saveAdminIndicacaoConfig(payload: AdminIndicacaoConfig) {
+    const res = await http.post('/admin/configuracoes/indicacao', payload)
+    return res.data
+  }
+
+  static async getMinhaIndicacao(): Promise<MinhaIndicacaoResponse> {
+    const res = await http.get('/contas/indicacao')
+    return res.data.data
   }
 }
