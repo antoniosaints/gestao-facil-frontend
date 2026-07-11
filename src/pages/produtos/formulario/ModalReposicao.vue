@@ -32,7 +32,7 @@ async function submit() {
             produtoId: store.idMutation,
             custo: formatToNumberValue(formulario.value.custo),
             quantidade: formulario.value.quantidade,
-            clienteFornecedor: formulario.value.clienteFornecedor,
+            fornecedor: formulario.value.clienteFornecedor,
             data: formulario.value.data,
             desconto: formatToNumberValue(formulario.value.desconto),
             frete: formatToNumberValue(formulario.value.frete),

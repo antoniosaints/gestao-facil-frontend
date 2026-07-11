@@ -475,6 +475,15 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'reposicao',
+        name: 'produtos-reposicao',
+        component: () => import('@/pages/produtos/reposicao/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 4,
+        },
+      },
+      {
         path: 'movimentacoes',
         name: 'produtos-movimentacoes',
         component: () => import('@/pages/produtos/movimentacoes/Home.vue'),

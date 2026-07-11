@@ -21,6 +21,7 @@ import {
   MapPinned,
   MessageCircle,
   Package,
+  PackagePlus,
   ReceiptText,
   Sparkles,
   Store,
@@ -240,6 +241,12 @@ export const sidebarMenuOptions = (
           nome: 'Produtos',
           link: '/produtos',
           icone: Boxes,
+          color: 'blue',
+        },
+        {
+          nome: 'Reposição',
+          link: '/produtos/reposicao',
+          icone: PackagePlus,
           color: 'blue',
         },
         {

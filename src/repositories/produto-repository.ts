@@ -9,7 +9,7 @@ type ReposicaoEstoque = {
   notaFiscal?: string
   status?: string
   tipo?: 'ENTRADA' | 'SAIDA'
-  clienteFornecedor?: number
+  fornecedor?: number | null
   desconto?: number
   frete?: number
   vendaId?: number
@@ -19,6 +19,21 @@ type DescarteEstoque = {
   produtoId: number
   quantidade: number
   motivo?: string
+}
+
+type ReposicaoLoteItem = {
+  produtoId: number
+  quantidade: number
+  custo: number
+}
+
+type ReposicaoLote = {
+  data?: string
+  notaFiscal?: string
+  fornecedor?: number | null
+  frete?: number
+  desconto?: number
+  itens: ReposicaoLoteItem[]
 }
 
 type ProductReportType = 'catalogo' | 'movimentacoes' | 'vendas' | 'lucro'
@@ -202,6 +217,11 @@ export class ProdutoRepository {
 
   static async getMovimentacoesResumo(params: Record<string, any>) {
     const { data } = await http.get(`/produtos/movimentacoes/resumo`, { params })
+    return data
+  }
+
+  static async reporLote(reposicao: ReposicaoLote) {
+    const { data } = await http.post(`/produtos/reposicao/lote`, reposicao)
     return data
   }
 
