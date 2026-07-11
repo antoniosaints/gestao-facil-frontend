@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { useToast } from "vue-toastification"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,10 +9,8 @@ import { ContaRepository, type StatusConta, type StatusContaFatura } from "@/rep
 import { useUiStore } from "@/stores/ui/uiStore"
 import { formatCurrencyBR } from "@/utils/formatters"
 import {
-  ArrowRight,
   CalendarClock,
   CheckCircle2,
-  CircleDollarSign,
   Clock3,
   CreditCard,
   ExternalLink,
@@ -25,8 +22,7 @@ import {
   ReceiptText,
   RefreshCcw,
   ShieldAlert,
-  Sparkles,
-  Wallet,
+  ShieldCheck,
   XCircle,
 } from "lucide-vue-next"
 
@@ -45,169 +41,129 @@ const assinaturaVenceHoje = computed(() => !assinaturaVencida.value && diasParaV
 const assinaturaEmRisco = computed(() => !assinaturaVencida.value && diasParaVencer.value <= 3)
 const temLinkPendente = computed(() => Boolean(assinatura.value?.proximoLinkPagamento))
 
-const totalFaturas = computed(() => historicoFaturas.value.length)
-const totalPagas = computed(
-  () => historicoFaturas.value.filter((fatura) => fatura.status === "PAGO").length,
-)
-const totalPendentes = computed(
-  () => historicoFaturas.value.filter((fatura) => ["PENDENTE", "ATRASADO"].includes(fatura.status)).length,
-)
-const totalCanceladas = computed(
-  () => historicoFaturas.value.filter((fatura) => ["CANCELADO", "ESTORNADO"].includes(fatura.status)).length,
+const totalPagas = computed(() => historicoFaturas.value.filter((f) => f.status === "PAGO").length)
+
+// Fatura em aberto (pendente/atrasada) para direcionar o pagamento.
+const faturaPendente = computed(
+  () => historicoFaturas.value.find((f) => ["PENDENTE", "ATRASADO"].includes(f.status)) || null,
 )
 
-const faturaEmAberto = computed(
-  () =>
-    historicoFaturas.value.find((fatura) => ["PENDENTE", "ATRASADO"].includes(fatura.status)) ||
-    historicoFaturas.value[0] ||
-    null,
+const linkParaPagar = computed(
+  () => assinatura.value?.proximoLinkPagamento || faturaPendente.value?.linkPagamento || null,
+)
+const precisaGerarRenovacao = computed(
+  () => !linkParaPagar.value && (assinaturaEmRisco.value || assinaturaVencida.value),
 )
 
-const statusBadgeClass = computed(() => {
-  if (assinaturaVencida.value) {
-    return "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300"
-  }
+// Valor em destaque: o que precisa ser pago agora, ou a mensalidade prevista.
+const valorDestaque = computed(() =>
+  faturaPendente.value
+    ? formatCurrencyBR(Number(faturaPendente.value.valor))
+    : assinatura.value?.valor || "R$ 0,00",
+)
+const valorDestaqueLabel = computed(() =>
+  faturaPendente.value ? "Valor a pagar" : "Mensalidade atual",
+)
+const vencimentoDestaque = computed(
+  () => faturaPendente.value?.vencimento || assinatura.value?.proximoVencimento || "-",
+)
 
-  if (assinaturaEmRisco.value || temLinkPendente.value) {
-    return "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-  }
-
-  return "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+const diasLabel = computed(() => {
+  if (assinaturaVencida.value) return `${Math.abs(Math.ceil(diasBrutos.value))} dia(s) em atraso`
+  if (assinaturaVenceHoje.value) return "Vence hoje"
+  return `Faltam ${diasParaVencer.value} dia(s)`
 })
 
-const statusResumo = computed(() => {
+// Estado único que guia todo o cartão principal (tom + textos + ícone).
+const hero = computed(() => {
   if (assinaturaVencida.value) {
     return {
-      titulo: "Assinatura vencida",
-      descricao:
-        "Seu acesso depende da regularizacao da mensalidade. Gere ou abra o pagamento pendente para voltar ao fluxo normal.",
+      tone: "danger" as const,
+      icon: ShieldAlert,
+      titulo: "Sua assinatura está vencida",
+      descricao: "Regularize o pagamento para reativar seu acesso e manter os apps funcionando.",
     }
   }
-
-  if (temLinkPendente.value) {
+  if (temLinkPendente.value || faturaPendente.value) {
     return {
-      titulo: "Existe um pagamento pendente",
-      descricao:
-        "Voce ja tem uma cobranca aberta para a renovacao. Assim que o pagamento for confirmado, a nova vigencia sera aplicada automaticamente.",
+      tone: "warn" as const,
+      icon: Clock3,
+      titulo: "Você tem um pagamento pendente",
+      descricao: "Assim que confirmarmos o pagamento, sua próxima vigência é aplicada automaticamente.",
     }
   }
-
   if (assinaturaVenceHoje.value) {
     return {
+      tone: "warn" as const,
+      icon: CalendarClock,
       titulo: "Sua assinatura vence hoje",
-      descricao:
-        "Evite bloqueios no acesso gerando agora o pagamento da proxima mensalidade.",
+      descricao: "Antecipe o pagamento para continuar usando o sistema sem interrupções.",
     }
   }
-
   if (assinaturaEmRisco.value) {
     return {
-      titulo: "Renovacao proxima",
-      descricao:
-        "Sua assinatura esta perto do vencimento. Antecipar o pagamento evita interrupcoes e mantem os apps ativos.",
+      tone: "warn" as const,
+      icon: CalendarClock,
+      titulo: "Sua renovação está próxima",
+      descricao: "Pagar agora evita bloqueios e mantém todos os seus apps ativos.",
     }
   }
-
   return {
-    titulo: "Plano em dia",
-    descricao:
-      "Sua conta esta regular. Acompanhe o vencimento, consulte o historico e acesse a App Store para ajustar seu plano.",
+    tone: "ok" as const,
+    icon: ShieldCheck,
+    titulo: "Tudo certo, seu plano está em dia",
+    descricao: "Sua conta está ativa. Você pode adiantar a próxima mensalidade quando quiser.",
   }
 })
 
-const proximosPassos = computed(() => {
-  if (assinaturaVencida.value) {
-    return [
-      "Abra a cobranca pendente ou gere uma nova renovacao.",
-      "Depois da confirmacao, a conta e os apps voltam ao ciclo normal.",
-      "Revise os apps ativos para entender o valor da proxima mensalidade.",
-    ]
+const toneUI = computed(() => {
+  const map = {
+    ok: {
+      wrap: "border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/50 dark:bg-emerald-950/20",
+      icon: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+      badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+    },
+    warn: {
+      wrap: "border-amber-200 bg-amber-50/60 dark:border-amber-900/50 dark:bg-amber-950/20",
+      icon: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+      badge: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+    },
+    danger: {
+      wrap: "border-red-200 bg-red-50/60 dark:border-red-900/50 dark:bg-red-950/20",
+      icon: "bg-red-500/15 text-red-600 dark:text-red-400",
+      badge: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+    },
   }
-
-  if (temLinkPendente.value) {
-    return [
-      "Concluir o pagamento pendente para atualizar a vigencia.",
-      "A confirmacao libera automaticamente a proxima fase da assinatura.",
-      "Se quiser ajustar o valor da recorrencia, acesse a App Store antes do proximo vencimento.",
-    ]
-  }
-
-  if (assinaturaEmRisco.value) {
-    return [
-      "Gerar o link da proxima mensalidade agora.",
-      "Conferir se os apps ativos refletem o valor esperado.",
-      "Acompanhar o historico abaixo para garantir que nao exista nenhuma cobranca antiga em aberto.",
-    ]
-  }
-
-  return [
-    "Acompanhar o proximo vencimento da conta.",
-    "Usar a App Store para adicionar ou remover apps do plano.",
-    "Consultar o historico sempre que precisar de comprovantes ou links pendentes.",
-  ]
+  return map[hero.value.tone]
 })
 
 function getStatusFatura(fatura: StatusContaFatura) {
   if (fatura.status === "PAGO") {
-    return {
-      label: "Paga",
-      className:
-        "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
-      icon: CheckCircle2,
-    }
+    return { label: "Paga", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300", icon: CheckCircle2 }
   }
-
   if (fatura.status === "PENDENTE") {
-    return {
-      label: "Pendente",
-      className:
-        "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
-      icon: Clock3,
-    }
+    return { label: "Pendente", className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300", icon: Clock3 }
   }
-
   if (fatura.status === "ATRASADO") {
-    return {
-      label: "Atrasada",
-      className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
-      icon: ShieldAlert,
-    }
+    return { label: "Atrasada", className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300", icon: ShieldAlert }
   }
-
-  return {
-    label: "Cancelada",
-    className: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-    icon: XCircle,
-  }
+  return { label: "Cancelada", className: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300", icon: XCircle }
 }
 
 function getOrigemFatura(fatura: StatusContaFatura) {
-  if (fatura.origem === "APP") {
-    return {
-      label: "App Store",
-      className: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
-    }
-  }
-
-  return {
-    label: "Mensalidade",
-    className: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
-  }
+  return fatura.origem === "APP"
+    ? { label: "App Store", className: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300" }
+    : { label: "Mensalidade", className: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300" }
 }
 
 function getTituloFatura(fatura: StatusContaFatura) {
-  if (fatura.origem === "APP") {
-    return fatura.descricao || "Cobranca de app"
-  }
-
-  return fatura.descricao || "Mensalidade do plano"
+  return fatura.descricao || (fatura.origem === "APP" ? "Cobrança de app" : "Mensalidade do plano")
 }
 
 async function getDataConta() {
   try {
     refresh.value = true
-    const response = await storeUi.getStatus()
-    assinatura.value = response
+    assinatura.value = await storeUi.getStatus()
   } catch (error) {
     console.error(error)
   } finally {
@@ -219,11 +175,11 @@ async function renovarAssinatura() {
   try {
     generatingLink.value = true
     const response = await ContaRepository.gerarLink()
-    toast.success("Link gerado com sucesso")
+    toast.success("Link de pagamento gerado")
     window.location.href = response.link
   } catch (error) {
     console.error(error)
-    toast.error("Erro ao gerar o link")
+    toast.error("Não foi possível gerar o link de pagamento")
   } finally {
     generatingLink.value = false
   }
@@ -234,527 +190,195 @@ function abrirLink(url?: string | null) {
   window.open(url, "_blank")
 }
 
-onMounted(() => {
-  getDataConta()
-})
+function pagarPrincipal() {
+  if (linkParaPagar.value) return abrirLink(linkParaPagar.value)
+  return renovarAssinatura()
+}
+
+onMounted(getDataConta)
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+  <div class="mx-auto max-w-3xl space-y-5 pb-24 md:pb-8">
+    <!-- Cabeçalho enxuto -->
+    <header class="flex items-center justify-between gap-3">
       <div>
-        <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
-          <Sparkles class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
-          Assinatura e resumo financeiro
-        </h2>
-        <p class="text-sm text-muted-foreground">
-          Veja o estado atual do plano, acompanhe vencimentos e resolva rapidamente qualquer pagamento pendente.
-        </p>
+        <h1 class="text-xl font-bold text-foreground md:text-2xl">Sua assinatura</h1>
+        <p class="text-sm text-muted-foreground">Acompanhe seu plano e mantenha o acesso ativo.</p>
+      </div>
+      <Button variant="ghost" size="icon" :disabled="refresh" title="Atualizar" @click="getDataConta">
+        <RefreshCcw class="h-5 w-5" :class="refresh ? 'animate-spin' : ''" />
+      </Button>
+    </header>
+
+    <!-- Cartão principal: status + valor + ação de pagamento -->
+    <section class="rounded-2xl border p-5 shadow-sm md:p-6" :class="toneUI.wrap">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="grid h-11 w-11 place-items-center rounded-xl" :class="toneUI.icon">
+            <component :is="hero.icon" class="h-6 w-6" />
+          </div>
+          <div>
+            <Badge class="border-0 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide" :class="toneUI.badge">
+              {{ assinatura?.status || storeUi.status }}
+            </Badge>
+            <h2 class="mt-1 text-lg font-semibold leading-tight text-foreground md:text-xl">{{ hero.titulo }}</h2>
+          </div>
+        </div>
       </div>
 
-      <div class="hidden items-center gap-2 md:flex">
-        <Button variant="outline" class="gap-2" :disabled="refresh" @click="getDataConta">
-          <RefreshCcw class="h-4 w-4" :class="refresh ? 'animate-spin' : ''" />
-          Atualizar
-        </Button>
+      <p class="mt-3 text-sm text-muted-foreground">{{ hero.descricao }}</p>
 
-        <Button as-child variant="outline" class="gap-2">
-          <RouterLink to="/loja">
-            <PackagePlus class="h-4 w-4" />
-            App Store
-          </RouterLink>
-        </Button>
+      <!-- Bloco de valor + fatos -->
+      <div class="mt-5 rounded-xl border bg-background/70 p-4">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-muted-foreground">{{ valorDestaqueLabel }}</p>
+            <p class="text-3xl font-bold text-foreground md:text-4xl">{{ valorDestaque }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-muted-foreground">Vencimento</p>
+            <p class="text-sm font-semibold text-foreground">{{ vencimentoDestaque }}</p>
+            <span
+              class="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+              :class="toneUI.badge"
+            >
+              <Clock3 class="h-3 w-3" /> {{ diasLabel }}
+            </span>
+          </div>
+        </div>
+      </div>
 
+      <!-- Ações -->
+      <div class="mt-5 flex flex-col gap-2 sm:flex-row">
         <Button
-          v-if="temLinkPendente"
-          class="gap-2"
-          @click="abrirLink(assinatura?.proximoLinkPagamento)"
-        >
-          <CreditCard class="h-4 w-4" />
-          Pagar agora
-        </Button>
-
-        <Button
-          v-else-if="assinaturaEmRisco || assinaturaVencida"
-          class="gap-2"
+          class="h-11 flex-1 gap-2 text-base dark:text-white"
           :disabled="generatingLink"
-          @click="renovarAssinatura"
+          @click="pagarPrincipal"
         >
           <LoaderCircle v-if="generatingLink" class="h-4 w-4 animate-spin" />
           <CreditCard v-else class="h-4 w-4" />
-          Gerar renovacao
+          {{ linkParaPagar ? "Pagar agora" : precisaGerarRenovacao ? "Gerar renovação" : "Adiantar pagamento" }}
+        </Button>
+        <Button as-child variant="outline" class="h-11 gap-2">
+          <RouterLink to="/loja">
+            <PackagePlus class="h-4 w-4" />
+            Gerenciar apps
+          </RouterLink>
         </Button>
       </div>
-    </div>
+    </section>
 
-    <Alert
-      :class="[
-        'border',
-        assinaturaVencida
-          ? 'border-red-200 bg-red-50 text-red-900 dark:border-red-950/50 dark:bg-red-950/20 dark:text-red-200'
-          : temLinkPendente || assinaturaEmRisco
-            ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-950/50 dark:bg-amber-950/20 dark:text-amber-200'
-            : 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-950/50 dark:bg-emerald-950/20 dark:text-emerald-200',
-      ]"
-    >
-      <ShieldAlert class="h-4 w-4" />
-      <AlertTitle>{{ statusResumo.titulo }}</AlertTitle>
-      <AlertDescription>
-        {{ statusResumo.descricao }}
-      </AlertDescription>
-    </Alert>
-
-    <Card class="overflow-hidden border">
-      <CardHeader class="border-b bg-muted/20 pb-2 pt-2">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div class="space-y-3">
-            <div class="flex items-center gap-3">
-              <div class="rounded-xl bg-primary/10 p-3 text-primary">
-                <Wallet class="h-5 w-5" />
-              </div>
-
-              <div>
-                <CardTitle class="text-xl">Visao geral do plano</CardTitle>
-                <CardDescription>
-                  Entenda o valor atual da sua mensalidade, o vencimento e o historico recente da conta.
-                </CardDescription>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap gap-2">
-              <Badge class="px-3 py-1 text-xs font-semibold uppercase tracking-wide" :class="statusBadgeClass">
-                {{ assinatura?.status || storeUi.status }}
-              </Badge>
-              <Badge variant="outline" class="px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-                {{ assinatura?.labelAssinatura || "Resumo da assinatura" }}
-              </Badge>
-            </div>
-          </div>
-
-          <div class="grid gap-2 sm:grid-cols-2 lg:hidden">
-            <Button variant="outline" class="gap-2" :disabled="refresh" @click="getDataConta">
-              <RefreshCcw class="h-4 w-4" :class="refresh ? 'animate-spin' : ''" />
-              Atualizar
-            </Button>
-
-            <Button as-child variant="outline" class="gap-2">
-              <RouterLink to="/loja">
-                <PackagePlus class="h-4 w-4" />
-                App Store
-              </RouterLink>
-            </Button>
-
-            <Button
-              v-if="temLinkPendente"
-              class="gap-2 sm:col-span-2"
-              @click="abrirLink(assinatura?.proximoLinkPagamento)"
-            >
-              <CreditCard class="h-4 w-4" />
-              Abrir pagamento pendente
-            </Button>
-
-            <Button
-              v-else-if="assinaturaEmRisco || assinaturaVencida"
-              class="gap-2 sm:col-span-2"
-              :disabled="generatingLink"
-              @click="renovarAssinatura"
-            >
-              <LoaderCircle v-if="generatingLink" class="h-4 w-4 animate-spin" />
-              <CreditCard v-else class="h-4 w-4" />
-              Gerar renovacao
-            </Button>
-          </div>
+    <!-- Histórico de faturas -->
+    <Card class="border-border/70 shadow-sm">
+      <CardHeader class="flex flex-row items-center justify-between gap-3 py-4">
+        <div>
+          <CardTitle class="flex items-center gap-2 text-base">
+            <ReceiptText class="h-4 w-4 text-primary" /> Histórico de faturas
+          </CardTitle>
+          <CardDescription>Pague pendências e acesse comprovantes.</CardDescription>
         </div>
-      </CardHeader>
-
-      <CardContent class="space-y-4 p-4 md:p-6">
-        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <Card class="border-dashed">
-            <CardHeader class="space-y-1 py-2">
-              <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                <CircleDollarSign class="h-4 w-4" />
-                Mensalidade atual
-              </div>
-              <CardTitle class="text-2xl">
-                {{ assinatura?.valor || "R$ 0,00" }}
-              </CardTitle>
-              <div class="text-xs text-muted-foreground">
-                Valor previsto da recorrencia atual da conta.
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card class="border-dashed">
-            <CardHeader class="space-y-1 py-2">
-              <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                <CalendarClock class="h-4 w-4" />
-                Proximo vencimento
-              </div>
-              <CardTitle class="text-2xl">
-                {{ assinatura?.proximoVencimento || "-" }}
-              </CardTitle>
-              <div class="text-xs text-muted-foreground">
-                {{ assinaturaVencida ? "Pagamento em atraso" : "Data base do proximo ciclo" }}
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card class="border-dashed">
-            <CardHeader class="space-y-1 py-2">
-              <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock3 class="h-4 w-4" />
-                Tempo restante
-              </div>
-              <CardTitle class="text-2xl" :class="assinaturaEmRisco || assinaturaVencida ? 'text-destructive' : ''">
-                {{
-                  assinaturaVencida
-                    ? `${Math.abs(Math.ceil(diasBrutos))} dia(s) em atraso`
-                    : assinaturaVenceHoje
-                      ? "Vence hoje"
-                      : `${diasParaVencer} dia(s)`
-                }}
-              </CardTitle>
-              <div class="text-xs text-muted-foreground">
-                {{ assinaturaVencida ? "Regularize para evitar bloqueios" : "Prazo ate o proximo vencimento" }}
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card class="border-dashed">
-            <CardHeader class="space-y-1 py-2">
-              <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                <ReceiptText class="h-4 w-4" />
-                Faturas recentes
-              </div>
-              <CardTitle class="text-2xl">
-                {{ totalFaturas }}
-              </CardTitle>
-              <div class="text-xs text-muted-foreground">
-                {{ totalPendentes }} pendente(s), {{ totalPagas }} paga(s)
-              </div>
-            </CardHeader>
-          </Card>
-        </div>
-
-        <div class="grid gap-3 lg:grid-cols-[1.4fr_0.8fr]">
-          <div class="rounded-xl border bg-card p-4">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <p class="text-sm font-medium">Resumo financeiro da assinatura</p>
-                <p class="text-xs text-muted-foreground">
-                  Consolidado do historico carregado para a conta.
-                </p>
-              </div>
-              <Badge variant="outline">Ultimas 10 faturas</Badge>
-            </div>
-
-            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <div class="rounded-lg border border-border bg-muted/40 p-3">
-                <div class="text-xs uppercase tracking-wide text-muted-foreground">Total movimentado</div>
-                <div class="mt-2 text-lg font-semibold text-foreground">
-                  {{ formatCurrencyBR(assinatura?.valorTotal || 0) }}
-                </div>
-              </div>
-
-              <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-950/50 dark:bg-emerald-950/20">
-                <div class="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Pago</div>
-                <div class="mt-2 text-lg font-semibold text-emerald-700 dark:text-emerald-300">
-                  {{ formatCurrencyBR(assinatura?.valorPago || 0) }}
-                </div>
-              </div>
-
-              <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-950/50 dark:bg-amber-950/20">
-                <div class="text-xs uppercase tracking-wide text-amber-700 dark:text-amber-300">Pendente</div>
-                <div class="mt-2 text-lg font-semibold text-amber-700 dark:text-amber-300">
-                  {{ formatCurrencyBR(assinatura?.valorPendente || 0) }}
-                </div>
-              </div>
-
-              <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/40">
-                <div class="text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300">Cancelado</div>
-                <div class="mt-2 text-lg font-semibold text-slate-700 dark:text-slate-300">
-                  {{ formatCurrencyBR(assinatura?.valorCancelado || 0) }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="rounded-xl border bg-card p-4">
-            <div class="space-y-1">
-              <p class="text-sm font-medium">O que fazer agora</p>
-              <p class="text-xs text-muted-foreground">
-                Orientacao rapida para o estado atual da sua assinatura.
-              </p>
-            </div>
-
-            <div class="mt-4 space-y-3">
-              <div
-                v-for="(passo, index) in proximosPassos"
-                :key="passo"
-                class="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2"
-              >
-                <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 border text-xs font-bold text-primary dark:text-blue-400">
-                  {{ index + 1 }}
-                </div>
-                <p class="text-sm text-foreground">{{ passo }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-
-    <div class="grid gap-3 lg:grid-cols-3">
-      <Card class="lg:col-span-2">
-        <CardHeader class="pb-2 pt-2">
-          <CardTitle class="text-lg">Fatura em destaque</CardTitle>
-          <CardDescription>
-            A cobranca mais importante para acao imediata no seu ciclo atual.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          <div
-            v-if="faturaEmAberto"
-            class="rounded-xl border border-border bg-muted/20 p-4"
+        <div class="hidden shrink-0 items-center gap-2 text-xs sm:flex">
+          <span class="rounded-full bg-emerald-100 px-2 py-1 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+            {{ totalPagas }} paga(s)
+          </span>
+          <span
+            v-if="Number(assinatura?.valorPendente || 0) > 0"
+            class="rounded-full bg-amber-100 px-2 py-1 font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
           >
-            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div class="space-y-3">
-                <div class="flex flex-wrap items-center gap-2">
-                  <Badge :class="getStatusFatura(faturaEmAberto).className">
-                    <component :is="getStatusFatura(faturaEmAberto).icon" class="mr-1 h-3.5 w-3.5" />
-                    {{ getStatusFatura(faturaEmAberto).label }}
-                  </Badge>
-                  <Badge :class="getOrigemFatura(faturaEmAberto).className">
-                    {{ getOrigemFatura(faturaEmAberto).label }}
-                  </Badge>
-                </div>
-
-                <div>
-                  <p class="text-xl font-semibold text-foreground">
-                    {{ formatCurrencyBR(faturaEmAberto.valor) }}
-                  </p>
-                  <p class="text-sm text-muted-foreground">
-                    Vencimento em {{ faturaEmAberto.vencimento }}
-                  </p>
-                </div>
-
-                <p class="text-sm text-muted-foreground">
-                  {{ temLinkPendente
-                    ? "Existe uma cobranca aberta aguardando pagamento."
-                    : "Use este bloco para consultar a cobranca mais recente do plano ou dos apps." }}
-                </p>
-              </div>
-
-              <div class="flex flex-col gap-2">
-                <Button
-                  v-if="['PENDENTE', 'ATRASADO'].includes(faturaEmAberto.status)"
-                  class="gap-2"
-                  @click="abrirLink(faturaEmAberto.linkPagamento)"
-                >
-                  <CreditCard class="h-4 w-4" />
-                  Pagar fatura
-                </Button>
-
-                <Button
-                  v-if="faturaEmAberto.linkPagamento"
-                  variant="outline"
-                  class="gap-2"
-                  @click="abrirLink(faturaEmAberto.linkPagamento)"
-                >
-                  <ExternalLink class="h-4 w-4" />
-                  Abrir link
-                </Button>
-
-                <Button
-                  v-if="faturaEmAberto.status === 'PAGO' && faturaEmAberto.linkPagamento"
-                  variant="outline"
-                  class="gap-2"
-                  @click="abrirLink(faturaEmAberto.linkPagamento)"
-                >
-                  <FileCheck2 class="h-4 w-4" />
-                  Ver comprovante
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="rounded-lg border border-border p-6">
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <FileClock class="h-5 w-5" />
-                </EmptyMedia>
-                <EmptyTitle>Nenhuma fatura disponivel</EmptyTitle>
-                <EmptyDescription>
-                  Quando houver cobrancas da assinatura, elas aparecerao aqui para consulta rapida.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader class="py-3">
-          <CardTitle class="text-lg">Apps e recorrencia</CardTitle>
-          <CardDescription>
-            Ajuste os apps contratados e acompanhe o impacto no valor do plano.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent class="space-y-3">
-          <div class="rounded-lg border border-border bg-muted/30 p-4">
-            <div class="text-sm font-medium text-foreground">Gerencie sua App Store</div>
-            <p class="mt-1 text-sm text-muted-foreground">
-              Adicione apps, remova recursos e veja como cada escolha afeta a proxima mensalidade.
-            </p>
-          </div>
-
-          <Button as-child class="w-full gap-2 dark:text-white">
-            <RouterLink to="/loja">
-              Abrir App Store
-              <ArrowRight class="h-4 w-4" />
-            </RouterLink>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-
-    <Card>
-      <CardHeader class="py-3">
-        <CardTitle class="text-lg">Historico de faturas</CardTitle>
-        <CardDescription>
-          Consulte os ultimos pagamentos da assinatura, abra links pendentes e visualize comprovantes.
-        </CardDescription>
+            Pendente {{ formatCurrencyBR(Number(assinatura?.valorPendente || 0)) }}
+          </span>
+        </div>
       </CardHeader>
 
-      <CardContent>
-        <div v-if="refresh && !historicoFaturas.length" class="rounded-lg border border-border p-6">
+      <CardContent class="pt-0">
+        <div v-if="refresh && !historicoFaturas.length" class="rounded-lg border p-6">
           <Empty>
             <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <LoaderCircle class="h-6 w-6 animate-spin" />
-              </EmptyMedia>
-              <EmptyTitle>Carregando historico</EmptyTitle>
-              <EmptyDescription>Buscando as ultimas faturas da assinatura.</EmptyDescription>
+              <EmptyMedia variant="icon"><LoaderCircle class="h-6 w-6 animate-spin" /></EmptyMedia>
+              <EmptyTitle>Carregando histórico</EmptyTitle>
+              <EmptyDescription>Buscando as últimas faturas da assinatura.</EmptyDescription>
             </EmptyHeader>
           </Empty>
         </div>
 
-        <div v-else-if="!historicoFaturas.length" class="rounded-lg border border-border p-6">
+        <div v-else-if="!historicoFaturas.length" class="rounded-lg border p-6">
           <Empty>
             <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <ReceiptText class="h-6 w-6" />
-              </EmptyMedia>
-              <EmptyTitle>Nenhuma fatura encontrada</EmptyTitle>
-              <EmptyDescription>Assim que a conta gerar cobrancas, elas aparecerao neste historico.</EmptyDescription>
+              <EmptyMedia variant="icon"><FileClock class="h-6 w-6" /></EmptyMedia>
+              <EmptyTitle>Nenhuma fatura ainda</EmptyTitle>
+              <EmptyDescription>Assim que sua conta gerar cobranças, elas aparecem aqui.</EmptyDescription>
             </EmptyHeader>
           </Empty>
         </div>
 
-        <div v-else class="space-y-3">
-          <div class="hidden grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr] gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid">
-            <div>Fatura</div>
-            <div>Valor</div>
-            <div>Status</div>
-            <div class="text-right">Acoes</div>
-          </div>
-
-          <div
+        <ul v-else class="divide-y divide-border/60">
+          <li
             v-for="fatura in historicoFaturas"
             :key="fatura.id"
-            class="rounded-xl border border-border bg-card px-4 py-2"
+            class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
           >
-            <div class="flex flex-col gap-4 md:grid md:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr] md:items-center">
-              <div class="space-y-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <div class="font-medium text-foreground">{{ getTituloFatura(fatura) }}</div>
-                  <Badge :class="getOrigemFatura(fatura).className" class="w-fit">
-                    {{ getOrigemFatura(fatura).label }}
-                  </Badge>
-                </div>
-                <div class="text-sm text-muted-foreground">
-                  Vencimento em {{ fatura.vencimento }}
-                </div>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="truncate text-sm font-medium text-foreground">{{ getTituloFatura(fatura) }}</span>
+                <Badge class="border-0 px-1.5 py-0 text-[10px]" :class="getOrigemFatura(fatura).className">
+                  {{ getOrigemFatura(fatura).label }}
+                </Badge>
               </div>
+              <p class="mt-0.5 text-xs text-muted-foreground">Vencimento em {{ fatura.vencimento }}</p>
+            </div>
 
-              <div class="space-y-1">
-                <div class="text-xs uppercase tracking-wide text-muted-foreground md:hidden">Valor</div>
-                <div class="font-semibold text-foreground">
-                  {{ formatCurrencyBR(fatura.valor) }}
-                </div>
-              </div>
-
-              <div class="space-y-1">
-                <div class="text-xs uppercase tracking-wide text-muted-foreground md:hidden">Status</div>
-                <Badge :class="getStatusFatura(fatura).className" class="w-fit">
-                  <component :is="getStatusFatura(fatura).icon" class="mr-1 h-3.5 w-3.5" />
+            <div class="flex items-center justify-between gap-3 sm:justify-end">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-foreground">{{ formatCurrencyBR(Number(fatura.valor)) }}</span>
+                <Badge class="border-0 px-2 py-0.5 text-[10px]" :class="getStatusFatura(fatura).className">
+                  <component :is="getStatusFatura(fatura).icon" class="mr-1 h-3 w-3" />
                   {{ getStatusFatura(fatura).label }}
                 </Badge>
               </div>
 
-              <div class="flex flex-wrap justify-start gap-2 md:justify-end">
-                <Button
-                  v-if="['PENDENTE', 'ATRASADO'].includes(fatura.status)"
-                  size="sm"
-                  class="gap-2"
-                  @click="abrirLink(fatura.linkPagamento)"
-                >
-                  <CreditCard class="h-4 w-4" />
-                  Pagar
-                </Button>
-
-                <Button
-                  v-if="fatura.linkPagamento"
-                  size="sm"
-                  variant="outline"
-                  class="gap-2"
-                  @click="abrirLink(fatura.linkPagamento)"
-                >
-                  <ExternalLink class="h-4 w-4" />
-                  Abrir
-                </Button>
-
-                <Button
-                  v-if="fatura.status === 'PAGO' && fatura.linkPagamento"
-                  size="sm"
-                  variant="outline"
-                  class="gap-2"
-                  @click="abrirLink(fatura.linkPagamento)"
-                >
-                  <FileCheck2 class="h-4 w-4" />
-                  Comprovante
-                </Button>
-              </div>
+              <Button
+                v-if="['PENDENTE', 'ATRASADO'].includes(fatura.status)"
+                size="sm"
+                class="gap-1.5 dark:text-white"
+                @click="abrirLink(fatura.linkPagamento)"
+              >
+                <CreditCard class="h-3.5 w-3.5" /> Pagar
+              </Button>
+              <Button
+                v-else-if="fatura.linkPagamento"
+                size="sm"
+                variant="outline"
+                class="gap-1.5"
+                @click="abrirLink(fatura.linkPagamento)"
+              >
+                <FileCheck2 v-if="fatura.status === 'PAGO'" class="h-3.5 w-3.5" />
+                <ExternalLink v-else class="h-3.5 w-3.5" />
+                {{ fatura.status === "PAGO" ? "Comprovante" : "Abrir" }}
+              </Button>
             </div>
-          </div>
-        </div>
+          </li>
+        </ul>
       </CardContent>
     </Card>
 
-    <div class="h-20 md:hidden"></div>
-
+    <!-- Barra inferior (mobile) -->
     <nav
       v-if="storeUi.isMobile"
-      class="fixed bottom-0 left-0 z-50 flex h-16 w-full items-center justify-around border-t bg-background shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
+      class="fixed bottom-0 left-0 z-50 flex h-16 w-full items-center gap-2 border-t bg-background px-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
     >
       <button
-        class="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary"
+        class="flex flex-col items-center gap-0.5 px-2 text-muted-foreground hover:text-primary"
         @click="storeUi.openSidebar = true"
       >
         <Menu class="h-5 w-5" />
         <span class="text-[10px] font-medium">Menu</span>
       </button>
-
-      <button
-        class="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary"
-        @click="abrirLink(assinatura?.proximoLinkPagamento)"
-      >
-        <CreditCard class="h-5 w-5" />
-        <span class="text-[10px] font-medium">Pagar</span>
-      </button>
+      <Button class="h-11 flex-1 gap-2 dark:text-white" :disabled="generatingLink" @click="pagarPrincipal">
+        <LoaderCircle v-if="generatingLink" class="h-4 w-4 animate-spin" />
+        <CreditCard v-else class="h-4 w-4" />
+        {{ linkParaPagar ? "Pagar agora" : precisaGerarRenovacao ? "Gerar renovação" : "Adiantar" }}
+      </Button>
     </nav>
   </div>
 </template>
