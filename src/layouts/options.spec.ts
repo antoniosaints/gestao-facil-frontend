@@ -39,4 +39,32 @@ describe('filterSidebarMenuByVisibility', () => {
       'Configurações',
     ])
   })
+
+  const menuComSubmenus: SidebarMenuType[] = [
+    {
+      key: 'vendas',
+      nome: 'Vendas',
+      show: true,
+      children: [
+        { key: 'vendas:painel', nome: 'Painel', link: '/vendas/dashboard' },
+        { key: 'vendas:lista', nome: 'Vendas', link: '/vendas' },
+        { key: 'vendas:caixas', nome: 'Caixas', link: '/vendas/caixas' },
+      ],
+    },
+  ]
+
+  it('keeps all submenus when no submenu is hidden', () => {
+    const [vendas] = filterSidebarMenuByVisibility(menuComSubmenus, null, false, [])
+    expect(vendas.children?.map((child) => child.nome)).toEqual(['Painel', 'Vendas', 'Caixas'])
+  })
+
+  it('removes submenus whose key is in the hidden list', () => {
+    const [vendas] = filterSidebarMenuByVisibility(menuComSubmenus, null, false, ['vendas:caixas'])
+    expect(vendas.children?.map((child) => child.nome)).toEqual(['Painel', 'Vendas'])
+  })
+
+  it('filters submenus even when top-level visibility is also applied', () => {
+    const [vendas] = filterSidebarMenuByVisibility(menuComSubmenus, ['vendas'], false, ['vendas:painel'])
+    expect(vendas.children?.map((child) => child.nome)).toEqual(['Vendas', 'Caixas'])
+  })
 })

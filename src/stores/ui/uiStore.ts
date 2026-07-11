@@ -51,6 +51,9 @@ export const useUiStore = defineStore('uiStore', () => {
   const appModules = ref<Record<string, boolean>>({})
   const appModulesLoaded = ref(false)
   const visibleMenuKeys = ref<string[] | null>(null)
+  // Submenus ocultos (keys no formato "pai:filho"). Separado de visibleMenuKeys porque
+  // no payload `menusVisiveis` as keys de topo são whitelist e as de submenu são blacklist.
+  const hiddenSubmenuKeys = ref<string[]>([])
   const status = ref(localStorage.getItem('gestao_facil:status') || 'INATIVO')
   const diasParaVencer = ref<number>(
     Number(localStorage.getItem('gestao_facil:diasParaVencer')) || 0,
@@ -226,9 +229,15 @@ export const useUiStore = defineStore('uiStore', () => {
         permitirTransferenciaContaFinanceira: response.data?.permitirTransferenciaContaFinanceira ?? true,
         permitirCriacaoCobranca: response.data?.permitirCriacaoCobranca ?? true,
       }
-      visibleMenuKeys.value = Array.isArray(response.data?.menusVisiveis)
-        ? response.data.menusVisiveis
-        : null
+      if (Array.isArray(response.data?.menusVisiveis)) {
+        const keys = response.data.menusVisiveis as string[]
+        // Keys com ":" são submenus ocultos (blacklist); as demais são menus de topo visíveis.
+        visibleMenuKeys.value = keys.filter((key) => !key.includes(':'))
+        hiddenSubmenuKeys.value = keys.filter((key) => key.includes(':'))
+      } else {
+        visibleMenuKeys.value = null
+        hiddenSubmenuKeys.value = []
+      }
       setThemeCustomization(response.data?.temaPersonalizado)
       return financeiroFlags.value
     } catch (error) {
@@ -240,6 +249,7 @@ export const useUiStore = defineStore('uiStore', () => {
         permitirCriacaoCobranca: true,
       }
       visibleMenuKeys.value = null
+      hiddenSubmenuKeys.value = []
       setThemeCustomization(null)
       return financeiroFlags.value
     }
@@ -293,6 +303,7 @@ export const useUiStore = defineStore('uiStore', () => {
     appModules,
     appModulesLoaded,
     visibleMenuKeys,
+    hiddenSubmenuKeys,
     getDataUsuario,
     loadFinanceiroFlags,
     diasParaVencer,

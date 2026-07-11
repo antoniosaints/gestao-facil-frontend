@@ -295,13 +295,29 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
 })
 
 const quickActions = [
-  { titulo: 'Nova venda', link: '/vendas', icon: ShoppingCart },
-  { titulo: 'Novo lançamento', link: '/financeiro/lancamentos', icon: Wallet },
-  { titulo: 'Novo produto', link: '/produtos', icon: Boxes },
-  { titulo: 'Nova OS', link: '/servicos/os', icon: Wrench },
+  { titulo: 'Nova venda', link: '/vendas', icon: ShoppingCart, menuKey: 'vendas' },
+  { titulo: 'Novo lançamento', link: '/financeiro/lancamentos', icon: Wallet, menuKey: 'financeiro' },
+  { titulo: 'Novo produto', link: '/produtos', icon: Boxes, menuKey: 'produtos' },
+  { titulo: 'Nova OS', link: '/servicos/os', icon: Wrench, menuKey: 'servicos' },
 ]
 
-const metasSlider = computed(() => metasResumo.value.slice(0, 8))
+// Respeita a ocultação de menus configurada na conta: se o menu correspondente
+// estiver oculto, o atalho rápido correspondente também some (ex.: menu de ordens
+// de serviço oculto => botão "Nova OS" desaparece). visibleMenuKeys nulo = tudo visível.
+function isMenuKeyVisible(key: string) {
+  const keys = uiStore.visibleMenuKeys
+  if (!Array.isArray(keys)) return true
+  return keys.includes(key)
+}
+
+const visibleQuickActions = computed(() =>
+  quickActions.filter((action) => isMenuKeyVisible(action.menuKey)),
+)
+
+// Metas só aparecem para administradores — vendedores não devem visualizá-las.
+const podeVerMetas = computed(() => uiStore.permissoes.admin && isMenuKeyVisible('metas'))
+
+const metasSlider = computed(() => (podeVerMetas.value ? metasResumo.value.slice(0, 8) : []))
 
 function getPeriodoSelecionado() {
   const inicio = filtroPeriodo.value === null
@@ -365,7 +381,7 @@ async function getDataDashboard(showFeedback = false) {
       LancamentosRepository.resumoStatusTotal(),
       ProdutoRepository.getResumoGeral(inicio, fim),
       OrdensServicoRepository.getResumo(),
-      MetasRepository.resumo(),
+      podeVerMetas.value ? MetasRepository.resumo() : Promise.resolve({ data: [] as MetaResumo[] }),
     ])
 
     dashboardResumo.value = resumoDashboard
@@ -424,7 +440,7 @@ onMounted(() => {
           </p>
         </div>
         <div class="flex flex-wrap gap-2">
-          <RouterLink v-for="action in quickActions" :key="action.titulo" :to="action.link">
+          <RouterLink v-for="action in visibleQuickActions" :key="action.titulo" :to="action.link">
             <Button variant="outline" class="gap-2">
               <component :is="action.icon" class="h-4 w-4" />
               {{ action.titulo }}

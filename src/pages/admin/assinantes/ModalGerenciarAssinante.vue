@@ -5,8 +5,12 @@ import {
   Ban,
   CalendarClock,
   CreditCard,
+  Eye,
+  EyeOff,
+  KeyRound,
   LoaderCircle,
   Power,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
   UserCog,
@@ -16,9 +20,11 @@ import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { useConfirm } from '@/composables/useConfirm'
 import {
   ContaRepository,
   type AssinanteAdminAppItem,
@@ -37,6 +43,7 @@ const emit = defineEmits<{
 const open = defineModel<boolean>('open', { default: false })
 
 const toast = useToast()
+const confirm = useConfirm()
 const loading = ref(false)
 const appsLoading = ref(false)
 const appSavingId = ref<number | null>(null)
@@ -44,17 +51,63 @@ const status = ref<'ATIVO' | 'INATIVO' | 'BLOQUEADO'>('ATIVO')
 const vencimento = ref<Date | null>(new Date())
 const apps = ref<AssinanteAdminAppItem[]>([])
 
+const novaSenhaRoot = ref('')
+const showSenhaRoot = ref(false)
+const resettingSenha = ref(false)
+const rootResetInfo = ref<{ email: string; nome: string; totalUsuariosRoot: number } | null>(null)
+
 const title = computed(() => (props.conta ? `Gerenciar ${props.conta.nome}` : 'Gerenciar conta'))
 
 watch(
   () => props.conta,
   (value) => {
+    novaSenhaRoot.value = ''
+    showSenhaRoot.value = false
+    rootResetInfo.value = null
     if (!value) return
     status.value = (value.status as 'ATIVO' | 'INATIVO' | 'BLOQUEADO') || 'ATIVO'
     vencimento.value = value.vencimento ? new Date(value.vencimento) : new Date()
   },
   { immediate: true },
 )
+
+function gerarSenhaRoot() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+  let senha = ''
+  for (let i = 0; i < 10; i++) senha += chars[Math.floor(Math.random() * chars.length)]
+  novaSenhaRoot.value = senha
+  showSenhaRoot.value = true
+}
+
+async function resetarSenhaRoot() {
+  if (!props.conta?.id) return
+
+  const senha = novaSenhaRoot.value.trim()
+  if (senha.length < 6) {
+    toast.error('A nova senha precisa de ao menos 6 caracteres')
+    return
+  }
+
+  const confirmed = await confirm.confirm({
+    title: 'Resetar senha do root',
+    message: `Isso vai substituir a senha do usuário root da conta "${props.conta.nome}", permitindo recuperar o acesso do cliente. Deseja continuar?`,
+    confirmText: 'Sim, redefinir senha',
+    colorButton: 'danger',
+  })
+  if (!confirmed) return
+
+  try {
+    resettingSenha.value = true
+    const response = await ContaRepository.resetarSenhaRootAdmin(props.conta.id, senha)
+    rootResetInfo.value = response.data ?? null
+    toast.success(response.message || 'Senha do root redefinida com sucesso')
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao redefinir a senha do root')
+  } finally {
+    resettingSenha.value = false
+  }
+}
 
 watch(
   () => [open.value, props.conta?.id] as const,
@@ -329,6 +382,67 @@ async function submit() {
                 </a>
               </div>
             </article>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card class="border-amber-300/60 bg-amber-50/50 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/10">
+        <CardContent class="space-y-3 p-4">
+          <div class="flex items-start gap-2">
+            <KeyRound class="mt-0.5 h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <div>
+              <div class="text-sm font-medium text-foreground">Recuperar acesso do cliente</div>
+              <div class="text-xs text-muted-foreground">
+                Redefine a senha do usuário root desta conta. Use quando o cliente perdeu o acesso.
+                Informe a nova senha ao cliente com segurança.
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div class="relative flex-1">
+              <Input
+                v-model="novaSenhaRoot"
+                :type="showSenhaRoot ? 'text' : 'password'"
+                placeholder="Nova senha do root (mín. 6 caracteres)"
+                autocomplete="new-password"
+                class="pr-10"
+              />
+              <button
+                type="button"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                :aria-label="showSenhaRoot ? 'Ocultar senha' : 'Mostrar senha'"
+                @click="showSenhaRoot = !showSenhaRoot"
+              >
+                <Eye v-if="showSenhaRoot" class="h-4 w-4" />
+                <EyeOff v-else class="h-4 w-4" />
+              </button>
+            </div>
+            <Button type="button" variant="outline" class="gap-2" @click="gerarSenhaRoot">
+              <RefreshCw class="h-4 w-4" />
+              Gerar
+            </Button>
+            <Button
+              type="button"
+              class="gap-2 bg-amber-600 text-white hover:bg-amber-600/90"
+              :disabled="resettingSenha || !conta?.id"
+              @click="resetarSenhaRoot"
+            >
+              <LoaderCircle v-if="resettingSenha" class="h-4 w-4 animate-spin" />
+              <KeyRound v-else class="h-4 w-4" />
+              {{ resettingSenha ? 'Redefinindo...' : 'Resetar senha do root' }}
+            </Button>
+          </div>
+
+          <div
+            v-if="rootResetInfo"
+            class="rounded-lg border border-emerald-300/60 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"
+          >
+            Senha redefinida para <span class="font-medium">{{ rootResetInfo.nome }}</span>.
+            O cliente deve entrar com o e-mail <span class="font-medium">{{ rootResetInfo.email }}</span> e a nova senha.
+            <span v-if="rootResetInfo.totalUsuariosRoot > 1">
+              ({{ rootResetInfo.totalUsuariosRoot }} usuários root foram atualizados.)
+            </span>
           </div>
         </CardContent>
       </Card>

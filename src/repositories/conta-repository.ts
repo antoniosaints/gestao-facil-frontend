@@ -355,6 +355,14 @@ export class ContaRepository {
     return res.data
   }
 
+  static async resetarSenhaRootAdmin(id: number, senha: string): Promise<{
+    message?: string
+    data?: { contaId: number; email: string; nome: string; totalUsuariosRoot: number }
+  }> {
+    const res = await http.post(`/admin/assinantes/${id}/reset-senha-root`, { senha })
+    return res.data
+  }
+
   static async getFinanceiroPainelAdmin(): Promise<AdminFinanceiroPainelResponse> {
     const res = await http.get('/admin/financeiro/painel')
     return res.data.data

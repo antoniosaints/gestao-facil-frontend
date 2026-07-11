@@ -80,6 +80,7 @@ const sidebarMenu = computed(() => {
         sidebarMenuOptions(store.permissoes, store.appModules),
         store.visibleMenuKeys,
         store.usuarioLogged.permissao === 'root',
+        store.hiddenSubmenuKeys,
     )
 })
 window.addEventListener('resize', () => {

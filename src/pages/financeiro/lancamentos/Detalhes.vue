@@ -57,6 +57,7 @@ import type {
 } from '@/types/schemas'
 
 import GerarCobranca from './modais/GerarCobranca.vue'
+import LancamentoModal from './formulario/LancamentoModal.vue'
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import FormularioEfertivar from './modais/FormularioEfertivar.vue'
 import ModalParcela from './modais/ModalParcela.vue'
@@ -199,6 +200,16 @@ function getTipoClasses(tipo?: string) {
 function copiarUid() {
   navigator.clipboard.writeText(lancamento.value?.Uid ?? '')
   toast.success('UID copiado para a área de transferência')
+}
+
+async function editarLancamento() {
+  if (!lancamento.value?.id) return
+  try {
+    await store.openUpdate(lancamento.value.id)
+  } catch (error) {
+    console.error(error)
+    toast.error('Erro ao abrir a edição do lançamento')
+  }
 }
 
 function editarParcela(parcela: ParcelaDetalhe) {
@@ -421,6 +432,9 @@ watch(() => store.filters.update, loadLancamento)
         </Button>
         <Button variant="outline" @click="loadLancamento">
           <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
+        </Button>
+        <Button variant="outline" :disabled="!lancamento?.id" @click="editarLancamento">
+          <PenLine class="h-4 w-4" /> Editar
         </Button>
         <Button variant="outline" :disabled="!lancamento?.id" @click="toggleNotificacaoVencimento">
           <BellOff v-if="lancamento?.notificarVencimento" class="h-4 w-4" />
@@ -745,6 +759,15 @@ watch(() => store.filters.update, loadLancamento)
       <button
         type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
+        :disabled="!lancamento?.id"
+        @click="editarLancamento"
+      >
+        <PenLine class="h-5 w-5" />
+        <span class="text-xs">Editar</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
         :disabled="!lancamento?.id || Boolean(lancamento?.vendaId)"
         @click="abrirAdicionarParcela"
       >
@@ -794,6 +817,7 @@ watch(() => store.filters.update, loadLancamento)
     </MobileBottomBar>
 
     <GerarCobranca />
+    <LancamentoModal />
     <ClientesModal />
     <ModalParcela />
     <ModalView

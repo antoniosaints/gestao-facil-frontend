@@ -304,29 +304,58 @@
                     <form @submit.prevent="submit(formularioMenus)">
                         <CardHeader>
                             <CardTitle class="font-normal">Menus</CardTitle>
-                            <CardDescription>Escolha quais atalhos aparecem na sidebar do sistema.</CardDescription>
+                            <CardDescription>Escolha quais atalhos aparecem na sidebar do sistema. Em cada menu você pode
+                                ocultar também os submenus, deixando visíveis apenas as funções que você realmente usa.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                <label v-for="menu in MAIN_MENU_VISIBILITY_OPTIONS" :key="menu.key" :for="`menu-${menu.key}`"
-                                    class="flex min-h-28 cursor-pointer flex-col justify-between rounded-lg border bg-body/70 p-4 transition hover:border-primary/60"
+                                <div v-for="menu in MAIN_MENU_VISIBILITY_OPTIONS" :key="menu.key"
+                                    class="flex min-h-[132px] flex-col rounded-lg border bg-body/70 p-4 transition"
                                     :class="{
                                         'border-primary bg-primary/5': isMenuSelected(menu.key),
-                                        'cursor-not-allowed opacity-80': isMenuLocked(menu.key),
+                                        'opacity-80': isMenuLocked(menu.key),
                                     }">
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="space-y-1">
                                             <p class="font-medium leading-none">{{ menu.nome }}</p>
                                             <p class="text-xs text-muted-foreground">{{ menu.descricao }}</p>
+                                            <p v-if="isMenuLocked(menu.key)" class="text-xs text-muted-foreground">
+                                                Mantido para acesso do root.
+                                            </p>
                                         </div>
-                                        <Switch :id="`menu-${menu.key}`" :model-value="isMenuSelected(menu.key)"
+                                        <Switch :model-value="isMenuSelected(menu.key)"
                                             :disabled="isMenuLocked(menu.key)"
                                             @update:model-value="(checked) => toggleMenu(menu.key, Boolean(checked))" />
                                     </div>
-                                    <p v-if="isMenuLocked(menu.key)" class="text-xs text-muted-foreground">
-                                        Mantido para acesso do root.
-                                    </p>
-                                </label>
+
+                                    <div v-if="getSubmenus(menu.key).length" class="mt-auto pt-3">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger as-child>
+                                                <Button type="button" variant="outline" size="sm"
+                                                    class="w-full justify-between font-normal"
+                                                    :disabled="!isMenuSelected(menu.key)">
+                                                    <span class="flex items-center gap-2">
+                                                        <ListChecks class="h-4 w-4" /> Submenus
+                                                    </span>
+                                                    <span class="flex items-center gap-1 text-xs text-muted-foreground">
+                                                        {{ submenusVisiveisCount(menu.key) }}/{{ getSubmenus(menu.key).length }}
+                                                        <ChevronDown class="h-4 w-4" />
+                                                    </span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start" class="w-56">
+                                                <DropdownMenuLabel>Submenus visíveis</DropdownMenuLabel>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuCheckboxItem v-for="sub in getSubmenus(menu.key)"
+                                                    :key="sub.key" :model-value="isSubmenuVisible(sub.key)"
+                                                    @update:model-value="(checked) => toggleSubmenu(sub.key, Boolean(checked))"
+                                                    @select="(event) => event.preventDefault()">
+                                                    {{ sub.nome }}
+                                                </DropdownMenuCheckboxItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                </div>
                             </div>
                         </CardContent>
                         <CardFooter class="justify-end">
@@ -369,7 +398,15 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Banknote, CircleCheck, Cog, Keyboard, LayoutGrid, LoaderIcon, Menu, Palette, ShoppingCart, Undo2 } from 'lucide-vue-next'
+import { Banknote, ChevronDown, CircleCheck, Cog, Keyboard, LayoutGrid, ListChecks, LoaderIcon, Menu, Palette, ShoppingCart, Undo2 } from 'lucide-vue-next'
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { ContaRepository, type WhatsAppNotificationInstanceOption } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -378,6 +415,7 @@ import TemaPage from './TemaPage.vue'
 import { goBack } from '@/hooks/links'
 import {
     MAIN_MENU_VISIBILITY_OPTIONS,
+    MENU_SUBMENU_VISIBILITY_OPTIONS,
     ROOT_ALWAYS_VISIBLE_MENU_KEYS,
     type MainMenuVisibilityKey,
 } from '@/layouts/options'
@@ -509,6 +547,27 @@ function toggleMenu(key: MainMenuVisibilityKey, checked: boolean) {
         selected.add(lockedKey)
     }
 
+    formularioMenus.menusVisiveis = Array.from(selected)
+}
+
+function getSubmenus(key: MainMenuVisibilityKey) {
+    return MENU_SUBMENU_VISIBILITY_OPTIONS[key] ?? []
+}
+
+function submenusVisiveisCount(key: MainMenuVisibilityKey) {
+    return getSubmenus(key).filter((sub) => isSubmenuVisible(sub.key)).length
+}
+
+// Submenu visível quando sua key NÃO está na lista (as keys de submenu funcionam como
+// blacklist em menusVisiveis; ausência = visível, mantendo compatibilidade retroativa).
+function isSubmenuVisible(subKey: string) {
+    return !(formularioMenus.menusVisiveis ?? []).includes(subKey)
+}
+
+function toggleSubmenu(subKey: string, visible: boolean) {
+    const selected = new Set(formularioMenus.menusVisiveis ?? [])
+    if (visible) selected.delete(subKey)
+    else selected.add(subKey)
     formularioMenus.menusVisiveis = Array.from(selected)
 }
 

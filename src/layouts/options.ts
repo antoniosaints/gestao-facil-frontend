@@ -58,20 +58,82 @@ export const MAIN_MENU_VISIBILITY_OPTIONS = [
 
 export type MainMenuVisibilityKey = (typeof MAIN_MENU_VISIBILITY_OPTIONS)[number]['key']
 
+// Submenus (filhos) que podem ser ocultados individualmente, agrupados pela key do menu pai.
+// As keys usam o formato "pai:filho" (com ":") — o que as distingue das keys de menu de
+// topo (sem ":"). Em `menusVisiveis`, keys de topo funcionam como whitelist (presente =
+// visível) e keys de submenu como blacklist (presente = OCULTO), mantendo compatibilidade
+// com contas antigas que só possuem keys de topo (todos os submenus visíveis por padrão).
+export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
+  string,
+  ReadonlyArray<{ key: string; nome: string }>
+> = {
+  vendas: [
+    { key: 'vendas:painel', nome: 'Painel' },
+    { key: 'vendas:lista', nome: 'Vendas' },
+    { key: 'vendas:caixas', nome: 'Caixas' },
+  ],
+  financeiro: [
+    { key: 'financeiro:painel', nome: 'Painel' },
+    { key: 'financeiro:lancamentos', nome: 'Lançamentos' },
+    { key: 'financeiro:acompanhamento', nome: 'Acompanhamento' },
+    { key: 'financeiro:contas-a-receber', nome: 'Contas a receber' },
+    { key: 'financeiro:contas-a-pagar', nome: 'Contas a pagar' },
+    { key: 'financeiro:assinaturas-a-pagar', nome: 'Assinaturas' },
+    { key: 'financeiro:cobrancas', nome: 'Cobranças' },
+  ],
+  produtos: [
+    { key: 'produtos:painel', nome: 'Painel' },
+    { key: 'produtos:lista', nome: 'Produtos' },
+    { key: 'produtos:reposicao', nome: 'Reposição' },
+    { key: 'produtos:movimentacoes', nome: 'Movimentações' },
+  ],
+  servicos: [
+    { key: 'servicos:painel', nome: 'Painel' },
+    { key: 'servicos:os', nome: 'Ordens de serviço' },
+    { key: 'servicos:lista', nome: 'Serviços' },
+  ],
+  assinaturas: [
+    { key: 'assinaturas:painel', nome: 'Painel' },
+    { key: 'assinaturas:lista', nome: 'Assinaturas' },
+    { key: 'assinaturas:planos', nome: 'Planos' },
+    { key: 'assinaturas:cobrancas', nome: 'Cobranças' },
+    { key: 'assinaturas:comodatos', nome: 'Comodatos' },
+  ],
+}
+
+export const ALL_SUBMENU_VISIBILITY_KEYS = Object.values(
+  MENU_SUBMENU_VISIBILITY_OPTIONS,
+).flatMap((submenus) => submenus.map((submenu) => submenu.key))
+
 export function filterSidebarMenuByVisibility(
   menu: SidebarMenuType[],
   visibleMenuKeys: string[] | null | undefined,
   isRoot = false,
+  hiddenSubmenuKeys: string[] | null | undefined = [],
 ): SidebarMenuType[] {
-  if (!Array.isArray(visibleMenuKeys)) return menu
+  const hiddenSubmenus = new Set(hiddenSubmenuKeys ?? [])
+
+  const applyHiddenSubmenus = (item: SidebarMenuType): SidebarMenuType => {
+    if (!item.children || hiddenSubmenus.size === 0) return item
+    return {
+      ...item,
+      children: item.children.filter(
+        (child) => !child.key || !hiddenSubmenus.has(child.key),
+      ),
+    }
+  }
+
+  if (!Array.isArray(visibleMenuKeys)) return menu.map(applyHiddenSubmenus)
 
   const visibleSet = new Set(visibleMenuKeys)
   const rootAlwaysVisible = new Set<string>(isRoot ? ROOT_ALWAYS_VISIBLE_MENU_KEYS : [])
-  return menu.filter((item) => {
-    if (item.divisor) return false
-    if (!item.key) return true
-    return visibleSet.has(item.key) || rootAlwaysVisible.has(item.key)
-  })
+  return menu
+    .filter((item) => {
+      if (item.divisor) return false
+      if (!item.key) return true
+      return visibleSet.has(item.key) || rootAlwaysVisible.has(item.key)
+    })
+    .map(applyHiddenSubmenus)
 }
 
 export const sidebarMenuOptions = (
@@ -141,6 +203,7 @@ export const sidebarMenuOptions = (
       show: permissions.vendas.visualizar,
       children: [
         {
+          key: 'vendas:painel',
           nome: 'Painel',
           link: '/vendas/dashboard',
           show: permissions.vendas.painel,
@@ -148,12 +211,14 @@ export const sidebarMenuOptions = (
           color: 'green',
         },
         {
+          key: 'vendas:lista',
           nome: 'Vendas',
           link: '/vendas',
           icone: Tags,
           color: 'green',
         },
         {
+          key: 'vendas:caixas',
           nome: 'Caixas',
           link: '/vendas/caixas',
           show: permissions.vendas.visualizar,
@@ -178,6 +243,7 @@ export const sidebarMenuOptions = (
       show: permissions.financeiro.visualizar,
       children: [
         {
+          key: 'financeiro:painel',
           nome: 'Painel',
           link: '/financeiro/painel',
           show: permissions.financeiro.painel,
@@ -185,36 +251,42 @@ export const sidebarMenuOptions = (
           color: 'emerald',
         },
         {
+          key: 'financeiro:lancamentos',
           nome: 'Lançamentos',
           link: '/financeiro/lancamentos',
           icone: CircleDollarSign,
           color: 'emerald',
         },
         {
+          key: 'financeiro:acompanhamento',
           nome: 'Acompanhamento',
           link: '/financeiro/acompanhamento',
           icone: CalendarClock,
           color: 'emerald',
         },
         {
+          key: 'financeiro:contas-a-receber',
           nome: 'Contas a receber',
           link: '/financeiro/contas-a-receber',
           icone: TrendingUp,
           color: 'emerald',
         },
         {
+          key: 'financeiro:contas-a-pagar',
           nome: 'Contas a pagar',
           link: '/financeiro/contas-a-pagar',
           icone: TrendingDown,
           color: 'emerald',
         },
         {
+          key: 'financeiro:assinaturas-a-pagar',
           nome: 'Assinaturas',
           link: '/financeiro/assinaturas-a-pagar',
           icone: ReceiptText,
           color: 'emerald',
         },
         {
+          key: 'financeiro:cobrancas',
           nome: 'Cobranças',
           link: '/financeiro/cobrancas',
           icone: HandCoins,
@@ -231,6 +303,7 @@ export const sidebarMenuOptions = (
       show: permissions.produtos.visualizar,
       children: [
         {
+          key: 'produtos:painel',
           nome: 'Painel',
           link: '/produtos/dashboard',
           show: permissions.produtos.painel,
@@ -238,18 +311,21 @@ export const sidebarMenuOptions = (
           color: 'blue',
         },
         {
+          key: 'produtos:lista',
           nome: 'Produtos',
           link: '/produtos',
           icone: Boxes,
           color: 'blue',
         },
         {
+          key: 'produtos:reposicao',
           nome: 'Reposição',
           link: '/produtos/reposicao',
           icone: PackagePlus,
           color: 'blue',
         },
         {
+          key: 'produtos:movimentacoes',
           nome: 'Movimentações',
           link: '/produtos/movimentacoes',
           icone: ArrowRightLeft,
@@ -270,14 +346,15 @@ export const sidebarMenuOptions = (
       color: 'yellow',
       children: [
         {
+          key: 'servicos:painel',
           nome: 'Painel',
           show: permissions.admin,
           link: '/servicos/painel',
           color: 'yellow',
           icone: ChartPie,
         },
-        { nome: 'Ordens de serviço', link: '/servicos/os', color: 'yellow', icone: FileDigit },
-        { nome: 'Serviços', link: '/servicos', color: 'yellow', icone: Wrench },
+        { key: 'servicos:os', nome: 'Ordens de serviço', link: '/servicos/os', color: 'yellow', icone: FileDigit },
+        { key: 'servicos:lista', nome: 'Serviços', link: '/servicos', color: 'yellow', icone: Wrench },
       ],
     },
     {
@@ -309,30 +386,35 @@ export const sidebarMenuOptions = (
       show: permissions.financeiro.visualizar && hasAssinaturasApp,
       children: [
         {
+          key: 'assinaturas:painel',
           nome: 'Painel',
           link: '/assinaturas/painel',
           icone: ChartPie,
           color: 'violet',
         },
         {
+          key: 'assinaturas:lista',
           nome: 'Assinaturas',
           link: '/assinaturas/assinaturas',
           icone: Sparkles,
           color: 'violet',
         },
         {
+          key: 'assinaturas:planos',
           nome: 'Planos',
           link: '/assinaturas/planos',
           icone: Layers3,
           color: 'violet',
         },
         {
+          key: 'assinaturas:cobrancas',
           nome: 'Cobranças',
           link: '/assinaturas/cobrancas',
           icone: ReceiptText,
           color: 'violet',
         },
         {
+          key: 'assinaturas:comodatos',
           nome: 'Comodatos',
           link: '/assinaturas/comodatos',
           icone: Package,

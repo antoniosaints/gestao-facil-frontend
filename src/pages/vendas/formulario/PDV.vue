@@ -326,9 +326,30 @@ function activateFullscreenPdv() {
   window.addEventListener('popstate', keepPdvOpen)
 }
 
-function deactivateFullscreenPdv() {
+function restaurarInteracaoBody() {
   document.body.style.overflow = previousBodyOverflow
+  document.body.style.pointerEvents = ''
+  document.body.style.paddingRight = ''
+  document.body.style.marginRight = ''
+  document.documentElement.style.removeProperty('--scrollbar-width')
+}
+
+function deactivateFullscreenPdv() {
   window.removeEventListener('popstate', keepPdvOpen)
+  // Sair do PDV PRO coincide com o fechamento de um Dialog (confirmação de saída / senha).
+  // O reka-ui gerencia `pointer-events`/`overflow` do <body>, mas a limpeza dele
+  // (DismissableLayer + scroll-lock) só roda quando o overlay desmonta, ao fim da
+  // animação de saída (~200ms DEPOIS do fechamento). Como a navegação acontece nesse
+  // instante, essa limpeza tardia reaplica `pointer-events: none` no <body> e trava o
+  // scroll/cliques até um reload. Por isso reforçamos a restauração numa janela que
+  // ultrapassa a animação de saída, garantindo o estado interativo por último.
+  restaurarInteracaoBody()
+  const inicio = performance.now()
+  const reforcar = () => {
+    restaurarInteracaoBody()
+    if (performance.now() - inicio < 800) requestAnimationFrame(reforcar)
+  }
+  requestAnimationFrame(reforcar)
 }
 
 onBeforeRouteLeave(() => {
