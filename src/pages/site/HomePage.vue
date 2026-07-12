@@ -1,13 +1,14 @@
 <template>
     <div class="min-h-screen bg-background font-sans text-foreground overflow-x-hidden selection:bg-primary/20">
 
-        <!-- Navbar Flutuante -->
-        <header
-            class="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/40 transition-all duration-300"
-            :class="{ 'shadow-sm': isScrolled }">
+        <!-- Navbar -->
+        <header class="fixed top-0 w-full z-50 transition-all duration-300"
+            :class="isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/60 shadow-sm' : 'bg-transparent'">
             <div class="container mx-auto px-4 h-16 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div
+                    <img src="/imgs/logo.png" alt="Gestão Fácil" class="w-8 h-8 rounded-lg object-contain"
+                        @error="logoError = true" v-if="!logoError" />
+                    <div v-else
                         class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
                         G
                     </div>
@@ -16,189 +17,240 @@
 
                 <nav class="hidden md:flex items-center gap-8">
                     <RouterLink :to="{ path: '/site', hash: '#features' }"
-                        class="text-sm font-medium hover:text-primary transition-colors">Funcionalidades</RouterLink>
-                    <RouterLink :to="{ path: '/site', hash: '#depoimentos' }"
-                        class="text-sm font-medium hover:text-primary transition-colors">Depoimentos</RouterLink>
+                        class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Funcionalidades</RouterLink>
+                    <RouterLink :to="{ path: '/site', hash: '#apps' }"
+                        class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Apps</RouterLink>
                     <RouterLink :to="{ path: '/site', hash: '#precos' }"
-                        class="text-sm font-medium hover:text-primary transition-colors">Preços</RouterLink>
+                        class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Preços</RouterLink>
                     <RouterLink :to="{ path: '/site', hash: '#faq' }"
-                        class="text-sm font-medium hover:text-primary transition-colors">FAQ</RouterLink>
+                        class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">FAQ</RouterLink>
                 </nav>
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3">
                     <RouterLink to="/login">
                         <Button variant="ghost" class="hidden sm:flex">Entrar</Button>
                     </RouterLink>
                     <RouterLink to="/site/cadastro">
-                        <Button class="text-white dark:text-white font-bold">Começar Grátis</Button>
+                        <Button class="text-white dark:text-white font-semibold rounded-full">Começar grátis</Button>
                     </RouterLink>
                 </div>
             </div>
         </header>
 
-        <!-- Hero Section -->
-        <section
-            class="relative pt-32 flex flex-col justify-center items-center pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
-            <!-- Background Gradients -->
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full z-0 pointer-events-none">
-                <div
-                    class="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-[100px] animate-pulse-slow">
-                </div>
-                <div class="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] animate-pulse-slow"
-                    style="animation-delay: 2s"></div>
+        <!-- Hero -->
+        <section class="relative pt-28 lg:pt-36 pb-16 lg:pb-24 overflow-hidden">
+            <div class="absolute inset-0 -z-10 pointer-events-none">
+                <div class="absolute top-10 left-1/4 w-[28rem] h-[28rem] bg-primary/15 rounded-full blur-[130px]"></div>
+                <div class="absolute -bottom-10 right-1/4 w-[26rem] h-[26rem] bg-blue-400/10 rounded-full blur-[130px]"></div>
             </div>
 
-            <div class="container relative z-10 px-4 text-center">
+            <div class="container mx-auto px-4 text-center">
                 <div
-                    class="inline-flex items-center gap-2 rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground mb-8 animate-fade-in-up">
+                    class="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-muted-foreground mb-8 animate-fade-in-up">
                     <span class="relative flex h-2 w-2">
-                        <span
-                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </span>
-                    Sistema de Gestão 100% Online
+                    7 dias grátis · sem cartão de crédito
                 </div>
 
                 <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 animate-fade-in-up"
                     style="animation-delay: 100ms">
-                    Simplifique a gestão da sua <br class="hidden md:block" />
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">Loja ou
-                        Empresa</span>
+                    O sistema completo para <br class="hidden md:block" />
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-500">gerir seu negócio</span>
                 </h1>
 
-                <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in-up"
+                <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in-up"
                     style="animation-delay: 200ms">
-                    Controle estoque, financeiro, vendas e emissão de notas fiscais em uma única plataforma intuitiva.
-                    Experimente grátis e transforme seu negócio hoje.
+                    Vendas, PDV, estoque, financeiro e ordens de serviço em uma única plataforma.
+                    Comece grátis por 7 dias e, depois, apenas <strong class="text-foreground">R$ 70/mês</strong>.
                 </p>
 
-                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up"
+                <div class="flex flex-col sm:flex-row gap-3 justify-center items-center animate-fade-in-up"
                     style="animation-delay: 300ms">
                     <RouterLink to="/site/cadastro">
                         <Button size="lg"
-                            class="h-14 px-8 text-lg shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all rounded-full text-white dark:text-white font-bold">
-                            Criar Conta Grátis
+                            class="h-13 px-8 text-base shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all rounded-full text-white dark:text-white font-semibold">
+                            Criar conta grátis
                             <ArrowRight class="ml-2 h-5 w-5" />
                         </Button>
                     </RouterLink>
-                    <a href="#video-demo">
-                        <Button variant="outline" size="lg" class="h-14 px-8 text-lg rounded-full">
+                    <a href="#features">
+                        <Button variant="outline" size="lg" class="h-13 px-8 text-base rounded-full">
                             <PlayCircle class="mr-2 h-5 w-5" />
-                            Ver Demonstração
+                            Ver funcionalidades
                         </Button>
                     </a>
                 </div>
 
-                <!-- Dashboard Preview -->
-                <div class="mt-16 md:mt-24 relative max-w-5xl mx-auto animate-fade-in-up"
-                    style="animation-delay: 500ms">
-                    <div class="rounded-xl border bg-card/50 backdrop-blur-sm shadow-2xl p-2 md:p-4">
-                        <img src="/imgs/dashboard.png" alt="Dashboard Preview"
-                            class="rounded-lg w-full h-auto shadow-sm border" loading="lazy" />
-                        <!-- Fallback if image missing, uses a div -->
-                        <div v-if="imgError"
-                            class="absolute inset-0 flex items-center justify-center bg-muted rounded-lg text-muted-foreground">
-                            <span class="text-sm">Preview do Sistema (Imagem não encontrada)</span>
+                <p class="mt-4 text-xs text-muted-foreground animate-fade-in-up" style="animation-delay: 350ms">
+                    Cancele quando quiser · Sem taxa de implantação
+                </p>
+
+                <!-- Screenshot do sistema em moldura de navegador -->
+                <div class="mt-14 md:mt-20 relative max-w-5xl mx-auto animate-fade-in-up" style="animation-delay: 500ms">
+                    <div class="rounded-xl border border-border bg-card shadow-2xl overflow-hidden">
+                        <div class="flex items-center gap-1.5 px-4 h-9 border-b border-border bg-muted/40">
+                            <span class="w-3 h-3 rounded-full bg-red-400"></span>
+                            <span class="w-3 h-3 rounded-full bg-yellow-400"></span>
+                            <span class="w-3 h-3 rounded-full bg-green-400"></span>
+                            <span class="ml-3 hidden sm:inline text-xs text-muted-foreground">app.gestaofacil.com</span>
                         </div>
+                        <img src="/imgs/dashboard.png" alt="Dashboard do Gestão Fácil"
+                            class="w-full h-auto" loading="lazy" />
                     </div>
-                    <!-- Floating Cards -->
-                    <div
-                        class="absolute -right-4 md:-right-12 top-1/4 bg-card p-4 rounded-xl shadow-xl border animate-float hidden md:block">
+
+                    <div class="absolute -right-4 md:-right-10 top-1/4 bg-card p-4 rounded-xl shadow-xl border border-border animate-float hidden md:block">
                         <div class="flex items-center gap-3">
-                            <div
-                                class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                            <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-950 flex items-center justify-center text-green-600">
                                 <TrendingUp class="w-5 h-5" />
                             </div>
-                            <div>
-                                <p class="text-sm font-medium text-muted-foreground">Vendas Hoje</p>
+                            <div class="text-left">
+                                <p class="text-xs font-medium text-muted-foreground">Vendas hoje</p>
                                 <p class="text-lg font-bold">R$ 4.250,00</p>
                             </div>
                         </div>
                     </div>
-                    <div
-                        class="absolute -left-4 md:-left-12 bottom-1/4 bg-card p-4 rounded-xl shadow-xl border animate-float-delayed hidden md:block">
+                    <div class="absolute -left-4 md:-left-10 bottom-1/4 bg-card p-4 rounded-xl shadow-xl border border-border animate-float-delayed hidden md:block">
                         <div class="flex items-center gap-3">
-                            <div
-                                class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-blue-600">
                                 <Users class="w-5 h-5" />
                             </div>
-                            <div>
-                                <p class="text-sm font-medium text-muted-foreground">Novos Clientes</p>
+                            <div class="text-left">
+                                <p class="text-xs font-medium text-muted-foreground">Novos clientes</p>
                                 <p class="text-lg font-bold">+128</p>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Métricas -->
+                <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
+                    <div v-for="stat in stats" :key="stat.label">
+                        <p class="text-2xl md:text-3xl font-extrabold text-primary">{{ stat.value }}</p>
+                        <p class="text-xs md:text-sm text-muted-foreground">{{ stat.label }}</p>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <!-- Features Section -->
-        <section id="features" class="py-20 bg-muted/30">
+        <!-- Features -->
+        <section id="features" class="py-20 bg-muted/30 border-y border-border/60">
             <div class="container mx-auto px-4">
-                <div class="text-center max-w-3xl mx-auto mb-16">
-                    <h2 class="text-3xl md:text-4xl font-bold mb-4">Tudo que você precisa para crescer</h2>
-                    <p class="text-muted-foreground text-lg">Uma suíte completa de ferramentas projetadas para
-                        simplificar cada aspecto do seu negócio.</p>
+                <div class="text-center max-w-2xl mx-auto mb-14">
+                    <span class="text-sm font-semibold text-primary uppercase tracking-wider">Funcionalidades</span>
+                    <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-4">Tudo incluso no plano base</h2>
+                    <p class="text-muted-foreground text-lg">Uma suíte completa para operar seu negócio do balcão ao caixa,
+                        sem contratar vários sistemas.</p>
                 </div>
 
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <Card v-for="(feature, index) in features" :key="index"
-                        class="border-none shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                        class="border-border/60 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
                         <CardHeader>
-                            <div
-                                class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 text-primary">
+                            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3 text-primary">
                                 <component :is="feature.icon" class="w-6 h-6" />
                             </div>
-                            <CardTitle class="text-xl">{{ feature.title }}</CardTitle>
+                            <CardTitle class="text-lg">{{ feature.title }}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p class="text-muted-foreground">{{ feature.description }}</p>
+                            <p class="text-muted-foreground text-sm leading-relaxed">{{ feature.description }}</p>
                         </CardContent>
                     </Card>
                 </div>
             </div>
         </section>
 
-        <!-- Solução para Variados Nichos -->
-        <section class="py-20 relative overflow-hidden">
+        <!-- Product showcase -->
+        <section class="py-20">
             <div class="container mx-auto px-4">
                 <div class="grid lg:grid-cols-2 gap-12 items-center">
-                    <div class="order-2 lg:order-1 relative">
+                    <div>
+                        <span class="text-sm font-semibold text-primary uppercase tracking-wider">Visão do negócio</span>
+                        <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-6">Decisões baseadas em dados reais</h2>
+                        <p class="text-lg text-muted-foreground mb-6">
+                            Acompanhe vendas, saldo mensal, ticket médio e produtos mais vendidos em um dashboard claro.
+                            Tudo atualizado em tempo real, do computador ou do celular.
+                        </p>
+                        <ul class="space-y-3">
+                            <li v-for="item in benefits" :key="item" class="flex items-center gap-3">
+                                <CheckCircle2 class="w-5 h-5 text-primary flex-shrink-0" />
+                                <span class="text-sm md:text-base">{{ item }}</span>
+                            </li>
+                        </ul>
+                        <RouterLink to="/site/cadastro">
+                            <Button class="mt-8 rounded-full text-white dark:text-white font-semibold">
+                                Experimentar grátis <ArrowRight class="ml-2 h-4 w-4" />
+                            </Button>
+                        </RouterLink>
+                    </div>
+                    <div class="rounded-xl border border-border bg-card shadow-xl overflow-hidden">
+                        <img src="/imgs/dashboard.png" alt="Relatórios e insights do sistema" class="w-full h-auto" loading="lazy" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Apps modulares -->
+        <section id="apps" class="py-20 bg-muted/30 border-y border-border/60">
+            <div class="container mx-auto px-4">
+                <div class="text-center max-w-2xl mx-auto mb-14">
+                    <span class="text-sm font-semibold text-primary uppercase tracking-wider">App Store</span>
+                    <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-4">Amplie com apps quando precisar</h2>
+                    <p class="text-muted-foreground text-lg">Ative módulos opcionais direto no sistema. Pague só pelo que usar,
+                        e desative a qualquer momento.</p>
+                </div>
+
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                    <div v-for="app in apps" :key="app.title"
+                        class="bg-card p-6 rounded-2xl border border-border/60 hover:shadow-lg transition-all">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-11 h-11 rounded-xl flex items-center justify-center" :class="app.iconBg">
+                                <component :is="app.icon" class="w-6 h-6" :class="app.iconColor" />
+                            </div>
+                            <span class="text-sm font-bold px-2.5 py-1 rounded-full"
+                                :class="app.price === 0 ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400' : 'bg-primary/10 text-primary'">
+                                {{ app.price === 0 ? 'Grátis' : `+ ${formatBRL(app.price)}/mês` }}
+                            </span>
+                        </div>
+                        <h3 class="font-bold mb-1">{{ app.title }}</h3>
+                        <p class="text-sm text-muted-foreground leading-relaxed">{{ app.description }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Nichos -->
+        <section class="py-20">
+            <div class="container mx-auto px-4">
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+                    <div class="order-2 lg:order-1">
                         <div class="grid grid-cols-2 gap-4">
                             <div class="space-y-4 mt-8">
-                                <div class="bg-card p-6 rounded-2xl shadow-lg border">
-                                    <Smartphone class="w-8 h-8 text-purple-500 mb-3" />
-                                    <h3 class="font-bold mb-1">Eletrônicos</h3>
-                                    <p class="text-xs text-muted-foreground">Controle de serial e garantia</p>
-                                </div>
-                                <div class="bg-card p-6 rounded-2xl shadow-lg border">
-                                    <Shirt class="w-8 h-8 text-pink-500 mb-3" />
-                                    <h3 class="font-bold mb-1">Vestuário</h3>
-                                    <p class="text-xs text-muted-foreground">Grade de cor e tamanho</p>
+                                <div v-for="n in segments.slice(0, 2)" :key="n.title" class="bg-card p-6 rounded-2xl shadow-sm border border-border/60">
+                                    <component :is="n.icon" class="w-8 h-8 mb-3" :class="n.color" />
+                                    <h3 class="font-bold mb-1">{{ n.title }}</h3>
+                                    <p class="text-xs text-muted-foreground">{{ n.desc }}</p>
                                 </div>
                             </div>
                             <div class="space-y-4">
-                                <div class="bg-card p-6 rounded-2xl shadow-lg border">
-                                    <Hammer class="w-8 h-8 text-orange-500 mb-3" />
-                                    <h3 class="font-bold mb-1">Serviços</h3>
-                                    <p class="text-xs text-muted-foreground">Ordem de serviço completa</p>
-                                </div>
-                                <div class="bg-card p-6 rounded-2xl shadow-lg border">
-                                    <ShoppingBasket class="w-8 h-8 text-green-500 mb-3" />
-                                    <h3 class="font-bold mb-1">Varejo</h3>
-                                    <p class="text-xs text-muted-foreground">PDV rápido e eficiente</p>
+                                <div v-for="n in segments.slice(2, 4)" :key="n.title" class="bg-card p-6 rounded-2xl shadow-sm border border-border/60">
+                                    <component :is="n.icon" class="w-8 h-8 mb-3" :class="n.color" />
+                                    <h3 class="font-bold mb-1">{{ n.title }}</h3>
+                                    <p class="text-xs text-muted-foreground">{{ n.desc }}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="order-1 lg:order-2">
-                        <h2 class="text-3xl md:text-4xl font-bold mb-6">Adaptável ao seu modelo de negócio</h2>
+                        <span class="text-sm font-semibold text-primary uppercase tracking-wider">Flexível</span>
+                        <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-6">Adaptável ao seu tipo de negócio</h2>
                         <p class="text-lg text-muted-foreground mb-6">
-                            Não importa o tamanho ou o segmento da sua empresa, o Gestão Fácil se adapta às suas
-                            necessidades específicas com configurações flexíveis e modulares.
+                            Do varejo aos serviços, o Gestão Fácil se molda à sua operação com configurações flexíveis
+                            e módulos que você ativa conforme cresce.
                         </p>
                         <ul class="space-y-3">
-                            <li v-for="item in benefits" :key="item" class="flex items-center gap-3">
+                            <li v-for="item in adaptBenefits" :key="item" class="flex items-center gap-3">
                                 <CheckCircle2 class="w-5 h-5 text-primary flex-shrink-0" />
                                 <span>{{ item }}</span>
                             </li>
@@ -208,114 +260,67 @@
             </div>
         </section>
 
-        <!-- Pricing Section -->
-        <section id="precos" class="py-20 bg-muted/30">
+        <!-- Preços -->
+        <section id="precos" class="py-20 bg-muted/30 border-y border-border/60">
             <div class="container mx-auto px-4">
-                <div class="text-center max-w-2xl mx-auto mb-16">
-                    <h2 class="text-3xl md:text-4xl font-bold mb-4">Investimento que se paga</h2>
-                    <p class="text-muted-foreground text-lg">Escolha o plano ideal para sua empresa. Sem taxas
-                        escondidas.</p>
+                <div class="text-center max-w-2xl mx-auto mb-14">
+                    <span class="text-sm font-semibold text-primary uppercase tracking-wider">Preços</span>
+                    <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-4">Simples e transparente</h2>
+                    <p class="text-muted-foreground text-lg">Um preço só pelo sistema completo. Sem letras miúdas,
+                        sem taxas escondidas.</p>
                 </div>
 
-                <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-start">
-                    <!-- Plano Inicial -->
-                    <Card class="border-2 hover:border-border transition-colors">
-                        <CardHeader>
-                            <CardTitle class="text-2xl">Básico</CardTitle>
-                            <CardDescription>Para quem está começando</CardDescription>
-                            <div class="mt-4">
-                                <span class="text-4xl font-bold">R$ 49</span>
-                                <span class="text-muted-foreground">/mês</span>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <RouterLink to="/site/cadastro">
-                                <Button variant="outline" class="w-full mb-6">Começar Agora</Button>
-                            </RouterLink>
-                            <ul class="space-y-3 text-sm">
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> 1 Usuário
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> Até 100 Vendas/mês
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> Controle de Estoque Básico
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> Suporte por Email
-                                </li>
-                            </ul>
-                        </CardContent>
-                    </Card>
-
-                    <!-- Plano Recomendado -->
-                    <Card class="border-2 border-primary relative shadow-2xl scale-105 z-10">
-                        <div
-                            class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-bold shadow-sm">
-                            MAIS POPULAR
+                <div class="grid lg:grid-cols-5 gap-6 max-w-5xl mx-auto items-start">
+                    <!-- Plano base -->
+                    <Card class="lg:col-span-3 border-2 border-primary relative shadow-2xl">
+                        <div class="absolute -top-3.5 left-8 bg-primary text-primary-foreground px-4 py-1 rounded-full text-xs font-bold shadow-sm">
+                            7 DIAS GRÁTIS
                         </div>
                         <CardHeader>
-                            <CardTitle class="text-2xl text-primary">Profissional</CardTitle>
-                            <CardDescription>Para empresas em crescimento</CardDescription>
-                            <div class="mt-4">
-                                <span class="text-4xl font-bold">R$ 99</span>
-                                <span class="text-muted-foreground">/mês</span>
+                            <CardTitle class="text-2xl">Plano Gestão Fácil</CardTitle>
+                            <CardDescription>Tudo que seu negócio precisa para operar</CardDescription>
+                            <div class="mt-4 flex items-end gap-2">
+                                <span class="text-5xl font-extrabold">R$ 70</span>
+                                <span class="text-muted-foreground mb-1">/mês</span>
                             </div>
+                            <p class="text-sm text-muted-foreground">Após os 7 dias de teste grátis. Sem cartão para começar.</p>
                         </CardHeader>
                         <CardContent>
                             <RouterLink to="/site/cadastro">
-                                <Button class="w-full mb-6 text-lg h-12 text-white dark:text-white font-bold">Teste
-                                    Grátis</Button>
+                                <Button class="w-full mb-6 h-12 text-base text-white dark:text-white font-semibold rounded-full">
+                                    Começar 7 dias grátis
+                                </Button>
                             </RouterLink>
-                            <ul class="space-y-3 font-medium">
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> 5 Usuários
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> Vendas Ilimitadas
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> Financeiro Completo
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> Emissão de Boletos
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> Suporte WhatsApp Prioritário
+                            <ul class="grid sm:grid-cols-2 gap-3 text-sm">
+                                <li v-for="inc in included" :key="inc" class="flex items-center gap-2">
+                                    <Check class="w-4 h-4 text-green-500 flex-shrink-0" /> {{ inc }}
                                 </li>
                             </ul>
                         </CardContent>
                     </Card>
 
-                    <!-- Plano Enterprise -->
-                    <Card class="border-2 hover:border-border transition-colors">
+                    <!-- Apps adicionais -->
+                    <Card class="lg:col-span-2 border-border/60">
                         <CardHeader>
-                            <CardTitle class="text-2xl">Premium</CardTitle>
-                            <CardDescription>Para grandes operações</CardDescription>
-                            <div class="mt-4">
-                                <span class="text-4xl font-bold">R$ 199</span>
-                                <span class="text-muted-foreground">/mês</span>
-                            </div>
+                            <CardTitle class="text-xl">Apps adicionais</CardTitle>
+                            <CardDescription>Opcionais — ative só o que usar</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <RouterLink to="/site/cadastro">
-                                <Button variant="outline" class="w-full mb-6">Falar com Consultor</Button>
-                            </RouterLink>
-                            <ul class="space-y-3 text-sm">
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> Usuários Ilimitados
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> Multi-lojas (Filiais)
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> API de Integração
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <Check class="w-4 h-4 text-green-500" /> Gerente de Conta Dedicado
+                            <ul class="space-y-3">
+                                <li v-for="app in apps" :key="app.title" class="flex items-center justify-between gap-2 text-sm">
+                                    <span class="flex items-center gap-2">
+                                        <component :is="app.icon" class="w-4 h-4 text-muted-foreground" />
+                                        {{ app.title }}
+                                    </span>
+                                    <span class="font-semibold" :class="app.price === 0 ? 'text-green-600' : 'text-foreground'">
+                                        {{ app.price === 0 ? 'Grátis' : `+ ${formatBRL(app.price)}` }}
+                                    </span>
                                 </li>
                             </ul>
+                            <p class="mt-5 text-xs text-muted-foreground border-t border-border/60 pt-4">
+                                Ative e desative na App Store dentro do sistema. O valor é somado à sua mensalidade
+                                de forma proporcional.
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -325,13 +330,16 @@
         <!-- Depoimentos -->
         <section id="depoimentos" class="py-20">
             <div class="container mx-auto px-4">
-                <h2 class="text-3xl font-bold text-center mb-12">O que dizem nossos parceiros</h2>
+                <div class="text-center max-w-2xl mx-auto mb-12">
+                    <span class="text-sm font-semibold text-primary uppercase tracking-wider">Depoimentos</span>
+                    <h2 class="text-3xl md:text-4xl font-bold mt-2">Quem usa, recomenda</h2>
+                </div>
                 <div class="grid md:grid-cols-3 gap-6">
-                    <div v-for="(t, i) in testimonials" :key="i" class="bg-card p-6 rounded-xl border shadow-sm">
+                    <div v-for="(t, i) in testimonials" :key="i" class="bg-card p-6 rounded-2xl border border-border/60 shadow-sm">
                         <div class="flex gap-1 text-yellow-500 mb-4">
                             <Star v-for="n in 5" :key="n" class="w-4 h-4 fill-current" />
                         </div>
-                        <p class="text-muted-foreground mb-6">"{{ t.text }}"</p>
+                        <p class="text-muted-foreground mb-6 leading-relaxed">"{{ t.text }}"</p>
                         <div class="flex items-center gap-3">
                             <Avatar class="h-10 w-10">
                                 <AvatarFallback>{{ t.initials }}</AvatarFallback>
@@ -346,51 +354,74 @@
             </div>
         </section>
 
+        <!-- FAQ -->
+        <section id="faq" class="py-20 bg-muted/30 border-y border-border/60">
+            <div class="container mx-auto px-4 max-w-3xl">
+                <div class="text-center mb-12">
+                    <span class="text-sm font-semibold text-primary uppercase tracking-wider">Dúvidas</span>
+                    <h2 class="text-3xl md:text-4xl font-bold mt-2">Perguntas frequentes</h2>
+                </div>
+                <div class="space-y-3">
+                    <div v-for="(item, i) in faqs" :key="i" class="bg-card border border-border/60 rounded-xl overflow-hidden">
+                        <button type="button" @click="openFaq = openFaq === i ? -1 : i"
+                            class="w-full flex items-center justify-between gap-4 p-5 text-left font-medium hover:text-primary transition-colors">
+                            {{ item.q }}
+                            <ChevronDown class="w-5 h-5 flex-shrink-0 transition-transform" :class="{ 'rotate-180': openFaq === i }" />
+                        </button>
+                        <div v-show="openFaq === i" class="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">
+                            {{ item.a }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA final -->
+        <section class="py-20">
+            <div class="container mx-auto px-4">
+                <div class="relative overflow-hidden rounded-3xl bg-primary px-8 py-14 md:py-20 text-center">
+                    <div class="absolute inset-0 bg-gradient-to-br from-primary to-blue-600 opacity-90"></div>
+                    <div class="relative">
+                        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Comece hoje, grátis por 7 dias</h2>
+                        <p class="text-white/80 max-w-xl mx-auto mb-8">Sem cartão de crédito, sem compromisso.
+                            Configure em minutos e veja seu negócio mais organizado.</p>
+                        <RouterLink to="/site/cadastro">
+                            <Button size="lg" variant="secondary" class="h-13 px-8 text-base font-semibold rounded-full">
+                                Criar conta grátis <ArrowRight class="ml-2 h-5 w-5" />
+                            </Button>
+                        </RouterLink>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Footer -->
         <footer class="bg-zinc-950 text-zinc-300 dark:bg-black py-16 border-t border-white/10 dark:border-border">
             <div class="container mx-auto px-4">
                 <div class="grid md:grid-cols-4 gap-8 mb-12">
                     <div class="col-span-1 md:col-span-2">
                         <div class="flex items-center gap-2 mb-4">
-                            <div
-                                class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
-                                G</div>
-                            <span class="font-bold text-xl tracking-tight text-white dark:text-foreground">Gestão
-                                Fácil</span>
+                            <img src="/imgs/logo.png" alt="Gestão Fácil" class="w-8 h-8 rounded-lg object-contain" v-if="!logoError" />
+                            <div v-else class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">G</div>
+                            <span class="font-bold text-xl tracking-tight text-white dark:text-foreground">Gestão Fácil</span>
                         </div>
-                        <p class="text-zinc-400 max-w-sm">Sistema completo para impulsionar suas vendas e
-                            organizar sua empresa. Simples, rápido e eficiente.</p>
+                        <p class="text-zinc-400 max-w-sm">Sistema completo para impulsionar suas vendas e organizar sua
+                            empresa. Simples, rápido e eficiente.</p>
                     </div>
                     <div>
                         <h4 class="font-bold mb-4 text-white dark:text-foreground">Produto</h4>
                         <ul class="space-y-2 text-sm text-zinc-400">
-                            <li>
-                                <RouterLink :to="{ path: '/site', hash: '#features' }"
-                                    class="hover:text-primary transition-colors">Funcionalidades</RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink :to="{ path: '/site', hash: '#precos' }"
-                                    class="hover:text-primary transition-colors">Preços</RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink :to="{ path: '/site', hash: '#features' }"
-                                    class="hover:text-primary transition-colors">Atualizações</RouterLink>
-                            </li>
+                            <li><RouterLink :to="{ path: '/site', hash: '#features' }" class="hover:text-primary transition-colors">Funcionalidades</RouterLink></li>
+                            <li><RouterLink :to="{ path: '/site', hash: '#apps' }" class="hover:text-primary transition-colors">Apps</RouterLink></li>
+                            <li><RouterLink :to="{ path: '/site', hash: '#precos' }" class="hover:text-primary transition-colors">Preços</RouterLink></li>
                         </ul>
                     </div>
                     <div>
                         <h4 class="font-bold mb-4 text-white dark:text-foreground">Legal</h4>
                         <ul class="space-y-2 text-sm text-zinc-400">
-                            <li>
-                                <RouterLink to="/site/termos-politica" class="hover:text-primary transition-colors">
-                                    Termos
-                                    de Uso</RouterLink>
-                            </li>
-                            <li>
-                                <RouterLink to="/site/termos-politica" class="hover:text-primary transition-colors">
-                                    Privacidade</RouterLink>
-                            </li>
-                            <li><a href="#" class="hover:text-primary transition-colors">Contato</a></li>
+                            <li><RouterLink to="/site/termos-politica" class="hover:text-primary transition-colors">Termos de Uso</RouterLink></li>
+                            <li><RouterLink to="/site/termos-politica" class="hover:text-primary transition-colors">Privacidade</RouterLink></li>
+                            <li><RouterLink to="/login" class="hover:text-primary transition-colors">Entrar</RouterLink></li>
                         </ul>
                     </div>
                 </div>
@@ -407,105 +438,108 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
     ArrowRight, PlayCircle, TrendingUp, Users, Smartphone, Shirt, Hammer,
-    ShoppingBasket, CheckCircle2, Check, Star,
-    Box, Wallet, FileBarChart, Layers
+    ShoppingBasket, CheckCircle2, Check, Star, ChevronDown,
+    Box, Wallet, FileBarChart, Wrench, ScanLine, UsersRound,
+    Bot, MessageCircle, Repeat, CreditCard
 } from 'lucide-vue-next'
 
 const isScrolled = ref(false)
-const imgError = ref(false)
+const logoError = ref(false)
+const openFaq = ref(0)
 
 const handleScroll = () => {
     isScrolled.value = window.scrollY > 20
 }
 
-onMounted(() => {
-    window.addEventListener('scroll', handleScroll)
-})
+onMounted(() => window.addEventListener('scroll', handleScroll))
+onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 
-onUnmounted(() => {
-    window.removeEventListener('scroll', handleScroll)
-})
+const formatBRL = (v: number) =>
+    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+const stats = [
+    { value: '5 min', label: 'para configurar' },
+    { value: '100%', label: 'online' },
+    { value: '7 dias', label: 'grátis' },
+    { value: 'R$ 70', label: 'por mês' },
+]
 
 const features = [
-    {
-        title: 'Gestão de Estoque',
-        description: 'Acompanhe entradas e saídas em tempo real, defina alertas de estoque mínimo e evite perdas.',
-        icon: Box
-    },
-    {
-        title: 'Controle Financeiro',
-        description: 'Fluxo de caixa, contas a pagar e receber, DRE gerencial e relatórios detalhados.',
-        icon: Wallet
-    },
-    {
-        title: 'Relatórios Inteligentes',
-        description: 'Tome decisões baseadas em dados com dashboards intuitivos e exportáveis.',
-        icon: FileBarChart
-    },
-    {
-        title: 'Multi-plataforma',
-        description: 'Acesse de qualquer lugar, seja no computador, tablet ou celular.',
-        icon: Layers
-    },
-    {
-        title: 'PDV Frente de Caixa',
-        description: 'Venda rápida integrada com leitor de código de barras e emissão de comprovantes.',
-        icon: ShoppingBasket
-    },
-    {
-        title: 'Nota Fiscal',
-        description: 'Emissão descomplicada de NFC-e e NF-e integrada ao seu estoque e financeiro.',
-        icon: CheckCircle2
-    }
+    { title: 'Vendas e PDV', description: 'Frente de caixa rápida com leitor de código de barras, cupom e impressão térmica (58mm e 80mm).', icon: ScanLine },
+    { title: 'Controle de estoque', description: 'Entradas e saídas em tempo real, alertas de estoque mínimo e histórico de movimentações.', icon: Box },
+    { title: 'Financeiro completo', description: 'Fluxo de caixa, contas a pagar e receber, categorias e relatórios gerenciais.', icon: Wallet },
+    { title: 'Ordens de serviço', description: 'Abertura, acompanhamento e faturamento de OS com garantia e assinatura do cliente.', icon: Wrench },
+    { title: 'Clientes', description: 'Cadastro completo, histórico de compras e cadastro público por link para seus clientes.', icon: UsersRound },
+    { title: 'Relatórios e dashboards', description: 'Vendas, ticket médio, top produtos e saldo mensal em painéis claros e exportáveis.', icon: FileBarChart },
 ]
 
 const benefits = [
+    'Dashboard com indicadores em tempo real',
+    'Acesse do computador, tablet ou celular',
+    'Exporte relatórios em PDF',
+    'Backup automático diário',
+]
+
+const apps = [
+    { title: 'CORE IA', description: 'Chat inteligente que ajuda na produtividade e nas análises do seu time.', price: 9.9, icon: Bot, iconBg: 'bg-purple-100 dark:bg-purple-950', iconColor: 'text-purple-500' },
+    { title: 'WhatsApp', description: 'Integração para notificações e comunicação com seus clientes.', price: 19.9, icon: MessageCircle, iconBg: 'bg-green-100 dark:bg-green-950', iconColor: 'text-green-500' },
+    { title: 'Assinaturas', description: 'Gestão de contratos recorrentes, ciclos, comodatos e cobranças.', price: 5, icon: Repeat, iconBg: 'bg-blue-100 dark:bg-blue-950', iconColor: 'text-blue-500' },
+    { title: 'Mercado Pago', description: 'Configure as credenciais do Mercado Pago para cobranças online.', price: 0, icon: CreditCard, iconBg: 'bg-sky-100 dark:bg-sky-950', iconColor: 'text-sky-500' },
+    { title: 'AbacatePay', description: 'Configure as credenciais do AbacatePay para receber pagamentos.', price: 0, icon: CreditCard, iconBg: 'bg-orange-100 dark:bg-orange-950', iconColor: 'text-orange-500' },
+]
+
+const segments = [
+    { title: 'Eletrônicos', desc: 'Controle de serial e garantia', icon: Smartphone, color: 'text-purple-500' },
+    { title: 'Vestuário', desc: 'Grade de cor e tamanho', icon: Shirt, color: 'text-pink-500' },
+    { title: 'Serviços', desc: 'Ordem de serviço completa', icon: Hammer, color: 'text-orange-500' },
+    { title: 'Varejo', desc: 'PDV rápido e eficiente', icon: ShoppingBasket, color: 'text-green-500' },
+]
+
+const adaptBenefits = [
     'Sem custo de implementação',
     'Suporte técnico especializado',
-    'Backup automático diário',
-    'Atualizações gratuitas constantes'
+    'Ative apps conforme sua necessidade',
+    'Atualizações gratuitas constantes',
+]
+
+const included = [
+    'Vendas e PDV ilimitados',
+    'Financeiro completo',
+    'Controle de estoque',
+    'Ordens de serviço',
+    'Clientes ilimitados',
+    'Relatórios e dashboards',
+    'Cupom e impressão térmica',
+    'Suporte incluso',
 ]
 
 const testimonials = [
-    {
-        text: "Melhor sistema que já usei na minha loja de roupas. Simples e resolve tudo.",
-        name: "Carla Dias",
-        company: "Boutique Elegance",
-        initials: "CD"
-    },
-    {
-        text: "O controle financeiro salvou minha empresa. Consigo ver exatamente onde estou gastando.",
-        name: "Roberto Júnior",
-        company: "RJ Tech",
-        initials: "RJ"
-    },
-    {
-        text: "Suporte nota 10! Sempre que preciso, resolvem meu problema em minutos.",
-        name: "Fernanda Costa",
-        company: "Mercadinho da Villa",
-        initials: "FC"
-    }
+    { text: 'Melhor sistema que já usei na minha loja de roupas. Simples e resolve tudo.', name: 'Carla Dias', company: 'Boutique Elegance', initials: 'CD' },
+    { text: 'O controle financeiro salvou minha empresa. Vejo exatamente onde estou gastando.', name: 'Roberto Júnior', company: 'RJ Tech', initials: 'RJ' },
+    { text: 'Suporte nota 10! Sempre que preciso, resolvem meu problema em minutos.', name: 'Fernanda Costa', company: 'Mercadinho da Villa', initials: 'FC' },
+]
+
+const faqs = [
+    { q: 'Preciso de cartão de crédito para testar?', a: 'Não. O teste de 7 dias é totalmente gratuito e não pedimos cartão de crédito para começar.' },
+    { q: 'O que acontece depois dos 7 dias grátis?', a: 'A mensalidade de R$ 70 passa a valer pelo sistema completo. Você pode cancelar quando quiser, sem multa ou fidelidade.' },
+    { q: 'Como funcionam os apps adicionais?', a: 'São módulos opcionais (como CORE IA e WhatsApp) cobrados à parte. Você ativa e desativa direto na App Store dentro do sistema, e o valor é somado à sua mensalidade de forma proporcional.' },
+    { q: 'Posso usar em mais de um dispositivo?', a: 'Sim. O Gestão Fácil é 100% online e você acessa do computador, tablet ou celular, de onde estiver.' },
+    { q: 'Meus dados ficam seguros?', a: 'Sim. Fazemos backup automático diário e seus dados ficam protegidos e disponíveis sempre que você precisar.' },
+    { q: 'Tem fidelidade ou taxa de cancelamento?', a: 'Não. Você paga mês a mês e pode cancelar a qualquer momento, sem taxas escondidas.' },
 ]
 </script>
 
 <style scoped>
-.animate-pulse-slow {
-    animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.h-13 {
+    height: 3.25rem;
 }
 
 @keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-20px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-18px); }
 }
 
 .animate-float {
@@ -518,19 +552,12 @@ const testimonials = [
 }
 
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in-up {
-    animation: fadeInUp 0.8s ease-out forwards;
+    animation: fadeInUp 0.7s ease-out forwards;
     opacity: 0;
 }
 </style>

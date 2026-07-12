@@ -54,6 +54,9 @@ export function useServerTable<T>(
   const table = useVueTable({
     data,
     columns,
+    // Usa o id do registro como chave da linha para que a seleção sobreviva a
+    // reordenacoes/refetch da tabela (fallback para o indice quando nao houver id).
+    getRowId: (row: any, index) => (row?.id != null ? String(row.id) : String(index)),
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     manualSorting: true,

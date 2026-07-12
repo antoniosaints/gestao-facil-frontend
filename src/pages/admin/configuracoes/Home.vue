@@ -42,14 +42,23 @@ async function loadModulos() {
 }
 
 async function salvarModulo(modulo: AdminModuloItem) {
+  const preco = Number(modulo.preco)
+  const desconto = Number(modulo.desconto)
+  if (!Number.isFinite(preco) || preco < 0) {
+    toast.error('Informe um preço válido para o app.')
+    return
+  }
   try {
     moduloSavingId.value = modulo.id
     const response = await ContaRepository.atualizarModuloAdmin(modulo.id, {
-      preco: Number(modulo.preco || 0),
-      desconto: Number(modulo.desconto || 0),
+      preco,
+      desconto: Number.isFinite(desconto) && desconto >= 0 ? desconto : 0,
       status: modulo.status,
     })
     toast.success(response.message || 'App atualizado')
+    // Recarrega do servidor para refletir exatamente o valor persistido
+    // (evita a sensação de "salvei mas não mudou" por estado local desatualizado).
+    await loadModulos()
   } catch (error: any) {
     console.error(error)
     toast.error(error?.response?.data?.message || 'Erro ao salvar o app')
@@ -252,11 +261,13 @@ onMounted(() => {
             <div class="mt-3 grid grid-cols-2 gap-2">
               <div class="space-y-1">
                 <Label class="text-xs">Preço (R$)</Label>
-                <Input v-model.number="modulo.preco" type="number" min="0" step="0.01" />
+                <Input :model-value="modulo.preco" type="number" min="0" step="0.01"
+                  @update:model-value="(v) => (modulo.preco = v === '' || v === null ? 0 : Number(v))" />
               </div>
               <div class="space-y-1">
                 <Label class="text-xs">Desconto (R$)</Label>
-                <Input v-model.number="modulo.desconto" type="number" min="0" step="0.01" />
+                <Input :model-value="modulo.desconto" type="number" min="0" step="0.01"
+                  @update:model-value="(v) => (modulo.desconto = v === '' || v === null ? 0 : Number(v))" />
               </div>
             </div>
             <div class="mt-3 flex justify-end">

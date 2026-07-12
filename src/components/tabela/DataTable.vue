@@ -44,6 +44,9 @@
             </div>
         </div>
 
+        <!-- Barra de ações (ex: ações em massa por seleção) -->
+        <slot name="toolbar" :table="table" :selected-count="table.getSelectedRowModel().rows.length" />
+
         <!-- Tabela -->
         <div class="rounded-lg border bg-background border-gray-300 dark:border-gray-600 overflow-x-auto">
             <Table class="min-w-full">

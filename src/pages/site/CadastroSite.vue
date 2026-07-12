@@ -226,7 +226,7 @@
 
                         <div class="space-y-4">
                             <div class="flex items-start gap-2">
-                                <Checkbox id="terms" v-model:checked="store.form.terms" />
+                                <Checkbox id="terms" v-model="store.form.terms" />
                                 <label for="terms"
                                     class="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                     Aceito os <RouterLink to="/site/termos-politica" target="_blank"
@@ -239,7 +239,7 @@
                                 termos</span>
 
                             <div class="flex items-center gap-2">
-                                <Checkbox id="newsletter" v-model:checked="store.form.newsletter" />
+                                <Checkbox id="newsletter" v-model="store.form.newsletter" />
                                 <Label for="newsletter" class="font-normal">Quero receber dicas e novidades.</Label>
                             </div>
                         </div>

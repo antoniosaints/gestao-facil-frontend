@@ -28,6 +28,8 @@ export const useVendasStore = defineStore('vendasStore', () => {
   const openModalFaturar = ref(false)
   const openModalDetalhes = ref(false)
   const idMutation = ref<number | null>(null)
+  // Ids das vendas a serem faturadas em massa (mesmo modal/dados de pagamento).
+  const idsFaturarMassa = ref<number[]>([])
   const tipoDesconto = ref<'VALOR' | 'PORCENTAGEM'>('VALOR')
   const venda = ref<Vendas & { ItensVendas: ItensVendas[]; PagamentoVendas: PagamentoVendas }>()
 
@@ -135,6 +137,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
     carrinho,
     openModal,
     idMutation,
+    idsFaturarMassa,
     openModalPropor,
     openModalFaturar,
     openModalDetalhes,

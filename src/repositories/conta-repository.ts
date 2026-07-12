@@ -289,6 +289,16 @@ export interface StatusContaFatura {
   criadoEm?: Date | string
 }
 
+export interface RenovacaoBreakdown {
+  base: number
+  apps: number
+  subtotal: number
+  creditoIndicacao: number
+  desconto: number
+  total: number
+  cobreTotalmente: boolean
+  saldoRestante: number
+}
 export interface StatusConta {
   status: string
   valor: string
@@ -301,6 +311,7 @@ export interface StatusConta {
   valorCancelado: string
   proximoLinkPagamento: string | null
   labelAssinatura: string
+  renovacao?: RenovacaoBreakdown
 }
 export interface UpdateConta {
   nome: string
@@ -357,6 +368,10 @@ export class ContaRepository {
   static async gerarLink(): Promise<{ link: string }> {
     const data = await http.get(`/contas/assinatura/checkout`)
     return data.data
+  }
+  static async renovarGratis(): Promise<{ message: string; vencimento: string }> {
+    const { data } = await http.post(`/contas/assinatura/renovar-gratis`)
+    return data
   }
   static async uploadPerfil(file: File) {
     const data = new FormData()

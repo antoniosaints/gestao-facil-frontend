@@ -20,8 +20,32 @@ import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
 import type { Component } from 'vue'
 import { useVendasStore } from '@/stores/vendas/useVenda'
+import { Checkbox } from '@/components/ui/checkbox'
 const store = useVendasStore()
 export const columnsVendas: ColumnDef<Vendas>[] = [
+  {
+    id: 'select',
+    enableSorting: false,
+    enableHiding: false,
+    enableColumnFilter: false,
+    header: ({ table }) =>
+      render(Checkbox, {
+        modelValue: table.getIsAllPageRowsSelected()
+          ? true
+          : table.getIsSomePageRowsSelected()
+            ? 'indeterminate'
+            : false,
+        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+          table.toggleAllPageRowsSelected(!!value),
+        'aria-label': 'Selecionar todos',
+      }),
+    cell: ({ row }) =>
+      render(Checkbox, {
+        modelValue: row.getIsSelected(),
+        'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
+        'aria-label': 'Selecionar linha',
+      }),
+  },
   {
     accessorKey: 'Uid',
     header: ({ column }) =>

@@ -38,6 +38,11 @@ function createDefaultForm(): VendaEfetivar {
 
 const faturarVenda = ref<VendaEfetivar>(createDefaultForm())
 
+const qtdFaturamento = computed(() =>
+  store.idsFaturarMassa.length ? store.idsFaturarMassa.length : store.idMutation ? 1 : 0,
+)
+const emMassa = computed(() => store.idsFaturarMassa.length > 1)
+
 const lancamentoAutomatico = computed({
   get: () => !faturarVenda.value.lancamentoManual,
   set: (value: boolean) => {
@@ -54,31 +59,66 @@ watch(
   },
 )
 
+function finalizarFaturamento() {
+  store.idMutation = null
+  store.idsFaturarMassa = []
+  store.openModalFaturar = false
+  store.updateTable()
+}
+
 async function submit() {
-  try {
-    if (!store.idMutation) return toast.error('ID nao informado!')
-    await VendaRepository.efetivar(store.idMutation as number, faturarVenda.value)
-    store.idMutation = null
-    store.openModalFaturar = false
-    store.updateTable()
-    toast.success('Venda faturada com sucesso')
-  } catch (error: any) {
-    console.log(error)
-    store.idMutation = null
-    store.openModalFaturar = false
-    toast.error(error.response?.data?.message || 'Erro ao faturar a venda!', {
-      timeout: 3000,
-    })
+  const ids = store.idsFaturarMassa.length
+    ? [...store.idsFaturarMassa]
+    : store.idMutation
+      ? [store.idMutation]
+      : []
+
+  if (!ids.length) return toast.error('Nenhuma venda informada!')
+
+  // Faturamento individual: mantém o erro detalhado vindo do backend.
+  if (ids.length === 1) {
+    try {
+      await VendaRepository.efetivar(ids[0], faturarVenda.value)
+      finalizarFaturamento()
+      toast.success('Venda faturada com sucesso')
+    } catch (error: any) {
+      console.log(error)
+      finalizarFaturamento()
+      toast.error(error.response?.data?.message || 'Erro ao faturar a venda!', {
+        timeout: 3000,
+      })
+    }
+    return
   }
+
+  // Faturamento em massa: aplica os mesmos dados de pagamento a cada venda.
+  let sucesso = 0
+  let falhas = 0
+  for (const id of ids) {
+    try {
+      await VendaRepository.efetivar(id, faturarVenda.value)
+      sucesso++
+    } catch (error) {
+      console.log(error)
+      falhas++
+    }
+  }
+  finalizarFaturamento()
+  if (sucesso > 0) toast.success(`${sucesso} venda(s) faturada(s) com sucesso.`)
+  if (falhas > 0) toast.error(`${falhas} venda(s) não puderam ser faturada(s).`, { timeout: 4000 })
 }
 </script>
 
 <template>
   <ModalView
     v-model:open="store.openModalFaturar"
-    title="Faturar venda"
+    :title="emMassa ? `Faturar ${qtdFaturamento} vendas` : 'Faturar venda'"
     size="lg"
-    description="Preencha os dados para faturar a venda"
+    :description="
+      emMassa
+        ? 'Os mesmos dados de pagamento serão aplicados a todas as vendas selecionadas.'
+        : 'Preencha os dados para faturar a venda'
+    "
   >
     <form class="flex flex-col px-4" @submit.prevent="submit">
       <div class="grid h-full w-full grid-cols-1 gap-4 rounded-md bg-background md:grid-cols-2">

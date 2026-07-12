@@ -161,7 +161,7 @@ onUnmounted(() => {
         <button @click="openReport = true"
           class="border border-orange-500 hover:border-orange-700 text-orange-900 dark:text-orange-200 bg-orange-500/20 px-3 py-1.5 text-sm rounded-lg flex items-center gap-1">
           <FileDown class="w-4 h-4 inline-flex" />
-          <span class="hidden lg:inline">Exportar relatório</span>
+          <span class="hidden lg:inline">Relatório</span>
         </button>
         <button @click="store.openSave"
           class="bg-teal-700 dark:bg-teal-900 text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">

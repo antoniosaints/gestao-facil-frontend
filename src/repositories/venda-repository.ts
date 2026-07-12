@@ -178,6 +178,7 @@ export class VendaRepository {
   static async printCupom(id: number) {
     const data = await http.get(`/vendas/cupom/${id}`, {
       headers: { 'Content-Type': 'application/text' },
+      params: { cols: qzTray.getCupomCols() },
     })
     await qzTray.printTermal(data.data)
   }

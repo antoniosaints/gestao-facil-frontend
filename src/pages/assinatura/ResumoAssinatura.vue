@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import MobileBottomBar from "@/components/mobile/MobileBottomBar.vue"
 import { ContaRepository, type StatusConta, type StatusContaFatura } from "@/repositories/conta-repository"
 import { useUiStore } from "@/stores/ui/uiStore"
 import { formatCurrencyBR } from "@/utils/formatters"
@@ -13,11 +14,11 @@ import {
   CheckCircle2,
   Clock3,
   CreditCard,
+  Gift,
   ExternalLink,
   FileCheck2,
   FileClock,
   LoaderCircle,
-  Menu,
   PackagePlus,
   ReceiptText,
   RefreshCcw,
@@ -51,18 +52,29 @@ const faturaPendente = computed(
 const linkParaPagar = computed(
   () => assinatura.value?.proximoLinkPagamento || faturaPendente.value?.linkPagamento || null,
 )
+
+// Detalhamento da próxima renovação (base + apps − saldo de indicação).
+const renovacao = computed(() => assinatura.value?.renovacao || null)
+// Só oferecemos renovação grátis quando não há uma fatura pendente a pagar.
+const cobreTotalmente = computed(
+  () => Boolean(renovacao.value?.cobreTotalmente) && !faturaPendente.value,
+)
+// Mostra o preview do cálculo quando ainda não há uma fatura fechada para pagar.
+const mostrarBreakdown = computed(() => Boolean(renovacao.value) && !faturaPendente.value)
+
 const precisaGerarRenovacao = computed(
   () => !linkParaPagar.value && (assinaturaEmRisco.value || assinaturaVencida.value),
 )
 
-// Valor em destaque: o que precisa ser pago agora, ou a mensalidade prevista.
-const valorDestaque = computed(() =>
-  faturaPendente.value
-    ? formatCurrencyBR(Number(faturaPendente.value.valor))
-    : assinatura.value?.valor || "R$ 0,00",
-)
+// Valor em destaque: o que precisa ser pago agora, ou a mensalidade prevista (com desconto).
+const valorDestaque = computed(() => {
+  if (faturaPendente.value) return formatCurrencyBR(Number(faturaPendente.value.valor))
+  if (cobreTotalmente.value) return "Grátis"
+  if (renovacao.value) return formatCurrencyBR(renovacao.value.total)
+  return assinatura.value?.valor || "R$ 0,00"
+})
 const valorDestaqueLabel = computed(() =>
-  faturaPendente.value ? "Valor a pagar" : "Mensalidade atual",
+  faturaPendente.value ? "Valor a pagar" : "Próxima renovação",
 )
 const vencimentoDestaque = computed(
   () => faturaPendente.value?.vencimento || assinatura.value?.proximoVencimento || "-",
@@ -177,9 +189,25 @@ async function renovarAssinatura() {
     const response = await ContaRepository.gerarLink()
     toast.success("Link de pagamento gerado")
     window.location.href = response.link
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
-    toast.error("Não foi possível gerar o link de pagamento")
+    // Se o saldo passou a cobrir tudo entre o carregamento e o clique, cai na renovação grátis.
+    if (error?.response?.data?.renovarGratis) return renovarGratisHandler()
+    toast.error(error?.response?.data?.message || "Não foi possível gerar o link de pagamento")
+  } finally {
+    generatingLink.value = false
+  }
+}
+
+async function renovarGratisHandler() {
+  try {
+    generatingLink.value = true
+    const res = await ContaRepository.renovarGratis()
+    toast.success(res.message || "Assinatura renovada com seu saldo de indicação")
+    await getDataConta()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || "Não foi possível renovar com o saldo")
   } finally {
     generatingLink.value = false
   }
@@ -191,6 +219,7 @@ function abrirLink(url?: string | null) {
 }
 
 function pagarPrincipal() {
+  if (cobreTotalmente.value) return renovarGratisHandler()
   if (linkParaPagar.value) return abrirLink(linkParaPagar.value)
   return renovarAssinatura()
 }
@@ -249,16 +278,52 @@ onMounted(getDataConta)
         </div>
       </div>
 
+      <!-- Detalhamento da próxima renovação (mensalidade + apps − saldo de indicação) -->
+      <div v-if="mostrarBreakdown && renovacao" class="mt-4 rounded-xl border bg-background/70 p-4">
+        <p class="mb-3 text-xs uppercase tracking-wide text-muted-foreground">Detalhes da próxima renovação</p>
+        <dl class="space-y-2 text-sm">
+          <div class="flex items-center justify-between">
+            <dt class="text-muted-foreground">Mensalidade</dt>
+            <dd class="font-medium text-foreground">{{ formatCurrencyBR(renovacao.base) }}</dd>
+          </div>
+          <div v-if="renovacao.apps > 0" class="flex items-center justify-between">
+            <dt class="text-muted-foreground">Apps adicionais</dt>
+            <dd class="font-medium text-foreground">+ {{ formatCurrencyBR(renovacao.apps) }}</dd>
+          </div>
+          <div v-if="renovacao.desconto > 0" class="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+            <dt class="flex items-center gap-1"><Gift class="h-3.5 w-3.5" /> Saldo de indicação</dt>
+            <dd class="font-medium">− {{ formatCurrencyBR(renovacao.desconto) }}</dd>
+          </div>
+          <div class="mt-2 flex items-center justify-between border-t pt-2">
+            <dt class="font-semibold text-foreground">{{ cobreTotalmente ? "Total" : "Total a pagar" }}</dt>
+            <dd class="text-lg font-bold text-foreground">{{ cobreTotalmente ? "Grátis" : formatCurrencyBR(renovacao.total) }}</dd>
+          </div>
+        </dl>
+        <p
+          v-if="cobreTotalmente"
+          class="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+        >
+          Você tem saldo de indicação suficiente para cobrir toda a mensalidade. Renove sem pagar nada —
+          sobram {{ formatCurrencyBR(renovacao.saldoRestante) }} para os próximos ciclos.
+        </p>
+        <p v-else-if="renovacao.desconto > 0" class="mt-3 text-xs text-muted-foreground">
+          Aplicamos {{ formatCurrencyBR(renovacao.desconto) }} do seu saldo de indicação nesta renovação.
+          Saldo restante: {{ formatCurrencyBR(renovacao.saldoRestante) }}.
+        </p>
+      </div>
+
       <!-- Ações -->
       <div class="mt-5 flex flex-col gap-2 sm:flex-row">
         <Button
           class="h-11 flex-1 gap-2 text-base dark:text-white"
+          :class="cobreTotalmente ? 'bg-emerald-600 hover:bg-emerald-700' : ''"
           :disabled="generatingLink"
           @click="pagarPrincipal"
         >
           <LoaderCircle v-if="generatingLink" class="h-4 w-4 animate-spin" />
+          <Gift v-else-if="cobreTotalmente" class="h-4 w-4" />
           <CreditCard v-else class="h-4 w-4" />
-          {{ linkParaPagar ? "Pagar agora" : precisaGerarRenovacao ? "Gerar renovação" : "Adiantar pagamento" }}
+          {{ cobreTotalmente ? "Renovar grátis" : linkParaPagar ? "Pagar agora" : precisaGerarRenovacao ? "Gerar renovação" : "Adiantar pagamento" }}
         </Button>
         <Button as-child variant="outline" class="h-11 gap-2">
           <RouterLink to="/loja">
@@ -362,23 +427,36 @@ onMounted(getDataConta)
       </CardContent>
     </Card>
 
-    <!-- Barra inferior (mobile) -->
-    <nav
-      v-if="storeUi.isMobile"
-      class="fixed bottom-0 left-0 z-50 flex h-16 w-full items-center gap-2 border-t bg-background px-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
-    >
+    <!-- Barra inferior (mobile) — padrão do sistema (MobileBottomBar, z-20 abaixo do sidebar) -->
+    <MobileBottomBar v-if="storeUi.isMobile">
       <button
-        class="flex flex-col items-center gap-0.5 px-2 text-muted-foreground hover:text-primary"
-        @click="storeUi.openSidebar = true"
+        type="button"
+        :disabled="generatingLink"
+        class="flex flex-col items-center transition disabled:opacity-50"
+        :class="cobreTotalmente ? 'text-emerald-600 dark:text-emerald-400' : 'text-primary'"
+        @click="pagarPrincipal"
       >
-        <Menu class="h-5 w-5" />
-        <span class="text-[10px] font-medium">Menu</span>
+        <LoaderCircle v-if="generatingLink" class="h-5 w-5 animate-spin" />
+        <Gift v-else-if="cobreTotalmente" class="h-5 w-5" />
+        <CreditCard v-else class="h-5 w-5" />
+        <span class="text-xs">{{ cobreTotalmente ? "Renovar grátis" : linkParaPagar ? "Pagar" : "Renovar" }}</span>
       </button>
-      <Button class="h-11 flex-1 gap-2 dark:text-white" :disabled="generatingLink" @click="pagarPrincipal">
-        <LoaderCircle v-if="generatingLink" class="h-4 w-4 animate-spin" />
-        <CreditCard v-else class="h-4 w-4" />
-        {{ linkParaPagar ? "Pagar agora" : precisaGerarRenovacao ? "Gerar renovação" : "Adiantar" }}
-      </Button>
-    </nav>
+      <RouterLink
+        to="/loja"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+      >
+        <PackagePlus class="h-5 w-5" />
+        <span class="text-xs">Apps</span>
+      </RouterLink>
+      <button
+        type="button"
+        :disabled="refresh"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:opacity-50 dark:text-gray-300"
+        @click="getDataConta"
+      >
+        <RefreshCcw class="h-5 w-5" :class="refresh ? 'animate-spin' : ''" />
+        <span class="text-xs">Atualizar</span>
+      </button>
+    </MobileBottomBar>
   </div>
 </template>

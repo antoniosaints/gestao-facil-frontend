@@ -1,13 +1,21 @@
 import qz from 'qz-tray'
 import { ImpressaoRepository } from '@/repositories/impressao-repository'
 
-type PaperSize = 'A4' | 'A5' | 'Letter' | 'cupom'
+type PaperSize = 'A4' | 'A5' | 'Letter' | 'cupom' | '80mm' | '58mm'
 
 const sizeMap: Record<PaperSize, { width: number; height: number }> = {
   A4: { width: 8.27, height: 11.69 },
   A5: { width: 5.83, height: 8.27 },
   Letter: { width: 8.5, height: 11 },
-  cupom: { width: 3.15, height: 11.69 },
+  cupom: { width: 3.15, height: 11.69 }, // 80mm (compatibilidade)
+  '80mm': { width: 3.15, height: 11.69 },
+  '58mm': { width: 2.28, height: 11.69 },
+}
+
+// Colunas de caracteres por largura de papel térmico (fonte A).
+const CUPOM_COLS: Record<string, number> = {
+  '58mm': 32,
+  '80mm': 40,
 }
 
 const typeMap = {
@@ -67,6 +75,11 @@ class QZService {
     return (localStorage.getItem('qz_size_paper') as PaperSize) ?? 'A4'
   }
 
+  /** Colunas do cupom térmico conforme o papel salvo (58mm = 32, demais = 80mm/40). */
+  getCupomCols(): number {
+    return CUPOM_COLS[this.getSavedSize()] ?? 40
+  }
+
   private getConfig(extra: object = {}) {
     const paper = this.getSavedSize()
     const size = sizeMap[paper] ?? sizeMap.A4
@@ -93,8 +106,11 @@ class QZService {
   async printTermal(content: string) {
     await this.ensureConnection()
 
+    const saved = this.getSavedSize()
+    const size = saved === '58mm' ? sizeMap['58mm'] : sizeMap.cupom
+
     const config = qz.configs.create(this.getSavedPrinter(), {
-      size: sizeMap.cupom,
+      size,
       units: 'in',
     })
 

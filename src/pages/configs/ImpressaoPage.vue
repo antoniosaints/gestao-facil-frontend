@@ -36,6 +36,7 @@
             <SelectItem value="A5">A5</SelectItem>
             <SelectItem value="Letter">Carta (US Letter)</SelectItem>
             <SelectItem value="80mm">Térmica 80mm</SelectItem>
+            <SelectItem value="58mm">Térmica 58mm</SelectItem>
           </SelectContent>
         </Select>
         <Input v-model="filter" placeholder="Filtrar impressoras..." @input="filterPrinters" class="flex-1" />
