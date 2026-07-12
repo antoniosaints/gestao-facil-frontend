@@ -24,6 +24,8 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   const detalheId = ref<number | null>(null)
   const carrinho = ref<CarrinhoOS[]>([])
   const idMutation = ref<number | null>(null)
+  // Ids das OS a faturar em massa (mesmo modal/dados de pagamento).
+  const idsFaturarMassa = ref<number[]>([])
   const tipoDesconto = ref<'VALOR' | 'PORCENTAGEM'>('VALOR')
 
   const selectedIds = ref<number[]>([])
@@ -176,6 +178,7 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
     reloadDetalhes,
     ordemDetalhe,
     idMutation,
+    idsFaturarMassa,
     carrinho,
     tipoDesconto,
     selectedIds,

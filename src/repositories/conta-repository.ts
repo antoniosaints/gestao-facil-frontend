@@ -445,6 +445,11 @@ export class ContaRepository {
     return res.data
   }
 
+  static async excluirFaturaAdmin(id: number) {
+    const res = await http.delete(`/admin/faturas/${id}`)
+    return res.data
+  }
+
   static async getDashboardAdmin(): Promise<DashboardAdminResponse> {
     const res = await http.get('/admin/faturas/dashboard')
     return res.data

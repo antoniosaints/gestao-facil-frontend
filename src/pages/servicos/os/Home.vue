@@ -1,47 +1,18 @@
 <script setup lang="ts">
 import { useUiStore } from '@/stores/ui/uiStore'
-import { BadgePlus, CircleChevronDown, FileDigit, RotateCw, Trash } from 'lucide-vue-next'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
-import { useToast } from 'vue-toastification'
-import { useConfirm } from '@/composables/useConfirm'
+import { BadgePlus, FileDigit, RotateCw } from 'lucide-vue-next'
 import Tabela from './tabela/Tabela.vue'
 import Mobile from './tabela/Mobile.vue'
 import OrdemServicoModal from '../modais/OrdemServicoModal.vue'
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos'
 import ModalChecklist from '../modais/ModalChecklist.vue'
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
-import { OrdensServicoRepository } from '@/repositories/os-repository'
 import ModalDetalhesOrdem from './ModalDetalhesOrdem.vue'
 import ModalFaturarOs from './ModalFaturarOs.vue'
 import GerarCobranca from '@/pages/financeiro/lancamentos/modais/GerarCobranca.vue'
 
 const store = useOrdemServicoStore()
 const uiStore = useUiStore()
-const toast = useToast()
-
-async function excluirEmLote() {
-  try {
-    if (!store.selectedIds.length) return toast.error('Nenhuma ordem selecionada')
-    const confirm = await useConfirm().confirm({
-      title: 'Excluir em lote',
-      message: 'Tem certeza que deseja excluir essas ordens?',
-    })
-    if (!confirm) return
-    await Promise.all(store.selectedIds.map((id) => OrdensServicoRepository.remove(id)))
-    store.updateTable()
-    toast.success('OS excluída(s) com sucesso')
-  } catch (error) {
-    console.log(error)
-    toast.error('Erro ao excluir as OS')
-  }
-}
 </script>
 
 <template>
@@ -55,22 +26,6 @@ async function excluirEmLote() {
         <p class="text-sm text-muted-foreground">Ordens de serviço com faturamento e cobrança reaproveitando o fluxo financeiro.</p>
       </div>
       <div class="hidden items-center justify-between gap-2 md:flex">
-        <DropdownMenu v-if="store.selectedIds.length">
-          <DropdownMenuTrigger as-child>
-            <Button variant="outline">
-              <CircleChevronDown />
-              Ações
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuGroup>
-              <DropdownMenuItem class="cursor-pointer" @click="excluirEmLote">
-                <Trash />
-                <span>Excluir em lote</span>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
         <button
           class="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-white"
           @click="store.openSave"

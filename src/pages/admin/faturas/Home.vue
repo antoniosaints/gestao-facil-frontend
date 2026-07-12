@@ -21,16 +21,18 @@ import {
   Search,
   SlidersHorizontal,
   SquarePen,
+  Trash2,
 } from 'lucide-vue-next'
 import { reactive, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
+import { useConfirm } from '@/composables/useConfirm'
 import ModalGerenciarFatura from './ModalGerenciarFatura.vue'
 import Tabela from './tabela/Tabela.vue'
 import { useFaturasAdmin } from './useFaturasAdmin'
 
 const uiStore = useUiStore()
 const toast = useToast()
-const { openModal, selectedFatura, openManage } = useFaturasAdmin()
+const { openModal, selectedFatura, refreshSignal, openManage } = useFaturasAdmin()
 
 const status = ref('TODOS')
 const search = ref('')
@@ -97,6 +99,26 @@ function refreshAll() {
 function handleSaved() {
   refreshAll()
 }
+
+async function excluirFatura(item: FaturaContaAdmin) {
+  const confirm = await useConfirm().confirm({
+    title: 'Excluir fatura',
+    message: `Excluir a fatura de ${item.conta?.nome || 'conta'} (${item.Uid})? Ela é removida do banco e do cache da assinatura.`,
+    confirmText: 'Sim, excluir!',
+  })
+  if (!confirm) return
+  try {
+    const res = await ContaRepository.excluirFaturaAdmin(item.id)
+    toast.success(res.message || 'Fatura excluída com sucesso')
+    refreshAll()
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error?.response?.data?.message || 'Erro ao excluir a fatura')
+  }
+}
+
+// Recarrega quando uma ação do desktop (ex.: exclusão via dropdown) pede refresh.
+watch(refreshSignal, () => refreshAll())
 
 function applySearch() {
   currentPage.value = 1
@@ -255,6 +277,13 @@ watch(
                 @click="openManage(item)"
               >
                 <SquarePen class="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                class="rounded-md bg-red-100 px-2 py-1 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400"
+                @click="excluirFatura(item)"
+              >
+                <Trash2 class="h-5 w-5" />
               </button>
             </div>
           </div>

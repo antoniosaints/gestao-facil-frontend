@@ -101,6 +101,11 @@ export class AssinaturaPagarRepository {
     return response.data
   }
 
+  static async efetivarManual(id: number) {
+    const response = await http.post(`/lancamentos/assinaturas-pagar/${id}/efetivar-manual`)
+    return response.data
+  }
+
   static async uploadIcon(id: number, file: File) {
     const data = new FormData()
     data.append('serviceIcon', file)

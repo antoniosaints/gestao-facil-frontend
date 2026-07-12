@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useAuthStore } from '@/stores/login/useAuthStore';
-import { Loader2, LogIn, Mail, Lock, Eye, EyeOff, User, ArrowRight, Star } from 'lucide-vue-next';
-import { useRouter } from 'vue-router';
+import {
+    Loader2, LogIn, Mail, Lock, Eye, EyeOff,
+    ScanLine, Boxes, Wallet, LineChart,
+    ShieldCheck, DatabaseBackup, Headset, ArrowRight,
+} from 'lucide-vue-next';
 
 // Shadcn Components
 import { Button } from '@/components/ui/button';
@@ -16,12 +19,9 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const store = useAuthStore();
-const router = useRouter();
 
 const login = ref({
     email: '',
@@ -33,47 +33,26 @@ const loading = ref(false);
 const showForgotPasswordDialog = ref(false);
 const saveDataLogin = ref<boolean>(localStorage.getItem('gestao_facil:credentials_login') == 'true' || false);
 
-// Testimonials (Reused or updated)
-const testimonials = [
-    {
-        name: 'Maria Silva',
-        initials: 'MS',
-        text: 'Desde que comecei a usar o Gestão Fácil, minha loja cresceu 150%. A interface é muito intuitiva!',
-        store: 'Boutique Fashion'
-    },
-    {
-        name: 'Joaquim Santos',
-        initials: 'JS',
-        text: 'O Gestão Fácil facilitou meu trabalho de vendas. Ele me ajudou a gerenciar minha loja de forma eficiente.',
-        store: 'JS Assistência Técnica'
-    },
-    {
-        name: 'Ana Oliveira',
-        initials: 'AO',
-        text: 'A Gestão Fácil me ajudou a gerenciar minha loja de forma simples e eficiente. Recomendado!',
-        store: 'Bazar da Ana'
-    }
+const features = [
+    { icon: ScanLine, title: 'Vendas e PDV', desc: 'Caixa rápido e cupom' },
+    { icon: Boxes, title: 'Estoque', desc: 'Controle em tempo real' },
+    { icon: Wallet, title: 'Financeiro', desc: 'Fluxo de caixa e DRE' },
+    { icon: LineChart, title: 'Relatórios', desc: 'Decisões com dados' },
 ];
 
-const currentTestimonial = ref(testimonials[0]);
-
-onMounted(() => {
-    // Rotate testimonials every 5 seconds
-    setInterval(() => {
-        const currentIndex = testimonials.indexOf(currentTestimonial.value);
-        const nextIndex = (currentIndex + 1) % testimonials.length;
-        currentTestimonial.value = testimonials[nextIndex];
-    }, 5000);
-});
+const trust = [
+    { icon: ShieldCheck, label: 'Dados criptografados' },
+    { icon: DatabaseBackup, label: 'Backup diário' },
+    { icon: Headset, label: 'Suporte dedicado' },
+];
 
 async function loginUsuario() {
     loading.value = true;
     try {
         localStorage.setItem('gestao_facil:credentials_login', saveDataLogin.value.toString());
         await store.login(login.value.email, login.value.password);
-        // Redirect handled by store or router if needed, assuming store handles it
     } catch (error) {
-        console.error("Login faile", error);
+        console.error("Login falhou", error);
     } finally {
         loading.value = false;
     }
@@ -85,80 +64,93 @@ function togglePasswordVisibility() {
 </script>
 
 <template>
-    <div class="min-h-screen grid lg:grid-cols-2">
+    <div class="min-h-screen grid lg:grid-cols-[1.05fr_1fr]">
 
-        <!-- Left Side (Visual) -->
-        <div class="hidden lg:flex flex-col justify-between bg-zinc-900 p-12 text-white relative overflow-hidden">
-            <!-- Background Decoration -->
+        <!-- Left Side (Brand / Value) -->
+        <div class="hidden lg:flex flex-col justify-between bg-zinc-950 p-12 xl:p-16 text-white relative overflow-hidden">
+            <!-- Background decoration -->
             <div class="absolute inset-0 z-0">
                 <div
-                    class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 animate-pulse-slow">
+                    class="absolute top-0 right-0 h-[520px] w-[520px] -translate-y-1/3 translate-x-1/3 rounded-full bg-primary/25 blur-[130px] animate-pulse-slow">
                 </div>
-                <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2 animate-pulse-slow"
+                <div class="absolute bottom-0 left-0 h-[520px] w-[520px] translate-y-1/3 -translate-x-1/3 rounded-full bg-blue-600/20 blur-[130px] animate-pulse-slow"
                     style="animation-delay: 2s"></div>
+                <div
+                    class="absolute inset-0 opacity-[0.04] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:40px_40px]">
+                </div>
             </div>
 
-            <div class="relative z-10">
-                <div class="flex items-center gap-4 mb-12">
-                    <!-- <div
-                        class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-white border border-white/20">
-                        G</div> -->
-                    <img src="/imgs/logo.png" alt="Logo" class="w-12 h-12 rounded-lg">
-                    <span class="font-bold text-xl tracking-tight">Gestão Fácil</span>
-                </div>
+            <!-- Brand -->
+            <div class="relative z-10 flex items-center gap-3">
+                <img src="/imgs/logo.png" alt="Gestão Fácil" class="h-11 w-11 rounded-xl" />
+                <span class="text-lg font-bold tracking-tight">Gestão Fácil</span>
+            </div>
 
-                <div class="space-y-6 max-w-lg">
-                    <h1 class="text-5xl font-extrabold tracking-tight leading-tight">
-                        Bem-vindo de volta ao seu <span class="text-primary">negócio</span>.
+            <!-- Headline + features -->
+            <div class="relative z-10 max-w-xl space-y-10">
+                <div class="space-y-5">
+                    <span
+                        class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300 backdrop-blur-sm">
+                        <span class="relative flex h-2 w-2">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75"></span>
+                            <span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                        </span>
+                        Sistema de gestão 100% online
+                    </span>
+                    <h1 class="text-4xl font-extrabold leading-[1.1] tracking-tight xl:text-5xl">
+                        Tudo o que sua empresa<br />precisa em <span class="text-primary">um só lugar</span>.
                     </h1>
-                    <p class="text-xl text-zinc-400">
-                        Acesse sua conta e continue gerenciando sua loja com facilidade e eficiência.
+                    <p class="max-w-md text-lg text-zinc-400">
+                        Vendas, estoque, financeiro e ordens de serviço — o controle completo do seu negócio,
+                        de onde você estiver.
                     </p>
                 </div>
+
+                <!-- Feature grid -->
+                <ul class="grid max-w-lg grid-cols-2 gap-3">
+                    <li v-for="f in features" :key="f.title"
+                        class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-white/[0.07]">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                            <component :is="f.icon" class="h-5 w-5" />
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold leading-tight">{{ f.title }}</p>
+                            <p class="truncate text-xs text-zinc-400">{{ f.desc }}</p>
+                        </div>
+                    </li>
+                </ul>
             </div>
 
-            <!-- Dynamic Testimonial -->
-            <div
-                class="relative z-10 mt-12 bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm transition-opacity duration-500">
-                <div class="flex gap-1 text-yellow-500 mb-4">
-                    <Star v-for="n in 5" :key="n" class="w-4 h-4 fill-current" />
-                </div>
-                <p class="text-lg italic mb-6">"{{ currentTestimonial.text }}"</p>
-                <div class="flex items-center gap-3">
-                    <Avatar>
-                        <AvatarFallback>{{ currentTestimonial.initials }}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p class="font-bold text-sm">{{ currentTestimonial.name }}</p>
-                        <p class="text-xs text-zinc-400">{{ currentTestimonial.store }}</p>
-                    </div>
+            <!-- Trust row -->
+            <div class="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/10 pt-6 text-sm text-zinc-400">
+                <div v-for="t in trust" :key="t.label" class="flex items-center gap-2">
+                    <component :is="t.icon" class="h-4 w-4 text-primary" />
+                    <span>{{ t.label }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Right Side (Form) -->
-        <div class="bg-background flex flex-col justify-center p-6 lg:p-12 relative">
-            <div class="absolute top-6 right-6 lg:hidden">
-                <div class="flex items-center gap-2">
-                    <div
-                        class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
-                        G</div>
-                </div>
+        <div class="relative flex flex-col justify-center bg-background p-6 lg:p-12">
+            <!-- Mobile brand -->
+            <div class="mb-8 flex items-center gap-3 lg:hidden">
+                <img src="/imgs/logo.png" alt="Gestão Fácil" class="h-10 w-10 rounded-xl" />
+                <span class="text-lg font-bold tracking-tight text-foreground">Gestão Fácil</span>
             </div>
 
-            <div class="max-w-md mx-auto w-full space-y-8">
-                <div class="text-center">
-                    <h2 class="text-3xl font-bold tracking-tight">Entrar na sua conta</h2>
-                    <p class="text-muted-foreground mt-2">Digite suas credenciais para continuar</p>
+            <div class="mx-auto w-full max-w-md space-y-8">
+                <div class="space-y-2">
+                    <h2 class="text-3xl font-bold tracking-tight text-foreground">Entrar na sua conta</h2>
+                    <p class="text-muted-foreground">Bem-vindo de volta. Acesse para continuar gerenciando seu negócio.</p>
                 </div>
 
-                <form @submit.prevent="loginUsuario" class="space-y-6">
+                <form @submit.prevent="loginUsuario" class="space-y-5">
                     <div class="space-y-2">
                         <Label for="email">E-mail</Label>
                         <div class="relative">
                             <Mail class="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input id="email" type="email" v-model="login.email" placeholder="seu@email.com"
-                                class="pl-9" required />
+                                class="h-11 pl-9" required />
                         </div>
                     </div>
 
@@ -166,14 +158,14 @@ function togglePasswordVisibility() {
                         <div class="flex items-center justify-between">
                             <Label for="password">Senha</Label>
                             <span @click="showForgotPasswordDialog = true"
-                                class="text-sm font-medium text-primary hover:text-primary/80 cursor-pointer">
+                                class="cursor-pointer text-sm font-medium text-primary hover:text-primary/80">
                                 Esqueceu a senha?
                             </span>
                         </div>
                         <div class="relative">
                             <Lock class="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input id="password" :type="showPassword ? 'text' : 'password'" v-model="login.password"
-                                placeholder="••••••••" class="pl-9 pr-9" required />
+                                placeholder="••••••••" class="h-11 pl-9 pr-9" required />
                             <button type="button" @click="togglePasswordVisibility"
                                 class="absolute right-3 top-3 text-muted-foreground hover:text-foreground">
                                 <Eye v-if="!showPassword" class="h-4 w-4" />
@@ -185,13 +177,12 @@ function togglePasswordVisibility() {
                     <div class="flex items-center space-x-2">
                         <Checkbox id="remember" :checked="saveDataLogin"
                             @update:checked="(val: boolean) => saveDataLogin = val" />
-                        <label for="remember"
-                            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            Lembrar de mim
+                        <label for="remember" class="text-sm font-medium leading-none text-muted-foreground">
+                            Manter conectado
                         </label>
                     </div>
 
-                    <Button type="submit" class="w-full h-11 text-base font-bold text-white dark:text-white"
+                    <Button type="submit" class="h-11 w-full text-base font-bold text-white dark:text-white"
                         :disabled="loading">
                         <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
                         <LogIn v-else class="mr-2 h-4 w-4" />
@@ -199,13 +190,24 @@ function togglePasswordVisibility() {
                     </Button>
                 </form>
 
-                <!-- <div class="text-center text-sm text-muted-foreground">
-                    Não tem uma conta?
-                    <RouterLink to="/site/cadastro"
-                        class="font-medium text-primary hover:text-primary/80 underline underline-offset-4">
-                        Cadastre-se gratuitamente
-                    </RouterLink>
-                </div> -->
+                <!-- <div class="flex items-center gap-4">
+                    <span class="h-px flex-1 bg-border"></span>
+                    <span class="text-xs uppercase tracking-wide text-muted-foreground">Novo por aqui?</span>
+                    <span class="h-px flex-1 bg-border"></span>
+                </div>
+
+                <RouterLink to="/site/cadastro"
+                    class="group flex h-11 w-full items-center justify-center gap-2 rounded-md border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary">
+                    Criar conta grátis
+                    <ArrowRight class="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </RouterLink> -->
+
+                <p class="text-center text-xs text-muted-foreground">
+                    Ao continuar, você concorda com os
+                    <RouterLink to="/site/termos-politica" class="underline underline-offset-2 hover:text-foreground">Termos</RouterLink>
+                    e a
+                    <RouterLink to="/site/termos-politica" class="underline underline-offset-2 hover:text-foreground">Política de Privacidade</RouterLink>.
+                </p>
             </div>
         </div>
 
@@ -226,7 +228,7 @@ function togglePasswordVisibility() {
                 </div>
                 <DialogFooter>
                     <Button variant="outline" @click="showForgotPasswordDialog = false">Cancelar</Button>
-                    <Button type="submit" class="text-white dark:text-white font-bold">Enviar Instruções</Button>
+                    <Button type="submit" class="font-bold text-white dark:text-white">Enviar Instruções</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

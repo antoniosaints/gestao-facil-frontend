@@ -38,6 +38,11 @@ function createDefaultForm(): OrdemServicoEfetivarPayload {
 
 const faturarOs = ref<OrdemServicoEfetivarPayload>(createDefaultForm())
 
+const qtdFaturamento = computed(() =>
+  store.idsFaturarMassa.length ? store.idsFaturarMassa.length : store.idMutation ? 1 : 0,
+)
+const emMassa = computed(() => store.idsFaturarMassa.length > 1)
+
 const lancamentoAutomatico = computed({
   get: () => !faturarOs.value.lancamentoManual,
   set: (value: boolean) => {
@@ -54,30 +59,67 @@ watch(
   },
 )
 
+function finalizarFaturamento() {
+  store.idMutation = null
+  store.idsFaturarMassa = []
+  store.openModalFaturar = false
+  store.updateTable()
+}
+
 async function submit() {
-  try {
-    if (!store.idMutation) return toast.error('ID da OS não informado!')
-    await OrdensServicoRepository.efetivar(store.idMutation as number, faturarOs.value)
-    store.openModalFaturar = false
-    toast.success('OS faturada com sucesso')
-    store.updateTable()
-    await store.reloadDetalhes()
-  } catch (error: any) {
-    console.log(error)
-    store.openModalFaturar = false
-    toast.error(error.response?.data?.message || 'Erro ao faturar a OS!', {
-      timeout: 3000,
-    })
+  const ids = store.idsFaturarMassa.length
+    ? [...store.idsFaturarMassa]
+    : store.idMutation
+      ? [store.idMutation]
+      : []
+
+  if (!ids.length) return toast.error('Nenhuma OS informada!')
+
+  // Faturamento individual: mantém o erro detalhado do backend e recarrega o detalhe.
+  if (ids.length === 1) {
+    try {
+      await OrdensServicoRepository.efetivar(ids[0], faturarOs.value)
+      finalizarFaturamento()
+      toast.success('OS faturada com sucesso')
+      await store.reloadDetalhes()
+    } catch (error: any) {
+      console.log(error)
+      finalizarFaturamento()
+      toast.error(error.response?.data?.message || 'Erro ao faturar a OS!', {
+        timeout: 3000,
+      })
+    }
+    return
   }
+
+  // Faturamento em massa: aplica os mesmos dados de pagamento a cada OS.
+  let sucesso = 0
+  let falhas = 0
+  for (const id of ids) {
+    try {
+      await OrdensServicoRepository.efetivar(id, faturarOs.value)
+      sucesso++
+    } catch (error) {
+      console.log(error)
+      falhas++
+    }
+  }
+  finalizarFaturamento()
+  if (sucesso > 0) toast.success(`${sucesso} OS faturada(s) com sucesso.`)
+  if (falhas > 0) toast.error(`${falhas} OS não puderam ser faturada(s).`, { timeout: 4000 })
 }
 </script>
 
 <template>
   <ModalView
     v-model:open="store.openModalFaturar"
-    title="Faturar OS"
+    :title="emMassa ? `Faturar ${qtdFaturamento} OS` : 'Faturar OS'"
     size="lg"
-    description="Preencha os dados para faturar a ordem de serviço"
+    :description="
+      emMassa
+        ? 'Os mesmos dados de pagamento serão aplicados a todas as OS selecionadas.'
+        : 'Preencha os dados para faturar a ordem de serviço'
+    "
   >
     <form class="flex flex-col px-4" @submit.prevent="submit">
       <div class="grid h-full w-full grid-cols-1 gap-4 rounded-md bg-background md:grid-cols-2">

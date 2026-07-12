@@ -11,7 +11,7 @@ import type { AssinaturaPagarListItem } from '@/repositories/assinatura-pagar-re
 import { AssinaturaPagarRepository } from '@/repositories/assinatura-pagar-repository'
 import { useAssinaturasPagarStore } from '@/stores/lancamentos/useAssinaturasPagar'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { Bell, BellOff, Menu, Pencil, ReceiptText, Trash2 } from 'lucide-vue-next'
+import { Bell, BellOff, CircleCheckBig, Menu, Pencil, ReceiptText, Trash2 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
 
@@ -50,6 +50,22 @@ async function gerarFinanceiro() {
   }
 }
 
+async function efetivarManual() {
+  const confirmed = await useConfirm().confirm({
+    title: 'Marcar mês como pago',
+    message: `Marcar o mês atual de "${props.data.nomeServico}" como pago? Isso apenas avança o vencimento e não gera lançamento financeiro.`,
+    confirmText: 'Sim, marcar como pago!',
+  })
+  if (!confirmed) return
+  try {
+    const response = await AssinaturaPagarRepository.efetivarManual(props.data.id)
+    toast.success(response?.message || 'Mês marcado como pago.')
+    store.updateTable()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Erro ao efetivar a assinatura.')
+  }
+}
+
 async function toggleNotificacaoVencimento() {
   const ativo = !props.data.notificarVencimento
 
@@ -76,9 +92,19 @@ async function toggleNotificacaoVencimento() {
         <Pencil class="mr-2 h-4 w-4" />
         Editar
       </DropdownMenuItem>
-      <DropdownMenuItem v-if="uiStore.permissoes.financeiro.editar" @click="gerarFinanceiro">
+      <DropdownMenuItem
+        v-if="uiStore.permissoes.financeiro.editar && props.data.gerarFinanceiro"
+        @click="gerarFinanceiro"
+      >
         <ReceiptText class="mr-2 h-4 w-4" />
         Gerar financeiro
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="uiStore.permissoes.financeiro.editar && !props.data.gerarFinanceiro"
+        @click="efetivarManual"
+      >
+        <CircleCheckBig class="mr-2 h-4 w-4" />
+        Marcar mês como pago
       </DropdownMenuItem>
       <DropdownMenuItem v-if="uiStore.permissoes.financeiro.editar" @click="toggleNotificacaoVencimento">
         <BellOff v-if="props.data.notificarVencimento" class="mr-2 h-4 w-4" />

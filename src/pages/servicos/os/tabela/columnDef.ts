@@ -29,7 +29,40 @@ type OrdemRecebida = OrdensServico & {
 export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
   {
     id: 'select',
-    header: ({ table }) => render('div', {}, ''),
+    enableSorting: false,
+    enableHiding: false,
+    header: ({ table }) => {
+      const rows = table.getRowModel().rows
+      // Ler selectedIds.length é essencial: garante que o header re-renderize a cada
+      // mudança de seleção. O filter abaixo não acessa selectedIds quando `rows` está
+      // vazio no render, então sem esta leitura o header nunca reflete o "selecionar todas".
+      const totalSelecionados = store.selectedIds.length
+      const naPagina = rows.filter((r) => store.selectedIds.includes(r.original.id!)).length
+      const modelValue =
+        rows.length > 0 && naPagina === rows.length
+          ? true
+          : naPagina > 0 || (rows.length === 0 && totalSelecionados > 0)
+            ? 'indeterminate'
+            : false
+      return render(Checkbox, {
+        modelValue,
+        // Lê as linhas e o estado NO MOMENTO DO CLIQUE (não no render): o header não
+        // re-renderiza quando os dados chegam, então um `rows` capturado no render fica
+        // vazio/estale e a seleção não funcionaria.
+        'onUpdate:modelValue': () => {
+          const atuais = table.getRowModel().rows
+          const todasSelecionadas =
+            atuais.length > 0 && atuais.every((r) => store.selectedIds.includes(r.original.id!))
+          const marcar = !todasSelecionadas
+          atuais.forEach((r) => {
+            r.toggleSelected(marcar)
+            if (marcar) store.addSelectedId(r.original.id!)
+            else store.removeSelectedId(r.original.id!)
+          })
+        },
+        ariaLabel: 'Selecionar todos',
+      })
+    },
     cell: ({ row }) =>
       render(Checkbox, {
         modelValue: store.selectedIds.includes(row.original.id!),
@@ -40,8 +73,6 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
         },
         ariaLabel: 'Select row',
       }),
-    enableSorting: false,
-    enableHiding: false,
   },
   {
     accessorKey: 'Uid',

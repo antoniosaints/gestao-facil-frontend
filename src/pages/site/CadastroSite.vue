@@ -1,73 +1,66 @@
 <template>
     <div class="min-h-screen grid lg:grid-cols-2">
 
-        <!-- Lado Esquerdo (Imagem/Benefícios) -->
-        <div class="hidden lg:flex flex-col justify-between bg-zinc-900 p-12 text-white relative overflow-hidden">
-            <!-- Background Decoration -->
+        <!-- Lado Esquerdo (Marca / Valor) -->
+        <div class="hidden lg:flex flex-col justify-between bg-zinc-950 p-12 xl:p-16 text-white relative overflow-hidden">
+            <!-- Background decoration -->
             <div class="absolute inset-0 z-0">
                 <div
-                    class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2">
+                    class="absolute top-0 right-0 h-[520px] w-[520px] -translate-y-1/3 translate-x-1/3 rounded-full bg-primary/25 blur-[130px] animate-pulse-slow">
                 </div>
+                <div class="absolute bottom-0 left-0 h-[520px] w-[520px] translate-y-1/3 -translate-x-1/3 rounded-full bg-blue-600/20 blur-[130px] animate-pulse-slow"
+                    style="animation-delay: 2s"></div>
                 <div
-                    class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2">
+                    class="absolute inset-0 opacity-[0.04] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:40px_40px]">
                 </div>
             </div>
 
-            <div class="relative z-10">
-                <div class="flex items-center gap-2 mb-12">
-                    <div
-                        class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-white border border-white/20">
-                        G</div>
-                    <span class="font-bold text-xl tracking-tight">Gestão Fácil</span>
-                </div>
-
-                <h1 class="text-5xl font-extrabold tracking-tight mb-8 leading-tight">
-                    Comece sua jornada <br />
-                    para o <span class="text-primary">sucesso</span>.
-                </h1>
-
-                <p class="text-xl text-zinc-400 max-w-md mb-12">
-                    Junte-se a milhares de empreendedores que transformaram a gestão de seus negócios.
-                </p>
-
-                <div class="space-y-6">
-                    <div class="flex items-start gap-4">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
-                            <Rocket class="w-6 h-6 text-primary" />
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-lg">Comece em minutos</h3>
-                            <p class="text-zinc-400">Cadastro simplificado para você não perder tempo.</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-4">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
-                            <ShieldCheck class="w-6 h-6 text-green-500" />
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-lg">7 dias grátis</h3>
-                            <p class="text-zinc-400">Teste todas as funcionalidades sem compromisso.</p>
-                        </div>
-                    </div>
-                </div>
+            <!-- Marca -->
+            <div class="relative z-10 flex items-center gap-3">
+                <img src="/imgs/logo.png" alt="Gestão Fácil" class="h-11 w-11 rounded-xl" />
+                <span class="text-lg font-bold tracking-tight">Gestão Fácil</span>
             </div>
 
-            <div class="relative z-10 mt-12 bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
-                <div class="flex gap-1 text-yellow-500 mb-2">
-                    <Star v-for="n in 5" :key="n" class="w-4 h-4 fill-current" />
+            <!-- Headline + features -->
+            <div class="relative z-10 max-w-xl space-y-10">
+                <div class="space-y-5">
+                    <span
+                        class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300 backdrop-blur-sm">
+                        <span class="relative flex h-2 w-2">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75"></span>
+                            <span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                        </span>
+                        7 dias grátis · sem cartão de crédito
+                    </span>
+                    <h1 class="text-4xl font-extrabold leading-[1.1] tracking-tight xl:text-5xl">
+                        Comece sua jornada<br />para o <span class="text-primary">sucesso</span>.
+                    </h1>
+                    <p class="max-w-md text-lg text-zinc-400">
+                        Crie sua conta e organize vendas, estoque e financeiro em uma única plataforma —
+                        do balcão ao caixa.
+                    </p>
                 </div>
-                <p class="text-lg italic mb-4">"Mudou completamente a forma como gerencio minha loja. Indispensável!"
-                </p>
-                <div class="flex items-center gap-3">
-                    <Avatar>
-                        <AvatarFallback>RC</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p class="font-bold text-sm">Ricardo Costa</p>
-                        <p class="text-xs text-zinc-400">Loja de Informática</p>
-                    </div>
+
+                <!-- Feature grid -->
+                <ul class="grid max-w-lg grid-cols-2 gap-3">
+                    <li v-for="f in features" :key="f.title"
+                        class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-white/[0.07]">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                            <component :is="f.icon" class="h-5 w-5" />
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold leading-tight">{{ f.title }}</p>
+                            <p class="truncate text-xs text-zinc-400">{{ f.desc }}</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Trust row -->
+            <div class="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/10 pt-6 text-sm text-zinc-400">
+                <div v-for="t in trust" :key="t.label" class="flex items-center gap-2">
+                    <component :is="t.icon" class="h-4 w-4 text-primary" />
+                    <span>{{ t.label }}</span>
                 </div>
             </div>
         </div>
@@ -278,16 +271,32 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select'
-import { Rocket, ShieldCheck, ArrowRight, Star, Loader2 } from 'lucide-vue-next'
+import {
+    ArrowRight, Loader2,
+    ScanLine, Boxes, Wallet, LineChart,
+    ShieldCheck, DatabaseBackup, Headset,
+} from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
 const store = useAccountCreateStore()
+
+const features = [
+    { icon: ScanLine, title: 'Vendas e PDV', desc: 'Caixa rápido e cupom' },
+    { icon: Boxes, title: 'Estoque', desc: 'Controle em tempo real' },
+    { icon: Wallet, title: 'Financeiro', desc: 'Fluxo de caixa e DRE' },
+    { icon: LineChart, title: 'Relatórios', desc: 'Decisões com dados' },
+]
+
+const trust = [
+    { icon: ShieldCheck, label: 'Dados criptografados' },
+    { icon: DatabaseBackup, label: 'Backup diário' },
+    { icon: Headset, label: 'Suporte dedicado' },
+]
 
 const step = ref(1)
 const loading = ref(false)

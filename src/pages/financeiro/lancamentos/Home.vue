@@ -13,7 +13,6 @@ import {
   Filter,
   RotateCw,
   Tags,
-  Trash,
   Upload,
   Wallet,
   X,
@@ -29,7 +28,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { useConfirm } from '@/composables/useConfirm'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useToast } from 'vue-toastification'
 import router from '@/router'
@@ -85,22 +83,6 @@ async function loadFilterOptions() {
   }
 }
 
-async function excluirEmLote() {
-  try {
-    if (!store.selectedIds.length) return toast.error('Nenhum lançamento selecionado')
-    const confirm = await useConfirm().confirm({
-      title: 'Excluir em lote',
-      message: 'Tem certeza que deseja excluir esses lançamentos?',
-    })
-    if (!confirm) return
-    await Promise.all(store.selectedIds.map((id) => LancamentosRepository.remove(id)))
-    store.updateTable()
-    toast.success('Lançamentos excluídos com sucesso')
-  } catch (error) {
-    toast.error('Erro ao excluir os lançamentos')
-    console.log(error)
-  }
-}
 
 function applyFilters() {
   store.filters.tipo = filtros.tipo
@@ -184,10 +166,6 @@ useSocketEvent('financeiro:updated', () => {
               <DropdownMenuItem class="cursor-pointer" @click="store.openModalLote = true">
                 <Upload />
                 <span>Importar CSV</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem v-if="store.selectedIds.length" class="cursor-pointer" @click="excluirEmLote">
-                <Trash />
-                <span>Excluir em lote</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
