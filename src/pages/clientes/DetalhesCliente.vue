@@ -50,6 +50,16 @@
               <Trash2 class="h-4 w-4" />
               Excluir
             </Button>
+            <Button
+              v-if="podeIniciarAtendimento"
+              type="button"
+              variant="outline"
+              class="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+              @click="iniciarAtendimento"
+            >
+              <Headset class="h-4 w-4" />
+              Iniciar atendimento
+            </Button>
             <Button type="button" class="text-white" @click="openReminderModal()">
               <MessageCircleMore class="h-4 w-4" />
               Enviar lembrete
@@ -356,6 +366,7 @@ import {
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useClientesStore } from '@/stores/clientes/useClientes'
+import { useUiStore } from '@/stores/ui/uiStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -370,6 +381,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Headset,
   MessageCircleMore,
   Phone,
   Pencil,
@@ -412,6 +424,7 @@ const router = useRouter()
 const toast = useToast()
 const confirm = useConfirm()
 const storeCliente = useClientesStore()
+const storeUi = useUiStore()
 const loading = ref(true)
 const operationalLoading = ref(true)
 const sendingReminder = ref(false)
@@ -470,6 +483,17 @@ const quickSend = ref<{
 
 const clienteId = computed(() => Number(route.params.id))
 const contatoPrincipal = computed(() => stats.value?.cliente?.whastapp || stats.value?.cliente?.telefone || '')
+const podeIniciarAtendimento = computed(
+  () => storeUi.hasActiveModule('atendimento') && Boolean(contatoPrincipal.value),
+)
+
+function iniciarAtendimento() {
+  if (!contatoPrincipal.value) {
+    toast.warning('Cliente sem telefone/WhatsApp cadastrado.')
+    return
+  }
+  router.push({ name: 'atendimento', query: { cliente: clienteId.value } })
+}
 const clienteStatus = computed(() => stats.value?.cliente?.status || 'ATIVO')
 const isClienteAtivo = computed(() => clienteStatus.value === 'ATIVO')
 const activeMeta = computed(() => tabMeta.value[activeTab.value])
@@ -758,6 +782,7 @@ watch(
 onMounted(async () => {
   try {
     if (!clienteId.value) throw new Error('ID invalido')
+    storeUi.loadAppModules().catch(() => undefined)
     await reloadClienteStats()
     await loadOperationalDetails(1)
   } catch (e: any) {

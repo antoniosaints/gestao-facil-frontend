@@ -184,6 +184,11 @@ export class WhatsAppRepository {
     return data.data as WhatsAppInstancePayment
   }
 
+  static async startConversation(payload: { clienteId: number; instanciaId?: number }) {
+    const { data } = await http.post('/whatsapp/conversas/iniciar', payload)
+    return data.data as WhatsAppConversation
+  }
+
   static async listConversations(params: { search?: string; status?: WhatsAppConversationStatus; take?: number; cursor?: number } = {}) {
     const { data } = await http.get('/whatsapp/conversas', { params })
     return data.data as PaginatedResponse<WhatsAppConversation>

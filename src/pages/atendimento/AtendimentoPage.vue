@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   ArrowLeft,
   CheckCheck,
@@ -14,6 +16,7 @@ import {
   Headset,
   Inbox,
   LoaderCircle,
+  MessageSquarePlus,
   MessageSquareText,
   Search,
   Send,
@@ -30,10 +33,23 @@ import {
 } from '@/repositories/whatsapp-repository'
 
 const toast = useToast()
+const route = useRoute()
+const router = useRouter()
 
 const loading = ref(false)
 const sending = ref(false)
 const showDetails = ref(false)
+
+const instances = ref<WhatsAppInstance[]>([])
+const newChat = reactive<{
+  open: boolean
+  search: string
+  options: Array<{ id: number; label: string }>
+  clienteId: number | null
+  instanciaId: number | null
+  loading: boolean
+  starting: boolean
+}>({ open: false, search: '', options: [], clienteId: null, instanciaId: null, loading: false, starting: false })
 
 const conversations = ref<WhatsAppConversation[]>([])
 const messages = ref<WhatsAppMessage[]>([])
@@ -132,6 +148,91 @@ async function loadConversations() {
     toast.error('Erro ao carregar as conversas de atendimento.')
   } finally {
     loading.value = false
+  }
+}
+
+// Insere no topo (ou atualiza) uma conversa na lista, mantendo a ordenação por recência.
+function upsertConversation(conversation: WhatsAppConversation) {
+  const index = conversations.value.findIndex((item) => item.id === conversation.id)
+  if (index >= 0) {
+    conversations.value[index] = { ...conversations.value[index], ...conversation }
+    const [moved] = conversations.value.splice(index, 1)
+    conversations.value.unshift(moved)
+  } else {
+    conversations.value.unshift(conversation)
+  }
+}
+
+async function loadInstances() {
+  try {
+    instances.value = await WhatsAppRepository.listInstances()
+  } catch (error) {
+    console.error(error)
+    instances.value = []
+  }
+}
+
+function openNewChat() {
+  newChat.open = true
+  newChat.search = ''
+  newChat.options = []
+  newChat.clienteId = null
+  newChat.instanciaId = null
+  if (!instances.value.length) loadInstances()
+}
+
+async function searchNewChatClients() {
+  try {
+    newChat.loading = true
+    newChat.options = await ClienteRepository.select2(newChat.search)
+  } catch (error) {
+    console.error(error)
+    newChat.options = []
+  } finally {
+    newChat.loading = false
+  }
+}
+
+async function startConversation(clienteId: number, instanciaId?: number | null) {
+  const conversation = await WhatsAppRepository.startConversation({
+    clienteId,
+    instanciaId: instanciaId || undefined,
+  })
+  upsertConversation(conversation)
+  await openConversation(conversation)
+  return conversation
+}
+
+async function confirmNewChat() {
+  if (!newChat.clienteId) {
+    toast.warning('Selecione um cliente para iniciar a conversa.')
+    return
+  }
+  try {
+    newChat.starting = true
+    await startConversation(newChat.clienteId, newChat.instanciaId)
+    newChat.open = false
+    toast.success('Conversa iniciada.')
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível iniciar a conversa.')
+  } finally {
+    newChat.starting = false
+  }
+}
+
+// Suporta abrir o atendimento já iniciando a conversa de um cliente (ex.: botão na tela do cliente).
+async function startFromClienteQuery() {
+  const raw = route.query.cliente
+  const clienteId = Number(Array.isArray(raw) ? raw[0] : raw)
+  if (!clienteId) return
+  // Limpa o parâmetro para não reabrir a conversa a cada refresh/navegação.
+  router.replace({ query: { ...route.query, cliente: undefined } })
+  try {
+    await startConversation(clienteId)
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível iniciar a conversa do cliente.')
   }
 }
 
@@ -235,10 +336,15 @@ useSocketEvent<WhatsAppMessage>('whatsapp:mensagem:created', async (message) => 
 })
 
 useSocketEvent<WhatsAppInstance>('whatsapp:instancia:updated', async () => {
+  await loadInstances()
   if (selectedConversation.value) await loadConversations()
 })
 
-onMounted(loadConversations)
+onMounted(async () => {
+  await loadConversations()
+  await loadInstances()
+  await startFromClienteQuery()
+})
 </script>
 
 <template>
@@ -254,6 +360,15 @@ onMounted(loadConversations)
             <Headset class="h-5 w-5 text-primary" :stroke-width="2.5" />
             <h1 class="text-base font-semibold tracking-tight">Atendimento</h1>
             <Badge v-if="totalNaoLidas" class="ml-auto bg-green-600 text-white">{{ totalNaoLidas }}</Badge>
+            <Button
+              size="sm"
+              class="text-white"
+              :class="totalNaoLidas ? '' : 'ml-auto'"
+              @click="openNewChat"
+            >
+              <MessageSquarePlus class="mr-1 h-4 w-4" />
+              Nova
+            </Button>
           </div>
           <div class="relative">
             <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -447,12 +562,73 @@ onMounted(loadConversations)
       </section>
 
       <!-- Estado vazio -->
-      <section v-else class="hidden flex-1 items-center justify-center p-8 text-center text-muted-foreground md:flex">
-        <div>
-          <Inbox class="mx-auto mb-3 h-10 w-10" />
-          <p>Selecione uma conversa para iniciar o atendimento.</p>
-        </div>
+      <section v-else class="hidden flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground md:flex">
+        <Inbox class="mb-3 h-10 w-10" />
+        <p>Selecione uma conversa ou inicie um novo atendimento.</p>
+        <Button class="mt-4 text-white" @click="openNewChat">
+          <MessageSquarePlus class="mr-2 h-4 w-4" />
+          Nova conversa
+        </Button>
       </section>
     </div>
+
+    <!-- Nova conversa a partir de um cliente -->
+    <Dialog v-model:open="newChat.open">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Nova conversa</DialogTitle>
+          <DialogDescription>Inicie um atendimento a partir de um cliente cadastrado.</DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-4">
+          <div class="space-y-1">
+            <Label>Cliente</Label>
+            <div class="flex gap-2">
+              <Input
+                v-model="newChat.search"
+                placeholder="Buscar cliente por nome"
+                @keyup.enter="searchNewChatClients"
+              />
+              <Button variant="outline" size="icon" :disabled="newChat.loading" @click="searchNewChatClients">
+                <LoaderCircle v-if="newChat.loading" class="h-4 w-4 animate-spin" />
+                <Search v-else class="h-4 w-4" />
+              </Button>
+            </div>
+            <select
+              v-model.number="newChat.clienteId"
+              class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm"
+            >
+              <option :value="null">Selecionar cliente...</option>
+              <option v-for="cliente in newChat.options" :key="cliente.id" :value="cliente.id">{{ cliente.label }}</option>
+            </select>
+            <p v-if="!newChat.options.length" class="text-xs text-muted-foreground">
+              Busque um cliente pelo nome para listar as opções.
+            </p>
+          </div>
+
+          <div v-if="instances.length > 1" class="space-y-1">
+            <Label>Instância</Label>
+            <select
+              v-model.number="newChat.instanciaId"
+              class="h-9 w-full rounded-md border bg-background px-3 text-sm"
+            >
+              <option :value="null">Automática (instância conectada)</option>
+              <option v-for="instance in instances" :key="instance.id" :value="instance.id">
+                {{ instance.nome }} · {{ instance.status }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="newChat.open = false">Cancelar</Button>
+          <Button class="text-white" :disabled="newChat.starting || !newChat.clienteId" @click="confirmNewChat">
+            <LoaderCircle v-if="newChat.starting" class="mr-2 h-4 w-4 animate-spin" />
+            <MessageSquarePlus v-else class="mr-2 h-4 w-4" />
+            Iniciar conversa
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
