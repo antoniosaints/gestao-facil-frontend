@@ -22,6 +22,7 @@ import {
   CircleDollarSign,
   CreditCard,
   ExternalLink,
+  Headset,
   LoaderCircle,
   MessageCircle,
   PackagePlus,
@@ -64,6 +65,7 @@ const iconMap = {
   'core-ia': Bot,
   assinaturas: Sparkles,
   whatsapp: MessageCircle,
+  atendimento: Headset,
   'mercado-pago': CreditCard,
   abacatepay: Banknote,
 } as const
@@ -72,6 +74,7 @@ const iconShellClassMap: Record<string, string> = {
   'core-ia': 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/20',
   assinaturas: 'bg-fuchsia-500/15 text-fuchsia-300 ring-1 ring-fuchsia-500/20',
   whatsapp: 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/20',
+  atendimento: 'bg-green-500/15 text-green-300 ring-1 ring-green-500/20',
   'mercado-pago': 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/20',
   abacatepay: 'bg-lime-500/15 text-lime-300 ring-1 ring-lime-500/20',
 }

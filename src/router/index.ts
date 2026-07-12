@@ -278,6 +278,16 @@ const routes: RouteInterface[] = [
     },
   },
   {
+    path: '/atendimento',
+    name: 'atendimento',
+    component: () => import('@/pages/atendimento/AtendimentoPage.vue'),
+    meta: {
+      layout: 'main',
+      permissao: 2,
+      modulo: 'atendimento',
+    },
+  },
+  {
     path: '/arena',
     name: 'arena',
     children: [

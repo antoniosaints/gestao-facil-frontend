@@ -4,10 +4,10 @@
       <div>
         <h1 class="flex items-center gap-2 text-2xl font-bold tracking-tight">
           <MessageCircle class="h-6 w-6 text-primary" :stroke-width="2.5" />
-          Atendimento WhatsApp
+          Instâncias WhatsApp
         </h1>
         <p class="text-sm text-muted-foreground">
-          Central de conversas, instâncias W-API e vínculo com clientes da conta atual.
+          Conexão e gerenciamento das instâncias W-API da conta. As conversas ficam no app Atendimento.
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
@@ -31,165 +31,6 @@
     </div>
 
     <Tabs v-model="tab" class="w-full">
-      <TabsContent value="inbox" class="mt-4">
-        <div class="grid min-h-[680px] overflow-hidden rounded-xl border bg-background lg:grid-cols-[360px_1fr]">
-          <aside class="border-r bg-body/40">
-            <div class="space-y-3 border-b p-3">
-              <div class="relative">
-                <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input v-model="conversationSearch" class="pl-9" placeholder="Buscar por nome, telefone ou cliente" @keyup.enter="loadConversations" />
-              </div>
-              <div class="grid grid-cols-3 gap-2 text-xs">
-                <Button :variant="statusFilter === undefined ? 'default' : 'outline'" size="sm" @click="setStatusFilter(undefined)">Todas</Button>
-                <Button :variant="statusFilter === 'ABERTA' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('ABERTA')">Abertas</Button>
-                <Button :variant="statusFilter === 'FINALIZADA' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('FINALIZADA')">Finalizadas</Button>
-              </div>
-            </div>
-
-            <ScrollArea class="h-[600px]">
-              <button
-                v-for="conversation in conversations"
-                :key="conversation.id"
-                type="button"
-                class="flex w-full gap-3 border-b p-3 text-left transition hover:bg-muted/60"
-                :class="selectedConversation?.id === conversation.id ? 'bg-muted' : ''"
-                @click="openConversation(conversation)"
-              >
-                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                  {{ initials(conversationLabel(conversation)) }}
-                </div>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center justify-between gap-2">
-                    <p class="truncate text-sm font-semibold">{{ conversationLabel(conversation) }}</p>
-                    <span class="whitespace-nowrap text-[11px] text-muted-foreground">{{ formatTime(conversation.ultimaInteracaoEm) }}</span>
-                  </div>
-                  <p class="truncate text-xs text-muted-foreground">{{ conversation.telefone }}</p>
-                  <p class="mt-1 line-clamp-1 text-xs">{{ conversation.ultimaMensagem || 'Sem mensagens ainda' }}</p>
-                  <div class="mt-2 flex items-center gap-2">
-                    <Badge variant="outline">{{ conversation.status }}</Badge>
-                    <Badge v-if="conversation.naoLidas" class="bg-green-600 text-white">{{ conversation.naoLidas }}</Badge>
-                    <span class="truncate text-[11px] text-muted-foreground">{{ conversation.Instancia?.nome }}</span>
-                  </div>
-                </div>
-              </button>
-              <div v-if="!conversations.length" class="p-8 text-center text-sm text-muted-foreground">
-                Nenhuma conversa encontrada.
-              </div>
-            </ScrollArea>
-          </aside>
-
-          <section v-if="selectedConversation" class="flex min-w-0 flex-col">
-            <header class="flex flex-col gap-3 border-b p-4 md:flex-row md:items-center md:justify-between">
-              <div class="min-w-0">
-                <h2 class="truncate text-lg font-semibold">{{ conversationLabel(selectedConversation) }}</h2>
-                <p class="text-sm text-muted-foreground">
-                  {{ selectedConversation.telefone }} · {{ selectedConversation.Instancia?.nome || 'Instância' }}
-                </p>
-                <p v-if="selectedConversation.Cliente" class="text-xs text-green-600">
-                  Cliente vinculado: {{ selectedConversation.Cliente.nome }}
-                </p>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" @click="markRead">
-                  <CheckCheck class="mr-2 h-4 w-4" />
-                  Marcar lida
-                </Button>
-                <Button v-if="selectedConversation.status !== 'FINALIZADA'" variant="outline" size="sm" @click="updateConversation({ status: 'FINALIZADA' })">
-                  Finalizar
-                </Button>
-                <Button v-else variant="outline" size="sm" @click="updateConversation({ status: 'ABERTA' })">
-                  Reabrir
-                </Button>
-              </div>
-            </header>
-
-            <div class="grid gap-4 border-b p-4 md:grid-cols-3">
-              <div class="space-y-1">
-                <Label>Cliente ERP</Label>
-                <div class="flex gap-2">
-                  <Input v-model="customerSearch" placeholder="Buscar cliente" @keyup.enter="loadCustomers" />
-                  <Button variant="outline" @click="loadCustomers"><Search class="h-4 w-4" /></Button>
-                </div>
-                <select v-if="customerOptions.length" class="h-9 w-full rounded-md border bg-background px-3 text-sm" @change="linkCustomer(($event.target as HTMLSelectElement).value)">
-                  <option value="">Selecionar cliente...</option>
-                  <option v-for="customer in customerOptions" :key="customer.id" :value="customer.id">{{ customer.label }}</option>
-                </select>
-              </div>
-              <div class="space-y-1">
-                <Label>Setor/Fila</Label>
-                <Input v-model="conversationForm.setor" placeholder="Ex.: Suporte" @change="updateConversation({ setor: conversationForm.setor || null })" />
-              </div>
-              <div class="space-y-1">
-                <Label>Status</Label>
-                <select v-model="conversationForm.status" class="h-9 w-full rounded-md border bg-background px-3 text-sm" @change="updateConversation({ status: conversationForm.status })">
-                  <option value="ABERTA">Aberta</option>
-                  <option value="PENDENTE">Pendente</option>
-                  <option value="FINALIZADA">Finalizada</option>
-                </select>
-              </div>
-            </div>
-
-            <ScrollArea ref="messagesScroll" class="flex-1 bg-muted/20 p-4">
-              <div class="space-y-3">
-                <div
-                  v-for="message in messages"
-                  :key="message.id"
-                  class="flex"
-                  :class="message.direcao === 'SAIDA' ? 'justify-end' : 'justify-start'"
-                >
-                  <div
-                    class="max-w-[78%] rounded-2xl px-4 py-2 shadow-sm"
-                    :class="message.direcao === 'SAIDA' ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm border bg-background'"
-                  >
-                    <div v-if="message.mediaUrl" class="mb-2 rounded-lg border bg-black/5 p-2 text-xs">
-                      <a :href="message.mediaUrl" target="_blank" rel="noreferrer" class="underline">
-                        {{ mediaLabel(message) }}
-                      </a>
-                    </div>
-                    <p class="whitespace-pre-wrap text-sm">{{ message.conteudo || mediaLabel(message) }}</p>
-                    <div class="mt-1 flex justify-end gap-1 text-[10px] opacity-70">
-                      <span>{{ formatTime(message.createdAt) }}</span>
-                      <span v-if="message.direcao === 'SAIDA'">· {{ message.statusEnvio }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-
-            <form class="border-t bg-background p-3" @submit.prevent="sendText">
-              <div class="mb-2 grid gap-2 md:grid-cols-[160px_1fr]">
-                <select v-model="messageForm.tipo" class="h-9 rounded-md border bg-background px-3 text-sm">
-                  <option value="text">Texto</option>
-                  <option value="image">Imagem</option>
-                  <option value="audio">Áudio</option>
-                  <option value="video">Vídeo</option>
-                  <option value="document">Documento</option>
-                </select>
-                <Input v-if="messageForm.tipo !== 'text'" v-model="messageForm.mediaUrl" placeholder="URL pública da mídia" />
-              </div>
-              <div class="flex items-end gap-2">
-                <Textarea v-model="messageForm.conteudo" class="min-h-[48px]" :placeholder="messageForm.tipo === 'text' ? 'Digite a resposta...' : 'Legenda opcional...'" />
-                <Button type="submit" class="text-white" :disabled="sending || !canSendMessage">
-                  <LoaderIcon v-if="sending" class="mr-2 h-4 w-4 animate-spin" />
-                  <Send v-else class="mr-2 h-4 w-4" />
-                  Enviar
-                </Button>
-              </div>
-              <p v-if="selectedConversation.Instancia?.status !== 'CONECTADA'" class="mt-2 text-xs text-amber-600">
-                A instância está {{ selectedConversation.Instancia?.status?.toLowerCase() }}; o envio fica bloqueado até reconectar.
-              </p>
-            </form>
-          </section>
-
-          <section v-else class="flex items-center justify-center p-8 text-center text-muted-foreground">
-            <div>
-              <Inbox class="mx-auto mb-3 h-10 w-10" />
-              <p>Selecione uma conversa para iniciar o atendimento.</p>
-            </div>
-          </section>
-        </div>
-      </TabsContent>
-
       <TabsContent value="instances" class="mt-4 space-y-4">
         <div class="grid gap-3 xl:grid-cols-3">
           <Card v-for="instance in instances" :key="instance.id" class="overflow-hidden">
@@ -668,16 +509,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import {
   AlertTriangle,
-  CheckCheck,
   CheckCircle2,
   Copy,
   CreditCard,
   ExternalLink,
-  Inbox,
   Landmark,
   LoaderIcon,
   MessageCircle,
@@ -686,8 +525,6 @@ import {
   QrCode,
   RefreshCw,
   RotateCw,
-  Search,
-  Send,
   Smartphone,
   Terminal,
   Trash2,
@@ -702,19 +539,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { useSocketEvent } from '@/composables/useSocketEvent'
-import { ClienteRepository } from '@/repositories/cliente-repository'
 import {
   WhatsAppRepository,
-  type WhatsAppConversation,
-  type WhatsAppConversationStatus,
   type WhatsAppInstance,
   type WhatsAppInstancePayment,
-  type WhatsAppMessage,
   type WhatsAppWebhookCallback,
   type WhatsAppWebhookSyncResult,
   type WhatsAppWebhookUrls,
@@ -725,18 +557,10 @@ const tab = ref<'instances'>('instances')
 const loading = ref(false)
 const savingInstance = ref(false)
 const savingInstanceEdit = ref(false)
-const sending = ref(false)
 const creatingPayment = ref(false)
 const removingInstance = ref(false)
 
 const instances = ref<WhatsAppInstance[]>([])
-const conversations = ref<WhatsAppConversation[]>([])
-const messages = ref<WhatsAppMessage[]>([])
-const selectedConversation = ref<WhatsAppConversation | null>(null)
-const conversationSearch = ref('')
-const statusFilter = ref<WhatsAppConversationStatus | undefined>(undefined)
-const customerSearch = ref('')
-const customerOptions = ref<Array<{ id: number; label: string }>>([])
 const instanceActionResult = reactive<Record<number, string>>({})
 const instanceActionSummary = reactive<Record<number, string>>({})
 const instanceActionDetail = reactive<Record<number, string>>({})
@@ -757,12 +581,6 @@ const webhookUrls = reactive<WhatsAppWebhookUrls>({})
 
 const instanceForm = reactive({ nome: '', instanceId: '', token: '' })
 const editInstanceForm = reactive({ nome: '', instanceId: '', token: '' })
-const conversationForm = reactive<{ status: WhatsAppConversationStatus; setor: string }>({ status: 'ABERTA', setor: '' })
-const messageForm = reactive<{ tipo: 'text' | 'image' | 'audio' | 'video' | 'document'; conteudo: string; mediaUrl: string }>({
-  tipo: 'text',
-  conteudo: '',
-  mediaUrl: '',
-})
 
 const connectedInstances = computed(() => instances.value.filter((instance) => instance.status === 'CONECTADA').length)
 const managedInstanceId = ref<number | null>(null)
@@ -778,30 +596,6 @@ const paymentResult = ref<WhatsAppInstancePayment | null>(null)
 const deletingPaymentId = ref<number | null>(null)
 const deleteModalOpen = ref(false)
 const deleteInstanceTarget = ref<WhatsAppInstance | null>(null)
-const canSendMessage = computed(() => {
-  if (!selectedConversation.value) return false
-  if (selectedConversation.value.Instancia?.status !== 'CONECTADA') return false
-  if (messageForm.tipo === 'text') return Boolean(messageForm.conteudo.trim())
-  return Boolean(messageForm.mediaUrl.trim())
-})
-
-function setStatusFilter(status?: WhatsAppConversationStatus) {
-  statusFilter.value = status
-  loadConversations()
-}
-
-function conversationLabel(conversation: WhatsAppConversation) {
-  return conversation.Cliente?.nome || conversation.Contato?.nome || conversation.telefone
-}
-
-function initials(value: string) {
-  return value
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('') || 'W'
-}
 
 function formatTime(value?: string | null) {
   if (!value) return ''
@@ -811,16 +605,6 @@ function formatTime(value?: string | null) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
-}
-
-function mediaLabel(message: WhatsAppMessage) {
-  const labels: Record<string, string> = {
-    IMAGEM: 'Imagem',
-    AUDIO: 'Áudio',
-    VIDEO: 'Vídeo',
-    DOCUMENTO: message.fileName || 'Documento',
-  }
-  return labels[message.tipo] || 'Mídia'
 }
 
 function paymentMethodLabel(method?: string | null) {
@@ -895,25 +679,13 @@ async function loadInstances() {
   }
 }
 
-async function loadConversations() {
-  const response = await WhatsAppRepository.listConversations({
-    search: conversationSearch.value || undefined,
-    status: statusFilter.value,
-    take: 80,
-  })
-  conversations.value = response.items
-  if (selectedConversation.value) {
-    selectedConversation.value = conversations.value.find((item) => item.id === selectedConversation.value?.id) || selectedConversation.value
-  }
-}
-
 async function refreshAll() {
   try {
     loading.value = true
     await loadInstances()
   } catch (error) {
     console.error(error)
-    toast.error('Erro ao atualizar atendimento WhatsApp.')
+    toast.error('Erro ao atualizar as instâncias WhatsApp.')
   } finally {
     loading.value = false
   }
@@ -1027,22 +799,6 @@ async function deletePendingPayment(instance: WhatsAppInstance, payment: WhatsAp
   } finally {
     deletingPaymentId.value = null
   }
-}
-
-async function openConversation(conversation: WhatsAppConversation) {
-  selectedConversation.value = conversation
-  conversationForm.status = conversation.status
-  conversationForm.setor = conversation.setor || ''
-  customerSearch.value = conversation.Cliente?.nome || ''
-  await loadMessages()
-  if (conversation.naoLidas) await markRead()
-}
-
-async function loadMessages() {
-  if (!selectedConversation.value) return
-  const response = await WhatsAppRepository.listMessages(selectedConversation.value.id, { take: 80 })
-  messages.value = response.items
-  await nextTick()
 }
 
 async function saveInstance() {
@@ -1309,84 +1065,6 @@ async function runInstanceAction(instance: WhatsAppInstance, action: InstanceAct
     instanceActionLoading[key] = false
   }
 }
-
-async function sendText() {
-  if (!selectedConversation.value || !canSendMessage.value) return
-  try {
-    sending.value = true
-    await WhatsAppRepository.sendMessage(selectedConversation.value.id, {
-      tipo: messageForm.tipo,
-      conteudo: messageForm.conteudo || undefined,
-      caption: messageForm.tipo !== 'text' ? messageForm.conteudo || undefined : undefined,
-      mediaUrl: messageForm.tipo !== 'text' ? messageForm.mediaUrl : undefined,
-    })
-    Object.assign(messageForm, { conteudo: '', mediaUrl: '' })
-    await Promise.all([loadMessages(), loadConversations()])
-  } catch (error: any) {
-    console.error(error)
-    toast.error(error?.response?.data?.message || 'Erro ao enviar mensagem.')
-  } finally {
-    sending.value = false
-  }
-}
-
-async function markRead() {
-  if (!selectedConversation.value) return
-  try {
-    const updated = await WhatsAppRepository.markAsRead(selectedConversation.value.id)
-    selectedConversation.value = { ...selectedConversation.value, ...updated }
-    await loadConversations()
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-async function updateConversation(payload: Partial<{ status: WhatsAppConversationStatus; setor: string | null; clienteId: number | null }>) {
-  if (!selectedConversation.value) return
-  try {
-    const updated = await WhatsAppRepository.updateConversation(selectedConversation.value.id, payload)
-    selectedConversation.value = updated
-    conversationForm.status = updated.status
-    conversationForm.setor = updated.setor || ''
-    await loadConversations()
-  } catch (error: any) {
-    console.error(error)
-    toast.error(error?.response?.data?.message || 'Erro ao atualizar conversa.')
-  }
-}
-
-async function loadCustomers() {
-  try {
-    customerOptions.value = await ClienteRepository.select2(customerSearch.value)
-  } catch (error) {
-    console.error(error)
-    customerOptions.value = []
-  }
-}
-
-async function linkCustomer(value: string) {
-  const id = Number(value)
-  if (!id) return
-  await updateConversation({ clienteId: id })
-  toast.success('Cliente vinculado à conversa.')
-}
-
-useSocketEvent<WhatsAppConversation>('whatsapp:conversa:updated', async (conversation) => {
-  const index = conversations.value.findIndex((item) => item.id === conversation.id)
-  if (index >= 0) conversations.value[index] = { ...conversations.value[index], ...conversation }
-  else await loadConversations()
-
-  if (selectedConversation.value?.id === conversation.id) {
-    selectedConversation.value = { ...selectedConversation.value, ...conversation }
-  }
-})
-
-useSocketEvent<WhatsAppMessage>('whatsapp:mensagem:created', async (message) => {
-  if (selectedConversation.value?.id !== message.conversaId) return
-  const index = messages.value.findIndex((item) => item.id === message.id)
-  if (index >= 0) messages.value[index] = message
-  else messages.value.push(message)
-})
 
 useSocketEvent<WhatsAppInstance>('whatsapp:instancia:updated', async () => {
   await loadInstances()

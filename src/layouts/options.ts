@@ -17,6 +17,7 @@ import {
   FileDigit,
   GitBranchPlus,
   HandCoins,
+  Headset,
   Layers3,
   MapPinned,
   MessageCircle,
@@ -48,7 +49,8 @@ export const MAIN_MENU_VISIBILITY_OPTIONS = [
   { key: 'clientes', nome: 'Clientes', descricao: 'Clientes e fornecedores.' },
   { key: 'assinaturas', nome: 'Assinaturas', descricao: 'Módulo adicional de assinaturas.' },
   { key: 'core-ia', nome: 'Core IA', descricao: 'Módulo adicional de inteligência artificial.' },
-  { key: 'whatsapp', nome: 'WhatsApp', descricao: 'Módulo adicional de atendimento.' },
+  { key: 'whatsapp', nome: 'WhatsApp', descricao: 'Módulo adicional de instâncias e conexão.' },
+  { key: 'atendimento', nome: 'Atendimento', descricao: 'Central de atendimento e chat via WhatsApp.' },
   { key: 'usuarios', nome: 'Usuários', descricao: 'Administração de usuários.' },
   { key: 'configuracoes', nome: 'Configurações', descricao: 'Preferências da empresa e do sistema.' },
   { key: 'changelog', nome: 'Atualizações', descricao: 'Histórico de novidades do sistema.' },
@@ -143,10 +145,12 @@ export const sidebarMenuOptions = (
   const hasAssinaturasApp = Boolean(appModules.assinaturas)
   const hasCoreIaApp = Boolean(appModules['core-ia'])
   const hasWhatsappApp = Boolean(appModules.whatsapp)
+  const hasAtendimentoApp = Boolean(appModules.atendimento)
   const hasVisibleAppsSection =
     (permissions.financeiro.visualizar && hasAssinaturasApp) ||
     (permissions.vendas.visualizar && hasCoreIaApp) ||
-    (permissions.configuracoes.visualizar && hasWhatsappApp)
+    (permissions.configuracoes.visualizar && hasWhatsappApp) ||
+    (permissions.configuracoes.visualizar && hasAtendimentoApp)
 
   return [
     {
@@ -429,6 +433,14 @@ export const sidebarMenuOptions = (
       show: permissions.vendas.visualizar && hasCoreIaApp,
       color: 'purple',
       link: '/chat/ia',
+    },
+    {
+      key: 'atendimento',
+      nome: 'Atendimento',
+      icone: Headset,
+      show: permissions.configuracoes.visualizar && hasAtendimentoApp,
+      color: 'green',
+      link: '/atendimento',
     },
     {
       key: 'whatsapp',
