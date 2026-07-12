@@ -41,6 +41,8 @@ const sending = ref(false)
 const showDetails = ref(false)
 
 const instances = ref<WhatsAppInstance[]>([])
+// Caixa de atendimento ativa: null = todas as instâncias; caso contrário, filtra por instância.
+const activeInstanceId = ref<number | null>(null)
 const newChat = reactive<{
   open: boolean
   search: string
@@ -76,6 +78,26 @@ const canSendMessage = computed(() => {
 })
 
 const totalNaoLidas = computed(() => conversations.value.reduce((total, item) => total + (item.naoLidas || 0), 0))
+const activeInstance = computed(() => instances.value.find((item) => item.id === activeInstanceId.value) || null)
+const showInboxSwitcher = computed(() => instances.value.length > 1)
+
+function instanceStatusDotClass(status?: string | null) {
+  if (status === 'CONECTADA') return 'bg-green-500'
+  if (status === 'CONECTANDO' || status === 'PENDENTE') return 'bg-amber-500'
+  return 'bg-slate-400'
+}
+
+function conversationStatusDotClass(status: WhatsAppConversationStatus) {
+  if (status === 'ABERTA') return 'bg-green-500'
+  if (status === 'PENDENTE') return 'bg-amber-500'
+  return 'bg-slate-400'
+}
+
+function setActiveInstance(id: number | null) {
+  if (activeInstanceId.value === id) return
+  activeInstanceId.value = id
+  loadConversations()
+}
 
 function conversationLabel(conversation: WhatsAppConversation) {
   return conversation.Cliente?.nome || conversation.Contato?.nome || conversation.telefone
@@ -112,12 +134,6 @@ function mediaLabel(message: WhatsAppMessage) {
   return labels[message.tipo] || 'Mídia'
 }
 
-function statusBadgeClass(status: WhatsAppConversationStatus) {
-  if (status === 'ABERTA') return 'border-green-500/30 bg-green-500/10 text-green-600'
-  if (status === 'PENDENTE') return 'border-amber-500/30 bg-amber-500/10 text-amber-600'
-  return 'border-slate-500/30 bg-slate-500/10 text-slate-500'
-}
-
 async function scrollToBottom() {
   await nextTick()
   const root: HTMLElement | null = messagesScroll.value?.$el ?? messagesScroll.value ?? null
@@ -136,6 +152,7 @@ async function loadConversations() {
     const response = await WhatsAppRepository.listConversations({
       search: conversationSearch.value || undefined,
       status: statusFilter.value,
+      instanciaId: activeInstanceId.value || undefined,
       take: 80,
     })
     conversations.value = response.items
@@ -177,7 +194,8 @@ function openNewChat() {
   newChat.search = ''
   newChat.options = []
   newChat.clienteId = null
-  newChat.instanciaId = null
+  // Já inicia na caixa (instância) ativa quando houver uma selecionada.
+  newChat.instanciaId = activeInstanceId.value
   if (!instances.value.length) loadInstances()
 }
 
@@ -319,8 +337,12 @@ async function linkCustomer(value: string) {
 
 useSocketEvent<WhatsAppConversation>('whatsapp:conversa:updated', async (conversation) => {
   const index = conversations.value.findIndex((item) => item.id === conversation.id)
-  if (index >= 0) conversations.value[index] = { ...conversations.value[index], ...conversation }
-  else await loadConversations()
+  if (index >= 0) {
+    conversations.value[index] = { ...conversations.value[index], ...conversation }
+  } else if (!activeInstanceId.value || conversation.instanciaId === activeInstanceId.value) {
+    // Só recarrega quando a conversa pertence à caixa (instância) atualmente aberta.
+    await loadConversations()
+  }
 
   if (selectedConversation.value?.id === conversation.id) {
     selectedConversation.value = { ...selectedConversation.value, ...conversation }
@@ -370,12 +392,37 @@ onMounted(async () => {
               Nova
             </Button>
           </div>
+          <!-- Caixas de atendimento (uma por instância) -->
+          <div v-if="showInboxSwitcher" class="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+            <button
+              type="button"
+              class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs transition"
+              :class="activeInstanceId === null ? 'border-primary bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'"
+              @click="setActiveInstance(null)"
+            >
+              <Inbox class="h-3.5 w-3.5" />
+              Todas
+            </button>
+            <button
+              v-for="instance in instances"
+              :key="instance.id"
+              type="button"
+              class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs transition"
+              :class="activeInstanceId === instance.id ? 'border-primary bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'"
+              :title="instance.nome"
+              @click="setActiveInstance(instance.id)"
+            >
+              <span class="h-2 w-2 rounded-full" :class="instanceStatusDotClass(instance.status)"></span>
+              <span class="max-w-[120px] truncate">{{ instance.nome }}</span>
+            </button>
+          </div>
+
           <div class="relative">
             <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               v-model="conversationSearch"
               class="pl-9"
-              placeholder="Buscar por nome, telefone ou cliente"
+              :placeholder="activeInstance ? `Buscar em ${activeInstance.nome}` : 'Buscar por nome, telefone ou cliente'"
               @keyup.enter="loadConversations"
             />
           </div>
@@ -391,24 +438,34 @@ onMounted(async () => {
             v-for="conversation in conversations"
             :key="conversation.id"
             type="button"
-            class="flex w-full gap-3 border-b p-3 text-left transition hover:bg-muted/60"
+            class="flex w-full items-center gap-2.5 border-b px-3 py-2 text-left transition hover:bg-muted/60"
             :class="selectedConversation?.id === conversation.id ? 'bg-muted' : ''"
             @click="openConversation(conversation)"
           >
-            <div class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
+            <div class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
               {{ initials(conversationLabel(conversation)) }}
+              <span
+                class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background"
+                :class="conversationStatusDotClass(conversation.status)"
+                :title="conversation.status"
+              ></span>
             </div>
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between gap-2">
-                <p class="truncate text-sm font-semibold">{{ conversationLabel(conversation) }}</p>
-                <span class="whitespace-nowrap text-[11px] text-muted-foreground">{{ formatTime(conversation.ultimaInteracaoEm) }}</span>
+                <p class="truncate text-sm font-medium">{{ conversationLabel(conversation) }}</p>
+                <span class="whitespace-nowrap text-[10px] text-muted-foreground">{{ formatTime(conversation.ultimaInteracaoEm) }}</span>
               </div>
-              <p class="truncate text-xs text-muted-foreground">{{ conversation.telefone }}</p>
-              <p class="mt-1 line-clamp-1 text-xs">{{ conversation.ultimaMensagem || 'Sem mensagens ainda' }}</p>
-              <div class="mt-2 flex items-center gap-2">
-                <Badge variant="outline" class="text-[10px]" :class="statusBadgeClass(conversation.status)">{{ conversation.status }}</Badge>
-                <Badge v-if="conversation.naoLidas" class="bg-green-600 text-white">{{ conversation.naoLidas }}</Badge>
-                <span class="truncate text-[11px] text-muted-foreground">{{ conversation.Instancia?.nome }}</span>
+              <div class="flex items-center justify-between gap-2">
+                <p class="truncate text-xs text-muted-foreground">
+                  <span v-if="activeInstanceId === null && showInboxSwitcher" class="text-primary/70">{{ conversation.Instancia?.nome }} · </span>
+                  {{ conversation.ultimaMensagem || conversation.telefone }}
+                </p>
+                <Badge
+                  v-if="conversation.naoLidas"
+                  class="h-4 min-w-[16px] shrink-0 justify-center rounded-full bg-green-600 px-1 text-[10px] text-white"
+                >
+                  {{ conversation.naoLidas }}
+                </Badge>
               </div>
             </div>
           </button>

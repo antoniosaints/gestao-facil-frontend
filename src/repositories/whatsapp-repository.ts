@@ -189,7 +189,7 @@ export class WhatsAppRepository {
     return data.data as WhatsAppConversation
   }
 
-  static async listConversations(params: { search?: string; status?: WhatsAppConversationStatus; take?: number; cursor?: number } = {}) {
+  static async listConversations(params: { search?: string; status?: WhatsAppConversationStatus; instanciaId?: number; take?: number; cursor?: number } = {}) {
     const { data } = await http.get('/whatsapp/conversas', { params })
     return data.data as PaginatedResponse<WhatsAppConversation>
   }
