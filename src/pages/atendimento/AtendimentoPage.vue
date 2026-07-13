@@ -219,6 +219,23 @@ function initials(value: string) {
   )
 }
 
+// Fotos de perfil do WhatsApp (pps.whatsapp.net) expiram e passam a retornar erro; quando
+// isso acontece caímos de volta nas iniciais em vez de mostrar uma imagem quebrada.
+const brokenPhotos = ref<Set<string>>(new Set())
+
+function conversationPhoto(conversation: WhatsAppConversation) {
+  const foto = conversation.Contato?.foto
+  if (!foto || brokenPhotos.value.has(foto)) return null
+  return foto
+}
+
+function handlePhotoError(foto?: string | null) {
+  if (!foto) return
+  const next = new Set(brokenPhotos.value)
+  next.add(foto)
+  brokenPhotos.value = next
+}
+
 function formatTime(value?: string | null) {
   if (!value) return ''
   return new Intl.DateTimeFormat('pt-BR', {
@@ -568,8 +585,21 @@ onMounted(async () => {
             :class="selectedConversation?.id === conversation.id ? 'bg-muted' : ''"
             @click="openConversation(conversation)"
           >
-            <div class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-              {{ initials(conversationLabel(conversation)) }}
+            <div class="relative h-9 w-9 shrink-0">
+              <img
+                v-if="conversationPhoto(conversation)"
+                :src="conversationPhoto(conversation) as string"
+                :alt="conversationLabel(conversation)"
+                class="h-9 w-9 rounded-full object-cover"
+                referrerpolicy="no-referrer"
+                @error="handlePhotoError(conversation.Contato?.foto)"
+              />
+              <div
+                v-else
+                class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
+              >
+                {{ initials(conversationLabel(conversation)) }}
+              </div>
               <span
                 class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background"
                 :class="conversationStatusDotClass(conversation.status)"
@@ -611,7 +641,18 @@ onMounted(async () => {
           <Button variant="ghost" size="icon" class="md:hidden" @click="selectedConversation = null">
             <ArrowLeft class="h-5 w-5" />
           </Button>
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
+          <img
+            v-if="conversationPhoto(selectedConversation)"
+            :src="conversationPhoto(selectedConversation) as string"
+            :alt="conversationLabel(selectedConversation)"
+            class="h-10 w-10 shrink-0 rounded-full object-cover"
+            referrerpolicy="no-referrer"
+            @error="handlePhotoError(selectedConversation.Contato?.foto)"
+          />
+          <div
+            v-else
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary"
+          >
             {{ initials(conversationLabel(selectedConversation)) }}
           </div>
           <div class="min-w-0 flex-1">
