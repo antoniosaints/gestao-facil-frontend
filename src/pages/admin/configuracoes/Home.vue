@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useToast } from 'vue-toastification'
-import { CheckCircle2, Cog, LoaderCircle, ShieldAlert } from 'lucide-vue-next'
+import { Boxes, CheckCircle2, Cog, CreditCard, Gift, LoaderCircle, ShieldAlert } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
 import {
   ContaRepository,
   type AdminIndicacaoConfig,
@@ -165,14 +164,17 @@ onMounted(() => {
       </p>
     </div>
 
-    <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
-      <CardHeader>
-        <CardTitle class="text-base font-semibold">Gateway padrão da mensalidade</CardTitle>
+    <Card class="border-border/70 bg-card/20 shadow-sm dark:bg-card">
+      <CardHeader class="pb-4">
+        <CardTitle class="flex items-center gap-2 text-base font-semibold">
+          <CreditCard class="h-4 w-4 text-primary" />
+          Gateway padrão da mensalidade
+        </CardTitle>
         <CardDescription>
-          Esta configuração sincroniza o campo <code>Contas.gateway</code> das contas existentes e também define o gateway padrão dos próximos cadastros.
+          Ao salvar, sincroniza <code>Contas.gateway</code> de todas as contas e define o padrão dos próximos cadastros.
         </CardDescription>
       </CardHeader>
-      <CardContent class="space-y-6">
+      <CardContent class="space-y-4">
         <div class="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
           <div class="space-y-2">
             <Label for="gateway-plataforma">Gateway</Label>
@@ -185,49 +187,42 @@ onMounted(() => {
                 <SelectItem value="abacatepay">AbacatePay</SelectItem>
               </SelectContent>
             </Select>
-            <p class="text-xs text-muted-foreground">
+            <p class="text-xs leading-relaxed text-muted-foreground">
               Mercado Pago mantém o fluxo atual. AbacatePay usa checkout hospedado com PIX e cartão para a renovação do SaaS.
             </p>
           </div>
 
-          <div class="rounded-xl border border-border/70 bg-background/70 p-4">
-            <div class="text-sm font-medium text-foreground">Estado das credenciais</div>
-            <div class="mt-3 space-y-2 text-sm">
+          <div class="rounded-lg border border-border/70 bg-background/70 p-3">
+            <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Estado das credenciais</div>
+            <div class="mt-2 space-y-1.5 text-sm">
               <div class="flex items-center justify-between gap-3">
                 <span>Mercado Pago</span>
-                <span class="flex items-center gap-2" :class="mercadoPagoConfigured ? 'text-green-600' : 'text-amber-600'">
-                  <CheckCircle2 v-if="mercadoPagoConfigured" class="h-4 w-4" />
-                  <ShieldAlert v-else class="h-4 w-4" />
+                <span class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium" :class="mercadoPagoConfigured ? 'bg-green-500/10 text-green-600' : 'bg-amber-500/10 text-amber-600'">
+                  <CheckCircle2 v-if="mercadoPagoConfigured" class="h-3.5 w-3.5" />
+                  <ShieldAlert v-else class="h-3.5 w-3.5" />
                   {{ mercadoPagoConfigured ? 'Configurado' : 'Pendente' }}
                 </span>
               </div>
               <div class="flex items-center justify-between gap-3">
                 <span>AbacatePay</span>
-                <span class="flex items-center gap-2" :class="abacatePayConfigured ? 'text-green-600' : 'text-amber-600'">
-                  <CheckCircle2 v-if="abacatePayConfigured" class="h-4 w-4" />
-                  <ShieldAlert v-else class="h-4 w-4" />
+                <span class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium" :class="abacatePayConfigured ? 'bg-green-500/10 text-green-600' : 'bg-amber-500/10 text-amber-600'">
+                  <CheckCircle2 v-if="abacatePayConfigured" class="h-3.5 w-3.5" />
+                  <ShieldAlert v-else class="h-3.5 w-3.5" />
                   {{ abacatePayConfigured ? 'Configurado' : 'Pendente' }}
                 </span>
               </div>
             </div>
-            <p class="mt-3 text-xs text-muted-foreground">
-              As credenciais da AbacatePay ficam no ambiente do backend. Esta tela não armazena API keys por conta.
+            <p class="mt-2 text-[11px] leading-snug text-muted-foreground">
+              As credenciais da AbacatePay ficam no backend; esta tela não armazena API keys por conta.
             </p>
           </div>
         </div>
-
-        <Separator />
-
-        <div class="rounded-xl border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
-          <p>
-            Ao salvar, o sistema atualiza todas as contas para o gateway selecionado. As próximas cobranças de mensalidade passarão a usar esse valor.
-          </p>
-          <p v-if="updatedAccounts !== null" class="mt-2 text-foreground">
-            Última sincronização: {{ updatedAccounts }} conta(s) afetada(s).
-          </p>
-        </div>
       </CardContent>
-      <CardFooter class="justify-end">
+      <CardFooter class="flex items-center justify-between gap-3 border-t pt-4">
+        <p v-if="updatedAccounts !== null" class="text-xs text-muted-foreground">
+          Última sincronização: <span class="font-medium text-foreground">{{ updatedAccounts }}</span> conta(s) afetada(s).
+        </p>
+        <span v-else class="text-xs text-muted-foreground">Atualiza todas as contas ao salvar.</span>
         <Button class="text-white" :disabled="loading" @click="saveConfig">
           <LoaderCircle v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
           {{ loading ? 'Salvando...' : 'Salvar gateway global' }}
@@ -235,11 +230,14 @@ onMounted(() => {
       </CardFooter>
     </Card>
 
-    <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
-      <CardHeader>
-        <CardTitle class="text-base font-semibold">Preços dos apps (global)</CardTitle>
+    <Card class="border-border/70 bg-card/20 shadow-sm dark:bg-card">
+      <CardHeader class="pb-4">
+        <CardTitle class="flex items-center gap-2 text-base font-semibold">
+          <Boxes class="h-4 w-4 text-primary" />
+          Preços dos apps (global)
+        </CardTitle>
         <CardDescription>
-          Define o valor mensal de cada app. Ao salvar, o novo preço é aplicado a todas as contas que usam o app e a mensalidade é recalculada.
+          Define o valor mensal de cada app. Ao salvar, o preço é aplicado a todas as contas que usam o app e a mensalidade é recalculada.
         </CardDescription>
       </CardHeader>
       <CardContent class="space-y-3">
@@ -250,7 +248,7 @@ onMounted(() => {
           Nenhum app cadastrado.
         </div>
         <div v-else class="grid gap-3 md:grid-cols-2">
-          <div v-for="modulo in modulos" :key="modulo.id" class="rounded-xl border border-border/70 bg-background/70 p-4">
+          <div v-for="modulo in modulos" :key="modulo.id" class="rounded-lg border border-border/70 bg-background p-4">
             <div class="flex items-start justify-between gap-3">
               <div>
                 <div class="text-sm font-medium text-foreground">{{ modulo.nome }}</div>
@@ -281,15 +279,18 @@ onMounted(() => {
       </CardContent>
     </Card>
 
-    <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
-      <CardHeader>
-        <CardTitle class="text-base font-semibold">Programa de indicação</CardTitle>
+    <Card class="border-border/70 bg-card/20 shadow-sm dark:bg-card">
+      <CardHeader class="pb-4">
+        <CardTitle class="flex items-center gap-2 text-base font-semibold">
+          <Gift class="h-4 w-4 text-primary" />
+          Programa de indicação
+        </CardTitle>
         <CardDescription>
           Quando um indicado paga o 1º mês, o indicador ganha a recompensa como crédito que abate da própria mensalidade. O indicado também pode ganhar um bônus no 1º mês.
         </CardDescription>
       </CardHeader>
-      <CardContent class="space-y-5">
-        <div class="flex items-center justify-between rounded-lg border border-border/70 bg-background/70 p-3">
+      <CardContent class="space-y-4">
+        <div class="flex items-center justify-between rounded-lg border border-border/70 bg-background p-3">
           <div>
             <div class="text-sm font-medium text-foreground">Ativar programa de indicação</div>
             <div class="text-xs text-muted-foreground">Desligado, novas indicações não geram recompensa.</div>
@@ -298,7 +299,7 @@ onMounted(() => {
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <div class="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
+          <div class="space-y-3 rounded-lg border border-border/70 bg-background p-4">
             <div class="text-sm font-medium text-foreground">Recompensa do indicador</div>
             <div class="space-y-1">
               <Label class="text-xs">Tipo</Label>
@@ -316,7 +317,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
+          <div class="space-y-3 rounded-lg border border-border/70 bg-background/70 p-4">
             <div class="text-sm font-medium text-foreground">Bônus do indicado (1º mês)</div>
             <div class="space-y-1">
               <Label class="text-xs">Tipo</Label>

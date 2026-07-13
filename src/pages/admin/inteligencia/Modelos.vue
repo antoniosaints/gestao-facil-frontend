@@ -133,7 +133,7 @@ onMounted(load)
     </div>
 
     <div v-else class="overflow-hidden rounded-lg border">
-      <div v-for="modelo in modelos" :key="modelo.id" class="flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
+      <div v-for="modelo in modelos" :key="modelo.id" class="flex items-center gap-3 border-b px-4 py-3 bg-background dark:bg-card last:border-b-0">
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <p class="truncate text-sm font-medium">{{ modelo.nome }}</p>

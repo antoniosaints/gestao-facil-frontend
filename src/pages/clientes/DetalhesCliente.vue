@@ -9,77 +9,97 @@
     </div>
 
     <div v-else class="space-y-6">
-      <Card>
-        <CardHeader class="flex flex-col gap-4 md:flex-row md:items-center">
-          <Avatar class="h-16 w-16 border bg-muted">
-            <AvatarFallback class="text-lg font-bold">{{ initials(stats?.cliente?.nome) }}</AvatarFallback>
-          </Avatar>
-          <div class="flex-1">
-            <CardTitle class="text-2xl font-bold">{{ stats?.cliente?.nome }}</CardTitle>
-            <div class="mt-2 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" class="uppercase">{{ stats?.cliente?.tipo }}</Badge>
-              <Badge
-                variant="outline"
-                class="uppercase"
-                :class="isClienteAtivo ? 'border-emerald-200 text-emerald-700' : 'border-muted-foreground/30 text-muted-foreground'"
-              >
-                {{ clienteStatus }}
-              </Badge>
-              <Badge variant="outline" class="gap-1">
-                <Phone class="h-3.5 w-3.5" />
-                {{ contatoPrincipal || 'Sem telefone' }}
-              </Badge>
+      <!-- Voltar (desktop): link discreto acima do cabeçalho -->
+      <button
+        type="button"
+        class="hidden items-center gap-1 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
+        @click="$router.push({ name: 'clientes-tabela' })"
+      >
+        <ChevronLeft class="h-4 w-4" />
+        Voltar para a lista
+      </button>
+
+      <Card class="overflow-hidden">
+        <!-- Faixa de destaque no topo do cartão -->
+        <div class="h-1.5 bg-gradient-to-r from-primary via-primary/70 to-primary/30"></div>
+        <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div class="flex items-start gap-4">
+            <Avatar class="h-16 w-16 shrink-0 ring-2 ring-primary/20">
+              <AvatarFallback class="bg-primary/10 text-lg font-bold text-primary">{{ initials(stats?.cliente?.nome) }}</AvatarFallback>
+            </Avatar>
+            <div class="min-w-0">
+              <CardTitle class="text-2xl font-bold leading-tight">{{ stats?.cliente?.nome }}</CardTitle>
+              <div class="mt-2 flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" class="uppercase">{{ stats?.cliente?.tipo }}</Badge>
+                <Badge
+                  variant="outline"
+                  class="gap-1 uppercase"
+                  :class="isClienteAtivo ? 'border-emerald-200 text-emerald-700 dark:border-emerald-800' : 'border-muted-foreground/30 text-muted-foreground'"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full" :class="isClienteAtivo ? 'bg-emerald-500' : 'bg-muted-foreground'"></span>
+                  {{ clienteStatus }}
+                </Badge>
+              </div>
+              <div class="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Phone class="h-3.5 w-3.5 shrink-0" />
+                <span class="truncate">{{ contatoPrincipal || 'Sem telefone cadastrado' }}</span>
+              </div>
             </div>
           </div>
-          <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-            <Button type="button" variant="outline" :disabled="clienteActionLoading" @click="editarCliente">
-              <Pencil class="h-4 w-4" />
-              Editar
-            </Button>
-            <Button type="button" variant="outline" :disabled="clienteActionLoading" @click="alternarStatusCliente">
-              <component :is="isClienteAtivo ? PowerOff : Power" class="h-4 w-4" />
-              {{ isClienteAtivo ? 'Desativar' : 'Ativar' }}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              class="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-              :disabled="clienteActionLoading"
-              @click="excluirCliente"
-            >
-              <Trash2 class="h-4 w-4" />
-              Excluir
-            </Button>
+
+          <!-- Ações: CTA primário + secundárias agrupadas num menu para reduzir a poluição visual -->
+          <div class="flex flex-wrap items-center gap-2 sm:justify-end">
             <Button
               v-if="podeIniciarAtendimento"
               type="button"
               variant="outline"
-              class="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+              class="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800 dark:border-green-900 dark:text-green-400"
               @click="iniciarAtendimento"
             >
               <Headset class="h-4 w-4" />
-              Iniciar atendimento
+              Atender
             </Button>
             <Button type="button" class="text-white" @click="openReminderModal()">
               <MessageCircleMore class="h-4 w-4" />
               Enviar lembrete
             </Button>
-            <Button variant="outline" @click="$router.push({ name: 'clientes-tabela' })">
-              Voltar para lista
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button type="button" variant="outline" size="icon" :disabled="clienteActionLoading" title="Mais ações">
+                  <MoreVertical class="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" class="w-48">
+                <DropdownMenuItem @select="editarCliente">
+                  <Pencil class="h-4 w-4" />
+                  Editar cadastro
+                </DropdownMenuItem>
+                <DropdownMenuItem @select="alternarStatusCliente">
+                  <component :is="isClienteAtivo ? PowerOff : Power" class="h-4 w-4" />
+                  {{ isClienteAtivo ? 'Desativar cliente' : 'Ativar cliente' }}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem class="text-red-600 focus:text-red-700" @select="excluirCliente">
+                  <Trash2 class="h-4 w-4" />
+                  Excluir cliente
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
       </Card>
 
-      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card v-for="item in summaryCards" :key="item.title">
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">{{ item.title }}</CardTitle>
-            <component :is="item.icon" class="h-4 w-4" :class="item.iconClass" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold" :class="item.valueClass">{{ item.value }}</div>
-            <p class="text-xs text-muted-foreground">{{ item.description }}</p>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card v-for="item in summaryCards" :key="item.title" class="transition hover:shadow-md">
+          <CardContent class="flex items-start gap-3 p-4">
+            <div class="shrink-0 rounded-xl p-2.5" :class="item.chipClass">
+              <component :is="item.icon" class="h-5 w-5" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-muted-foreground">{{ item.title }}</p>
+              <p class="truncate text-xl font-bold" :class="item.valueClass">{{ item.value }}</p>
+              <p class="mt-0.5 text-xs text-muted-foreground">{{ item.description }}</p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -131,7 +151,7 @@
             <TabsContent value="cobrancas" class="mt-4">
               <TabState :loading="operationalLoading" :empty="!operational.cobrancas.length" empty-label="Nenhuma cobrança vinculada.">
                 <div class="grid gap-3">
-                  <div v-for="cobranca in operational.cobrancas" :key="cobranca.id" class="rounded-md border bg-background p-3">
+                  <div v-for="cobranca in operational.cobrancas" :key="cobranca.id" class="rounded-lg border bg-background p-3 transition hover:border-primary/30 hover:shadow-sm">
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <div class="font-medium">{{ cobranca.Uid || cobranca.idCobranca }}</div>
@@ -159,7 +179,7 @@
             <TabsContent value="lancamentos" class="mt-4">
               <TabState :loading="operationalLoading" :empty="!operational.lancamentos.length" empty-label="Nenhum lançamento vinculado.">
                 <div class="grid gap-3">
-                  <div v-for="lancamento in operational.lancamentos" :key="lancamento.id" class="rounded-md border bg-background p-3">
+                  <div v-for="lancamento in operational.lancamentos" :key="lancamento.id" class="rounded-lg border bg-background p-3 transition hover:border-primary/30 hover:shadow-sm">
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <div class="font-medium">{{ lancamento.descricao }}</div>
@@ -188,7 +208,7 @@
             <TabsContent value="vendas" class="mt-4">
               <TabState :loading="operationalLoading" :empty="!operational.vendas.length" empty-label="Nenhuma venda vinculada.">
                 <div class="grid gap-3">
-                  <div v-for="venda in operational.vendas" :key="venda.id" class="rounded-md border bg-background p-3">
+                  <div v-for="venda in operational.vendas" :key="venda.id" class="rounded-lg border bg-background p-3 transition hover:border-primary/30 hover:shadow-sm">
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <div class="font-medium">{{ venda.Uid }}</div>
@@ -213,7 +233,7 @@
             <TabsContent value="ordens" class="mt-4">
               <TabState :loading="operationalLoading" :empty="!operational.ordens.length" empty-label="Nenhuma OS vinculada.">
                 <div class="grid gap-3">
-                  <div v-for="ordem in operational.ordens" :key="ordem.id" class="rounded-md border bg-background p-3">
+                  <div v-for="ordem in operational.ordens" :key="ordem.id" class="rounded-lg border bg-background p-3 transition hover:border-primary/30 hover:shadow-sm">
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <div class="font-medium">{{ ordem.Uid }}</div>
@@ -373,6 +393,13 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import ModalView from '@/components/formulario/ModalView.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { formatCurrencyBR as formatCurrency, formatDateToPtBR } from '@/utils/formatters'
@@ -383,6 +410,7 @@ import {
   Filter,
   Headset,
   MessageCircleMore,
+  MoreVertical,
   Phone,
   Pencil,
   Power,
@@ -503,7 +531,7 @@ const summaryCards = computed(() => [
     value: formatCurrency(stats.value?.cliente?.tipo === 'FORNECEDOR' ? stats.value?.compras?.total || 0 : stats.value?.vendas?.total || 0),
     description: `${stats.value?.cliente?.tipo === 'FORNECEDOR' ? stats.value?.compras?.quantidade || 0 : stats.value?.vendas?.quantidade || 0} operações registradas`,
     icon: ShoppingCartIcon,
-    iconClass: 'text-muted-foreground',
+    chipClass: 'bg-primary/10 text-primary',
     valueClass: '',
   },
   {
@@ -511,7 +539,7 @@ const summaryCards = computed(() => [
     value: formatCurrency(stats.value?.vendas?.lucroEstimado || 0),
     description: 'Baseado no custo de estoque',
     icon: TrendingUpIcon,
-    iconClass: 'text-emerald-500',
+    chipClass: 'bg-emerald-500/10 text-emerald-600',
     valueClass: 'text-emerald-600',
   },
   {
@@ -519,16 +547,16 @@ const summaryCards = computed(() => [
     value: formatCurrency(stats.value?.os?.total || 0),
     description: `${stats.value?.os?.quantidade || 0} serviços finalizados`,
     icon: WrenchIcon,
-    iconClass: 'text-muted-foreground',
+    chipClass: 'bg-blue-500/10 text-blue-600',
     valueClass: '',
   },
   {
-    title: 'Pendente',
+    title: 'Saldo pendente',
     value: formatCurrency((stats.value?.financeiro?.pendenteReceber || 0) - (stats.value?.financeiro?.pendentePagar || 0)),
     description: `Receber: ${formatCurrency(stats.value?.financeiro?.pendenteReceber || 0)} | Pagar: ${formatCurrency(stats.value?.financeiro?.pendentePagar || 0)}`,
     icon: AlertCircleIcon,
-    iconClass: 'text-yellow-500',
-    valueClass: 'text-yellow-600',
+    chipClass: 'bg-amber-500/10 text-amber-600',
+    valueClass: 'text-amber-600',
   },
 ])
 

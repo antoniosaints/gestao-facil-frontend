@@ -147,7 +147,7 @@ onMounted(load)
     </div>
 
     <div v-else class="grid gap-3 md:grid-cols-2">
-      <div v-for="chave in chaves" :key="chave.id" class="flex flex-col gap-3 rounded-lg border p-4">
+      <div v-for="chave in chaves" :key="chave.id" class="flex flex-col gap-3 rounded-lg border bg-background dark:bg-card p-4">
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
             <div class="flex items-center gap-2">
