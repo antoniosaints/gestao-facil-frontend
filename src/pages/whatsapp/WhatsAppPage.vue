@@ -59,6 +59,9 @@
                     <DropdownMenuItem @click="openEditInstance(instance)">
                       <PencilLine class="mr-2 h-4 w-4" /> Editar
                     </DropdownMenuItem>
+                    <DropdownMenuItem @click="openLogsModal(instance)">
+                      <ScrollText class="mr-2 h-4 w-4" /> Logs de webhook
+                    </DropdownMenuItem>
                     <DropdownMenuItem @click="openPaymentModal(instance)">
                       <CreditCard class="mr-2 h-4 w-4" /> Pagamento
                     </DropdownMenuItem>
@@ -260,6 +263,77 @@
             <Webhook v-else class="mr-2 h-4 w-4" />
             Confirmar e enviar para W-API
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog v-model:open="logsModalOpen">
+      <DialogContent class="flex max-h-[90vh] max-w-2xl flex-col">
+        <DialogHeader>
+          <DialogTitle>Logs de webhook</DialogTitle>
+          <DialogDescription>
+            Eventos recebidos da W-API para {{ logsInstance?.nome || 'a instância' }}. Use para verificar se as mensagens estão chegando.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <select v-model="logsTipo" class="h-9 rounded-md border bg-background px-3 text-sm" @change="loadLogs">
+            <option value="">Todos os eventos</option>
+            <option value="received">Mensagem recebida (received)</option>
+            <option value="delivery">Mensagem enviada (delivery)</option>
+            <option value="status">Status de mensagem</option>
+            <option value="connected">Conectado</option>
+            <option value="disconnected">Desconectado</option>
+            <option value="presence">Presença</option>
+          </select>
+          <Button variant="outline" size="sm" class="h-9" :disabled="logsLoading" @click="loadLogs">
+            <LoaderIcon v-if="logsLoading" class="mr-2 h-4 w-4 animate-spin" />
+            <RefreshCw v-else class="mr-2 h-4 w-4" />
+            Atualizar
+          </Button>
+        </div>
+
+        <div
+          v-if="!logsLoading && logs.length && !logsTipo && logsReceivedCount === 0"
+          class="flex items-start gap-2 rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-400"
+        >
+          <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            Nenhum evento <strong>received</strong> registrado. As mensagens que o cliente envia não estão chegando ao backend:
+            confira em "Webhooks" se a URL do evento <strong>received</strong> na W-API é exatamente a mostrada aqui (com o segredo) e se <code>BASE_URL</code> é público.
+          </span>
+        </div>
+
+        <div class="-mr-2 flex-1 space-y-2 overflow-y-auto pr-2">
+          <div v-for="event in logs" :key="event.id" class="rounded-lg border">
+            <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left" @click="toggleLogPayload(event.id)">
+              <span
+                class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                :class="event.tipo === 'received' ? 'bg-green-500/15 text-green-600' : 'bg-slate-500/15 text-slate-500'"
+              >
+                {{ webhookEventLabel(event.tipo) }}
+              </span>
+              <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">{{ formatTime(event.createdAt) }}</span>
+              <CheckCircle2 v-if="event.processado && !event.erro" class="h-4 w-4 shrink-0 text-green-600" title="Processado" />
+              <AlertTriangle v-else-if="event.erro" class="h-4 w-4 shrink-0 text-red-600" title="Erro no processamento" />
+              <Clock v-else class="h-4 w-4 shrink-0 text-amber-600" title="Pendente" />
+            </button>
+            <div v-if="expandedLogId === event.id" class="border-t p-3">
+              <p v-if="event.erro" class="mb-2 rounded-md bg-red-500/10 px-2 py-1 text-xs text-red-600">Erro: {{ event.erro }}</p>
+              <pre class="max-h-64 overflow-auto rounded-md bg-muted/50 p-2 text-[11px] leading-relaxed">{{ prettyJson(event.payload) }}</pre>
+            </div>
+          </div>
+
+          <div v-if="logsLoading && !logs.length" class="flex items-center justify-center py-8 text-sm text-muted-foreground">
+            <LoaderIcon class="mr-2 h-4 w-4 animate-spin" /> Carregando eventos...
+          </div>
+          <div v-else-if="!logs.length" class="py-8 text-center text-sm text-muted-foreground">
+            Nenhum evento de webhook registrado ainda.
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="logsModalOpen = false">Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -596,6 +670,7 @@ import {
   QrCode,
   RefreshCw,
   RotateCw,
+  ScrollText,
   Smartphone,
   Terminal,
   Trash2,
@@ -627,6 +702,7 @@ import {
   type WhatsAppInstance,
   type WhatsAppInstancePayment,
   type WhatsAppWebhookCallback,
+  type WhatsAppWebhookEvent,
   type WhatsAppWebhookSyncResult,
   type WhatsAppWebhookUrls,
 } from '@/repositories/whatsapp-repository'
@@ -680,6 +756,14 @@ const paymentsModalOpen = ref(false)
 const paymentsModalInstanceId = ref<number | null>(null)
 // Lê a instância viva da lista (para refletir exclusões de pagamento sem fechar o modal).
 const paymentsModalInstance = computed(() => instances.value.find((instance) => instance.id === paymentsModalInstanceId.value) || null)
+
+const logsModalOpen = ref(false)
+const logsInstance = ref<WhatsAppInstance | null>(null)
+const logs = ref<WhatsAppWebhookEvent[]>([])
+const logsLoading = ref(false)
+const logsTipo = ref<string>('')
+const expandedLogId = ref<number | null>(null)
+const logsReceivedCount = computed(() => logs.value.filter((event) => event.tipo === 'received').length)
 
 function formatTime(value?: string | null) {
   if (!value) return ''
@@ -1162,6 +1246,58 @@ async function confirmInstanceAction(instance: WhatsAppInstance, action: 'restar
 function openPaymentsModal(instance: WhatsAppInstance) {
   paymentsModalInstanceId.value = instance.id
   paymentsModalOpen.value = true
+}
+
+async function loadLogs() {
+  if (!logsInstance.value) return
+  try {
+    logsLoading.value = true
+    logs.value = await WhatsAppRepository.listInstanceWebhookEvents(logsInstance.value.id, {
+      take: 50,
+      tipo: logsTipo.value || undefined,
+    })
+  } catch (error) {
+    console.error(error)
+    toast.error('Não foi possível carregar os logs de webhook.')
+    logs.value = []
+  } finally {
+    logsLoading.value = false
+  }
+}
+
+function openLogsModal(instance: WhatsAppInstance) {
+  logsInstance.value = instance
+  logsTipo.value = ''
+  expandedLogId.value = null
+  logs.value = []
+  logsModalOpen.value = true
+  loadLogs()
+}
+
+function toggleLogPayload(id: number) {
+  expandedLogId.value = expandedLogId.value === id ? null : id
+}
+
+function prettyJson(raw?: string | null) {
+  if (!raw) return ''
+  try {
+    return JSON.stringify(JSON.parse(raw), null, 2)
+  } catch {
+    return raw
+  }
+}
+
+function webhookEventLabel(tipo: string) {
+  const labels: Record<string, string> = {
+    received: 'Mensagem recebida',
+    delivery: 'Mensagem enviada',
+    status: 'Status de mensagem',
+    connected: 'Conectado',
+    disconnected: 'Desconectado',
+    presence: 'Presença',
+    generic: 'Genérico',
+  }
+  return labels[tipo] || tipo
 }
 
 async function runInstanceAction(instance: WhatsAppInstance, action: InstanceActionName) {

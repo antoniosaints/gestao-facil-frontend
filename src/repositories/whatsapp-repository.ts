@@ -128,6 +128,17 @@ export interface WhatsAppWebhookConfig {
   success?: boolean
 }
 
+export interface WhatsAppWebhookEvent {
+  id: number
+  tipo: string
+  eventId: string
+  processado: boolean
+  erro?: string | null
+  payload: string
+  createdAt: string
+  processedAt?: string | null
+}
+
 export interface PaginatedResponse<T> {
   items: T[]
   nextCursor?: number | null
@@ -175,6 +186,11 @@ export class WhatsAppRepository {
   static async configureInstanceWebhooks(id: number, webhookUrls?: WhatsAppWebhookUrls) {
     const { data } = await http.post(`/whatsapp/instances/${id}/webhooks`, { webhookUrls })
     return data.data as WhatsAppWebhookConfig
+  }
+
+  static async listInstanceWebhookEvents(id: number, params: { take?: number; tipo?: string } = {}) {
+    const { data } = await http.get(`/whatsapp/instances/${id}/eventos`, { params })
+    return data.data as WhatsAppWebhookEvent[]
   }
 
   static async instanceAction(id: number, action: 'qrCode' | 'pairingCode' | 'restart' | 'disconnect' | 'status' | 'device' | 'setupWebhooks', payload?: Record<string, unknown>) {
