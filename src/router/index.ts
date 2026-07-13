@@ -115,6 +115,16 @@ const routes: RouteInterface[] = [
         name: 'admin-configuracoes',
         component: () => import('@/pages/admin/configuracoes/Home.vue'),
       },
+      {
+        path: 'inteligencia/modelos',
+        name: 'admin-ia-modelos',
+        component: () => import('@/pages/admin/inteligencia/Modelos.vue'),
+      },
+      {
+        path: 'inteligencia/chaves',
+        name: 'admin-ia-chaves',
+        component: () => import('@/pages/admin/inteligencia/Chaves.vue'),
+      },
     ],
   },
   {

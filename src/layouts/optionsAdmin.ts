@@ -1,13 +1,16 @@
 import { type Permissoes } from '@/stores/ui/uiStore'
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
+  BrainCircuit,
   CalendarClock,
   ChartPie,
   CircleDollarSign,
   Cog,
+  Cpu,
   FileSliders,
   GitBranchPlus,
   HandCoins,
+  KeyRound,
   Lock,
   ServerCog,
   Sparkles,
@@ -57,6 +60,26 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.configuracoes.visualizar,
       color: 'indigo',
       link: '/admin/configuracoes',
+    },
+    {
+      nome: 'Inteligência',
+      icone: BrainCircuit,
+      color: 'violet',
+      show: permissions.superadmin,
+      children: [
+        {
+          nome: 'Modelos',
+          link: '/admin/inteligencia/modelos',
+          icone: Cpu,
+          color: 'violet',
+        },
+        {
+          nome: 'Chaves API',
+          link: '/admin/inteligencia/chaves',
+          icone: KeyRound,
+          color: 'violet',
+        },
+      ],
     },
     {
       nome: 'Monitoramento',
