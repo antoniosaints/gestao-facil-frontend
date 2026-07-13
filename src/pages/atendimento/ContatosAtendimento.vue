@@ -175,7 +175,7 @@ onMounted(loadContacts)
 
 <template>
   <div class="container mx-auto flex h-[calc(100vh-6rem)] flex-col gap-4 py-4">
-    <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <header class="flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3">
         <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Users class="h-6 w-6" />
@@ -193,13 +193,13 @@ onMounted(loadContacts)
       </div>
     </header>
 
-    <div class="min-h-0 flex-1 rounded-lg border">
-      <ScrollArea class="h-full">
-        <div class="divide-y">
+    <div class="min-h-0 flex-1 rounded-lg">
+      <ScrollArea class="h-full px-4">
+        <div class="divide-y gap-2 flex flex-col">
           <div
             v-for="contact in contacts"
             :key="contact.id"
-            class="flex items-center gap-3 px-4 py-3 transition hover:bg-muted/50"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition hover:bg-muted/50 bg-background dark:bg-card"
           >
             <img
               v-if="contactPhoto(contact)"

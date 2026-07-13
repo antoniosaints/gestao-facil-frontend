@@ -211,13 +211,13 @@ onMounted(loadData)
         <LoaderCircle class="mr-2 h-4 w-4 animate-spin" /> Carregando agentes...
       </div>
 
-      <div v-else-if="!agents.length" class="rounded-lg border border-dashed p-10 text-center">
+      <div v-else-if="!agents.length" class="rounded-lg border bg-background dark:bg-card border-dashed p-10 text-center">
         <Bot class="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
         <p class="text-sm text-muted-foreground">Nenhum agente criado ainda. Crie um para iniciar o autoatendimento.</p>
       </div>
 
-      <div v-else class="grid gap-3 md:grid-cols-2">
-        <div v-for="agent in agents" :key="agent.id" class="flex flex-col gap-3 rounded-lg border p-4">
+      <div v-else class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div v-for="agent in agents" :key="agent.id" class="flex flex-col gap-3 rounded-lg border bg-background dark:bg-card p-4">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
@@ -264,7 +264,7 @@ onMounted(loadData)
 
     <!-- Modal criar/editar agente -->
     <Dialog v-model:open="dialog.open">
-      <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{{ dialog.editingId ? 'Editar agente' : 'Novo agente' }}</DialogTitle>
           <DialogDescription>Configure o comportamento, os horários e as instâncias que o agente vai atender.</DialogDescription>
