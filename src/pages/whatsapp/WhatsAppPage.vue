@@ -402,23 +402,23 @@
             <button
               type="button"
               class="rounded-md px-3 py-2 text-sm font-medium transition"
-              :class="instanceMode === 'manual' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
-              @click="instanceMode = 'manual'"
-            >
-            <span class="flex items-center justify-center">
-              <Hand class="mr-2 h-4 w-4" />
-                Manual
-            </span>
-            </button>
-            <button
-              type="button"
-              class="rounded-md px-3 py-2 text-sm font-medium transition"
               :class="instanceMode === 'auto' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
               @click="instanceMode = 'auto'"
             >
             <span class="flex items-center justify-center">
               <Brain class="mr-2 h-4 w-4" />
               Automático
+            </span>
+            </button>
+            <button
+              type="button"
+              class="rounded-md px-3 py-2 text-sm font-medium transition"
+              :class="instanceMode === 'manual' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              @click="instanceMode = 'manual'"
+            >
+            <span class="flex items-center justify-center">
+              <Hand class="mr-2 h-4 w-4" />
+                Manual
             </span>
             </button>
           </div>
@@ -771,7 +771,7 @@ const webhookSyncResults = ref<WhatsAppWebhookSyncResult[]>([])
 const webhookUrls = reactive<WhatsAppWebhookUrls>({})
 
 const instanceForm = reactive({ nome: '', instanceId: '', token: '' })
-const instanceMode = ref<'manual' | 'auto'>('manual')
+const instanceMode = ref<'manual' | 'auto'>('auto')
 const editInstanceForm = reactive({ nome: '', instanceId: '', token: '' })
 
 const connectedInstances = computed(() => instances.value.filter((instance) => instance.status === 'CONECTADA').length)
