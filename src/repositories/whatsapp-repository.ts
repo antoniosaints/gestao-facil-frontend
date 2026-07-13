@@ -238,6 +238,13 @@ export class WhatsAppRepository {
     return data.data as PaginatedResponse<WhatsAppMessage>
   }
 
+  // Baixa a mídia descriptografada de uma mensagem (o backend baixa o `.enc` do WhatsApp e
+  // decifra). Retorna um object URL pronto para usar em <img src>; lembre de revogar depois.
+  static async fetchMessageMedia(messageId: number) {
+    const { data } = await http.get(`/whatsapp/messages/${messageId}/media`, { responseType: 'blob' })
+    return URL.createObjectURL(data as Blob)
+  }
+
   static async sendMessage(conversaId: number, payload: { tipo?: 'text' | 'image' | 'audio' | 'video' | 'document'; conteudo?: string; mediaUrl?: string; caption?: string; fileName?: string; extension?: string }) {
     const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens`, payload)
     return data.data as WhatsAppMessage

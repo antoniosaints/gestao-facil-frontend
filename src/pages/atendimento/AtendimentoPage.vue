@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
@@ -240,23 +240,62 @@ function conversationPhoto(conversation: WhatsAppConversation) {
 
 // Imagem aberta em tela cheia (lightbox); null = fechado.
 const imagePreview = ref<string | null>(null)
+// Cache de mídias recebidas já descriptografadas: id da mensagem -> object URL do blob.
+const mediaCache = ref<Record<number, string>>({})
 
 function isSticker(message: WhatsAppMessage) {
   return message.tipo === 'STICKER'
 }
 
-// Renderiza como imagem quando é imagem/figurinha (ou o mime-type indica imagem) e o link
-// ainda não falhou ao carregar.
-function renderableImage(message: WhatsAppMessage) {
-  if (!message.mediaUrl || brokenImages.value.has(message.mediaUrl)) return null
-  const isImage =
+// É uma mensagem que deve ser exibida como imagem (imagem ou figurinha / mime-type de imagem)?
+function isImageMessage(message: WhatsAppMessage) {
+  if (!message.mediaUrl) return false
+  return (
     message.tipo === 'IMAGEM' || message.tipo === 'STICKER' || Boolean(message.mediaMimeType?.startsWith('image/'))
-  return isImage ? message.mediaUrl : null
+  )
 }
 
-function openImagePreview(url?: string | null) {
+// URL para exibir a imagem. Mídias enviadas por nós (SAIDA) já têm URL pública direta; mídias
+// recebidas (ENTRADA) vêm criptografadas e são descriptografadas pelo backend e servidas como
+// blob (mediaCache). Retorna null enquanto o blob não chegou ou se a imagem falhou.
+function imageSrc(message: WhatsAppMessage): string | null {
+  if (!isImageMessage(message) || brokenImages.value.has(String(message.id))) return null
+  if (message.direcao === 'SAIDA') return message.mediaUrl || null
+  return mediaCache.value[message.id] || null
+}
+
+// Está descriptografando/baixando uma imagem recebida que ainda não chegou nem falhou?
+function isImageLoading(message: WhatsAppMessage) {
+  return (
+    isImageMessage(message) &&
+    message.direcao === 'ENTRADA' &&
+    !mediaCache.value[message.id] &&
+    !brokenImages.value.has(String(message.id))
+  )
+}
+
+// Baixa (descriptografando no backend) as imagens recebidas ainda não carregadas.
+async function prefetchMedia(list: WhatsAppMessage[]) {
+  for (const message of list) {
+    if (message.direcao !== 'ENTRADA' || !isImageMessage(message)) continue
+    if (mediaCache.value[message.id] || brokenImages.value.has(String(message.id))) continue
+    try {
+      const url = await WhatsAppRepository.fetchMessageMedia(message.id)
+      mediaCache.value = { ...mediaCache.value, [message.id]: url }
+    } catch {
+      handleImageError(String(message.id))
+    }
+  }
+}
+
+function openImagePreview(message: WhatsAppMessage) {
+  const url = imageSrc(message)
   if (url) imagePreview.value = url
 }
+
+onBeforeUnmount(() => {
+  Object.values(mediaCache.value).forEach((url) => URL.revokeObjectURL(url))
+})
 
 function formatTime(value?: string | null) {
   if (!value) return ''
@@ -415,6 +454,7 @@ async function loadMessages() {
   const response = await WhatsAppRepository.listMessages(selectedConversation.value.id, { take: 80 })
   messages.value = response.items
   await scrollToBottom()
+  void prefetchMedia(messages.value)
 }
 
 async function sendText() {
@@ -520,6 +560,7 @@ useSocketEvent<WhatsAppMessage>('whatsapp:mensagem:created', async (message) => 
   if (index >= 0) messages.value[index] = message
   else messages.value.push(message)
   await scrollToBottom()
+  void prefetchMedia([message])
 })
 
 useSocketEvent<WhatsAppInstance>('whatsapp:instancia:updated', async () => {
@@ -786,16 +827,23 @@ onMounted(async () => {
                   <!-- Imagem/figurinha: preview clicável (abre em tela cheia). Figurinhas
                        menores; imagens com largura limitada para não quebrar o layout. -->
                   <img
-                    v-if="renderableImage(message)"
-                    :src="renderableImage(message) as string"
+                    v-if="imageSrc(message)"
+                    :src="imageSrc(message) as string"
                     :alt="mediaLabel(message)"
                     loading="lazy"
                     referrerpolicy="no-referrer"
                     class="mb-2 cursor-zoom-in rounded-lg"
                     :class="isSticker(message) ? 'h-28 w-28 object-contain' : 'max-h-72 w-auto max-w-full object-cover'"
-                    @click="openImagePreview(message.mediaUrl)"
-                    @error="handleImageError(message.mediaUrl)"
+                    @click="openImagePreview(message)"
+                    @error="handleImageError(String(message.id))"
                   />
+                  <!-- Imagem recebida ainda sendo baixada/descriptografada. -->
+                  <div
+                    v-else-if="isImageLoading(message)"
+                    class="mb-2 flex h-28 w-40 items-center justify-center rounded-lg border bg-black/5 text-xs text-muted-foreground"
+                  >
+                    <LoaderCircle class="mr-1.5 h-4 w-4 animate-spin" /> Carregando imagem...
+                  </div>
                   <!-- Demais mídias (ou imagem que falhou ao carregar): link para abrir. -->
                   <div v-else class="mb-2 rounded-lg border bg-black/5 p-2 text-xs">
                     <a :href="message.mediaUrl" target="_blank" rel="noreferrer" class="underline">{{ mediaLabel(message) }}</a>
