@@ -32,117 +32,120 @@
 
     <Tabs v-model="tab" class="w-full">
       <TabsContent value="instances" class="mt-4 space-y-4">
-        <div class="grid gap-3 xl:grid-cols-3">
+        <div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           <Card v-for="instance in instances" :key="instance.id" class="overflow-hidden">
-            <CardHeader class="pb-3">
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <CardTitle class="truncate text-base font-medium">{{ instance.nome }}</CardTitle>
-                  <CardDescription class="truncate text-xs">{{ instance.instanceId }}</CardDescription>
+            <CardContent class="p-4">
+              <!-- Cabeçalho: identidade + status + menu -->
+              <div class="flex items-start gap-3">
+                <div class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Smartphone class="h-5 w-5" />
+                  <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background" :class="instanceStatusDotClass(instance.status)"></span>
                 </div>
-                <Badge :variant="instance.status === 'CONECTADA' ? 'default' : 'outline'">{{ instance.status }}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent class="space-y-3">
-              <div class="grid gap-2 md:grid-cols-2">
-                <div class="rounded-md border p-2">
-                  <p class="text-xs text-muted-foreground">Número conectado</p>
-                  <p class="truncate text-sm font-medium">{{ instance.numeroConectado || 'Não identificado' }}</p>
-                </div>
-                <div class="rounded-md border p-2">
-                  <p class="text-xs text-muted-foreground">Última sincronização</p>
-                  <p class="truncate text-sm font-medium">{{ formatTime(instance.lastSyncAt) || 'Nunca' }}</p>
-                </div>
-              </div>
-              <div v-if="instance.ultimoErro" class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-                <AlertTriangle class="mr-1 inline h-4 w-4" />
-                {{ instance.ultimoErro }}
-              </div>
-              <div class="rounded-md border p-2">
-                <div class="mb-2 flex items-center justify-between gap-2">
-                  <div class="min-w-0">
-                    <p class="text-sm font-medium">Mensalidades</p>
-                    <p class="truncate text-xs text-muted-foreground">Pagamentos gerados para esta instancia.</p>
-                  </div>
-                  <span
-                    v-if="latestPayment(instance)"
-                    class="rounded-full border px-2 py-0.5 text-xs"
-                    :class="paymentStatusClass(latestPayment(instance)?.status)"
-                  >
-                    {{ latestPayment(instance)?.status }}
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-semibold leading-tight">{{ instance.nome }}</p>
+                  <p class="truncate text-xs text-muted-foreground">{{ instance.instanceId }}</p>
+                  <span class="mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium" :class="instanceStatusPillClass(instance.status)">
+                    <span class="h-1.5 w-1.5 rounded-full" :class="instanceStatusDotClass(instance.status)"></span>
+                    {{ instanceStatusLabel(instance.status) }}
                   </span>
                 </div>
-                <div v-if="instance.pagamentos?.length" class="space-y-2">
-                  <div v-for="payment in instance.pagamentos.slice(0, 3)" :key="payment.id" class="flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1.5 text-xs">
-                    <button type="button" class="min-w-0 flex-1 text-left" @click="openExistingPayment(instance, payment)">
-                      <span class="block truncate font-medium">{{ paymentMethodLabel(payment.metodo) }} - {{ formatTime(payment.createdAt) }}</span>
-                      <span class="block text-muted-foreground">{{ payment.status }}</span>
-                    </button>
-                    <Button v-if="payment.status === 'PENDENTE'" variant="ghost" size="icon" class="h-7 w-7" @click="openExistingPayment(instance, payment)">
-                      <ExternalLink class="h-3.5 w-3.5" />
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <Button variant="ghost" size="icon" class="h-8 w-8 shrink-0 text-muted-foreground">
+                      <MoreVertical class="h-4 w-4" />
                     </Button>
-                    <Button
-                      v-if="payment.status === 'PENDENTE'"
-                      variant="ghost"
-                      size="icon"
-                      class="h-7 w-7 text-destructive hover:text-destructive"
-                      :disabled="deletingPaymentId === payment.id"
-                      @click="deletePendingPayment(instance, payment)"
-                    >
-                      <LoaderIcon v-if="deletingPaymentId === payment.id" class="h-3.5 w-3.5 animate-spin" />
-                      <Trash2 v-else class="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-                <p v-else class="text-xs text-muted-foreground">Nenhuma cobranca gerada ainda.</p>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" class="w-44">
+                    <DropdownMenuItem @click="openEditInstance(instance)">
+                      <PencilLine class="mr-2 h-4 w-4" /> Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem @click="openPaymentModal(instance)">
+                      <CreditCard class="mr-2 h-4 w-4" /> Pagamento
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem class="text-destructive focus:text-destructive" @click="openDeleteModal(instance)">
+                      <Trash2 class="mr-2 h-4 w-4" /> Remover
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <div class="space-y-3">
-                <div class="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" @click="openEditInstance(instance)">
-                    <PencilLine class="mr-2 h-4 w-4" />
-                    Editar
-                  </Button>
-                  <Button variant="outline" size="sm" @click="openPaymentModal(instance)">
-                    <CreditCard class="mr-2 h-4 w-4" />
-                    Pagamento
-                  </Button>
-                  <Button variant="destructive" size="sm" @click="openDeleteModal(instance)">
-                    <Trash2 class="mr-2 h-4 w-4" />
-                    Remover
-                  </Button>
+
+              <!-- Metadados -->
+              <div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                <div class="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+                  <Phone class="h-3.5 w-3.5 shrink-0" />
+                  <span class="truncate text-foreground">{{ instance.numeroConectado || 'Sem número' }}</span>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                  <Button v-if="instance.status !== 'CONECTADA'" variant="outline" size="sm" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'qrCode')">
-                    <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'qrCode')" class="mr-2 h-4 w-4 animate-spin" />
-                    <QrCode v-else class="mr-2 h-4 w-4" />
-                    QR Code
-                  </Button>
-                  <Button variant="outline" size="sm" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'status')">
-                    <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'status')" class="mr-2 h-4 w-4 animate-spin" />
-                    <Wifi v-else class="mr-2 h-4 w-4" />
-                    Status
-                  </Button>
-                  <Button variant="outline" size="sm" :disabled="loadingWebhookConfig || isAnyInstanceActionLoading(instance.id)" @click="openWebhookModal(instance)">
-                    <LoaderIcon v-if="loadingWebhookConfig && webhookInstance?.id === instance.id" class="mr-2 h-4 w-4 animate-spin" />
-                    <Webhook v-else class="mr-2 h-4 w-4" />
-                    Webhooks
-                  </Button>
-                  <Button variant="outline" size="sm" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'restart')">
-                    <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'restart')" class="mr-2 h-4 w-4 animate-spin" />
-                    <RefreshCw v-else class="mr-2 h-4 w-4" />
-                    Reiniciar
-                  </Button>
-                  <Button variant="outline" size="sm" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'disconnect')">
-                    <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'disconnect')" class="mr-2 h-4 w-4 animate-spin" />
-                    <WifiOff v-else class="mr-2 h-4 w-4" />
-                    Desconectar
-                  </Button>
+                <div class="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+                  <Clock class="h-3.5 w-3.5 shrink-0" />
+                  <span class="truncate">{{ formatTime(instance.lastSyncAt) || 'Nunca sincronizado' }}</span>
                 </div>
-                <div
-                  v-if="instanceActionResult[instance.id]"
-                  class="overflow-hidden rounded-lg border bg-background"
-                  :class="instanceActionCardClass(instance.id)"
+              </div>
+
+              <div v-if="instance.ultimoErro" class="mt-3 flex items-start gap-1.5 rounded-md border border-amber-300/60 bg-amber-50 px-2.5 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-400">
+                <AlertTriangle class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span class="min-w-0">{{ instance.ultimoErro }}</span>
+              </div>
+
+              <!-- Mensalidades (só a mais recente; demais no modal) -->
+              <div v-if="latestPayment(instance)" class="mt-3 flex items-center gap-2 rounded-lg bg-muted/40 px-2.5 py-2 text-xs">
+                <span class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Mensalidade</span>
+                <button type="button" class="min-w-0 flex-1 truncate text-left hover:underline" @click="openExistingPayment(instance, latestPayment(instance)!)">
+                  {{ paymentMethodLabel(latestPayment(instance)?.metodo) }} · {{ formatTime(latestPayment(instance)?.createdAt) }}
+                </button>
+                <span
+                  class="shrink-0 rounded-full border px-2 py-0.5 text-[10px]"
+                  :class="paymentStatusClass(latestPayment(instance)?.status)"
                 >
+                  {{ latestPayment(instance)?.status }}
+                </span>
+                <Button
+                  v-if="(instance.pagamentos?.length || 0) > 1"
+                  variant="ghost"
+                  size="sm"
+                  class="h-6 shrink-0 px-2 text-[11px]"
+                  @click="openPaymentsModal(instance)"
+                >
+                  Ver todas
+                </Button>
+              </div>
+
+              <!-- Ações de conexão -->
+              <div class="mt-3 flex flex-wrap items-center gap-1.5 border-t pt-3">
+                <Button
+                  v-if="instance.status !== 'CONECTADA'"
+                  size="sm"
+                  class="h-8 text-white"
+                  :disabled="isAnyInstanceActionLoading(instance.id)"
+                  @click="runInstanceAction(instance, 'qrCode')"
+                >
+                  <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'qrCode')" class="mr-1.5 h-4 w-4 animate-spin" />
+                  <QrCode v-else class="mr-1.5 h-4 w-4" />
+                  Conectar
+                </Button>
+                <Button variant="outline" size="icon" class="h-8 w-8" title="Verificar status" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'status')">
+                  <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'status')" class="h-4 w-4 animate-spin" />
+                  <Wifi v-else class="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" class="h-8 w-8" title="Configurar webhooks" :disabled="loadingWebhookConfig || isAnyInstanceActionLoading(instance.id)" @click="openWebhookModal(instance)">
+                  <LoaderIcon v-if="loadingWebhookConfig && webhookInstance?.id === instance.id" class="h-4 w-4 animate-spin" />
+                  <Webhook v-else class="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" class="h-8 w-8" title="Reiniciar instância" :disabled="isAnyInstanceActionLoading(instance.id)" @click="confirmInstanceAction(instance, 'restart')">
+                  <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'restart')" class="h-4 w-4 animate-spin" />
+                  <RefreshCw v-else class="h-4 w-4" />
+                </Button>
+                <Button v-if="instance.status === 'CONECTADA'" variant="outline" size="icon" class="h-8 w-8 text-amber-600 hover:text-amber-700" title="Desconectar" :disabled="isAnyInstanceActionLoading(instance.id)" @click="confirmInstanceAction(instance, 'disconnect')">
+                  <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'disconnect')" class="h-4 w-4 animate-spin" />
+                  <WifiOff v-else class="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div
+                v-if="instanceActionResult[instance.id]"
+                class="mt-3 overflow-hidden rounded-lg border bg-background"
+                :class="instanceActionCardClass(instance.id)"
+              >
                   <div class="flex items-start justify-between gap-3 p-3">
                     <div class="flex min-w-0 gap-3">
                       <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full" :class="instanceActionIconClass(instance.id)">
@@ -182,7 +185,19 @@
                     </div>
                   </div>
                 </div>
+            </CardContent>
+          </Card>
+          <Card v-if="!instances.length" class="border-dashed">
+            <CardContent class="flex flex-col items-center justify-center gap-2 p-8 text-center">
+              <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                <Smartphone class="h-6 w-6" />
               </div>
+              <p class="text-sm font-medium">Nenhuma instância cadastrada</p>
+              <p class="max-w-xs text-xs text-muted-foreground">Cadastre uma instância da W-API para conectar um número de WhatsApp à conta.</p>
+              <Button class="mt-1 text-white" @click="createInstanceModalOpen = true">
+                <Plus class="mr-2 h-4 w-4" />
+                Nova instância
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -190,7 +205,7 @@
     </Tabs>
 
     <Dialog v-model:open="webhookModalOpen">
-      <DialogContent class="max-w-3xl">
+      <DialogContent class="flex max-h-[90vh] max-w-3xl flex-col">
         <DialogHeader>
           <DialogTitle>Configurar webhooks da W-API</DialogTitle>
           <DialogDescription>
@@ -199,7 +214,7 @@
           </DialogDescription>
         </DialogHeader>
 
-        <div class="space-y-4">
+        <div class="-mr-2 flex-1 space-y-4 overflow-y-auto pr-2">
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             <AlertTriangle class="mr-1 inline h-4 w-4" />
             A URL pública vem de <code>BASE_URL</code> no backend. Se estiver local ou inacessível pela W-API, o recebimento não chegará ao ERP.
@@ -244,6 +259,59 @@
             <LoaderIcon v-if="configuringWebhooks" class="mr-2 h-4 w-4 animate-spin" />
             <Webhook v-else class="mr-2 h-4 w-4" />
             Confirmar e enviar para W-API
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog v-model:open="paymentsModalOpen">
+      <DialogContent class="flex max-h-[85vh] max-w-lg flex-col">
+        <DialogHeader>
+          <DialogTitle>Mensalidades</DialogTitle>
+          <DialogDescription>Cobranças geradas para {{ paymentsModalInstance?.nome || 'a instância' }}.</DialogDescription>
+        </DialogHeader>
+
+        <div class="-mr-2 flex-1 space-y-2 overflow-y-auto pr-2">
+          <div
+            v-for="payment in paymentsModalInstance?.pagamentos || []"
+            :key="payment.id"
+            class="flex items-center gap-2 rounded-lg border p-2.5 text-sm"
+          >
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-medium">{{ paymentMethodLabel(payment.metodo) }} · {{ formatTime(payment.createdAt) }}</p>
+              <p class="truncate text-xs text-muted-foreground">{{ payment.payerEmail }}</p>
+            </div>
+            <span class="shrink-0 rounded-full border px-2 py-0.5 text-[10px]" :class="paymentStatusClass(payment.status)">{{ payment.status }}</span>
+            <Button variant="ghost" size="icon" class="h-7 w-7" title="Abrir pagamento" @click="openExistingPayment(paymentsModalInstance!, payment)">
+              <ExternalLink class="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              v-if="payment.status === 'PENDENTE'"
+              variant="ghost"
+              size="icon"
+              class="h-7 w-7 text-destructive hover:text-destructive"
+              title="Remover pagamento pendente"
+              :disabled="deletingPaymentId === payment.id"
+              @click="deletePendingPayment(paymentsModalInstance!, payment)"
+            >
+              <LoaderIcon v-if="deletingPaymentId === payment.id" class="h-3.5 w-3.5 animate-spin" />
+              <Trash2 v-else class="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <p v-if="!(paymentsModalInstance?.pagamentos?.length)" class="py-8 text-center text-sm text-muted-foreground">
+            Nenhuma cobrança gerada ainda.
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="paymentsModalOpen = false">Fechar</Button>
+          <Button
+            v-if="paymentsModalInstance"
+            class="text-white"
+            @click="openPaymentModal(paymentsModalInstance!); paymentsModalOpen = false"
+          >
+            <CreditCard class="mr-2 h-4 w-4" />
+            Gerar cobrança
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -514,13 +582,16 @@ import { useToast } from 'vue-toastification'
 import {
   AlertTriangle,
   CheckCircle2,
+  Clock,
   Copy,
   CreditCard,
   ExternalLink,
   Landmark,
   LoaderIcon,
   MessageCircle,
+  MoreVertical,
   PencilLine,
+  Phone,
   Plus,
   QrCode,
   RefreshCw,
@@ -535,13 +606,21 @@ import {
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
+import { useConfirm } from '@/composables/useConfirm'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import {
   WhatsAppRepository,
@@ -553,6 +632,7 @@ import {
 } from '@/repositories/whatsapp-repository'
 
 const toast = useToast()
+const confirm = useConfirm()
 const tab = ref<'instances'>('instances')
 const loading = ref(false)
 const savingInstance = ref(false)
@@ -596,6 +676,10 @@ const paymentResult = ref<WhatsAppInstancePayment | null>(null)
 const deletingPaymentId = ref<number | null>(null)
 const deleteModalOpen = ref(false)
 const deleteInstanceTarget = ref<WhatsAppInstance | null>(null)
+const paymentsModalOpen = ref(false)
+const paymentsModalInstanceId = ref<number | null>(null)
+// Lê a instância viva da lista (para refletir exclusões de pagamento sem fechar o modal).
+const paymentsModalInstance = computed(() => instances.value.find((instance) => instance.id === paymentsModalInstanceId.value) || null)
 
 function formatTime(value?: string | null) {
   if (!value) return ''
@@ -622,6 +706,31 @@ function paymentStatusClass(status?: string | null) {
 
 function latestPayment(instance: WhatsAppInstance) {
   return instance.pagamentos?.[0] || null
+}
+
+function instanceStatusLabel(status?: string | null) {
+  const labels: Record<string, string> = {
+    CONECTADA: 'Conectada',
+    DESCONECTADA: 'Desconectada',
+    CONECTANDO: 'Conectando',
+    PENDENTE: 'Pendente',
+    ERRO: 'Erro',
+  }
+  return labels[status || ''] || status || 'Desconhecido'
+}
+
+function instanceStatusDotClass(status?: string | null) {
+  if (status === 'CONECTADA') return 'bg-green-500'
+  if (status === 'CONECTANDO' || status === 'PENDENTE') return 'bg-amber-500'
+  if (status === 'ERRO') return 'bg-red-500'
+  return 'bg-slate-400'
+}
+
+function instanceStatusPillClass(status?: string | null) {
+  if (status === 'CONECTADA') return 'bg-green-500/15 text-green-600'
+  if (status === 'CONECTANDO' || status === 'PENDENTE') return 'bg-amber-500/15 text-amber-600'
+  if (status === 'ERRO') return 'bg-red-500/15 text-red-600'
+  return 'bg-slate-500/15 text-slate-500'
 }
 
 function pixQrCodeSrc(payment?: WhatsAppInstancePayment | null) {
@@ -1029,6 +1138,30 @@ async function confirmWebhooks() {
   } finally {
     configuringWebhooks.value = false
   }
+}
+
+// Ações sensíveis (reiniciar/desconectar) pedem confirmação para evitar clique acidental.
+async function confirmInstanceAction(instance: WhatsAppInstance, action: 'restart' | 'disconnect') {
+  const options =
+    action === 'disconnect'
+      ? {
+          title: 'Desconectar instância',
+          message: `Desconectar “${instance.nome}”? O número será desvinculado e você precisará ler o QR Code novamente para reconectar.`,
+          confirmText: 'Desconectar',
+        }
+      : {
+          title: 'Reiniciar instância',
+          message: `Reiniciar “${instance.nome}”? A conexão será interrompida por alguns segundos.`,
+          confirmText: 'Reiniciar',
+        }
+  const confirmed = await confirm.confirm({ ...options, colorButton: 'warning' })
+  if (!confirmed) return
+  await runInstanceAction(instance, action)
+}
+
+function openPaymentsModal(instance: WhatsAppInstance) {
+  paymentsModalInstanceId.value = instance.id
+  paymentsModalOpen.value = true
 }
 
 async function runInstanceAction(instance: WhatsAppInstance, action: InstanceActionName) {

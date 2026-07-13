@@ -133,6 +133,19 @@ export interface PaginatedResponse<T> {
   nextCursor?: number | null
 }
 
+export interface ConversationSaleItem {
+  id: number
+  uid: string
+  data: string
+  status: string
+  total: number
+}
+
+export interface ConversationSaleTool {
+  cliente: { id: number; nome: string } | null
+  items: ConversationSaleItem[]
+}
+
 export class WhatsAppRepository {
   static async listInstances() {
     const { data } = await http.get('/whatsapp/instances')
@@ -207,6 +220,21 @@ export class WhatsAppRepository {
   static async updateConversation(conversaId: number, payload: Partial<{ status: WhatsAppConversationStatus; atendenteId: number | null; setor: string | null; fila: string | null; clienteId: number | null }>) {
     const { data } = await http.patch(`/whatsapp/conversas/${conversaId}`, payload)
     return data.data as WhatsAppConversation
+  }
+
+  static async attendConversation(conversaId: number) {
+    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/atender`)
+    return data.data as WhatsAppConversation
+  }
+
+  static async listConversationSales(conversaId: number, search?: string) {
+    const { data } = await http.get(`/whatsapp/conversas/${conversaId}/ferramentas/vendas`, { params: { search } })
+    return data.data as ConversationSaleTool
+  }
+
+  static async sendConversationSale(conversaId: number, vendaId: number) {
+    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/ferramentas/vendas`, { vendaId })
+    return data.data as WhatsAppMessage
   }
 
   static async markAsRead(conversaId: number) {

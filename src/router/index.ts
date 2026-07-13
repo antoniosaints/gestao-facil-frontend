@@ -288,6 +288,36 @@ const routes: RouteInterface[] = [
     },
   },
   {
+    path: '/atendimento/painel',
+    name: 'atendimento-painel',
+    component: () => import('@/pages/atendimento/PainelAtendimento.vue'),
+    meta: {
+      layout: 'main',
+      permissao: 2,
+      modulo: 'atendimento',
+    },
+  },
+  {
+    path: '/atendimento/agentes',
+    name: 'atendimento-agentes',
+    component: () => import('@/pages/atendimento/AgentesAtendimento.vue'),
+    meta: {
+      layout: 'main',
+      permissao: 2,
+      modulo: 'atendimento',
+    },
+  },
+  {
+    path: '/atendimento/relatorios',
+    name: 'atendimento-relatorios',
+    component: () => import('@/pages/atendimento/RelatoriosAtendimento.vue'),
+    meta: {
+      layout: 'main',
+      permissao: 2,
+      modulo: 'atendimento',
+    },
+  },
+  {
     path: '/arena',
     name: 'arena',
     children: [

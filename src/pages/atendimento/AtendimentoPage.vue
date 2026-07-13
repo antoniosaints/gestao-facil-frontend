@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   ArrowLeft,
+  Blocks,
   CheckCheck,
   ChevronDown,
   Headset,
@@ -18,6 +19,7 @@ import {
   LoaderCircle,
   MessageSquarePlus,
   MessageSquareText,
+  Receipt,
   Search,
   Send,
   UserPlus,
@@ -26,6 +28,7 @@ import { useSocketEvent } from '@/composables/useSocketEvent'
 import { ClienteRepository } from '@/repositories/cliente-repository'
 import {
   WhatsAppRepository,
+  type ConversationSaleItem,
   type WhatsAppConversation,
   type WhatsAppConversationStatus,
   type WhatsAppInstance,
@@ -38,6 +41,7 @@ const router = useRouter()
 
 const loading = ref(false)
 const sending = ref(false)
+const attending = ref(false)
 const showDetails = ref(false)
 
 const instances = ref<WhatsAppInstance[]>([])
@@ -57,7 +61,9 @@ const conversations = ref<WhatsAppConversation[]>([])
 const messages = ref<WhatsAppMessage[]>([])
 const selectedConversation = ref<WhatsAppConversation | null>(null)
 const conversationSearch = ref('')
-const statusFilter = ref<WhatsAppConversationStatus | undefined>(undefined)
+// Abas de atendimento: Espera (PENDENTE) -> Abertas (ABERTA) -> Finalizadas (FINALIZADA).
+// A aba inicial é sempre "Abertas".
+const statusFilter = ref<WhatsAppConversationStatus>('ABERTA')
 const customerSearch = ref('')
 const customerOptions = ref<Array<{ id: number; label: string }>>([])
 
@@ -70,14 +76,101 @@ const messageForm = reactive<{ tipo: 'text' | 'image' | 'audio' | 'video' | 'doc
   mediaUrl: '',
 })
 
+// Ações rápidas (ferramentas) do chat: abre por "/" ou pelo botão de Blocks.
+const toolsOpen = ref(false)
+const saleTool = reactive<{ open: boolean; search: string; loading: boolean; sendingId: number | null; items: ConversationSaleItem[] }>({
+  open: false,
+  search: '',
+  loading: false,
+  sendingId: null,
+  items: [],
+})
+
 const canSendMessage = computed(() => {
   if (!selectedConversation.value) return false
+  // Só responde quando o atendimento está em curso (ABERTA); em ESPERA é preciso "Atender".
+  if (selectedConversation.value.status !== 'ABERTA') return false
   if (selectedConversation.value.Instancia?.status !== 'CONECTADA') return false
   if (messageForm.tipo === 'text') return Boolean(messageForm.conteudo.trim())
   return Boolean(messageForm.mediaUrl.trim())
 })
 
 const totalNaoLidas = computed(() => conversations.value.reduce((total, item) => total + (item.naoLidas || 0), 0))
+const hasLinkedClient = computed(() => Boolean(selectedConversation.value?.clienteId || selectedConversation.value?.Cliente))
+
+// Abre as ferramentas ao digitar "/" no início da mensagem (comando de barra).
+watch(
+  () => messageForm.conteudo,
+  (value) => {
+    if (value === '/') {
+      messageForm.conteudo = ''
+      toolsOpen.value = true
+    }
+  },
+)
+
+function toggleTools() {
+  toolsOpen.value = !toolsOpen.value
+}
+
+function openSaleTool() {
+  toolsOpen.value = false
+  if (!hasLinkedClient.value) {
+    toast.warning('Vincule um cliente do sistema à conversa para usar esta ferramenta.')
+    return
+  }
+  saleTool.open = true
+  saleTool.search = ''
+  saleTool.items = []
+  loadSaleToolItems()
+}
+
+async function loadSaleToolItems() {
+  if (!selectedConversation.value) return
+  try {
+    saleTool.loading = true
+    const response = await WhatsAppRepository.listConversationSales(selectedConversation.value.id, saleTool.search || undefined)
+    saleTool.items = response.items
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível carregar as vendas do cliente.')
+    saleTool.items = []
+  } finally {
+    saleTool.loading = false
+  }
+}
+
+async function sendSale(vendaId: number) {
+  if (!selectedConversation.value) return
+  try {
+    saleTool.sendingId = vendaId
+    await WhatsAppRepository.sendConversationSale(selectedConversation.value.id, vendaId)
+    await Promise.all([loadMessages(), loadConversations()])
+    saleTool.open = false
+    toast.success('Dados da venda enviados ao cliente.')
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível enviar os dados da venda.')
+  } finally {
+    saleTool.sendingId = null
+  }
+}
+
+function saleStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    ORCAMENTO: 'Orçamento',
+    FATURADO: 'Faturado',
+    ANDAMENTO: 'Em andamento',
+    FINALIZADO: 'Finalizado',
+    PENDENTE: 'Pendente',
+    CANCELADO: 'Cancelado',
+  }
+  return labels[status] || status
+}
+
+function formatMoney(value: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)
+}
 const activeInstance = computed(() => instances.value.find((item) => item.id === activeInstanceId.value) || null)
 const showInboxSwitcher = computed(() => instances.value.length > 1)
 
@@ -91,6 +184,18 @@ function conversationStatusDotClass(status: WhatsAppConversationStatus) {
   if (status === 'ABERTA') return 'bg-green-500'
   if (status === 'PENDENTE') return 'bg-amber-500'
   return 'bg-slate-400'
+}
+
+function statusLabel(status: WhatsAppConversationStatus) {
+  if (status === 'ABERTA') return 'Em atendimento'
+  if (status === 'PENDENTE') return 'Em espera'
+  return 'Finalizada'
+}
+
+function statusPillClass(status: WhatsAppConversationStatus) {
+  if (status === 'ABERTA') return 'bg-green-500/15 text-green-600'
+  if (status === 'PENDENTE') return 'bg-amber-500/15 text-amber-600'
+  return 'bg-slate-500/15 text-slate-500'
 }
 
 function setActiveInstance(id: number | null) {
@@ -141,7 +246,7 @@ async function scrollToBottom() {
   if (viewport) viewport.scrollTop = viewport.scrollHeight
 }
 
-function setStatusFilter(status?: WhatsAppConversationStatus) {
+function setStatusFilter(status: WhatsAppConversationStatus) {
   statusFilter.value = status
   loadConversations()
 }
@@ -261,6 +366,7 @@ async function openConversation(conversation: WhatsAppConversation) {
   customerSearch.value = conversation.Cliente?.nome || ''
   customerOptions.value = []
   showDetails.value = false
+  toolsOpen.value = false
   await loadMessages()
   if (conversation.naoLidas) await markRead()
 }
@@ -300,6 +406,26 @@ async function markRead() {
     await loadConversations()
   } catch (error) {
     console.error(error)
+  }
+}
+
+// Assume o atendimento (ESPERA -> ABERTA), registrando o atendente. Move a aba para "Abertas"
+// para o atendente continuar o fluxo no contexto certo.
+async function attend() {
+  if (!selectedConversation.value) return
+  try {
+    attending.value = true
+    const updated = await WhatsAppRepository.attendConversation(selectedConversation.value.id)
+    selectedConversation.value = updated
+    conversationForm.status = updated.status
+    statusFilter.value = 'ABERTA'
+    await loadConversations()
+    toast.success('Atendimento assumido.')
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível assumir o atendimento.')
+  } finally {
+    attending.value = false
   }
 }
 
@@ -427,7 +553,7 @@ onMounted(async () => {
             />
           </div>
           <div class="grid grid-cols-3 gap-2 text-xs">
-            <Button :variant="statusFilter === undefined ? 'default' : 'outline'" size="sm" @click="setStatusFilter(undefined)">Todas</Button>
+            <Button :variant="statusFilter === 'PENDENTE' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('PENDENTE')">Espera</Button>
             <Button :variant="statusFilter === 'ABERTA' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('ABERTA')">Abertas</Button>
             <Button :variant="statusFilter === 'FINALIZADA' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('FINALIZADA')">Finalizadas</Button>
           </div>
@@ -489,25 +615,49 @@ onMounted(async () => {
             {{ initials(conversationLabel(selectedConversation)) }}
           </div>
           <div class="min-w-0 flex-1">
-            <h2 class="truncate text-sm font-semibold">{{ conversationLabel(selectedConversation) }}</h2>
+            <div class="flex items-center gap-2">
+              <h2 class="truncate text-sm font-semibold">{{ conversationLabel(selectedConversation) }}</h2>
+              <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium" :class="statusPillClass(selectedConversation.status)">
+                {{ statusLabel(selectedConversation.status) }}
+              </span>
+            </div>
             <p class="truncate text-xs text-muted-foreground">
               {{ selectedConversation.telefone }} · {{ selectedConversation.Instancia?.nome || 'Instância' }}
+              <template v-if="selectedConversation.Atendente"> · Atendente: {{ selectedConversation.Atendente.nome }}</template>
             </p>
           </div>
           <div class="flex items-center gap-2">
+            <Button
+              v-if="selectedConversation.status === 'PENDENTE'"
+              size="sm"
+              class="text-white"
+              :disabled="attending"
+              @click="attend"
+            >
+              <LoaderCircle v-if="attending" class="mr-1 h-4 w-4 animate-spin" />
+              <Headset v-else class="mr-1 h-4 w-4" />
+              Atender
+            </Button>
             <Button variant="outline" size="sm" @click="markRead">
               <CheckCheck class="mr-1 h-4 w-4" />
               <span class="hidden sm:inline">Marcar lida</span>
             </Button>
             <Button
-              v-if="selectedConversation.status !== 'FINALIZADA'"
+              v-if="selectedConversation.status === 'ABERTA'"
               variant="outline"
               size="sm"
               @click="updateConversation({ status: 'FINALIZADA' })"
             >
               Finalizar
             </Button>
-            <Button v-else variant="outline" size="sm" @click="updateConversation({ status: 'ABERTA' })">Reabrir</Button>
+            <Button
+              v-else-if="selectedConversation.status === 'FINALIZADA'"
+              variant="outline"
+              size="sm"
+              @click="updateConversation({ status: 'ABERTA' })"
+            >
+              Reabrir
+            </Button>
             <Button variant="ghost" size="icon" @click="showDetails = !showDetails">
               <ChevronDown class="h-4 w-4 transition" :class="showDetails ? 'rotate-180' : ''" />
             </Button>
@@ -549,8 +699,8 @@ onMounted(async () => {
               class="h-9 w-full rounded-md border bg-background px-3 text-sm"
               @change="updateConversation({ status: conversationForm.status })"
             >
-              <option value="ABERTA">Aberta</option>
-              <option value="PENDENTE">Pendente</option>
+              <option value="PENDENTE">Em espera</option>
+              <option value="ABERTA">Em atendimento</option>
               <option value="FINALIZADA">Finalizada</option>
             </select>
           </div>
@@ -587,23 +737,78 @@ onMounted(async () => {
           </div>
         </ScrollArea>
 
-        <!-- Composer -->
-        <form class="border-t bg-background p-3" @submit.prevent="sendText">
-          <div class="mb-2 grid gap-2 md:grid-cols-[160px_1fr]">
-            <select v-model="messageForm.tipo" class="h-9 rounded-md border bg-background px-3 text-sm">
+        <!-- Em espera: precisa assumir o atendimento antes de responder -->
+        <div v-if="selectedConversation.status === 'PENDENTE'" class="flex items-center justify-between gap-3 border-t bg-amber-500/10 p-3">
+          <p class="text-xs text-amber-700 dark:text-amber-400">
+            Conversa em espera. Assuma o atendimento para responder e registrar quem está atendendo.
+          </p>
+          <Button size="sm" class="shrink-0 text-white" :disabled="attending" @click="attend">
+            <LoaderCircle v-if="attending" class="mr-1 h-4 w-4 animate-spin" />
+            <Headset v-else class="mr-1 h-4 w-4" />
+            Atender
+          </Button>
+        </div>
+
+        <!-- Finalizada: precisa reabrir para responder -->
+        <div v-else-if="selectedConversation.status === 'FINALIZADA'" class="flex items-center justify-between gap-3 border-t bg-muted/40 p-3">
+          <p class="text-xs text-muted-foreground">Atendimento finalizado. Reabra para voltar a responder.</p>
+          <Button variant="outline" size="sm" class="shrink-0" @click="updateConversation({ status: 'ABERTA' })">Reabrir</Button>
+        </div>
+
+        <!-- Composer (apenas em atendimento) -->
+        <form v-else class="border-t bg-background p-3" @submit.prevent="sendText">
+          <div class="mb-2 flex items-center gap-2">
+            <!-- Ações rápidas / ferramentas -->
+            <div class="relative">
+              <div v-if="toolsOpen" class="fixed inset-0 z-10" @click="toolsOpen = false"></div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                class="shrink-0"
+                :class="toolsOpen ? 'border-primary text-primary' : ''"
+                title="Ferramentas (ou digite /)"
+                @click="toggleTools"
+              >
+                <Blocks class="h-4 w-4" />
+              </Button>
+              <div
+                v-if="toolsOpen"
+                class="absolute bottom-full left-0 z-20 mb-2 w-72 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
+              >
+                <p class="border-b px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Enviar dados do sistema</p>
+                <button
+                  type="button"
+                  class="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="!hasLinkedClient"
+                  @click="openSaleTool"
+                >
+                  <Receipt class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>
+                    <span class="block font-medium">Venda</span>
+                    <span class="block text-[11px] text-muted-foreground">Envie o resumo de uma venda do cliente</span>
+                  </span>
+                </button>
+                <p v-if="!hasLinkedClient" class="border-t bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-400">
+                  Vincule um cliente do sistema à conversa para usar as ferramentas.
+                </p>
+              </div>
+            </div>
+
+            <select v-model="messageForm.tipo" class="h-9 w-40 rounded-md border bg-background px-3 text-sm">
               <option value="text">Texto</option>
               <option value="image">Imagem</option>
               <option value="audio">Áudio</option>
               <option value="video">Vídeo</option>
               <option value="document">Documento</option>
             </select>
-            <Input v-if="messageForm.tipo !== 'text'" v-model="messageForm.mediaUrl" placeholder="URL pública da mídia" />
+            <Input v-if="messageForm.tipo !== 'text'" v-model="messageForm.mediaUrl" class="flex-1" placeholder="URL pública da mídia" />
           </div>
           <div class="flex items-end gap-2">
             <Textarea
               v-model="messageForm.conteudo"
               class="min-h-[48px]"
-              :placeholder="messageForm.tipo === 'text' ? 'Digite a resposta...' : 'Legenda opcional...'"
+              :placeholder="messageForm.tipo === 'text' ? 'Digite a resposta ou / para ferramentas...' : 'Legenda opcional...'"
               @keydown.enter.exact.prevent="sendText"
             />
             <Button type="submit" class="text-white" :disabled="sending || !canSendMessage">
@@ -628,6 +833,62 @@ onMounted(async () => {
         </Button>
       </section>
     </div>
+
+    <!-- Ferramenta: enviar dados de venda do cliente -->
+    <Dialog v-model:open="saleTool.open">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Enviar dados de venda</DialogTitle>
+          <DialogDescription>
+            Selecione uma venda de <strong>{{ selectedConversation?.Cliente?.nome || 'cliente' }}</strong> para enviar o resumo no chat.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-3">
+          <div class="flex gap-2">
+            <Input v-model="saleTool.search" placeholder="Buscar por código (ex.: VEN_001)" @keyup.enter="loadSaleToolItems" />
+            <Button variant="outline" size="icon" :disabled="saleTool.loading" @click="loadSaleToolItems">
+              <LoaderCircle v-if="saleTool.loading" class="h-4 w-4 animate-spin" />
+              <Search v-else class="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div class="max-h-[50vh] space-y-2 overflow-y-auto">
+            <div
+              v-for="venda in saleTool.items"
+              :key="venda.id"
+              class="flex items-center justify-between gap-3 rounded-md border p-3"
+            >
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <p class="truncate text-sm font-semibold">{{ venda.uid }}</p>
+                  <span class="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{{ saleStatusLabel(venda.status) }}</span>
+                </div>
+                <p class="text-xs text-muted-foreground">
+                  {{ formatTime(venda.data) }} · {{ formatMoney(venda.total) }}
+                </p>
+              </div>
+              <Button size="sm" class="shrink-0 text-white" :disabled="saleTool.sendingId !== null" @click="sendSale(venda.id)">
+                <LoaderCircle v-if="saleTool.sendingId === venda.id" class="mr-1 h-4 w-4 animate-spin" />
+                <Send v-else class="mr-1 h-4 w-4" />
+                Enviar
+              </Button>
+            </div>
+
+            <div v-if="saleTool.loading && !saleTool.items.length" class="flex items-center justify-center py-8 text-sm text-muted-foreground">
+              <LoaderCircle class="mr-2 h-4 w-4 animate-spin" /> Carregando vendas...
+            </div>
+            <div v-else-if="!saleTool.items.length" class="py-8 text-center text-sm text-muted-foreground">
+              Nenhuma venda encontrada para este cliente.
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="saleTool.open = false">Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Nova conversa a partir de um cliente -->
     <Dialog v-model:open="newChat.open">

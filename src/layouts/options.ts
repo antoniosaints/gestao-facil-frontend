@@ -101,6 +101,12 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'assinaturas:cobrancas', nome: 'Cobranças' },
     { key: 'assinaturas:comodatos', nome: 'Comodatos' },
   ],
+  atendimento: [
+    { key: 'atendimento:painel', nome: 'Painel' },
+    { key: 'atendimento:chat', nome: 'Chat' },
+    { key: 'atendimento:agentes', nome: 'Agentes' },
+    { key: 'atendimento:relatorios', nome: 'Relatórios' },
+  ],
 }
 
 export const ALL_SUBMENU_VISIBILITY_KEYS = Object.values(
@@ -438,9 +444,38 @@ export const sidebarMenuOptions = (
       key: 'atendimento',
       nome: 'Atendimento',
       icone: Headset,
-      show: permissions.configuracoes.visualizar && hasAtendimentoApp,
       color: 'green',
-      link: '/atendimento',
+      show: permissions.configuracoes.visualizar && hasAtendimentoApp,
+      children: [
+        {
+          key: 'atendimento:painel',
+          nome: 'Painel',
+          link: '/atendimento/painel',
+          icone: ChartPie,
+          color: 'green',
+        },
+        {
+          key: 'atendimento:chat',
+          nome: 'Chat',
+          link: '/atendimento',
+          icone: MessageCircle,
+          color: 'green',
+        },
+        {
+          key: 'atendimento:agentes',
+          nome: 'Agentes',
+          link: '/atendimento/agentes',
+          icone: Bot,
+          color: 'green',
+        },
+        {
+          key: 'atendimento:relatorios',
+          nome: 'Relatórios',
+          link: '/atendimento/relatorios',
+          icone: FileDigit,
+          color: 'green',
+        },
+      ],
     },
     {
       key: 'whatsapp',
