@@ -66,6 +66,18 @@ export interface WhatsAppLinkedCustomer {
   whastapp?: string | null
 }
 
+export interface WhatsAppContactListItem {
+  id: number
+  telefone: string
+  nome?: string | null
+  foto?: string | null
+  clienteId?: number | null
+  Cliente?: WhatsAppLinkedCustomer | null
+  _count?: { conversas: number }
+  createdAt: string
+  updatedAt: string
+}
+
 export interface WhatsAppConversation {
   id: number
   instanciaId: number
@@ -253,6 +265,28 @@ export class WhatsAppRepository {
   static async updateConversation(conversaId: number, payload: Partial<{ status: WhatsAppConversationStatus; atendenteId: number | null; setor: string | null; fila: string | null; clienteId: number | null }>) {
     const { data } = await http.patch(`/whatsapp/conversas/${conversaId}`, payload)
     return data.data as WhatsAppConversation
+  }
+
+  // Apagar chat (conversa + mensagens). Restrito a administradores no backend.
+  static async deleteConversation(conversaId: number) {
+    const { data } = await http.delete(`/whatsapp/conversas/${conversaId}`)
+    return data.data as { id: number }
+  }
+
+  static async listContacts(params: { search?: string; take?: number; cursor?: number } = {}) {
+    const { data } = await http.get('/whatsapp/contatos', { params })
+    return data.data as PaginatedResponse<WhatsAppContactListItem>
+  }
+
+  static async updateContact(contatoId: number, payload: Partial<{ nome: string | null; clienteId: number | null }>) {
+    const { data } = await http.patch(`/whatsapp/contatos/${contatoId}`, payload)
+    return data.data as WhatsAppContactListItem
+  }
+
+  // Apaga um contato e todas as suas conversas/mensagens. Restrito a administradores no backend.
+  static async deleteContact(contatoId: number) {
+    const { data } = await http.delete(`/whatsapp/contatos/${contatoId}`)
+    return data.data as { id: number; conversasRemovidas: number }
   }
 
   static async attendConversation(conversaId: number) {

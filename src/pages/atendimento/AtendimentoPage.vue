@@ -22,10 +22,13 @@ import {
   Receipt,
   Search,
   Send,
+  Trash2,
   UserPlus,
   X,
 } from 'lucide-vue-next'
 import { useSocketEvent } from '@/composables/useSocketEvent'
+import { useConfirm } from '@/composables/useConfirm'
+import { useUiStore } from '@/stores/ui/uiStore'
 import { ClienteRepository } from '@/repositories/cliente-repository'
 import {
   WhatsAppRepository,
@@ -39,10 +42,14 @@ import {
 const toast = useToast()
 const route = useRoute()
 const router = useRouter()
+const storeUi = useUiStore()
+// Apagar chats é permitido apenas para administradores (nível 4: admin/root).
+const isAdmin = computed(() => Boolean(storeUi.permissoes?.admin))
 
 const loading = ref(false)
 const sending = ref(false)
 const attending = ref(false)
+const deleting = ref(false)
 const showDetails = ref(false)
 
 const instances = ref<WhatsAppInstance[]>([])
@@ -540,6 +547,38 @@ async function linkCustomer(value: string) {
   toast.success('Cliente vinculado à conversa.')
 }
 
+// Remove localmente uma conversa apagada (por esta aba ou por outra, via socket).
+function dropConversation(conversaId: number) {
+  conversations.value = conversations.value.filter((item) => item.id !== conversaId)
+  if (selectedConversation.value?.id === conversaId) {
+    selectedConversation.value = null
+    messages.value = []
+  }
+}
+
+async function deleteChat() {
+  if (!selectedConversation.value || !isAdmin.value) return
+  const confirmed = await useConfirm().confirm({
+    title: 'Apagar conversa',
+    message: 'Isso remove a conversa e todas as mensagens dela permanentemente. O contato é mantido. Deseja continuar?',
+    confirmText: 'Sim, apagar',
+    colorButton: 'danger',
+  })
+  if (!confirmed) return
+  const conversaId = selectedConversation.value.id
+  try {
+    deleting.value = true
+    await WhatsAppRepository.deleteConversation(conversaId)
+    dropConversation(conversaId)
+    toast.success('Conversa apagada.')
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível apagar a conversa.')
+  } finally {
+    deleting.value = false
+  }
+}
+
 useSocketEvent<WhatsAppConversation>('whatsapp:conversa:updated', async (conversation) => {
   const index = conversations.value.findIndex((item) => item.id === conversation.id)
   if (index >= 0) {
@@ -561,6 +600,10 @@ useSocketEvent<WhatsAppMessage>('whatsapp:mensagem:created', async (message) => 
   else messages.value.push(message)
   await scrollToBottom()
   void prefetchMedia([message])
+})
+
+useSocketEvent<{ id: number }>('whatsapp:conversa:deleted', (payload) => {
+  if (payload?.id) dropConversation(payload.id)
 })
 
 useSocketEvent<WhatsAppInstance>('whatsapp:instancia:updated', async () => {
@@ -761,6 +804,18 @@ onMounted(async () => {
               @click="updateConversation({ status: 'ABERTA' })"
             >
               Reabrir
+            </Button>
+            <Button
+              v-if="isAdmin"
+              variant="ghost"
+              size="icon"
+              class="text-destructive hover:text-destructive"
+              title="Apagar conversa"
+              :disabled="deleting"
+              @click="deleteChat"
+            >
+              <LoaderCircle v-if="deleting" class="h-4 w-4 animate-spin" />
+              <Trash2 v-else class="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" @click="showDetails = !showDetails">
               <ChevronDown class="h-4 w-4 transition" :class="showDetails ? 'rotate-180' : ''" />

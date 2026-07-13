@@ -298,6 +298,16 @@ const routes: RouteInterface[] = [
     },
   },
   {
+    path: '/atendimento/contatos',
+    name: 'atendimento-contatos',
+    component: () => import('@/pages/atendimento/ContatosAtendimento.vue'),
+    meta: {
+      layout: 'main',
+      permissao: 2,
+      modulo: 'atendimento',
+    },
+  },
+  {
     path: '/atendimento/agentes',
     name: 'atendimento-agentes',
     component: () => import('@/pages/atendimento/AgentesAtendimento.vue'),

@@ -32,6 +32,7 @@ import {
   TrendingDown,
   TrendingUp,
   User,
+  Users,
   UserStar,
   Wrench,
 } from 'lucide-vue-next'
@@ -104,6 +105,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
   atendimento: [
     { key: 'atendimento:painel', nome: 'Painel' },
     { key: 'atendimento:chat', nome: 'Chat' },
+    { key: 'atendimento:contatos', nome: 'Contatos' },
     { key: 'atendimento:agentes', nome: 'Agentes' },
     { key: 'atendimento:relatorios', nome: 'Relatórios' },
   ],
@@ -459,6 +461,13 @@ export const sidebarMenuOptions = (
           nome: 'Chat',
           link: '/atendimento',
           icone: MessageCircle,
+          color: 'green',
+        },
+        {
+          key: 'atendimento:contatos',
+          nome: 'Contatos',
+          link: '/atendimento/contatos',
+          icone: Users,
           color: 'green',
         },
         {
