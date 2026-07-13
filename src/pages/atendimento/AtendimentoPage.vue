@@ -11,12 +11,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   ArrowLeft,
+  ArrowRightLeft,
   Blocks,
-  CheckCheck,
   ChevronDown,
+  Clock,
   Headset,
   Inbox,
   LoaderCircle,
+  MessageSquareDashed,
+  MessageSquareLock,
   MessageSquarePlus,
   MessageSquareText,
   Receipt,
@@ -31,6 +34,7 @@ import { useSocketEvent } from '@/composables/useSocketEvent'
 import { useConfirm } from '@/composables/useConfirm'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { ClienteRepository } from '@/repositories/cliente-repository'
+import { UsuarioRepository } from '@/repositories/usuario-repository'
 import {
   WhatsAppRepository,
   type ConversationSaleItem,
@@ -569,7 +573,7 @@ async function attend() {
 }
 
 async function updateConversation(
-  payload: Partial<{ status: WhatsAppConversationStatus; setor: string | null; clienteId: number | null }>,
+  payload: Partial<{ status: WhatsAppConversationStatus; setor: string | null; clienteId: number | null; atendenteId: number | null }>,
 ) {
   if (!selectedConversation.value) return
   try {
@@ -590,6 +594,43 @@ async function loadCustomers() {
   } catch (error) {
     console.error(error)
     customerOptions.value = []
+  }
+}
+
+// --- Transferência de atendimento para outro usuário da conta ---
+const transferOpen = ref(false)
+const transferLoading = ref(false)
+const transferSaving = ref(false)
+const transferUserId = ref<number | null>(null)
+const transferUsers = ref<Array<{ id: number; label: string }>>([])
+
+async function openTransfer() {
+  transferUserId.value = null
+  transferOpen.value = true
+  try {
+    transferLoading.value = true
+    transferUsers.value = await UsuarioRepository.select2()
+  } catch (error) {
+    console.error(error)
+    toast.error('Não foi possível carregar os usuários para transferência.')
+  } finally {
+    transferLoading.value = false
+  }
+}
+
+async function confirmTransfer() {
+  if (!selectedConversation.value || !transferUserId.value) return
+  const alvo = transferUsers.value.find((user) => user.id === transferUserId.value)
+  try {
+    transferSaving.value = true
+    await updateConversation({ atendenteId: transferUserId.value })
+    transferOpen.value = false
+    toast.success(`Atendimento transferido${alvo ? ` para ${alvo.label}` : ''}.`)
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível transferir o atendimento.')
+  } finally {
+    transferSaving.value = false
   }
 }
 
@@ -729,9 +770,18 @@ onMounted(async () => {
             />
           </div>
           <div class="grid grid-cols-3 gap-2 text-xs">
-            <Button :variant="statusFilter === 'PENDENTE' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('PENDENTE')">Espera</Button>
-            <Button :variant="statusFilter === 'ABERTA' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('ABERTA')">Abertas</Button>
-            <Button :variant="statusFilter === 'FINALIZADA' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('FINALIZADA')">Finalizadas</Button>
+            <Button :variant="statusFilter === 'PENDENTE' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('PENDENTE')">
+              <Clock class="mr-1 h-3.5 w-3.5" />
+              Espera
+            </Button>
+            <Button :variant="statusFilter === 'ABERTA' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('ABERTA')">
+              <MessageSquareDashed class="mr-1 h-3.5 w-3.5" />
+              Abertas
+            </Button>
+            <Button :variant="statusFilter === 'FINALIZADA' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('FINALIZADA')">
+              <MessageSquareLock class="mr-1 h-3.5 w-3.5" />
+              Finalizadas
+            </Button>
           </div>
         </div>
 
@@ -838,9 +888,15 @@ onMounted(async () => {
               <Headset v-else class="mr-1 h-4 w-4" />
               Atender
             </Button>
-            <Button variant="outline" size="sm" @click="markRead">
-              <CheckCheck class="mr-1 h-4 w-4" />
-              <span class="hidden sm:inline">Marcar lida</span>
+            <Button
+              v-if="selectedConversation.status === 'ABERTA'"
+              variant="outline"
+              size="sm"
+              title="Transferir atendimento para outro usuário"
+              @click="openTransfer"
+            >
+              <ArrowRightLeft class="mr-1 h-4 w-4" />
+              <span class="hidden sm:inline">Transferir</span>
             </Button>
             <Button
               v-if="selectedConversation.status === 'ABERTA'"
@@ -1226,6 +1282,43 @@ onMounted(async () => {
             <LoaderCircle v-if="newChat.starting" class="mr-2 h-4 w-4 animate-spin" />
             <MessageSquarePlus v-else class="mr-2 h-4 w-4" />
             Iniciar conversa
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Transferir atendimento para outro usuário da conta -->
+    <Dialog v-model:open="transferOpen">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Transferir atendimento</DialogTitle>
+          <DialogDescription>Escolha o usuário que passará a ser responsável por esta conversa.</DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-2">
+          <Label>Usuário responsável</Label>
+          <div v-if="transferLoading" class="flex items-center gap-2 text-sm text-muted-foreground">
+            <LoaderCircle class="h-4 w-4 animate-spin" /> Carregando usuários...
+          </div>
+          <select
+            v-else
+            v-model.number="transferUserId"
+            class="h-9 w-full rounded-md border bg-background px-3 text-sm"
+          >
+            <option :value="null">Selecionar usuário...</option>
+            <option v-for="user in transferUsers" :key="user.id" :value="user.id">{{ user.label }}</option>
+          </select>
+          <p v-if="selectedConversation?.Atendente" class="text-xs text-muted-foreground">
+            Atendente atual: {{ selectedConversation.Atendente.nome }}
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="transferOpen = false">Cancelar</Button>
+          <Button class="text-white" :disabled="transferSaving || !transferUserId" @click="confirmTransfer">
+            <LoaderCircle v-if="transferSaving" class="mr-2 h-4 w-4 animate-spin" />
+            <ArrowRightLeft v-else class="mr-2 h-4 w-4" />
+            Transferir
           </Button>
         </DialogFooter>
       </DialogContent>

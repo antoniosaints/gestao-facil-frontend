@@ -1,6 +1,7 @@
 import { type Permissoes } from '@/stores/ui/uiStore'
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
+  Bot,
   BrainCircuit,
   CalendarClock,
   ChartPie,
@@ -77,6 +78,12 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
           nome: 'Chaves API',
           link: '/admin/inteligencia/chaves',
           icone: KeyRound,
+          color: 'violet',
+        },
+        {
+          nome: 'Core IA',
+          link: '/admin/inteligencia/core',
+          icone: Bot,
           color: 'violet',
         },
       ],

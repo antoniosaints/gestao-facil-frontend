@@ -125,6 +125,11 @@ const routes: RouteInterface[] = [
         name: 'admin-ia-chaves',
         component: () => import('@/pages/admin/inteligencia/Chaves.vue'),
       },
+      {
+        path: 'inteligencia/core',
+        name: 'admin-ia-core',
+        component: () => import('@/pages/admin/inteligencia/CoreIA.vue'),
+      },
     ],
   },
   {

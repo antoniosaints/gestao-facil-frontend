@@ -20,6 +20,11 @@ export class UsuarioRepository {
     const data = await http.get(`/usuarios/whoami`)
     return data.data
   }
+  // Lista usuários da conta (id + nome) para seletores — ex.: transferir atendimento.
+  static async select2(search?: string) {
+    const { data } = await http.get('/usuarios/select2', { params: { search } })
+    return data.results as Array<{ id: number; label: string }>
+  }
   static async get(id: number) {
     const { data } = await http.get(`/usuarios/get/${id}`)
     return data.data

@@ -36,6 +36,27 @@ export interface IaModeloPayload {
   ativo?: boolean
 }
 
+export interface IaCoreConfig {
+  id: number
+  provider: string
+  modelId: string
+  systemPrompt: string
+  defaultSystemPrompt: string
+  ativo: boolean
+  apiKeyMasked: string
+  apiKeyConfigured: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IaCoreConfigPayload {
+  provider?: string
+  modelId?: string
+  apiKey?: string
+  systemPrompt?: string
+  ativo?: boolean
+}
+
 // Configuração de IA da plataforma (área do CEO / super admin).
 export class IaAdminRepository {
   static async listChaves() {
@@ -76,5 +97,16 @@ export class IaAdminRepository {
   static async deleteModelo(id: number) {
     const res = await http.delete(`/admin/ia/modelos/${id}`)
     return res.data.data as { id: number }
+  }
+
+  // Core IA — assistente interno do ERP (modelo, chave dedicada, prompt e comportamento).
+  static async getCoreConfig() {
+    const res = await http.get('/admin/ia/core')
+    return res.data.data as IaCoreConfig
+  }
+
+  static async saveCoreConfig(payload: IaCoreConfigPayload) {
+    const res = await http.put('/admin/ia/core', payload)
+    return res.data.data as IaCoreConfig
   }
 }
