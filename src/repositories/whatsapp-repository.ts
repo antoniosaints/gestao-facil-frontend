@@ -179,6 +179,31 @@ export interface ConversationSaleTool {
   items: ConversationSaleItem[]
 }
 
+export interface WhatsAppAgent {
+  id: number
+  nome: string
+  prompt: string
+  modelo: string
+  ativo: boolean
+  horaInicio?: string | null
+  horaFim?: string | null
+  diasSemana: string
+  instanciaIds: number[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface WhatsAppAgentPayload {
+  nome: string
+  prompt: string
+  modelo?: string
+  ativo?: boolean
+  horaInicio?: string | null
+  horaFim?: string | null
+  diasSemana?: string | null
+  instanciaIds?: number[]
+}
+
 export class WhatsAppRepository {
   static async listInstances() {
     const { data } = await http.get('/whatsapp/instances')
@@ -287,6 +312,27 @@ export class WhatsAppRepository {
   static async deleteContact(contatoId: number) {
     const { data } = await http.delete(`/whatsapp/contatos/${contatoId}`)
     return data.data as { id: number; conversasRemovidas: number }
+  }
+
+  // Agentes de autoatendimento (IA). Gerenciados por administradores.
+  static async listAgents() {
+    const { data } = await http.get('/whatsapp/agentes')
+    return data.data as { items: WhatsAppAgent[]; models: string[] }
+  }
+
+  static async createAgent(payload: WhatsAppAgentPayload) {
+    const { data } = await http.post('/whatsapp/agentes', payload)
+    return data.data as WhatsAppAgent
+  }
+
+  static async updateAgent(id: number, payload: Partial<WhatsAppAgentPayload>) {
+    const { data } = await http.put(`/whatsapp/agentes/${id}`, payload)
+    return data.data as WhatsAppAgent
+  }
+
+  static async deleteAgent(id: number) {
+    const { data } = await http.delete(`/whatsapp/agentes/${id}`)
+    return data.data as { id: number }
   }
 
   static async attendConversation(conversaId: number) {
