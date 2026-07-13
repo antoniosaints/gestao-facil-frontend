@@ -398,17 +398,44 @@
           <DialogDescription>O token e salvo no backend e nao volta a ser exibido na interface.</DialogDescription>
         </DialogHeader>
         <div class="grid gap-4">
+          <div class="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              :class="instanceMode === 'manual' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              @click="instanceMode = 'manual'"
+            >
+              Manual
+            </button>
+            <button
+              type="button"
+              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              :class="instanceMode === 'auto' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              @click="instanceMode = 'auto'"
+            >
+              Gerar
+            </button>
+          </div>
+
           <div class="space-y-1">
             <Label>Nome</Label>
             <Input v-model="instanceForm.nome" placeholder="Nome amigavel" />
           </div>
-          <div class="space-y-1">
-            <Label>Instance ID</Label>
-            <Input v-model="instanceForm.instanceId" placeholder="Instance ID" />
-          </div>
-          <div class="space-y-1">
-            <Label>Token W-API</Label>
-            <Input v-model="instanceForm.token" type="password" placeholder="Token W-API" autocomplete="off" />
+
+          <template v-if="instanceMode === 'manual'">
+            <div class="space-y-1">
+              <Label>Instance ID</Label>
+              <Input v-model="instanceForm.instanceId" placeholder="Instance ID" />
+            </div>
+            <div class="space-y-1">
+              <Label>Token W-API</Label>
+              <Input v-model="instanceForm.token" type="password" placeholder="Token W-API" autocomplete="off" />
+            </div>
+          </template>
+
+          <div v-else class="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+            <CheckCircle2 class="mt-0.5 h-4 w-4 shrink-0" />
+            <p>A instância é criada automaticamente via W-API com <strong>7 dias grátis</strong>. Você só paga após 7 dias. O Instance ID e o token são gerados pelo sistema — o token não é exibido.</p>
           </div>
         </div>
         <DialogFooter>
@@ -416,7 +443,7 @@
           <Button class="text-white" :disabled="savingInstance" @click="saveInstance">
             <LoaderIcon v-if="savingInstance" class="mr-2 h-4 w-4 animate-spin" />
             <Plus v-else class="mr-2 h-4 w-4" />
-            Cadastrar
+            {{ instanceMode === 'auto' ? 'Gerar instância' : 'Cadastrar' }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -736,6 +763,7 @@ const webhookSyncResults = ref<WhatsAppWebhookSyncResult[]>([])
 const webhookUrls = reactive<WhatsAppWebhookUrls>({})
 
 const instanceForm = reactive({ nome: '', instanceId: '', token: '' })
+const instanceMode = ref<'manual' | 'auto'>('manual')
 const editInstanceForm = reactive({ nome: '', instanceId: '', token: '' })
 
 const connectedInstances = computed(() => instances.value.filter((instance) => instance.status === 'CONECTADA').length)
@@ -995,21 +1023,32 @@ async function deletePendingPayment(instance: WhatsAppInstance, payment: WhatsAp
 }
 
 async function saveInstance() {
-  if (!instanceForm.nome.trim() || !instanceForm.instanceId.trim() || !instanceForm.token.trim()) {
+  if (!instanceForm.nome.trim()) {
+    toast.warning('Informe o nome da instância.')
+    return
+  }
+
+  if (instanceMode.value === 'manual' && (!instanceForm.instanceId.trim() || !instanceForm.token.trim())) {
     toast.warning('Informe nome, instance ID e token.')
     return
   }
 
   try {
     savingInstance.value = true
-    await WhatsAppRepository.createInstance({ ...instanceForm })
+    if (instanceMode.value === 'auto') {
+      await WhatsAppRepository.createInstanceAuto({ nome: instanceForm.nome.trim() })
+      toast.success('Instância gerada. 7 dias grátis — conecte lendo o QR Code; a cobrança começa após 7 dias.')
+    } else {
+      await WhatsAppRepository.createInstance({ ...instanceForm })
+      toast.success('Instância cadastrada.')
+    }
     Object.assign(instanceForm, { nome: '', instanceId: '', token: '' })
-    toast.success('Instância cadastrada.')
+    instanceMode.value = 'manual'
     createInstanceModalOpen.value = false
     await loadInstances()
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
-    toast.error('Erro ao cadastrar instância.')
+    toast.error(error?.response?.data?.message || 'Erro ao cadastrar instância.')
   } finally {
     savingInstance.value = false
   }

@@ -215,6 +215,11 @@ export class WhatsAppRepository {
     return data.data as WhatsAppInstance
   }
 
+  static async createInstanceAuto(payload: { nome: string }) {
+    const { data } = await http.post('/whatsapp/instances/generate', payload)
+    return data.data as { instance: WhatsAppInstance; isTrial: boolean; trialDays: number }
+  }
+
   static async updateInstance(id: number, payload: Partial<{ nome: string; instanceId: string; token: string | null; ativo: boolean }>) {
     const { data } = await http.put(`/whatsapp/instances/${id}`, payload)
     return data.data as WhatsAppInstance
