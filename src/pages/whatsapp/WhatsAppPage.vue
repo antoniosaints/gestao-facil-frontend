@@ -392,7 +392,7 @@
     </Dialog>
 
     <Dialog v-model:open="createInstanceModalOpen">
-      <DialogContent class="max-w-2xl">
+      <DialogContent class="max-w-lg">
         <DialogHeader>
           <DialogTitle>Nova instancia W-API</DialogTitle>
           <DialogDescription>O token e salvo no backend e nao volta a ser exibido na interface.</DialogDescription>
@@ -401,19 +401,25 @@
           <div class="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
             <button
               type="button"
-              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              class="rounded-md px-3 py-2 text-sm font-medium transition"
               :class="instanceMode === 'manual' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
               @click="instanceMode = 'manual'"
             >
-              Manual
+            <span class="flex items-center justify-center">
+              <Hand class="mr-2 h-4 w-4" />
+                Manual
+            </span>
             </button>
             <button
               type="button"
-              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              class="rounded-md px-3 py-2 text-sm font-medium transition"
               :class="instanceMode === 'auto' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
               @click="instanceMode = 'auto'"
             >
-              Gerar
+            <span class="flex items-center justify-center">
+              <Brain class="mr-2 h-4 w-4" />
+              Automático
+            </span>
             </button>
           </div>
 
@@ -682,11 +688,13 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import {
   AlertTriangle,
+  Brain,
   CheckCircle2,
   Clock,
   Copy,
   CreditCard,
   ExternalLink,
+  Hand,
   Landmark,
   LoaderIcon,
   MessageCircle,

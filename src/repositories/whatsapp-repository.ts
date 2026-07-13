@@ -112,6 +112,12 @@ export interface WhatsAppMessage {
   erroEnvio?: string | null
   enviadoEm?: string | null
   lidoEm?: string | null
+  // Reações recebidas nesta mensagem (JSON serializado: array de { emoji, fromMe, senderId }).
+  // Exibidas como um selo abaixo do balão, sem virar um balão próprio.
+  reacoes?: string | null
+  // Resposta/citação: id externo da mensagem citada e um resumo do conteúdo dela.
+  quotedMessageId?: string | null
+  quotedConteudo?: string | null
   createdAt: string
 }
 
@@ -287,7 +293,7 @@ export class WhatsAppRepository {
     return URL.createObjectURL(data as Blob)
   }
 
-  static async sendMessage(conversaId: number, payload: { tipo?: 'text' | 'image' | 'audio' | 'video' | 'document'; conteudo?: string; mediaUrl?: string; caption?: string; fileName?: string; extension?: string }) {
+  static async sendMessage(conversaId: number, payload: { tipo?: 'text' | 'image' | 'audio' | 'video' | 'document'; conteudo?: string; mediaUrl?: string; caption?: string; fileName?: string; extension?: string; quotedMessageId?: string }) {
     const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens`, payload)
     return data.data as WhatsAppMessage
   }

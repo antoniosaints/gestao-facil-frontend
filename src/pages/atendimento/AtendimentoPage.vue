@@ -20,6 +20,7 @@ import {
   MessageSquarePlus,
   MessageSquareText,
   Receipt,
+  Reply,
   Search,
   Send,
   Trash2,
@@ -83,6 +84,18 @@ const messageForm = reactive<{ tipo: 'text' | 'image' | 'audio' | 'video' | 'doc
   conteudo: '',
   mediaUrl: '',
 })
+
+// Mensagem que está sendo respondida (citada). Enquanto definida, mostramos uma prévia acima
+// do campo de digitação e enviamos o `quotedMessageId` para a mensagem sair como resposta.
+const replyingTo = ref<WhatsAppMessage | null>(null)
+
+function startReply(message: WhatsAppMessage) {
+  replyingTo.value = message
+}
+
+function cancelReply() {
+  replyingTo.value = null
+}
 
 // Ações rápidas (ferramentas) do chat: abre por "/" ou pelo botão de Blocks.
 const toolsOpen = ref(false)
@@ -324,6 +337,44 @@ function mediaLabel(message: WhatsAppMessage) {
   return labels[message.tipo] || 'Mídia'
 }
 
+// Reações da mensagem (evento reactionMessage): guardadas como JSON na própria mensagem
+// reagida. Exibidas como um selo abaixo do balão, agrupando emojis iguais com contagem.
+function messageReactions(message: WhatsAppMessage): Array<{ emoji: string; count: number }> {
+  if (!message.reacoes) return []
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(message.reacoes)
+  } catch {
+    return []
+  }
+  if (!Array.isArray(parsed)) return []
+  const counts = new Map<string, number>()
+  for (const item of parsed) {
+    const emoji = (item as { emoji?: unknown })?.emoji
+    if (typeof emoji === 'string' && emoji) counts.set(emoji, (counts.get(emoji) || 0) + 1)
+  }
+  return Array.from(counts, ([emoji, count]) => ({ emoji, count }))
+}
+
+// Resumo curto do conteúdo de uma mensagem, para prévias de resposta/citação.
+function messageSnippet(message: WhatsAppMessage): string {
+  return (message.conteudo && message.conteudo.trim()) || mediaLabel(message)
+}
+
+// Dados do trecho citado por uma mensagem (resposta). Tenta resolver a mensagem original já
+// carregada (para saber autor e conteúdo atual); se não estiver, usa o resumo salvo.
+function quotedPreview(message: WhatsAppMessage): { autor: string; texto: string } | null {
+  if (!message.quotedMessageId && !message.quotedConteudo) return null
+  const original = messages.value.find((item) => item.externalMessageId === message.quotedMessageId)
+  if (original) {
+    return {
+      autor: original.direcao === 'SAIDA' ? 'Você' : selectedConversation.value?.Contato?.nome || 'Contato',
+      texto: messageSnippet(original),
+    }
+  }
+  return { autor: '', texto: message.quotedConteudo || 'Mensagem' }
+}
+
 async function scrollToBottom() {
   await nextTick()
   const root: HTMLElement | null = messagesScroll.value?.$el ?? messagesScroll.value ?? null
@@ -473,8 +524,10 @@ async function sendText() {
       conteudo: messageForm.conteudo || undefined,
       caption: messageForm.tipo !== 'text' ? messageForm.conteudo || undefined : undefined,
       mediaUrl: messageForm.tipo !== 'text' ? messageForm.mediaUrl : undefined,
+      quotedMessageId: replyingTo.value?.externalMessageId || undefined,
     })
     Object.assign(messageForm, { conteudo: '', mediaUrl: '' })
+    replyingTo.value = null
     await Promise.all([loadMessages(), loadConversations()])
   } catch (error: any) {
     console.error(error)
@@ -871,13 +924,36 @@ onMounted(async () => {
             <div
               v-for="message in messages"
               :key="message.id"
-              class="flex"
+              class="group flex items-center gap-1"
               :class="message.direcao === 'SAIDA' ? 'justify-end' : 'justify-start'"
             >
+              <!-- Botão de responder: aparece ao passar o mouse; do lado interno do balão. -->
+              <button
+                type="button"
+                class="shrink-0 rounded-full p-1.5 text-muted-foreground opacity-0 transition hover:bg-muted focus:opacity-100 group-hover:opacity-100"
+                :class="message.direcao === 'SAIDA' ? '' : 'order-last'"
+                title="Responder"
+                @click="startReply(message)"
+              >
+                <Reply class="h-4 w-4" />
+              </button>
               <div
-                class="max-w-[78%] rounded-2xl px-4 py-2 shadow-sm"
+                class="flex max-w-[78%] flex-col"
+                :class="message.direcao === 'SAIDA' ? 'items-end' : 'items-start'"
+              >
+              <div
+                class="rounded-2xl px-4 py-2 shadow-sm"
                 :class="message.direcao === 'SAIDA' ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm border bg-background'"
               >
+                <!-- Trecho citado (quando a mensagem é uma resposta a outra). -->
+                <div
+                  v-if="quotedPreview(message)"
+                  class="mb-1.5 rounded-md border-l-2 px-2 py-1 text-xs"
+                  :class="message.direcao === 'SAIDA' ? 'border-white/60 bg-white/15' : 'border-primary bg-muted'"
+                >
+                  <p v-if="quotedPreview(message)?.autor" class="font-medium opacity-90">{{ quotedPreview(message)?.autor }}</p>
+                  <p class="line-clamp-2 opacity-80">{{ quotedPreview(message)?.texto }}</p>
+                </div>
                 <template v-if="message.mediaUrl">
                   <!-- Imagem/figurinha: preview clicável (abre em tela cheia). Figurinhas
                        menores; imagens com largura limitada para não quebrar o layout. -->
@@ -910,6 +986,17 @@ onMounted(async () => {
                   <span v-if="message.direcao === 'SAIDA'">· {{ message.statusEnvio }}</span>
                 </div>
               </div>
+              <!-- Reações: selo abaixo do balão, sobrepondo levemente a borda (estilo WhatsApp). -->
+              <div
+                v-if="messageReactions(message).length"
+                class="-mt-2 z-10 flex items-center gap-1 rounded-full border bg-background px-1.5 py-0.5 text-xs leading-none shadow-sm"
+              >
+                <span v-for="reaction in messageReactions(message)" :key="reaction.emoji" class="flex items-center gap-0.5">
+                  <span>{{ reaction.emoji }}</span>
+                  <span v-if="reaction.count > 1" class="text-[10px] text-muted-foreground">{{ reaction.count }}</span>
+                </span>
+              </div>
+              </div>
             </div>
 
             <div v-if="!messages.length" class="flex flex-col items-center justify-center py-16 text-center text-sm text-muted-foreground">
@@ -939,6 +1026,19 @@ onMounted(async () => {
 
         <!-- Composer (apenas em atendimento) -->
         <form v-else class="border-t bg-background p-3" @submit.prevent="sendText">
+          <!-- Prévia da mensagem sendo respondida (citada). -->
+          <div v-if="replyingTo" class="mb-2 flex items-start gap-2 rounded-md border-l-2 border-primary bg-muted/60 px-3 py-2">
+            <div class="min-w-0 flex-1">
+              <p class="flex items-center gap-1 text-xs font-medium text-primary">
+                <Reply class="h-3.5 w-3.5" />
+                Respondendo {{ replyingTo.direcao === 'SAIDA' ? 'você mesmo' : (selectedConversation.Contato?.nome || 'contato') }}
+              </p>
+              <p class="line-clamp-2 text-xs text-muted-foreground">{{ messageSnippet(replyingTo) }}</p>
+            </div>
+            <button type="button" class="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted" title="Cancelar resposta" @click="cancelReply">
+              <X class="h-4 w-4" />
+            </button>
+          </div>
           <div class="mb-2 flex items-center gap-2">
             <!-- Ações rápidas / ferramentas -->
             <div class="relative">
