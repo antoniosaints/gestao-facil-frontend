@@ -35,6 +35,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { ClienteRepository } from '@/repositories/cliente-repository'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
+import AudioMessagePlayer from '@/pages/atendimento/AudioMessagePlayer.vue'
 import {
   WhatsAppRepository,
   type ConversationSaleItem,
@@ -298,10 +299,34 @@ function isImageLoading(message: WhatsAppMessage) {
   )
 }
 
-// Baixa (descriptografando no backend) as imagens recebidas ainda não carregadas.
+// É uma mensagem de áudio (nota de voz)? Precisa ter mídia associada.
+function isAudioMessage(message: WhatsAppMessage) {
+  if (!message.mediaUrl) return false
+  return message.tipo === 'AUDIO' || Boolean(message.mediaMimeType?.startsWith('audio/'))
+}
+
+// URL do áudio para o player. Enviados (SAIDA) têm URL pública direta; recebidos (ENTRADA) vêm
+// criptografados e são descriptografados pelo backend e servidos como blob (mediaCache).
+function audioSrc(message: WhatsAppMessage): string | null {
+  if (!isAudioMessage(message) || brokenImages.value.has(String(message.id))) return null
+  if (message.direcao === 'SAIDA') return message.mediaUrl || null
+  return mediaCache.value[message.id] || null
+}
+
+// Está baixando/descriptografando um áudio recebido que ainda não chegou nem falhou?
+function isAudioLoading(message: WhatsAppMessage) {
+  return (
+    isAudioMessage(message) &&
+    message.direcao === 'ENTRADA' &&
+    !mediaCache.value[message.id] &&
+    !brokenImages.value.has(String(message.id))
+  )
+}
+
+// Baixa (descriptografando no backend) as mídias recebidas (imagens e áudios) ainda não carregadas.
 async function prefetchMedia(list: WhatsAppMessage[]) {
   for (const message of list) {
-    if (message.direcao !== 'ENTRADA' || !isImageMessage(message)) continue
+    if (message.direcao !== 'ENTRADA' || (!isImageMessage(message) && !isAudioMessage(message))) continue
     if (mediaCache.value[message.id] || brokenImages.value.has(String(message.id))) continue
     try {
       const url = await WhatsAppRepository.fetchMessageMedia(message.id)
@@ -1011,10 +1036,24 @@ onMounted(async () => {
                   <p class="line-clamp-2 opacity-80">{{ quotedPreview(message)?.texto }}</p>
                 </div>
                 <template v-if="message.mediaUrl">
+                  <!-- Áudio (nota de voz): reprodutor com waveform. -->
+                  <AudioMessagePlayer
+                    v-if="isAudioMessage(message) && audioSrc(message)"
+                    class="mb-1"
+                    :src="audioSrc(message) as string"
+                    :mine="message.direcao === 'SAIDA'"
+                  />
+                  <!-- Áudio recebido ainda sendo baixado/descriptografado. -->
+                  <div
+                    v-else-if="isAudioLoading(message)"
+                    class="mb-2 flex h-9 w-52 items-center justify-center rounded-full border bg-black/5 text-xs text-muted-foreground"
+                  >
+                    <LoaderCircle class="mr-1.5 h-4 w-4 animate-spin" /> Carregando áudio...
+                  </div>
                   <!-- Imagem/figurinha: preview clicável (abre em tela cheia). Figurinhas
                        menores; imagens com largura limitada para não quebrar o layout. -->
                   <img
-                    v-if="imageSrc(message)"
+                    v-else-if="imageSrc(message)"
                     :src="imageSrc(message) as string"
                     :alt="mediaLabel(message)"
                     loading="lazy"
