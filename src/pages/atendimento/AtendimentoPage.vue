@@ -23,6 +23,7 @@ import {
   Search,
   Send,
   UserPlus,
+  X,
 } from 'lucide-vue-next'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { ClienteRepository } from '@/repositories/cliente-repository'
@@ -219,21 +220,42 @@ function initials(value: string) {
   )
 }
 
-// Fotos de perfil do WhatsApp (pps.whatsapp.net) expiram e passam a retornar erro; quando
-// isso acontece caímos de volta nas iniciais em vez de mostrar uma imagem quebrada.
-const brokenPhotos = ref<Set<string>>(new Set())
+// Imagens do WhatsApp (fotos de perfil em pps.whatsapp.net, mídias em mmg.whatsapp.net)
+// podem expirar/vir criptografadas e falhar ao carregar; quando isso acontece caímos de volta
+// nas iniciais (avatar) ou no link (mensagem) em vez de mostrar uma imagem quebrada.
+const brokenImages = ref<Set<string>>(new Set())
+
+function handleImageError(url?: string | null) {
+  if (!url) return
+  const next = new Set(brokenImages.value)
+  next.add(url)
+  brokenImages.value = next
+}
 
 function conversationPhoto(conversation: WhatsAppConversation) {
   const foto = conversation.Contato?.foto
-  if (!foto || brokenPhotos.value.has(foto)) return null
+  if (!foto || brokenImages.value.has(foto)) return null
   return foto
 }
 
-function handlePhotoError(foto?: string | null) {
-  if (!foto) return
-  const next = new Set(brokenPhotos.value)
-  next.add(foto)
-  brokenPhotos.value = next
+// Imagem aberta em tela cheia (lightbox); null = fechado.
+const imagePreview = ref<string | null>(null)
+
+function isSticker(message: WhatsAppMessage) {
+  return message.tipo === 'STICKER'
+}
+
+// Renderiza como imagem quando é imagem/figurinha (ou o mime-type indica imagem) e o link
+// ainda não falhou ao carregar.
+function renderableImage(message: WhatsAppMessage) {
+  if (!message.mediaUrl || brokenImages.value.has(message.mediaUrl)) return null
+  const isImage =
+    message.tipo === 'IMAGEM' || message.tipo === 'STICKER' || Boolean(message.mediaMimeType?.startsWith('image/'))
+  return isImage ? message.mediaUrl : null
+}
+
+function openImagePreview(url?: string | null) {
+  if (url) imagePreview.value = url
 }
 
 function formatTime(value?: string | null) {
@@ -592,7 +614,7 @@ onMounted(async () => {
                 :alt="conversationLabel(conversation)"
                 class="h-9 w-9 rounded-full object-cover"
                 referrerpolicy="no-referrer"
-                @error="handlePhotoError(conversation.Contato?.foto)"
+                @error="handleImageError(conversation.Contato?.foto)"
               />
               <div
                 v-else
@@ -647,7 +669,7 @@ onMounted(async () => {
             :alt="conversationLabel(selectedConversation)"
             class="h-10 w-10 shrink-0 rounded-full object-cover"
             referrerpolicy="no-referrer"
-            @error="handlePhotoError(selectedConversation.Contato?.foto)"
+            @error="handleImageError(selectedConversation.Contato?.foto)"
           />
           <div
             v-else
@@ -760,10 +782,26 @@ onMounted(async () => {
                 class="max-w-[78%] rounded-2xl px-4 py-2 shadow-sm"
                 :class="message.direcao === 'SAIDA' ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm border bg-background'"
               >
-                <div v-if="message.mediaUrl" class="mb-2 rounded-lg border bg-black/5 p-2 text-xs">
-                  <a :href="message.mediaUrl" target="_blank" rel="noreferrer" class="underline">{{ mediaLabel(message) }}</a>
-                </div>
-                <p class="whitespace-pre-wrap text-sm">{{ message.conteudo || mediaLabel(message) }}</p>
+                <template v-if="message.mediaUrl">
+                  <!-- Imagem/figurinha: preview clicável (abre em tela cheia). Figurinhas
+                       menores; imagens com largura limitada para não quebrar o layout. -->
+                  <img
+                    v-if="renderableImage(message)"
+                    :src="renderableImage(message) as string"
+                    :alt="mediaLabel(message)"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                    class="mb-2 cursor-zoom-in rounded-lg"
+                    :class="isSticker(message) ? 'h-28 w-28 object-contain' : 'max-h-72 w-auto max-w-full object-cover'"
+                    @click="openImagePreview(message.mediaUrl)"
+                    @error="handleImageError(message.mediaUrl)"
+                  />
+                  <!-- Demais mídias (ou imagem que falhou ao carregar): link para abrir. -->
+                  <div v-else class="mb-2 rounded-lg border bg-black/5 p-2 text-xs">
+                    <a :href="message.mediaUrl" target="_blank" rel="noreferrer" class="underline">{{ mediaLabel(message) }}</a>
+                  </div>
+                </template>
+                <p v-if="message.conteudo || !message.mediaUrl" class="whitespace-pre-wrap text-sm">{{ message.conteudo || mediaLabel(message) }}</p>
                 <div class="mt-1 flex justify-end gap-1 text-[10px] opacity-70">
                   <span>{{ formatTime(message.createdAt) }}</span>
                   <span v-if="message.direcao === 'SAIDA'">· {{ message.statusEnvio }}</span>
@@ -989,5 +1027,28 @@ onMounted(async () => {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Lightbox: imagem/figurinha ampliada. Clique em qualquer lugar fecha. -->
+    <div
+      v-if="imagePreview"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      @click="imagePreview = null"
+    >
+      <button
+        type="button"
+        class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
+        aria-label="Fechar"
+        @click.stop="imagePreview = null"
+      >
+        <X class="h-5 w-5" />
+      </button>
+      <img
+        :src="imagePreview"
+        alt="Pré-visualização"
+        referrerpolicy="no-referrer"
+        class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+        @click.stop
+      />
+    </div>
   </div>
 </template>
