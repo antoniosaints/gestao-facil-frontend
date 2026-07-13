@@ -70,6 +70,15 @@ const iconMap = {
   abacatepay: Banknote,
 } as const
 
+const logoMap = {
+  'core-ia': '/imgs/apps/core.png',
+  assinaturas: '/imgs/apps/assina.png',
+  whatsapp: '/imgs/apps/wpp.avif',
+  atendimento: '/imgs/apps/atende.png',
+  'mercado-pago': '/imgs/apps/mp.png',
+  abacatepay: '/imgs/apps/abacate.png',
+} as const
+
 const iconShellClassMap: Record<string, string> = {
   'core-ia': 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/20',
   assinaturas: 'bg-fuchsia-500/15 text-fuchsia-300 ring-1 ring-fuchsia-500/20',
@@ -177,6 +186,10 @@ function getModulePriority(modulo: StoreModule) {
 
 function getIcon(modulo: StoreModule) {
   return iconMap[modulo.codigo as keyof typeof iconMap] || PackagePlus
+}
+
+function getImage(modulo: StoreModule) {
+  return logoMap[modulo.codigo as keyof typeof logoMap] || '/imgs/logo.png'
 }
 
 function getIconShellClass(modulo: StoreModule) {
@@ -592,7 +605,7 @@ onMounted(carregarModulos)
           >
             <div class="flex items-start gap-4">
               <div :class="['flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl', getIconShellClass(modulo)]">
-                <component :is="getIcon(modulo)" class="h-7 w-7" />
+                <img :src="getImage(modulo)" class="h-14 w-14 rounded-2xl" />
               </div>
 
               <div class="min-w-0 flex-1">
