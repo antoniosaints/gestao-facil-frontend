@@ -34,7 +34,7 @@ const uiStore = useUiStore()
 const toast = useToast()
 const { openModal, selectedConta, openManage, openCreate, refreshKey } = useAssinantesAdmin()
 
-const status = ref('TODOS')
+const status = ref('ATIVO')
 const search = ref('')
 const loading = ref(false)
 const assinantes = ref<ContaAssinanteAdmin[]>([])
@@ -45,7 +45,7 @@ const showSearchModal = ref(false)
 const showActionsModal = ref(false)
 
 const tableFilters = reactive({
-  status: 'TODOS',
+  status: 'ATIVO',
   update: 0,
 })
 
