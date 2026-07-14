@@ -312,6 +312,19 @@ export class WhatsAppRepository {
     return data.data as WhatsAppMessage
   }
 
+  // Envia uma imagem a partir do dispositivo do usuário (multipart). O backend faz o scale down,
+  // salva no storage público (Cloudflare R2) e envia a URL na conversa.
+  static async sendImageMessage(conversaId: number, file: File, options: { caption?: string; quotedMessageId?: string } = {}) {
+    const form = new FormData()
+    form.append('file', file)
+    if (options.caption) form.append('caption', options.caption)
+    if (options.quotedMessageId) form.append('quotedMessageId', options.quotedMessageId)
+    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens/imagem`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data.data as WhatsAppMessage
+  }
+
   static async updateConversation(conversaId: number, payload: Partial<{ status: WhatsAppConversationStatus; atendenteId: number | null; setor: string | null; fila: string | null; clienteId: number | null }>) {
     const { data } = await http.patch(`/whatsapp/conversas/${conversaId}`, payload)
     return data.data as WhatsAppConversation

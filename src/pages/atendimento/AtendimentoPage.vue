@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
@@ -9,17 +9,27 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import {
   ArrowLeft,
   ArrowRightLeft,
   Ban,
-  Blocks,
+  Camera,
   ChevronDown,
   Clock,
   Headset,
+  ImagePlus,
   Inbox,
+  Link,
   LoaderCircle,
+  Plus,
   MessageSquareDashed,
   MessageSquareLock,
   MessageSquarePlus,
@@ -85,11 +95,9 @@ const customerOptions = ref<Array<{ id: number; label: string }>>([])
 const messagesScroll = ref<any>(null)
 
 const conversationForm = reactive<{ status: WhatsAppConversationStatus; setor: string }>({ status: 'ABERTA', setor: '' })
-const messageForm = reactive<{ tipo: 'text' | 'image' | 'audio' | 'video' | 'document'; conteudo: string; mediaUrl: string }>({
-  tipo: 'text',
-  conteudo: '',
-  mediaUrl: '',
-})
+// O campo de texto do composer envia apenas texto; mídias vão por fluxos próprios (imagem em modal
+// de pré-visualização; áudio/vídeo/documento por link).
+const messageForm = reactive<{ conteudo: string }>({ conteudo: '' })
 
 // Mensagem que está sendo respondida (citada). Enquanto definida, mostramos uma prévia acima
 // do campo de digitação e enviamos o `quotedMessageId` para a mensagem sair como resposta.
@@ -103,8 +111,7 @@ function cancelReply() {
   replyingTo.value = null
 }
 
-// Ações rápidas (ferramentas) do chat: abre por "/" ou pelo botão de Blocks.
-const toolsOpen = ref(false)
+// Ferramenta de envio de dados do sistema (venda), acessível pelo menu de anexos (+).
 const saleTool = reactive<{ open: boolean; search: string; loading: boolean; sendingId: number | null; items: ConversationSaleItem[] }>({
   open: false,
   search: '',
@@ -118,30 +125,13 @@ const canSendMessage = computed(() => {
   // Só responde quando o atendimento está em curso (ABERTA); em ESPERA é preciso "Atender".
   if (selectedConversation.value.status !== 'ABERTA') return false
   if (selectedConversation.value.Instancia?.status !== 'CONECTADA') return false
-  if (messageForm.tipo === 'text') return Boolean(messageForm.conteudo.trim())
-  return Boolean(messageForm.mediaUrl.trim())
+  return Boolean(messageForm.conteudo.trim())
 })
 
 const totalNaoLidas = computed(() => conversations.value.reduce((total, item) => total + (item.naoLidas || 0), 0))
 const hasLinkedClient = computed(() => Boolean(selectedConversation.value?.clienteId || selectedConversation.value?.Cliente))
 
-// Abre as ferramentas ao digitar "/" no início da mensagem (comando de barra).
-watch(
-  () => messageForm.conteudo,
-  (value) => {
-    if (value === '/') {
-      messageForm.conteudo = ''
-      toolsOpen.value = true
-    }
-  },
-)
-
-function toggleTools() {
-  toolsOpen.value = !toolsOpen.value
-}
-
 function openSaleTool() {
-  toolsOpen.value = false
   if (!hasLinkedClient.value) {
     toast.warning('Vincule um cliente do sistema à conversa para usar esta ferramenta.')
     return
@@ -345,6 +335,7 @@ function openImagePreview(message: WhatsAppMessage) {
 
 onBeforeUnmount(() => {
   Object.values(mediaCache.value).forEach((url) => URL.revokeObjectURL(url))
+  if (imageDraft.previewUrl) URL.revokeObjectURL(imageDraft.previewUrl)
 })
 
 function formatTime(value?: string | null) {
@@ -537,7 +528,6 @@ async function openConversation(conversation: WhatsAppConversation) {
   customerSearch.value = conversation.Cliente?.nome || ''
   customerOptions.value = []
   showDetails.value = false
-  toolsOpen.value = false
   await loadMessages()
   if (conversation.naoLidas) await markRead()
 }
@@ -555,13 +545,11 @@ async function sendText() {
   try {
     sending.value = true
     await WhatsAppRepository.sendMessage(selectedConversation.value.id, {
-      tipo: messageForm.tipo,
-      conteudo: messageForm.conteudo || undefined,
-      caption: messageForm.tipo !== 'text' ? messageForm.conteudo || undefined : undefined,
-      mediaUrl: messageForm.tipo !== 'text' ? messageForm.mediaUrl : undefined,
+      tipo: 'text',
+      conteudo: messageForm.conteudo,
       quotedMessageId: replyingTo.value?.externalMessageId || undefined,
     })
-    Object.assign(messageForm, { conteudo: '', mediaUrl: '' })
+    messageForm.conteudo = ''
     replyingTo.value = null
     await Promise.all([loadMessages(), loadConversations()])
   } catch (error: any) {
@@ -569,6 +557,111 @@ async function sendText() {
     toast.error(error?.response?.data?.message || 'Erro ao enviar mensagem.')
   } finally {
     sending.value = false
+  }
+}
+
+// --- Envio de imagem do dispositivo (PC/celular) ---
+// Ao anexar, mostramos uma pré-visualização com legenda opcional antes de enviar. O backend faz o
+// scale down, salva no storage público e envia a URL na conversa.
+const imageInput = ref<HTMLInputElement | null>(null)
+const cameraInput = ref<HTMLInputElement | null>(null)
+const sendingImage = ref(false)
+const imageDraft = reactive<{ open: boolean; file: File | null; previewUrl: string; caption: string }>({
+  open: false,
+  file: null,
+  previewUrl: '',
+  caption: '',
+})
+
+function pickImage() {
+  imageInput.value?.click()
+}
+
+function pickCamera() {
+  cameraInput.value?.click()
+}
+
+function onImageSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = '' // permite reenviar o mesmo arquivo em seguida
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    toast.warning('Selecione um arquivo de imagem.')
+    return
+  }
+  if (imageDraft.previewUrl) URL.revokeObjectURL(imageDraft.previewUrl)
+  imageDraft.file = file
+  imageDraft.previewUrl = URL.createObjectURL(file)
+  imageDraft.caption = ''
+  imageDraft.open = true
+}
+
+function closeImageDraft() {
+  if (imageDraft.previewUrl) URL.revokeObjectURL(imageDraft.previewUrl)
+  imageDraft.open = false
+  imageDraft.file = null
+  imageDraft.previewUrl = ''
+  imageDraft.caption = ''
+}
+
+async function confirmSendImage() {
+  if (!imageDraft.file || !selectedConversation.value) return
+  try {
+    sendingImage.value = true
+    await WhatsAppRepository.sendImageMessage(selectedConversation.value.id, imageDraft.file, {
+      caption: imageDraft.caption.trim() || undefined,
+      quotedMessageId: replyingTo.value?.externalMessageId || undefined,
+    })
+    replyingTo.value = null
+    closeImageDraft()
+    await Promise.all([loadMessages(), loadConversations()])
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível enviar a imagem.')
+  } finally {
+    sendingImage.value = false
+  }
+}
+
+// --- Envio de áudio/vídeo/documento por URL pública (menu de anexos) ---
+const mediaLink = reactive<{ open: boolean; tipo: 'audio' | 'video' | 'document'; url: string; caption: string; sending: boolean }>({
+  open: false,
+  tipo: 'document',
+  url: '',
+  caption: '',
+  sending: false,
+})
+
+function openMediaLink() {
+  mediaLink.tipo = 'document'
+  mediaLink.url = ''
+  mediaLink.caption = ''
+  mediaLink.open = true
+}
+
+async function sendMediaLink() {
+  if (!selectedConversation.value) return
+  if (!mediaLink.url.trim()) {
+    toast.warning('Informe a URL pública da mídia.')
+    return
+  }
+  try {
+    mediaLink.sending = true
+    await WhatsAppRepository.sendMessage(selectedConversation.value.id, {
+      tipo: mediaLink.tipo,
+      mediaUrl: mediaLink.url.trim(),
+      caption: mediaLink.caption.trim() || undefined,
+      quotedMessageId: replyingTo.value?.externalMessageId || undefined,
+    })
+    replyingTo.value = null
+    mediaLink.open = false
+    await Promise.all([loadMessages(), loadConversations()])
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível enviar a mídia.')
+  } finally {
+    mediaLink.sending = false
   }
 }
 
@@ -1146,64 +1239,60 @@ onMounted(async () => {
               <X class="h-4 w-4" />
             </button>
           </div>
-          <div class="mb-2 flex items-center gap-2">
-            <!-- Ações rápidas / ferramentas -->
-            <div class="relative">
-              <div v-if="toolsOpen" class="fixed inset-0 z-10" @click="toolsOpen = false"></div>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                class="shrink-0"
-                :class="toolsOpen ? 'border-primary text-primary' : ''"
-                title="Ferramentas (ou digite /)"
-                @click="toggleTools"
-              >
-                <Blocks class="h-4 w-4" />
-              </Button>
-              <div
-                v-if="toolsOpen"
-                class="absolute bottom-full left-0 z-20 mb-2 w-72 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
-              >
-                <p class="border-b px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Enviar dados do sistema</p>
-                <button
-                  type="button"
-                  class="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                  :disabled="!hasLinkedClient"
-                  @click="openSaleTool"
-                >
-                  <Receipt class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>
-                    <span class="block font-medium">Venda</span>
-                    <span class="block text-[11px] text-muted-foreground">Envie o resumo de uma venda do cliente</span>
-                  </span>
-                </button>
-                <p v-if="!hasLinkedClient" class="border-t bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-400">
-                  Vincule um cliente do sistema à conversa para usar as ferramentas.
-                </p>
-              </div>
-            </div>
+          <!-- Inputs de arquivo ocultos (galeria e câmera). -->
+          <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="onImageSelected" />
+          <input ref="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="onImageSelected" />
 
-            <select v-model="messageForm.tipo" class="h-9 w-40 rounded-md border bg-background px-3 text-sm">
-              <option value="text">Texto</option>
-              <option value="image">Imagem</option>
-              <option value="audio">Áudio</option>
-              <option value="video">Vídeo</option>
-              <option value="document">Documento</option>
-            </select>
-            <Input v-if="messageForm.tipo !== 'text'" v-model="messageForm.mediaUrl" class="flex-1" placeholder="URL pública da mídia" />
-          </div>
           <div class="flex items-end gap-2">
+            <!-- Menu de anexos (+) -->
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  class="h-10 w-10 shrink-0 rounded-full text-muted-foreground"
+                  title="Anexar"
+                >
+                  <Plus class="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="top" class="w-52">
+                <DropdownMenuItem @click="pickImage">
+                  <ImagePlus class="mr-2 h-4 w-4 text-violet-500" /> Fotos
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="pickCamera">
+                  <Camera class="mr-2 h-4 w-4 text-rose-500" /> Câmera
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="openMediaLink">
+                  <Link class="mr-2 h-4 w-4 text-sky-500" /> Mídia por link
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem :disabled="!hasLinkedClient" @click="openSaleTool">
+                  <Receipt class="mr-2 h-4 w-4 text-emerald-500" /> Venda
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <!-- Campo de texto -->
             <Textarea
               v-model="messageForm.conteudo"
-              class="min-h-[48px]"
-              :placeholder="messageForm.tipo === 'text' ? 'Digite a resposta ou / para ferramentas...' : 'Legenda opcional...'"
+              class="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl px-4 py-2.5"
+              placeholder="Digite uma mensagem"
+              rows="1"
               @keydown.enter.exact.prevent="sendText"
             />
-            <Button type="submit" class="text-white" :disabled="sending || !canSendMessage">
-              <LoaderCircle v-if="sending" class="mr-2 h-4 w-4 animate-spin" />
-              <Send v-else class="mr-2 h-4 w-4" />
-              Enviar
+
+            <!-- Enviar -->
+            <Button
+              type="submit"
+              size="icon"
+              class="h-10 w-10 shrink-0 rounded-full text-white"
+              :disabled="sending || !canSendMessage"
+              title="Enviar"
+            >
+              <LoaderCircle v-if="sending" class="h-4 w-4 animate-spin" />
+              <Send v-else class="h-4 w-4" />
             </Button>
           </div>
           <p v-if="selectedConversation.Instancia?.status !== 'CONECTADA'" class="mt-2 text-xs text-amber-600">
@@ -1275,6 +1364,75 @@ onMounted(async () => {
 
         <DialogFooter>
           <Button variant="outline" @click="saleTool.open = false">Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Pré-visualização da imagem antes de enviar (com legenda opcional) -->
+    <Dialog v-model:open="imageDraft.open" @update:open="(v) => { if (!v) closeImageDraft() }">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Enviar imagem</DialogTitle>
+          <DialogDescription>Confira a imagem e adicione uma legenda opcional antes de enviar.</DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-3">
+          <div class="flex max-h-[50vh] items-center justify-center overflow-hidden rounded-lg border bg-muted/30">
+            <img v-if="imageDraft.previewUrl" :src="imageDraft.previewUrl" alt="Pré-visualização" class="max-h-[50vh] w-auto object-contain" />
+          </div>
+          <Input
+            v-model="imageDraft.caption"
+            placeholder="Legenda (opcional)"
+            :disabled="sendingImage"
+            @keyup.enter="confirmSendImage"
+          />
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" :disabled="sendingImage" @click="closeImageDraft">Cancelar</Button>
+          <Button class="text-white" :disabled="sendingImage" @click="confirmSendImage">
+            <LoaderCircle v-if="sendingImage" class="mr-2 h-4 w-4 animate-spin" />
+            <Send v-else class="mr-2 h-4 w-4" />
+            Enviar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Enviar áudio/vídeo/documento por URL pública -->
+    <Dialog v-model:open="mediaLink.open">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Enviar mídia por link</DialogTitle>
+          <DialogDescription>Informe a URL pública de um áudio, vídeo ou documento.</DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-3">
+          <div class="space-y-1">
+            <Label class="text-xs">Tipo</Label>
+            <select v-model="mediaLink.tipo" class="h-9 w-full rounded-md border bg-background px-3 text-sm">
+              <option value="document">Documento</option>
+              <option value="audio">Áudio</option>
+              <option value="video">Vídeo</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <Label class="text-xs">URL pública</Label>
+            <Input v-model="mediaLink.url" placeholder="https://..." :disabled="mediaLink.sending" />
+          </div>
+          <div class="space-y-1">
+            <Label class="text-xs">Legenda (opcional)</Label>
+            <Input v-model="mediaLink.caption" :disabled="mediaLink.sending" />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" :disabled="mediaLink.sending" @click="mediaLink.open = false">Cancelar</Button>
+          <Button class="text-white" :disabled="mediaLink.sending || !mediaLink.url.trim()" @click="sendMediaLink">
+            <LoaderCircle v-if="mediaLink.sending" class="mr-2 h-4 w-4 animate-spin" />
+            <Send v-else class="mr-2 h-4 w-4" />
+            Enviar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
