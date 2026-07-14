@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import { formatWhatsAppText } from '@/utils/whatsappFormat'
 import {
   ArrowLeft,
   ArrowRightLeft,
@@ -392,6 +393,12 @@ function messageReactions(message: WhatsAppMessage): Array<{ emoji: string; coun
 // Resumo curto do conteúdo de uma mensagem, para prévias de resposta/citação.
 function messageSnippet(message: WhatsAppMessage): string {
   return (message.conteudo && message.conteudo.trim()) || mediaLabel(message)
+}
+
+// Conteúdo do balão como HTML seguro, interpretando a formatação do WhatsApp (negrito, itálico,
+// tachado e monoespaçado). Para mídia sem texto, usa o rótulo (também escapado pelo formatador).
+function messageHtml(message: WhatsAppMessage): string {
+  return formatWhatsAppText(message.conteudo || mediaLabel(message))
 }
 
 // Dados do trecho citado por uma mensagem (resposta). Tenta resolver a mensagem original já
@@ -1326,7 +1333,12 @@ onMounted(async () => {
                     <a :href="message.mediaUrl" target="_blank" rel="noreferrer" class="underline">{{ mediaLabel(message) }}</a>
                   </div>
                 </template>
-                <p v-if="message.conteudo || !message.mediaUrl" class="whitespace-pre-wrap text-sm" :class="{ 'italic opacity-70': message.apagadaEm }">{{ message.conteudo || mediaLabel(message) }}</p>
+                <p
+                  v-if="message.conteudo || !message.mediaUrl"
+                  class="message-formatted whitespace-pre-wrap break-words text-sm"
+                  :class="{ 'italic opacity-70': message.apagadaEm }"
+                  v-html="messageHtml(message)"
+                ></p>
                 <div class="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-70">
                   <span
                     v-if="message.apagadaEm"
@@ -1763,3 +1775,18 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Conteúdo formatado do WhatsApp (injetado via v-html). Negrito/itálico/tachado usam os defaults;
+   o monoespaçado ganha um leve realce. `:deep` é necessário porque o v-html não recebe o atributo
+   de escopo do componente. */
+.message-formatted :deep(code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  padding: 0.05em 0.35em;
+  border-radius: 0.3rem;
+  background: rgba(127, 127, 127, 0.18);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+</style>
