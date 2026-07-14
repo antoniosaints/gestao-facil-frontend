@@ -153,15 +153,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div>
-      <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
-        <Cog class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
-        Configurações da plataforma
-      </h2>
-      <p class="text-sm text-muted-foreground">
-        Controle global do gateway usado para cobrar a mensalidade SaaS dos assinantes.
-      </p>
+  <div class="mx-auto w-full max-w-5xl space-y-5">
+    <div class="flex items-center gap-3">
+      <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-white">
+        <Cog class="h-6 w-6" :stroke-width="2.5" />
+      </div>
+      <div>
+        <h2 class="text-xl font-bold leading-tight text-foreground">Configurações da plataforma</h2>
+        <p class="text-sm text-muted-foreground">
+          Gateway da mensalidade, preços dos apps e programa de indicação — aplicados a todos os assinantes.
+        </p>
+      </div>
     </div>
 
     <Card class="border-border/70 bg-card/20 shadow-sm dark:bg-card">
@@ -298,7 +300,7 @@ onMounted(() => {
           <Switch :model-value="indicacao.ativa" @update:model-value="(v) => (indicacao.ativa = Boolean(v))" />
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
+        <div class="grid gap-4 md:grid-cols-2" :class="{ 'pointer-events-none opacity-60': !indicacao.ativa }">
           <div class="space-y-3 rounded-lg border border-border/70 bg-background p-4">
             <div class="text-sm font-medium text-foreground">Recompensa do indicador</div>
             <div class="space-y-1">
@@ -317,7 +319,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="space-y-3 rounded-lg border border-border/70 bg-background/70 p-4">
+          <div class="space-y-3 rounded-lg border border-border/70 bg-background p-4">
             <div class="text-sm font-medium text-foreground">Bônus do indicado (1º mês)</div>
             <div class="space-y-1">
               <Label class="text-xs">Tipo</Label>

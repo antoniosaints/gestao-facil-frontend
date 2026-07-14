@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import {
   ArrowLeft,
   ArrowRightLeft,
+  Ban,
   Blocks,
   ChevronDown,
   Clock,
@@ -63,13 +64,15 @@ const instances = ref<WhatsAppInstance[]>([])
 const activeInstanceId = ref<number | null>(null)
 const newChat = reactive<{
   open: boolean
+  mode: 'cliente' | 'contato'
   search: string
   options: Array<{ id: number; label: string }>
   clienteId: number | null
+  contatoId: number | null
   instanciaId: number | null
   loading: boolean
   starting: boolean
-}>({ open: false, search: '', options: [], clienteId: null, instanciaId: null, loading: false, starting: false })
+}>({ open: false, mode: 'cliente', search: '', options: [], clienteId: null, contatoId: null, instanciaId: null, loading: false, starting: false })
 
 const conversations = ref<WhatsAppConversation[]>([])
 const messages = ref<WhatsAppMessage[]>([])
@@ -461,18 +464,42 @@ async function loadInstances() {
 
 function openNewChat() {
   newChat.open = true
+  newChat.mode = 'cliente'
   newChat.search = ''
   newChat.options = []
   newChat.clienteId = null
+  newChat.contatoId = null
   // Já inicia na caixa (instância) ativa quando houver uma selecionada.
   newChat.instanciaId = activeInstanceId.value
   if (!instances.value.length) loadInstances()
+  // Já carrega a lista inicial para o select não ficar vazio antes de digitar.
+  searchNewChat()
 }
 
-async function searchNewChatClients() {
+// Alterna entre iniciar por cliente do ERP ou por contato do WhatsApp, limpando a seleção e
+// recarregando a lista do novo modo.
+function setNewChatMode(mode: 'cliente' | 'contato') {
+  if (newChat.mode === mode) return
+  newChat.mode = mode
+  newChat.search = ''
+  newChat.options = []
+  newChat.clienteId = null
+  newChat.contatoId = null
+  searchNewChat()
+}
+
+async function searchNewChat() {
   try {
     newChat.loading = true
-    newChat.options = await ClienteRepository.select2(newChat.search)
+    if (newChat.mode === 'contato') {
+      const { items } = await WhatsAppRepository.listContacts({ search: newChat.search || undefined, take: 30 })
+      newChat.options = items.map((contato) => ({
+        id: contato.id,
+        label: contato.nome ? `${contato.nome} · ${contato.telefone}` : contato.telefone,
+      }))
+    } else {
+      newChat.options = await ClienteRepository.select2(newChat.search)
+    }
   } catch (error) {
     console.error(error)
     newChat.options = []
@@ -481,9 +508,9 @@ async function searchNewChatClients() {
   }
 }
 
-async function startConversation(clienteId: number, instanciaId?: number | null) {
+async function startConversation(target: { clienteId?: number; contatoId?: number }, instanciaId?: number | null) {
   const conversation = await WhatsAppRepository.startConversation({
-    clienteId,
+    ...target,
     instanciaId: instanciaId || undefined,
   })
   upsertConversation(conversation)
@@ -492,13 +519,21 @@ async function startConversation(clienteId: number, instanciaId?: number | null)
 }
 
 async function confirmNewChat() {
-  if (!newChat.clienteId) {
-    toast.warning('Selecione um cliente para iniciar a conversa.')
+  const target: { clienteId?: number; contatoId?: number } =
+    newChat.mode === 'contato'
+      ? { contatoId: newChat.contatoId ?? undefined }
+      : { clienteId: newChat.clienteId ?? undefined }
+  if (!target.clienteId && !target.contatoId) {
+    toast.warning(
+      newChat.mode === 'contato'
+        ? 'Selecione um contato para iniciar a conversa.'
+        : 'Selecione um cliente para iniciar a conversa.',
+    )
     return
   }
   try {
     newChat.starting = true
-    await startConversation(newChat.clienteId, newChat.instanciaId)
+    await startConversation(target, newChat.instanciaId)
     newChat.open = false
     toast.success('Conversa iniciada.')
   } catch (error: any) {
@@ -517,7 +552,7 @@ async function startFromClienteQuery() {
   // Limpa o parâmetro para não reabrir a conversa a cada refresh/navegação.
   router.replace({ query: { ...route.query, cliente: undefined } })
   try {
-    await startConversation(clienteId)
+    await startConversation({ clienteId })
   } catch (error: any) {
     console.error(error)
     toast.error(error?.response?.data?.message || 'Não foi possível iniciar a conversa do cliente.')
@@ -1075,8 +1110,14 @@ onMounted(async () => {
                     <a :href="message.mediaUrl" target="_blank" rel="noreferrer" class="underline">{{ mediaLabel(message) }}</a>
                   </div>
                 </template>
-                <p v-if="message.conteudo || !message.mediaUrl" class="whitespace-pre-wrap text-sm">{{ message.conteudo || mediaLabel(message) }}</p>
-                <div class="mt-1 flex justify-end gap-1 text-[10px] opacity-70">
+                <p v-if="message.conteudo || !message.mediaUrl" class="whitespace-pre-wrap text-sm" :class="{ 'italic opacity-70': message.apagadaEm }">{{ message.conteudo || mediaLabel(message) }}</p>
+                <div class="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-70">
+                  <span
+                    v-if="message.apagadaEm"
+                    class="inline-flex items-center gap-1 rounded-full bg-black/10 px-1.5 py-0.5 font-medium dark:bg-white/15"
+                  >
+                    <Ban class="h-2.5 w-2.5" /> apagada
+                  </span>
                   <span>{{ formatTime(message.createdAt) }}</span>
                   <span v-if="message.direcao === 'SAIDA'">· {{ message.statusEnvio }}</span>
                 </div>
@@ -1267,37 +1308,66 @@ onMounted(async () => {
       </DialogContent>
     </Dialog>
 
-    <!-- Nova conversa a partir de um cliente -->
+    <!-- Nova conversa: a partir de um cliente do ERP ou de um contato do WhatsApp -->
     <Dialog v-model:open="newChat.open">
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Nova conversa</DialogTitle>
-          <DialogDescription>Inicie um atendimento a partir de um cliente cadastrado.</DialogDescription>
+          <DialogDescription>Inicie um atendimento a partir de um cliente cadastrado ou de um contato do WhatsApp.</DialogDescription>
         </DialogHeader>
 
         <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              :class="newChat.mode === 'cliente' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              @click="setNewChatMode('cliente')"
+            >
+              Cliente
+            </button>
+            <button
+              type="button"
+              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              :class="newChat.mode === 'contato' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              @click="setNewChatMode('contato')"
+            >
+              Contato
+            </button>
+          </div>
+
           <div class="space-y-1">
-            <Label>Cliente</Label>
+            <Label>{{ newChat.mode === 'contato' ? 'Contato' : 'Cliente' }}</Label>
             <div class="flex gap-2">
               <Input
                 v-model="newChat.search"
-                placeholder="Buscar cliente por nome"
-                @keyup.enter="searchNewChatClients"
+                :placeholder="newChat.mode === 'contato' ? 'Filtrar contato por nome ou telefone' : 'Filtrar cliente por nome'"
+                @keyup.enter="searchNewChat"
               />
-              <Button variant="outline" size="icon" :disabled="newChat.loading" @click="searchNewChatClients">
+              <Button variant="outline" size="icon" :disabled="newChat.loading" @click="searchNewChat">
                 <LoaderCircle v-if="newChat.loading" class="h-4 w-4 animate-spin" />
                 <Search v-else class="h-4 w-4" />
               </Button>
             </div>
             <select
+              v-if="newChat.mode === 'contato'"
+              v-model.number="newChat.contatoId"
+              class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm"
+            >
+              <option :value="null">Selecionar contato...</option>
+              <option v-for="contato in newChat.options" :key="contato.id" :value="contato.id">{{ contato.label }}</option>
+            </select>
+            <select
+              v-else
               v-model.number="newChat.clienteId"
               class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm"
             >
               <option :value="null">Selecionar cliente...</option>
               <option v-for="cliente in newChat.options" :key="cliente.id" :value="cliente.id">{{ cliente.label }}</option>
             </select>
-            <p v-if="!newChat.options.length" class="text-xs text-muted-foreground">
-              Busque um cliente pelo nome para listar as opções.
+            <p v-if="newChat.loading" class="text-xs text-muted-foreground">Carregando opções...</p>
+            <p v-else-if="!newChat.options.length" class="text-xs text-muted-foreground">
+              {{ newChat.mode === 'contato' ? 'Nenhum contato encontrado.' : 'Nenhum cliente encontrado.' }}
             </p>
           </div>
 
@@ -1317,7 +1387,11 @@ onMounted(async () => {
 
         <DialogFooter>
           <Button variant="outline" @click="newChat.open = false">Cancelar</Button>
-          <Button class="text-white" :disabled="newChat.starting || !newChat.clienteId" @click="confirmNewChat">
+          <Button
+            class="text-white"
+            :disabled="newChat.starting || (newChat.mode === 'contato' ? !newChat.contatoId : !newChat.clienteId)"
+            @click="confirmNewChat"
+          >
             <LoaderCircle v-if="newChat.starting" class="mr-2 h-4 w-4 animate-spin" />
             <MessageSquarePlus v-else class="mr-2 h-4 w-4" />
             Iniciar conversa

@@ -112,6 +112,9 @@ export interface WhatsAppMessage {
   erroEnvio?: string | null
   enviadoEm?: string | null
   lidoEm?: string | null
+  // Quando preenchido, a mensagem foi apagada pelo remetente (revoke); o conteúdo original é
+  // mantido e o chat mostra o selo "apagada".
+  apagadaEm?: string | null
   // Reações recebidas nesta mensagem (JSON serializado: array de { emoji, fromMe, senderId }).
   // Exibidas como um selo abaixo do balão, sem virar um balão próprio.
   reacoes?: string | null
@@ -271,7 +274,7 @@ export class WhatsAppRepository {
     return data.data as WhatsAppInstancePayment
   }
 
-  static async startConversation(payload: { clienteId: number; instanciaId?: number }) {
+  static async startConversation(payload: { clienteId?: number; contatoId?: number; instanciaId?: number }) {
     const { data } = await http.post('/whatsapp/conversas/iniciar', payload)
     return data.data as WhatsAppConversation
   }
