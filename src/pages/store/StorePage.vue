@@ -72,6 +72,7 @@ const iconMap = {
 
 const logoMap = {
   'core-ia': '/imgs/apps/core.png',
+  'loja-virtual': '/imgs/apps/loja.png',
   assinaturas: '/imgs/apps/assina.png',
   whatsapp: '/imgs/apps/wpp.avif',
   atendimento: '/imgs/apps/atende.png',
