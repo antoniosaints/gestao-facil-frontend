@@ -6,7 +6,7 @@ import { useToast } from 'vue-toastification'
 import ModalProdutos from './formulario/ModalProdutos.vue'
 import ModalCriarLote from './others/ModalCriarLote.vue'
 import { ProdutoRepository } from '@/repositories/produto-repository'
-import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, FolderTree, Funnel, Layers3, Package, RotateCw, Tags, Trash } from 'lucide-vue-next'
+import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, FolderTree, Funnel, Layers3, Package, RotateCw, Store, Tags, Trash } from 'lucide-vue-next'
 import ModalReposicao from './formulario/ModalReposicao.vue'
 import ModalDescarte from './formulario/ModalDescarte.vue'
 import {
@@ -23,12 +23,14 @@ import ModalVariante from './formulario/ModalVariante.vue'
 import GerarEtiquetas from './others/GerarEtiquetas.vue'
 import ModalTipoCadastroProduto from './others/ModalTipoCadastroProduto.vue'
 import ModalFiltroProdutos from './formulario/ModalFiltroProdutos.vue'
+import ModalCatalogoLink from './others/ModalCatalogoLink.vue'
 import router from '@/router'
 import { provide, ref } from 'vue'
 
 const toast = useToast()
 const store = useProdutoStore()
 const openFilter = ref(false)
+const openCatalogo = ref(false)
 
 provide('openModalFiltroProdutos', openFilter)
 
@@ -123,6 +125,10 @@ async function excluirEmLote() {
                     class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
                     <FolderTree class="w-5 h-5" />
                 </button>
+                <button @click="openCatalogo = true" title="Catálogo online"
+                    class="bg-violet-600 text-white px-2 py-1.5 text-sm rounded-md">
+                    <Store class="w-5 h-5" />
+                </button>
                 <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo Produto</span>
                 </button>
@@ -147,5 +153,6 @@ async function excluirEmLote() {
         <ModalFiltroProdutos />
         <GerarEtiquetas />
         <ModalTipoCadastroProduto />
+        <ModalCatalogoLink v-model:open="openCatalogo" />
     </div>
 </template>

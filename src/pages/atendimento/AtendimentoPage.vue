@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { formatWhatsAppText } from '@/utils/whatsappFormat'
+import { parseWhatsAppLocation, parseWhatsAppContact } from '@/utils/whatsappEntities'
 import {
   ArrowLeft,
   ArrowRightLeft,
@@ -30,7 +31,10 @@ import {
   Inbox,
   Link,
   LoaderCircle,
+  MapPin,
   Mic,
+  Navigation,
+  Phone,
   Plus,
   Square,
   MessageSquareDashed,
@@ -42,6 +46,7 @@ import {
   Search,
   Send,
   Trash2,
+  User,
   UserPlus,
   X,
 } from 'lucide-vue-next'
@@ -54,6 +59,7 @@ import AudioMessagePlayer from '@/pages/atendimento/AudioMessagePlayer.vue'
 import {
   WhatsAppRepository,
   type ConversationSaleItem,
+  type WhatsAppContactListItem,
   type WhatsAppConversation,
   type WhatsAppConversationStatus,
   type WhatsAppInstance,
@@ -344,7 +350,23 @@ function openImagePreview(message: WhatsAppMessage) {
   if (url) imagePreview.value = url
 }
 
+// ESC fecha a conversa aberta (volta para a lista). Se houver um diálogo/menu aberto ou o preview
+// de imagem, o ESC é tratado por eles primeiro (evita fechar a conversa "por baixo").
+function handleGlobalKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+  if (imagePreview.value) {
+    imagePreview.value = null
+    return
+  }
+  if (document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]')) return
+  if (selectedConversation.value) {
+    event.preventDefault()
+    closeConversation()
+  }
+}
+
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleGlobalKeydown)
   Object.values(mediaCache.value).forEach((url) => URL.revokeObjectURL(url))
   if (imageDraft.previewUrl) URL.revokeObjectURL(imageDraft.previewUrl)
   if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
@@ -369,6 +391,16 @@ function mediaLabel(message: WhatsAppMessage) {
     DOCUMENTO: message.fileName || 'Documento',
   }
   return labels[message.tipo] || 'Mídia'
+}
+
+// Balões personalizados: localização (pino no mapa) e contato (vCard). Os dados vêm do
+// `rawPayload` da mensagem e são iguais nas duas direções (recebida/enviada).
+function locationOf(message: WhatsAppMessage) {
+  return message.tipo === 'LOCALIZACAO' ? parseWhatsAppLocation(message) : null
+}
+
+function contactOf(message: WhatsAppMessage) {
+  return message.tipo === 'CONTATO' ? parseWhatsAppContact(message) : null
 }
 
 // Reações da mensagem (evento reactionMessage): guardadas como JSON na própria mensagem
@@ -489,7 +521,10 @@ function setNewChatMode(mode: 'cliente' | 'contato') {
   newChat.contatoId = null
 }
 
-async function startConversation(target: { clienteId?: number; contatoId?: number }, instanciaId?: number | null) {
+async function startConversation(
+  target: { clienteId?: number; contatoId?: number; phone?: string; nome?: string },
+  instanciaId?: number | null,
+) {
   const conversation = await WhatsAppRepository.startConversation({
     ...target,
     instanciaId: instanciaId || undefined,
@@ -497,6 +532,26 @@ async function startConversation(target: { clienteId?: number; contatoId?: numbe
   upsertConversation(conversation)
   await openConversation(conversation)
   return conversation
+}
+
+// "Conversar" no cartão de contato recebido/enviado: abre o atendimento desse contato dentro do
+// sistema (cria/reaproveita o contato pelo telefone), sem redirecionar para o WhatsApp Web.
+const startingContactChat = ref(false)
+async function startConversationFromContact(contact: { name: string; phone: string }) {
+  if (!contact.phone) {
+    toast.warning('Este contato não possui um telefone válido.')
+    return
+  }
+  try {
+    startingContactChat.value = true
+    await startConversation({ phone: contact.phone, nome: contact.name || undefined }, activeInstanceId.value)
+    toast.success('Conversa iniciada.')
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível iniciar a conversa com este contato.')
+  } finally {
+    startingContactChat.value = false
+  }
 }
 
 async function confirmNewChat() {
@@ -540,6 +595,16 @@ async function startFromClienteQuery() {
   }
 }
 
+// Foca o campo de digitação (como no WhatsApp) ao abrir uma conversa em atendimento. Só em telas
+// maiores, para não abrir o teclado automaticamente no mobile.
+const messageInput = ref<InstanceType<typeof Textarea> | null>(null)
+function focusMessageInput() {
+  if (typeof window !== 'undefined' && !window.matchMedia('(min-width: 768px)').matches) return
+  nextTick(() => {
+    ;(messageInput.value?.$el as HTMLTextAreaElement | undefined)?.focus()
+  })
+}
+
 async function openConversation(conversation: WhatsAppConversation) {
   selectedConversation.value = conversation
   conversationForm.status = conversation.status
@@ -549,6 +614,15 @@ async function openConversation(conversation: WhatsAppConversation) {
   showDetails.value = false
   await loadMessages()
   if (conversation.naoLidas) await markRead()
+  // Conversa aberta (em atendimento): já deixa o cursor no input, pronto para responder.
+  if (conversation.status === 'ABERTA') focusMessageInput()
+}
+
+// Fecha a conversa aberta (volta para a lista). Usada pelo botão de voltar (mobile) e pelo ESC.
+function closeConversation() {
+  selectedConversation.value = null
+  messages.value = []
+  replyingTo.value = null
 }
 
 async function loadMessages() {
@@ -681,6 +755,173 @@ async function sendMediaLink() {
     toast.error(error?.response?.data?.message || 'Não foi possível enviar a mídia.')
   } finally {
     mediaLink.sending = false
+  }
+}
+
+// --- Envio de localização ---
+// O usuário pode coletar a posição atual do navegador (geolocation) ou preencher manualmente
+// (lat/long/título/endereço). Título e endereço são obrigatórios pela W-API.
+const locationDialog = reactive<{
+  open: boolean
+  latitude: string
+  longitude: string
+  name: string
+  address: string
+  locating: boolean
+  sending: boolean
+}>({ open: false, latitude: '', longitude: '', name: '', address: '', locating: false, sending: false })
+
+function openLocationDialog() {
+  locationDialog.latitude = ''
+  locationDialog.longitude = ''
+  locationDialog.name = ''
+  locationDialog.address = ''
+  locationDialog.locating = false
+  locationDialog.sending = false
+  locationDialog.open = true
+}
+
+// Coleta as coordenadas atuais do navegador. Requer contexto seguro (HTTPS) e permissão do
+// usuário; em caso de recusa/erro, o preenchimento manual continua disponível.
+function useCurrentLocation() {
+  if (!navigator.geolocation) {
+    toast.warning('Seu navegador não suporta geolocalização.')
+    return
+  }
+  locationDialog.locating = true
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      locationDialog.latitude = String(position.coords.latitude)
+      locationDialog.longitude = String(position.coords.longitude)
+      locationDialog.locating = false
+      toast.success('Localização atual capturada.')
+    },
+    (error) => {
+      locationDialog.locating = false
+      const msg =
+        error.code === error.PERMISSION_DENIED
+          ? 'Permissão de localização negada. Informe as coordenadas manualmente.'
+          : 'Não foi possível obter sua localização. Informe as coordenadas manualmente.'
+      toast.error(msg)
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+  )
+}
+
+async function sendLocation() {
+  if (!selectedConversation.value) return
+  const latitude = locationDialog.latitude.trim()
+  const longitude = locationDialog.longitude.trim()
+  if (!Number.isFinite(Number(latitude)) || !latitude || !Number.isFinite(Number(longitude)) || !longitude) {
+    toast.warning('Informe latitude e longitude válidas (ou use a localização atual).')
+    return
+  }
+  if (!locationDialog.name.trim() || !locationDialog.address.trim()) {
+    toast.warning('Informe o título e o endereço da localização.')
+    return
+  }
+  try {
+    locationDialog.sending = true
+    await WhatsAppRepository.sendLocation(selectedConversation.value.id, {
+      latitude,
+      longitude,
+      name: locationDialog.name.trim(),
+      address: locationDialog.address.trim(),
+      quotedMessageId: replyingTo.value?.externalMessageId || undefined,
+    })
+    replyingTo.value = null
+    locationDialog.open = false
+    await Promise.all([loadMessages(), loadConversations()])
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível enviar a localização.')
+  } finally {
+    locationDialog.sending = false
+  }
+}
+
+// --- Envio de contato (vCard) ---
+// Pode-se buscar um contato já salvo no sistema (contatos do WhatsApp, inclusive os recebidos) para
+// preencher nome/telefone automaticamente, ou digitar manualmente.
+const contactDialog = reactive<{
+  open: boolean
+  contactName: string
+  contactPhone: string
+  contactBusinessDescription: string
+  search: string
+  results: WhatsAppContactListItem[]
+  searching: boolean
+  sending: boolean
+}>({
+  open: false,
+  contactName: '',
+  contactPhone: '',
+  contactBusinessDescription: '',
+  search: '',
+  results: [],
+  searching: false,
+  sending: false,
+})
+let contactSearchTimer: ReturnType<typeof setTimeout> | null = null
+
+function openContactDialog() {
+  contactDialog.contactName = ''
+  contactDialog.contactPhone = ''
+  contactDialog.contactBusinessDescription = ''
+  contactDialog.search = ''
+  contactDialog.results = []
+  contactDialog.searching = false
+  contactDialog.sending = false
+  contactDialog.open = true
+  void searchSystemContacts()
+}
+
+// Busca contatos salvos no sistema (com debounce). Reaproveita o endpoint de contatos do módulo.
+async function searchSystemContacts() {
+  try {
+    contactDialog.searching = true
+    const response = await WhatsAppRepository.listContacts({ search: contactDialog.search.trim() || undefined, take: 8 })
+    contactDialog.results = response.items
+  } catch (error) {
+    console.error(error)
+  } finally {
+    contactDialog.searching = false
+  }
+}
+
+function onContactSearchInput() {
+  if (contactSearchTimer) clearTimeout(contactSearchTimer)
+  contactSearchTimer = setTimeout(searchSystemContacts, 300)
+}
+
+// Ao escolher um contato do sistema, preenche os campos de nome/telefone (que continuam editáveis).
+function pickSystemContact(item: WhatsAppContactListItem) {
+  contactDialog.contactName = item.nome || item.Cliente?.nome || item.telefone
+  contactDialog.contactPhone = item.telefone
+}
+
+async function sendContact() {
+  if (!selectedConversation.value) return
+  if (!contactDialog.contactName.trim() || !contactDialog.contactPhone.trim()) {
+    toast.warning('Informe o nome e o telefone do contato.')
+    return
+  }
+  try {
+    contactDialog.sending = true
+    await WhatsAppRepository.sendContact(selectedConversation.value.id, {
+      contactName: contactDialog.contactName.trim(),
+      contactPhone: contactDialog.contactPhone.trim(),
+      contactBusinessDescription: contactDialog.contactBusinessDescription.trim() || undefined,
+      quotedMessageId: replyingTo.value?.externalMessageId || undefined,
+    })
+    replyingTo.value = null
+    contactDialog.open = false
+    await Promise.all([loadMessages(), loadConversations()])
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível enviar o contato.')
+  } finally {
+    contactDialog.sending = false
   }
 }
 
@@ -989,6 +1230,7 @@ useSocketEvent<WhatsAppInstance>('whatsapp:instancia:updated', async () => {
 })
 
 onMounted(async () => {
+  window.addEventListener('keydown', handleGlobalKeydown)
   await loadConversations()
   await loadInstances()
   await startFromClienteQuery()
@@ -1130,7 +1372,7 @@ onMounted(async () => {
       <!-- Painel da conversa -->
       <section v-if="selectedConversation" class="flex min-w-0 flex-1 flex-col">
         <header class="flex items-center gap-3 border-b p-3">
-          <Button variant="ghost" size="icon" class="md:hidden" @click="selectedConversation = null">
+          <Button variant="ghost" size="icon" class="md:hidden" @click="closeConversation">
             <ArrowLeft class="h-5 w-5" />
           </Button>
           <img
@@ -1281,7 +1523,7 @@ onMounted(async () => {
                 :class="message.direcao === 'SAIDA' ? 'items-end' : 'items-start'"
               >
               <div
-                class="rounded-2xl px-4 py-2 shadow-sm"
+                class="rounded-2xl px-3 py-3 shadow-sm"
                 :class="message.direcao === 'SAIDA' ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm border bg-background'"
               >
                 <!-- Trecho citado (quando a mensagem é uma resposta a outra). -->
@@ -1298,10 +1540,9 @@ onMounted(async () => {
                   <AudioMessagePlayer
                     v-if="isAudioMessage(message) && audioSrc(message)"
                     class="mb-1"
-                    :src="audioSrc(message) as string"
+                    :src="(audioSrc(message) as string)"
                     :mine="message.direcao === 'SAIDA'"
                   />
-                  <!-- Áudio recebido ainda sendo baixado/descriptografado. -->
                   <div
                     v-else-if="isAudioLoading(message)"
                     class="mb-2 flex h-9 w-52 items-center justify-center rounded-full border bg-black/5 text-xs text-muted-foreground"
@@ -1333,8 +1574,69 @@ onMounted(async () => {
                     <a :href="message.mediaUrl" target="_blank" rel="noreferrer" class="underline">{{ mediaLabel(message) }}</a>
                   </div>
                 </template>
+
+                <!-- Balão personalizado: LOCALIZAÇÃO (pino no mapa). -->
+                <a
+                  v-if="locationOf(message)"
+                  :href="locationOf(message)?.mapsUrl"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="mb-1 block w-60 max-w-full overflow-hidden rounded-lg bg-black/5 no-underline"
+                >
+                  <img
+                    v-if="locationOf(message)?.thumbnail"
+                    :src="locationOf(message)?.thumbnail as string"
+                    alt="Mapa da localização"
+                    class="h-28 w-full object-cover"
+                  />
+                  <div v-else class="flex h-28 w-full items-center justify-center bg-emerald-500/10">
+                    <MapPin class="h-8 w-8 text-emerald-600" />
+                  </div>
+                  <div class="p-2 dark:bg-card">
+                    <p class="flex items-center gap-1 text-sm font-semibold">
+                      <MapPin class="h-3.5 w-3.5 shrink-0" />
+                      <span class="truncate">{{ locationOf(message)?.name || 'Localização' }}</span>
+                    </p>
+                    <p v-if="locationOf(message)?.address" class="mt-0.5 line-clamp-2 text-xs opacity-70">
+                      {{ locationOf(message)?.address }}
+                    </p>
+                    <span class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-sky-600">
+                      <Navigation class="h-3 w-3" /> Ver no mapa
+                    </span>
+                  </div>
+                </a>
+
+                <!-- Balão personalizado: CONTATO (vCard). -->
+                <div v-else-if="contactOf(message)" class="mb-1 w-60 max-w-full bg-black/5 dark:bg-card rounded-lg p-2">
+                  <div class="flex items-center gap-2">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                      <User class="h-5 w-5" />
+                    </span>
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-semibold">{{ contactOf(message)?.name }}</p>
+                      <p v-if="contactOf(message)?.phone" class="flex items-center gap-1 truncate text-xs opacity-70">
+                        <Phone class="h-3 w-3 shrink-0" /> {{ contactOf(message)?.phone }}
+                      </p>
+                    </div>
+                  </div>
+                  <p v-if="contactOf(message)?.businessDescription" class="mt-2 line-clamp-2 text-xs opacity-70">
+                    {{ contactOf(message)?.businessDescription }}
+                  </p>
+                  <button
+                    v-if="contactOf(message)?.phone"
+                    type="button"
+                    :disabled="startingContactChat"
+                    class="mt-2 flex w-full items-center justify-center gap-1 rounded-md border border-emerald-600/30 py-1 text-xs font-medium text-emerald-600 disabled:opacity-60"
+                    @click="startConversationFromContact(contactOf(message) as { name: string; phone: string })"
+                  >
+                    <LoaderCircle v-if="startingContactChat" class="h-3.5 w-3.5 animate-spin" />
+                    <MessageSquareText v-else class="h-3.5 w-3.5" />
+                    Conversar
+                  </button>
+                </div>
+
                 <p
-                  v-if="message.conteudo || !message.mediaUrl"
+                  v-if="(message.conteudo || !message.mediaUrl) && !locationOf(message) && !contactOf(message)"
                   class="message-formatted whitespace-pre-wrap break-words text-sm"
                   :class="{ 'italic opacity-70': message.apagadaEm }"
                   v-html="messageHtml(message)"
@@ -1459,6 +1761,12 @@ onMounted(async () => {
                 <DropdownMenuItem @click="openMediaLink">
                   <Link class="mr-2 h-4 w-4 text-sky-500" /> Mídia por link
                 </DropdownMenuItem>
+                <DropdownMenuItem @click="openLocationDialog">
+                  <MapPin class="mr-2 h-4 w-4 text-emerald-500" /> Localização
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="openContactDialog">
+                  <User class="mr-2 h-4 w-4 text-indigo-500" /> Contato
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem :disabled="!hasLinkedClient" @click="openSaleTool">
                   <Receipt class="mr-2 h-4 w-4 text-emerald-500" /> Venda
@@ -1468,6 +1776,7 @@ onMounted(async () => {
 
             <!-- Campo de texto -->
             <Textarea
+              ref="messageInput"
               v-model="messageForm.conteudo"
               class="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl px-4 py-2.5"
               placeholder="Digite uma mensagem"
@@ -1634,6 +1943,130 @@ onMounted(async () => {
           <Button variant="outline" :disabled="mediaLink.sending" @click="mediaLink.open = false">Cancelar</Button>
           <Button class="text-white" :disabled="mediaLink.sending || !mediaLink.url.trim()" @click="sendMediaLink">
             <LoaderCircle v-if="mediaLink.sending" class="mr-2 h-4 w-4 animate-spin" />
+            <Send v-else class="mr-2 h-4 w-4" />
+            Enviar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Enviar localização -->
+    <Dialog v-model:open="locationDialog.open">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Enviar localização</DialogTitle>
+          <DialogDescription>Use sua localização atual ou informe as coordenadas manualmente.</DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-3">
+          <Button type="button" variant="outline" class="w-full" :disabled="locationDialog.locating || locationDialog.sending" @click="useCurrentLocation">
+            <LoaderCircle v-if="locationDialog.locating" class="mr-2 h-4 w-4 animate-spin" />
+            <Navigation v-else class="mr-2 h-4 w-4" />
+            Usar localização atual
+          </Button>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="space-y-1">
+              <Label class="text-xs">Latitude</Label>
+              <Input v-model="locationDialog.latitude" placeholder="-5.477352" :disabled="locationDialog.sending" />
+            </div>
+            <div class="space-y-1">
+              <Label class="text-xs">Longitude</Label>
+              <Input v-model="locationDialog.longitude" placeholder="-47.494956" :disabled="locationDialog.sending" />
+            </div>
+          </div>
+          <div class="space-y-1">
+            <Label class="text-xs">Título</Label>
+            <Input v-model="locationDialog.name" placeholder="Ex.: Abraão Gás" :disabled="locationDialog.sending" />
+          </div>
+          <div class="space-y-1">
+            <Label class="text-xs">Endereço</Label>
+            <Input v-model="locationDialog.address" placeholder="Rua, número, bairro, cidade, UF, CEP" :disabled="locationDialog.sending" />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" :disabled="locationDialog.sending" @click="locationDialog.open = false">Cancelar</Button>
+          <Button class="text-white" :disabled="locationDialog.sending" @click="sendLocation">
+            <LoaderCircle v-if="locationDialog.sending" class="mr-2 h-4 w-4 animate-spin" />
+            <Send v-else class="mr-2 h-4 w-4" />
+            Enviar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Enviar contato -->
+    <Dialog v-model:open="contactDialog.open">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Enviar contato</DialogTitle>
+          <DialogDescription>Escolha um contato do sistema ou informe os dados manualmente.</DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-3">
+          <!-- Busca de contatos salvos no sistema (inclui os contatos recebidos). -->
+          <div class="space-y-1">
+            <Label class="text-xs">Buscar contato do sistema</Label>
+            <div class="relative">
+              <Search class="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                v-model="contactDialog.search"
+                placeholder="Buscar por nome ou telefone"
+                class="pl-8"
+                :disabled="contactDialog.sending"
+                @input="onContactSearchInput"
+              />
+            </div>
+            <div class="max-h-40 overflow-y-auto rounded-md border">
+              <div v-if="contactDialog.searching" class="flex items-center justify-center py-4 text-xs text-muted-foreground">
+                <LoaderCircle class="mr-1.5 h-3.5 w-3.5 animate-spin" /> Buscando...
+              </div>
+              <div v-else-if="!contactDialog.results.length" class="py-4 text-center text-xs text-muted-foreground">
+                Nenhum contato encontrado.
+              </div>
+              <button
+                v-for="item in contactDialog.results"
+                v-else
+                :key="item.id"
+                type="button"
+                class="flex w-full items-center gap-2 border-b px-2.5 py-2 text-left last:border-b-0 hover:bg-muted"
+                :class="{ 'bg-muted': contactDialog.contactPhone === item.telefone }"
+                @click="pickSystemContact(item)"
+              >
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                  <User class="h-4 w-4" />
+                </span>
+                <span class="min-w-0">
+                  <span class="block truncate text-sm font-medium">{{ item.nome || item.Cliente?.nome || item.telefone }}</span>
+                  <span class="block truncate text-xs text-muted-foreground">{{ item.telefone }}</span>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative py-1 text-center">
+            <span class="relative z-10 bg-background px-2 text-[10px] uppercase tracking-wide text-muted-foreground">ou preencha manualmente</span>
+            <span class="absolute left-0 top-1/2 h-px w-full bg-border"></span>
+          </div>
+
+          <div class="space-y-1">
+            <Label class="text-xs">Nome</Label>
+            <Input v-model="contactDialog.contactName" placeholder="Nome completo do contato" :disabled="contactDialog.sending" />
+          </div>
+          <div class="space-y-1">
+            <Label class="text-xs">Telefone</Label>
+            <Input v-model="contactDialog.contactPhone" placeholder="Ex.: 5599999999999" :disabled="contactDialog.sending" />
+          </div>
+          <div class="space-y-1">
+            <Label class="text-xs">Descrição (opcional)</Label>
+            <Input v-model="contactDialog.contactBusinessDescription" placeholder="Pequena apresentação do contato" :disabled="contactDialog.sending" />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" :disabled="contactDialog.sending" @click="contactDialog.open = false">Cancelar</Button>
+          <Button class="text-white" :disabled="contactDialog.sending" @click="sendContact">
+            <LoaderCircle v-if="contactDialog.sending" class="mr-2 h-4 w-4 animate-spin" />
             <Send v-else class="mr-2 h-4 w-4" />
             Enviar
           </Button>

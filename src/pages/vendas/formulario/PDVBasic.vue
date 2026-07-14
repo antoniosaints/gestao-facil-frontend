@@ -112,8 +112,10 @@
                             data-product-id="${product.id}">
                             <div class="text-center">
                                 <div
-                                    class="w-16 h-16 mx-auto mb-2 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground">
-                                    <Package class="w-8 h-8" />
+                                    class="w-16 h-16 mx-auto mb-2 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground overflow-hidden">
+                                    <img v-if="p.imagem" :src="resolveFileUrl(p.imagem)" :alt="p.nome"
+                                        class="w-full h-full object-cover" loading="lazy" />
+                                    <Package v-else class="w-8 h-8" />
                                 </div>
                                 <div class="text-center flex flex-col">
                                     <h3 class="text-gray-800 dark:text-white text-xs">
@@ -743,6 +745,7 @@ import { CirclePercent, Dot, Download, HandCoins, HandGrab, Link2, MessageCircle
 import ModalView from '@/components/formulario/ModalView.vue';
 import type { ProdutoVariante } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
+import { resolveFileUrl } from '@/utils/fileUrl';
 import router from '@/router';
 import { useConfirm } from '@/composables/useConfirm';
 

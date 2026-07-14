@@ -28,10 +28,12 @@ type ProdutoForm = {
   controlaEstoque: boolean
   producaoLocal: boolean
   mostrarNoPdv: boolean
+  mostrarNoCatalogo: boolean
   materiaPrima: boolean
   custoMedioProducao?: number
   nomeVariante: string
   skuBloqueado?: boolean
+  imagem?: string | null
 }
 
 type ProdutoVarianteForm = {
@@ -51,11 +53,13 @@ type ProdutoVarianteForm = {
   controlaEstoque: boolean
   producaoLocal: boolean
   mostrarNoPdv: boolean
+  mostrarNoCatalogo: boolean
   materiaPrima: boolean
   custoMedioProducao?: number
   nomeVariante: string
   categoriaId: number | null
   skuBloqueado?: boolean
+  imagem?: string | null
 }
 
 type ProdutoCategoriaForm = {
@@ -94,9 +98,11 @@ function getDefaultProdutoForm(): ProdutoForm {
     controlaEstoque: true,
     producaoLocal: false,
     mostrarNoPdv: true,
+    mostrarNoCatalogo: true,
     materiaPrima: false,
     custoMedioProducao: undefined,
     skuBloqueado: false,
+    imagem: null,
   }
 }
 
@@ -119,10 +125,12 @@ function getDefaultVarianteForm(produtoBaseId: number | null = null): ProdutoVar
     controlaEstoque: true,
     producaoLocal: false,
     mostrarNoPdv: true,
+    mostrarNoCatalogo: true,
     materiaPrima: false,
     custoMedioProducao: undefined,
     categoriaId: null,
     skuBloqueado: false,
+    imagem: null,
   }
 }
 
@@ -288,10 +296,12 @@ export const useProdutoStore = defineStore('produtoStore', () => {
         controlaEstoque: data?.controlaEstoque ?? true,
         producaoLocal: data?.producaoLocal ?? false,
         mostrarNoPdv: data?.mostrarNoPdv ?? true,
+        mostrarNoCatalogo: data?.mostrarNoCatalogo ?? true,
         materiaPrima: data?.materiaPrima ?? false,
         custoMedioProducao: data?.custoMedioProducao || undefined,
         nomeVariante: data?.nomeVariante || 'Padrão',
         skuBloqueado: data?.skuBloqueado ?? false,
+        imagem: data?.imagem ?? null,
       }
       baseMutationId.value = data?.id ?? id
       if (data?.variantePadraoId) {
@@ -325,10 +335,12 @@ export const useProdutoStore = defineStore('produtoStore', () => {
         controlaEstoque: data.controlaEstoque ?? true,
         producaoLocal: data.producaoLocal ?? false,
         mostrarNoPdv: data.mostrarNoPdv ?? true,
+        mostrarNoCatalogo: data.mostrarNoCatalogo ?? true,
         materiaPrima: data.materiaPrima ?? false,
         custoMedioProducao: data.custoMedioProducao || undefined,
         categoriaId: data.categoriaId ?? null,
         skuBloqueado: data.skuBloqueado ?? false,
+        imagem: data.imagem ?? null,
       }
       idMutation.value = data.id ?? id
       openModalVariante.value = true

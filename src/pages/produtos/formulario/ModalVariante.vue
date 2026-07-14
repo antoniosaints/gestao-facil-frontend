@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import VarianteImagemField from '@/pages/produtos/formulario/VarianteImagemField.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -13,7 +14,7 @@ import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 import { formatToNumberValue } from '@/utils/formatters'
-import { CircleDollarSign, Lock, PackagePlus, Settings2, Sparkles } from 'lucide-vue-next'
+import { CircleDollarSign, LoaderCircle, Lock, PackagePlus, Settings2, Sparkles } from 'lucide-vue-next'
 
 const store = useProdutoStore()
 const toast = useToast()
@@ -25,6 +26,18 @@ const description = computed(() =>
     : 'Selecione o produto base e preencha somente o que muda nesta nova variante.',
 )
 const controlaEstoqueAtivo = computed(() => store.varianteForm.controlaEstoque)
+
+// Bloqueia o botão salvar enquanto a variante + upload de imagem estão em andamento.
+const saving = ref(false)
+
+// Intenção de mudança de imagem (arquivo novo ou remoção), persistida após salvar a variante.
+const imagemChange = ref<{ file: File | null; remove: boolean }>({ file: null, remove: false })
+watch(
+  () => store.openModalVariante,
+  (open) => {
+    if (open) imagemChange.value = { file: null, remove: false }
+  },
+)
 
 function isBlank(value: string | number | null | undefined) {
   return String(value ?? '').trim() === ''
@@ -50,6 +63,7 @@ function buildPayload() {
     controlaEstoque: store.varianteForm.controlaEstoque,
     producaoLocal: store.varianteForm.producaoLocal,
     mostrarNoPdv: store.varianteForm.mostrarNoPdv,
+    mostrarNoCatalogo: store.varianteForm.mostrarNoCatalogo,
     materiaPrima: store.varianteForm.materiaPrima,
     categoriaId: store.varianteForm.categoriaId,
     custoMedioProducao: isBlank(store.varianteForm.custoMedioProducao)
@@ -93,8 +107,10 @@ function validateForm() {
 }
 
 async function submit() {
+  if (saving.value) return
   try {
     if (!validateForm()) return
+    saving.value = true
 
     const payload = buildPayload()
     if (payload.produtoBaseId == null) {
@@ -102,10 +118,21 @@ async function submit() {
       return
     }
 
-    await ProdutoVarianteRepository.save({
+    const saved = await ProdutoVarianteRepository.save({
       ...payload,
       produtoBaseId: payload.produtoBaseId,
     })
+
+    // Persiste a imagem (upload/remoção) usando o id da variante salva.
+    const varianteId = saved?.id ?? store.varianteForm.id
+    if (varianteId && (imagemChange.value.file || imagemChange.value.remove)) {
+      try {
+        await ProdutoVarianteRepository.persistImagem(varianteId, imagemChange.value)
+      } catch (imgError) {
+        console.log(imgError)
+        toast.error('Variante salva, mas não foi possível atualizar a imagem.')
+      }
+    }
 
     toast.success(store.varianteForm.id ? 'Variante atualizada com sucesso' : 'Variante criada com sucesso')
     store.resetVariante(store.varianteForm.produtoBaseId)
@@ -117,6 +144,8 @@ async function submit() {
       ? error.response.data.data.map((item: any) => item.message).join('\n')
       : error?.response?.data?.message || 'Erro ao salvar a variante'
     toast.error(errors)
+  } finally {
+    saving.value = false
   }
 }
 </script>
@@ -184,6 +213,15 @@ async function submit() {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-sm font-medium text-foreground">Imagem da variante</label>
+        <VarianteImagemField
+          :key="store.varianteForm.id ?? 'nova'"
+          :existing="store.varianteForm.imagem"
+          @change="imagemChange = $event"
+        />
       </div>
 
       <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
@@ -259,13 +297,22 @@ async function submit() {
 
         <label
           class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+          <span>Mostrar no catálogo online</span>
+          <Switch v-model:model-value="store.varianteForm.mostrarNoCatalogo" />
+        </label>
+
+        <label
+          class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
           <span>Materia prima</span>
           <Switch v-model:model-value="store.varianteForm.materiaPrima" />
         </label>
       </div>
       <div class="flex flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:justify-end">
-        <Button type="button" variant="secondary" @click="store.openModalVariante = false">Fechar</Button>
-        <Button class="text-white" type="submit">Salvar variante</Button>
+        <Button type="button" variant="secondary" :disabled="saving" @click="store.openModalVariante = false">Fechar</Button>
+        <Button class="text-white" type="submit" :disabled="saving">
+          <LoaderCircle v-if="saving" class="mr-2 h-4 w-4 animate-spin" />
+          {{ saving ? 'Salvando...' : 'Salvar variante' }}
+        </Button>
       </div>
     </form>
   </ModalView>

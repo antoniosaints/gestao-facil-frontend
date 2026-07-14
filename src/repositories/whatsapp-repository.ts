@@ -125,6 +125,9 @@ export interface WhatsAppMessage {
   // Resposta/citação: id externo da mensagem citada e um resumo do conteúdo dela.
   quotedMessageId?: string | null
   quotedConteudo?: string | null
+  // Payload bruto (JSON) do webhook recebido ou do envio. Para mensagens de localização/contato
+  // guarda o `msgContent.locationMessage`/`contactMessage` usado para montar o balão personalizado.
+  rawPayload?: string | null
   createdAt: string
 }
 
@@ -285,7 +288,7 @@ export class WhatsAppRepository {
     return data.data as WhatsAppInstancePayment
   }
 
-  static async startConversation(payload: { clienteId?: number; contatoId?: number; instanciaId?: number }) {
+  static async startConversation(payload: { clienteId?: number; contatoId?: number; phone?: string; nome?: string; instanciaId?: number }) {
     const { data } = await http.post('/whatsapp/conversas/iniciar', payload)
     return data.data as WhatsAppConversation
   }
@@ -309,6 +312,25 @@ export class WhatsAppRepository {
 
   static async sendMessage(conversaId: number, payload: { tipo?: 'text' | 'image' | 'audio' | 'video' | 'document'; conteudo?: string; mediaUrl?: string; caption?: string; fileName?: string; extension?: string; quotedMessageId?: string }) {
     const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens`, payload)
+    return data.data as WhatsAppMessage
+  }
+
+  // Envia uma localização (pino no mapa). Coordenadas coletadas do navegador (geolocation) ou
+  // informadas manualmente. `name` é o título e `address` o endereço completo.
+  static async sendLocation(
+    conversaId: number,
+    payload: { latitude: number | string; longitude: number | string; name: string; address: string; quotedMessageId?: string },
+  ) {
+    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens/localizacao`, payload)
+    return data.data as WhatsAppMessage
+  }
+
+  // Envia um cartão de contato (vCard).
+  static async sendContact(
+    conversaId: number,
+    payload: { contactName: string; contactPhone: string; contactBusinessDescription?: string; quotedMessageId?: string },
+  ) {
+    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens/contato`, payload)
     return data.data as WhatsAppMessage
   }
 

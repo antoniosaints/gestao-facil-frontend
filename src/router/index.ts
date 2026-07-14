@@ -53,6 +53,14 @@ const routes: RouteInterface[] = [
     ],
   },
   {
+    path: '/catalogo/:contaId',
+    name: 'catalogo-publico',
+    component: () => import('@/pages/produtos/publico/CatalogoPublico.vue'),
+    meta: {
+      isPublic: true,
+    },
+  },
+  {
     path: '/site',
     name: 'site-page',
     meta: {
@@ -290,6 +298,16 @@ const routes: RouteInterface[] = [
       layout: 'main',
       permissao: 5,
       modulo: 'whatsapp',
+    },
+  },
+  {
+    path: '/loja-virtual',
+    name: 'loja-virtual',
+    component: () => import('@/pages/loja/ConfiguracaoLoja.vue'),
+    meta: {
+      layout: 'main',
+      permissao: 2,
+      modulo: 'loja-virtual',
     },
   },
   {

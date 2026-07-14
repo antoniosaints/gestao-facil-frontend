@@ -154,11 +154,13 @@ export const sidebarMenuOptions = (
   const hasCoreIaApp = Boolean(appModules['core-ia'])
   const hasWhatsappApp = Boolean(appModules.whatsapp)
   const hasAtendimentoApp = Boolean(appModules.atendimento)
+  const hasLojaApp = Boolean(appModules['loja-virtual'])
   const hasVisibleAppsSection =
     (permissions.financeiro.visualizar && hasAssinaturasApp) ||
     (permissions.vendas.visualizar && hasCoreIaApp) ||
     (permissions.configuracoes.visualizar && hasWhatsappApp) ||
-    (permissions.configuracoes.visualizar && hasAtendimentoApp)
+    (permissions.configuracoes.visualizar && hasAtendimentoApp) ||
+    (permissions.produtos.visualizar && hasLojaApp)
 
   return [
     {
@@ -493,6 +495,14 @@ export const sidebarMenuOptions = (
       show: permissions.configuracoes.visualizar && hasWhatsappApp,
       color: 'green',
       link: '/whatsapp',
+    },
+    {
+      // Sem `key`: contorna a whitelist de menusVisiveis para aparecer assim que o app é ativado.
+      nome: 'Loja Virtual',
+      icone: Store,
+      show: permissions.produtos.visualizar && hasLojaApp,
+      color: 'blue',
+      link: '/loja-virtual',
     },
     {
       nome: 'Administração',

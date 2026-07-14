@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import VarianteImagemField from '@/pages/produtos/formulario/VarianteImagemField.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -10,8 +11,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
-import { ProdutoRepository } from '@/repositories/produto-repository'
-import { BadgePlus, CircleDollarSign, Layers3, Lock, Package2, Settings2, Sparkles } from 'lucide-vue-next'
+import { ProdutoRepository, ProdutoVarianteRepository } from '@/repositories/produto-repository'
+import { BadgePlus, CircleDollarSign, Layers3, LoaderCircle, Lock, Package2, Settings2, Sparkles } from 'lucide-vue-next'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 import { formatToNumberValue } from '@/utils/formatters'
@@ -33,6 +34,18 @@ const description = computed(() =>
 
 const estoqueReadonly = computed(() => store.form.id != null)
 const controlaEstoqueAtivo = computed(() => store.form.controlaEstoque)
+
+// Bloqueia o botão salvar enquanto o produto + upload de imagem estão em andamento.
+const saving = ref(false)
+
+// Intenção de mudança de imagem da variante padrão, persistida após salvar o produto.
+const imagemChange = ref<{ file: File | null; remove: boolean }>({ file: null, remove: false })
+watch(
+  () => store.openModal,
+  (open) => {
+    if (open) imagemChange.value = { file: null, remove: false }
+  },
+)
 
 function buildPayload() {
   return {
@@ -93,18 +106,29 @@ function validateForm() {
 }
 
 async function submit() {
+  if (saving.value) return
   try {
     if (!validateForm()) return
+    saving.value = true
 
     const payload = buildPayload()
 
-    if (store.form.id) {
-      await ProdutoRepository.update(payload, store.form.id)
-      toast.success('Produto atualizado com sucesso')
-    } else {
-      await ProdutoRepository.save(payload)
-      toast.success('Produto salvo com sucesso')
+    const base = store.form.id
+      ? await ProdutoRepository.update(payload, store.form.id)
+      : await ProdutoRepository.save(payload)
+
+    // Persiste a imagem (upload/remoção) na variante padrão do produto.
+    const varianteId = base?.variantePadraoId ?? store.idMutation
+    if (varianteId && (imagemChange.value.file || imagemChange.value.remove)) {
+      try {
+        await ProdutoVarianteRepository.persistImagem(varianteId, imagemChange.value)
+      } catch (imgError) {
+        console.log(imgError)
+        toast.error('Produto salvo, mas não foi possível atualizar a imagem.')
+      }
     }
+
+    toast.success(store.form.id ? 'Produto atualizado com sucesso' : 'Produto salvo com sucesso')
 
     store.reset()
     store.updateTable()
@@ -115,6 +139,8 @@ async function submit() {
       ? error.response.data.data.map((item: any) => item.message).join('\n')
       : 'Ocorreu um erro ao salvar o produto'
     toast.error(errors)
+  } finally {
+    saving.value = false
   }
 }
 </script>
@@ -149,6 +175,15 @@ async function submit() {
           <Textarea v-model="store.form.descricao" rows="4"
             placeholder="Adicione observacoes ou detalhes sobre o produto"
             class="bg-background dark:bg-background/70" />
+        </div>
+
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-foreground">Imagem da variante</label>
+          <VarianteImagemField
+            :key="store.form.id ?? 'novo'"
+            :existing="store.form.imagem"
+            @change="imagemChange = $event"
+          />
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
@@ -279,14 +314,23 @@ async function submit() {
 
           <label
             class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+            <span>Mostrar no catálogo online</span>
+            <Switch v-model:model-value="store.form.mostrarNoCatalogo" />
+          </label>
+
+          <label
+            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
             <span>Materia prima</span>
             <Switch v-model:model-value="store.form.materiaPrima" />
           </label>
         </div>
 
         <div class="flex flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:justify-end">
-          <Button type="button" variant="secondary" @click="store.openModal = false">Fechar</Button>
-          <Button class="text-white" type="submit">Salvar produto</Button>
+          <Button type="button" variant="secondary" :disabled="saving" @click="store.openModal = false">Fechar</Button>
+          <Button class="text-white" type="submit" :disabled="saving">
+            <LoaderCircle v-if="saving" class="mr-2 h-4 w-4 animate-spin" />
+            {{ saving ? 'Salvando...' : 'Salvar produto' }}
+          </Button>
         </div>
       </form>
     </ModalView>

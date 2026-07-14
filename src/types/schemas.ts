@@ -252,6 +252,10 @@ export interface ProdutoVariante {
   categoria?: string | null
   produtoBaseNome?: string
   label?: string
+  // Imagem da variante (referência do storage; renderizar com resolveFileUrl).
+  imagem?: string | null
+  // Se a variante aparece no catálogo/loja online pública.
+  mostrarNoCatalogo?: boolean
 }
 
 export interface ProdutoBase {
@@ -281,6 +285,10 @@ export interface ProdutoBase {
   nomeVariante?: string
   totalVariantes?: number
   variantePadraoId?: number | null
+  // Imagem da variante padrão (referência do storage; renderizar com resolveFileUrl).
+  imagem?: string | null
+  // Se a variante padrão aparece no catálogo/loja online pública.
+  mostrarNoCatalogo?: boolean
   ncm?: string | null
   cest?: string | null
   cfop?: string | null

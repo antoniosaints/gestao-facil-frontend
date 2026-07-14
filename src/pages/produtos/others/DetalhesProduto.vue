@@ -10,6 +10,7 @@ import { useProdutoStore } from '@/stores/produtos/useProduto'
 import { useUiStore } from '@/stores/ui/uiStore'
 import type { ProdutoBase, ProdutoVariante } from '@/types/schemas'
 import { formatCurrencyBR } from '@/utils/formatters'
+import { resolveFileUrl } from '@/utils/fileUrl'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
@@ -27,6 +28,7 @@ import GerarEtiquetas from './GerarEtiquetas.vue'
 import {
   ArchiveRestore,
   ArrowLeft,
+  X,
   BadgeCheck,
   Box,
   Boxes,
@@ -82,6 +84,12 @@ const loadingResumoProduto = ref(false)
 const loadingResumoVariante = ref(false)
 const activeTab = ref<ActiveTab>('variante')
 const selectedVariantId = ref<string>('')
+
+// Lightbox: ao clicar na imagem de uma variante, abre em tamanho maior.
+const imagemPreview = ref<string>('')
+function abrirImagem(imagem?: string | null) {
+  if (imagem) imagemPreview.value = resolveFileUrl(imagem)
+}
 
 const variants = computed(() => produto.value?.variantes ?? [])
 const selectedVariant = computed<ProdutoVariante | null>(() => {
@@ -547,12 +555,21 @@ onMounted(async () => {
                   />
                 </div>
 
-                <div>
-                  <div class="text-xl font-semibold text-foreground">
-                    {{ selectedVariant.nomeVariante || 'Padrão' }}
-                  </div>
-                  <div class="text-sm text-muted-foreground">
-                    {{ produto?.nome || selectedVariant.produtoBaseNome || 'Produto base' }}
+                <div class="flex items-center gap-3">
+                  <img
+                    v-if="selectedVariant.imagem"
+                    :src="resolveFileUrl(selectedVariant.imagem)"
+                    alt="Imagem da variante"
+                    class="h-16 w-16 shrink-0 cursor-zoom-in rounded-lg border object-cover"
+                    @click="abrirImagem(selectedVariant.imagem)"
+                  />
+                  <div>
+                    <div class="text-xl font-semibold text-foreground">
+                      {{ selectedVariant.nomeVariante || 'Padrão' }}
+                    </div>
+                    <div class="text-sm text-muted-foreground">
+                      {{ produto?.nome || selectedVariant.produtoBaseNome || 'Produto base' }}
+                    </div>
                   </div>
                 </div>
 
@@ -743,22 +760,31 @@ onMounted(async () => {
                   <TableBody>
                     <TableRow v-for="item in variants" :key="item.id">
                       <TableCell class="align-middle">
-                        <div class="flex flex-col gap-0">
-                          <div class="flex flex-wrap items-center gap-2">
-                            <span class="text-sm font-semibold text-foreground">
-                              {{ item.nomeVariante || 'Padrão' }}
-                            </span>
-                            <BadgeCell
-                              size="sm"
-                              :label="item.ehPadrao ? 'Padrão' : 'Variante'"
-                              :color="item.ehPadrao ? 'purple' : 'gray'"
-                              :icon="item.ehPadrao ? BadgeCheck : Boxes"
-                              :capitalize="true"
-                            />
+                        <div class="flex items-center gap-2.5">
+                          <img
+                            v-if="item.imagem"
+                            :src="resolveFileUrl(item.imagem)"
+                            alt="Imagem da variante"
+                            class="h-9 w-9 shrink-0 cursor-zoom-in rounded-md border object-cover"
+                            @click="abrirImagem(item.imagem)"
+                          />
+                          <div class="flex flex-col gap-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <span class="text-sm font-semibold text-foreground">
+                                {{ item.nomeVariante || 'Padrão' }}
+                              </span>
+                              <BadgeCell
+                                size="sm"
+                                :label="item.ehPadrao ? 'Padrão' : 'Variante'"
+                                :color="item.ehPadrao ? 'purple' : 'gray'"
+                                :icon="item.ehPadrao ? BadgeCheck : Boxes"
+                                :capitalize="true"
+                              />
+                            </div>
+                            <p class="text-[11px] text-muted-foreground">
+                              {{ item.codigo || 'Sem código' }} • {{ item.unidade || 'un' }}
+                            </p>
                           </div>
-                          <p class="text-[11px] text-muted-foreground">
-                            {{ item.codigo || 'Sem código' }} • {{ item.unidade || 'un' }}
-                          </p>
                         </div>
                       </TableCell>
                       <TableCell class="align-middle">
@@ -1039,5 +1065,29 @@ onMounted(async () => {
     <ModalDescarte />
     <ModalRelatorio />
     <GerarEtiquetas />
+
+    <!-- Lightbox da imagem da variante (teleportado para o body para ocupar a viewport inteira,
+         sem sofrer recorte por containers/transform da página). -->
+    <Teleport to="body">
+      <div
+        v-if="imagemPreview"
+        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
+        @click="imagemPreview = ''"
+      >
+        <img
+          :src="imagemPreview"
+          alt="Imagem da variante"
+          class="max-h-[95vh] max-w-[95vw] rounded-lg object-contain shadow-2xl"
+          @click.stop
+        />
+        <button
+          type="button"
+          class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+          @click="imagemPreview = ''"
+        >
+          <X class="h-5 w-5" />
+        </button>
+      </div>
+    </Teleport>
   </div>
 </template>
