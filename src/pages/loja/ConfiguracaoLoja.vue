@@ -5,12 +5,27 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { LojaRepository, type LojaConfig, type LojaHeaderEstilo } from '@/repositories/loja-repository'
-import { ExternalLink, ImagePlus, LoaderCircle, Package, Save, Store, Trash2 } from 'lucide-vue-next'
+import ToggleRow from './components/ToggleRow.vue'
+import {
+  Check,
+  Copy,
+  CreditCard,
+  ExternalLink,
+  Image as ImageIcon,
+  ImagePlus,
+  LoaderCircle,
+  Package,
+  Palette,
+  Save,
+  Store,
+  Trash2,
+  Type,
+  Users,
+} from 'lucide-vue-next'
 
 const toast = useToast()
 const uiStore = useUiStore()
@@ -21,6 +36,19 @@ const uploadingBanner = ref(false)
 const uploadingMobileBanner = ref(false)
 const bannerInput = ref<HTMLInputElement | null>(null)
 const bannerMobileInput = ref<HTMLInputElement | null>(null)
+
+type SectionId = 'aparencia' | 'banner' | 'conteudo' | 'vendas' | 'clientes'
+const activeSection = ref<SectionId>('aparencia')
+const sections: { id: SectionId; label: string; icon: any; desc: string }[] = [
+  { id: 'aparencia', label: 'Aparência', icon: Palette, desc: 'Tema, cores e cabeçalho' },
+  { id: 'banner', label: 'Banner', icon: ImageIcon, desc: 'Capa e imagens de destaque' },
+  { id: 'conteudo', label: 'Conteúdo', icon: Type, desc: 'Textos e exibição de produtos' },
+  { id: 'vendas', label: 'Vendas e entrega', icon: CreditCard, desc: 'Pagamento, retirada e frete' },
+  { id: 'clientes', label: 'Clientes', icon: Users, desc: 'Login e checkout' },
+]
+const activeSectionMeta = computed(() => sections.find((s) => s.id === activeSection.value)!)
+
+const linkCopied = ref(false)
 
 const config = reactive<LojaConfig>({
   slug: '',
@@ -176,6 +204,18 @@ function abrirLoja() {
   if (lojaLink.value) window.open(lojaLink.value, '_blank')
 }
 
+async function copiarLink() {
+  if (!lojaLink.value) return
+  try {
+    await navigator.clipboard.writeText(lojaLink.value)
+    linkCopied.value = true
+    toast.success('Link copiado.')
+    setTimeout(() => (linkCopied.value = false), 2000)
+  } catch {
+    toast.error('Não foi possível copiar o link.')
+  }
+}
+
 function updateTheme(key: string, value: string | number) {
   config.themeConfig = { ...(config.themeConfig || {}), [key]: value }
 }
@@ -185,15 +225,20 @@ onMounted(carregar)
 
 <template>
   <div>
-    <div class="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-      <div>
-        <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
-          <Store class="h-6 w-6 text-primary" :stroke-width="2.5" />
-          Loja Virtual
-        </h2>
-        <p class="text-sm text-muted-foreground">Personalize a aparência da sua loja online.</p>
+    <!-- Barra superior: endereço da loja + salvar -->
+    <div class="mb-4 flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="min-w-0">
+        <Label class="text-xs text-muted-foreground">Endereço da loja</Label>
+        <div class="mt-1 flex items-center gap-1.5">
+          <span class="shrink-0 text-sm text-muted-foreground">/lojas/</span>
+          <Input v-model="config.slug" class="h-9 max-w-[200px]" placeholder="minha-loja" />
+          <Button type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" :disabled="!lojaLink" title="Copiar link" @click="copiarLink">
+            <Check v-if="linkCopied" class="h-4 w-4 text-emerald-600" />
+            <Copy v-else class="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      <div class="flex gap-2">
+      <div class="flex shrink-0 gap-2">
         <Button variant="outline" :disabled="!lojaLink" @click="abrirLoja">
           <ExternalLink class="mr-1 h-4 w-4" /> Abrir loja
         </Button>
@@ -209,143 +254,224 @@ onMounted(carregar)
       <LoaderCircle class="mr-2 h-5 w-5 animate-spin" /> Carregando...
     </div>
 
-    <div v-else class="grid gap-4 lg:grid-cols-5">
-      <!-- Formulário -->
-      <div class="space-y-4 lg:col-span-3">
-        <Card>
-          <CardHeader class="py-3"><CardTitle class="text-base">Layout da loja</CardTitle></CardHeader>
-          <CardContent class="space-y-4">
-            <div class="grid gap-3 sm:grid-cols-3">
-              <button v-for="preset in [{ id: 'ESSENCIAL', name: 'Essencial', text: 'Minimalista e direto, com grade densa.' }, { id: 'EDITORIAL', name: 'Editorial', text: 'Hero amplo, tipografia e mais respiro.' }, { id: 'IMPACTO', name: 'Impacto', text: 'Contraste alto, cards grandes e quick-add.' }]" :key="preset.id" type="button" class="rounded-xl border p-4 text-left transition" :class="config.template === preset.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:bg-muted/50'" @click="config.template = preset.id as any"><span class="font-bold">{{ preset.name }}</span><span class="mt-1 block text-xs text-muted-foreground">{{ preset.text }}</span></button>
-            </div>
-            <div><Label class="text-xs">Endereço profissional</Label><div class="flex items-center gap-2"><span class="text-sm text-muted-foreground">/lojas/</span><Input v-model="config.slug" class="h-9" /></div></div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader class="py-3"><CardTitle class="text-base">Cores</CardTitle></CardHeader>
-          <CardContent class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <Label class="text-xs">Cor primária</Label>
-              <div class="flex items-center gap-2">
-                <input v-model="config.corPrimaria" type="color" class="h-9 w-12 cursor-pointer rounded border bg-transparent" />
-                <Input v-model="config.corPrimaria" class="h-9" />
-              </div>
-            </div>
-            <div class="space-y-1">
-              <Label class="text-xs">Cor secundária</Label>
-              <div class="flex items-center gap-2">
-                <input v-model="config.corSecundaria" type="color" class="h-9 w-12 cursor-pointer rounded border bg-transparent" />
-                <Input v-model="config.corSecundaria" class="h-9" />
-              </div>
-            </div>
-            <div><Label class="text-xs">Fonte</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.font" @change="updateTheme('font', ($event.target as HTMLSelectElement).value)"><option value="Inter">Inter</option><option value="system">Sistema</option><option value="Georgia">Georgia</option></select></div>
-            <div><Label class="text-xs">Arredondamento</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.radius" @change="updateTheme('radius', ($event.target as HTMLSelectElement).value)"><option value="none">Sem arredondamento</option><option value="small">Discreto</option><option value="medio">Médio</option><option value="grande">Grande</option></select></div>
-            <div><Label class="text-xs">Densidade da grade</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.gridDensity" @change="updateTheme('gridDensity', ($event.target as HTMLSelectElement).value)"><option value="compacta">Compacta</option><option value="confortavel">Confortável</option><option value="arejada">Arejada</option></select></div>
-            <div><Label class="text-xs">Estilo dos cards</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.cardStyle" @change="updateTheme('cardStyle', ($event.target as HTMLSelectElement).value)"><option value="plano">Plano</option><option value="elevado">Elevado</option><option value="contorno">Contorno</option></select></div>
-          </CardContent>
-        </Card>
+    <div v-else class="grid gap-4 lg:grid-cols-12">
+      <!-- Navegação de seções -->
+      <nav class="lg:col-span-3">
+        <div class="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
+          <button
+            v-for="sec in sections"
+            :key="sec.id"
+            type="button"
+            class="flex shrink-0 items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition lg:w-full"
+            :class="activeSection === sec.id ? 'border-primary bg-primary/5 text-primary' : 'border-transparent hover:bg-muted/60'"
+            @click="activeSection = sec.id"
+          >
+            <component :is="sec.icon" class="h-4 w-4 shrink-0" />
+            <span class="min-w-0">
+              <span class="block whitespace-nowrap text-sm font-medium lg:whitespace-normal">{{ sec.label }}</span>
+              <span class="hidden text-xs text-muted-foreground lg:block">{{ sec.desc }}</span>
+            </span>
+          </button>
+        </div>
+      </nav>
 
+      <!-- Conteúdo da seção -->
+      <div class="lg:col-span-5">
         <Card>
-          <CardHeader class="py-3"><CardTitle class="text-base">Formato do cabeçalho</CardTitle></CardHeader>
-          <CardContent class="grid gap-2 sm:grid-cols-3">
-            <button
-              v-for="op in headerOpcoes"
-              :key="op.valor"
-              type="button"
-              class="rounded-lg border p-3 text-left transition"
-              :class="config.headerEstilo === op.valor ? 'border-primary ring-1 ring-primary' : 'hover:bg-muted'"
-              @click="config.headerEstilo = op.valor"
-            >
-              <span class="block text-sm font-medium">{{ op.nome }}</span>
-              <span class="block text-xs text-muted-foreground">{{ op.descricao }}</span>
-            </button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader class="py-3"><CardTitle class="text-base">Banner / capa</CardTitle></CardHeader>
-          <CardContent class="space-y-3">
-            <div class="aspect-[16/6] w-full overflow-hidden rounded-lg border bg-muted/40">
-              <img v-if="bannerSrc" :src="bannerSrc" alt="Banner" class="h-full w-full object-cover" />
-              <div v-else class="flex h-full w-full items-center justify-center text-muted-foreground">
-                <ImagePlus class="h-8 w-8" />
+          <CardContent class="space-y-5 py-5">
+            <div class="flex items-center gap-2 border-b pb-3">
+              <component :is="activeSectionMeta.icon" class="h-5 w-5 text-primary" />
+              <div>
+                <h3 class="text-base font-semibold leading-none">{{ activeSectionMeta.label }}</h3>
+                <p class="mt-1 text-xs text-muted-foreground">{{ activeSectionMeta.desc }}</p>
               </div>
             </div>
-            <input ref="bannerInput" type="file" accept="image/*" class="hidden" @change="onBannerSelected" />
-            <div class="flex gap-2">
-              <Button type="button" variant="outline" size="sm" :disabled="uploadingBanner" @click="pickBanner">
-                <LoaderCircle v-if="uploadingBanner" class="mr-1 h-4 w-4 animate-spin" />
-                <ImagePlus v-else class="mr-1 h-4 w-4" />
-                {{ config.bannerUrl ? 'Trocar banner' : 'Enviar banner' }}
-              </Button>
-              <Button v-if="config.bannerUrl" type="button" variant="outline" size="sm" class="text-red-600" @click="removerBanner">
-                <Trash2 class="mr-1 h-4 w-4" /> Remover
-              </Button>
-            </div>
-            <div class="grid gap-3 sm:grid-cols-2">
+
+            <!-- APARÊNCIA -->
+            <template v-if="activeSection === 'aparencia'">
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Modelo da vitrine</Label>
+                <div class="grid gap-2 sm:grid-cols-3">
+                  <button
+                    v-for="preset in [{ id: 'ESSENCIAL', name: 'Essencial', text: 'Minimalista, grade densa.' }, { id: 'EDITORIAL', name: 'Editorial', text: 'Hero amplo, mais respiro.' }, { id: 'IMPACTO', name: 'Impacto', text: 'Contraste alto, cards grandes.' }]"
+                    :key="preset.id"
+                    type="button"
+                    class="rounded-xl border p-3 text-left transition"
+                    :class="config.template === preset.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:bg-muted/50'"
+                    @click="config.template = preset.id as any"
+                  >
+                    <span class="block text-sm font-bold">{{ preset.name }}</span>
+                    <span class="mt-1 block text-xs text-muted-foreground">{{ preset.text }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Cores da marca</Label>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <Label class="text-xs text-muted-foreground">Primária</Label>
+                    <div class="flex items-center gap-2">
+                      <input v-model="config.corPrimaria" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" />
+                      <Input v-model="config.corPrimaria" class="h-9" />
+                    </div>
+                  </div>
+                  <div class="space-y-1">
+                    <Label class="text-xs text-muted-foreground">Secundária</Label>
+                    <div class="flex items-center gap-2">
+                      <input v-model="config.corSecundaria" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" />
+                      <Input v-model="config.corSecundaria" class="h-9" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Estilo visual</Label>
+                <div class="grid grid-cols-2 gap-3">
+                  <div><Label class="text-xs text-muted-foreground">Fonte</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.font" @change="updateTheme('font', ($event.target as HTMLSelectElement).value)"><option value="Inter">Inter</option><option value="system">Sistema</option><option value="Georgia">Georgia</option></select></div>
+                  <div><Label class="text-xs text-muted-foreground">Arredondamento</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.radius" @change="updateTheme('radius', ($event.target as HTMLSelectElement).value)"><option value="none">Sem arredondamento</option><option value="small">Discreto</option><option value="medio">Médio</option><option value="grande">Grande</option></select></div>
+                  <div><Label class="text-xs text-muted-foreground">Densidade da grade</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.gridDensity" @change="updateTheme('gridDensity', ($event.target as HTMLSelectElement).value)"><option value="compacta">Compacta</option><option value="confortavel">Confortável</option><option value="arejada">Arejada</option></select></div>
+                  <div><Label class="text-xs text-muted-foreground">Estilo dos cards</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.cardStyle" @change="updateTheme('cardStyle', ($event.target as HTMLSelectElement).value)"><option value="plano">Plano</option><option value="elevado">Elevado</option><option value="contorno">Contorno</option></select></div>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Formato do cabeçalho</Label>
+                <div class="grid gap-2 sm:grid-cols-3">
+                  <button
+                    v-for="op in headerOpcoes"
+                    :key="op.valor"
+                    type="button"
+                    class="rounded-lg border p-3 text-left transition"
+                    :class="config.headerEstilo === op.valor ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:bg-muted'"
+                    @click="config.headerEstilo = op.valor"
+                  >
+                    <span class="block text-sm font-medium">{{ op.nome }}</span>
+                    <span class="block text-xs text-muted-foreground">{{ op.descricao }}</span>
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <!-- BANNER -->
+            <template v-else-if="activeSection === 'banner'">
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Banner (desktop)</Label>
+                <div class="aspect-[16/6] w-full overflow-hidden rounded-lg border bg-muted/40">
+                  <img v-if="bannerSrc" :src="bannerSrc" alt="Banner" class="h-full w-full object-cover" />
+                  <div v-else class="flex h-full w-full items-center justify-center text-muted-foreground">
+                    <ImagePlus class="h-8 w-8" />
+                  </div>
+                </div>
+                <input ref="bannerInput" type="file" accept="image/*" class="hidden" @change="onBannerSelected" />
+                <div class="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" :disabled="uploadingBanner" @click="pickBanner">
+                    <LoaderCircle v-if="uploadingBanner" class="mr-1 h-4 w-4 animate-spin" />
+                    <ImagePlus v-else class="mr-1 h-4 w-4" />
+                    {{ config.bannerUrl ? 'Trocar banner' : 'Enviar banner' }}
+                  </Button>
+                  <Button v-if="config.bannerUrl" type="button" variant="outline" size="sm" class="text-red-600" @click="removerBanner">
+                    <Trash2 class="mr-1 h-4 w-4" /> Remover
+                  </Button>
+                </div>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="space-y-1">
+                  <Label class="text-xs text-muted-foreground">Título do banner</Label>
+                  <Input :model-value="config.bannerTitulo ?? ''" placeholder="Ex.: Bem-vindo à nossa loja" @update:model-value="config.bannerTitulo = String($event)" />
+                </div>
+                <div class="space-y-1">
+                  <Label class="text-xs text-muted-foreground">Subtítulo do banner</Label>
+                  <Input :model-value="config.bannerSubtitulo ?? ''" placeholder="Ex.: Frete grátis acima de R$ 199" @update:model-value="config.bannerSubtitulo = String($event)" />
+                </div>
+              </div>
+
+              <div class="space-y-2 border-t pt-4">
+                <Label class="text-xs font-medium">Ajuste da imagem</Label>
+                <div class="grid gap-3 sm:grid-cols-3">
+                  <div><Label class="text-xs text-muted-foreground">Altura</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm" :value="config.themeConfig?.bannerHeight" @change="updateTheme('bannerHeight', ($event.target as HTMLSelectElement).value)"><option value="pequeno">Pequena</option><option value="medio">Média</option><option value="grande">Grande</option></select></div>
+                  <div><Label class="text-xs text-muted-foreground">Ponto focal</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm" :value="config.themeConfig?.bannerFocalPoint" @change="updateTheme('bannerFocalPoint', ($event.target as HTMLSelectElement).value)"><option value="center">Centro</option><option value="top">Topo</option><option value="bottom">Base</option><option value="left">Esquerda</option><option value="right">Direita</option></select></div>
+                  <div><Label class="text-xs text-muted-foreground">Sobreposição {{ config.themeConfig?.bannerOverlay }}%</Label><input class="mt-3 w-full" type="range" min="0" max="80" :value="Number(config.themeConfig?.bannerOverlay || 0)" @input="updateTheme('bannerOverlay', Number(($event.target as HTMLInputElement).value))" /></div>
+                </div>
+              </div>
+
+              <div class="space-y-2 border-t pt-4">
+                <Label class="text-xs font-medium">Banner (mobile)</Label>
+                <div class="flex items-center gap-3">
+                  <div class="h-28 w-20 shrink-0 overflow-hidden rounded-lg border bg-muted"><img v-if="bannerMobileSrc" :src="bannerMobileSrc" class="h-full w-full object-cover" /></div>
+                  <div class="space-y-2">
+                    <input ref="bannerMobileInput" type="file" accept="image/*" class="hidden" @change="onMobileBannerSelected" />
+                    <Button type="button" variant="outline" size="sm" :disabled="uploadingMobileBanner" @click="bannerMobileInput?.click()">
+                      <LoaderCircle v-if="uploadingMobileBanner" class="mr-1 h-4 w-4 animate-spin" />
+                      <ImagePlus v-else class="mr-1 h-4 w-4" />
+                      {{ config.bannerMobileUrl ? 'Trocar mobile' : 'Enviar mobile' }}
+                    </Button>
+                    <Button v-if="config.bannerMobileUrl" type="button" variant="outline" size="sm" class="ml-2 text-red-600" @click="removerBannerMobile"><Trash2 class="mr-1 h-4 w-4" />Remover</Button>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- CONTEÚDO -->
+            <template v-else-if="activeSection === 'conteudo'">
               <div class="space-y-1">
-                <Label class="text-xs">Título do banner</Label>
-                <Input :model-value="config.bannerTitulo ?? ''" placeholder="Ex.: Bem-vindo à nossa loja" @update:model-value="config.bannerTitulo = String($event)" />
+                <Label class="text-xs font-medium">Mensagem de boas-vindas</Label>
+                <Textarea :model-value="config.mensagemBoasVindas ?? ''" rows="2" placeholder="Uma frase curta que aparece no topo da loja." @update:model-value="config.mensagemBoasVindas = String($event)" />
               </div>
-              <div class="space-y-1">
-                <Label class="text-xs">Subtítulo do banner</Label>
-                <Input :model-value="config.bannerSubtitulo ?? ''" placeholder="Ex.: Frete grátis acima de R$ 199" @update:model-value="config.bannerSubtitulo = String($event)" />
+
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Exibição de produtos</Label>
+                <ToggleRow v-model="config.mostrarPrecos" title="Mostrar preços" description="Exibe o valor dos produtos na vitrine." />
+                <ToggleRow v-model="config.mostrarDisponibilidade" title="Mostrar disponibilidade" description="Indica se o produto está em estoque." />
+                <ToggleRow v-model="config.ocultarEsgotados" title="Ocultar esgotados" description="Esconde produtos sem estoque." />
+                <ToggleRow v-model="config.quickAdd" title="Adicionar rápido" description="Botão de adicionar ao carrinho direto na grade." />
               </div>
-            </div>
-            <div class="border-t pt-3">
-              <Label class="text-xs">Banner mobile</Label>
-              <div class="mt-2 flex items-center gap-3"><div class="h-28 w-20 overflow-hidden rounded-lg border bg-muted"><img v-if="bannerMobileSrc" :src="bannerMobileSrc" class="h-full w-full object-cover" /></div><div class="space-y-2"><input ref="bannerMobileInput" type="file" accept="image/*" class="hidden" @change="onMobileBannerSelected" /><Button type="button" variant="outline" size="sm" :disabled="uploadingMobileBanner" @click="bannerMobileInput?.click()"><ImagePlus class="mr-1 h-4 w-4" />{{ config.bannerMobileUrl ? 'Trocar mobile' : 'Enviar mobile' }}</Button><Button v-if="config.bannerMobileUrl" type="button" variant="outline" size="sm" class="ml-2 text-red-600" @click="removerBannerMobile"><Trash2 class="mr-1 h-4 w-4" />Remover</Button></div></div>
-            </div>
-            <div class="grid gap-3 border-t pt-3 sm:grid-cols-3"><div><Label class="text-xs">Altura</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm" :value="config.themeConfig?.bannerHeight" @change="updateTheme('bannerHeight', ($event.target as HTMLSelectElement).value)"><option value="pequeno">Pequena</option><option value="medio">Média</option><option value="grande">Grande</option></select></div><div><Label class="text-xs">Ponto focal</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm" :value="config.themeConfig?.bannerFocalPoint" @change="updateTheme('bannerFocalPoint', ($event.target as HTMLSelectElement).value)"><option value="center">Centro</option><option value="top">Topo</option><option value="bottom">Base</option><option value="left">Esquerda</option><option value="right">Direita</option></select></div><div><Label class="text-xs">Sobreposição {{ config.themeConfig?.bannerOverlay }}%</Label><input class="mt-2 w-full" type="range" min="0" max="80" :value="Number(config.themeConfig?.bannerOverlay || 0)" @input="updateTheme('bannerOverlay', Number(($event.target as HTMLInputElement).value))" /></div></div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader class="py-3"><CardTitle class="text-base">Textos e opções</CardTitle></CardHeader>
-          <CardContent class="space-y-3">
-            <div class="space-y-1">
-              <Label class="text-xs">Mensagem de boas-vindas</Label>
-              <Textarea :model-value="config.mensagemBoasVindas ?? ''" rows="2" placeholder="Uma frase curta que aparece no topo da loja." @update:model-value="config.mensagemBoasVindas = String($event)" />
-            </div>
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm">
-              <span>Mostrar preços na loja</span>
-              <Switch v-model:model-value="config.mostrarPrecos" />
-            </label>
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"><span>Mostrar disponibilidade</span><Switch v-model:model-value="config.mostrarDisponibilidade" /></label>
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"><span>Ocultar produtos esgotados</span><Switch v-model:model-value="config.ocultarEsgotados" /></label>
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"><span>Adicionar rápido ao carrinho</span><Switch v-model:model-value="config.quickAdd" /></label>
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm">
-              <span>Botão “Pedir pelo WhatsApp”</span>
-              <Switch v-model:model-value="config.pedidoWhatsapp" />
-            </label>
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"><span>Barra de aviso promocional</span><Switch v-model:model-value="config.barraAvisoAtiva" /></label>
-            <Input v-if="config.barraAvisoAtiva" :model-value="config.barraAvisoTexto ?? ''" placeholder="Ex.: Frete grátis acima de R$ 199" @update:model-value="config.barraAvisoTexto = String($event)" />
-          </CardContent>
-        </Card>
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Chamadas para ação</Label>
+                <ToggleRow v-model="config.pedidoWhatsapp" title="Pedir pelo WhatsApp" description="Exibe o botão de pedido via WhatsApp." />
+                <ToggleRow v-model="config.barraAvisoAtiva" title="Barra de aviso promocional" description="Faixa de destaque no topo da loja." />
+                <Input v-if="config.barraAvisoAtiva" :model-value="config.barraAvisoTexto ?? ''" placeholder="Ex.: Frete grátis acima de R$ 199" @update:model-value="config.barraAvisoTexto = String($event)" />
+              </div>
+            </template>
 
-        <Card>
-          <CardHeader class="py-3"><CardTitle class="text-base">Checkout e entrega</CardTitle></CardHeader>
-          <CardContent class="space-y-3">
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"><span>Pagamento online</span><Switch v-model:model-value="config.pagamentoOnline" /></label>
-            <div v-if="config.pagamentoOnline" class="grid grid-cols-2 gap-2"><button v-for="gateway in ['MERCADOPAGO','ABACATEPAY']" :key="gateway" class="rounded-lg border p-3 text-sm font-semibold" :class="config.gatewayPreferido === gateway ? 'border-primary bg-primary/5' : ''" @click="config.gatewayPreferido = gateway as any">{{ gateway === 'MERCADOPAGO' ? 'Mercado Pago' : 'AbacatePay' }}</button></div>
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"><span>Retirada no local</span><Switch v-model:model-value="config.retiradaAtiva" /></label>
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"><span>Entrega local</span><Switch v-model:model-value="config.entregaLocalAtiva" /></label>
-            <div v-if="config.entregaLocalAtiva" class="grid grid-cols-2 gap-3"><div><Label>Taxa fixa</Label><Input v-model.number="config.taxaEntrega" type="number" min="0" /></div><div><Label>Frete grátis acima de</Label><Input :model-value="config.freteGratisAcima ?? ''" type="number" min="0" @update:model-value="config.freteGratisAcima = $event === '' ? null : Number($event)" /></div></div>
-          </CardContent>
-        </Card>
+            <!-- VENDAS E ENTREGA -->
+            <template v-else-if="activeSection === 'vendas'">
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Pagamento</Label>
+                <ToggleRow v-model="config.pagamentoOnline" title="Pagamento online" description="Receba pagamentos direto na loja." />
+                <div v-if="config.pagamentoOnline" class="grid grid-cols-2 gap-2">
+                  <button v-for="gateway in ['MERCADOPAGO','ABACATEPAY']" :key="gateway" type="button" class="rounded-lg border p-3 text-sm font-semibold transition" :class="config.gatewayPreferido === gateway ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'" @click="config.gatewayPreferido = gateway as any">{{ gateway === 'MERCADOPAGO' ? 'Mercado Pago' : 'AbacatePay' }}</button>
+                </div>
+              </div>
 
-        <Card>
-          <CardHeader class="py-3"><CardTitle class="text-base">Clientes</CardTitle></CardHeader>
-          <CardContent class="space-y-3">
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"><span>Permitir login</span><Switch v-model:model-value="config.permitirLogin" /></label>
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"><span>Permitir cadastro</span><Switch v-model:model-value="config.permitirCadastro" /></label>
-            <label class="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"><span>Checkout como visitante</span><Switch v-model:model-value="config.permitirCheckoutVisitante" /></label>
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Entrega</Label>
+                <ToggleRow v-model="config.retiradaAtiva" title="Retirada no local" description="Cliente retira o pedido no endereço." />
+                <ToggleRow v-model="config.entregaLocalAtiva" title="Entrega local" description="Entrega feita pela sua equipe." />
+                <div v-if="config.entregaLocalAtiva" class="grid grid-cols-2 gap-3 rounded-lg border bg-muted/30 p-3">
+                  <div><Label class="text-xs text-muted-foreground">Taxa fixa</Label><Input v-model.number="config.taxaEntrega" type="number" min="0" class="mt-1" /></div>
+                  <div><Label class="text-xs text-muted-foreground">Frete grátis acima de</Label><Input :model-value="config.freteGratisAcima ?? ''" type="number" min="0" class="mt-1" @update:model-value="config.freteGratisAcima = $event === '' ? null : Number($event)" /></div>
+                </div>
+              </div>
+            </template>
+
+            <!-- CLIENTES -->
+            <template v-else-if="activeSection === 'clientes'">
+              <div class="space-y-2">
+                <ToggleRow v-model="config.permitirLogin" title="Permitir login" description="Clientes podem acessar uma conta." />
+                <ToggleRow v-model="config.permitirCadastro" title="Permitir cadastro" description="Novos clientes podem criar conta." />
+                <ToggleRow v-model="config.permitirCheckoutVisitante" title="Checkout como visitante" description="Finalizar pedido sem criar conta." />
+              </div>
+            </template>
           </CardContent>
         </Card>
       </div>
 
       <!-- Pré-visualização -->
-      <div class="lg:col-span-2">
+      <div class="lg:col-span-4">
         <div class="sticky top-4">
           <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Pré-visualização</p>
           <div class="overflow-hidden rounded-xl border bg-background shadow-sm">
