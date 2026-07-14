@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import {
   ArrowLeft,
   ArrowRightLeft,
@@ -65,14 +66,11 @@ const activeInstanceId = ref<number | null>(null)
 const newChat = reactive<{
   open: boolean
   mode: 'cliente' | 'contato'
-  search: string
-  options: Array<{ id: number; label: string }>
   clienteId: number | null
   contatoId: number | null
   instanciaId: number | null
-  loading: boolean
   starting: boolean
-}>({ open: false, mode: 'cliente', search: '', options: [], clienteId: null, contatoId: null, instanciaId: null, loading: false, starting: false })
+}>({ open: false, mode: 'cliente', clienteId: null, contatoId: null, instanciaId: null, starting: false })
 
 const conversations = ref<WhatsAppConversation[]>([])
 const messages = ref<WhatsAppMessage[]>([])
@@ -465,47 +463,20 @@ async function loadInstances() {
 function openNewChat() {
   newChat.open = true
   newChat.mode = 'cliente'
-  newChat.search = ''
-  newChat.options = []
   newChat.clienteId = null
   newChat.contatoId = null
   // Já inicia na caixa (instância) ativa quando houver uma selecionada.
   newChat.instanciaId = activeInstanceId.value
   if (!instances.value.length) loadInstances()
-  // Já carrega a lista inicial para o select não ficar vazio antes de digitar.
-  searchNewChat()
 }
 
-// Alterna entre iniciar por cliente do ERP ou por contato do WhatsApp, limpando a seleção e
-// recarregando a lista do novo modo.
+// Alterna entre iniciar por cliente do ERP ou por contato do WhatsApp, limpando a seleção.
+// O Select2Ajax de cada modo faz a própria busca ao ser montado.
 function setNewChatMode(mode: 'cliente' | 'contato') {
   if (newChat.mode === mode) return
   newChat.mode = mode
-  newChat.search = ''
-  newChat.options = []
   newChat.clienteId = null
   newChat.contatoId = null
-  searchNewChat()
-}
-
-async function searchNewChat() {
-  try {
-    newChat.loading = true
-    if (newChat.mode === 'contato') {
-      const { items } = await WhatsAppRepository.listContacts({ search: newChat.search || undefined, take: 30 })
-      newChat.options = items.map((contato) => ({
-        id: contato.id,
-        label: contato.nome ? `${contato.nome} · ${contato.telefone}` : contato.telefone,
-      }))
-    } else {
-      newChat.options = await ClienteRepository.select2(newChat.search)
-    }
-  } catch (error) {
-    console.error(error)
-    newChat.options = []
-  } finally {
-    newChat.loading = false
-  }
 }
 
 async function startConversation(target: { clienteId?: number; contatoId?: number }, instanciaId?: number | null) {
@@ -1338,37 +1309,18 @@ onMounted(async () => {
 
           <div class="space-y-1">
             <Label>{{ newChat.mode === 'contato' ? 'Contato' : 'Cliente' }}</Label>
-            <div class="flex gap-2">
-              <Input
-                v-model="newChat.search"
-                :placeholder="newChat.mode === 'contato' ? 'Filtrar contato por nome ou telefone' : 'Filtrar cliente por nome'"
-                @keyup.enter="searchNewChat"
-              />
-              <Button variant="outline" size="icon" :disabled="newChat.loading" @click="searchNewChat">
-                <LoaderCircle v-if="newChat.loading" class="h-4 w-4 animate-spin" />
-                <Search v-else class="h-4 w-4" />
-              </Button>
-            </div>
-            <select
+            <Select2Ajax
               v-if="newChat.mode === 'contato'"
-              v-model.number="newChat.contatoId"
-              class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm"
-            >
-              <option :value="null">Selecionar contato...</option>
-              <option v-for="contato in newChat.options" :key="contato.id" :value="contato.id">{{ contato.label }}</option>
-            </select>
-            <select
+              v-model="newChat.contatoId"
+              url="/whatsapp/contatos/select2"
+              placeholder="Selecionar contato..."
+            />
+            <Select2Ajax
               v-else
-              v-model.number="newChat.clienteId"
-              class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm"
-            >
-              <option :value="null">Selecionar cliente...</option>
-              <option v-for="cliente in newChat.options" :key="cliente.id" :value="cliente.id">{{ cliente.label }}</option>
-            </select>
-            <p v-if="newChat.loading" class="text-xs text-muted-foreground">Carregando opções...</p>
-            <p v-else-if="!newChat.options.length" class="text-xs text-muted-foreground">
-              {{ newChat.mode === 'contato' ? 'Nenhum contato encontrado.' : 'Nenhum cliente encontrado.' }}
-            </p>
+              v-model="newChat.clienteId"
+              url="/clientes/select2"
+              placeholder="Selecionar cliente..."
+            />
           </div>
 
           <div v-if="instances.length > 1" class="space-y-1">

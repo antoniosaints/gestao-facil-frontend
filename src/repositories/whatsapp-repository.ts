@@ -44,6 +44,10 @@ export interface WhatsAppInstance {
   numeroConectado?: string | null
   ativo: boolean
   tokenConfigurado: boolean
+  // Controle de atendimento (sem desconectar a API): não perturbe + janela de horário.
+  atendimentoNaoPerturbe?: boolean
+  atendimentoHoraInicio?: string | null
+  atendimentoHoraFim?: string | null
   lastSyncAt?: string | null
   ultimoErro?: string | null
   pagamentos?: WhatsAppInstancePayment[]
@@ -236,6 +240,13 @@ export class WhatsAppRepository {
 
   static async removeInstance(id: number) {
     const { data } = await http.delete(`/whatsapp/instances/${id}`)
+    return data.data as WhatsAppInstance
+  }
+
+  // Atualiza o controle de atendimento da instância (não perturbe + janela de horário), sem
+  // desconectar a API. Horário no formato "HH:mm"; null/"" limpa a restrição.
+  static async updateAtendimento(id: number, payload: { naoPerturbe?: boolean; horaInicio?: string | null; horaFim?: string | null }) {
+    const { data } = await http.patch(`/whatsapp/instances/${id}/atendimento`, payload)
     return data.data as WhatsAppInstance
   }
 

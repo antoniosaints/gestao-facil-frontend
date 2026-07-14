@@ -142,6 +142,49 @@
                   <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'disconnect')" class="h-4 w-4 animate-spin" />
                   <WifiOff v-else class="h-4 w-4" />
                 </Button>
+
+                <!-- Ações de atendimento: só com o app Atendimento ativo e a instância conectada.
+                     Fica num popover para não aumentar o tamanho do card. -->
+                <Popover v-if="atendimentoAtivo && instance.status === 'CONECTADA'">
+                  <PopoverTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      class="ml-auto h-8 w-8"
+                      :class="instance.atendimentoNaoPerturbe ? 'text-amber-600 hover:text-amber-700' : ''"
+                      :title="instance.atendimentoNaoPerturbe ? 'Atendimento: não perturbe ativo' : 'Ações de atendimento'"
+                      @click="openAtendimento(instance)"
+                    >
+                      <BellOff v-if="instance.atendimentoNaoPerturbe" class="h-4 w-4" />
+                      <Headset v-else class="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" class="w-72 space-y-3">
+                    <div>
+                      <p class="text-sm font-semibold leading-none">Atendimento</p>
+                      <p class="mt-1 text-xs text-muted-foreground">Controla o recebimento sem desconectar a API.</p>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-2.5">
+                      <div class="min-w-0">
+                        <p class="text-sm font-medium">Não perturbe</p>
+                        <p class="text-xs text-muted-foreground">Para de salvar os eventos recebidos.</p>
+                      </div>
+                      <Switch :model-value="atendimentoForm.naoPerturbe" @update:model-value="(v) => (atendimentoForm.naoPerturbe = Boolean(v))" />
+                    </div>
+                    <div class="space-y-1.5" :class="{ 'pointer-events-none opacity-60': atendimentoForm.naoPerturbe }">
+                      <Label class="text-xs">Horário de funcionamento</Label>
+                      <div class="grid grid-cols-2 gap-2">
+                        <Input v-model="atendimentoForm.horaInicio" type="time" class="h-9" />
+                        <Input v-model="atendimentoForm.horaFim" type="time" class="h-9" />
+                      </div>
+                      <p class="text-[11px] text-muted-foreground">Fora do horário também para de salvar. Vazio = sem restrição.</p>
+                    </div>
+                    <Button size="sm" class="w-full text-white" :disabled="atendimentoSaving" @click="saveAtendimento">
+                      <LoaderIcon v-if="atendimentoSaving" class="mr-2 h-4 w-4 animate-spin" />
+                      Salvar
+                    </Button>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div
@@ -688,6 +731,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import {
   AlertTriangle,
+  BellOff,
   Brain,
   CheckCircle2,
   Clock,
@@ -695,6 +739,7 @@ import {
   CreditCard,
   ExternalLink,
   Hand,
+  Headset,
   Landmark,
   LoaderIcon,
   MessageCircle,
@@ -725,6 +770,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
@@ -732,6 +779,7 @@ import { Textarea } from '@/components/ui/textarea'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useSocketEvent } from '@/composables/useSocketEvent'
+import { useUiStore } from '@/stores/ui/uiStore'
 import {
   WhatsAppRepository,
   type WhatsAppInstance,
@@ -744,6 +792,10 @@ import {
 
 const toast = useToast()
 const confirm = useConfirm()
+const storeUi = useUiStore()
+// As ações de atendimento (não perturbe + horário) só aparecem quando o app Atendimento está
+// ativo na conta; e, no card, apenas para instâncias conectadas.
+const atendimentoAtivo = computed(() => storeUi.hasActiveModule('atendimento'))
 const tab = ref<'instances'>('instances')
 const loading = ref(false)
 const savingInstance = ref(false)
@@ -917,6 +969,42 @@ async function refreshAll() {
     toast.error('Erro ao atualizar as instâncias WhatsApp.')
   } finally {
     loading.value = false
+  }
+}
+
+// --- Ações de atendimento da instância (não perturbe + janela de horário) ---
+const atendimentoSaving = ref(false)
+const atendimentoForm = reactive<{ id: number | null; naoPerturbe: boolean; horaInicio: string; horaFim: string }>({
+  id: null,
+  naoPerturbe: false,
+  horaInicio: '',
+  horaFim: '',
+})
+
+// Semeia o formulário ao abrir o popover da instância (um popover aberto por vez).
+function openAtendimento(instance: WhatsAppInstance) {
+  atendimentoForm.id = instance.id
+  atendimentoForm.naoPerturbe = Boolean(instance.atendimentoNaoPerturbe)
+  atendimentoForm.horaInicio = instance.atendimentoHoraInicio || ''
+  atendimentoForm.horaFim = instance.atendimentoHoraFim || ''
+}
+
+async function saveAtendimento() {
+  if (!atendimentoForm.id) return
+  try {
+    atendimentoSaving.value = true
+    await WhatsAppRepository.updateAtendimento(atendimentoForm.id, {
+      naoPerturbe: atendimentoForm.naoPerturbe,
+      horaInicio: atendimentoForm.horaInicio || null,
+      horaFim: atendimentoForm.horaFim || null,
+    })
+    await loadInstances()
+    toast.success('Atendimento da instância atualizado.')
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível atualizar o atendimento.')
+  } finally {
+    atendimentoSaving.value = false
   }
 }
 
@@ -1386,5 +1474,8 @@ useSocketEvent<WhatsAppInstance>('whatsapp:instancia:updated', async () => {
   await loadInstances()
 })
 
-onMounted(refreshAll)
+onMounted(() => {
+  refreshAll()
+  storeUi.loadAppModules()
+})
 </script>
