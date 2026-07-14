@@ -29,7 +29,9 @@ import {
   Inbox,
   Link,
   LoaderCircle,
+  Mic,
   Plus,
+  Square,
   MessageSquareDashed,
   MessageSquareLock,
   MessageSquarePlus,
@@ -298,26 +300,34 @@ function isAudioMessage(message: WhatsAppMessage) {
 
 // URL do áudio para o player. Enviados (SAIDA) têm URL pública direta; recebidos (ENTRADA) vêm
 // criptografados e são descriptografados pelo backend e servidos como blob (mediaCache).
+// O áudio (enviado ou recebido) é sempre servido via proxy same-origin do backend (mediaCache),
+// porque o wavesurfer lê os bytes para desenhar a waveform e o bucket público bloqueia por CORS.
 function audioSrc(message: WhatsAppMessage): string | null {
   if (!isAudioMessage(message) || brokenImages.value.has(String(message.id))) return null
-  if (message.direcao === 'SAIDA') return message.mediaUrl || null
   return mediaCache.value[message.id] || null
 }
 
-// Está baixando/descriptografando um áudio recebido que ainda não chegou nem falhou?
+// Está baixando o áudio (que ainda não chegou ao cache nem falhou)?
 function isAudioLoading(message: WhatsAppMessage) {
   return (
     isAudioMessage(message) &&
-    message.direcao === 'ENTRADA' &&
     !mediaCache.value[message.id] &&
     !brokenImages.value.has(String(message.id))
   )
 }
 
-// Baixa (descriptografando no backend) as mídias recebidas (imagens e áudios) ainda não carregadas.
+// Precisa passar pelo proxy same-origin do backend? Recebidas (ENTRADA) de imagem/áudio precisam
+// (descriptografia); enviadas (SAIDA) só o áudio precisa (evitar CORS na waveform — a imagem SAIDA
+// carrega direto via <img>, que não sofre CORS).
+function needsMediaProxy(message: WhatsAppMessage) {
+  if (message.direcao === 'ENTRADA') return isImageMessage(message) || isAudioMessage(message)
+  return isAudioMessage(message)
+}
+
+// Baixa (proxy/descriptografia no backend) as mídias que precisam de blob same-origin.
 async function prefetchMedia(list: WhatsAppMessage[]) {
   for (const message of list) {
-    if (message.direcao !== 'ENTRADA' || (!isImageMessage(message) && !isAudioMessage(message))) continue
+    if (!needsMediaProxy(message)) continue
     if (mediaCache.value[message.id] || brokenImages.value.has(String(message.id))) continue
     try {
       const url = await WhatsAppRepository.fetchMessageMedia(message.id)
@@ -336,6 +346,8 @@ function openImagePreview(message: WhatsAppMessage) {
 onBeforeUnmount(() => {
   Object.values(mediaCache.value).forEach((url) => URL.revokeObjectURL(url))
   if (imageDraft.previewUrl) URL.revokeObjectURL(imageDraft.previewUrl)
+  if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
+  stopAudioResources()
 })
 
 function formatTime(value?: string | null) {
@@ -662,6 +674,146 @@ async function sendMediaLink() {
     toast.error(error?.response?.data?.message || 'Não foi possível enviar a mídia.')
   } finally {
     mediaLink.sending = false
+  }
+}
+
+// --- Gravação de áudio (nota de voz) ---
+// Grava com o MediaRecorder (preferindo ogg/webm opus), mostra uma pré-escuta antes de enviar; o
+// backend transcoda para OGG/Opus (ffmpeg), sobe no storage e envia a URL.
+const audioRec = reactive<{ state: 'idle' | 'recording' | 'preview'; seconds: number; sending: boolean }>({
+  state: 'idle',
+  seconds: 0,
+  sending: false,
+})
+const audioBlob = ref<Blob | null>(null)
+const audioUrl = ref('')
+let mediaRecorder: MediaRecorder | null = null
+let audioStream: MediaStream | null = null
+let audioChunks: Blob[] = []
+let audioTimer: ReturnType<typeof setInterval> | null = null
+let audioMime = ''
+let audioCancelled = false
+
+function pickRecorderMimeType(): string {
+  const options = ['audio/ogg;codecs=opus', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
+  return options.find((type) => MediaRecorder.isTypeSupported?.(type)) || ''
+}
+
+function formatSeconds(total: number): string {
+  const minutes = Math.floor(total / 60)
+  const seconds = total % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+function stopAudioResources() {
+  if (audioTimer) {
+    clearInterval(audioTimer)
+    audioTimer = null
+  }
+  audioStream?.getTracks().forEach((track) => track.stop())
+  audioStream = null
+  mediaRecorder = null
+}
+
+async function startRecording() {
+  if (!selectedConversation.value || audioRec.state !== 'idle') return
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+    toast.error('Gravação de áudio indisponível neste navegador.')
+    return
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    audioMime = pickRecorderMimeType()
+    const recorder = new MediaRecorder(stream, audioMime ? { mimeType: audioMime } : undefined)
+    audioChunks = []
+    audioCancelled = false
+    audioStream = stream
+    mediaRecorder = recorder
+    recorder.ondataavailable = (event) => {
+      if (event.data?.size) audioChunks.push(event.data)
+    }
+    recorder.onstop = () => finalizeRecording(audioMime || recorder.mimeType || 'audio/webm')
+    recorder.start()
+    audioRec.seconds = 0
+    audioRec.state = 'recording'
+    audioTimer = setInterval(() => {
+      audioRec.seconds += 1
+    }, 1000)
+  } catch (error) {
+    console.error(error)
+    stopAudioResources()
+    audioRec.state = 'idle'
+    toast.error('Não foi possível acessar o microfone.')
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder?.state === 'recording') mediaRecorder.stop()
+}
+
+function finalizeRecording(mime: string) {
+  const cancelled = audioCancelled
+  const chunks = audioChunks
+  stopAudioResources()
+  if (cancelled) {
+    audioRec.state = 'idle'
+    audioRec.seconds = 0
+    return
+  }
+  if (!chunks.length) {
+    audioRec.state = 'idle'
+    audioRec.seconds = 0
+    toast.warning('Nenhum áudio foi gravado.')
+    return
+  }
+  const blob = new Blob(chunks, { type: mime })
+  if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
+  audioBlob.value = blob
+  audioUrl.value = URL.createObjectURL(blob)
+  audioRec.state = 'preview'
+}
+
+// Cancela durante a gravação (aborta) ou descarta a pré-escuta.
+function cancelRecording() {
+  if (audioRec.state === 'recording') {
+    audioCancelled = true
+    if (mediaRecorder?.state === 'recording') {
+      mediaRecorder.stop()
+    } else {
+      stopAudioResources()
+      audioRec.state = 'idle'
+      audioRec.seconds = 0
+    }
+    return
+  }
+  discardAudio()
+}
+
+function discardAudio() {
+  if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
+  audioUrl.value = ''
+  audioBlob.value = null
+  audioRec.state = 'idle'
+  audioRec.seconds = 0
+}
+
+async function confirmSendAudio() {
+  if (!audioBlob.value || !selectedConversation.value) return
+  try {
+    audioRec.sending = true
+    const ext = audioMime.split(';')[0].split('/')[1] || 'webm'
+    const file = new File([audioBlob.value], `audio-gravado.${ext}`, { type: audioBlob.value.type })
+    await WhatsAppRepository.sendAudioMessage(selectedConversation.value.id, file, {
+      quotedMessageId: replyingTo.value?.externalMessageId || undefined,
+    })
+    replyingTo.value = null
+    discardAudio()
+    await Promise.all([loadMessages(), loadConversations()])
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível enviar o áudio.')
+  } finally {
+    audioRec.sending = false
   }
 }
 
@@ -1243,7 +1395,35 @@ onMounted(async () => {
           <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="onImageSelected" />
           <input ref="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="onImageSelected" />
 
-          <div class="flex items-end gap-2">
+          <!-- Gravando áudio -->
+          <div v-if="audioRec.state === 'recording'" class="flex items-center gap-3">
+            <Button type="button" variant="ghost" size="icon" class="h-10 w-10 shrink-0 rounded-full text-destructive" title="Cancelar" @click="cancelRecording">
+              <Trash2 class="h-5 w-5" />
+            </Button>
+            <div class="flex flex-1 items-center gap-2 text-sm">
+              <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500"></span>
+              <span class="text-muted-foreground">Gravando</span>
+              <span class="font-mono tabular-nums">{{ formatSeconds(audioRec.seconds) }}</span>
+            </div>
+            <Button type="button" size="icon" class="h-10 w-10 shrink-0 rounded-full text-white" title="Parar gravação" @click="stopRecording">
+              <Square class="h-4 w-4" />
+            </Button>
+          </div>
+
+          <!-- Pré-escuta do áudio gravado -->
+          <div v-else-if="audioRec.state === 'preview'" class="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="icon" class="h-10 w-10 shrink-0 rounded-full text-destructive" title="Descartar" :disabled="audioRec.sending" @click="discardAudio">
+              <Trash2 class="h-5 w-5" />
+            </Button>
+            <audio :src="audioUrl" controls class="h-10 flex-1"></audio>
+            <Button type="button" size="icon" class="h-10 w-10 shrink-0 rounded-full text-white" title="Enviar áudio" :disabled="audioRec.sending" @click="confirmSendAudio">
+              <LoaderCircle v-if="audioRec.sending" class="h-4 w-4 animate-spin" />
+              <Send v-else class="h-4 w-4" />
+            </Button>
+          </div>
+
+          <!-- Barra normal -->
+          <div v-else class="flex items-end gap-2">
             <!-- Menu de anexos (+) -->
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
@@ -1283,8 +1463,9 @@ onMounted(async () => {
               @keydown.enter.exact.prevent="sendText"
             />
 
-            <!-- Enviar -->
+            <!-- Enviar (com texto) ou Gravar áudio (sem texto) -->
             <Button
+              v-if="messageForm.conteudo.trim()"
               type="submit"
               size="icon"
               class="h-10 w-10 shrink-0 rounded-full text-white"
@@ -1293,6 +1474,17 @@ onMounted(async () => {
             >
               <LoaderCircle v-if="sending" class="h-4 w-4 animate-spin" />
               <Send v-else class="h-4 w-4" />
+            </Button>
+            <Button
+              v-else
+              type="button"
+              size="icon"
+              class="h-10 w-10 shrink-0 rounded-full text-white"
+              :disabled="selectedConversation.Instancia?.status !== 'CONECTADA'"
+              title="Gravar áudio"
+              @click="startRecording"
+            >
+              <Mic class="h-5 w-5" />
             </Button>
           </div>
           <p v-if="selectedConversation.Instancia?.status !== 'CONECTADA'" class="mt-2 text-xs text-amber-600">

@@ -325,6 +325,18 @@ export class WhatsAppRepository {
     return data.data as WhatsAppMessage
   }
 
+  // Envia um áudio gravado no dispositivo (multipart). O backend transcoda para OGG/Opus (ffmpeg),
+  // salva no storage público e envia a URL como nota de voz.
+  static async sendAudioMessage(conversaId: number, file: File | Blob, options: { quotedMessageId?: string } = {}) {
+    const form = new FormData()
+    form.append('file', file, 'audio-gravado.webm')
+    if (options.quotedMessageId) form.append('quotedMessageId', options.quotedMessageId)
+    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens/audio`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data.data as WhatsAppMessage
+  }
+
   static async updateConversation(conversaId: number, payload: Partial<{ status: WhatsAppConversationStatus; atendenteId: number | null; setor: string | null; fila: string | null; clienteId: number | null }>) {
     const { data } = await http.patch(`/whatsapp/conversas/${conversaId}`, payload)
     return data.data as WhatsAppConversation
