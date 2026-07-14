@@ -8,6 +8,7 @@ type RouteMeta = {
     layout?: 'main' | 'default' | 'admin'
     permissao?: number
     modulo?: string
+    customerMode?: string
   }
 }
 
@@ -60,6 +61,20 @@ const routes: RouteInterface[] = [
       isPublic: true,
     },
   },
+  {
+    path: '/lojas/:slug',
+    name: 'loja-publica',
+    component: () => import('@/pages/loja/publico/LojaPublica.vue'),
+    meta: { isPublic: true },
+  },
+  ...[
+    ['login', 'login'], ['cadastro', 'register'], ['esqueci-senha', 'forgot'], ['redefinir-senha', 'reset'], ['verificar', 'verify'], ['conta', 'account'],
+  ].map(([path, customerMode]) => ({
+    path: `/lojas/:slug/${path}`,
+    name: `loja-cliente-${customerMode}`,
+    component: () => import('@/pages/loja/publico/ContaCliente.vue'),
+    meta: { isPublic: true, customerMode },
+  })) as RouteInterface[],
   {
     path: '/site',
     name: 'site-page',
@@ -303,7 +318,7 @@ const routes: RouteInterface[] = [
   {
     path: '/loja-virtual',
     name: 'loja-virtual',
-    component: () => import('@/pages/loja/ConfiguracaoLoja.vue'),
+    component: () => import('@/pages/loja/LojaVirtualPage.vue'),
     meta: {
       layout: 'main',
       permissao: 2,
