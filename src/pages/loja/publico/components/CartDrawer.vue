@@ -65,7 +65,7 @@ function close() { emit('update:open', false) }
       <aside
         v-if="open"
         class="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl"
-        :style="{ '--shop-primary': store.colors.primary }"
+        :style="{ '--shop-primary': store.colors.primary, fontFamily: 'var(--shop-font)' }"
       >
         <!-- Cabeçalho -->
         <header class="flex items-center justify-between border-b px-5 py-4">
@@ -167,12 +167,12 @@ function close() { emit('update:open', false) }
               </div>
               <div class="flex justify-between pt-1 text-lg font-black text-slate-900"><span>Total</span><span>{{ formatCurrencyBR(step === 'checkout' ? total : subtotal) }}</span></div>
             </div>
-            <Button v-if="step === 'cart'" class="mt-4 h-12 w-full rounded-full text-base text-white" @click="step = 'checkout'">
+            <Button v-if="step === 'cart'" class="mt-4 h-12 w-full rounded-full text-base text-white" :style="{ backgroundColor: 'var(--shop-primary)' }" @click="step = 'checkout'">
               Continuar
             </Button>
-            <Button v-else class="mt-4 h-12 w-full rounded-full text-base text-white" :disabled="checkingOut || !canFinish" @click="emit('finish')">
+            <Button v-else class="mt-4 h-12 w-full rounded-full text-base text-white" :style="{ backgroundColor: 'var(--shop-primary)' }" :disabled="checkingOut || !canFinish" @click="emit('finish')">
               <LoaderCircle v-if="checkingOut" class="mr-2 h-4 w-4 animate-spin" />
-              {{ checkout.channel === 'WHATSAPP' ? 'Enviar pedido pelo WhatsApp' : 'Finalizar pedido' }}
+              {{ checkout.channel === 'WHATSAPP' ? 'Finalizar no WhatsApp' : 'Finalizar pedido' }}
             </Button>
             <p v-if="step === 'checkout' && !canFinish" class="mt-2 text-center text-xs text-slate-400">Informe nome e telefone para continuar.</p>
           </footer>

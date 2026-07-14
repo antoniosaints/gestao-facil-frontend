@@ -11,6 +11,7 @@ import { resolveFileUrl } from '@/utils/fileUrl'
 import { LojaRepository, type LojaConfig, type LojaHeaderEstilo } from '@/repositories/loja-repository'
 import ToggleRow from './components/ToggleRow.vue'
 import {
+  Building2,
   Check,
   Copy,
   CreditCard,
@@ -20,6 +21,8 @@ import {
   LoaderCircle,
   Package,
   Palette,
+  PanelTop,
+  Plus,
   Save,
   Store,
   Trash2,
@@ -32,19 +35,23 @@ const uiStore = useUiStore()
 
 const loading = ref(true)
 const saving = ref(false)
-const uploadingBanner = ref(false)
 const uploadingMobileBanner = ref(false)
-const bannerInput = ref<HTMLInputElement | null>(null)
+const uploadingLogo = ref(false)
+const uploadingCarrossel = ref(false)
 const bannerMobileInput = ref<HTMLInputElement | null>(null)
+const logoInput = ref<HTMLInputElement | null>(null)
+const carrosselInput = ref<HTMLInputElement | null>(null)
 
-type SectionId = 'aparencia' | 'banner' | 'conteudo' | 'vendas' | 'clientes'
+type SectionId = 'aparencia' | 'cabecalho' | 'banner' | 'conteudo' | 'vendas' | 'clientes' | 'rodape'
 const activeSection = ref<SectionId>('aparencia')
 const sections: { id: SectionId; label: string; icon: any; desc: string }[] = [
-  { id: 'aparencia', label: 'Aparência', icon: Palette, desc: 'Tema, cores e cabeçalho' },
-  { id: 'banner', label: 'Banner', icon: ImageIcon, desc: 'Capa e imagens de destaque' },
+  { id: 'aparencia', label: 'Aparência', icon: Palette, desc: 'Tema, cores e fundo' },
+  { id: 'cabecalho', label: 'Cabeçalho', icon: PanelTop, desc: 'Logo, título e subtítulo' },
+  { id: 'banner', label: 'Banner', icon: ImageIcon, desc: 'Capa e carrossel de destaque' },
   { id: 'conteudo', label: 'Conteúdo', icon: Type, desc: 'Textos e exibição de produtos' },
   { id: 'vendas', label: 'Vendas e entrega', icon: CreditCard, desc: 'Pagamento, retirada e frete' },
   { id: 'clientes', label: 'Clientes', icon: Users, desc: 'Login e checkout' },
+  { id: 'rodape', label: 'Rodapé', icon: Building2, desc: 'Dados da empresa e contato' },
 ]
 const activeSectionMeta = computed(() => sections.find((s) => s.id === activeSection.value)!)
 
@@ -87,6 +94,11 @@ const lojaLink = computed(() => {
 
 const bannerSrc = computed(() => (config.bannerUrl ? resolveFileUrl(config.bannerUrl, { bustCache: true }) : ''))
 const bannerMobileSrc = computed(() => (config.bannerMobileUrl ? resolveFileUrl(config.bannerMobileUrl, { bustCache: true }) : ''))
+const previewBannerSrc = computed(() => {
+  const first = (config.themeConfig?.banners as string[] | undefined)?.[0]
+  if (first) return resolveFileUrl(first, { bustCache: true })
+  return bannerSrc.value
+})
 const nomeLoja = computed(() => uiStore.contaInfo.nomeFantasia || uiStore.contaInfo.nome || 'Minha Loja')
 
 const headerOpcoes: { valor: LojaHeaderEstilo; nome: string; descricao: string }[] = [
@@ -147,45 +159,6 @@ async function salvar() {
   }
 }
 
-function pickBanner() {
-  bannerInput.value?.click()
-}
-
-async function onBannerSelected(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file) return
-  if (!file.type.startsWith('image/')) {
-    toast.warning('Selecione uma imagem para o banner.')
-    return
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    toast.warning('O banner excede o limite de 5MB.')
-    return
-  }
-  try {
-    uploadingBanner.value = true
-    const data = await LojaRepository.uploadBanner(file)
-    config.bannerUrl = data.bannerUrl
-    toast.success('Banner enviado.')
-  } catch (error: any) {
-    toast.error(error?.response?.data?.message || 'Não foi possível enviar o banner.')
-  } finally {
-    uploadingBanner.value = false
-  }
-}
-
-async function removerBanner() {
-  try {
-    await LojaRepository.removeBanner()
-    config.bannerUrl = null
-    toast.success('Banner removido.')
-  } catch (error: any) {
-    toast.error(error?.response?.data?.message || 'Não foi possível remover o banner.')
-  }
-}
-
 async function onMobileBannerSelected(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]; input.value = ''
@@ -216,8 +189,51 @@ async function copiarLink() {
   }
 }
 
-function updateTheme(key: string, value: string | number) {
-  config.themeConfig = { ...(config.themeConfig || {}), [key]: value }
+function updateTheme(key: string, value: unknown) {
+  config.themeConfig = { ...(config.themeConfig || {}), [key]: value } as any
+}
+function updateCompany(key: string, value: string) {
+  const company = { ...(config.themeConfig?.company || {}), [key]: value }
+  updateTheme('company', company)
+}
+
+const carrossel = computed<string[]>(() => (config.themeConfig?.banners as string[] | undefined) || [])
+
+async function onLogoSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]; input.value = ''
+  if (!file) return
+  if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) return toast.warning('Selecione uma imagem de até 5MB.')
+  try {
+    uploadingLogo.value = true
+    const data = await LojaRepository.uploadImage(file, 'logo')
+    updateTheme('logoUrl', data.reference)
+    toast.success('Logo enviada. Lembre de salvar.')
+  } catch (error: any) { toast.error(error?.response?.data?.message || 'Não foi possível enviar a logo.') }
+  finally { uploadingLogo.value = false }
+}
+function removerLogo() { updateTheme('logoUrl', null) }
+
+async function onCarrosselSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files || []); input.value = ''
+  if (!files.length) return
+  try {
+    uploadingCarrossel.value = true
+    const atuais = [...carrossel.value]
+    for (const file of files) {
+      if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) { toast.warning(`"${file.name}" ignorada (imagem até 5MB).`); continue }
+      if (atuais.length >= 8) { toast.warning('Limite de 8 imagens no carrossel.'); break }
+      const data = await LojaRepository.uploadImage(file, 'galeria')
+      atuais.push(data.reference)
+    }
+    updateTheme('banners', atuais)
+    toast.success('Imagens adicionadas. Lembre de salvar.')
+  } catch (error: any) { toast.error(error?.response?.data?.message || 'Não foi possível enviar as imagens.') }
+  finally { uploadingCarrossel.value = false }
+}
+function removerImagemCarrossel(index: number) {
+  const arr = [...carrossel.value]; arr.splice(index, 1); updateTheme('banners', arr)
 }
 
 onMounted(carregar)
@@ -327,6 +343,16 @@ onMounted(carregar)
               </div>
 
               <div class="space-y-2">
+                <Label class="text-xs font-medium">Cor de fundo da loja</Label>
+                <div class="flex items-center gap-2">
+                  <input :value="config.themeConfig?.bgColor || '#fafaf9'" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('bgColor', ($event.target as HTMLInputElement).value)" />
+                  <Input :model-value="config.themeConfig?.bgColor || ''" placeholder="#fafaf9 (padrão)" class="h-9" @update:model-value="updateTheme('bgColor', String($event).trim() || null)" />
+                  <Button v-if="config.themeConfig?.bgColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('bgColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                </div>
+                <p class="text-xs text-muted-foreground">Cor de fundo das áreas de produtos. Deixe em branco para o padrão claro.</p>
+              </div>
+
+              <div class="space-y-2">
                 <Label class="text-xs font-medium">Estilo visual</Label>
                 <div class="grid grid-cols-2 gap-3">
                   <div><Label class="text-xs text-muted-foreground">Fonte</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.font" @change="updateTheme('font', ($event.target as HTMLSelectElement).value)"><option value="Inter">Inter</option><option value="system">Sistema</option><option value="Georgia">Georgia</option></select></div>
@@ -334,6 +360,39 @@ onMounted(carregar)
                   <div><Label class="text-xs text-muted-foreground">Densidade da grade</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.gridDensity" @change="updateTheme('gridDensity', ($event.target as HTMLSelectElement).value)"><option value="compacta">Compacta</option><option value="confortavel">Confortável</option><option value="arejada">Arejada</option></select></div>
                   <div><Label class="text-xs text-muted-foreground">Estilo dos cards</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.cardStyle" @change="updateTheme('cardStyle', ($event.target as HTMLSelectElement).value)"><option value="plano">Plano</option><option value="elevado">Elevado</option><option value="contorno">Contorno</option></select></div>
                 </div>
+              </div>
+
+            </template>
+
+            <!-- CABEÇALHO -->
+            <template v-else-if="activeSection === 'cabecalho'">
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Logo da loja</Label>
+                <div class="flex items-center gap-4">
+                  <div class="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border bg-muted/40">
+                    <img v-if="config.themeConfig?.logoUrl" :src="resolveFileUrl(config.themeConfig.logoUrl, { bustCache: true })" class="h-full w-full object-cover" />
+                    <Store v-else class="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div class="space-y-2">
+                    <input ref="logoInput" type="file" accept="image/*" class="hidden" @change="onLogoSelected" />
+                    <Button type="button" variant="outline" size="sm" :disabled="uploadingLogo" @click="logoInput?.click()">
+                      <LoaderCircle v-if="uploadingLogo" class="mr-1 h-4 w-4 animate-spin" />
+                      <ImagePlus v-else class="mr-1 h-4 w-4" />
+                      {{ config.themeConfig?.logoUrl ? 'Trocar logo' : 'Enviar logo' }}
+                    </Button>
+                    <Button v-if="config.themeConfig?.logoUrl" type="button" variant="outline" size="sm" class="ml-2 text-red-600" @click="removerLogo"><Trash2 class="mr-1 h-4 w-4" /> Remover</Button>
+                  </div>
+                </div>
+                <p class="text-xs text-muted-foreground">Ideal quadrada (ex.: 200×200). Sem logo, usamos a inicial da loja.</p>
+              </div>
+
+              <div class="space-y-1">
+                <Label class="text-xs font-medium">Título do cabeçalho</Label>
+                <Input :model-value="config.themeConfig?.headerTitle || ''" :placeholder="nomeLoja" @update:model-value="updateTheme('headerTitle', String($event).trim() || null)" />
+              </div>
+              <div class="space-y-1">
+                <Label class="text-xs font-medium">Subtítulo do cabeçalho</Label>
+                <Input :model-value="config.themeConfig?.headerSubtitle || ''" placeholder="Ex.: Loja online" @update:model-value="updateTheme('headerSubtitle', String($event).trim() || null)" />
               </div>
 
               <div class="space-y-2">
@@ -357,24 +416,24 @@ onMounted(carregar)
             <!-- BANNER -->
             <template v-else-if="activeSection === 'banner'">
               <div class="space-y-2">
-                <Label class="text-xs font-medium">Banner (desktop)</Label>
-                <div class="aspect-[16/6] w-full overflow-hidden rounded-lg border bg-muted/40">
-                  <img v-if="bannerSrc" :src="bannerSrc" alt="Banner" class="h-full w-full object-cover" />
-                  <div v-else class="flex h-full w-full items-center justify-center text-muted-foreground">
-                    <ImagePlus class="h-8 w-8" />
+                <div class="flex items-center justify-between">
+                  <Label class="text-xs font-medium">Imagens do banner (desktop)</Label>
+                  <span class="text-xs text-muted-foreground">{{ carrossel.length }}/8</span>
+                </div>
+                <p class="text-xs text-muted-foreground">Uma imagem fica estática; com duas ou mais vira um carrossel automático.</p>
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div v-for="(img, i) in carrossel" :key="img + i" class="group relative aspect-[16/9] overflow-hidden rounded-lg border bg-muted/40">
+                    <img :src="resolveFileUrl(img, { bustCache: true })" class="h-full w-full object-cover" />
+                    <span class="absolute left-1 top-1 rounded bg-black/60 px-1.5 text-[10px] font-bold text-white">{{ i + 1 }}</span>
+                    <button type="button" class="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white transition hover:bg-red-600" @click="removerImagemCarrossel(i)"><Trash2 class="h-3.5 w-3.5" /></button>
                   </div>
+                  <button v-if="carrossel.length < 8" type="button" class="flex aspect-[16/9] flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-muted-foreground transition hover:border-primary hover:text-primary" :disabled="uploadingCarrossel" @click="carrosselInput?.click()">
+                    <LoaderCircle v-if="uploadingCarrossel" class="h-5 w-5 animate-spin" />
+                    <Plus v-else class="h-5 w-5" />
+                    <span class="text-xs font-medium">Adicionar</span>
+                  </button>
                 </div>
-                <input ref="bannerInput" type="file" accept="image/*" class="hidden" @change="onBannerSelected" />
-                <div class="flex gap-2">
-                  <Button type="button" variant="outline" size="sm" :disabled="uploadingBanner" @click="pickBanner">
-                    <LoaderCircle v-if="uploadingBanner" class="mr-1 h-4 w-4 animate-spin" />
-                    <ImagePlus v-else class="mr-1 h-4 w-4" />
-                    {{ config.bannerUrl ? 'Trocar banner' : 'Enviar banner' }}
-                  </Button>
-                  <Button v-if="config.bannerUrl" type="button" variant="outline" size="sm" class="text-red-600" @click="removerBanner">
-                    <Trash2 class="mr-1 h-4 w-4" /> Remover
-                  </Button>
-                </div>
+                <input ref="carrosselInput" type="file" accept="image/*" multiple class="hidden" @change="onCarrosselSelected" />
               </div>
 
               <div class="grid gap-3 sm:grid-cols-2">
@@ -466,6 +525,25 @@ onMounted(carregar)
                 <ToggleRow v-model="config.permitirCheckoutVisitante" title="Checkout como visitante" description="Finalizar pedido sem criar conta." />
               </div>
             </template>
+
+            <!-- RODAPÉ / EMPRESA -->
+            <template v-else-if="activeSection === 'rodape'">
+              <p class="text-xs text-muted-foreground">Essas informações aparecem no rodapé da loja para dar mais confiança ao cliente. Todos os campos são opcionais.</p>
+              <div class="space-y-1">
+                <Label class="text-xs font-medium">Sobre a loja</Label>
+                <Textarea :model-value="config.themeConfig?.company?.about || ''" rows="3" placeholder="Uma breve descrição da sua empresa." @update:model-value="updateCompany('about', String($event))" />
+              </div>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="space-y-1"><Label class="text-xs text-muted-foreground">Telefone</Label><Input :model-value="config.themeConfig?.company?.phone || ''" placeholder="(00) 0000-0000" @update:model-value="updateCompany('phone', String($event))" /></div>
+                <div class="space-y-1"><Label class="text-xs text-muted-foreground">WhatsApp</Label><Input :model-value="config.themeConfig?.company?.whatsapp || ''" placeholder="Ex.: 5599999999999" @update:model-value="updateCompany('whatsapp', String($event))" /></div>
+                <div class="space-y-1"><Label class="text-xs text-muted-foreground">E-mail</Label><Input :model-value="config.themeConfig?.company?.email || ''" type="email" placeholder="contato@sualoja.com" @update:model-value="updateCompany('email', String($event))" /></div>
+                <div class="space-y-1"><Label class="text-xs text-muted-foreground">CNPJ</Label><Input :model-value="config.themeConfig?.company?.cnpj || ''" placeholder="00.000.000/0000-00" @update:model-value="updateCompany('cnpj', String($event))" /></div>
+                <div class="space-y-1 sm:col-span-2"><Label class="text-xs text-muted-foreground">Endereço</Label><Input :model-value="config.themeConfig?.company?.address || ''" placeholder="Rua, número, bairro, cidade/UF" @update:model-value="updateCompany('address', String($event))" /></div>
+                <div class="space-y-1 sm:col-span-2"><Label class="text-xs text-muted-foreground">Horário de atendimento</Label><Input :model-value="config.themeConfig?.company?.hours || ''" placeholder="Ex.: Seg a Sex, 8h às 18h" @update:model-value="updateCompany('hours', String($event))" /></div>
+                <div class="space-y-1"><Label class="text-xs text-muted-foreground">Instagram</Label><Input :model-value="config.themeConfig?.company?.instagram || ''" placeholder="@sualoja" @update:model-value="updateCompany('instagram', String($event))" /></div>
+                <div class="space-y-1"><Label class="text-xs text-muted-foreground">Facebook</Label><Input :model-value="config.themeConfig?.company?.facebook || ''" placeholder="sualoja" @update:model-value="updateCompany('facebook', String($event))" /></div>
+              </div>
+            </template>
           </CardContent>
         </Card>
       </div>
@@ -482,24 +560,28 @@ onMounted(carregar)
               :class="config.headerEstilo === 'centralizado' ? 'justify-center' : ''"
               :style="{ backgroundColor: config.corPrimaria }"
             >
-              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white">
-                <Store class="h-4 w-4" />
+              <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white/20 text-white">
+                <img v-if="config.themeConfig?.logoUrl" :src="resolveFileUrl(config.themeConfig.logoUrl, { bustCache: true })" class="h-full w-full object-cover" />
+                <Store v-else class="h-4 w-4" />
               </div>
-              <span class="truncate text-sm font-bold text-white">{{ nomeLoja }}</span>
+              <div class="min-w-0 leading-tight">
+                <span class="block truncate text-sm font-bold text-white">{{ config.themeConfig?.headerTitle || nomeLoja }}</span>
+                <span v-if="config.themeConfig?.headerSubtitle" class="block truncate text-[10px] text-white/80">{{ config.themeConfig.headerSubtitle }}</span>
+              </div>
             </div>
             <div
               v-else
               class="relative flex h-28 items-end p-4"
-              :style="bannerSrc ? { backgroundImage: `url(${bannerSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { backgroundColor: config.corPrimaria }"
+              :style="previewBannerSrc ? { backgroundImage: `url(${previewBannerSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { backgroundColor: config.corPrimaria }"
             >
               <div class="absolute inset-0 bg-black/35"></div>
               <div class="relative text-white">
-                <p class="text-sm font-bold">{{ config.bannerTitulo || nomeLoja }}</p>
+                <p class="text-sm font-bold">{{ config.bannerTitulo || config.themeConfig?.headerTitle || nomeLoja }}</p>
                 <p v-if="config.bannerSubtitulo" class="text-xs opacity-90">{{ config.bannerSubtitulo }}</p>
               </div>
             </div>
 
-            <div class="p-4">
+            <div class="p-4" :style="{ backgroundColor: config.themeConfig?.bgColor || undefined }">
               <p v-if="config.mensagemBoasVindas" class="mb-3 text-xs text-muted-foreground">{{ config.mensagemBoasVindas }}</p>
               <div class="grid grid-cols-2 gap-3">
                 <div v-for="n in 2" :key="n" class="overflow-hidden rounded-lg border">

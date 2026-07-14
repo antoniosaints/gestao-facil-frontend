@@ -1,9 +1,39 @@
 import axios from 'axios'
 import http from '@/utils/axios'
+import { randomUUID } from '@/utils/uuid'
 
 export type LojaHeaderEstilo = 'padrao' | 'centralizado' | 'banner'
 export type LojaTemplate = 'ESSENCIAL' | 'EDITORIAL' | 'IMPACTO'
 export type LojaGateway = 'MERCADOPAGO' | 'ABACATEPAY'
+
+export interface LojaCompanyInfo {
+  phone?: string | null
+  whatsapp?: string | null
+  email?: string | null
+  address?: string | null
+  cnpj?: string | null
+  instagram?: string | null
+  facebook?: string | null
+  hours?: string | null
+  about?: string | null
+}
+
+export interface LojaThemeConfig {
+  font?: string
+  radius?: string
+  gridDensity?: string
+  cardStyle?: string
+  bannerHeight?: string
+  bannerOverlay?: number
+  bannerFocalPoint?: string
+  bgColor?: string | null
+  headerTitle?: string | null
+  headerSubtitle?: string | null
+  logoUrl?: string | null
+  banners?: string[]
+  company?: LojaCompanyInfo | null
+  [key: string]: unknown
+}
 
 export interface LojaConfig {
   id?: number
@@ -11,7 +41,7 @@ export interface LojaConfig {
   slug: string
   template: LojaTemplate
   themeVersion: number
-  themeConfig: Record<string, string | number | boolean> | null
+  themeConfig: LojaThemeConfig | null
   corPrimaria: string
   corSecundaria: string
   headerEstilo: LojaHeaderEstilo
@@ -46,7 +76,7 @@ export interface PublicStore {
   mode: 'CATALOGO' | 'LOJA'
   template: LojaTemplate
   themeVersion: number
-  theme: Record<string, string | number | boolean>
+  theme: LojaThemeConfig
   colors: { primary: string; secondary: string }
   headerStyle: LojaHeaderEstilo
   banner: { desktopUrl: string | null; mobileUrl: string | null; title: string | null; subtitle: string | null }
@@ -90,9 +120,14 @@ export class LojaRepository {
     return data.data as { bannerUrl: string; bannerPublicUrl: string }
   }
   static async removeBanner(type: 'desktop' | 'mobile' = 'desktop') { await http.delete('/loja/config/banner', { params: { tipo: type } }) }
+  static async uploadImage(file: File, tipo: 'logo' | 'galeria') {
+    const form = new FormData(); form.append('file', file)
+    const { data } = await http.post('/loja/config/banner', form, { params: { tipo }, headers: { 'Content-Type': 'multipart/form-data' } })
+    return data.data as { reference: string; url: string }
+  }
   static async listOrders(params: Record<string, unknown>) { const { data } = await http.get('/loja/pedidos', { params }); return data }
   static async getOrder(id: number) { const { data } = await http.get(`/loja/pedidos/${id}`); return data.data }
-  static async actOnOrder(id: number, action: 'confirmar' | 'preparar' | 'despachar' | 'cancelar' | 'concluir') { const { data } = await http.post(`/loja/pedidos/${id}/${action}`, undefined, { headers: { 'Idempotency-Key': crypto.randomUUID() } }); return data.data }
+  static async actOnOrder(id: number, action: 'confirmar' | 'preparar' | 'despachar' | 'cancelar' | 'concluir') { const { data } = await http.post(`/loja/pedidos/${id}/${action}`, undefined, { headers: { 'Idempotency-Key': randomUUID() } }); return data.data }
 
   static async getPublicStore(slug: string) { const { data } = await publicHttp.get(`/loja/publica/${slug}`); return data.data as PublicStore }
   static async getPublicProducts(slug: string, params?: Record<string, unknown>) { const { data } = await publicHttp.get(`/loja/publica/${slug}/produtos`, { params }); return data.data as { data: StoreProduct[]; nextCursor: number | null } }

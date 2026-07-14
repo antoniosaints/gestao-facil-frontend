@@ -10,7 +10,7 @@ const icons: Record<StoreToastVariant, any> = { success: CheckCircle2, error: XC
 
 <template>
   <Teleport to="body">
-    <div class="store-toaster" :style="{ '--shop-primary': accent || '#4f46e5' }">
+    <div class="store-toaster" :style="{ '--shop-primary': accent || '#4f46e5', fontFamily: 'var(--shop-font)' }">
       <TransitionGroup name="toast" tag="div" class="store-toaster__list">
         <div
           v-for="toast in toasts"

@@ -80,7 +80,7 @@ function variantLabel(variant: StoreProduct) {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent v-if="group" class="max-h-[94vh] max-w-3xl overflow-y-auto p-0" :style="{ '--shop-primary': store.colors.primary }">
+    <DialogContent v-if="group" class="max-h-[94vh] max-w-3xl overflow-y-auto bg-white p-0" :style="{ '--shop-primary': store.colors.primary, fontFamily: 'var(--shop-font)' }">
       <div class="grid gap-0 md:grid-cols-2">
         <!-- Galeria -->
         <div class="bg-slate-100">
@@ -126,13 +126,12 @@ function variantLabel(variant: StoreProduct) {
                 :key="variant.id"
                 type="button"
                 :disabled="variant.available === 0"
-                class="rounded-full border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40"
-                :class="selectedId === variant.id
-                  ? 'border-[var(--shop-primary)] bg-[var(--shop-primary)] text-white'
-                  : 'border-slate-300 text-slate-700 hover:border-[var(--shop-primary)]'"
+                class="inline-flex items-center gap-1 rounded-full border-2 px-4 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:line-through disabled:opacity-40"
+                :class="selectedId === variant.id ? 'text-white shadow-md' : 'border-slate-300 bg-white text-slate-700 hover:border-[var(--shop-primary)] hover:text-[var(--shop-primary)]'"
+                :style="selectedId === variant.id ? { backgroundColor: 'var(--shop-primary)', borderColor: 'var(--shop-primary)' } : {}"
                 @click="pickVariant(variant)"
               >
-                <Check v-if="selectedId === variant.id" class="mr-1 inline h-3.5 w-3.5" />
+                <Check v-if="selectedId === variant.id" class="h-3.5 w-3.5" />
                 {{ variantLabel(variant) }}
               </button>
             </div>
@@ -146,7 +145,7 @@ function variantLabel(variant: StoreProduct) {
                 <span class="w-10 text-center text-base font-bold">{{ quantity }}</span>
                 <button type="button" class="grid h-11 w-11 place-items-center rounded-r-full text-slate-600 hover:bg-slate-100 disabled:opacity-40" :disabled="quantity >= maxQuantity" @click="step(1)"><Plus class="h-4 w-4" /></button>
               </div>
-              <Button class="h-11 flex-1 rounded-full text-white" :disabled="soldOut || maxQuantity < 1" @click="addToCart">
+              <Button class="h-11 flex-1 rounded-full text-white" :style="{ backgroundColor: 'var(--shop-primary)' }" :disabled="soldOut || maxQuantity < 1" @click="addToCart">
                 <ShoppingBag class="mr-2 h-4 w-4" />
                 {{ soldOut ? 'Esgotado' : 'Adicionar ao carrinho' }}
               </Button>
