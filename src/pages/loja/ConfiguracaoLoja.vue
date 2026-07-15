@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { resolveFileUrl } from '@/utils/fileUrl'
+import { readableForeground } from '@/utils/themeCustomization'
 import { LojaRepository, type LojaConfig, type LojaHeaderEstilo } from '@/repositories/loja-repository'
 import ToggleRow from './components/ToggleRow.vue'
 import SecoesManager from './components/SecoesManager.vue'
@@ -113,6 +114,10 @@ const previewBannerSrc = computed(() => {
   return bannerSrc.value
 })
 const nomeLoja = computed(() => uiStore.contaInfo.nomeFantasia || uiStore.contaInfo.nome || 'Minha Loja')
+const previewHeaderColor = computed(() => String(config.themeConfig?.headerColor || '#ffffff'))
+const previewFooterColor = computed(() => String(config.themeConfig?.footerColor || '#ffffff'))
+const previewHeaderForeground = computed(() => readableForeground(previewHeaderColor.value))
+const previewFooterForeground = computed(() => readableForeground(previewFooterColor.value))
 
 const headerOpcoes: { valor: LojaHeaderEstilo; nome: string; descricao: string }[] = [
   { valor: 'padrao', nome: 'Padrão', descricao: 'Logo à esquerda, nome ao lado.' },
@@ -255,12 +260,12 @@ onMounted(carregar)
 <template>
   <div>
     <!-- Barra superior: endereço da loja + salvar -->
-    <div class="mb-4 flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="mb-4 flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="min-w-0">
-        <Label class="text-xs text-muted-foreground">Endereço da loja</Label>
+        <Label class="text-md text-muted-foreground">Endereço da loja</Label>
         <div class="mt-1 flex items-center gap-1.5">
           <span class="shrink-0 text-sm text-muted-foreground">/lojas/</span>
-          <Input v-model="config.slug" class="h-9 max-w-[200px]" placeholder="minha-loja" />
+          <Input v-model="config.slug" class="h-8 max-w-[200px]" placeholder="minha-loja" />
           <Button type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" :disabled="!lojaLink" title="Copiar link" @click="copiarLink">
             <Check v-if="linkCopied" class="h-4 w-4 text-emerald-600" />
             <Copy v-else class="h-4 w-4" />
@@ -356,13 +361,34 @@ onMounted(carregar)
               </div>
 
               <div class="space-y-2">
-                <Label class="text-xs font-medium">Cor de fundo da loja</Label>
-                <div class="flex items-center gap-2">
-                  <input :value="config.themeConfig?.bgColor || '#fafaf9'" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('bgColor', ($event.target as HTMLInputElement).value)" />
-                  <Input :model-value="config.themeConfig?.bgColor || ''" placeholder="#fafaf9 (padrão)" class="h-9" @update:model-value="updateTheme('bgColor', String($event).trim() || null)" />
-                  <Button v-if="config.themeConfig?.bgColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('bgColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                <Label class="text-xs font-medium">Cores de fundo</Label>
+                <div class="grid gap-3 sm:grid-cols-3">
+                  <div class="space-y-1">
+                    <Label class="text-xs text-muted-foreground">Loja</Label>
+                    <div class="flex items-center gap-2">
+                      <input :value="config.themeConfig?.bgColor || '#fafaf9'" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('bgColor', ($event.target as HTMLInputElement).value)" />
+                      <Input :model-value="config.themeConfig?.bgColor || ''" placeholder="#fafaf9" class="h-9 min-w-0" @update:model-value="updateTheme('bgColor', String($event).trim() || null)" />
+                      <Button v-if="config.themeConfig?.bgColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('bgColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                  <div class="space-y-1">
+                    <Label class="text-xs text-muted-foreground">Cabeçalho</Label>
+                    <div class="flex items-center gap-2">
+                      <input :value="config.themeConfig?.headerColor || '#ffffff'" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('headerColor', ($event.target as HTMLInputElement).value)" />
+                      <Input :model-value="config.themeConfig?.headerColor || ''" placeholder="#ffffff" class="h-9 min-w-0" @update:model-value="updateTheme('headerColor', String($event).trim() || null)" />
+                      <Button v-if="config.themeConfig?.headerColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('headerColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                  <div class="space-y-1">
+                    <Label class="text-xs text-muted-foreground">Rodapé</Label>
+                    <div class="flex items-center gap-2">
+                      <input :value="config.themeConfig?.footerColor || '#ffffff'" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('footerColor', ($event.target as HTMLInputElement).value)" />
+                      <Input :model-value="config.themeConfig?.footerColor || ''" placeholder="#ffffff" class="h-9 min-w-0" @update:model-value="updateTheme('footerColor', String($event).trim() || null)" />
+                      <Button v-if="config.themeConfig?.footerColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('footerColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                    </div>
+                  </div>
                 </div>
-                <p class="text-xs text-muted-foreground">Cor de fundo das áreas de produtos. Deixe em branco para o padrão claro.</p>
+                <p class="text-xs text-muted-foreground">Defina cores independentes para o conteúdo, o cabeçalho e o rodapé da loja.</p>
               </div>
 
               <div class="space-y-2">
@@ -611,15 +637,15 @@ onMounted(carregar)
               v-if="config.headerEstilo !== 'banner'"
               class="flex items-center gap-2 px-4 py-3"
               :class="config.headerEstilo === 'centralizado' ? 'justify-center' : ''"
-              :style="{ backgroundColor: config.corPrimaria }"
+              :style="{ backgroundColor: previewHeaderColor, color: previewHeaderForeground }"
             >
-              <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white/20 text-white">
+              <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white/20">
                 <img v-if="config.themeConfig?.logoUrl" :src="resolveFileUrl(config.themeConfig.logoUrl, { bustCache: true })" class="h-full w-full object-cover" />
                 <Store v-else class="h-4 w-4" />
               </div>
               <div class="min-w-0 leading-tight">
-                <span class="block truncate text-sm font-bold text-white">{{ config.themeConfig?.headerTitle || nomeLoja }}</span>
-                <span v-if="config.themeConfig?.headerSubtitle" class="block truncate text-[10px] text-white/80">{{ config.themeConfig.headerSubtitle }}</span>
+                <span class="block truncate text-sm font-bold">{{ config.themeConfig?.headerTitle || nomeLoja }}</span>
+                <span v-if="config.themeConfig?.headerSubtitle" class="block truncate text-[10px] opacity-75">{{ config.themeConfig.headerSubtitle }}</span>
               </div>
             </div>
             <div
@@ -654,6 +680,9 @@ onMounted(carregar)
               >
                 Pedir pelo WhatsApp
               </button>
+            </div>
+            <div class="border-t px-4 py-3 text-center text-[10px]" :style="{ backgroundColor: previewFooterColor, color: previewFooterForeground }">
+              © {{ new Date().getFullYear() }} {{ config.themeConfig?.headerTitle || nomeLoja }}
             </div>
           </div>
         </div>

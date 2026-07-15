@@ -21,9 +21,6 @@ type typed = RouteLocationNormalizedGeneric
 export async function handleRouteGuard(to: typed, from: typed) {
   const storeUi = useUiStore()
   const toast = useToast()
-  storeUi.loading = true
-  await storeUi.getDataUsuario()
-  storeUi.loading = false
   const home = { name: 'home' }
   const login = { name: 'login' }
   const assinatura = { name: 'assinatura-resumo' }
@@ -47,9 +44,18 @@ export async function handleRouteGuard(to: typed, from: typed) {
 
   if (to.meta?.isPublic) return true
 
-  if (!to.meta?.isPublic && !token) {
+  if (!token) {
     toast.info('Necessário efetuar login para acessar essa rota!')
     return login
+  }
+
+  // Dados do ERP só são necessários depois que a rota privada e o token foram
+  // confirmados. Isso evita /usuarios/whoami sem Authorization nas vitrines públicas.
+  storeUi.loading = true
+  try {
+    await storeUi.getDataUsuario()
+  } finally {
+    storeUi.loading = false
   }
 
   if (to.path === '/login' && token) return home

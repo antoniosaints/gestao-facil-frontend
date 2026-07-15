@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { LojaRepository, type CheckoutPayload, type PublicStore, type StoreProduct } from '@/repositories/loja-repository'
+import { LojaRepository, type CheckoutPayload, type PublicStore, type StoreCustomerAccount, type StoreProduct } from '@/repositories/loja-repository'
 import { useStoreCart } from '@/composables/useStoreCart'
 import { useStoreToast } from '@/composables/useStoreToast'
+import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { randomUUID } from '@/utils/uuid'
+import { readableForeground } from '@/utils/themeCustomization'
 import { Input } from '@/components/ui/input'
 import ProductDetailModal from './components/ProductDetailModal.vue'
 import ProductCard from './components/ProductCard.vue'
@@ -18,9 +20,11 @@ import { groupStoreProducts, type GroupedProduct } from './types'
 import { ChevronDown, Clock, CreditCard, Flame, Instagram, LayoutGrid, LoaderCircle, Mail, MapPin, MessageCircle, Package, Phone, Search, ShieldCheck, ShieldX, ShoppingBag, ShoppingCart, Sparkles, Tag, Truck, UserRound, X } from 'lucide-vue-next'
 
 const route = useRoute()
+useStorefrontLightTheme()
 const toast = useStoreToast()
 const slug = String(route.params.slug)
 const store = ref<PublicStore | null>(null)
+const customer = ref<StoreCustomerAccount | null>(null)
 const products = ref<StoreProduct[]>([])
 const loading = ref(true)
 const invalid = ref(false)
@@ -103,12 +107,27 @@ const shopBg = computed(() => {
   if (custom) return String(custom)
   return store.value?.template === 'IMPACTO' ? '#fff7ed' : '#fafaf9'
 })
+const headerColor = computed(() => String(store.value?.theme.headerColor || '#ffffff'))
+const footerColor = computed(() => String(store.value?.theme.footerColor || '#ffffff'))
 const brandStyle = computed(() => {
   const theme = store.value?.theme || {}
   const fonts: Record<string, string> = { Inter: 'Inter, sans-serif', system: 'system-ui, sans-serif', Georgia: 'Georgia, serif' }
   const radii: Record<string, string> = { none: '0', small: '.35rem', medio: '.75rem', grande: '1.25rem' }
   const primary = store.value?.colors.primary || '#4f46e5'
-  return { '--shop-primary': primary, '--shop-secondary': store.value?.colors.secondary || '#0ea5e9', '--shop-radius': radii[String(theme.radius)] || '.75rem', '--shop-font': fonts[String(theme.font)] || 'Inter, sans-serif', '--hero-position': String(theme.bannerFocalPoint || 'center'), '--shop-bg': shopBg.value, '--shop-promo': String(theme.promoColor || '#dc2626'), '--shop-section-icon': String(theme.sectionIconColor || primary) }
+  return {
+    '--shop-primary': primary,
+    '--shop-secondary': store.value?.colors.secondary || '#0ea5e9',
+    '--shop-radius': radii[String(theme.radius)] || '.75rem',
+    '--shop-font': fonts[String(theme.font)] || 'Inter, sans-serif',
+    '--hero-position': String(theme.bannerFocalPoint || 'center'),
+    '--shop-bg': shopBg.value,
+    '--shop-header': headerColor.value,
+    '--shop-header-foreground': readableForeground(headerColor.value),
+    '--shop-footer': footerColor.value,
+    '--shop-footer-foreground': readableForeground(footerColor.value),
+    '--shop-promo': String(theme.promoColor || '#dc2626'),
+    '--shop-section-icon': String(theme.sectionIconColor || primary),
+  }
 })
 const layoutClass = computed(() => `layout-${(store.value?.template || 'ESSENCIAL').toLowerCase()}`)
 const gridDensityClass = computed(() => `grid-${String(store.value?.theme.gridDensity || 'confortavel')}`)
@@ -135,7 +154,45 @@ const bannerImages = computed(() => {
 })
 
 const categoryOpen = ref(false)
-const customerToken = () => localStorage.getItem(`gestao-facil:loja:${slug}:access-token`) || undefined
+const customerTokenKey = `gestao-facil:loja:${slug}:access-token`
+const customerToken = () => localStorage.getItem(customerTokenKey) || undefined
+const customerFirstName = computed(() => customer.value?.nome.trim().split(/\s+/)[0] || '')
+
+function fillCheckoutFromCustomer(account: StoreCustomerAccount) {
+  const savedAddress = account.enderecos.find((item) => item.principal) || account.enderecos[0]
+  Object.assign(checkout.customer, {
+    name: account.nome || '',
+    email: account.email || '',
+    phone: account.telefone || '',
+    postalCode: savedAddress?.cep || '',
+    address: savedAddress?.endereco || '',
+    number: savedAddress?.numero || '',
+    complement: savedAddress?.complemento || '',
+    district: savedAddress?.bairro || '',
+    city: savedAddress?.cidade || '',
+    state: savedAddress?.estado || '',
+  })
+}
+
+async function loadCustomerSession() {
+  let token = customerToken()
+  if (!token) return
+  try {
+    customer.value = await LojaRepository.customerMe(slug, token)
+  } catch (error: any) {
+    if (error?.response?.status !== 401) return
+    try {
+      const refreshed = await LojaRepository.customerAuth(slug, 'refresh')
+      const refreshedToken = String(refreshed.accessToken)
+      localStorage.setItem(customerTokenKey, refreshedToken)
+      customer.value = await LojaRepository.customerMe(slug, refreshedToken)
+    } catch (refreshError: any) {
+      if (refreshError?.response?.status === 401) localStorage.removeItem(customerTokenKey)
+      return
+    }
+  }
+  if (customer.value) fillCheckoutFromCustomer(customer.value)
+}
 
 function selectCategory(value: string | null) {
   category.value = value
@@ -161,7 +218,7 @@ function applyRootTheme() {
 }
 onUnmounted(() => {
   const el = document.documentElement
-  ;['--shop-primary', '--shop-secondary', '--shop-radius', '--shop-font', '--hero-position', '--shop-bg', '--shop-promo', '--shop-section-icon'].forEach((key) => el.style.removeProperty(key))
+  ;['--shop-primary', '--shop-secondary', '--shop-radius', '--shop-font', '--hero-position', '--shop-bg', '--shop-header', '--shop-header-foreground', '--shop-footer', '--shop-footer-foreground', '--shop-promo', '--shop-section-icon'].forEach((key) => el.style.removeProperty(key))
 })
 
 async function load() {
@@ -172,6 +229,7 @@ async function load() {
     checkout.deliveryType = store.value.capabilities.pickup ? 'RETIRADA' : 'ENTREGA_LOCAL'
     document.title = `${store.value.identity.name} · ${isCommerce.value ? 'Loja online' : 'Catálogo online'}`
     applyRootTheme()
+    await loadCustomerSession()
   } catch { invalid.value = true } finally { loading.value = false }
 }
 
@@ -251,12 +309,12 @@ onMounted(load)
     <div v-else-if="invalid" class="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center"><ShieldX class="h-14 w-14 text-red-600" /><h1 class="text-2xl font-bold">Loja indisponível</h1><p class="text-slate-500">Confira o endereço ou fale com a empresa.</p></div>
     <template v-else-if="store">
       <div v-if="store.announcement.enabled && store.announcement.text" class="announcement px-4 py-2 text-center text-sm font-semibold text-white">{{ store.announcement.text }}</div>
-      <header class="sticky top-0 z-30 border-b border-black/10 bg-white/95 backdrop-blur-md" :class="`header-${store.headerStyle}`">
+      <header class="store-header sticky top-0 z-30 border-b backdrop-blur-md" :class="`header-${store.headerStyle}`">
         <div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 lg:px-8">
           <div class="flex min-w-0 items-center gap-3">
             <img v-if="logoUrl" :src="logoUrl" :alt="headerTitle" class="h-11 w-11 rounded-full border object-cover" />
             <div v-else class="grid h-11 w-11 place-items-center rounded-full text-white" :style="{ backgroundColor: 'var(--shop-primary)' }"><ShoppingBag class="h-6 w-6" /></div>
-            <div class="min-w-0"><h1 class="truncate text-lg font-black leading-tight">{{ headerTitle }}</h1><p class="truncate text-xs text-slate-500">{{ headerSubtitle }}</p></div>
+            <div class="min-w-0"><h1 class="truncate text-lg font-black leading-tight">{{ headerTitle }}</h1><p class="header-muted truncate text-xs">{{ headerSubtitle }}</p></div>
           </div>
 
           <!-- Busca no header (desktop) -->
@@ -266,8 +324,8 @@ onMounted(load)
           </div>
 
           <div class="ml-auto flex items-center gap-1.5 sm:gap-2 md:ml-0">
-            <RouterLink v-if="store.capabilities.login" :to="`/lojas/${slug}/login`" class="flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" aria-label="Minha conta">
-              <UserRound class="h-5 w-5" /><span class="hidden lg:inline">Minha conta</span>
+            <RouterLink v-if="store.capabilities.login" :to="customer ? `/lojas/${slug}/conta` : `/lojas/${slug}/login`" class="account-link flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition" :aria-label="customer ? `Conta de ${customer.nome}` : 'Minha conta'">
+              <UserRound class="h-5 w-5" /><span class="hidden lg:inline">{{ customer ? `Olá, ${customerFirstName}` : 'Minha conta' }}</span>
             </RouterLink>
             <button v-if="isCommerce" class="relative flex items-center gap-2 rounded-full px-3 py-2 text-sm font-bold text-white transition hover:brightness-110 sm:px-4" :style="{ backgroundColor: 'var(--shop-primary)' }" @click="cartOpen = true">
               <ShoppingCart class="h-5 w-5" /><span class="hidden sm:inline">Carrinho</span>
@@ -280,7 +338,7 @@ onMounted(load)
         <nav v-if="categories.length" class="border-t border-black/5">
           <div class="mx-auto flex max-w-7xl items-center gap-1 px-4 lg:px-8">
             <div class="relative">
-              <button type="button" class="flex items-center gap-2 py-2.5 pr-4 text-sm font-bold text-slate-800" @click="categoryOpen = !categoryOpen">
+              <button type="button" class="flex items-center gap-2 py-2.5 pr-4 text-sm font-bold" @click="categoryOpen = !categoryOpen">
                 <span class="grid h-5 w-5 place-items-center"><span class="flex flex-col gap-[3px]"><span class="h-0.5 w-4 rounded bg-current" /><span class="h-0.5 w-4 rounded bg-current" /><span class="h-0.5 w-4 rounded bg-current" /></span></span>
                 Todas categorias <ChevronDown class="h-4 w-4 transition-transform" :class="{ 'rotate-180': categoryOpen }" />
               </button>
@@ -296,7 +354,7 @@ onMounted(load)
                 :key="item"
                 type="button"
                 class="whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-semibold transition"
-                :class="category === item ? 'border-[var(--shop-primary)] text-[var(--shop-primary)]' : 'border-transparent text-slate-600 hover:text-slate-900'"
+                :class="category === item ? 'border-[var(--shop-primary)] text-[var(--shop-primary)]' : 'header-muted border-transparent hover:opacity-100'"
                 @click="selectCategory(category === item ? null : item)"
               >{{ item }}</button>
             </div>
@@ -381,16 +439,16 @@ onMounted(load)
       </main>
 
       <!-- Rodapé -->
-      <footer class="mt-8 border-t border-black/5 bg-white">
+      <footer class="store-footer mt-8 border-t">
         <div class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
           <!-- Marca -->
           <div class="lg:col-span-2">
             <div class="flex items-center gap-3">
               <img v-if="logoUrl" :src="logoUrl" class="h-10 w-10 rounded-full border object-cover" />
               <div v-else class="grid h-10 w-10 place-items-center rounded-full text-white" :style="{ backgroundColor: 'var(--shop-primary)' }"><ShoppingBag class="h-5 w-5" /></div>
-              <p class="text-lg font-black text-slate-900">{{ headerTitle }}</p>
+              <p class="text-lg font-black">{{ headerTitle }}</p>
             </div>
-            <p class="mt-3 max-w-sm text-sm leading-relaxed text-slate-500">{{ company?.about || store.welcomeMessage || headerSubtitle }}</p>
+            <p class="footer-muted mt-3 max-w-sm text-sm leading-relaxed">{{ company?.about || store.welcomeMessage || headerSubtitle }}</p>
             <div v-if="company?.instagram || company?.facebook || company?.whatsapp" class="mt-4 flex gap-2">
               <a v-if="company?.instagram" :href="socialUrl('instagram', company.instagram)" target="_blank" rel="noopener" class="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200" aria-label="Instagram"><Instagram class="h-4 w-4" /></a>
               <a v-if="company?.whatsapp" :href="whatsappUrl(company.whatsapp)" target="_blank" rel="noopener" class="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200" aria-label="WhatsApp"><MessageCircle class="h-4 w-4" /></a>
@@ -400,8 +458,8 @@ onMounted(load)
 
           <!-- Contato -->
           <div v-if="hasCompanyInfo">
-            <h3 class="mb-3 text-sm font-black uppercase tracking-wide text-slate-900">Contato</h3>
-            <ul class="space-y-2 text-sm text-slate-600">
+            <h3 class="mb-3 text-sm font-black uppercase tracking-wide">Contato</h3>
+            <ul class="footer-muted space-y-2 text-sm">
               <li v-if="company?.phone" class="flex items-center gap-2"><Phone class="h-4 w-4 text-[var(--shop-primary)]" /> {{ company.phone }}</li>
               <li v-if="company?.email" class="flex items-center gap-2"><Mail class="h-4 w-4 text-[var(--shop-primary)]" /> {{ company.email }}</li>
               <li v-if="company?.address" class="flex items-start gap-2"><MapPin class="mt-0.5 h-4 w-4 shrink-0 text-[var(--shop-primary)]" /> {{ company.address }}</li>
@@ -411,8 +469,8 @@ onMounted(load)
 
           <!-- Vantagens -->
           <div>
-            <h3 class="mb-3 text-sm font-black uppercase tracking-wide text-slate-900">A loja</h3>
-            <ul class="space-y-2 text-sm text-slate-600">
+            <h3 class="mb-3 text-sm font-black uppercase tracking-wide">A loja</h3>
+            <ul class="footer-muted space-y-2 text-sm">
               <li v-if="store.capabilities.onlinePayment" class="flex items-center gap-2"><CreditCard class="h-4 w-4 text-[var(--shop-primary)]" /> Pagamento seguro</li>
               <li v-if="store.capabilities.localDelivery" class="flex items-center gap-2"><Truck class="h-4 w-4 text-[var(--shop-primary)]" /> Entrega local</li>
               <li v-if="store.capabilities.pickup" class="flex items-center gap-2"><ShoppingBag class="h-4 w-4 text-[var(--shop-primary)]" /> Retirada na loja</li>
@@ -421,7 +479,7 @@ onMounted(load)
           </div>
         </div>
         <div class="border-t border-black/5">
-          <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-slate-400 sm:flex-row lg:px-8">
+          <div class="footer-muted mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs sm:flex-row lg:px-8">
             <span>© {{ new Date().getFullYear() }} {{ headerTitle }}. Todos os direitos reservados.</span>
             <span v-if="company?.cnpj">CNPJ {{ company.cnpj }}</span>
           </div>
@@ -465,6 +523,11 @@ onMounted(load)
 <style scoped>
 .announcement,.shop :deep(.bg-primary),.shop :deep(button.bg-primary){background:var(--shop-primary)}
 .shop{font-family:var(--shop-font)}
+.store-header{background:color-mix(in srgb,var(--shop-header) 95%,transparent);color:var(--shop-header-foreground);border-color:color-mix(in srgb,var(--shop-header-foreground) 12%,transparent)}
+.header-muted{color:color-mix(in srgb,var(--shop-header-foreground) 68%,transparent)}
+.account-link{color:var(--shop-header-foreground)}.account-link:hover{background:color-mix(in srgb,var(--shop-header-foreground) 9%,transparent)}
+.store-footer{background:var(--shop-footer);color:var(--shop-footer-foreground);border-color:color-mix(in srgb,var(--shop-footer-foreground) 10%,transparent)}
+.footer-muted{color:color-mix(in srgb,var(--shop-footer-foreground) 68%,transparent)}
 .shop-tint{background:color-mix(in srgb,var(--shop-primary) 12%,white)}
 .section-scroll{scrollbar-width:thin}.section-scroll::-webkit-scrollbar{height:6px}.section-scroll::-webkit-scrollbar-thumb{background:rgb(148 163 184/.5);border-radius:9999px}
 .product-card{border-radius:var(--shop-radius)}.card-plano{box-shadow:none;border-color:transparent}.card-elevado{box-shadow:0 10px 25px rgb(15 23 42/.08)}.card-contorno{border-width:2px;box-shadow:none}.grid-compacta{gap:.5rem}.grid-arejada{gap:2rem}

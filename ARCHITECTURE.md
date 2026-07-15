@@ -25,6 +25,7 @@ Este frontend concentra a interface principal do sistema em Vue 3. A base atual 
   - `permissao`.
 - `src/utils/axios.ts` define o cliente HTTP, injeta o token e tenta renovar sessão com refresh token.
 - `src/repositories/loja-repository.ts` usa o cliente autenticado do ERP nas rotas internas e um cliente público com `withCredentials` nas rotas por slug; tokens de cliente da loja nunca entram no store de autenticação do ERP.
+- `src/composables/useRouterControl.ts` encerra o guard imediatamente para rotas `meta.isPublic` e redireciona rotas privadas sem token antes de consultar `getDataUsuario`; a inicialização de vitrines públicas não pode chamar `/usuarios/whoami` nem depender da sessão do ERP.
 - `src/utils/worker.ts` e `src/utils/theme.ts` inicializam comportamento global adicional.
 
 ## Organização real do código
@@ -56,9 +57,9 @@ Na prática:
 ## Convenções importantes
 - O módulo costuma viver perto da sua tela: `Home.vue`, subpastas `tabela`, `modais`, `formulario`, `dashboard` e variantes mobile.
 - Quando uma listagem desktop precisa de adaptação mobile, a preferência é manter a tabela no desktop e usar cards compactos + bottombar fixa no mobile, reaproveitando o store e o repository do domínio.
-- Em `/loja-virtual`, Pedidos usa `DataTable` no desktop, cards no mobile e modal operacional no mesmo contexto; Personalização mantém preview e opções validadas, sem aceitar CSS/HTML arbitrário.
-- A vitrine `/lojas/:slug` aplica os mesmos contratos de tema da configuração. O carrinho fica em `localStorage` com chave por slug, mas preço, frete e disponibilidade sempre são recalculados pelo backend antes do pedido.
-- As rotas públicas de cliente (`login`, `cadastro`, verificação, recuperação, conta e histórico) guardam somente o access token curto por loja; o refresh token permanece em cookie `HttpOnly`.
+- Em `/loja-virtual`, Pedidos usa `DataTable` no desktop, cards no mobile e modal operacional no mesmo contexto; Personalização mantém preview e opções validadas, sem aceitar CSS/HTML arbitrário. O `themeConfig` persiste, entre outros tokens, `bgColor`, `headerColor` e `footerColor` para controlar separadamente as áreas da vitrine.
+- A vitrine `/lojas/:slug` aplica os mesmos contratos de tema da configuração, não passa pela transição global de rota do ERP e usa `useStorefrontLightTheme` para manter somente as rotas da loja em modo claro, restaurando o tema escolhido do ERP ao desmontar. O carrinho fica em `localStorage` com chave por slug, mas preço, frete e disponibilidade sempre são recalculados pelo backend antes do pedido.
+- As rotas públicas de cliente (`login`, `cadastro`, verificação, recuperação, conta e histórico) guardam somente o access token curto por loja; o refresh token permanece em cookie `HttpOnly`. A mudança entre os modos do componente de conta deve recarregar o estado da rota reutilizada. Na vitrine, uma sessão válida identifica o cliente no header e preenche o checkout com nome, e-mail, telefone e endereço principal (ou primeiro endereço) retornados por `auth/me`.
 - No domínio `assinaturas`, essa consistência é obrigatória para planos, assinaturas, cobranças e comodatos: desktop com `DataTable`, mobile com cards paginados e ações concentradas na bottombar.
 - Em formulários do domínio `assinaturas`, relações dinâmicas devem usar o select com busca padrão (`Select2Ajax`) e datas editáveis devem usar o `Calendarpicker` baseado em `@vuepic/vue-datepicker`.
 - O detalhe de assinatura deve reutilizar o mesmo padrão de tabs do detalhe de produto para separar `Cobranças`, `Comodatos` e `Histórico`, sem introduzir uma nova variação visual para esse tipo de navegação contextual.

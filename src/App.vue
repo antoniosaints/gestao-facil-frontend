@@ -24,12 +24,15 @@ const layout = computed(() => {
   return layouts[name]
 })
 
+const disableRouteTransition = computed(() => route.path.startsWith('/lojas/'))
+
 </script>
 
 <template>
   <component :is="layout">
     <router-view v-slot="{ Component }">
-      <transition :name="store.isMobile ? 'fade' : 'slide'" mode="out-in">
+      <component v-if="disableRouteTransition" :is="Component" />
+      <transition v-else :name="store.isMobile ? 'fade' : 'slide'" mode="out-in">
         <component :is="Component" />
       </transition>
     </router-view>

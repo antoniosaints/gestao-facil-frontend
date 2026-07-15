@@ -27,6 +27,8 @@ export interface LojaThemeConfig {
   bannerOverlay?: number
   bannerFocalPoint?: string
   bgColor?: string | null
+  headerColor?: string | null
+  footerColor?: string | null
   promoColor?: string | null
   sectionIconColor?: string | null
   headerTitle?: string | null
@@ -122,6 +124,28 @@ export interface StoreProduct {
   soldCount: number
 }
 
+export interface StoreCustomerAddress {
+  id: number
+  destinatario: string
+  cep: string
+  endereco: string
+  numero: string
+  complemento: string | null
+  bairro: string
+  cidade: string
+  estado: string
+  principal: boolean
+}
+
+export interface StoreCustomerAccount {
+  id: number
+  nome: string
+  email: string
+  telefone: string | null
+  enderecos: StoreCustomerAddress[]
+  pedidos?: unknown[]
+}
+
 export type CheckoutPayload = {
   items: Array<{ productId: number; quantity: number }>
   channel: 'WHATSAPP' | 'GATEWAY'
@@ -167,7 +191,7 @@ export class LojaRepository {
     return data.data
   }
   static async customerAuth(slug: string, action: string, payload?: unknown) { const { data } = await publicHttp.post(`/loja/publica/${slug}/auth/${action}`, payload); return data.data }
-  static async customerMe(slug: string, token: string) { const { data } = await publicHttp.get(`/loja/publica/${slug}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }); return data.data }
+  static async customerMe(slug: string, token: string) { const { data } = await publicHttp.get(`/loja/publica/${slug}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }); return data.data as StoreCustomerAccount }
   static async saveCustomerAddress(slug: string, token: string, payload: unknown, id?: number) { const { data } = await publicHttp.request({ method: id ? 'PUT' : 'POST', url: `/loja/publica/${slug}/auth/addresses${id ? `/${id}` : ''}`, data: payload, headers: { Authorization: `Bearer ${token}` } }); return data.data }
   static async removeCustomerAddress(slug: string, token: string, id: number) { await publicHttp.delete(`/loja/publica/${slug}/auth/addresses/${id}`, { headers: { Authorization: `Bearer ${token}` } }) }
 }
