@@ -11,8 +11,8 @@
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <Badge :variant="connectedInstances ? 'default' : 'outline'" class="gap-1">
-          <Wifi class="h-3.5 w-3.5" />
+        <Badge :variant="connectedInstances ? 'default' : 'outline'" class="gap-1 py-[0.55rem]">
+          <Wifi class="h-4 w-4" />
           {{ connectedInstances }} conectada(s)
         </Badge>
         <Button variant="outline" :disabled="loading" @click="refreshAll">
