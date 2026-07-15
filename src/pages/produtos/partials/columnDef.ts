@@ -22,18 +22,24 @@ type ProdutoVarianteRow = ProdutoVariante & {
 // Checkbox no cabeçalho: seleciona/desseleciona todas as linhas da página atual,
 // sincronizando com `store.selectedIds` (mesma seleção usada pela barra de ações em massa).
 function selectAllHeader({ table }: { table: any }) {
-  const rows = table.getRowModel().rows
-  const ids = rows
-    .map((row: any) => row.original.id)
-    .filter((id: unknown): id is number => typeof id === 'number')
+  // As linhas são relidas dentro do clique em vez de virem da closure do render: o cabeçalho é
+  // montado antes de os dados chegarem, e `table.getRowModel()` não é uma fonte reativa.
+  const idsDaPagina = (): number[] =>
+    table
+      .getRowModel()
+      .rows.map((row: any) => row.original.id)
+      .filter((id: unknown): id is number => typeof id === 'number')
+
+  const ids = idsDaPagina()
   const allSelected = ids.length > 0 && ids.every((id: number) => store.selectedIds.includes(id))
   const someSelected = ids.some((id: number) => store.selectedIds.includes(id))
   return render(Checkbox, {
     modelValue: allSelected ? true : someSelected ? 'indeterminate' : false,
     'onUpdate:modelValue': (value: boolean | string) => {
-      rows.forEach((row: any) => row.toggleSelected(!!value))
-      if (value) ids.forEach((id: number) => store.addSelectedId(id))
-      else ids.forEach((id: number) => store.removeSelectedId(id))
+      table.getRowModel().rows.forEach((row: any) => row.toggleSelected(!!value))
+      const idsAtuais = idsDaPagina()
+      if (value) idsAtuais.forEach((id: number) => store.addSelectedId(id))
+      else idsAtuais.forEach((id: number) => store.removeSelectedId(id))
     },
     ariaLabel: 'Selecionar todos',
   })

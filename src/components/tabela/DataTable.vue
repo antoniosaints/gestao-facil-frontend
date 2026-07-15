@@ -52,11 +52,17 @@
             <Table class="min-w-full">
                 <TableHeader class="bg-gray-100 dark:bg-gray-800">
                     <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-                        <TableHead v-for="(header, i) in headerGroup.headers" :key="header.id" :class="[
-                            i === headerGroup.headers.length - 1
-                                ? 'sticky right-0 bg-gray-100 dark:bg-gray-800 z-10'
-                                : ''
-                        ]">
+                        <!-- `rowsKey` entra na key para remontar o cabeçalho quando o conjunto de linhas
+                             muda. O contexto do header (table/column/header) é estável entre renders, então
+                             o Vue nunca atualiza o componente do header por props: sem isso um header que
+                             depende das linhas (o checkbox "selecionar tudo") fica preso ao primeiro render,
+                             quando os dados ainda não chegaram. -->
+                        <TableHead v-for="(header, i) in headerGroup.headers" :key="`${header.id}-${rowsKey}`"
+                            :class="[
+                                i === headerGroup.headers.length - 1
+                                    ? 'sticky right-0 bg-gray-100 dark:bg-gray-800 z-10'
+                                    : ''
+                            ]">
                             <FlexRender class="text-gray-900 dark:text-gray-100" v-if="!header.isPlaceholder"
                                 :render="header.column.columnDef.header" :props="header.getContext()" />
                         </TableHead>
@@ -138,7 +144,7 @@ import { Input } from '../ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { BadgeQuestionMark, Eye, Loader } from 'lucide-vue-next';
-import { watch } from 'vue';
+import { computed, watch } from 'vue';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
 
 const { columns, api, filters } = defineProps<{
@@ -161,5 +167,8 @@ const {
 watch(() => filters!.update, () => {
     fetchData()
 })
+
+// Identifica as linhas atualmente exibidas; ver o comentário no <TableHead> do cabeçalho.
+const rowsKey = computed(() => data.value.map((row: any) => row?.id).join(','))
 
 </script>

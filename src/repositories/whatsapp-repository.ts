@@ -18,6 +18,94 @@ export type WhatsAppMessageStatus = 'PENDENTE' | 'ENVIADA' | 'ENTREGUE' | 'LIDA'
 export type WhatsAppPaymentMethod = 'PIX' | 'CARTAO'
 export type WhatsAppPaymentStatus = 'PENDENTE' | 'PAGO' | 'FALHOU' | 'CANCELADO'
 
+export type MetricaAtendimento = { atual: number; anterior: number; delta: number }
+
+export type CicloStatusAtendimento = 'NA_FILA' | 'EM_ANDAMENTO' | 'FINALIZADO'
+
+// Uma linha do relatório = um ciclo de atendimento (fila -> assumido -> finalizado). A mesma
+// conversa pode render vários ciclos, já que a thread é reaproveitada a cada retorno do cliente.
+export interface LinhaRelatorioAtendimento {
+  id: string
+  conversaId: number
+  contato: string
+  telefone: string
+  instancia: string | null
+  atendenteId: number | null
+  atendente: string | null
+  status: CicloStatusAtendimento
+  entrouFilaEm: string | null
+  assumidoEm: string | null
+  finalizadoEm: string | null
+  // `null` = não medido (o ciclo começou antes do período consultado), não zero.
+  esperaMs: number | null
+  duracaoMs: number | null
+}
+
+export interface ResumoRelatorioAtendimento {
+  periodo: { inicio: string; fim: string }
+  totais: {
+    atendimentos: number
+    finalizados: number
+    emAndamento: number
+    naFila: number
+    tempoMedioEsperaMs: number | null
+    tempoMedioResolucaoMs: number | null
+  }
+  porAtendente: {
+    atendenteId: number
+    nome: string
+    finalizados: number
+    emAndamento: number
+    tempoMedioEsperaMs: number | null
+    tempoMedioResolucaoMs: number | null
+  }[]
+}
+
+export interface PainelAtendimento {
+  periodo: { inicio: string; fim: string; anterior: { inicio: string; fim: string } }
+  // Estado atual, independente do período selecionado.
+  agora: {
+    naFila: number
+    emAtendimento: number
+    finalizadas: number
+    naoLidas: number
+    esperaMaiorMs: number
+  }
+  kpis: {
+    novasNaFila: MetricaAtendimento
+    atendimentosAssumidos: MetricaAtendimento
+    atendimentosFinalizados: MetricaAtendimento
+    tempoMedioEsperaMs: MetricaAtendimento
+    tempoMedioResolucaoMs: MetricaAtendimento
+    mensagensRecebidas: MetricaAtendimento
+    respostasAtendente: MetricaAtendimento
+    respostasIa: MetricaAtendimento
+  }
+  serieVolume: { labels: string[]; recebidas: number[]; enviadas: number[] }
+  distribuicaoStatus: { labels: string[]; data: number[] }
+  // `semOrigem` são mensagens anteriores à instrumentação: não dá para saber se vieram do
+  // atendente ou do agente de IA, então ficam fora da distribuição.
+  distribuicaoOrigem: { labels: string[]; data: number[]; semOrigem: number }
+  produtividade: {
+    atendenteId: number
+    nome: string
+    assumidas: number
+    finalizadas: number
+    mensagens: number
+  }[]
+  filaAtual: {
+    conversaId: number
+    contato: string
+    telefone: string
+    instancia: string | null
+    fila: string | null
+    setor: string | null
+    naoLidas: number
+    ultimaMensagem: string | null
+    esperandoMs: number | null
+  }[]
+}
+
 export interface WhatsAppInstancePayment {
   id: number
   instanciaId: number
@@ -425,5 +513,20 @@ export class WhatsAppRepository {
   static async markAsRead(conversaId: number) {
     const { data } = await http.post(`/whatsapp/conversas/${conversaId}/read`)
     return data.data as WhatsAppConversation
+  }
+
+  // Painel de atendimento. Devolve o payload cru (sem envelope `data`), como os demais painéis.
+  static async getPainel(inicio?: string, fim?: string) {
+    const { data } = await http.get(`/whatsapp/graficos/painel`, {
+      params: { ...(inicio ? { inicio } : {}), ...(fim ? { fim } : {}) },
+    })
+    return data as PainelAtendimento
+  }
+
+  // Resumo do relatório de atendimentos. A tabela em si é carregada pelo DataTable, que fala
+  // direto com /whatsapp/relatorios/atendimentos.
+  static async getRelatorioResumo(params: { inicio?: string; fim?: string; atendenteId?: number }) {
+    const { data } = await http.get(`/whatsapp/relatorios/atendimentos/resumo`, { params })
+    return data as ResumoRelatorioAtendimento
   }
 }

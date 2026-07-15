@@ -157,3 +157,25 @@ export function formatParsePtBRToDate(datePtBR: string): Date | null {
 
   return isValid(parsedDate) ? parsedDate : null
 }
+
+/**
+ * Duração legível a partir de milissegundos ("45s", "12min", "2h 05min", "3d 4h").
+ * Usada nos indicadores de atendimento, que são lidos de relance: a ordem de grandeza
+ * comunica mais que a precisão.
+ *
+ * `null` significa "não medido" e vira "—" — diferente de zero, que é uma duração real.
+ */
+export function formatDuracaoMs(ms: number | null | undefined): string {
+  if (ms == null) return '—'
+  if (ms < 1000) return '0s'
+  const segundos = Math.floor(ms / 1000)
+  if (segundos < 60) return `${segundos}s`
+  const minutos = Math.floor(segundos / 60)
+  if (minutos < 60) return `${minutos}min`
+  const horas = Math.floor(minutos / 60)
+  const restoMin = minutos % 60
+  if (horas < 24) return restoMin ? `${horas}h ${String(restoMin).padStart(2, '0')}min` : `${horas}h`
+  const dias = Math.floor(horas / 24)
+  const restoH = horas % 24
+  return restoH ? `${dias}d ${restoH}h` : `${dias}d`
+}
