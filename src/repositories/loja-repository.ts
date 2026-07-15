@@ -27,12 +27,25 @@ export interface LojaThemeConfig {
   bannerOverlay?: number
   bannerFocalPoint?: string
   bgColor?: string | null
+  promoColor?: string | null
+  sectionIconColor?: string | null
   headerTitle?: string | null
   headerSubtitle?: string | null
   logoUrl?: string | null
   banners?: string[]
   company?: LojaCompanyInfo | null
+  // Liga/desliga as seções automáticas da loja (default: todas ativas).
+  secoesAutomaticas?: { promocoes?: boolean; maisVendidos?: boolean; novidades?: boolean } | null
   [key: string]: unknown
+}
+
+/** Seção manual da loja no admin, com os produtos base escolhidos. */
+export interface LojaSecaoAdmin {
+  id: number
+  nome: string
+  ordem: number
+  ativo: boolean
+  produtos: { produtoBaseId: number; nome: string; imagem: string | null }[]
 }
 
 export interface LojaConfig {
@@ -84,6 +97,9 @@ export interface PublicStore {
   announcement: { enabled: boolean; text: string | null }
   capabilities: Record<'showPrices' | 'showAvailability' | 'hideSoldOut' | 'quickAdd' | 'whatsapp' | 'onlinePayment' | 'login' | 'register' | 'guestCheckout' | 'pickup' | 'localDelivery', boolean>
   delivery: { fixedFee: number; freeAbove: number | null }
+  // Seções manuais ativas (com os ids dos produtos base) e flags das automáticas.
+  sections: { id: number; nome: string; baseIds: number[] }[]
+  automaticSections: { promocoes: boolean; maisVendidos: boolean; novidades: boolean }
 }
 
 export interface StoreProduct {
@@ -93,12 +109,17 @@ export interface StoreProduct {
   description: string | null
   variant: string
   category: string | null
+  /** Preço efetivo (promocional quando há promoção ativa). */
   price: number
+  /** Preço "de" (cheio) quando o produto está em promoção; `null` sem promoção. */
+  priceOriginal: number | null
   image: string | null
   unit: string | null
   sku: string | null
   controlsStock: boolean
   available: number | null
+  /** Total de unidades vendidas — alimenta a seção "Mais vendidos". */
+  soldCount: number
 }
 
 export type CheckoutPayload = {
@@ -125,9 +146,18 @@ export class LojaRepository {
     const { data } = await http.post('/loja/config/banner', form, { params: { tipo }, headers: { 'Content-Type': 'multipart/form-data' } })
     return data.data as { reference: string; url: string }
   }
+  // Seções manuais da loja (admin)
+  static async listSecoes() { const { data } = await http.get('/loja/secoes'); return data.data as LojaSecaoAdmin[] }
+  static async createSecao(nome: string) { const { data } = await http.post('/loja/secoes', { nome }); return data.data as LojaSecaoAdmin }
+  static async updateSecao(id: number, payload: { nome?: string; ativo?: boolean; ordem?: number }) { const { data } = await http.patch(`/loja/secoes/${id}`, payload); return data.data as LojaSecaoAdmin }
+  static async deleteSecao(id: number) { await http.delete(`/loja/secoes/${id}`) }
+  static async addProdutoSecao(id: number, produtoBaseId: number) { const { data } = await http.post(`/loja/secoes/${id}/produtos`, { produtoBaseId }); return data.data as LojaSecaoAdmin }
+  static async removeProdutoSecao(id: number, produtoBaseId: number) { const { data } = await http.delete(`/loja/secoes/${id}/produtos/${produtoBaseId}`); return data.data as LojaSecaoAdmin }
+
   static async listOrders(params: Record<string, unknown>) { const { data } = await http.get('/loja/pedidos', { params }); return data }
   static async getOrder(id: number) { const { data } = await http.get(`/loja/pedidos/${id}`); return data.data }
   static async actOnOrder(id: number, action: 'confirmar' | 'preparar' | 'despachar' | 'cancelar' | 'concluir') { const { data } = await http.post(`/loja/pedidos/${id}/${action}`, undefined, { headers: { 'Idempotency-Key': randomUUID() } }); return data.data }
+  static async deleteOrder(id: number) { const { data } = await http.delete(`/loja/pedidos/${id}`); return data.data }
 
   static async getPublicStore(slug: string) { const { data } = await publicHttp.get(`/loja/publica/${slug}`); return data.data as PublicStore }
   static async getPublicProducts(slug: string, params?: Record<string, unknown>) { const { data } = await publicHttp.get(`/loja/publica/${slug}/produtos`, { params }); return data.data as { data: StoreProduct[]; nextCursor: number | null } }

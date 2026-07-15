@@ -68,7 +68,7 @@ function close() { emit('update:open', false) }
         :style="{ '--shop-primary': store.colors.primary, fontFamily: 'var(--shop-font)' }"
       >
         <!-- Cabeçalho -->
-        <header class="flex items-center justify-between border-b px-5 py-4">
+        <header class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div class="flex items-center gap-2">
             <button v-if="step === 'checkout'" class="rounded-full p-1 hover:bg-slate-100" aria-label="Voltar" @click="step = 'cart'"><ArrowLeft class="h-5 w-5" /></button>
             <ShoppingBag v-else class="h-5 w-5 text-[var(--shop-primary)]" />
@@ -82,7 +82,7 @@ function close() { emit('update:open', false) }
           <div class="grid h-16 w-16 place-items-center rounded-full bg-slate-100"><ShoppingBag class="h-7 w-7 text-slate-400" /></div>
           <p class="font-semibold text-slate-700">Seu carrinho está vazio</p>
           <p class="text-sm">Adicione produtos para começar seu pedido.</p>
-          <Button variant="outline" class="mt-2 rounded-full" @click="close">Continuar comprando</Button>
+          <Button variant="outline" class="mt-2 rounded-full dark:bg-white dark:border-background/50" @click="close">Continuar comprando</Button>
         </div>
 
         <template v-else>
@@ -99,7 +99,7 @@ function close() { emit('update:open', false) }
               <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"><div class="h-full rounded-full bg-[var(--shop-primary)] transition-all" :style="{ width: `${freeShippingProgress}%` }" /></div>
             </div>
 
-            <ul class="divide-y">
+            <ul class="divide-y divide-slate-200">
               <li v-for="item in items" :key="item.product.id" class="flex gap-3 py-4">
                 <div class="h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-slate-100">
                   <img v-if="item.product.image" :src="resolveFileUrl(item.product.image)" class="h-full w-full object-cover" />
@@ -111,7 +111,7 @@ function close() { emit('update:open', false) }
                   <div class="mt-auto flex items-center justify-between pt-2">
                     <div class="flex items-center rounded-full border border-slate-300">
                       <button class="grid h-8 w-8 place-items-center rounded-l-full text-slate-600 hover:bg-slate-100" @click="emit('set-quantity', { productId: item.product.id, quantity: item.quantity - 1 })"><Minus class="h-3.5 w-3.5" /></button>
-                      <span class="w-8 text-center text-sm font-bold">{{ item.quantity }}</span>
+                      <span class="w-8 text-center text-sm font-bold dark:text-black">{{ item.quantity }}</span>
                       <button class="grid h-8 w-8 place-items-center rounded-r-full text-slate-600 hover:bg-slate-100" @click="emit('set-quantity', { productId: item.product.id, quantity: item.quantity + 1 })"><Plus class="h-3.5 w-3.5" /></button>
                     </div>
                     <span class="font-black text-slate-900">{{ formatCurrencyBR(item.product.price * item.quantity) }}</span>
@@ -159,7 +159,7 @@ function close() { emit('update:open', false) }
           </div>
 
           <!-- Rodapé fixo -->
-          <footer class="border-t bg-white px-5 py-4">
+          <footer class="border-t border-slate-200 bg-white px-5 py-4">
             <div class="space-y-1 text-sm">
               <div class="flex justify-between text-slate-600"><span>Subtotal</span><span>{{ formatCurrencyBR(subtotal) }}</span></div>
               <div v-if="step === 'checkout' && checkout.deliveryType === 'ENTREGA_LOCAL'" class="flex justify-between text-slate-600">

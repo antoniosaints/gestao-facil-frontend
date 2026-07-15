@@ -7,14 +7,15 @@ import { useStoreToast } from '@/composables/useStoreToast'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { randomUUID } from '@/utils/uuid'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import ProductDetailModal from './components/ProductDetailModal.vue'
+import ProductCard from './components/ProductCard.vue'
+import AddedToCartModal from './components/AddedToCartModal.vue'
 import CartDrawer from './components/CartDrawer.vue'
 import StoreToaster from './components/StoreToaster.vue'
 import BannerCarousel from './components/BannerCarousel.vue'
 import { groupStoreProducts, type GroupedProduct } from './types'
-import { ChevronDown, Clock, CreditCard, Instagram, LoaderCircle, Mail, MapPin, MessageCircle, Package, Phone, Plus, Search, ShieldCheck, ShieldX, ShoppingBag, ShoppingCart, Truck, UserRound, X } from 'lucide-vue-next'
+import { ChevronDown, Clock, CreditCard, Flame, Instagram, LayoutGrid, LoaderCircle, Mail, MapPin, MessageCircle, Package, Phone, Search, ShieldCheck, ShieldX, ShoppingBag, ShoppingCart, Sparkles, Tag, Truck, UserRound, X } from 'lucide-vue-next'
 
 const route = useRoute()
 const toast = useStoreToast()
@@ -43,6 +44,50 @@ const visibleProducts = computed(() => products.value.filter((product) => {
 const groupedProducts = computed<GroupedProduct[]>(() => groupStoreProducts(visibleProducts.value))
 const detailGroup = ref<GroupedProduct | null>(null)
 
+// Seções curadas (Promoções, Mais vendidos, Novidades) só aparecem na vitrine "cheia":
+// quando o cliente filtra por categoria ou busca, mostramos apenas o resultado.
+const isFiltering = computed(() => !!category.value || !!search.value.trim())
+const SECTION_LIMIT = 12
+const promoGroups = computed(() => groupedProducts.value.filter((g) => g.hasPromo).slice(0, SECTION_LIMIT))
+const bestSellerGroups = computed(() =>
+  [...groupedProducts.value].filter((g) => g.soldCount > 0).sort((a, b) => b.soldCount - a.soldCount).slice(0, SECTION_LIMIT),
+)
+const newestGroups = computed(() =>
+  [...groupedProducts.value].sort((a, b) => b.recencyKey - a.recencyKey).slice(0, SECTION_LIMIT),
+)
+type StoreSection = { key: string; title: string; icon: any; groups: GroupedProduct[] }
+
+// Flags das seções automáticas (default: todas ligadas quando a loja não define nada).
+const autoFlags = computed(() => store.value?.automaticSections ?? { promocoes: true, maisVendidos: true, novidades: true })
+
+// Seções manuais/curadas: mapeia os ids de produto base de cada seção para os grupos carregados,
+// preservando a ordem definida pelo lojista.
+const manualSections = computed<StoreSection[]>(() => {
+  const configured = store.value?.sections ?? []
+  if (!configured.length) return []
+  const byBase = new Map<number, GroupedProduct>()
+  for (const group of groupedProducts.value) if (group.baseId != null) byBase.set(group.baseId, group)
+  return configured
+    .map((sec) => ({
+      key: `manual-${sec.id}`,
+      title: sec.nome,
+      icon: LayoutGrid,
+      groups: sec.baseIds.map((id) => byBase.get(id)).filter((g): g is GroupedProduct => !!g),
+    }))
+    .filter((sec) => sec.groups.length > 0)
+})
+
+const sections = computed<StoreSection[]>(() => {
+  if (isFiltering.value) return []
+  // Seções personalizadas primeiro; depois as automáticas habilitadas.
+  const list: StoreSection[] = [...manualSections.value]
+  if (autoFlags.value.promocoes && promoGroups.value.length) list.push({ key: 'promo', title: 'Promoções', icon: Tag, groups: promoGroups.value })
+  if (autoFlags.value.maisVendidos && bestSellerGroups.value.length) list.push({ key: 'best', title: 'Mais vendidos', icon: Flame, groups: bestSellerGroups.value })
+  // "Novidades" só faz sentido quando há catálogo suficiente para não repetir a grade inteira.
+  if (autoFlags.value.novidades && groupedProducts.value.length > 6) list.push({ key: 'new', title: 'Novidades', icon: Sparkles, groups: newestGroups.value })
+  return list
+})
+
 const benefits = computed(() => {
   const caps = store.value?.capabilities
   const list: { icon: any; title: string; text: string }[] = []
@@ -62,7 +107,8 @@ const brandStyle = computed(() => {
   const theme = store.value?.theme || {}
   const fonts: Record<string, string> = { Inter: 'Inter, sans-serif', system: 'system-ui, sans-serif', Georgia: 'Georgia, serif' }
   const radii: Record<string, string> = { none: '0', small: '.35rem', medio: '.75rem', grande: '1.25rem' }
-  return { '--shop-primary': store.value?.colors.primary || '#4f46e5', '--shop-secondary': store.value?.colors.secondary || '#0ea5e9', '--shop-radius': radii[String(theme.radius)] || '.75rem', '--shop-font': fonts[String(theme.font)] || 'Inter, sans-serif', '--hero-position': String(theme.bannerFocalPoint || 'center'), '--shop-bg': shopBg.value }
+  const primary = store.value?.colors.primary || '#4f46e5'
+  return { '--shop-primary': primary, '--shop-secondary': store.value?.colors.secondary || '#0ea5e9', '--shop-radius': radii[String(theme.radius)] || '.75rem', '--shop-font': fonts[String(theme.font)] || 'Inter, sans-serif', '--hero-position': String(theme.bannerFocalPoint || 'center'), '--shop-bg': shopBg.value, '--shop-promo': String(theme.promoColor || '#dc2626'), '--shop-section-icon': String(theme.sectionIconColor || primary) }
 })
 const layoutClass = computed(() => `layout-${(store.value?.template || 'ESSENCIAL').toLowerCase()}`)
 const gridDensityClass = computed(() => `grid-${String(store.value?.theme.gridDensity || 'confortavel')}`)
@@ -115,7 +161,7 @@ function applyRootTheme() {
 }
 onUnmounted(() => {
   const el = document.documentElement
-  ;['--shop-primary', '--shop-secondary', '--shop-radius', '--shop-font', '--hero-position', '--shop-bg'].forEach((key) => el.style.removeProperty(key))
+  ;['--shop-primary', '--shop-secondary', '--shop-radius', '--shop-font', '--hero-position', '--shop-bg', '--shop-promo', '--shop-section-icon'].forEach((key) => el.style.removeProperty(key))
 })
 
 async function load() {
@@ -129,24 +175,23 @@ async function load() {
   } catch { invalid.value = true } finally { loading.value = false }
 }
 
-function groupSoldOut(group: GroupedProduct) {
-  return group.totalAvailable === 0
-}
-function groupAvailableLabel(group: GroupedProduct) {
-  if (!store.value?.capabilities.showAvailability || group.totalAvailable === null) return ''
-  return group.totalAvailable > 0 ? `${group.totalAvailable} disponível(is)` : 'Esgotado'
-}
-function groupPriceLabel(group: GroupedProduct) {
-  return group.priceFrom === group.priceTo
-    ? formatCurrencyBR(group.priceFrom)
-    : `A partir de ${formatCurrencyBR(group.priceFrom)}`
-}
 function cartQuantityOf(product: StoreProduct) {
   return cart.items.value.find((item) => item.product.id === product.id)?.quantity ?? 0
 }
+// Após adicionar, um modal pergunta se o cliente quer ir ao carrinho ou continuar comprando.
+const addedProduct = ref<StoreProduct | null>(null)
+const addedQuantity = ref(1)
+const addedOpen = ref(false)
 function addVariant(variant: StoreProduct, quantity: number) {
   cart.set(variant, cartQuantityOf(variant) + quantity)
-  toast.success('Produto adicionado ao carrinho.')
+  addedProduct.value = variant
+  addedQuantity.value = quantity
+  detailGroup.value = null // fecha o detalhe se estava aberto
+  addedOpen.value = true
+}
+function goToCartFromPrompt() {
+  addedOpen.value = false
+  cartOpen.value = true
 }
 /** Botão do card: variantes abrem o detalhe; produto único vai direto ao carrinho. */
 function onCardAction(group: GroupedProduct) {
@@ -270,10 +315,9 @@ onMounted(load)
         :overlay="Number(store.theme.bannerOverlay || 25)"
         :position="String(store.theme.bannerFocalPoint || 'center')"
         :height="String(store.theme.bannerHeight || 'medio')"
-        class="mx-auto max-w-[1600px] text-white"
+        class="mx-auto max-w-full text-white"
       >
-        <p class="mb-2 inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-[.2em] backdrop-blur">{{ isCommerce ? 'Compre online' : 'Conheça nossos produtos' }}</p>
-        <h2 class="hero-title max-w-3xl text-4xl font-black leading-[1.05] tracking-tight drop-shadow-sm sm:text-6xl">{{ store.banner.title || headerTitle }}</h2>
+        <h2 class="hero-title max-w-3xl text-4xl font-black leading-[1.05] tracking-tight drop-shadow-sm sm:text-6xl">{{ store.banner.title }}</h2>
         <p v-if="store.banner.subtitle" class="mt-3 max-w-2xl text-base text-white/90 sm:text-xl">{{ store.banner.subtitle }}</p>
       </BannerCarousel>
 
@@ -290,6 +334,26 @@ onMounted(load)
       <main id="produtos" class="mx-auto max-w-7xl scroll-mt-20 px-4 py-8 lg:px-8">
         <p v-if="store.welcomeMessage" class="mb-6 max-w-3xl border-l-4 border-[var(--shop-primary)] pl-4 text-lg text-slate-600">{{ store.welcomeMessage }}</p>
 
+        <!-- Seções curadas: cada uma é um carrossel horizontal, exibido só na vitrine sem filtro. -->
+        <section v-for="sec in sections" :key="sec.key" class="mb-10">
+          <div class="mb-3 flex items-center gap-2">
+            <span class="grid h-8 w-8 place-items-center rounded-full text-white" :style="{ backgroundColor: 'var(--shop-section-icon)' }"><component :is="sec.icon" class="h-4 w-4" /></span>
+            <h2 class="text-lg font-black text-slate-900 sm:text-xl">{{ sec.title }}</h2>
+          </div>
+          <div class="section-scroll flex snap-x gap-3 overflow-x-auto pb-3">
+            <ProductCard
+              v-for="group in sec.groups"
+              :key="group.key"
+              :group="group"
+              :store="store"
+              class="w-40 shrink-0 snap-start sm:w-52"
+              :class="cardStyleClass"
+              @open="detailGroup = $event"
+              @action="onCardAction"
+            />
+          </div>
+        </section>
+
         <div class="mb-4 flex items-baseline justify-between gap-3">
           <h2 class="text-xl font-black text-slate-900">{{ category || (search ? 'Resultados da busca' : (isCommerce ? 'Nossos produtos' : 'Catálogo')) }}</h2>
           <div class="flex items-center gap-3">
@@ -299,40 +363,15 @@ onMounted(load)
         </div>
 
         <div v-if="groupedProducts.length" class="product-grid grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4" :class="gridDensityClass">
-          <article
+          <ProductCard
             v-for="group in groupedProducts"
             :key="group.key"
-            class="product-card group flex cursor-pointer flex-col overflow-hidden border border-black/10 bg-white transition duration-200 hover:-translate-y-1 hover:shadow-xl"
+            :group="group"
+            :store="store"
             :class="cardStyleClass"
-            @click="detailGroup = group"
-          >
-            <div class="relative aspect-square overflow-hidden bg-slate-100">
-              <img v-if="group.image" :src="resolveFileUrl(group.image)" :alt="group.name" loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-              <Package v-else class="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 text-slate-300" />
-              <span v-if="group.hasVariants" class="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-slate-700 shadow-sm">{{ group.variants.length }} opções</span>
-              <span v-if="groupSoldOut(group)" class="absolute inset-0 grid place-items-center bg-slate-950/45"><span class="rounded-full bg-slate-950/85 px-4 py-1.5 text-xs font-bold text-white">Esgotado</span></span>
-            </div>
-            <div class="flex min-h-[9rem] flex-col p-3 sm:p-4">
-              <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ group.category || 'Produto' }}</p>
-              <h3 class="mt-1 line-clamp-2 font-bold leading-tight text-slate-900">{{ group.name }}</h3>
-              <p v-if="groupAvailableLabel(group)" class="mt-1 text-xs" :class="groupSoldOut(group) ? 'text-red-600' : 'text-emerald-700'">{{ groupAvailableLabel(group) }}</p>
-              <div class="mt-auto pt-3">
-                <div v-if="store.capabilities.showPrices" class="leading-tight">
-                  <span v-if="group.hasVariants && group.priceFrom !== group.priceTo" class="block text-[11px] text-slate-400">a partir de</span>
-                  <span class="text-lg font-black text-[var(--shop-primary)]">{{ formatCurrencyBR(group.priceFrom) }}</span>
-                </div>
-                <Button
-                  v-if="isCommerce && store.capabilities.quickAdd"
-                  class="mt-2 w-full rounded-full text-white"
-                  size="sm"
-                  :disabled="groupSoldOut(group)"
-                  @click.stop="onCardAction(group)"
-                >
-                  <Plus class="mr-1 h-4 w-4" /> {{ group.hasVariants ? 'Ver opções' : 'Adicionar' }}
-                </Button>
-              </div>
-            </div>
-          </article>
+            @open="detailGroup = $event"
+            @action="onCardAction"
+          />
         </div>
         <div v-else class="rounded-2xl border border-dashed py-24 text-center text-slate-500">
           <Package class="mx-auto mb-3 h-10 w-10 text-slate-300" />
@@ -397,6 +436,15 @@ onMounted(load)
         @add="({ variant, quantity }) => addVariant(variant, quantity)"
       />
 
+      <AddedToCartModal
+        :open="addedOpen"
+        :product="addedProduct"
+        :quantity="addedQuantity"
+        :store="store"
+        @keep-shopping="addedOpen = false"
+        @go-to-cart="goToCartFromPrompt"
+      />
+
       <CartDrawer
         :open="cartOpen"
         :store="store"
@@ -418,6 +466,7 @@ onMounted(load)
 .announcement,.shop :deep(.bg-primary),.shop :deep(button.bg-primary){background:var(--shop-primary)}
 .shop{font-family:var(--shop-font)}
 .shop-tint{background:color-mix(in srgb,var(--shop-primary) 12%,white)}
+.section-scroll{scrollbar-width:thin}.section-scroll::-webkit-scrollbar{height:6px}.section-scroll::-webkit-scrollbar-thumb{background:rgb(148 163 184/.5);border-radius:9999px}
 .product-card{border-radius:var(--shop-radius)}.card-plano{box-shadow:none;border-color:transparent}.card-elevado{box-shadow:0 10px 25px rgb(15 23 42/.08)}.card-contorno{border-width:2px;box-shadow:none}.grid-compacta{gap:.5rem}.grid-arejada{gap:2rem}
 .layout-editorial .product-grid{gap:1.5rem}.layout-editorial .product-card{border-radius:0;box-shadow:none}
 .layout-impacto .announcement{background:#111827}.layout-impacto .product-card{border:2px solid #111827;border-radius:1rem;box-shadow:5px 5px 0 #111827}

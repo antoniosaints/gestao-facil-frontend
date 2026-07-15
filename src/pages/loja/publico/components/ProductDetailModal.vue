@@ -80,7 +80,7 @@ function variantLabel(variant: StoreProduct) {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent v-if="group" class="max-h-[94vh] max-w-3xl overflow-y-auto bg-white p-0" :style="{ '--shop-primary': store.colors.primary, fontFamily: 'var(--shop-font)' }">
+    <DialogContent v-if="group" class="max-h-[94vh] max-w-3xl overflow-y-auto bg-white dark:text-black p-0" :style="{ '--shop-primary': store.colors.primary, fontFamily: 'var(--shop-font)' }">
       <div class="grid gap-0 md:grid-cols-2">
         <!-- Galeria -->
         <div class="bg-slate-100">
@@ -110,7 +110,10 @@ function variantLabel(variant: StoreProduct) {
           <h2 class="mt-1 text-2xl font-black leading-tight text-slate-900">{{ group.name }}</h2>
 
           <div class="mt-3 flex items-baseline gap-2">
-            <span v-if="store.capabilities.showPrices" class="text-3xl font-black text-[var(--shop-primary)]">{{ formatCurrencyBR(selected?.price ?? group.priceFrom) }}</span>
+            <template v-if="store.capabilities.showPrices">
+              <span v-if="selected?.priceOriginal" class="text-lg font-semibold text-slate-400 line-through">{{ formatCurrencyBR(selected.priceOriginal) }}</span>
+              <span class="text-3xl font-black" :class="selected?.priceOriginal ? '' : 'text-[var(--shop-primary)]'" :style="selected?.priceOriginal ? { color: 'var(--shop-promo)' } : {}">{{ formatCurrencyBR(selected?.price ?? group.priceFrom) }}</span>
+            </template>
             <span v-if="selected?.unit" class="text-sm text-slate-400">/ {{ selected.unit }}</span>
           </div>
           <p v-if="stockLabel" class="mt-1 text-sm font-medium" :class="soldOut ? 'text-red-600' : 'text-emerald-700'">{{ stockLabel }}</p>
@@ -142,7 +145,7 @@ function variantLabel(variant: StoreProduct) {
             <div class="flex items-center gap-3">
               <div class="flex items-center rounded-full border border-slate-300">
                 <button type="button" class="grid h-11 w-11 place-items-center rounded-l-full text-slate-600 hover:bg-slate-100 disabled:opacity-40" :disabled="quantity <= 1" @click="step(-1)"><Minus class="h-4 w-4" /></button>
-                <span class="w-10 text-center text-base font-bold">{{ quantity }}</span>
+                <span class="w-10 text-center text-base dark:text-black font-bold">{{ quantity }}</span>
                 <button type="button" class="grid h-11 w-11 place-items-center rounded-r-full text-slate-600 hover:bg-slate-100 disabled:opacity-40" :disabled="quantity >= maxQuantity" @click="step(1)"><Plus class="h-4 w-4" /></button>
               </div>
               <Button class="h-11 flex-1 rounded-full text-white" :style="{ backgroundColor: 'var(--shop-primary)' }" :disabled="soldOut || maxQuantity < 1" @click="addToCart">

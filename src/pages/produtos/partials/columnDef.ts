@@ -10,6 +10,7 @@ import { ArrowUpDown, Boxes, Package, ScanQrCode, Tags } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import Actions from './Actions.vue'
 import ActionsVariante from './ActionsVariante.vue'
+import ThumbCell from './ThumbCell.vue'
 
 const store = useProdutoStore()
 
@@ -18,10 +19,30 @@ type ProdutoVarianteRow = ProdutoVariante & {
   produtoBaseUid?: string | null
 }
 
+// Checkbox no cabeçalho: seleciona/desseleciona todas as linhas da página atual,
+// sincronizando com `store.selectedIds` (mesma seleção usada pela barra de ações em massa).
+function selectAllHeader({ table }: { table: any }) {
+  const rows = table.getRowModel().rows
+  const ids = rows
+    .map((row: any) => row.original.id)
+    .filter((id: unknown): id is number => typeof id === 'number')
+  const allSelected = ids.length > 0 && ids.every((id: number) => store.selectedIds.includes(id))
+  const someSelected = ids.some((id: number) => store.selectedIds.includes(id))
+  return render(Checkbox, {
+    modelValue: allSelected ? true : someSelected ? 'indeterminate' : false,
+    'onUpdate:modelValue': (value: boolean | string) => {
+      rows.forEach((row: any) => row.toggleSelected(!!value))
+      if (value) ids.forEach((id: number) => store.addSelectedId(id))
+      else ids.forEach((id: number) => store.removeSelectedId(id))
+    },
+    ariaLabel: 'Selecionar todos',
+  })
+}
+
 export const columnsProdutos: ColumnDef<ProdutoBase>[] = [
   {
     id: 'select',
-    header: () => render('div', {}, ''),
+    header: selectAllHeader,
     cell: ({ row }) =>
       render(Checkbox, {
         modelValue: store.selectedIds.includes(row.original.id!),
@@ -34,6 +55,14 @@ export const columnsProdutos: ColumnDef<ProdutoBase>[] = [
       }),
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: 'imagem',
+    id: 'foto',
+    header: () => render('div', {}, 'Foto'),
+    cell: ({ row }) =>
+      render(ThumbCell, { image: row.original.imagem ?? null, alt: row.original.nome }),
+    enableSorting: false,
   },
   {
     accessorKey: 'Uid',
@@ -135,6 +164,30 @@ export const columnsProdutos: ColumnDef<ProdutoBase>[] = [
 ]
 
 export const columnsVariantes: ColumnDef<ProdutoVarianteRow>[] = [
+  {
+    id: 'select',
+    header: selectAllHeader,
+    cell: ({ row }) =>
+      render(Checkbox, {
+        modelValue: store.selectedIds.includes(row.original.id!),
+        'onUpdate:modelValue': (value: boolean | string) => {
+          row.toggleSelected(!!value)
+          if (value) store.addSelectedId(row.original.id!)
+          else store.removeSelectedId(row.original.id!)
+        },
+        ariaLabel: 'Selecionar linha',
+      }),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: 'imagem',
+    id: 'foto',
+    header: () => render('div', {}, 'Foto'),
+    cell: ({ row }) =>
+      render(ThumbCell, { image: row.original.imagem ?? null, alt: row.original.nomeVariante || row.original.nome }),
+    enableSorting: false,
+  },
   {
     accessorKey: 'Uid',
     header: ({ column }) =>

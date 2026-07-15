@@ -41,7 +41,7 @@ watch(() => props.images, () => { index.value = 0; restart() })
 </script>
 
 <template>
-  <section class="hero-carousel relative overflow-hidden" :class="heightClass">
+  <section class="hero-carousel relative flex flex-col overflow-hidden" :class="heightClass">
     <!-- Imagens (crossfade) -->
     <div
       v-for="(img, i) in images"
@@ -55,8 +55,8 @@ watch(() => props.images, () => { index.value = 0; restart() })
     <div class="absolute inset-0 bg-black" :style="{ opacity: overlay / 100 }" />
     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-    <!-- Conteúdo -->
-    <div class="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-5 py-10 lg:px-8">
+    <!-- Conteúdo (ancorado embaixo-esquerda) -->
+    <div class="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-end px-5 py-10 lg:px-8">
       <slot />
     </div>
 

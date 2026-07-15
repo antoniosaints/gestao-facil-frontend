@@ -8,9 +8,13 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { LoaderCircle, PackageOpen } from 'lucide-vue-next'
+import { LoaderCircle, PackageOpen, Trash2 } from 'lucide-vue-next'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { getSocket } from '@/pluguins/socket'
+import { useConfirm } from '@/composables/useConfirm'
+
+// Pedidos "mortos" (cancelados/expirados) podem ser excluídos para limpar a listagem.
+const DELETAVEIS = ['CANCELADO', 'EXPIRADO']
 
 const toast = useToast(); const selected = ref<any>(null); const acting = ref(false); const mobileOrders = ref<any[]>([])
 const filters = reactive({ update: 0 })
@@ -23,12 +27,36 @@ const columns: ColumnDef<any>[] = [
   { accessorKey: 'status', header: 'Pedido', cell: ({ row }) => h(Badge, { variant: statusColor[row.original.status] as any }, () => row.original.status) },
   { accessorKey: 'pagamentoStatus', header: 'Pagamento' },
   { accessorKey: 'total', header: 'Total', cell: ({ row }) => formatCurrencyBR(Number(row.original.total)) },
-  { id: 'acoes', header: '', cell: ({ row }) => h(Button, { size: 'sm', variant: 'outline', onClick: () => open(row.original) }, () => 'Detalhes') },
+  { id: 'acoes', header: '', cell: ({ row }) => h('div', { class: 'flex justify-end gap-1' }, [
+    h(Button, { size: 'sm', variant: 'outline', onClick: () => open(row.original) }, () => 'Detalhes'),
+    ...(DELETAVEIS.includes(row.original.status)
+      ? [h(Button, { size: 'sm', variant: 'ghost', class: 'text-red-600 hover:text-red-700', title: 'Excluir pedido', onClick: () => excluirPedido(row.original) }, () => h(Trash2, { class: 'h-4 w-4' }))]
+      : []),
+  ]) },
 ]
 async function loadMobile() { try { mobileOrders.value = (await LojaRepository.listOrders({ page: 1, limit: 100 })).data } catch { mobileOrders.value = [] } }
 async function act(action: 'confirmar' | 'preparar' | 'despachar' | 'cancelar' | 'concluir') {
   if (!selected.value) return
   try { acting.value = true; await LojaRepository.actOnOrder(selected.value.id, action); toast.success('Pedido atualizado.'); await open(selected.value); filters.update += 1; await loadMobile() } catch (error: any) { toast.error(error?.response?.data?.message || 'Não foi possível atualizar o pedido.') } finally { acting.value = false }
+}
+async function excluirPedido(order: any) {
+  if (!order) return
+  const ok = await useConfirm().confirm({
+    title: 'Excluir pedido',
+    message: `Excluir o pedido ${order.Uid}? Essa ação não pode ser desfeita.`,
+    confirmText: 'Sim, excluir!',
+  })
+  if (!ok) return
+  try {
+    acting.value = true
+    await LojaRepository.deleteOrder(order.id)
+    toast.success('Pedido excluído.')
+    if (selected.value?.id === order.id) selected.value = null
+    filters.update += 1
+    await loadMobile()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível excluir o pedido.')
+  } finally { acting.value = false }
 }
 const socket = getSocket()
 async function onStoreUpdate(payload: any) { if (String(payload?.reason || '').startsWith('loja-')) { filters.update += 1; await loadMobile(); if (selected.value?.id === payload.pedidoId) await open(selected.value) } }
@@ -47,7 +75,7 @@ onUnmounted(() => socket.off('vendas:updatetable', onStoreUpdate))
       <div class="grid gap-3 sm:grid-cols-3"><div class="rounded-lg border p-3"><p class="text-xs text-muted-foreground">Pedido</p><b>{{ selected.status }}</b></div><div class="rounded-lg border p-3"><p class="text-xs text-muted-foreground">Pagamento</p><b>{{ selected.pagamentoStatus }}</b></div><div class="rounded-lg border p-3"><p class="text-xs text-muted-foreground">Estoque</p><b>{{ selected.reservas?.some((r:any) => r.status === 'CONSUMIDA') ? 'Consumido' : 'Reservado' }}</b></div></div>
       <div class="rounded-lg border"><div v-for="item in selected.itens" :key="item.id" class="flex justify-between border-b p-3 last:border-0"><span>{{ item.quantidade }}× {{ item.produtoNomeSnapshot }} / {{ item.varianteNomeSnapshot }}</span><b>{{ formatCurrencyBR(Number(item.subtotal)) }}</b></div><div class="flex justify-between bg-muted/40 p-3 text-lg font-bold"><span>Total</span><span>{{ formatCurrencyBR(Number(selected.total)) }}</span></div></div>
       <div class="text-sm"><p><b>Contato:</b> {{ selected.telefoneSnapshot }} · {{ selected.emailSnapshot || 'sem e-mail' }}</p><p v-if="selected.tipoEntrega === 'ENTREGA_LOCAL'"><b>Entrega:</b> {{ selected.enderecoSnapshot }}, {{ selected.numeroSnapshot }} — {{ selected.cidadeSnapshot }}/{{ selected.estadoSnapshot }}</p><p v-else><b>Entrega:</b> Retirada</p><p v-if="selected.Venda"><b>Venda:</b> {{ selected.Venda.Uid }} · {{ selected.Venda.faturado ? 'Faturada' : 'Pendente' }}</p></div>
-      <div class="flex flex-wrap justify-end gap-2"><Button v-if="['RECEBIDO','REVISAO'].includes(selected.status)" variant="outline" :disabled="acting" @click="act('cancelar')">{{ selected.status === 'REVISAO' ? 'Solicitar estorno' : 'Cancelar' }}</Button><Button v-if="selected.status === 'RECEBIDO'" :disabled="acting" @click="act('confirmar')">Confirmar</Button><Button v-if="selected.status === 'CONFIRMADO'" :disabled="acting" @click="act('preparar')">Preparar</Button><Button v-if="selected.status === 'PREPARANDO'" :disabled="acting" @click="act('despachar')">Despachar</Button><Button v-if="selected.status === 'DESPACHADO'" :disabled="acting" @click="act('concluir')">Concluir</Button><LoaderCircle v-if="acting" class="h-5 w-5 animate-spin" /></div>
+      <div class="flex flex-wrap justify-end gap-2"><Button v-if="DELETAVEIS.includes(selected.status)" variant="destructive" :disabled="acting" @click="excluirPedido(selected)"><Trash2 class="mr-1 h-4 w-4" />Excluir pedido</Button><Button v-if="['RECEBIDO','REVISAO'].includes(selected.status)" variant="outline" :disabled="acting" @click="act('cancelar')">{{ selected.status === 'REVISAO' ? 'Solicitar estorno' : 'Cancelar' }}</Button><Button v-if="selected.status === 'RECEBIDO'" :disabled="acting" @click="act('confirmar')">Confirmar</Button><Button v-if="selected.status === 'CONFIRMADO'" :disabled="acting" @click="act('preparar')">Preparar</Button><Button v-if="selected.status === 'PREPARANDO'" :disabled="acting" @click="act('despachar')">Despachar</Button><Button v-if="selected.status === 'DESPACHADO'" :disabled="acting" @click="act('concluir')">Concluir</Button><LoaderCircle v-if="acting" class="h-5 w-5 animate-spin" /></div>
     </DialogContent></Dialog>
   </div>
 </template>

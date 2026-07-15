@@ -235,6 +235,7 @@ export interface ProdutoVariante {
   nomeVariante?: string
   descricao?: string | null
   preco: number | string
+  precoPromocional?: number | string | null
   precoCompra?: number | string | null
   entradas?: boolean
   saidas?: boolean
@@ -269,6 +270,7 @@ export interface ProdutoBase {
   categoria?: string | null
   Categoria?: ProdutoCategoria | null
   preco: number | string
+  precoPromocional?: number | string | null
   precoCompra?: number | string | null
   entradas?: boolean
   saidas?: boolean

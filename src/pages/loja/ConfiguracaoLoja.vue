@@ -10,6 +10,7 @@ import { useUiStore } from '@/stores/ui/uiStore'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { LojaRepository, type LojaConfig, type LojaHeaderEstilo } from '@/repositories/loja-repository'
 import ToggleRow from './components/ToggleRow.vue'
+import SecoesManager from './components/SecoesManager.vue'
 import {
   Building2,
   Check,
@@ -18,6 +19,7 @@ import {
   ExternalLink,
   Image as ImageIcon,
   ImagePlus,
+  LayoutGrid,
   LoaderCircle,
   Package,
   Palette,
@@ -42,17 +44,28 @@ const bannerMobileInput = ref<HTMLInputElement | null>(null)
 const logoInput = ref<HTMLInputElement | null>(null)
 const carrosselInput = ref<HTMLInputElement | null>(null)
 
-type SectionId = 'aparencia' | 'cabecalho' | 'banner' | 'conteudo' | 'vendas' | 'clientes' | 'rodape'
+type SectionId = 'aparencia' | 'cabecalho' | 'banner' | 'conteudo' | 'secoes' | 'vendas' | 'clientes' | 'rodape'
 const activeSection = ref<SectionId>('aparencia')
 const sections: { id: SectionId; label: string; icon: any; desc: string }[] = [
   { id: 'aparencia', label: 'Aparência', icon: Palette, desc: 'Tema, cores e fundo' },
   { id: 'cabecalho', label: 'Cabeçalho', icon: PanelTop, desc: 'Logo, título e subtítulo' },
   { id: 'banner', label: 'Banner', icon: ImageIcon, desc: 'Capa e carrossel de destaque' },
   { id: 'conteudo', label: 'Conteúdo', icon: Type, desc: 'Textos e exibição de produtos' },
+  { id: 'secoes', label: 'Seções', icon: LayoutGrid, desc: 'Vitrines automáticas e personalizadas' },
   { id: 'vendas', label: 'Vendas e entrega', icon: CreditCard, desc: 'Pagamento, retirada e frete' },
   { id: 'clientes', label: 'Clientes', icon: Users, desc: 'Login e checkout' },
   { id: 'rodape', label: 'Rodapé', icon: Building2, desc: 'Dados da empresa e contato' },
 ]
+
+// Seções automáticas ficam no themeConfig (default: todas ligadas).
+const autoSecoes = computed(() => ({
+  promocoes: config.themeConfig?.secoesAutomaticas?.promocoes ?? true,
+  maisVendidos: config.themeConfig?.secoesAutomaticas?.maisVendidos ?? true,
+  novidades: config.themeConfig?.secoesAutomaticas?.novidades ?? true,
+}))
+function setAutoSecao(key: 'promocoes' | 'maisVendidos' | 'novidades', value: boolean) {
+  updateTheme('secoesAutomaticas', { ...autoSecoes.value, [key]: value })
+}
 const activeSectionMeta = computed(() => sections.find((s) => s.id === activeSection.value)!)
 
 const linkCopied = ref(false)
@@ -353,6 +366,29 @@ onMounted(carregar)
               </div>
 
               <div class="space-y-2">
+                <Label class="text-xs font-medium">Cores de destaque</Label>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <Label class="text-xs text-muted-foreground">Promoções (preço e selo)</Label>
+                    <div class="flex items-center gap-2">
+                      <input :value="config.themeConfig?.promoColor || '#dc2626'" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('promoColor', ($event.target as HTMLInputElement).value)" />
+                      <Input :model-value="config.themeConfig?.promoColor || ''" placeholder="#dc2626" class="h-9" @update:model-value="updateTheme('promoColor', String($event).trim() || null)" />
+                      <Button v-if="config.themeConfig?.promoColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('promoColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                  <div class="space-y-1">
+                    <Label class="text-xs text-muted-foreground">Ícones das seções</Label>
+                    <div class="flex items-center gap-2">
+                      <input :value="config.themeConfig?.sectionIconColor || config.corPrimaria" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('sectionIconColor', ($event.target as HTMLInputElement).value)" />
+                      <Input :model-value="config.themeConfig?.sectionIconColor || ''" placeholder="Cor primária" class="h-9" @update:model-value="updateTheme('sectionIconColor', String($event).trim() || null)" />
+                      <Button v-if="config.themeConfig?.sectionIconColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('sectionIconColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                </div>
+                <p class="text-xs text-muted-foreground">Cor do preço/percentual em promoção e dos ícones dos títulos de seção.</p>
+              </div>
+
+              <div class="space-y-2">
                 <Label class="text-xs font-medium">Estilo visual</Label>
                 <div class="grid grid-cols-2 gap-3">
                   <div><Label class="text-xs text-muted-foreground">Fonte</Label><select class="mt-1 h-9 w-full rounded-md border bg-background px-3 text-sm" :value="config.themeConfig?.font" @change="updateTheme('font', ($event.target as HTMLSelectElement).value)"><option value="Inter">Inter</option><option value="system">Sistema</option><option value="Georgia">Georgia</option></select></div>
@@ -493,6 +529,23 @@ onMounted(carregar)
                 <ToggleRow v-model="config.pedidoWhatsapp" title="Pedir pelo WhatsApp" description="Exibe o botão de pedido via WhatsApp." />
                 <ToggleRow v-model="config.barraAvisoAtiva" title="Barra de aviso promocional" description="Faixa de destaque no topo da loja." />
                 <Input v-if="config.barraAvisoAtiva" :model-value="config.barraAvisoTexto ?? ''" placeholder="Ex.: Frete grátis acima de R$ 199" @update:model-value="config.barraAvisoTexto = String($event)" />
+              </div>
+            </template>
+
+            <!-- SEÇÕES -->
+            <template v-else-if="activeSection === 'secoes'">
+              <div class="space-y-2">
+                <Label class="text-xs font-medium">Seções automáticas</Label>
+                <p class="text-xs text-muted-foreground">Vitrines geradas sozinhas a partir dos seus dados. Ative ou desative como quiser.</p>
+                <ToggleRow :model-value="autoSecoes.promocoes" title="Promoções" description="Produtos com preço promocional." @update:model-value="setAutoSecao('promocoes', $event)" />
+                <ToggleRow :model-value="autoSecoes.maisVendidos" title="Mais vendidos" description="Produtos com mais vendas registradas." @update:model-value="setAutoSecao('maisVendidos', $event)" />
+                <ToggleRow :model-value="autoSecoes.novidades" title="Novidades" description="Produtos cadastrados mais recentemente." @update:model-value="setAutoSecao('novidades', $event)" />
+                <p class="text-[11px] text-muted-foreground">As opções acima são salvas com o botão “Salvar” no topo.</p>
+              </div>
+
+              <div class="space-y-2 border-t pt-4">
+                <Label class="text-xs font-medium">Seções personalizadas</Label>
+                <SecoesManager />
               </div>
             </template>
 

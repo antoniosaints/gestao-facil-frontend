@@ -2,22 +2,11 @@
 import Tabela from '@/pages/produtos/partials/Tabela.vue'
 import Mobile from '@/pages/produtos/partials/Mobile.vue'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
-import { useToast } from 'vue-toastification'
 import ModalProdutos from './formulario/ModalProdutos.vue'
 import ModalCriarLote from './others/ModalCriarLote.vue'
-import { ProdutoRepository } from '@/repositories/produto-repository'
-import { BadgePlus, CircleChevronDown, FileChartLine, FileUp, FolderTree, Funnel, Layers3, Package, RotateCw, Store, Tags, Trash } from 'lucide-vue-next'
+import { BadgePlus, FileChartLine, FileUp, FolderTree, Funnel, Layers3, Package, RotateCw, Store } from 'lucide-vue-next'
 import ModalReposicao from './formulario/ModalReposicao.vue'
 import ModalDescarte from './formulario/ModalDescarte.vue'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
-import { useConfirm } from '@/composables/useConfirm'
 import ModalRelatorio from './formulario/ModalRelatorio.vue'
 import ModalVariante from './formulario/ModalVariante.vue'
 import GerarEtiquetas from './others/GerarEtiquetas.vue'
@@ -27,7 +16,6 @@ import ModalCatalogoLink from './others/ModalCatalogoLink.vue'
 import router from '@/router'
 import { provide, ref } from 'vue'
 
-const toast = useToast()
 const store = useProdutoStore()
 const openFilter = ref(false)
 const openCatalogo = ref(false)
@@ -36,23 +24,6 @@ provide('openModalFiltroProdutos', openFilter)
 
 const relatorioGeral = async () => {
     store.openReportModal({ reportType: 'catalogo' })
-}
-
-async function excluirEmLote() {
-    try {
-        if (!store.selectedIds.length) return toast.error('Nenhum produto selecionado')
-        const confirm = await useConfirm().confirm({
-            title: 'Excluir em lote',
-            message: 'Tem certeza que deseja excluir esses produtos?'
-        });
-        if (!confirm) return
-        await Promise.all(store.selectedIds.map(id => ProdutoRepository.remove(id)))
-        store.updateTable()
-        toast.success('Produtos excluidos com sucesso')
-    } catch (error) {
-        toast.error('Erro ao excluir os produtos')
-        console.log(error)
-    }
 }
 
 </script>
@@ -92,24 +63,6 @@ async function excluirEmLote() {
                         Variantes
                     </button>
                 </div>
-                <DropdownMenu v-if="store.selectedIds.length && store.filters.listingMode === 'base'">
-                    <DropdownMenuTrigger as-child>
-                        <Button variant="outline">
-                            <CircleChevronDown />
-                            Ações
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem @click="excluirEmLote" class="cursor-pointer">
-                                <Trash />
-                                <span>
-                                    Excluir em lote
-                                </span>
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                </DropdownMenu>
                 <button @click="openFilter = true"
                     class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-2 text-sm rounded-lg">
                     <Funnel class="w-4 h-4" />

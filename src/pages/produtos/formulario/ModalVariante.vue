@@ -14,7 +14,7 @@ import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 import { formatToNumberValue } from '@/utils/formatters'
-import { CircleDollarSign, LoaderCircle, Lock, PackagePlus, Settings2, Sparkles } from 'lucide-vue-next'
+import { CircleDollarSign, LoaderCircle, Lock, PackagePlus, Settings2, Sparkles, Tag } from 'lucide-vue-next'
 
 const store = useProdutoStore()
 const toast = useToast()
@@ -53,6 +53,9 @@ function buildPayload() {
     unidade: store.varianteForm.unidade || 'un',
     descricao: store.varianteForm.descricao?.trim() || null,
     preco: formatToNumberValue(store.varianteForm.preco),
+    precoPromocional: isBlank(store.varianteForm.precoPromocional)
+      ? null
+      : formatToNumberValue(store.varianteForm.precoPromocional),
     precoCompra: isBlank(store.varianteForm.precoCompra)
       ? undefined
       : formatToNumberValue(store.varianteForm.precoCompra),
@@ -90,6 +93,14 @@ function validateForm() {
 
   if (formatToNumberValue(store.varianteForm.preco) <= 0) {
     toast.error('Informe um preco de venda valido')
+    return false
+  }
+
+  if (
+    !isBlank(store.varianteForm.precoPromocional) &&
+    formatToNumberValue(store.varianteForm.precoPromocional) >= formatToNumberValue(store.varianteForm.preco)
+  ) {
+    toast.error('O preço promocional deve ser menor que o preço de venda')
     return false
   }
 
@@ -225,13 +236,13 @@ async function submit() {
       </div>
 
       <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-        <div class="md:col-span-4">
+        <div class="md:col-span-3">
           <label class="mb-1.5 block text-sm font-medium text-foreground">Preco de compra</label>
           <Input v-model="store.varianteForm.precoCompra" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
             class="bg-background dark:bg-background/70" />
         </div>
 
-        <div class="md:col-span-4">
+        <div class="md:col-span-3">
           <label class="mb-1.5 block text-sm font-medium text-foreground">
             Preco de venda <span class="text-red-500">*</span>
           </label>
@@ -239,7 +250,16 @@ async function submit() {
             class="bg-background dark:bg-background/70" />
         </div>
 
-        <div class="md:col-span-4">
+        <div class="md:col-span-3">
+          <label class="mb-1.5 flex items-center gap-1 text-sm font-medium text-foreground">
+            Preço promocional
+            <Tag class="h-3.5 w-3.5 text-red-500" />
+          </label>
+          <Input v-model="store.varianteForm.precoPromocional" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
+            class="bg-background dark:bg-background/70" />
+        </div>
+
+        <div class="md:col-span-3">
           <label class="mb-1.5 block text-sm font-medium text-foreground">Custo medio producao</label>
           <Input v-model="store.varianteForm.custoMedioProducao" type="number" min="0" step="0.01"
             class="bg-background dark:bg-background/70" />

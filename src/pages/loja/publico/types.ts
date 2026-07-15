@@ -14,6 +14,14 @@ export interface GroupedProduct {
   variants: StoreProduct[]
   priceFrom: number
   priceTo: number
+  /** Menor preço "de" (cheio) entre as variantes em promoção; `null` sem promoção no grupo. */
+  priceOriginalFrom: number | null
+  /** Verdadeiro quando ao menos uma variante do grupo está em promoção. */
+  hasPromo: boolean
+  /** Total vendido somando as variantes; alimenta o ranking de "Mais vendidos". */
+  soldCount: number
+  /** Maior id entre as variantes — usado como proxy de "mais recente" para "Novidades". */
+  recencyKey: number
   /** Soma do estoque das variantes; `null` quando nenhuma controla estoque. */
   totalAvailable: number | null
   hasVariants: boolean
@@ -31,6 +39,11 @@ export function groupStoreProducts(products: StoreProduct[]): GroupedProduct[] {
     const prices = variants.map((v) => v.price)
     const stocks = variants.filter((v) => v.available !== null).map((v) => v.available as number)
     const cover = variants.find((v) => v.image) ?? variants[0]
+    // Variante "vitrine": a de menor preço efetivo — é a que define o preço exibido no card.
+    // A promoção do grupo acompanha essa variante para que selo, preço "de" e a seção
+    // "Promoções" fiquem coerentes (evita mostrar "-40%" quando o preço mais barato não é o promo).
+    const headline = variants.reduce((min, v) => (v.price < min.price ? v : min), variants[0])
+    const headlineOnPromo = headline.priceOriginal != null
     return {
       key,
       baseId: variants[0].baseId,
@@ -41,6 +54,10 @@ export function groupStoreProducts(products: StoreProduct[]): GroupedProduct[] {
       variants,
       priceFrom: Math.min(...prices),
       priceTo: Math.max(...prices),
+      priceOriginalFrom: headlineOnPromo ? (headline.priceOriginal as number) : null,
+      hasPromo: headlineOnPromo,
+      soldCount: variants.reduce((total, v) => total + (v.soldCount || 0), 0),
+      recencyKey: Math.max(...variants.map((v) => v.id)),
       totalAvailable: stocks.length ? stocks.reduce((total, value) => total + value, 0) : null,
       hasVariants: variants.length > 1,
     }

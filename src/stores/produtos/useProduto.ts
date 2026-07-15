@@ -19,6 +19,7 @@ type ProdutoForm = {
   categoria?: string | null
   codigo: string
   preco: number | string
+  precoPromocional: number | string
   precoCompra: number | string
   entradas: boolean
   saidas: boolean
@@ -44,6 +45,7 @@ type ProdutoVarianteForm = {
   descricao: string
   codigo: string
   preco: number | string
+  precoPromocional: number | string
   precoCompra: number | string
   entradas: boolean
   saidas: boolean
@@ -91,6 +93,7 @@ function getDefaultProdutoForm(): ProdutoForm {
     nome: '',
     nomeVariante: 'Padrão',
     preco: '',
+    precoPromocional: '',
     precoCompra: '',
     saidas: true,
     unidade: 'un',
@@ -118,6 +121,7 @@ function getDefaultVarianteForm(produtoBaseId: number | null = null): ProdutoVar
     nome: '',
     nomeVariante: '',
     preco: '',
+    precoPromocional: '',
     precoCompra: '',
     saidas: true,
     unidade: 'un',
@@ -286,6 +290,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
         categoria: data?.categoria ?? null,
         codigo: data?.codigo ?? '',
         preco: data?.preco,
+        precoPromocional: data?.precoPromocional ?? '',
         precoCompra: data?.precoCompra ?? '',
         estoque: data?.estoque,
         minimo: data?.minimo,
@@ -325,6 +330,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
         nomeVariante: data.nomeVariante,
         codigo: data.codigo ?? '',
         preco: data.preco,
+        precoPromocional: data.precoPromocional ?? '',
         precoCompra: data.precoCompra ?? '',
         estoque: data.estoque,
         minimo: data.minimo,

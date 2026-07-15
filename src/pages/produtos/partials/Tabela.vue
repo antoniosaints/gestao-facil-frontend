@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import DataTable from '@/components/tabela/DataTable.vue';
 import { columnsProdutos, columnsVariantes } from './columnDef';
+import BulkActionsProdutos from './BulkActionsProdutos.vue';
 import { useProdutoStore } from '@/stores/produtos/useProduto';
 const store = useProdutoStore()
 
@@ -10,5 +11,9 @@ const columns = computed(() => store.filters.listingMode === 'variante' ? column
 </script>
 
 <template>
-  <DataTable :key="store.filters.listingMode" :columns="columns" api="/produtos" :filters="store.filters" />
+  <DataTable :key="store.filters.listingMode" :columns="columns" api="/produtos" :filters="store.filters">
+    <template #toolbar>
+      <BulkActionsProdutos />
+    </template>
+  </DataTable>
 </template>

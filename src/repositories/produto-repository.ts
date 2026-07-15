@@ -136,6 +136,21 @@ export class ProdutoRepository {
     await http.delete(`/produtos/${id}`)
   }
 
+  // Ação em massa: mostra/oculta produtos no catálogo online. No modo 'base' os ids são de
+  // produtos base (aplica a todas as variantes); no modo 'variante', ids das variantes.
+  static async setCatalogoVisibilidade(
+    ids: number[],
+    mostrarNoCatalogo: boolean,
+    scope: 'base' | 'variante',
+  ) {
+    const { data } = await http.patch(`/produtos/catalogo/visibilidade`, {
+      ids,
+      mostrarNoCatalogo,
+      scope,
+    })
+    return data?.data as { atualizados: number }
+  }
+
   static async update(produto: Partial<ProdutoBase>, id: number) {
     produto.id = id
     const { data } = await http.post(`/produtos`, produto)
