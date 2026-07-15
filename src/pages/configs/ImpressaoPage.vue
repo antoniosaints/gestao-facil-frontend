@@ -141,6 +141,8 @@
       </div>
     </ModalView>
   </Card>
+
+  <EtiquetasModelosPage />
 </template>
 
 <script setup lang="ts">
@@ -163,6 +165,7 @@ import {
 import { ImpressaoRepository } from '@/repositories/impressao-repository'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { getTemplateTesteEscPos } from './partials/templateEscpos'
+import EtiquetasModelosPage from './EtiquetasModelosPage.vue'
 
 const printers = ref<string[]>([])
 const filtered = ref<string[]>([])

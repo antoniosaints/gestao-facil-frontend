@@ -460,6 +460,19 @@ export class ProdutoVarianteRepository {
     downloadBlob(data.data, `etiquetas-produto-${id}-${getTodayFileSuffix()}.pdf`)
   }
 
+  static async gerarFolhaEtiquetas(payload: {
+    modeloId: string
+    posicaoInicial?: number
+    itens: { produtoId: number; quantidade: number }[]
+  }) {
+    const data = await http.post(`/produtos/etiquetas/folha`, payload, {
+      responseType: 'blob',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    downloadBlob(data.data, `etiquetas-${getTodayFileSuffix()}.pdf`)
+  }
+
   static async gerarRelatorio(id: number, orderBy: 'asc' | 'desc') {
     const data = await http.get(`/produtos/relatorio/reposicao/${id}?orderBy=${orderBy}`, {
       responseType: 'blob',
