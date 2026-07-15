@@ -11,12 +11,16 @@ import {
   DollarSign,
   EyeClosed,
   FileDigit,
+  Filter,
   HandCoins,
+  Headset,
   Menu,
   PackageSearch,
   Receipt,
+  RefreshCcw,
   RotateCw,
   ShoppingCart,
+  Store,
   Tags,
   Target,
   TrendingUp,
@@ -28,21 +32,32 @@ import {
 import BarChart from '@/components/graficos/BarChart.vue'
 import LineChart from '@/components/graficos/LineChart.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
+import ModalView from '@/components/formulario/ModalView.vue'
+import AutoGrid from '@/components/layout/AutoGrid.vue'
+import { intervaloDoPreset, PERIODO_PRESETS, type PeriodoPresetKey } from '@/components/layout/periodoPresets'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { optionsChartBar, optionsChartBarDefault, optionsChartLine } from '@/composables/useChartOptions'
+import { isModuleActive, type ModuleKey } from '@/layouts/moduleAccess'
+import { AssinaturaRepository, type AssinaturaDashboardResponse } from '@/repositories/assinatura-repository'
+import { CaixaRepository, type ResumoCaixas } from '@/repositories/caixa-repository'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
+import { LojaRepository, type ResumoLoja } from '@/repositories/loja-repository'
 import { MetasRepository, type MetaResumo } from '@/repositories/metas-repository'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { ProdutoRepository } from '@/repositories/produto-repository'
 import { VendaRepository } from '@/repositories/venda-repository'
+import { WhatsAppRepository, type PainelAtendimento } from '@/repositories/whatsapp-repository'
 import { useDashboardStore } from '@/stores/dashboard/useDashboardStore'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { formatCurrencyBR, formatToCapitalize, formatToNumberValue } from '@/utils/formatters'
+import { formatCurrencyBR, formatDuracaoMs, formatToCapitalize, formatToNumberValue } from '@/utils/formatters'
 
+// Todo bloco da dashboard declara a que módulo pertence, e some junto com ele. Sem isso a
+// dashboard mostrava catálogo, estoque e serviços mesmo para contas com esses menus ocultos.
 type KpiCard = {
+  modulo: ModuleKey
   titulo: string
   valor: string | any
   detalhe: string
@@ -52,6 +67,7 @@ type KpiCard = {
 }
 
 type AlertCard = {
+  modulo: ModuleKey
   titulo: string
   descricao: string
   tone: 'danger' | 'warning' | 'info' | 'success'
@@ -60,6 +76,7 @@ type AlertCard = {
 }
 
 type SummaryBlock = {
+  modulo: ModuleKey
   titulo: string
   descricao: string
   icone: any
@@ -67,12 +84,25 @@ type SummaryBlock = {
   metrics: Array<{ label: string; value: string | Component }>
 }
 
+type ChartCard = {
+  modulo: ModuleKey
+  titulo: string
+  descricao: string
+  icone: any
+  iconClass: string
+  tipo: 'bar' | 'line'
+  data: any
+  options: any
+}
+
 const store = useDashboardStore()
 const uiStore = useUiStore()
 const toast = useToast()
 
 const loading = ref(true)
-const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
+const filtroPeriodo = ref<[Date, Date]>(intervaloDoPreset('month'))
+const presetAtivo = ref<string>('month')
+const openModalFiltros = ref(false)
 
 const dataVendasMensais: any = ref({ labels: [], datasets: [] })
 const dataSaldoMensal: any = ref({ labels: [], datasets: [] })
@@ -86,21 +116,86 @@ const financeiroStatus = ref<any>(null)
 const produtoResumo = ref<any>(null)
 const servicosResumo = ref<any>(null)
 const metasResumo = ref<MetaResumo[]>([])
+const caixasResumo = ref<ResumoCaixas | null>(null)
+const atendimentoResumo = ref<PainelAtendimento | null>(null)
+const assinaturasResumo = ref<AssinaturaDashboardResponse['data'] | null>(null)
+const lojaResumo = ref<ResumoLoja | null>(null)
 
-const periodoDescricao = computed(() => {
-  if (!filtroPeriodo.value) return 'Mês atual'
-  return 'Período selecionado'
+// Combina permissões, apps contratados e a visibilidade configurada na conta. A regra vive em
+// moduleAccess.ts para espelhar o menu lateral: o que não aparece no menu não aparece aqui.
+const modulos = computed(() => {
+  const ctx = {
+    permissoes: uiStore.permissoes,
+    appModules: uiStore.appModules,
+    visibleMenuKeys: uiStore.visibleMenuKeys,
+    hiddenSubmenuKeys: uiStore.hiddenSubmenuKeys,
+  }
+  const chaves: ModuleKey[] = [
+    'vendas', 'caixas', 'comandas', 'financeiro', 'produtos', 'servicos',
+    'clientes', 'metas', 'assinaturas', 'atendimento', 'loja-virtual',
+  ]
+  return Object.fromEntries(chaves.map((k) => [k, isModuleActive(k, ctx)])) as Record<ModuleKey, boolean>
 })
 
-const kpis = computed<KpiCard[]>(() => {
+const periodoDescricao = computed(() => {
+  const preset = PERIODO_PRESETS.find((p) => p.key === presetAtivo.value)
+  if (preset) return preset.label
+  const [inicio, fim] = filtroPeriodo.value ?? []
+  if (!inicio || !fim) return 'Mês atual'
+  return `${inicio.toLocaleDateString('pt-BR')} — ${fim.toLocaleDateString('pt-BR')}`
+})
+
+function applyPreset(preset: PeriodoPresetKey) {
+  presetAtivo.value = preset
+  filtroPeriodo.value = intervaloDoPreset(preset)
+  getDataDashboard()
+}
+
+function aplicarCustom() {
+  presetAtivo.value = 'custom'
+  openModalFiltros.value = false
+  getDataDashboard()
+}
+
+// O subtítulo listava módulos fixos ("vendas, financeiro, catálogo e serviços") mesmo em contas
+// que não os têm. Agora descreve o que a conta realmente vê.
+const NOME_MODULO: Record<ModuleKey, string> = {
+  vendas: 'vendas',
+  caixas: 'caixas',
+  comandas: 'comandas',
+  financeiro: 'financeiro',
+  produtos: 'catálogo',
+  servicos: 'serviços',
+  clientes: 'clientes',
+  metas: 'metas',
+  assinaturas: 'assinaturas',
+  atendimento: 'atendimento',
+  'loja-virtual': 'loja',
+}
+
+const resumoModulosLabel = computed(() => {
+  const ativos = (Object.keys(modulos.value) as ModuleKey[])
+    .filter((k) => modulos.value[k] && k !== 'caixas' && k !== 'metas')
+    .map((k) => NOME_MODULO[k])
+  if (!ativos.length) return 'nenhum módulo ativo para o seu acesso.'
+  if (ativos.length === 1) return `dados de ${ativos[0]}.`
+  return `dados centralizados de ${ativos.slice(0, -1).join(', ')} e ${ativos.at(-1)}.`
+})
+
+const todosKpis = computed<KpiCard[]>(() => {
   const resumo = dashboardResumo.value?.data
   const vendas = vendasResumo.value
   const financeiro = financeiroResumo.value
   const produtos = produtoResumo.value
   const servicos = servicosResumo.value?.data
+  const caixas = caixasResumo.value
+  const atendimento = atendimentoResumo.value
+  const assinaturas = assinaturasResumo.value
+  const loja = lojaResumo.value
 
   return [
     {
+      modulo: 'vendas',
       titulo: 'Faturamento',
       valor: resumo?.vendasCount || 'R$ 0,00',
       detalhe: `${vendas?.totalFaturado || 0} venda(s) faturada(s) no período`,
@@ -109,6 +204,7 @@ const kpis = computed<KpiCard[]>(() => {
       link: '/vendas',
     },
     {
+      modulo: 'vendas',
       titulo: 'Ticket médio',
       valor: uiStore.permissoes.vendas.painel ? formatCurrencyBR(vendas?.ticketMedio || 0) : EyeClosed,
       detalhe: 'Média das vendas faturadas no período',
@@ -117,6 +213,7 @@ const kpis = computed<KpiCard[]>(() => {
       link: '/vendas/dashboard',
     },
     {
+      modulo: 'financeiro',
       titulo: 'Saldo financeiro',
       valor: uiStore.permissoes.financeiro.painel ? (financeiro?.saldo || 'R$ 0,00') : EyeClosed,
       detalhe: uiStore.permissoes.financeiro.painel ? `Receitas ${financeiro?.receitas || 'R$ 0,00'} • Despesas ${financeiro?.despesas || 'R$ 0,00'}` : 'Sem acesso à essa informação.',
@@ -125,6 +222,7 @@ const kpis = computed<KpiCard[]>(() => {
       link: '/financeiro/painel',
     },
     {
+      modulo: 'clientes',
       titulo: 'Clientes',
       valor: `${resumo?.clientes || 0}`,
       detalhe: 'Base total cadastrada no sistema',
@@ -133,6 +231,7 @@ const kpis = computed<KpiCard[]>(() => {
       link: '/clientes',
     },
     {
+      modulo: 'produtos',
       titulo: 'Catálogo',
       valor: `${produtos?.totalProdutosBase || 0} Produto(s)`,
       detalhe: `${produtos?.totalVariantes || 0} variante(s) e ${produtos?.totalCategorias || 0} categoria(s)`,
@@ -141,6 +240,7 @@ const kpis = computed<KpiCard[]>(() => {
       link: '/produtos',
     },
     {
+      modulo: 'produtos',
       titulo: 'Estoque crítico',
       valor: `${produtos?.estoqueBaixo || resumo?.estoquesBaixos?.length || 0}`,
       detalhe: `${produtos?.produtosSemEstoque || 0} sem estoque • ${produtos?.controlaEstoque || 0} com controle ativo`,
@@ -149,6 +249,7 @@ const kpis = computed<KpiCard[]>(() => {
       link: '/produtos/dashboard',
     },
     {
+      modulo: 'servicos',
       titulo: 'Serviços em aberto',
       valor: `${(servicos?.qtdAberta || 0) + (servicos?.qtdAndamento || 0)}`,
       detalhe: `${servicos?.qtdAberta || 0} aberta(s) • ${servicos?.qtdAndamento || 0} em andamento`,
@@ -157,6 +258,7 @@ const kpis = computed<KpiCard[]>(() => {
       link: '/servicos/os',
     },
     {
+      modulo: 'financeiro',
       titulo: 'Pendências financeiras',
       valor: uiStore.permissoes.financeiro.painel ? formatCurrencyBR(financeiroStatus.value?.pendente || 0) : EyeClosed,
       detalhe: uiStore.permissoes.financeiro.painel ? `Pago no histórico: ${formatCurrencyBR(financeiroStatus.value?.pago || 0)}` : 'Sem acesso à essa informação.',
@@ -164,10 +266,56 @@ const kpis = computed<KpiCard[]>(() => {
       colorClass: 'text-rose-600 bg-rose-500/10',
       link: '/financeiro/lancamentos',
     },
+    // Estado agora, não recorte do período: "tem caixa aberto?" é a primeira pergunta do dia,
+    // e caixa esquecido aberto não aparece em nenhum outro lugar do sistema.
+    {
+      modulo: 'caixas',
+      titulo: 'Caixas abertos',
+      valor: `${caixas?.caixasAbertos || 0}`,
+      detalhe: caixas?.caixasAbertos
+        ? `${formatCurrencyBR(caixas.saldoEsperado)} esperado • aberto há ${formatDuracaoMs(caixas.abertoHaMaisTempoMs)}`
+        : 'Nenhum caixa aberto no momento',
+      icone: Wallet,
+      colorClass: 'text-teal-600 bg-teal-500/10',
+      link: '/vendas/caixas',
+    },
+    {
+      modulo: 'atendimento',
+      titulo: 'Fila de atendimento',
+      valor: `${atendimento?.agora.naFila || 0}`,
+      detalhe: atendimento?.agora.naFila
+        ? `Maior espera: ${formatDuracaoMs(atendimento.agora.esperaMaiorMs)} • ${atendimento.agora.emAtendimento} em atendimento`
+        : `${atendimento?.agora.emAtendimento || 0} em atendimento • fila zerada`,
+      icone: Headset,
+      colorClass: 'text-cyan-600 bg-cyan-500/10',
+      link: '/atendimento/painel',
+    },
+    {
+      modulo: 'assinaturas',
+      titulo: 'Assinaturas ativas',
+      valor: `${assinaturas?.kpis.assinaturasAtivas || 0}`,
+      detalhe: uiStore.permissoes.financeiro.painel
+        ? `MRR estimado ${formatCurrencyBR(assinaturas?.kpis.mrrEstimado || 0)}`
+        : 'Sem acesso à essa informação.',
+      icone: RefreshCcw,
+      colorClass: 'text-indigo-600 bg-indigo-500/10',
+      link: '/assinaturas',
+    },
+    {
+      modulo: 'loja-virtual',
+      titulo: 'Pedidos da loja',
+      valor: `${loja?.pedidos || 0}`,
+      detalhe: `${loja?.emAberto || 0} aguardando ação • ${formatCurrencyBR(loja?.faturamento || 0)} no período`,
+      icone: Store,
+      colorClass: 'text-pink-600 bg-pink-500/10',
+      link: '/loja-virtual',
+    },
   ]
 })
 
-const alerts = computed<AlertCard[]>(() => {
+const kpis = computed(() => todosKpis.value.filter((kpi) => modulos.value[kpi.modulo]))
+
+const todosAlerts = computed<AlertCard[]>(() => {
   const produtos = produtoResumo.value
   const resumo = dashboardResumo.value?.data
   const vendas = vendasResumo.value
@@ -178,6 +326,7 @@ const alerts = computed<AlertCard[]>(() => {
 
   if ((produtos?.estoqueBaixo || 0) > 0) {
     list.push({
+      modulo: 'produtos',
       titulo: 'Estoque baixo precisa de revisão',
       descricao: `${produtos.estoqueBaixo} variante(s) estão em nível crítico de estoque.`,
       tone: 'danger',
@@ -188,6 +337,7 @@ const alerts = computed<AlertCard[]>(() => {
 
   if ((produtos?.produtosSemEstoque || 0) > 0) {
     list.push({
+      modulo: 'produtos',
       titulo: 'Há itens sem estoque',
       descricao: `${produtos.produtosSemEstoque} variante(s) já estão zeradas.`,
       tone: 'warning',
@@ -198,6 +348,7 @@ const alerts = computed<AlertCard[]>(() => {
 
   if (financeiroPendencias > 0 && uiStore.permissoes.financeiro.painel) {
     list.push({
+      modulo: 'financeiro',
       titulo: 'Existem pendências financeiras',
       descricao: `Total pendente acumulado em ${formatCurrencyBR(financeiroPendencias)}.`,
       tone: 'warning',
@@ -208,6 +359,7 @@ const alerts = computed<AlertCard[]>(() => {
 
   if ((vendas?.totalAberto || 0) > 0) {
     list.push({
+      modulo: 'vendas',
       titulo: 'Vendas em aberto exigem acompanhamento',
       descricao: `${vendas.totalAberto} venda(s) ainda não faturadas/concluídas.`,
       tone: 'info',
@@ -218,6 +370,7 @@ const alerts = computed<AlertCard[]>(() => {
 
   if (((servicos?.qtdAberta || 0) + (servicos?.qtdAndamento || 0)) > 0) {
     list.push({
+      modulo: 'servicos',
       titulo: 'Ordens de serviço em execução',
       descricao: `${servicos?.qtdAberta || 0} aberta(s) e ${servicos?.qtdAndamento || 0} em andamento.`,
       tone: 'info',
@@ -226,20 +379,27 @@ const alerts = computed<AlertCard[]>(() => {
     })
   }
 
-  if (!list.length) {
-    list.push({
+  return list
+})
+
+// Alertas de módulo inativo não fazem sentido: a conta não pode agir sobre eles. O "tudo sob
+// controle" entra só depois do filtro, senão apareceria junto de alertas que foram removidos.
+const alerts = computed<AlertCard[]>(() => {
+  const list = todosAlerts.value.filter((alert) => modulos.value[alert.modulo]).slice(0, 4)
+  if (list.length) return list
+  return [
+    {
+      modulo: 'vendas',
       titulo: 'Tudo sob controle',
       descricao: 'Nenhum alerta crítico foi identificado com os dados carregados agora.',
       tone: 'success',
       link: '/',
       cta: 'Atualizar painel',
-    })
-  }
-
-  return list.slice(0, 4)
+    },
+  ]
 })
 
-const summaryBlocks = computed<SummaryBlock[]>(() => {
+const todosSummaryBlocks = computed<SummaryBlock[]>(() => {
   const resumo = dashboardResumo.value?.data
   const vendas = vendasResumo.value
   const financeiro = financeiroResumo.value
@@ -248,6 +408,7 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
 
   return [
     {
+      modulo: 'vendas',
       titulo: 'Vendas',
       descricao: 'Visão rápida do comercial.',
       icone: ShoppingCart,
@@ -259,6 +420,7 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
       ],
     },
     {
+      modulo: 'financeiro',
       titulo: 'Financeiro',
       descricao: 'Receitas, despesas e saldo consolidado.',
       icone: Wallet,
@@ -270,6 +432,7 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
       ],
     },
     {
+      modulo: 'produtos',
       titulo: 'Produtos',
       descricao: 'Catálogo operacional do estoque.',
       icone: Boxes,
@@ -281,6 +444,7 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
       ],
     },
     {
+      modulo: 'servicos',
       titulo: 'Serviços',
       descricao: 'Carteira atual de ordens e faturamento.',
       icone: FileDigit,
@@ -294,28 +458,77 @@ const summaryBlocks = computed<SummaryBlock[]>(() => {
   ]
 })
 
-const quickActions = [
-  { titulo: 'Nova venda', link: '/vendas', icon: ShoppingCart, menuKey: 'vendas' },
-  { titulo: 'Novo lançamento', link: '/financeiro/lancamentos', icon: Wallet, menuKey: 'financeiro' },
-  { titulo: 'Novo produto', link: '/produtos', icon: Boxes, menuKey: 'produtos' },
-  { titulo: 'Nova OS', link: '/servicos/os', icon: Wrench, menuKey: 'servicos' },
-]
-
-// Respeita a ocultação de menus configurada na conta: se o menu correspondente
-// estiver oculto, o atalho rápido correspondente também some (ex.: menu de ordens
-// de serviço oculto => botão "Nova OS" desaparece). visibleMenuKeys nulo = tudo visível.
-function isMenuKeyVisible(key: string) {
-  const keys = uiStore.visibleMenuKeys
-  if (!Array.isArray(keys)) return true
-  return keys.includes(key)
-}
-
-const visibleQuickActions = computed(() =>
-  quickActions.filter((action) => isMenuKeyVisible(action.menuKey)),
+const summaryBlocks = computed(() =>
+  todosSummaryBlocks.value.filter((block) => modulos.value[block.modulo]),
 )
 
-// Metas só aparecem para administradores — vendedores não devem visualizá-las.
-const podeVerMetas = computed(() => uiStore.permissoes.admin && isMenuKeyVisible('metas'))
+// Gráficos também seguem o módulo: um gráfico de estoque numa conta sem Produtos é ruído.
+const charts = computed<ChartCard[]>(() =>
+  [
+    {
+      modulo: 'vendas' as const,
+      titulo: 'Vendas mensais',
+      descricao: 'Receita e volume vendidos ao longo dos meses.',
+      icone: Tags,
+      iconClass: 'text-green-600',
+      tipo: 'bar' as const,
+      data: dataVendasMensais.value,
+      options: optionsChartBar,
+    },
+    {
+      modulo: 'financeiro' as const,
+      titulo: 'Saldo mensal',
+      descricao: 'Evolução consolidada do financeiro.',
+      icone: HandCoins,
+      iconClass: 'text-emerald-600',
+      tipo: 'line' as const,
+      data: dataSaldoMensal.value,
+      options: optionsChartLine,
+    },
+    {
+      modulo: 'vendas' as const,
+      titulo: 'Ticket médio mensal',
+      descricao: 'Média de faturamento por venda faturada.',
+      icone: Receipt,
+      iconClass: 'text-blue-600',
+      tipo: 'bar' as const,
+      data: dataTicketMedio.value,
+      options: optionsChartBarDefault,
+    },
+    {
+      modulo: 'produtos' as const,
+      titulo: 'Top produtos',
+      descricao: 'Itens com melhor saída no período filtrado.',
+      icone: Boxes,
+      iconClass: 'text-violet-600',
+      tipo: 'bar' as const,
+      data: dataTopProdutos.value,
+      options: optionsChartBarDefault,
+    },
+  ].filter((chart) => modulos.value[chart.modulo]),
+)
+
+const quickActions = [
+  { titulo: 'Nova venda', link: '/vendas', icon: ShoppingCart, modulo: 'vendas' as const },
+  { titulo: 'Novo lançamento', link: '/financeiro/lancamentos', icon: Wallet, modulo: 'financeiro' as const },
+  { titulo: 'Novo produto', link: '/produtos', icon: Boxes, modulo: 'produtos' as const },
+  { titulo: 'Nova OS', link: '/servicos/os', icon: Wrench, modulo: 'servicos' as const },
+]
+
+const visibleQuickActions = computed(() =>
+  quickActions.filter((action) => modulos.value[action.modulo]),
+)
+
+// Atalhos da barra inferior no mobile: mesma regra dos demais blocos.
+const mobileLinks = computed(() =>
+  [
+    { titulo: 'Vendas', link: '/vendas', icon: Tags, modulo: 'vendas' as const },
+    { titulo: 'Serviços', link: '/servicos/os', icon: FileDigit, modulo: 'servicos' as const },
+    { titulo: 'Produtos', link: '/produtos', icon: Boxes, modulo: 'produtos' as const },
+  ].filter((item) => modulos.value[item.modulo]),
+)
+
+const podeVerMetas = computed(() => modulos.value.metas)
 
 const metasSlider = computed(() => (podeVerMetas.value ? metasResumo.value.slice(0, 8) : []))
 
@@ -348,7 +561,7 @@ function formatMetaValue(meta: Pick<MetaResumo, 'metrica'>, value: number) {
 }
 
 function getMetaTipoLabel(meta: MetaResumo) {
-  if (meta.tipo === 'SERVICOS') return 'ServiÃ§os'
+  if (meta.tipo === 'SERVICOS') return 'Serviços'
   if (meta.tipo === 'FINANCEIRO') return meta.financeiroTipo === 'DESPESA' ? 'Despesas' : 'Receitas'
   return 'Vendas'
 }
@@ -357,6 +570,12 @@ async function getDataDashboard(showFeedback = false) {
   try {
     loading.value = true
     const { inicio, fim } = getPeriodoSelecionado()
+
+    // Só busca o que a conta enxerga: antes eram 11 requisições fixas, inclusive de módulos
+    // ocultos, cujo resultado era descartado (ou pior, exibido).
+    const m = modulos.value
+    const quando = <T,>(ativo: boolean, promessa: () => Promise<T>) =>
+      ativo ? promessa() : Promise.resolve(null)
 
     const [
       resumoDashboard,
@@ -370,32 +589,47 @@ async function getDataDashboard(showFeedback = false) {
       resumoProdutos,
       resumoServicos,
       resumoMetas,
+      resumoCaixas,
+      resumoAtendimento,
+      resumoAssinaturas,
+      resumoLoja,
     ] = await Promise.all([
       store.getResumo(inicio, fim),
-      VendaRepository.resumo(inicio, fim),
-      VendaRepository.getResumoMensal(inicio, fim),
-      LancamentosRepository.getSaldoMensal(inicio, fim),
-      ProdutoRepository.getTicketMedioMensal(inicio, fim),
-      VendaRepository.getTopProdutos(inicio, fim),
-      LancamentosRepository.resumoTotal(),
-      LancamentosRepository.resumoStatusTotal(),
-      ProdutoRepository.getResumoGeral(inicio, fim),
-      OrdensServicoRepository.getResumo(),
-      podeVerMetas.value ? MetasRepository.resumo() : Promise.resolve({ data: [] as MetaResumo[] }),
+      quando(m.vendas, () => VendaRepository.resumo(inicio, fim)),
+      quando(m.vendas, () => VendaRepository.getResumoMensal(inicio, fim)),
+      quando(m.financeiro, () => LancamentosRepository.getSaldoMensal(inicio, fim)),
+      quando(m.vendas, () => ProdutoRepository.getTicketMedioMensal(inicio, fim)),
+      quando(m.produtos, () => VendaRepository.getTopProdutos(inicio, fim)),
+      quando(m.financeiro, () => LancamentosRepository.resumoTotal()),
+      quando(m.financeiro, () => LancamentosRepository.resumoStatusTotal()),
+      quando(m.produtos, () => ProdutoRepository.getResumoGeral(inicio, fim)),
+      quando(m.servicos, () => OrdensServicoRepository.getResumo()),
+      quando(m.metas, () => MetasRepository.resumo()),
+      quando(m.caixas, () => CaixaRepository.getResumo()),
+      quando(m.atendimento, () => WhatsAppRepository.getPainel(inicio, fim)),
+      quando(m.assinaturas, () => AssinaturaRepository.dashboard()),
+      quando(m['loja-virtual'], () => LojaRepository.getResumo(inicio, fim)),
     ])
 
     dashboardResumo.value = resumoDashboard
-    vendasResumo.value = resumoVendas.data
+    vendasResumo.value = resumoVendas?.data ?? null
     financeiroResumo.value = resumoFinanceiro
     financeiroStatus.value = resumoFinanceiroStatus
     produtoResumo.value = resumoProdutos
     servicosResumo.value = resumoServicos
-    metasResumo.value = resumoMetas.data || []
+    metasResumo.value = resumoMetas?.data ?? []
+    caixasResumo.value = resumoCaixas
+    atendimentoResumo.value = resumoAtendimento
+    assinaturasResumo.value = resumoAssinaturas?.data ?? null
+    lojaResumo.value = resumoLoja
 
-    dataVendasMensais.value = { labels: [...vendasMensais.data.labels], datasets: [...vendasMensais.data.datasets] }
-    dataSaldoMensal.value = { labels: [...saldoMensal.labels], datasets: [...saldoMensal.datasets] }
-    dataTicketMedio.value = { labels: [...ticketMedio.labels], datasets: [...ticketMedio.datasets] }
-    dataTopProdutos.value = { labels: [...topProdutos.labels], datasets: [...topProdutos.datasets] }
+    const serie = (fonte: any) =>
+      fonte ? { labels: [...fonte.labels], datasets: [...fonte.datasets] } : { labels: [], datasets: [] }
+
+    dataVendasMensais.value = serie(vendasMensais?.data)
+    dataSaldoMensal.value = serie(saldoMensal)
+    dataTicketMedio.value = serie(ticketMedio)
+    dataTopProdutos.value = serie(topProdutos)
 
     if (showFeedback) {
       toast.info('Dashboard atualizada!')
@@ -408,7 +642,11 @@ async function getDataDashboard(showFeedback = false) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // O guard de rota já carrega os apps antes de liberar rotas privadas, mas a dashboard depende
+  // deles para decidir o que buscar. A chamada é cacheada; sem ela, uma mudança no guard faria
+  // os KPIs de apps (atendimento, assinaturas, loja) sumirem silenciosamente.
+  await uiStore.loadAppModules().catch(() => undefined)
   getDataDashboard()
 })
 </script>
@@ -423,10 +661,19 @@ onMounted(() => {
         </h2>
         <p class="text-sm text-muted-foreground">Resumo geral com indicadores centralizados do sistema.</p>
       </div>
-      <div class="flex items-center gap-2 w-content">
-        <Calendarpicker :range="true" v-model="filtroPeriodo" @update:model-value="getDataDashboard(true)" />
-        <Button variant="outline" size="icon" @click="getDataDashboard(true)">
-          <RotateCw class="h-4 w-4" />
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center rounded-lg border border-border bg-card p-1">
+          <button v-for="p in PERIODO_PRESETS" :key="p.key" type="button" @click="applyPreset(p.key)"
+            class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+            :class="presetAtivo === p.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'">
+            {{ p.label }}
+          </button>
+        </div>
+        <Button variant="outline" size="sm" @click="openModalFiltros = true">
+          <Filter class="h-4 w-4" /> Período
+        </Button>
+        <Button variant="outline" size="icon" class="h-9 w-9" :disabled="loading" @click="getDataDashboard(true)">
+          <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
         </Button>
       </div>
     </div>
@@ -436,7 +683,7 @@ onMounted(() => {
         <div>
           <p class="text-sm font-medium text-foreground">Visão executiva do negócio</p>
           <p class="text-xs text-muted-foreground">
-            {{ periodoDescricao }} • dados centralizados de vendas, financeiro, catálogo e serviços.
+            {{ periodoDescricao }} • {{ resumoModulosLabel }}
           </p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -490,12 +737,12 @@ onMounted(() => {
       </div>
     </section>
 
-    <section v-if="loading" class="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-4">
-      <Skeleton v-for="item in 8" :key="item" class="h-[152px] rounded-2xl" />
-    </section>
+    <AutoGrid v-if="loading" :items="kpis" :min="200">
+      <Skeleton class="h-[152px] w-full rounded-2xl" />
+    </AutoGrid>
 
-    <section v-else class="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-4">
-      <RouterLink v-for="item in kpis" :key="item.titulo" :to="item.link || '/'">
+    <AutoGrid v-else :items="kpis" :min="200" v-slot="{ item }">
+      <RouterLink :to="item.link || '/'" class="block h-full">
         <Card
           class="h-full rounded-2xl border-border/70 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
           <CardHeader class="py-3">
@@ -515,7 +762,7 @@ onMounted(() => {
           </CardContent>
         </Card>
       </RouterLink>
-    </section>
+    </AutoGrid>
 
     <div v-if="loading" class="grid grid-cols-1 gap-4 lg:grid-cols-6">
       <div class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm lg:col-span-4">
@@ -533,7 +780,9 @@ onMounted(() => {
     </div>
 
     <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-6">
-      <Card class="border-border/70 bg-card shadow-sm lg:col-span-4">
+      <!-- Sem "Tendência comercial" ao lado (conta sem vendas), os alertas ocupam a linha
+           inteira em vez de deixar 2 colunas vazias. -->
+      <Card class="border-border/70 bg-card shadow-sm" :class="modulos.vendas ? 'lg:col-span-4' : 'lg:col-span-6'">
         <CardHeader>
           <CardTitle class="flex items-center gap-2 text-lg">
             <AlertTriangle class="h-5 w-5 text-amber-600" />
@@ -541,26 +790,27 @@ onMounted(() => {
           </CardTitle>
           <CardDescription>Prioridades operacionais para revisão rápida.</CardDescription>
         </CardHeader>
-        <CardContent class="grid gap-3 md:grid-cols-2">
-          <div v-for="alert in alerts" :key="alert.titulo" class="rounded-xl border px-4 py-2"
-            :class="getAlertClasses(alert.tone)">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <p class="font-medium text-foreground">{{ alert.titulo }}</p>
-                <p class="mt-1 text-sm text-muted-foreground">{{ alert.descricao }}</p>
+        <CardContent>
+          <AutoGrid :items="alerts" :max="2" :min="260" :gap="12" v-slot="{ item: alert }">
+            <div class="h-full rounded-xl border px-4 py-2" :class="getAlertClasses(alert.tone)">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-medium text-foreground">{{ alert.titulo }}</p>
+                  <p class="mt-1 text-sm text-muted-foreground">{{ alert.descricao }}</p>
+                </div>
+                <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               </div>
-              <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <RouterLink v-if="alert.link" :to="alert.link"
+                class="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary dark:text-blue-500">
+                {{ alert.cta || 'Abrir' }}
+                <ChevronRight class="h-4 w-4" />
+              </RouterLink>
             </div>
-            <RouterLink v-if="alert.link" :to="alert.link"
-              class="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary dark:text-blue-500">
-              {{ alert.cta || 'Abrir' }}
-              <ChevronRight class="h-4 w-4" />
-            </RouterLink>
-          </div>
+          </AutoGrid>
         </CardContent>
       </Card>
 
-      <Card class="border-border/70 bg-card shadow-sm lg:col-span-2">
+      <Card v-if="modulos.vendas" class="border-border/70 bg-card shadow-sm lg:col-span-2">
         <CardHeader>
           <CardTitle class="flex items-center gap-2 text-lg">
             <TrendingUp class="h-5 w-5 text-green-600" />
@@ -598,17 +848,17 @@ onMounted(() => {
       </Card>
     </div>
 
-    <section v-if="loading" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <div v-for="i in 4" :key="i" class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
+    <AutoGrid v-if="loading" :items="summaryBlocks" :min="260">
+      <div class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
         <Skeleton class="h-6 w-32 rounded-lg" />
         <Skeleton class="h-4 w-40 rounded" />
         <Skeleton v-for="j in 3" :key="j" class="h-10 w-full rounded-lg" />
         <Skeleton class="h-9 w-full rounded-lg" />
       </div>
-    </section>
+    </AutoGrid>
 
-    <section v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <Card v-for="block in summaryBlocks" :key="block.titulo" class="border-border/70 bg-card shadow-sm">
+    <AutoGrid v-else :items="summaryBlocks" :min="260" v-slot="{ item: block }">
+      <Card class="h-full border-border/70 bg-card shadow-sm">
         <CardHeader>
           <CardTitle class="flex items-center gap-2 text-base">
             <component :is="block.icone" class="h-5 w-5 text-primary" />
@@ -628,90 +878,38 @@ onMounted(() => {
           </RouterLink>
         </CardContent>
       </Card>
-    </section>
+    </AutoGrid>
 
-    <div v-if="loading" class="grid grid-cols-1 gap-4 lg:grid-cols-4">
-      <div v-for="i in 4" :key="i" class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm lg:col-span-2">
+    <AutoGrid v-if="loading" :items="charts" :max="2" :min="380">
+      <div class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
         <Skeleton class="h-6 w-44 rounded-lg" />
         <Skeleton class="h-4 w-56 rounded" />
         <Skeleton class="h-64 w-full rounded-xl" />
       </div>
-    </div>
+    </AutoGrid>
 
-    <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-4">
-      <Card class="border-border/70 bg-card shadow-sm lg:col-span-2">
+    <AutoGrid v-else :items="charts" :max="2" :min="380" v-slot="{ item: chart }">
+      <Card class="h-full border-border/70 bg-card shadow-sm">
         <CardHeader>
           <CardTitle class="flex items-center gap-2 text-lg">
-            <Tags class="h-5 w-5 text-green-600" />
-            Vendas mensais
+            <component :is="chart.icone" class="h-5 w-5" :class="chart.iconClass" />
+            {{ chart.titulo }}
           </CardTitle>
-          <CardDescription>Receita e volume vendidos ao longo dos meses.</CardDescription>
+          <CardDescription>{{ chart.descricao }}</CardDescription>
         </CardHeader>
         <CardContent>
-          <BarChart class="max-h-72" :data="dataVendasMensais" :options="optionsChartBar" />
+          <BarChart v-if="chart.tipo === 'bar'" class="max-h-72" :data="chart.data" :options="chart.options" />
+          <LineChart v-else class="max-h-72" :data="chart.data" :options="chart.options" />
         </CardContent>
       </Card>
-
-      <Card class="border-border/70 bg-card shadow-sm lg:col-span-2">
-        <CardHeader>
-          <CardTitle class="flex items-center gap-2 text-lg">
-            <HandCoins class="h-5 w-5 text-emerald-600" />
-            Saldo mensal
-          </CardTitle>
-          <CardDescription>Evolução consolidada do financeiro.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <LineChart class="max-h-72" :data="dataSaldoMensal" :options="optionsChartLine" />
-        </CardContent>
-      </Card>
-
-      <Card class="border-border/70 bg-card shadow-sm lg:col-span-2">
-        <CardHeader>
-          <CardTitle class="flex items-center gap-2 text-lg">
-            <Receipt class="h-5 w-5 text-blue-600" />
-            Ticket médio mensal
-          </CardTitle>
-          <CardDescription>Média de faturamento por venda faturada.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BarChart class="max-h-72" :data="dataTicketMedio" :options="optionsChartBarDefault" />
-        </CardContent>
-      </Card>
-
-      <Card class="border-border/70 bg-card shadow-sm lg:col-span-2">
-        <CardHeader>
-          <CardTitle class="flex items-center gap-2 text-lg">
-            <Boxes class="h-5 w-5 text-violet-600" />
-            Top produtos
-          </CardTitle>
-          <CardDescription>Itens com melhor saída no período filtrado.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BarChart class="max-h-72" :data="dataTopProdutos" :options="optionsChartBarDefault" />
-        </CardContent>
-      </Card>
-    </div>
+    </AutoGrid>
 
     <MobileBottomBar v-if="uiStore.isMobile">
-      <RouterLink to="/vendas">
+      <RouterLink v-for="item in mobileLinks" :key="item.titulo" :to="item.link">
         <button type="button"
           class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
-          <Tags class="h-5 w-5" />
-          <span class="text-xs">Vendas</span>
-        </button>
-      </RouterLink>
-      <RouterLink to="/servicos/os">
-        <button type="button"
-          class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
-          <FileDigit class="h-5 w-5" />
-          <span class="text-xs">Serviços</span>
-        </button>
-      </RouterLink>
-      <RouterLink to="/produtos">
-        <button type="button"
-          class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
-          <Boxes class="h-5 w-5" />
-          <span class="text-xs">Produtos</span>
+          <component :is="item.icon" class="h-5 w-5" />
+          <span class="text-xs">{{ item.titulo }}</span>
         </button>
       </RouterLink>
       <button type="button" @click="uiStore.openSidebar = true"
@@ -720,5 +918,15 @@ onMounted(() => {
         <span class="text-xs">Menu</span>
       </button>
     </MobileBottomBar>
+
+    <ModalView v-model:open="openModalFiltros" title="Período personalizado" size="lg">
+      <div class="space-y-4">
+        <Calendarpicker class="w-full" :range="true" v-model="filtroPeriodo" />
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" size="sm" @click="openModalFiltros = false">Cancelar</Button>
+          <Button size="sm" @click="aplicarCustom">Aplicar</Button>
+        </div>
+      </div>
+    </ModalView>
   </div>
 </template>

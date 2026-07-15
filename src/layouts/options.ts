@@ -50,6 +50,7 @@ export const MAIN_MENU_VISIBILITY_OPTIONS = [
   { key: 'servicos', nome: 'Serviços', descricao: 'Ordens de serviço e cadastro de serviços.' },
   { key: 'clientes', nome: 'Clientes', descricao: 'Clientes e fornecedores.' },
   { key: 'assinaturas', nome: 'Assinaturas', descricao: 'Módulo adicional de assinaturas.' },
+  { key: 'loja-virtual', nome: 'Loja Virtual', descricao: 'Módulo adicional de vitrine e pedidos online.' },
   { key: 'core-ia', nome: 'Core IA', descricao: 'Módulo adicional de inteligência artificial.' },
   { key: 'whatsapp', nome: 'WhatsApp', descricao: 'Módulo adicional de instâncias e conexão.' },
   { key: 'usuarios', nome: 'Usuários', descricao: 'Administração de usuários.' },
@@ -497,7 +498,7 @@ export const sidebarMenuOptions = (
       link: '/whatsapp',
     },
     {
-      // Sem `key`: contorna a whitelist de menusVisiveis para aparecer assim que o app é ativado.
+      key: 'loja-virtual',
       nome: 'Loja Virtual',
       icone: Store,
       show: permissions.produtos.visualizar && hasLojaApp,

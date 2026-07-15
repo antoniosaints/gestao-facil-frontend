@@ -52,6 +52,23 @@ function getFilenameFromDisposition(disposition?: string) {
   return filename || null
 }
 
+export interface ResumoCaixas {
+  caixasAbertos: number
+  saldoEsperado: number
+  vendasNoTurno: number
+  totalVendasNoTurno: number
+  // Há quanto tempo o caixa mais antigo está aberto; `null` quando não há caixa aberto.
+  abertoHaMaisTempoMs: number | null
+  caixas: {
+    id: number
+    codigo: string
+    pdv: string | null
+    abertoPor: string | null
+    abertoEm: string
+    saldoEsperado: number
+  }[]
+}
+
 export class CaixaRepository {
   static async contexto() {
     const { data } = await http.get('/vendas/pdv/contexto')
@@ -107,6 +124,13 @@ export class CaixaRepository {
       params: { id },
     })
     return data.data
+  }
+
+  // Estado atual dos caixas (sem recorte de período), para a dashboard. Devolve o payload cru,
+  // sem envelope `data`, como os demais resumos de painel.
+  static async getResumo() {
+    const { data } = await http.get('/vendas/pdv/resumo')
+    return data as ResumoCaixas
   }
 
   static async relatorio(params: CaixaRelatorioParams = {}) {

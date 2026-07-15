@@ -1,7 +1,23 @@
 import { describe, expect, it } from 'vitest'
 
-import { filterSidebarMenuByVisibility } from './options'
+import { filterSidebarMenuByVisibility, MAIN_MENU_VISIBILITY_OPTIONS } from './options'
 import type { SidebarMenuType } from '@/types/sidebar'
+
+describe('MAIN_MENU_VISIBILITY_OPTIONS', () => {
+  // A tela de configurações renderiza esta lista: estar aqui é o que permite ocultar/mostrar
+  // o menu. A Loja Virtual ficava de fora e por isso não aparecia lá.
+  it('permite configurar a visibilidade da Loja Virtual', () => {
+    expect(MAIN_MENU_VISIBILITY_OPTIONS.map((m) => m.key)).toContain('loja-virtual')
+  })
+
+  // 'loja' é a App Store (complementos) e 'loja-virtual' é a vitrine: menus diferentes, que
+  // não podem colidir nem ser confundidos.
+  it('mantém App Store e Loja Virtual como entradas distintas', () => {
+    const keys = MAIN_MENU_VISIBILITY_OPTIONS.map((m) => m.key)
+    expect(keys).toContain('loja')
+    expect(new Set(keys).size).toBe(keys.length)
+  })
+})
 
 describe('filterSidebarMenuByVisibility', () => {
   const menu: SidebarMenuType[] = [

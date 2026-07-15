@@ -156,7 +156,26 @@ export type CheckoutPayload = {
 
 const publicHttp = axios.create({ baseURL: import.meta.env.VITE_API_URL, withCredentials: true })
 
+export interface ResumoLoja {
+  periodo: { inicio: string; fim: string }
+  pedidos: number
+  pedidosFaturados: number
+  faturamento: number
+  ticketMedio: number
+  // Pedidos aguardando ação da operação — estado atual, não recorte do período.
+  emAberto: number
+  cancelados: number
+}
+
 export class LojaRepository {
+  // Resumo da loja para a dashboard. Payload cru, sem envelope `data`.
+  static async getResumo(inicio?: string, fim?: string) {
+    const { data } = await http.get('/loja/resumo', {
+      params: { ...(inicio ? { inicio } : {}), ...(fim ? { fim } : {}) },
+    })
+    return data as ResumoLoja
+  }
+
   static async getConfig() { const { data } = await http.get('/loja/config'); return data.data as LojaConfig }
   static async saveConfig(payload: LojaConfigPayload) { const { data } = await http.put('/loja/config', payload); return data.data as LojaConfig }
   static async uploadBanner(file: File, type: 'desktop' | 'mobile' = 'desktop') {
