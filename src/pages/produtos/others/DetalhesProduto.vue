@@ -610,7 +610,7 @@ onMounted(async () => {
 
                 <div>
                   <div class="text-xs uppercase tracking-wide text-muted-foreground">Descrição da variante</div>
-                  <div class="mt-1 text-sm whitespace-pre-wrap text-foreground">
+                  <div class="mt-1 text-sm whitespace-pre-wrap text-foreground truncate max-w-[500px]">
                     {{ selectedVariant.descricao || 'Sem descrição adicional para esta variante.' }}
                   </div>
                 </div>
@@ -899,9 +899,9 @@ onMounted(async () => {
                 </CardDescription>
               </CardHeader>
               <CardContent class="space-y-4">
-                <div>
+                <div class="max-w-max">
                   <div class="text-xs uppercase tracking-wide text-muted-foreground">Descrição</div>
-                  <div class="mt-1 text-sm whitespace-pre-wrap text-foreground">
+                  <div class="mt-1 text-sm whitespace-pre-wrap text-foreground truncate max-w-[500px]">
                     {{ produto?.descricao || 'Sem descrição cadastrada.' }}
                   </div>
                 </div>

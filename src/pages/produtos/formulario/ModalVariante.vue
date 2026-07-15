@@ -7,6 +7,7 @@ import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import VarianteImagemField from '@/pages/produtos/formulario/VarianteImagemField.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
@@ -224,6 +225,13 @@ async function submit() {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-sm font-medium text-foreground">Descrição</label>
+        <Textarea v-model="store.varianteForm.descricao" rows="4"
+          placeholder="Descreva esta variante: detalhes, medidas, composição, diferenciais"
+          class="bg-background dark:bg-background/60" />
       </div>
 
       <div>
