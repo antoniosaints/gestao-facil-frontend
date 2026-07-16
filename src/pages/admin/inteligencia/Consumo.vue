@@ -3,9 +3,13 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Activity,
   Bot,
+  Calculator,
   Coins,
   Cpu,
   FilterX,
@@ -23,10 +27,18 @@ import { IaAdminRepository, type IaUsoResumo } from '@/repositories/ia-admin-rep
 const toast = useToast()
 const loading = ref(false)
 const uso = ref<IaUsoResumo | null>(null)
+const calculadoraOpen = ref(false)
 
 // Filtros do painel.
 const filtroPeriodo = ref<[Date, Date] | []>([])
 const filtroContaId = ref<number | null>(null)
+
+const MOEDA_TOKENS = 'USD'
+const moedaComparacao = ref('BRL')
+const valorBaseMoedaTokens = ref(1)
+const valorMoedaComparacao = ref(1)
+const tokensCalculadora = ref(1000000)
+const custoMilhaoCalculadora = ref(0)
 
 // Rótulos amigáveis para as features (o "local de uso" da IA).
 const FEATURE_LABELS: Record<string, string> = {
@@ -74,13 +86,28 @@ const pieOptions = {
 }
 
 const nf = (v: number) => (v ?? 0).toLocaleString('pt-BR')
-const fmtCusto = (v: number) =>
-  (v ?? 0).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
+const nfDecimal = (v: number, max = 6) =>
+  (Number.isFinite(Number(v)) ? Number(v) : 0).toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
+    maximumFractionDigits: max,
   })
+const fmtCustoMoeda = (v: number, moeda = MOEDA_TOKENS) => {
+  const valor = Number.isFinite(Number(v)) ? Number(v) : 0
+  const currency = moeda.trim().toUpperCase()
+  if (!currency) return nfDecimal(valor, 4)
+
+  try {
+    return valor.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4,
+    })
+  } catch {
+    return `${currency} ${nfDecimal(valor, 4)}`
+  }
+}
+const fmtCusto = (v: number) => fmtCustoMoeda(v, MOEDA_TOKENS)
 
 const mesLabel = computed(() => {
   const i = uso.value?.mesInicio ? new Date(uso.value.mesInicio) : null
@@ -109,10 +136,34 @@ const custoPorAssinante = computed(() => {
   if (!n) return 0
   return (uso.value?.custoEstimado || 0) / n
 })
+const moedaComparacaoNormalizada = computed(() => moedaComparacao.value.trim().toUpperCase() || 'BRL')
+const taxaComparacao = computed(() => {
+  const base = Number(valorBaseMoedaTokens.value) || 0
+  const comparacao = Number(valorMoedaComparacao.value) || 0
+  if (base <= 0 || comparacao < 0) return 0
+  return comparacao / base
+})
+const custoMedioMilhaoPeriodo = computed(() => {
+  const tokens = uso.value?.totalTokens || 0
+  if (!tokens) return 0
+  return ((uso.value?.custoEstimado || 0) / tokens) * 1_000_000
+})
+const custoTokensCalculado = computed(() => {
+  const tokens = Math.max(0, Number(tokensCalculadora.value) || 0)
+  const custoMilhao = Math.max(0, Number(custoMilhaoCalculadora.value) || 0)
+  return (tokens / 1_000_000) * custoMilhao
+})
+const custoTokensComparacao = computed(() => custoTokensCalculado.value * taxaComparacao.value)
+const custoPeriodoComparacao = computed(() => (uso.value?.custoEstimado || 0) * taxaComparacao.value)
 
 const maxTokensConta = computed(() =>
   Math.max(1, ...(uso.value?.porConta || []).map((c) => c.tokens)),
 )
+
+function usarCustoMedioPeriodo() {
+  if (!custoMedioMilhaoPeriodo.value) return
+  custoMilhaoCalculadora.value = Number(custoMedioMilhaoPeriodo.value.toFixed(6))
+}
 
 // Dados dos gráficos de pizza (participação de tokens).
 const modeloPieData = computed(() => {
@@ -161,6 +212,9 @@ async function load() {
 // Recarrega automaticamente ao mudar o assinante ou o período (um único disparo mesmo quando
 // os dois mudam juntos, ex.: ao limpar os filtros).
 watch([filtroContaId, filtroPeriodo], load, { deep: true })
+watch(custoMedioMilhaoPeriodo, (value) => {
+  if (value > 0 && custoMilhaoCalculadora.value === 0) usarCustoMedioPeriodo()
+})
 
 onMounted(load)
 </script>
@@ -389,5 +443,129 @@ onMounted(load)
         </CardContent>
       </Card>
     </template>
+
+    <Button
+      class="fixed bottom-5 right-5 z-40 h-12 rounded-full px-4 text-white shadow-lg shadow-primary/25"
+      @click="calculadoraOpen = true"
+    >
+      <Calculator class="mr-2 h-4 w-4" />
+      Calculadora de tokens
+    </Button>
+
+    <Dialog v-model:open="calculadoraOpen">
+      <DialogContent class="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle class="flex items-center gap-2">
+            <Calculator class="h-5 w-5 text-primary" />
+            Calculadora de tokens
+          </DialogTitle>
+          <DialogDescription>
+            Converta o custo configurado em {{ MOEDA_TOKENS }} para outra moeda e estime o valor de uma quantidade de tokens.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="grid gap-4">
+          <section class="rounded-lg border border-border/70 bg-muted/20 p-4">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 class="text-sm font-semibold text-foreground">Conversão de moeda</h2>
+                <p class="text-xs text-muted-foreground">Informe quanto a moeda de comparação vale em relação à moeda dos tokens.</p>
+              </div>
+              <div class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                Moeda dos tokens: {{ MOEDA_TOKENS }}
+              </div>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="space-y-1">
+                <Label>Valor base em {{ MOEDA_TOKENS }}</Label>
+                <Input v-model.number="valorBaseMoedaTokens" type="number" min="0.000001" step="0.000001" />
+              </div>
+              <div class="space-y-1">
+                <Label>Moeda de comparação</Label>
+                <Input v-model="moedaComparacao" maxlength="8" placeholder="BRL" />
+              </div>
+              <div class="space-y-1 sm:col-span-2">
+                <Label>Valor na moeda de comparação</Label>
+                <Input v-model.number="valorMoedaComparacao" type="number" min="0" step="0.000001" placeholder="Ex.: 5.50" />
+              </div>
+            </div>
+
+            <div class="mt-3 rounded-md border border-dashed bg-background p-3 text-sm">
+              <template v-if="taxaComparacao > 0">
+                {{ nfDecimal(valorBaseMoedaTokens, 6) }} {{ MOEDA_TOKENS }} =
+                {{ nfDecimal(valorMoedaComparacao, 6) }} {{ moedaComparacaoNormalizada }}
+                <span class="text-muted-foreground">
+                  · 1 {{ MOEDA_TOKENS }} = {{ fmtCustoMoeda(taxaComparacao, moedaComparacaoNormalizada) }}
+                </span>
+              </template>
+              <template v-else>
+                Informe um valor base maior que zero para calcular a taxa de comparação.
+              </template>
+            </div>
+          </section>
+
+          <section class="rounded-lg border border-border/70 p-4">
+            <div class="mb-3">
+              <h2 class="text-sm font-semibold text-foreground">Custo de X tokens</h2>
+              <p class="text-xs text-muted-foreground">Use um custo por 1 milhão de tokens para estimar o valor na moeda configurada e na comparação.</p>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="space-y-1">
+                <Label>Quantidade de tokens</Label>
+                <Input v-model.number="tokensCalculadora" type="number" min="0" step="1" />
+              </div>
+              <div class="space-y-1">
+                <div class="flex items-center justify-between gap-2">
+                  <Label>Custo / 1M tokens ({{ MOEDA_TOKENS }})</Label>
+                  <button
+                    type="button"
+                    class="text-xs font-medium text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                    :disabled="!custoMedioMilhaoPeriodo"
+                    @click="usarCustoMedioPeriodo"
+                  >
+                    usar média
+                  </button>
+                </div>
+                <Input v-model.number="custoMilhaoCalculadora" type="number" min="0" step="0.000001" />
+              </div>
+            </div>
+
+            <div class="mt-4 grid gap-3 sm:grid-cols-3">
+              <div class="rounded-lg border bg-card p-3">
+                <p class="text-xs text-muted-foreground">Valor em {{ MOEDA_TOKENS }}</p>
+                <p class="mt-1 text-lg font-semibold tabular-nums">{{ fmtCusto(custoTokensCalculado) }}</p>
+              </div>
+              <div class="rounded-lg border bg-card p-3">
+                <p class="text-xs text-muted-foreground">Valor em {{ moedaComparacaoNormalizada }}</p>
+                <p class="mt-1 text-lg font-semibold tabular-nums">
+                  {{ fmtCustoMoeda(custoTokensComparacao, moedaComparacaoNormalizada) }}
+                </p>
+              </div>
+              <div class="rounded-lg border bg-card p-3">
+                <p class="text-xs text-muted-foreground">Média do período / 1M</p>
+                <p class="mt-1 text-lg font-semibold tabular-nums">{{ fmtCusto(custoMedioMilhaoPeriodo) }}</p>
+              </div>
+            </div>
+          </section>
+
+          <section v-if="uso" class="rounded-lg border border-border/70 bg-muted/20 p-4">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm font-semibold text-foreground">Custo estimado do período</p>
+                <p class="text-xs text-muted-foreground">Conversão do total carregado na tela com a taxa informada acima.</p>
+              </div>
+              <div class="text-left sm:text-right">
+                <p class="text-sm font-semibold tabular-nums">{{ fmtCusto(uso.custoEstimado) }}</p>
+                <p class="text-xs text-muted-foreground">
+                  {{ fmtCustoMoeda(custoPeriodoComparacao, moedaComparacaoNormalizada) }}
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
