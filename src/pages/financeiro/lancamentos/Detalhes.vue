@@ -629,7 +629,7 @@ watch(() => store.filters.update, loadLancamento)
           <BadgeInfo class="h-4 w-4" />
           Parcelas e cobranças
         </CardTitle>
-        <Button variant="outline" size="sm" :disabled="!lancamento?.id || Boolean(lancamento?.vendaId)" @click="abrirAdicionarParcela">
+        <Button variant="outline" size="sm" :disabled="!lancamento?.id" @click="abrirAdicionarParcela">
           <Plus class="h-4 w-4" /> Adicionar
         </Button>
       </CardHeader>
@@ -679,7 +679,7 @@ watch(() => store.filters.update, loadLancamento)
                   <PenLine class="h-4 w-4" />
                 </Button>
                 <Button v-if="!parcela.pago" variant="outline" size="icon" class="h-8 w-8 text-rose-600 hover:text-rose-700"
-                  :disabled="Boolean(lancamento?.vendaId)" @click="excluirParcela(parcela)">
+                  @click="excluirParcela(parcela)">
                   <Trash2 class="h-4 w-4" />
                 </Button>
                 <Button v-if="uiStore.canCreateCharge && !parcela.pago && !parcela.CobrancasFinanceiras?.length" size="icon"
@@ -691,12 +691,12 @@ watch(() => store.filters.update, loadLancamento)
                   @click="openLinkCobranca(parcela.CobrancasFinanceiras[0].externalLink)">
                   <ExternalLink class="h-4 w-4" />
                 </Button>
-                <Button v-if="!parcela.pago" size="icon" class="h-8 w-8 dark:text-white" :disabled="Boolean(lancamento?.vendaId)"
+                <Button v-if="!parcela.pago" size="icon" class="h-8 w-8 dark:text-white"
                   @click="efetivarParcela(parcela.id!)">
                   <CheckCircle2 class="h-4 w-4" />
                 </Button>
                 <Button v-else size="icon" class="h-8 w-8 bg-warning text-white hover:bg-warning/80"
-                  :disabled="Boolean(lancamento?.vendaId)" @click="estornarParcela(parcela.id!)">
+                  @click="estornarParcela(parcela.id!)">
                   <Undo2 class="h-4 w-4" />
                 </Button>
               </div>
@@ -711,15 +711,15 @@ watch(() => store.filters.update, loadLancamento)
                   <DropdownMenuItem v-if="!parcela.pago" @click="editarParcela(parcela)">
                     <PenLine class="mr-2 h-4 w-4" /> Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="!parcela.pago" :disabled="Boolean(lancamento?.vendaId)"
+                  <DropdownMenuItem v-if="!parcela.pago"
                     @click="excluirParcela(parcela)">
                     <Trash2 class="mr-2 h-4 w-4" /> Excluir
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="!parcela.pago" :disabled="Boolean(lancamento?.vendaId)"
+                  <DropdownMenuItem v-if="!parcela.pago"
                     @click="efetivarParcela(parcela.id!)">
                     <CheckCircle2 class="mr-2 h-4 w-4" /> {{ lancamento?.tipo === 'DESPESA' ? 'Pagar' : 'Receber' }}
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-else :disabled="Boolean(lancamento?.vendaId)"
+                  <DropdownMenuItem v-else
                     @click="estornarParcela(parcela.id!)">
                     <Undo2 class="mr-2 h-4 w-4" /> Estornar
                   </DropdownMenuItem>
@@ -768,7 +768,7 @@ watch(() => store.filters.update, loadLancamento)
       <button
         type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
-        :disabled="!lancamento?.id || Boolean(lancamento?.vendaId)"
+        :disabled="!lancamento?.id"
         @click="abrirAdicionarParcela"
       >
         <Plus class="h-5 w-5" />

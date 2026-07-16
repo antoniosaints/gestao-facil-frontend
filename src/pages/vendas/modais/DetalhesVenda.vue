@@ -121,6 +121,35 @@
                     </div>
                 </div>
             </div>
+            <div v-if="lancamentosFinanceiros.length" class="col-span-2 flex flex-col gap-2">
+                <hr class="col-span-2">
+                <label class="text-md">Lançamentos financeiros</label>
+                <div
+                    class="grid grid-cols-1 gap-2 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 p-2 px-4 rounded-lg shadow-sm col-span-2">
+                    <div v-for="lancamento in lancamentosFinanceiros" :key="lancamento.id"
+                        class="border-b border-orange-200/70 pb-2 last:border-b-0 last:pb-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                {{ lancamento.descricao || `Lançamento #${lancamento.id}` }}
+                            </span>
+                            <span class="text-sm font-semibold text-orange-700 dark:text-orange-300">
+                                {{ formatCurrencyBR(Number(lancamento.valorTotal || 0)) }}
+                            </span>
+                            <Button type="button" size="sm" variant="destructive"
+                                @click="excluirLancamentoFinanceiro(lancamento.id)">
+                                <Trash2 class="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div class="mt-1 grid gap-1 text-xs text-gray-600 dark:text-gray-400">
+                            <div v-for="parcela in getParcelasPendentes(lancamento)" :key="parcela.id"
+                                class="flex justify-between gap-2">
+                                <span>Parcela {{ parcela.numero }} - vence {{ formatDate(parcela.vencimento) }}</span>
+                                <span>{{ formatCurrencyBR(Number(parcela.valor || 0)) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div v-if="store.venda?.ItensVendas.length" class="col-span-2 flex flex-col gap-2">
                 <hr class="col-span-2">
                 <label class="text-md">Itens da venda</label>
@@ -202,17 +231,59 @@ import { Button } from '@/components/ui/button';
 import { useVendasStore } from '@/stores/vendas/useVenda';
 import { formatCurrencyBR } from '@/utils/formatters';
 import { addDays } from 'date-fns';
-import { FileText } from 'lucide-vue-next';
+import { FileText, Trash2 } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
 import { gerarCupomVenda } from '../ActionsVendas';
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas';
 import { useUiStore } from '@/stores/ui/uiStore';
+import { LancamentosRepository } from '@/repositories/lancamento-repository';
+import { useConfirm } from '@/composables/useConfirm';
+import { useToast } from 'vue-toastification';
 const store = useVendasStore()
 const storeCobranca = useCobrancasFinanceirasStore()
 const uiStore = useUiStore()
+const toast = useToast()
 const subtotal = computed(() => {
     return store.venda?.ItensVendas.reduce((acc, item) => acc + item.quantidade * item.valor, 0)
 })
+
+const lancamentosFinanceiros = computed(() => store.venda?.LancamentoFinanceiro || [])
+
+function getParcelasPendentes(lancamento: any) {
+    const parcelas = Array.isArray(lancamento.parcelas) ? lancamento.parcelas : []
+    const pendentes = parcelas.filter((parcela: any) => !parcela.pago)
+    return pendentes.length ? pendentes : parcelas
+}
+
+function formatDate(value: Date | string | null | undefined) {
+    if (!value) return '-'
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString('pt-BR')
+}
+
+async function excluirLancamentoFinanceiro(id?: number) {
+    if (!id) return
+
+    const confirm = await useConfirm().confirm({
+        title: 'Excluir lançamento financeiro',
+        message: 'Deseja excluir o lançamento financeiro vinculado a esta venda?',
+        confirmText: 'Sim, excluir',
+    })
+
+    if (!confirm) return
+
+    try {
+        await LancamentosRepository.remove(id)
+        toast.success('Lançamento financeiro excluí­do com sucesso')
+        store.updateTable()
+        if (store.idMutation) {
+            await store.openDetalhes(store.idMutation)
+        }
+    } catch (error: any) {
+        console.error(error)
+        toast.error(error?.response?.data?.message || 'Erro ao excluir o lançamento financeiro')
+    }
+}
 
 const total = computed(() => {
     return subtotal.value! - store.venda?.desconto!

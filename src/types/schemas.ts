@@ -392,6 +392,7 @@ export interface Vendas {
   vendedor?: Usuarios
   caixa?: CaixaSessao | null
   CobrancasFinanceiras?: CobrancaFinanceira[]
+  LancamentoFinanceiro?: LancamentoFinanceiro[]
   ItensVendas?: ItensVendas[]
   ComandaItens?: ComandaItem[]
   PagamentoVendas?: PagamentoVendas | null
@@ -485,6 +486,7 @@ export interface UpdateParametrosConta {
   permitirEfetivacaoFutura?: boolean | null
   permitirTransferenciaContaFinanceira?: boolean | null
   permitirCriacaoCobranca?: boolean | null
+  contaFinanceiraPadraoId?: number | null
   MercadoPagoApiKey?: string | null
   MercadoPagoEnv?: string | null
   AbacatePayApiKey?: string | null
@@ -757,6 +759,7 @@ export interface LancamentoFinanceiro {
   categoriaId: number
   vendaId?: number
   contasFinanceiroId?: number
+  parcelas?: ParcelaFinanceiro[]
   assinaturaPagar?: {
     id: number
     nomeServico: string

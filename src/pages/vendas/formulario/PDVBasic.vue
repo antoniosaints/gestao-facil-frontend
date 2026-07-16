@@ -315,7 +315,7 @@
                     </div>
                     <div class="space-y-1">
                         <label class="text-sm font-medium">Data da primeira parcela</label>
-                        <Input v-model="crediarioPrimeiroVencimento" type="date" />
+                        <Calendarpicker v-model="crediarioPrimeiroVencimento" :teleport="true" />
                     </div>
                 </div>
                 <div class="rounded-lg border border-border bg-card p-3 text-sm">
@@ -788,6 +788,7 @@ import { Separator } from '@/components/ui/separator';
 import BadgeCell from '@/components/tabela/BadgeCell.vue';
 import { CirclePercent, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Package, Plus, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
+import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import type { ProdutoVariante } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
 import { resolveFileUrl } from '@/utils/fileUrl';
@@ -901,7 +902,7 @@ const discountValue = ref<number | null>(null)
 const paymentMethod = ref("PIX")
 const receivedAmount = ref<string | null>(null)
 const crediarioParcelas = ref(1)
-const crediarioPrimeiroVencimento = ref(getDefaultCrediarioFirstDueDate())
+const crediarioPrimeiroVencimento = ref<Date | string | null>(getDefaultCrediarioFirstDueDate())
 const crediarioFinalizeOptions = ref<{ print?: boolean } | null>(null)
 const cliente = ref(null)
 const subtotal = computed(() =>
@@ -916,7 +917,14 @@ const valorParcelaCrediario = computed(() => {
 function getDefaultCrediarioFirstDueDate() {
     const data = new Date()
     data.setMonth(data.getMonth() + 1)
-    return data.toISOString().split('T')[0]
+    return data
+}
+
+function formatCrediarioDateForApi(value: Date | string | null) {
+    if (!value) return null
+    const parsed = value instanceof Date ? value : new Date(value)
+    if (Number.isNaN(parsed.getTime())) return null
+    return parsed.toISOString()
 }
 
 function syncPodeFinalizarPDV() {
@@ -1330,8 +1338,8 @@ async function finalizarVendaPDV(options?: { print?: boolean, crediarioConfirmad
         toast.error("Informe em quantas vezes sera o crediario")
         return
     }
-    if (paymentMethod.value === "CREDIARIO" && !crediarioPrimeiroVencimento.value) {
-        toast.error("Informe a data da primeira parcela")
+    if (paymentMethod.value === "CREDIARIO" && !formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)) {
+        toast.error("Informe uma data valida para a primeira parcela")
         return
     }
 
@@ -1343,7 +1351,7 @@ async function finalizarVendaPDV(options?: { print?: boolean, crediarioConfirmad
         pagamento: paymentMethod.value,
         valorRecebido: paymentMethod.value === 'DINHEIRO' ? receivedAmount.value : null,
         crediarioParcelas: paymentMethod.value === 'CREDIARIO' ? Number(crediarioParcelas.value) : null,
-        crediarioPrimeiroVencimento: paymentMethod.value === 'CREDIARIO' ? crediarioPrimeiroVencimento.value : null,
+        crediarioPrimeiroVencimento: paymentMethod.value === 'CREDIARIO' ? formatCrediarioDateForApi(crediarioPrimeiroVencimento.value) : null,
         itens: cart.value.map((i) => ({
             id: Number(i.id),
             nome: `${i.nome}${i.nomeVariante ? ` / ${i.nomeVariante}` : ''}`,
@@ -1395,8 +1403,8 @@ async function confirmarCrediarioEFinalizar() {
         toast.error("Informe em quantas vezes sera o crediario")
         return
     }
-    if (!crediarioPrimeiroVencimento.value) {
-        toast.error("Informe a data da primeira parcela")
+    if (!formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)) {
+        toast.error("Informe uma data valida para a primeira parcela")
         return
     }
 

@@ -246,6 +246,16 @@
                                     <Input id="chavePixSistema" v-model="(formularioFinanceiro.chavePix as string)"
                                         type="text" placeholder="Sua chave aqui..." />
                                 </div>
+                                <div class="space-y-2">
+                                    <Label for="contaFinanceiraPadrao">Conta financeira padrÃ£o</Label>
+                                    <Select2Ajax id="contaFinanceiraPadrao"
+                                        v-model="formularioFinanceiro.contaFinanceiraPadraoId"
+                                        url="/lancamentos/contas/select2" :allow-clear="true"
+                                        placeholder="Usar quando nenhuma conta for informada" />
+                                    <p class="text-xs text-muted-foreground">
+                                        Usada em novos lançamentos e efetivações quando o usuário não escolher uma conta manualmente.
+                                    </p>
+                                </div>
                             </div>
 
                             <Separator />
@@ -397,6 +407,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
+import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
 import { Banknote, ChevronDown, CircleCheck, Cog, Keyboard, LayoutGrid, ListChecks, LoaderIcon, Menu, Palette, ShoppingCart, Undo2 } from 'lucide-vue-next'
 import {
@@ -501,6 +512,7 @@ const formularioNotificacoes = reactive<UpdateParametrosConta>({
 })
 const formularioFinanceiro = reactive<UpdateParametrosConta>({
     chavePix: '',
+    contaFinanceiraPadraoId: null,
     permitirLancamentoRetroativo: true,
     permitirEfetivacaoFutura: true,
     permitirTransferenciaContaFinanceira: true,
@@ -628,6 +640,7 @@ async function getParametros() {
             })
             Object.assign(formularioFinanceiro, {
                 chavePix: response.data.chavePix,
+                contaFinanceiraPadraoId: response.data.contaFinanceiraPadraoId ?? null,
                 permitirLancamentoRetroativo: response.data.permitirLancamentoRetroativo ?? true,
                 permitirEfetivacaoFutura: response.data.permitirEfetivacaoFutura ?? true,
                 permitirTransferenciaContaFinanceira: response.data.permitirTransferenciaContaFinanceira ?? true,

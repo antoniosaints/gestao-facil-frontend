@@ -72,7 +72,7 @@ export class LancamentosRepository {
     data: {
       dataPagamento: string
       metodoPagamento: MetodoPagamentoFinanceiro
-      contaPagamento: number
+      contaPagamento?: number | null
     },
   ) {
     await http.post(`/lancamentos/parcelas/${idParcela}/pagar`, data)

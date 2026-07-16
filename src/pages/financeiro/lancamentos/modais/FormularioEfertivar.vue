@@ -30,7 +30,6 @@ const emit = defineEmits(['success'])
 async function submit() {
     try {
         if (!store.idMutation) return toast.error("Nenhuma parcela selecionada")
-        if (!data.value.contaPagamento) return toast.error("Selecione uma conta de pagamento")
         await LancamentosRepository.pagarParcela(store.idMutation, {
             dataPagamento: data.value.dataPagamento.toISOString(),
             metodoPagamento: data.value.metodoPagamento,
