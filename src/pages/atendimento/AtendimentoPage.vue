@@ -26,6 +26,7 @@ import {
   Camera,
   ChevronDown,
   Clock,
+  FileText,
   Headset,
   ImagePlus,
   Inbox,
@@ -33,6 +34,7 @@ import {
   LoaderCircle,
   MapPin,
   Mic,
+  Sparkles,
   Navigation,
   Phone,
   Plus,
@@ -55,6 +57,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { ClienteRepository } from '@/repositories/cliente-repository'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
+import { IaRepository, isIaQuotaError } from '@/repositories/ia-repository'
 import AudioMessagePlayer from '@/pages/atendimento/AudioMessagePlayer.vue'
 import {
   WhatsAppRepository,
@@ -650,6 +653,62 @@ async function sendText() {
     toast.error(error?.response?.data?.message || 'Erro ao enviar mensagem.')
   } finally {
     sending.value = false
+  }
+}
+
+// ---- Fase 2: assistente de IA para o atendente (só com o app core-ia ativo) ----
+const iaAtendimentoAtivo = computed(() => storeUi.hasActiveModule('core-ia'))
+const iaComposing = ref(false)
+const resumoIa = reactive<{ open: boolean; loading: boolean; texto: string }>({
+  open: false,
+  loading: false,
+  texto: '',
+})
+
+// Sugere a próxima resposta e coloca no composer (não envia sozinho).
+async function sugerirRespostaIa() {
+  if (!selectedConversation.value || iaComposing.value) return
+  try {
+    iaComposing.value = true
+    const r = await IaRepository.sugerirRespostaAtendimento(selectedConversation.value.id)
+    const sugestao = (r.text || '').trim()
+    if (!sugestao) {
+      toast.info('A IA não retornou uma sugestão.')
+      return
+    }
+    const atual = messageForm.conteudo.trim()
+    messageForm.conteudo = atual ? `${atual}\n${sugestao}` : sugestao
+    await nextTick()
+    focusMessageInput()
+  } catch (error: any) {
+    if (isIaQuotaError(error)) {
+      toast.error('Limite mensal de IA do plano atingido. Fale com o administrador.')
+    } else {
+      toast.error(error?.response?.data?.message || 'Não foi possível gerar a sugestão.')
+    }
+  } finally {
+    iaComposing.value = false
+  }
+}
+
+// Resume a conversa e mostra num diálogo (apenas leitura para o atendente).
+async function resumirConversaIa() {
+  if (!selectedConversation.value) return
+  resumoIa.texto = ''
+  resumoIa.loading = true
+  resumoIa.open = true
+  try {
+    const r = await IaRepository.resumoAtendimento(selectedConversation.value.id)
+    resumoIa.texto = (r.text || '').trim()
+  } catch (error: any) {
+    resumoIa.open = false
+    if (isIaQuotaError(error)) {
+      toast.error('Limite mensal de IA do plano atingido. Fale com o administrador.')
+    } else {
+      toast.error(error?.response?.data?.message || 'Não foi possível resumir a conversa.')
+    }
+  } finally {
+    resumoIa.loading = false
   }
 }
 
@@ -1774,6 +1833,31 @@ onMounted(async () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            <!-- Assistente de IA para o atendente -->
+            <DropdownMenu v-if="iaAtendimentoAtivo">
+              <DropdownMenuTrigger as-child>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  class="h-10 w-10 shrink-0 rounded-full text-violet-500"
+                  title="Assistente de IA"
+                  :disabled="iaComposing"
+                >
+                  <LoaderCircle v-if="iaComposing" class="h-5 w-5 animate-spin" />
+                  <Sparkles v-else class="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="top" class="w-52">
+                <DropdownMenuItem :disabled="iaComposing" @click="sugerirRespostaIa">
+                  <MessageSquareText class="mr-2 h-4 w-4 text-violet-500" /> Sugerir resposta
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="resumirConversaIa">
+                  <FileText class="mr-2 h-4 w-4 text-sky-500" /> Resumir conversa
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <!-- Campo de texto -->
             <Textarea
               ref="messageInput"
@@ -2075,6 +2159,29 @@ onMounted(async () => {
     </Dialog>
 
     <!-- Nova conversa: a partir de um cliente do ERP ou de um contato do WhatsApp -->
+    <!-- Resumo da conversa (IA) -->
+    <Dialog v-model:open="resumoIa.open">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle class="flex items-center gap-2">
+            <FileText class="h-4 w-4 text-sky-500" /> Resumo da conversa
+          </DialogTitle>
+          <DialogDescription>Resumo gerado por IA para apoiar o atendimento. Revise antes de usar.</DialogDescription>
+        </DialogHeader>
+
+        <div v-if="resumoIa.loading" class="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+          <LoaderCircle class="h-4 w-4 animate-spin" /> Resumindo a conversa...
+        </div>
+        <div v-else class="max-h-[50vh] overflow-y-auto whitespace-pre-wrap rounded-md bg-muted/50 p-3 text-sm">
+          {{ resumoIa.texto || 'Sem conteúdo.' }}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="resumoIa.open = false">Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <Dialog v-model:open="newChat.open">
       <DialogContent>
         <DialogHeader>

@@ -45,6 +45,36 @@ export class IaRepository {
     return data.data
   }
 
+  // Fase 2 — atendimento (WhatsApp): sugestões para o atendente humano.
+  static async sugerirRespostaAtendimento(conversaId: number): Promise<IaTextResult> {
+    const { data } = await http.post('/ia/atendimento/sugerir-resposta', { conversaId })
+    return data.data
+  }
+
+  static async resumoAtendimento(conversaId: number): Promise<IaTextResult> {
+    const { data } = await http.post('/ia/atendimento/resumo', { conversaId })
+    return data.data
+  }
+
+  // Fase 3 — análise & inteligência.
+  static async insightsDashboard(payload: { inicio?: string | null; fim?: string | null }): Promise<{
+    text: string
+    kpis: Record<string, any>
+    usage?: IaTextResult['usage']
+  }> {
+    const { data } = await http.post('/ia/insights/dashboard', payload)
+    return data.data
+  }
+
+  static async categorizarLancamento(payload: {
+    descricao: string
+    valor?: number | null
+    tipo?: 'RECEITA' | 'DESPESA' | null
+  }): Promise<{ categoria: { id: number; nome: string } | null }> {
+    const { data } = await http.post('/ia/financeiro/categorizar', payload)
+    return data.data
+  }
+
   // Uso de IA da própria conta no mês (para o indicador no Core IA).
   static async meuUso(): Promise<IaMeuUso> {
     const { data } = await http.get('/ia/uso')

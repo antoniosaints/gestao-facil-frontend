@@ -21,10 +21,59 @@ import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { POSITION, useToast } from 'vue-toastification'
 import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
 import { useClientesStore } from '@/stores/clientes/useClientes'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { IaRepository, isIaQuotaError } from '@/repositories/ia-repository'
+import { LoaderCircle, Sparkles } from 'lucide-vue-next'
 import FormularioContas from '../modais/FormularioContas.vue'
 import FormularioCategorias from '../modais/FormularioCategorias.vue'
 
 const store = useLancamentosStore()
+const storeUi = useUiStore()
+
+// ---- Fase 3: sugestão de categoria por IA (só com o app core-ia ativo) ----
+const iaFinanceiroAtivo = computed(() => storeUi.hasActiveModule('core-ia'))
+const categoriaIa = ref<{ loading: boolean; sugestao: { id: number; nome: string } | null }>({
+  loading: false,
+  sugestao: null,
+})
+
+async function sugerirCategoriaIa() {
+  const descricao = (store.form.descricao || '').trim()
+  if (!descricao) {
+    toast.warning('Preencha a descrição para sugerir a categoria.')
+    return
+  }
+  try {
+    categoriaIa.value.loading = true
+    categoriaIa.value.sugestao = null
+    const valor = formatToNumberValue(store.form.valorTotal)
+    const r = await IaRepository.categorizarLancamento({
+      descricao,
+      valor: Number.isFinite(valor) ? valor : null,
+      tipo: (store.form.tipo as 'RECEITA' | 'DESPESA') || null,
+    })
+    if (r.categoria) {
+      categoriaIa.value.sugestao = r.categoria
+    } else {
+      toast.info('A IA não encontrou uma categoria adequada entre as cadastradas.')
+    }
+  } catch (error: any) {
+    if (isIaQuotaError(error)) {
+      toast.error('Limite mensal de IA do plano atingido. Fale com o administrador.')
+    } else {
+      toast.error(error?.response?.data?.message || 'Não foi possível sugerir a categoria.')
+    }
+  } finally {
+    categoriaIa.value.loading = false
+  }
+}
+
+function aplicarCategoriaIa() {
+  if (categoriaIa.value.sugestao) {
+    store.form.categoriaId = categoriaIa.value.sugestao.id
+    categoriaIa.value.sugestao = null
+  }
+}
 const storeCliente = useClientesStore()
 const toast = useToast()
 const erros = ref<{ [key: string]: string }>({})
@@ -328,6 +377,12 @@ watch(
               <FormularioCategorias class="cursor-pointer px-2 text-blue-500"
                 >+ Nova</FormularioCategorias
               >
+              <button v-if="iaFinanceiroAtivo" type="button"
+                class="ml-1 inline-flex items-center gap-1 align-middle text-xs font-medium text-violet-600 hover:underline disabled:opacity-50 dark:text-violet-400"
+                :disabled="categoriaIa.loading" @click="sugerirCategoriaIa">
+                <LoaderCircle v-if="categoriaIa.loading" class="h-3 w-3 animate-spin" />
+                <Sparkles v-else class="h-3 w-3" /> Sugerir (IA)
+              </button>
             </label>
             <Select2Ajax
               id="categoriaIdLancamentoEdicao"
@@ -335,6 +390,11 @@ watch(
               url="lancamentos/categorias/select2"
             />
             <p v-if="erros.categoriaId" class="text-sm text-red-600">{{ erros.categoriaId }}</p>
+            <button v-if="categoriaIa.sugestao" type="button"
+              class="mt-1.5 inline-flex items-center gap-1 rounded-full border border-violet-300 bg-violet-50 px-2 py-0.5 text-xs text-violet-700 hover:bg-violet-100 dark:border-violet-700 dark:bg-violet-900/30 dark:text-violet-300"
+              @click="aplicarCategoriaIa">
+              <Sparkles class="h-3 w-3" /> Sugerido: {{ categoriaIa.sugestao.nome }} — aplicar
+            </button>
           </div>
 
           <div>
@@ -632,6 +692,12 @@ watch(
                 <FormularioCategorias class="cursor-pointer px-2 text-blue-500"
                   >+ Nova</FormularioCategorias
                 >
+                <button v-if="iaFinanceiroAtivo" type="button"
+                  class="ml-1 inline-flex items-center gap-1 align-middle text-xs font-medium text-violet-600 hover:underline disabled:opacity-50 dark:text-violet-400"
+                  :disabled="categoriaIa.loading" @click="sugerirCategoriaIa">
+                  <LoaderCircle v-if="categoriaIa.loading" class="h-3 w-3 animate-spin" />
+                  <Sparkles v-else class="h-3 w-3" /> Sugerir (IA)
+                </button>
               </label>
               <Select2Ajax
                 id="categoriaIdLancamento"
@@ -639,6 +705,11 @@ watch(
                 url="lancamentos/categorias/select2"
               />
               <p v-if="erros.categoriaId" class="text-sm text-red-600">{{ erros.categoriaId }}</p>
+              <button v-if="categoriaIa.sugestao" type="button"
+                class="mt-1.5 inline-flex items-center gap-1 rounded-full border border-violet-300 bg-violet-50 px-2 py-0.5 text-xs text-violet-700 hover:bg-violet-100 dark:border-violet-700 dark:bg-violet-900/30 dark:text-violet-300"
+                @click="aplicarCategoriaIa">
+                <Sparkles class="h-3 w-3" /> Sugerido: {{ categoriaIa.sugestao.nome }} — aplicar
+              </button>
             </div>
 
             <div class="col-span-6">

@@ -17,9 +17,11 @@ import {
   Menu,
   PackageSearch,
   Receipt,
+  LoaderCircle,
   RefreshCcw,
   RotateCw,
   ShoppingCart,
+  Sparkles,
   Store,
   Tags,
   Target,
@@ -53,6 +55,8 @@ import { WhatsAppRepository, type PainelAtendimento } from '@/repositories/whats
 import { useDashboardStore } from '@/stores/dashboard/useDashboardStore'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { formatCurrencyBR, formatDuracaoMs, formatToCapitalize, formatToNumberValue } from '@/utils/formatters'
+import { IaRepository, isIaQuotaError } from '@/repositories/ia-repository'
+import { renderMarkdown } from '@/utils/simpleMarkdown'
 
 // Todo bloco da dashboard declara a que módulo pertence, e some junto com ele. Sem isso a
 // dashboard mostrava catálogo, estoque e serviços mesmo para contas com esses menus ocultos.
@@ -543,6 +547,35 @@ function getPeriodoSelecionado() {
   return { inicio, fim }
 }
 
+// ---- Fase 3: análise do dashboard com IA (só com o app core-ia ativo) ----
+const iaInsightsAtivo = computed(() => uiStore.hasActiveModule('core-ia'))
+const insightsIa = ref<{ open: boolean; loading: boolean; texto: string }>({
+  open: false,
+  loading: false,
+  texto: '',
+})
+const insightsHtml = computed(() => renderMarkdown(insightsIa.value.texto))
+
+async function analisarComIa() {
+  insightsIa.value.texto = ''
+  insightsIa.value.loading = true
+  insightsIa.value.open = true
+  try {
+    const { inicio, fim } = getPeriodoSelecionado()
+    const r = await IaRepository.insightsDashboard({ inicio, fim })
+    insightsIa.value.texto = (r.text || '').trim()
+  } catch (error: any) {
+    insightsIa.value.open = false
+    if (isIaQuotaError(error)) {
+      toast.error('Limite mensal de IA do plano atingido. Fale com o administrador.')
+    } else {
+      toast.error(error?.response?.data?.message || 'Não foi possível analisar o período.')
+    }
+  } finally {
+    insightsIa.value.loading = false
+  }
+}
+
 function getAlertClasses(tone: AlertCard['tone']) {
   switch (tone) {
     case 'danger':
@@ -671,6 +704,12 @@ onMounted(async () => {
         </div>
         <Button variant="outline" size="sm" @click="openModalFiltros = true">
           <Filter class="h-4 w-4" /> Período
+        </Button>
+        <Button v-if="iaInsightsAtivo" variant="outline" size="sm" class="gap-2 text-violet-600 dark:text-violet-400"
+          :disabled="loading || insightsIa.loading" @click="analisarComIa">
+          <LoaderCircle v-if="insightsIa.loading" class="h-4 w-4 animate-spin" />
+          <Sparkles v-else class="h-4 w-4" />
+          Analisar com IA
         </Button>
         <Button variant="outline" size="icon" class="h-9 w-9" :disabled="loading" @click="getDataDashboard(true)">
           <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
@@ -928,5 +967,44 @@ onMounted(async () => {
         </div>
       </div>
     </ModalView>
+
+    <!-- Análise do período com IA -->
+    <ModalView v-model:open="insightsIa.open" title="Análise com IA" :icon="Sparkles" size="xl"
+      :description="`Panorama do período: ${periodoDescricao}`">
+      <div class="px-1">
+        <div v-if="insightsIa.loading" class="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+          <LoaderCircle class="h-4 w-4 animate-spin" /> Analisando os indicadores do período...
+        </div>
+        <div v-else class="ia-markdown max-h-[65vh] overflow-y-auto text-sm leading-relaxed" v-html="insightsHtml" />
+      </div>
+    </ModalView>
   </div>
 </template>
+
+<style scoped>
+.ia-markdown :deep(h2) {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.35rem;
+}
+.ia-markdown :deep(h3) {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0.65rem 0 0.3rem;
+}
+.ia-markdown :deep(h4) {
+  font-weight: 600;
+  margin: 0.5rem 0 0.25rem;
+}
+.ia-markdown :deep(p) {
+  margin: 0.35rem 0;
+}
+.ia-markdown :deep(ul) {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0.35rem 0;
+}
+.ia-markdown :deep(li) {
+  margin: 0.15rem 0;
+}
+</style>
