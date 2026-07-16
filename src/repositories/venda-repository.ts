@@ -24,6 +24,8 @@ export interface FinalizarVendaPdvPayload {
   desconto: number
   pagamento: MetodoPagamento | string
   valorRecebido?: number | string | null
+  crediarioParcelas?: number | null
+  crediarioPrimeiroVencimento?: string | null
   itens: Array<{
     id: number
     nome?: string

@@ -69,6 +69,7 @@ export enum MetodoPagamento {
   PIX = 'PIX',
   DINHEIRO = 'DINHEIRO',
   CARTAO = 'CARTAO',
+  CREDIARIO = 'CREDIARIO',
   BOLETO = 'BOLETO',
   TRANSFERENCIA = 'TRANSFERENCIA',
   CHEQUE = 'CHEQUE',
@@ -80,6 +81,7 @@ export enum MetodoPagamento {
 
 export type MetodoPagamentoFinanceiro =
   | 'DINHEIRO'
+  | 'CREDIARIO'
   | 'DEBITO'
   | 'CREDITO'
   | 'BOLETO'

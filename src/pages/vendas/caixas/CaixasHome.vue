@@ -182,6 +182,8 @@ function getPaymentMethodLabel(method?: string | null) {
       return 'Dinheiro'
     case 'CARTAO':
       return 'Cartao'
+    case 'CREDIARIO':
+      return 'Crediário'
     case 'PIX':
       return 'PIX'
     case 'BOLETO':

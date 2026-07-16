@@ -246,6 +246,9 @@
                                         <SelectItem value="CARTAO">
                                             Cartão
                                         </SelectItem>
+                                        <SelectItem value="CREDIARIO">
+                                            Crediário
+                                        </SelectItem>
                                         <SelectItem value="PIX">
                                             PIX
                                         </SelectItem>
@@ -273,6 +276,14 @@
                                 <span>R$ {{ change.toFixed(2).replace('.', ',') }}</span>
                             </div>
                         </div>
+                        <div class="space-y-2" v-if="paymentMethod === 'CREDIARIO'">
+                            <p class="text-xs text-muted-foreground">
+                                Ao finalizar, escolha as parcelas e a data da primeira parcela.
+                            </p>
+                            <p class="hidden">
+                                Será criado um financeiro pendente em {{ crediarioParcelas }}x vinculado à venda.
+                            </p>
+                        </div>
                     </div>
 
                     <!-- Botões de finalização -->
@@ -294,6 +305,40 @@
                 </div>
             </div>
         </div>
+        <ModalView v-model:open="openModalCrediario" title="Configurar crediário"
+            description="Defina as condições do financeiro pendente antes de finalizar a venda." size="md">
+            <div class="space-y-4 p-4">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="space-y-1">
+                        <label class="text-sm font-medium">Quantidade de parcelas</label>
+                        <Input v-model.number="crediarioParcelas" type="number" min="1" max="36" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-sm font-medium">Data da primeira parcela</label>
+                        <Input v-model="crediarioPrimeiroVencimento" type="date" />
+                    </div>
+                </div>
+                <div class="rounded-lg border border-border bg-card p-3 text-sm">
+                    <div class="flex justify-between">
+                        <span>Total da venda</span>
+                        <strong>{{ formatCurrencyBR(total) }}</strong>
+                    </div>
+                    <div class="mt-1 flex justify-between text-muted-foreground">
+                        <span>Valor aproximado por parcela</span>
+                        <span>{{ formatCurrencyBR(valorParcelaCrediario) }}</span>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <Button type="button" variant="outline" @click="openModalCrediario = false">
+                        Cancelar
+                    </Button>
+                    <Button type="button" class="text-white" @click="confirmarCrediarioEFinalizar">
+                        Finalizar no crediário
+                    </Button>
+                </div>
+            </div>
+        </ModalView>
+
         <ModalView v-model:open="openModalVendaFinalizada" title="Comprovante da venda"
             description="Ticket da venda pronto para imprimir, baixar ou enviar." size="xl">
             <div class="p-4 space-y-4">
@@ -761,6 +806,7 @@ const openModalDesconto = ref(false)
 const openModalAcoes = ref(false)
 const openModalVendaFinalizada = ref(false)
 const openModalEnvioComprovante = ref(false)
+const openModalCrediario = ref(false)
 const printingCupom = ref(false)
 const downloadingCupom = ref(false)
 const sendingCupomWhatsapp = ref(false)
@@ -854,10 +900,24 @@ const discountType = ref<"percentage" | "value">("percentage")
 const discountValue = ref<number | null>(null)
 const paymentMethod = ref("PIX")
 const receivedAmount = ref<string | null>(null)
+const crediarioParcelas = ref(1)
+const crediarioPrimeiroVencimento = ref(getDefaultCrediarioFirstDueDate())
+const crediarioFinalizeOptions = ref<{ print?: boolean } | null>(null)
 const cliente = ref(null)
 const subtotal = computed(() =>
     cart.value.reduce((t, item) => t + Number(item.preco) * item.quantity, 0)
 )
+
+const valorParcelaCrediario = computed(() => {
+    const parcelas = Math.max(1, Number(crediarioParcelas.value) || 1)
+    return total.value / parcelas
+})
+
+function getDefaultCrediarioFirstDueDate() {
+    const data = new Date()
+    data.setMonth(data.getMonth() + 1)
+    return data.toISOString().split('T')[0]
+}
 
 function syncPodeFinalizarPDV() {
     podeFinalizarPDV.value = cart.value.length > 0 && Boolean(caixaStore.caixaAtivo?.id)
@@ -1004,6 +1064,8 @@ function getPaymentMethodLabel(method?: string | null) {
             return 'Dinheiro'
         case 'CARTAO':
             return 'Cartão'
+        case 'CREDIARIO':
+            return 'Crediário'
         case 'PIX':
             return 'PIX'
         case 'BOLETO':
@@ -1019,6 +1081,8 @@ function getPaymentMethodBadge(method?: string | null) {
             return { color: 'green' as const, label: 'Dinheiro' }
         case 'CARTAO':
             return { color: 'blue' as const, label: 'Cartão' }
+        case 'CREDIARIO':
+            return { color: 'orange' as const, label: 'Crediário' }
         case 'PIX':
             return { color: 'purple' as const, label: 'PIX' }
         case 'BOLETO':
@@ -1103,7 +1167,7 @@ function removerUltimoItem() {
 }
 
 function alternarPagamento() {
-    const metodos = ['DINHEIRO', 'CARTAO', 'PIX', 'BOLETO']
+    const metodos = ['DINHEIRO', 'CARTAO', 'CREDIARIO', 'PIX', 'BOLETO']
     const indiceAtual = metodos.indexOf(paymentMethod.value)
     paymentMethod.value = metodos[(indiceAtual + 1) % metodos.length]
     toast.info(`Pagamento: ${getPaymentMethodLabel(paymentMethod.value)}`)
@@ -1240,7 +1304,7 @@ async function enviarComprovanteViaApi() {
 }
 
 // ---- Venda ----
-async function finalizarVendaPDV(options?: { print?: boolean }) {
+async function finalizarVendaPDV(options?: { print?: boolean, crediarioConfirmado?: boolean }) {
     if (!cart.value.length) {
         toast.error("Carrinho vazio!")
         return
@@ -1254,6 +1318,22 @@ async function finalizarVendaPDV(options?: { print?: boolean }) {
         toast.error("Valor recebido insuficiente!")
         return
     }
+    if (paymentMethod.value === "CREDIARIO" && !options?.crediarioConfirmado) {
+        crediarioFinalizeOptions.value = { print: options?.print }
+        if (!crediarioPrimeiroVencimento.value) {
+            crediarioPrimeiroVencimento.value = getDefaultCrediarioFirstDueDate()
+        }
+        openModalCrediario.value = true
+        return
+    }
+    if (paymentMethod.value === "CREDIARIO" && (!Number.isInteger(Number(crediarioParcelas.value)) || Number(crediarioParcelas.value) < 1)) {
+        toast.error("Informe em quantas vezes sera o crediario")
+        return
+    }
+    if (paymentMethod.value === "CREDIARIO" && !crediarioPrimeiroVencimento.value) {
+        toast.error("Informe a data da primeira parcela")
+        return
+    }
 
     const data = {
         caixaId: caixaStore.caixaAtivo.id,
@@ -1262,6 +1342,8 @@ async function finalizarVendaPDV(options?: { print?: boolean }) {
         desconto: discount.value,
         pagamento: paymentMethod.value,
         valorRecebido: paymentMethod.value === 'DINHEIRO' ? receivedAmount.value : null,
+        crediarioParcelas: paymentMethod.value === 'CREDIARIO' ? Number(crediarioParcelas.value) : null,
+        crediarioPrimeiroVencimento: paymentMethod.value === 'CREDIARIO' ? crediarioPrimeiroVencimento.value : null,
         itens: cart.value.map((i) => ({
             id: Number(i.id),
             nome: `${i.nome}${i.nomeVariante ? ` / ${i.nomeVariante}` : ''}`,
@@ -1293,6 +1375,8 @@ async function finalizarVendaPDV(options?: { print?: boolean }) {
     try {
         const vendaCriada = await VendaRepository.finalizarVendaPdv(data)
         limparCarrinho()
+        crediarioParcelas.value = 1
+        crediarioPrimeiroVencimento.value = getDefaultCrediarioFirstDueDate()
         await fetchProducts()
         await caixaStore.loadContexto()
         toast.success("Venda realizada com sucesso!")
@@ -1304,6 +1388,24 @@ async function finalizarVendaPDV(options?: { print?: boolean }) {
     } catch (err: any) {
         toast.error(err.response?.data?.message || "Erro inesperado")
     }
+}
+
+async function confirmarCrediarioEFinalizar() {
+    if (!Number.isInteger(Number(crediarioParcelas.value)) || Number(crediarioParcelas.value) < 1) {
+        toast.error("Informe em quantas vezes sera o crediario")
+        return
+    }
+    if (!crediarioPrimeiroVencimento.value) {
+        toast.error("Informe a data da primeira parcela")
+        return
+    }
+
+    openModalCrediario.value = false
+    await finalizarVendaPDV({
+        ...crediarioFinalizeOptions.value,
+        crediarioConfirmado: true,
+    })
+    crediarioFinalizeOptions.value = null
 }
 
 const resumoVenda = computed(() => ({
