@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { filterSidebarMenuByVisibility, MAIN_MENU_VISIBILITY_OPTIONS } from './options'
+import { filterSidebarMenuByVisibility, getMainMenuVisibilityOptions, MAIN_MENU_VISIBILITY_OPTIONS } from './options'
 import type { SidebarMenuType } from '@/types/sidebar'
 
 describe('MAIN_MENU_VISIBILITY_OPTIONS', () => {
@@ -16,6 +16,29 @@ describe('MAIN_MENU_VISIBILITY_OPTIONS', () => {
     const keys = MAIN_MENU_VISIBILITY_OPTIONS.map((m) => m.key)
     expect(keys).toContain('loja')
     expect(new Set(keys).size).toBe(keys.length)
+  })
+  it('mostra configuracao apenas dos menus de apps ativos na conta', () => {
+    const semApps = getMainMenuVisibilityOptions({}).map((m) => m.key)
+    expect(semApps).toContain('vendas')
+    expect(semApps).toContain('loja')
+    expect(semApps).not.toContain('assinaturas')
+    expect(semApps).not.toContain('atendimento')
+    expect(semApps).not.toContain('loja-virtual')
+    expect(semApps).not.toContain('core-ia')
+    expect(semApps).not.toContain('whatsapp')
+
+    const comApps = getMainMenuVisibilityOptions({
+      assinaturas: true,
+      atendimento: true,
+      'loja-virtual': true,
+      'core-ia': true,
+      whatsapp: true,
+    }).map((m) => m.key)
+    expect(comApps).toContain('assinaturas')
+    expect(comApps).toContain('atendimento')
+    expect(comApps).toContain('loja-virtual')
+    expect(comApps).toContain('core-ia')
+    expect(comApps).toContain('whatsapp')
   })
 })
 

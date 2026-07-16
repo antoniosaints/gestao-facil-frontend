@@ -197,8 +197,8 @@
                 <div class="text-center max-w-2xl mx-auto mb-14">
                     <span class="text-sm font-semibold text-primary uppercase tracking-wider">App Store</span>
                     <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-4">Amplie com apps quando precisar</h2>
-                    <p class="text-muted-foreground text-lg">Ative módulos opcionais direto no sistema. Pague só pelo que usar,
-                        e desative a qualquer momento.</p>
+                    <p class="text-muted-foreground text-lg">Ative módulos opcionais direto no sistema: IA, WhatsApp,
+                        atendimento, loja virtual, recorrência e gateways. Pague só pelo que usar.</p>
                 </div>
 
                 <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -214,6 +214,7 @@
                             </span>
                         </div>
                         <h3 class="font-bold mb-1">{{ app.title }}</h3>
+                        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ app.category }}</p>
                         <p class="text-sm text-muted-foreground leading-relaxed">{{ app.description }}</p>
                     </div>
                 </div>
@@ -318,8 +319,8 @@
                                 </li>
                             </ul>
                             <p class="mt-5 text-xs text-muted-foreground border-t border-border/60 pt-4">
-                                Ative e desative na App Store dentro do sistema. O valor é somado à sua mensalidade
-                                de forma proporcional.
+                                Ative e desative na App Store dentro do sistema. Apps pagos entram na mensalidade de forma
+                                proporcional. Apps com valor zerado são gratuitos.
                             </p>
                         </CardContent>
                     </Card>
@@ -443,7 +444,7 @@ import {
     ArrowRight, PlayCircle, TrendingUp, Users, Smartphone, Shirt, Hammer,
     ShoppingBasket, CheckCircle2, Check, Star, ChevronDown,
     Box, Wallet, FileBarChart, Wrench, ScanLine, UsersRound,
-    Bot, MessageCircle, Repeat, CreditCard
+    Bot, MessageCircle, Repeat, CreditCard, Headset, Store
 } from 'lucide-vue-next'
 
 const isScrolled = ref(false)
@@ -471,9 +472,11 @@ const features = [
     { title: 'Vendas e PDV', description: 'Frente de caixa rápida com leitor de código de barras, cupom e impressão térmica (58mm e 80mm).', icon: ScanLine },
     { title: 'Controle de estoque', description: 'Entradas e saídas em tempo real, alertas de estoque mínimo e histórico de movimentações.', icon: Box },
     { title: 'Financeiro completo', description: 'Fluxo de caixa, contas a pagar e receber, categorias e relatórios gerenciais.', icon: Wallet },
-    { title: 'Ordens de serviço', description: 'Abertura, acompanhamento e faturamento de OS com garantia e assinatura do cliente.', icon: Wrench },
+    { title: 'Recorrências operacionais', description: 'Controle assinaturas a pagar, links úteis, ciclos recorrentes e geração de lançamentos vinculados.', icon: Repeat },
     { title: 'Clientes', description: 'Cadastro completo, histórico de compras e cadastro público por link para seus clientes.', icon: UsersRound },
-    { title: 'Relatórios e dashboards', description: 'Vendas, ticket médio, top produtos e saldo mensal em painéis claros e exportáveis.', icon: FileBarChart },
+    { title: 'Relatórios e dashboards', description: 'Vendas, ticket médio, produtos mais vendidos, estoque e saldo mensal em painéis claros.', icon: FileBarChart },
+    { title: 'Ordens de serviço', description: 'Abertura, acompanhamento e faturamento de OS com garantia e assinatura do cliente.', icon: Wrench },
+    { title: 'Catálogo público', description: 'Compartilhe produtos por link público. Se precisar vender online, ative a Loja Virtual.', icon: Store },
 ]
 
 const benefits = [
@@ -484,11 +487,12 @@ const benefits = [
 ]
 
 const apps = [
-    { title: 'CORE IA', description: 'Chat inteligente que ajuda na produtividade e nas análises do seu time.', price: 9.9, icon: Bot, iconBg: 'bg-purple-100 dark:bg-purple-950', iconColor: 'text-purple-500' },
-    { title: 'WhatsApp', description: 'Integração para notificações e comunicação com seus clientes.', price: 19.9, icon: MessageCircle, iconBg: 'bg-green-100 dark:bg-green-950', iconColor: 'text-green-500' },
-    { title: 'Assinaturas', description: 'Gestão de contratos recorrentes, ciclos, comodatos e cobranças.', price: 5, icon: Repeat, iconBg: 'bg-blue-100 dark:bg-blue-950', iconColor: 'text-blue-500' },
-    { title: 'Mercado Pago', description: 'Configure as credenciais do Mercado Pago para cobranças online.', price: 0, icon: CreditCard, iconBg: 'bg-sky-100 dark:bg-sky-950', iconColor: 'text-sky-500' },
-    { title: 'AbacatePay', description: 'Configure as credenciais do AbacatePay para receber pagamentos.', price: 0, icon: CreditCard, iconBg: 'bg-orange-100 dark:bg-orange-950', iconColor: 'text-orange-500' },
+    { title: 'CORE IA', category: 'Chat inteligente', description: 'Chat inteligente que auxilia na produtividade do time.', price: 9.9, icon: Bot, iconBg: 'bg-purple-100 dark:bg-purple-950', iconColor: 'text-purple-500' },
+    { title: 'WhatsApp', category: 'Notificações', description: 'Integração com WhatsApp para comunicação e notificações.', price: 19.9, icon: MessageCircle, iconBg: 'bg-green-100 dark:bg-green-950', iconColor: 'text-green-500' },
+    { title: 'Atendimento', category: 'Central de conversas', description: 'Chat via WhatsApp com conversas, filas, atendentes e vínculo com clientes.', price: 29.9, icon: Headset, iconBg: 'bg-emerald-100 dark:bg-emerald-950', iconColor: 'text-emerald-500' },
+    { title: 'Loja Virtual', category: 'Vendas online', description: 'Vitrine online personalizável com cores, banners, login e cadastro de clientes.', price: 39.9, icon: Store, iconBg: 'bg-amber-100 dark:bg-amber-950', iconColor: 'text-amber-500' },
+    { title: 'Assinaturas', category: 'Recorrência', description: 'Gestão de contratos recorrentes, ciclos, comodatos e cobranças.', price: 5, icon: Repeat, iconBg: 'bg-blue-100 dark:bg-blue-950', iconColor: 'text-blue-500' },
+    { title: 'Mercado Pago', category: 'Gateway gratuito', description: 'Configure as credenciais operacionais do Mercado Pago da conta.', price: 0, icon: CreditCard, iconBg: 'bg-sky-100 dark:bg-sky-950', iconColor: 'text-sky-500' },
 ]
 
 const segments = [
@@ -502,7 +506,7 @@ const adaptBenefits = [
     'Sem custo de implementação',
     'Suporte técnico especializado',
     'Ative apps conforme sua necessidade',
-    'Atualizações gratuitas constantes',
+    'Loja, atendimento, IA e gateways no mesmo ecossistema',
 ]
 
 const included = [
@@ -513,6 +517,7 @@ const included = [
     'Clientes ilimitados',
     'Relatórios e dashboards',
     'Cupom e impressão térmica',
+    'Catálogo público por link',
     'Suporte incluso',
 ]
 
@@ -525,7 +530,7 @@ const testimonials = [
 const faqs = [
     { q: 'Preciso de cartão de crédito para testar?', a: 'Não. O teste de 7 dias é totalmente gratuito e não pedimos cartão de crédito para começar.' },
     { q: 'O que acontece depois dos 7 dias grátis?', a: 'A mensalidade de R$ 70 passa a valer pelo sistema completo. Você pode cancelar quando quiser, sem multa ou fidelidade.' },
-    { q: 'Como funcionam os apps adicionais?', a: 'São módulos opcionais (como CORE IA e WhatsApp) cobrados à parte. Você ativa e desativa direto na App Store dentro do sistema, e o valor é somado à sua mensalidade de forma proporcional.' },
+    { q: 'Como funcionam os apps adicionais?', a: 'São módulos opcionais, como CORE IA, WhatsApp, Atendimento, Loja Virtual e Assinaturas. Você ativa e desativa direto na App Store; apps pagos entram na mensalidade de forma proporcional e apps de valor zerado aparecem como gratuitos.' },
     { q: 'Posso usar em mais de um dispositivo?', a: 'Sim. O Gestão Fácil é 100% online e você acessa do computador, tablet ou celular, de onde estiver.' },
     { q: 'Meus dados ficam seguros?', a: 'Sim. Fazemos backup automático diário e seus dados ficam protegidos e disponíveis sempre que você precisar.' },
     { q: 'Tem fidelidade ou taxa de cancelamento?', a: 'Não. Você paga mês a mês e pode cancelar a qualquer momento, sem taxas escondidas.' },

@@ -309,7 +309,7 @@
                         </CardHeader>
                         <CardContent>
                             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                <div v-for="menu in MAIN_MENU_VISIBILITY_OPTIONS" :key="menu.key"
+                                <div v-for="menu in menuVisibilityOptions" :key="menu.key"
                                     class="flex min-h-[132px] flex-col rounded-lg border bg-body/70 p-4 transition"
                                     :class="{
                                         'border-primary bg-primary/5': isMenuSelected(menu.key),
@@ -414,7 +414,7 @@ import ImpressaoPage from './ImpressaoPage.vue'
 import TemaPage from './TemaPage.vue'
 import { goBack } from '@/hooks/links'
 import {
-    MAIN_MENU_VISIBILITY_OPTIONS,
+    getMainMenuVisibilityOptions,
     MENU_SUBMENU_VISIBILITY_OPTIONS,
     ROOT_ALWAYS_VISIBLE_MENU_KEYS,
     type MainMenuVisibilityKey,
@@ -428,6 +428,7 @@ const loadingWhatsappInstances = ref(false)
 const whatsappInstances = ref<WhatsAppNotificationInstanceOption[]>([])
 const isRootUser = computed(() => storeUi.usuarioLogged.permissao === 'root')
 const hasWhatsAppModule = computed(() => storeUi.hasActiveModule('whatsapp'))
+const menuVisibilityOptions = computed(() => getMainMenuVisibilityOptions(storeUi.appModules))
 const notificationSubmitDisabled = computed(() => {
     return Boolean(
         loading.value ||
@@ -478,7 +479,7 @@ const whatsappNotificationEvents = [
 ] as const
 
 function getDefaultVisibleMenuKeys() {
-    return MAIN_MENU_VISIBILITY_OPTIONS.map((menu) => menu.key)
+    return menuVisibilityOptions.value.map((menu) => menu.key)
 }
 
 const formularioNotificacoes = reactive<UpdateParametrosConta>({

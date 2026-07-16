@@ -6,6 +6,7 @@ import { formatCurrencyBR } from '@/utils/formatters'
 import { StoreRepository, type StoreModule, type StoreResumo } from '@/repositories/store-repository'
 import { ContaRepository } from '@/repositories/conta-repository'
 import type { UpdateParametrosConta } from '@/types/schemas'
+import { isStoreModuleFree, shouldShowImmediateBillingOptions } from './billing'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -217,6 +218,7 @@ function getMonthlyValueAfterAction(modulo: StoreModule) {
 }
 
 function getImmediateChargeValue(modulo: StoreModule, mode = billingMode.value) {
+  if (isStoreModuleFree(modulo)) return 0
   return mode === 'MENSAL' ? modulo.valorCobrancaMensal : modulo.valorCobrancaProporcional
 }
 
@@ -229,6 +231,14 @@ function getImpactDescription(modulo: StoreModule) {
     }
 
     return 'App gratuito. Ao instalar, ele é liberado imediatamente e não altera a recorrência da conta.'
+  }
+
+  if (isStoreModuleFree(modulo)) {
+    if (modulo.ativo) {
+      return 'App gratuito ativo. Ele não altera a mensalidade da conta.'
+    }
+
+    return 'App gratuito. Ao instalar, ele é liberado sem cobrança e não altera a mensalidade da conta.'
   }
 
   if (modulo.cobrancaPendenteAtual && modulo.cobrancaAtual?.tipo === 'PROPORCIONAL') {
@@ -288,6 +298,10 @@ function getCardHint(modulo: StoreModule) {
     return 'App instalado. Falta salvar as credenciais.'
   }
 
+  if (isStoreModuleFree(modulo) && !modulo.ativo) {
+    return 'Instale grátis. Não haverá cobrança na mensalidade.'
+  }
+
   if (modulo.cobrancaPendenteAtual) {
     return `Cobrança pendente até ${getDataFormatada(modulo.cobrancaAtual?.vencimento)}.`
   }
@@ -329,7 +343,7 @@ function setModuloSelecionado(id: number) {
 
 function abrirDetalhes(modulo: StoreModule) {
   moduloSelecionado.value = modulo
-  billingMode.value = modulo.ativacaoImediataDisponivel ? 'PROPORCIONAL' : 'MENSAL'
+  billingMode.value = shouldShowImmediateBillingOptions(modulo) ? 'PROPORCIONAL' : 'MENSAL'
   isDialogOpen.value = true
 }
 
@@ -366,8 +380,8 @@ async function adicionarAoPlano(modulo: StoreModule) {
   const valorAtual = resumo.value?.mensalidadeAtual || 0
   const proximoValor = getMonthlyValueAfterAction(modulo)
   const immediateCharge = getImmediateChargeValue(modulo)
-  const immediateFlow = modulo.ativacaoImediataDisponivel
-  const isFreeApp = Number(modulo.preco || 0) <= 0
+  const immediateFlow = shouldShowImmediateBillingOptions(modulo)
+  const isFreeApp = isStoreModuleFree(modulo)
 
   const confirmed = await confirm.confirm({
     title: isFreeApp
@@ -398,7 +412,7 @@ async function adicionarAoPlano(modulo: StoreModule) {
     setModuloSelecionado(modulo.id)
     toast.success(response.message || 'App selecionado com sucesso.')
 
-    if (response.data?.paymentLink) {
+    if (!isFreeApp && response.data?.paymentLink) {
       abrirCobranca(response.data.paymentLink)
     }
   } catch (error: any) {
@@ -413,7 +427,7 @@ async function cancelarModulo(modulo: StoreModule) {
   const valorAtual = resumo.value?.mensalidadeAtual || 0
   const proximoValor = getMonthlyValueAfterAction(modulo)
   const isPending = modulo.pendenteAtivacao
-  const isFreeApp = Number(modulo.preco || 0) <= 0
+  const isFreeApp = isStoreModuleFree(modulo)
 
   const confirmed = await confirm.confirm({
     title: isFreeApp
@@ -780,7 +794,7 @@ onMounted(carregarModulos)
         </div>
 
         <div v-else-if="moduloSelecionado" class="space-y-4">
-          <Alert v-if="moduloSelecionado.ativacaoImediataDisponivel && !moduloSelecionado.ativo && !moduloSelecionado.pendenteAtivacao">
+          <Alert v-if="shouldShowImmediateBillingOptions(moduloSelecionado)">
             <CircleDollarSign class="h-4 w-4" />
             <AlertTitle>Liberação imediata disponível</AlertTitle>
             <AlertDescription>
@@ -798,7 +812,7 @@ onMounted(carregarModulos)
               </div>
               <div class="text-right">
                 <div class="text-xl font-black text-primary">
-                  {{ formatCurrencyBR(moduloSelecionado.preco) }}
+                  {{ getCatalogPriceLabel(moduloSelecionado) }}
                 </div>
                 <div class="text-xs text-muted-foreground">valor mensal do app</div>
               </div>
@@ -806,7 +820,7 @@ onMounted(carregarModulos)
           </div>
 
           <div
-            v-if="moduloSelecionado.ativacaoImediataDisponivel && !moduloSelecionado.ativo && !moduloSelecionado.pendenteAtivacao"
+            v-if="shouldShowImmediateBillingOptions(moduloSelecionado)"
             class="space-y-3 rounded-lg border border-border bg-card p-4"
           >
             <div>
@@ -859,7 +873,7 @@ onMounted(carregarModulos)
               </span>
             </div>
             <div
-              v-if="moduloSelecionado.ativacaoImediataDisponivel && !moduloSelecionado.ativo && !moduloSelecionado.pendenteAtivacao"
+              v-if="shouldShowImmediateBillingOptions(moduloSelecionado)"
               class="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3"
             >
               <span>Liberação neste ciclo</span>
@@ -870,7 +884,7 @@ onMounted(carregarModulos)
           </div>
 
           <div
-            v-if="moduloSelecionado.cobrancaAtual?.linkPagamento"
+            v-if="moduloSelecionado.cobrancaAtual?.linkPagamento && !isStoreModuleFree(moduloSelecionado)"
             class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
           >
             <div class="flex items-start justify-between gap-3">
@@ -932,7 +946,7 @@ onMounted(carregarModulos)
 
           <template v-else-if="moduloSelecionado">
             <Button
-              v-if="moduloSelecionado.cobrancaAtual?.linkPagamento"
+              v-if="moduloSelecionado.cobrancaAtual?.linkPagamento && !isStoreModuleFree(moduloSelecionado)"
               variant="outline"
               class="gap-2"
               @click="abrirCobranca(moduloSelecionado.cobrancaAtual.linkPagamento)"
@@ -949,7 +963,7 @@ onMounted(carregarModulos)
             >
               <LoaderCircle v-if="actionLoadingId === moduloSelecionado.id" class="h-4 w-4 animate-spin" />
               <ShoppingCart v-else class="h-4 w-4" />
-              {{ moduloSelecionado.ativacaoImediataDisponivel ? 'Gerar cobrança do app' : 'Reservar app' }}
+              {{ shouldShowImmediateBillingOptions(moduloSelecionado) ? 'Gerar cobrança do app' : isStoreModuleFree(moduloSelecionado) ? 'Instalar app' : 'Reservar app' }}
             </Button>
 
             <Button

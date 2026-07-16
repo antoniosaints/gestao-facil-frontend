@@ -62,6 +62,28 @@ export const MAIN_MENU_VISIBILITY_OPTIONS = [
 
 export type MainMenuVisibilityKey = (typeof MAIN_MENU_VISIBILITY_OPTIONS)[number]['key']
 
+export const APP_MENU_MODULE_KEYS: Partial<Record<MainMenuVisibilityKey, string>> = {
+  atendimento: 'atendimento',
+  assinaturas: 'assinaturas',
+  'loja-virtual': 'loja-virtual',
+  'core-ia': 'core-ia',
+  whatsapp: 'whatsapp',
+}
+
+export function isMainMenuVisibilityOptionAvailable(
+  menuKey: MainMenuVisibilityKey,
+  appModules: Record<string, boolean> = {},
+) {
+  const moduleKey = APP_MENU_MODULE_KEYS[menuKey]
+  return !moduleKey || Boolean(appModules[moduleKey])
+}
+
+export function getMainMenuVisibilityOptions(appModules: Record<string, boolean> = {}) {
+  return MAIN_MENU_VISIBILITY_OPTIONS.filter((menu) =>
+    isMainMenuVisibilityOptionAvailable(menu.key, appModules),
+  )
+}
+
 // Submenus (filhos) que podem ser ocultados individualmente, agrupados pela key do menu pai.
 // As keys usam o formato "pai:filho" (com ":") — o que as distingue das keys de menu de
 // topo (sem ":"). Em `menusVisiveis`, keys de topo funcionam como whitelist (presente =
