@@ -17,6 +17,8 @@ export interface IaModelo {
   nome: string
   provider: string
   ativo: boolean
+  custoInputMilhao: number | string | null
+  custoOutputMilhao: number | string | null
   createdAt: string
   updatedAt: string
 }
@@ -34,6 +36,8 @@ export interface IaModeloPayload {
   nome: string
   provider?: string
   ativo?: boolean
+  custoInputMilhao?: number | null
+  custoOutputMilhao?: number | null
 }
 
 export interface IaCoreConfig {
@@ -63,7 +67,9 @@ export interface IaUsoResumo {
   mesInicio: string
   totalTokens: number
   chamadas: number
+  custoEstimado: number
   porFeature: { feature: string; tokens: number }[]
+  porModelo: { modelId: string; tokens: number; custoEstimado: number }[]
 }
 
 // Configuração de IA da plataforma (área do CEO / super admin).

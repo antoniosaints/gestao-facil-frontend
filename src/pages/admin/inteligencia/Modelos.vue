@@ -18,11 +18,20 @@ const busyId = ref<number | null>(null)
 const modelos = ref<IaModelo[]>([])
 
 const dialog = reactive<{ open: boolean; editingId: number | null }>({ open: false, editingId: null })
-const form = reactive<{ modelId: string; nome: string; provider: string; ativo: boolean }>({
+const form = reactive<{
+  modelId: string
+  nome: string
+  provider: string
+  ativo: boolean
+  custoInputMilhao: number | null
+  custoOutputMilhao: number | null
+}>({
   modelId: '',
   nome: '',
   provider: 'gemini',
   ativo: true,
+  custoInputMilhao: null,
+  custoOutputMilhao: null,
 })
 
 async function load() {
@@ -38,13 +47,20 @@ async function load() {
 
 function openCreate() {
   dialog.editingId = null
-  Object.assign(form, { modelId: '', nome: '', provider: 'gemini', ativo: true })
+  Object.assign(form, {
+    modelId: '', nome: '', provider: 'gemini', ativo: true,
+    custoInputMilhao: null, custoOutputMilhao: null,
+  })
   dialog.open = true
 }
 
 function openEdit(modelo: IaModelo) {
   dialog.editingId = modelo.id
-  Object.assign(form, { modelId: modelo.modelId, nome: modelo.nome, provider: modelo.provider, ativo: modelo.ativo })
+  Object.assign(form, {
+    modelId: modelo.modelId, nome: modelo.nome, provider: modelo.provider, ativo: modelo.ativo,
+    custoInputMilhao: modelo.custoInputMilhao != null ? Number(modelo.custoInputMilhao) : null,
+    custoOutputMilhao: modelo.custoOutputMilhao != null ? Number(modelo.custoOutputMilhao) : null,
+  })
   dialog.open = true
 }
 
@@ -57,6 +73,10 @@ async function save() {
     nome: form.nome.trim(),
     provider: form.provider.trim() || 'gemini',
     ativo: form.ativo,
+    custoInputMilhao:
+      form.custoInputMilhao != null && Number(form.custoInputMilhao) >= 0 ? Number(form.custoInputMilhao) : null,
+    custoOutputMilhao:
+      form.custoOutputMilhao != null && Number(form.custoOutputMilhao) >= 0 ? Number(form.custoOutputMilhao) : null,
   }
   try {
     saving.value = true
@@ -142,6 +162,10 @@ onMounted(load)
             </Badge>
           </div>
           <p class="truncate font-mono text-xs text-muted-foreground">{{ modelo.provider }} · {{ modelo.modelId }}</p>
+          <p v-if="modelo.custoInputMilhao != null || modelo.custoOutputMilhao != null"
+            class="truncate text-[11px] text-muted-foreground">
+            Custo/1M: entrada {{ Number(modelo.custoInputMilhao ?? 0) }} · saída {{ Number(modelo.custoOutputMilhao ?? 0) }}
+          </p>
         </div>
         <Switch :model-value="modelo.ativo" :disabled="busyId === modelo.id" @update:model-value="(v) => toggleAtivo(modelo, Boolean(v))" />
         <Button variant="ghost" size="icon" title="Editar" @click="openEdit(modelo)"><Pencil class="h-4 w-4" /></Button>
@@ -177,6 +201,19 @@ onMounted(load)
           <div class="space-y-1">
             <Label>Provedor</Label>
             <Input v-model="form.provider" placeholder="gemini" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <Label>Custo entrada / 1M tokens</Label>
+              <Input v-model.number="form.custoInputMilhao" type="number" min="0" step="0.000001" placeholder="Ex.: 0.075" />
+            </div>
+            <div class="space-y-1">
+              <Label>Custo saída / 1M tokens</Label>
+              <Input v-model.number="form.custoOutputMilhao" type="number" min="0" step="0.000001" placeholder="Ex.: 0.30" />
+            </div>
+            <p class="col-span-2 text-[11px] text-muted-foreground">
+              Custo por 1 milhão de tokens (na sua moeda). Usado para estimar o gasto de IA. Deixe vazio se não quiser rastrear.
+            </p>
           </div>
           <div class="flex items-center justify-between rounded-md border p-3">
             <Label>Ativo</Label>

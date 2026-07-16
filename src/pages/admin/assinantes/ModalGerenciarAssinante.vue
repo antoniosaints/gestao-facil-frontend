@@ -51,7 +51,7 @@ const status = ref<'ATIVO' | 'INATIVO' | 'BLOQUEADO'>('ATIVO')
 const vencimento = ref<Date | null>(new Date())
 const apps = ref<AssinanteAdminAppItem[]>([])
 const iaLimiteTokensMensal = ref<number | null>(null)
-const iaUsoMes = ref<{ totalTokens: number; limite: number | null; restante: number | null } | null>(null)
+const iaUsoMes = ref<{ totalTokens: number; limite: number | null; restante: number | null; custoEstimado: number } | null>(null)
 
 const dados = ref({
   nome: '',
@@ -406,6 +406,10 @@ async function submit() {
               <div class="flex items-center justify-between">
                 <span class="text-muted-foreground">Consumo do mês</span>
                 <span class="font-medium">{{ iaUsoMes.totalTokens.toLocaleString('pt-BR') }} tokens</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">Custo estimado</span>
+                <span class="font-medium">{{ iaUsoMes.custoEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) }}</span>
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-muted-foreground">Limite efetivo</span>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Bot, KeyRound, LoaderCircle, RotateCcw, ShieldAlert, CheckCircle2 } from 'lucide-vue-next'
 import {
@@ -22,6 +23,16 @@ const saving = ref(false)
 const config = ref<IaCoreConfig | null>(null)
 const modelos = ref<IaModelo[]>([])
 const uso = ref<IaUsoResumo | null>(null)
+
+// Opções do select de modelo do Core IA: modelos cadastrados. Se o modelo salvo não estiver
+// cadastrado, mantém como opção para não perder a seleção.
+const modeloOptions = computed(() => {
+  const opts = modelos.value.map((m) => ({ value: m.modelId, label: m.nome }))
+  if (form.value.modelId && !opts.some((o) => o.value === form.value.modelId)) {
+    opts.unshift({ value: form.value.modelId, label: `${form.value.modelId} (não cadastrado)` })
+  }
+  return opts
+})
 
 // Formulário: a chave só é enviada quando o CEO digita uma nova (não recarregamos a existente).
 const form = ref<{ modelId: string; apiKey: string; systemPrompt: string; ativo: boolean; limiteTokensMensalPadrao: number | null }>({
@@ -135,12 +146,16 @@ onMounted(load)
         <!-- Modelo -->
         <div class="space-y-1">
           <Label for="core-modelo">Modelo</Label>
-          <Input id="core-modelo" v-model="form.modelId" placeholder="Ex.: gemini-2.0-flash" list="core-modelos-sugeridos" />
-          <datalist id="core-modelos-sugeridos">
-            <option v-for="modelo in modelos" :key="modelo.id" :value="modelo.modelId">{{ modelo.nome }}</option>
-          </datalist>
+          <Select v-model="form.modelId">
+            <SelectTrigger id="core-modelo" class="w-full">
+              <SelectValue placeholder="Selecione um modelo cadastrado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="opt in modeloOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+            </SelectContent>
+          </Select>
           <p class="text-[11px] text-muted-foreground">
-            Identificador exato do provedor (Gemini). Use um modelo mais capaz para respostas melhores.
+            Modelo usado pelo Core IA e por <strong>todas as features de IA do lado do cliente</strong> (exceto os agentes de atendimento, onde o cliente escolhe). Cadastre modelos e custos na aba <strong>Modelos</strong>.
           </p>
         </div>
 
@@ -181,6 +196,13 @@ onMounted(load)
           <div class="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
             <span><strong class="text-foreground">{{ uso.totalTokens.toLocaleString('pt-BR') }}</strong> tokens</span>
             <span><strong class="text-foreground">{{ uso.chamadas.toLocaleString('pt-BR') }}</strong> chamadas</span>
+            <span>Custo estimado: <strong class="text-foreground">{{ uso.custoEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) }}</strong></span>
+          </div>
+          <div v-if="uso.porModelo?.length" class="mt-2 flex flex-wrap gap-1">
+            <span v-for="m in uso.porModelo" :key="m.modelId"
+              class="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+              {{ m.modelId }}: {{ m.tokens.toLocaleString('pt-BR') }} tok · {{ m.custoEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) }}
+            </span>
           </div>
           <div v-if="uso.porFeature.length" class="mt-2 flex flex-wrap gap-1">
             <span v-for="f in uso.porFeature" :key="f.feature"

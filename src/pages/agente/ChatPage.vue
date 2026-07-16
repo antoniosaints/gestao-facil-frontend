@@ -15,6 +15,7 @@ import {
     FileQuestion
 } from 'lucide-vue-next';
 import { GeminiRepository } from '@/repositories/gemini-repository';
+import IaUsageIndicator from '@/components/ia/IaUsageIndicator.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import { POSITION, useToast } from 'vue-toastification';
 import { Separator } from '@/components/ui/separator';
@@ -146,6 +147,8 @@ const formatMessage = (text: string) => {
 
     return html;
 };
+const usageIndicator = ref<{ refresh: () => void } | null>(null);
+
 const addMessage = (text: string, isUser: boolean) => {
     messages.value.push({
         id: Date.now(),
@@ -177,6 +180,9 @@ const callIA = async (message: string) => {
 
             // 2. Exibe a mensagem na tela
             addMessage(reply, false);
+
+            // 3. Atualiza o indicador de uso de IA (consumiu tokens)
+            usageIndicator.value?.refresh();
         } else {
             throw new Error(response.message || "Erro desconhecido");
         }
@@ -232,9 +238,7 @@ const clearChat = () => {
                     </span>
                 </div>
             </div>
-            <!-- <button @click="toggleSettings" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition">
-                <Settings :size="20" />
-            </button> -->
+            <IaUsageIndicator ref="usageIndicator" />
         </header>
 
         <!-- Modal de Configuração -->

@@ -5,6 +5,13 @@ export interface IaTextResult {
   usage?: { promptTokens: number; completionTokens: number; totalTokens: number }
 }
 
+export interface IaMeuUso {
+  totalTokens: number
+  limite: number | null
+  restante: number | null
+  custoEstimado: number
+}
+
 // Repositório das features de IA (Gemini). Todos os endpoints exigem o app "core-ia" ativo e
 // respeitam o limite mensal de tokens da conta (429 quando excedido).
 export class IaRepository {
@@ -35,6 +42,12 @@ export class IaRepository {
     cliente?: string | null
   }): Promise<IaTextResult> {
     const { data } = await http.post('/ia/os/redigir', payload)
+    return data.data
+  }
+
+  // Uso de IA da própria conta no mês (para o indicador no Core IA).
+  static async meuUso(): Promise<IaMeuUso> {
+    const { data } = await http.get('/ia/uso')
     return data.data
   }
 }

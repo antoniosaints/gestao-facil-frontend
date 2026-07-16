@@ -115,7 +115,7 @@ export interface AssinanteAdminAppsResponse {
     totalAppsPendentes: number
     vencimento: string | Date
     iaLimiteTokensMensal: number | null
-    iaUsoMes: { totalTokens: number; limite: number | null; restante: number | null }
+    iaUsoMes: { totalTokens: number; limite: number | null; restante: number | null; custoEstimado: number }
   }
 }
 
