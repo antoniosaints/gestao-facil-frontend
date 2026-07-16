@@ -35,7 +35,7 @@ function toggle() {
     >
       <div
         v-show="open"
-        class="fixed left-2 right-2 top-16 bottom-24 z-[60] flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl md:left-auto md:right-6 md:top-auto md:bottom-24 md:h-[min(72vh,660px)] md:w-[400px]"
+        class="fixed left-0 right-0 top-16 bottom-20 z-[60] flex flex-col overflow-hidden md:rounded-xl border border-border bg-card shadow-2xl md:left-auto md:right-6 md:top-auto md:bottom-24 md:h-[min(72vh,660px)] md:w-[400px]"
       >
         <ChatPage embedded />
       </div>
@@ -45,7 +45,7 @@ function toggle() {
     <button
       type="button"
       :title="open ? 'Fechar assistente' : 'Abrir assistente Core IA'"
-      class="fixed bottom-6 right-4 z-[70] flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700 md:right-6"
+      class="fixed right-0 bottom-40 z-[90] flex h-14 w-10 items-center justify-center rounded-l-full bg-blue-600 pl-3 pr-0 text-white shadow-lg transition-transform hover:scale-[1.03] hover:bg-blue-700 active:scale-[0.96] md:right-6 md:bottom-6 md:w-14 md:rounded-full md:px-0"
       @click="toggle"
     >
       <X v-if="open" class="h-6 w-6" />
