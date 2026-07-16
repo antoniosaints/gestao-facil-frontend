@@ -15,6 +15,7 @@ import {
   CalendarClock,
   CircleCheck,
   CircleOff,
+  CirclePlus,
   CreditCard,
   Loader,
   RefreshCcw,
@@ -27,6 +28,7 @@ import { reactive, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
 import ModalGerenciarFatura from './ModalGerenciarFatura.vue'
+import ModalNovaFatura from './ModalNovaFatura.vue'
 import Tabela from './tabela/Tabela.vue'
 import { useFaturasAdmin } from './useFaturasAdmin'
 
@@ -43,6 +45,7 @@ const totalPages = ref(1)
 const total = ref(0)
 const showSearchModal = ref(false)
 const showActionsModal = ref(false)
+const showNovaFatura = ref(false)
 
 const tableFilters = reactive({
   status: 'TODOS',
@@ -184,6 +187,11 @@ watch(
           <RefreshCcw class="h-4 w-4" />
           Atualizar
         </Button>
+
+        <Button class="gap-2" @click="showNovaFatura = true">
+          <CirclePlus class="h-4 w-4" />
+          Nova fatura
+        </Button>
       </div>
     </div>
 
@@ -322,11 +330,14 @@ watch(
           </Select>
         </div>
         <div class="grid grid-cols-2 gap-2">
+          <Button @click="showActionsModal = false; showNovaFatura = true">
+            <CirclePlus class="mr-2 h-4 w-4" />
+            Nova fatura
+          </Button>
           <Button variant="outline" @click="refreshAll">
             <RefreshCcw class="mr-2 h-4 w-4" />
             Atualizar
           </Button>
-          <Button variant="outline" @click="showActionsModal = false">Fechar</Button>
         </div>
       </div>
     </ModalView>
@@ -373,5 +384,7 @@ watch(
       :fatura="selectedFatura"
       @saved="handleSaved"
     />
+
+    <ModalNovaFatura v-model:open="showNovaFatura" @saved="handleSaved" />
   </div>
 </template>

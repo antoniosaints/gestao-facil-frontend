@@ -152,6 +152,15 @@ export interface UpdateFaturaAdminPayload {
   descricao?: string
 }
 
+export interface CreateFaturaManualPayload {
+  contaId: number
+  valor: number
+  descricao?: string
+  vencimento?: string
+  status: 'PAGO' | 'PENDENTE'
+  renovarConta: boolean
+}
+
 export interface DashboardAdminKpis {
   totalAssinantes: number
   faturamentoMes: number
@@ -337,8 +346,10 @@ export interface CreateConta {
   indicacao?: string
 }
 export class ContaRepository {
-  static async status(): Promise<{ data: StatusConta }> {
-    const data = await http.get(`/contas/assinatura/status`)
+  static async status(forceRefresh = false): Promise<{ data: StatusConta }> {
+    const data = await http.get(`/contas/assinatura/status`, {
+      params: forceRefresh ? { refresh: 1 } : undefined,
+    })
     return data.data
   }
   static async info(): Promise<Contas & { Usuarios: Usuarios[] }> {
@@ -445,6 +456,11 @@ export class ContaRepository {
 
   static async gerenciarFaturaAdmin(id: number, payload: UpdateFaturaAdminPayload) {
     const res = await http.post(`/admin/faturas/${id}/controle`, payload)
+    return res.data
+  }
+
+  static async criarFaturaManualAdmin(payload: CreateFaturaManualPayload) {
+    const res = await http.post('/admin/faturas/manual', payload)
     return res.data
   }
 

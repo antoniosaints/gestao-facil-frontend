@@ -496,6 +496,15 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'inadimplencia',
+        name: 'financeiro-inadimplencia',
+        component: () => import('@/pages/financeiro/inadimplencia/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
         path: 'cobrancas',
         name: 'lancamentos-cobrancas',
         component: () => import('@/pages/financeiro/cobrancas/Home.vue'),

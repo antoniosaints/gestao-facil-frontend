@@ -175,7 +175,9 @@ function getTituloFatura(fatura: StatusContaFatura) {
 async function getDataConta() {
   try {
     refresh.value = true
-    assinatura.value = await storeUi.getStatus()
+    // Botão de atualizar (e carga da tela) força ignorar o cache do Redis para exibir
+    // sempre o estado real das faturas — dados críticos que não podem ficar defasados.
+    assinatura.value = await storeUi.getStatus(true)
   } catch (error) {
     console.error(error)
   } finally {

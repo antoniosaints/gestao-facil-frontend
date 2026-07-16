@@ -273,9 +273,9 @@ export const useUiStore = defineStore('uiStore', () => {
     openSidebar.value = !openSidebar.value
   }
 
-  async function getStatus() {
+  async function getStatus(forceRefresh = false) {
     try {
-      const { data } = await ContaRepository.status()
+      const { data } = await ContaRepository.status(forceRefresh)
       status.value = data.status
       diasParaVencer.value = data.diasParaVencer
       localStorage.setItem('gestao_facil:status', data.status)

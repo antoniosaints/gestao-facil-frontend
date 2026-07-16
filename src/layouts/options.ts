@@ -31,6 +31,7 @@ import {
   TicketCheck,
   TrendingDown,
   TrendingUp,
+  TriangleAlert,
   User,
   Users,
   UserStar,
@@ -105,6 +106,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'financeiro:contas-a-receber', nome: 'Contas a receber' },
     { key: 'financeiro:contas-a-pagar', nome: 'Contas a pagar' },
     { key: 'financeiro:assinaturas-a-pagar', nome: 'Assinaturas' },
+    { key: 'financeiro:inadimplencia', nome: 'Inadimplência' },
     { key: 'financeiro:cobrancas', nome: 'Cobranças' },
   ],
   produtos: [
@@ -364,6 +366,13 @@ export const sidebarMenuOptions = (
           nome: 'Assinaturas',
           link: '/financeiro/assinaturas-a-pagar',
           icone: ReceiptText,
+          color: 'emerald',
+        },
+        {
+          key: 'financeiro:inadimplencia',
+          nome: 'Inadimplência',
+          link: '/financeiro/inadimplencia',
+          icone: TriangleAlert,
           color: 'emerald',
         },
         {

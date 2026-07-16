@@ -11,6 +11,7 @@ import {
   FileDown,
   Filter,
   HandCoins,
+  Lock,
   MessageCircleMore,
   ReceiptText,
   RefreshCcw,
@@ -29,6 +30,7 @@ import PieChart from '@/components/graficos/PieChart.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { useConfirm } from '@/composables/useConfirm'
 import { optionsChartBarDefault, optionsChartPie } from '@/composables/useChartOptions'
 import {
@@ -68,6 +70,13 @@ const canResendWhatsapp = computed(() =>
   caixaSelecionado.value?.caixa.status === 'FECHADO' && connectedInstances.value.length > 0,
 )
 const canDeleteCaixas = computed(() => storeUi.permissoes.admin)
+const canCloseCaixas = computed(() => storeUi.permissoes.admin)
+
+const openModalFechar = ref(false)
+const caixaParaFechar = ref<CaixaRelatorioResponse['caixas'][number] | null>(null)
+const valorFechamento = ref<number | null>(null)
+const descricaoFechamento = ref('')
+const fechandoCaixa = ref(false)
 
 const filtrosAtivos = computed(() => {
   const inicio = filtroPeriodo.value[0]?.toLocaleDateString('pt-BR')
@@ -247,6 +256,41 @@ async function deletarCaixa(item: CaixaRelatorioResponse['caixas'][number]) {
   }
 }
 
+function abrirFecharCaixa(item: CaixaRelatorioResponse['caixas'][number]) {
+  caixaParaFechar.value = item
+  valorFechamento.value = Number(item.resumo.saldoEsperado || 0)
+  descricaoFechamento.value = ''
+  openModalFechar.value = true
+}
+
+async function confirmarFecharCaixa() {
+  if (!caixaParaFechar.value || valorFechamento.value === null || valorFechamento.value < 0) {
+    toast.error('Informe o valor contado no fechamento.')
+    return
+  }
+  try {
+    fechandoCaixa.value = true
+    await CaixaRepository.fecharCaixaGerencial({
+      caixaId: caixaParaFechar.value.caixa.id,
+      valorFechamento: Number(valorFechamento.value),
+      descricao: descricaoFechamento.value.trim() || undefined,
+    })
+    toast.success('Caixa fechado com sucesso')
+    openModalFechar.value = false
+    await carregarRelatorio()
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error.response?.data?.message || 'Erro ao fechar o caixa')
+  } finally {
+    fechandoCaixa.value = false
+  }
+}
+
+const diferencaFechamento = computed(() => {
+  if (!caixaParaFechar.value || valorFechamento.value === null) return 0
+  return Number(valorFechamento.value) - Number(caixaParaFechar.value.resumo.saldoEsperado || 0)
+})
+
 async function carregarInstanciasWhatsapp() {
   try {
     whatsappInstances.value = await ContaRepository.listarInstanciasWhatsappNotificacao()
@@ -425,6 +469,11 @@ onMounted(() => {
                     </Button>
                     <Button variant="outline" size="sm" @click="abrirDetalhes(item)">
                       <Eye class="h-4 w-4" /> Detalhes
+                    </Button>
+                    <Button v-if="canCloseCaixas && item.caixa.status === 'ABERTO'" size="sm"
+                      title="Fechar caixa"
+                      @click="abrirFecharCaixa(item)">
+                      <Lock class="h-4 w-4" /> Fechar
                     </Button>
                     <Button v-if="canDeleteCaixas" variant="destructive" size="sm"
                       :disabled="!canDeleteCaixaItem(item) || deletingCaixaId === item.caixa.id"
@@ -696,6 +745,50 @@ onMounted(() => {
         </section>
       </div>
     </ModalView>
+    <ModalView v-model:open="openModalFechar" title="Fechar caixa" size="md">
+      <div v-if="caixaParaFechar" class="grid gap-4 p-4">
+        <div class="rounded-md border bg-muted/30 p-3 text-sm">
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">Caixa</span>
+            <strong>{{ caixaParaFechar.caixa.codigo }}</strong>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">Operador</span>
+            <span>{{ caixaParaFechar.caixa.abertoPor?.nome || '-' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-muted-foreground">Saldo esperado</span>
+            <strong>{{ formatCurrencyBR(caixaParaFechar.resumo.saldoEsperado || 0) }}</strong>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-sm font-medium">Valor contado (fechamento)</label>
+          <Input v-model.number="valorFechamento" type="number" min="0" step="0.01" placeholder="0,00" />
+        </div>
+
+        <div class="rounded-md border p-3 text-sm" :class="diferencaFechamento === 0 ? 'text-muted-foreground' : diferencaFechamento > 0 ? 'text-emerald-600' : 'text-rose-600'">
+          <div class="flex justify-between">
+            <span>Diferença</span>
+            <strong>{{ formatCurrencyBR(diferencaFechamento) }}</strong>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-sm font-medium">Observação (opcional)</label>
+          <Input v-model="descricaoFechamento" placeholder="Ex.: Fechamento gerencial pela tabela" />
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" :disabled="fechandoCaixa" @click="openModalFechar = false">Cancelar</Button>
+          <Button :disabled="fechandoCaixa || valorFechamento === null" @click="confirmarFecharCaixa">
+            <Lock class="h-4 w-4" />
+            {{ fechandoCaixa ? 'Fechando...' : 'Fechar caixa' }}
+          </Button>
+        </div>
+      </div>
+    </ModalView>
+
     <ModalView v-model:open="openModalReenvio" title="Reenviar resumo via WhatsApp" size="md">
       <div class="grid gap-4 p-4">
         <p class="text-sm text-muted-foreground">

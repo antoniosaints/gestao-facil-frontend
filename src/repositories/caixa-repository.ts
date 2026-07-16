@@ -100,6 +100,12 @@ export class CaixaRepository {
     return data.data as CaixaSessao
   }
 
+  // Fechamento gerencial (admin) direto pela tabela de caixas, sem passar pelo PDV.
+  static async fecharCaixaGerencial(payload: FecharCaixaPayload) {
+    const { data } = await http.put('/vendas/pdv/fecharCaixaGerencial', payload)
+    return data.data as CaixaSessao
+  }
+
   static async criarPdv(payload: { nome: string; localizacao?: string; descricao?: string }) {
     const { data } = await http.post('/vendas/pdv/criarPdv', payload)
     return data.data as PdvPonto
