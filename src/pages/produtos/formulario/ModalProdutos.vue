@@ -7,6 +7,8 @@ import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import VarianteImagemField from '@/pages/produtos/formulario/VarianteImagemField.vue'
 import CollapsibleSection from './CollapsibleSection.vue'
 import ProdutoFiscalFields from './ProdutoFiscalFields.vue'
+import IaTextAssistant from '@/components/ia/IaTextAssistant.vue'
+import { IaRepository } from '@/repositories/ia-repository'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -87,6 +89,22 @@ watch(
     autoGerarSku()
   },
 )
+
+// Geração da descrição do produto com IA (usada pelo IaTextAssistant).
+async function gerarDescricaoIa(modo: 'gerar' | 'melhorar' | 'resumir') {
+  const atributos = [
+    store.form.unidade ? `Unidade: ${store.form.unidade}` : null,
+    store.form.categoria ? `Categoria: ${store.form.categoria}` : null,
+  ]
+    .filter(Boolean)
+    .join(', ')
+  const r = await IaRepository.descricaoProduto({
+    nome: store.form.nome,
+    atributos: atributos || null,
+    descricaoAtual: modo === 'melhorar' ? store.form.descricao : null,
+  })
+  return r.text
+}
 
 function buildPayload() {
   return {
@@ -339,7 +357,12 @@ async function submit() {
         <CollapsibleSection v-model:open="secDescricao" title="Descrição e imagem" :icon="FileText">
           <div class="grid gap-4">
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-foreground">Descrição</label>
+              <div class="mb-1.5 flex items-center justify-between gap-2">
+                <label class="block text-sm font-medium text-foreground">Descrição</label>
+                <IaTextAssistant v-model="store.form.descricao" :modos="['gerar', 'melhorar']"
+                  title="Descrição do produto com IA" button-label="Gerar com IA"
+                  :custom-generate="gerarDescricaoIa" />
+              </div>
               <Textarea v-model="store.form.descricao" rows="4"
                 placeholder="Adicione observações ou detalhes sobre o produto"
                 class="bg-background dark:bg-background/70" />

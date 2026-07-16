@@ -44,6 +44,7 @@ export interface UpdateAssinanteAdminPayload {
   telefone?: string | null
   documento?: string | null
   valorBasePlano?: number
+  iaLimiteTokensMensal?: number | null
 }
 
 export interface AdminModuloItem {
@@ -113,6 +114,8 @@ export interface AssinanteAdminAppsResponse {
     totalAppsAtivos: number
     totalAppsPendentes: number
     vencimento: string | Date
+    iaLimiteTokensMensal: number | null
+    iaUsoMes: { totalTokens: number; limite: number | null; restante: number | null }
   }
 }
 

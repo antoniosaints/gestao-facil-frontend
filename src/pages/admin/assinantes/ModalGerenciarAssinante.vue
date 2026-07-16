@@ -50,6 +50,8 @@ const appSavingId = ref<number | null>(null)
 const status = ref<'ATIVO' | 'INATIVO' | 'BLOQUEADO'>('ATIVO')
 const vencimento = ref<Date | null>(new Date())
 const apps = ref<AssinanteAdminAppItem[]>([])
+const iaLimiteTokensMensal = ref<number | null>(null)
+const iaUsoMes = ref<{ totalTokens: number; limite: number | null; restante: number | null } | null>(null)
 
 const dados = ref({
   nome: '',
@@ -178,6 +180,8 @@ async function loadApps(contaId: number) {
     appsLoading.value = true
     const response = await ContaRepository.listarAppsAssinante(contaId)
     apps.value = response.data || []
+    iaLimiteTokensMensal.value = response.resumo?.iaLimiteTokensMensal ?? null
+    iaUsoMes.value = response.resumo?.iaUsoMes ?? null
   } catch (error: any) {
     console.error(error)
     apps.value = []
@@ -232,6 +236,10 @@ async function submit() {
       telefone: dados.value.telefone.trim() || null,
       documento: dados.value.documento.trim() || null,
       valorBasePlano: Number(valorBasePlano.value || 0),
+      iaLimiteTokensMensal:
+        iaLimiteTokensMensal.value != null && Number(iaLimiteTokensMensal.value) > 0
+          ? Number(iaLimiteTokensMensal.value)
+          : null,
     })
     toast.success('Conta atualizada com sucesso')
     open.value = false
@@ -382,6 +390,37 @@ async function submit() {
           </CardContent>
         </Card>
       </div>
+
+      <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
+        <CardContent class="space-y-3 p-4">
+          <div class="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Sparkles class="h-4 w-4 text-primary" /> Limite de IA (tokens/mês)
+          </div>
+          <div class="grid gap-3 md:grid-cols-2">
+            <div class="space-y-1">
+              <Label>Limite mensal desta conta</Label>
+              <Input v-model.number="iaLimiteTokensMensal" type="number" min="0" placeholder="Vazio = usa o padrão global" />
+              <p class="text-xs text-muted-foreground">Vazio ou 0 = usa o limite padrão definido no Core IA. Salvo junto com "Salvar controle".</p>
+            </div>
+            <div v-if="iaUsoMes" class="rounded-lg border border-border/70 bg-background/70 p-3 text-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">Consumo do mês</span>
+                <span class="font-medium">{{ iaUsoMes.totalTokens.toLocaleString('pt-BR') }} tokens</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">Limite efetivo</span>
+                <span class="font-medium">{{ iaUsoMes.limite == null ? 'Ilimitado' : iaUsoMes.limite.toLocaleString('pt-BR') }}</span>
+              </div>
+              <div v-if="iaUsoMes.restante != null" class="mt-1 flex items-center justify-between border-t border-border/70 pt-1">
+                <span class="text-muted-foreground">Restante</span>
+                <span class="font-semibold" :class="iaUsoMes.restante > 0 ? 'text-primary' : 'text-danger'">
+                  {{ iaUsoMes.restante.toLocaleString('pt-BR') }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
         <CardContent class="space-y-4 p-4">

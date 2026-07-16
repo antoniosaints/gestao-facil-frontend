@@ -13,6 +13,7 @@ import {
   type IaCoreConfig,
   type IaCoreConfigPayload,
   type IaModelo,
+  type IaUsoResumo,
 } from '@/repositories/ia-admin-repository'
 
 const toast = useToast()
@@ -20,29 +21,34 @@ const loading = ref(false)
 const saving = ref(false)
 const config = ref<IaCoreConfig | null>(null)
 const modelos = ref<IaModelo[]>([])
+const uso = ref<IaUsoResumo | null>(null)
 
 // Formulário: a chave só é enviada quando o CEO digita uma nova (não recarregamos a existente).
-const form = ref<{ modelId: string; apiKey: string; systemPrompt: string; ativo: boolean }>({
+const form = ref<{ modelId: string; apiKey: string; systemPrompt: string; ativo: boolean; limiteTokensMensalPadrao: number | null }>({
   modelId: '',
   apiKey: '',
   systemPrompt: '',
   ativo: true,
+  limiteTokensMensalPadrao: null,
 })
 
 async function load() {
   try {
     loading.value = true
-    const [cfg, listaModelos] = await Promise.all([
+    const [cfg, listaModelos, resumoUso] = await Promise.all([
       IaAdminRepository.getCoreConfig(),
       IaAdminRepository.listModelos().catch(() => [] as IaModelo[]),
+      IaAdminRepository.getUso().catch(() => null),
     ])
     config.value = cfg
     modelos.value = listaModelos
+    uso.value = resumoUso
     form.value = {
       modelId: cfg.modelId,
       apiKey: '',
       systemPrompt: cfg.systemPrompt,
       ativo: cfg.ativo,
+      limiteTokensMensalPadrao: cfg.limiteTokensMensalPadrao ?? null,
     }
   } catch (error: any) {
     toast.error(error?.response?.data?.message || 'Erro ao carregar a configuração do Core IA.')
@@ -60,6 +66,10 @@ async function save() {
     modelId: form.value.modelId.trim(),
     systemPrompt: form.value.systemPrompt,
     ativo: form.value.ativo,
+    limiteTokensMensalPadrao:
+      form.value.limiteTokensMensalPadrao != null && Number(form.value.limiteTokensMensalPadrao) > 0
+        ? Number(form.value.limiteTokensMensalPadrao)
+        : null,
   }
   // Só envia a chave quando o CEO digitou uma nova.
   if (form.value.apiKey.trim()) payload.apiKey = form.value.apiKey.trim()
@@ -153,6 +163,31 @@ onMounted(load)
             <ShieldAlert v-else class="h-3.5 w-3.5" />
             {{ config?.apiKeyConfigured ? 'Chave dedicada configurada. Deixe em branco para manter.' : 'Sem chave dedicada — usando a chave padrão do ambiente.' }}
           </p>
+        </div>
+
+        <!-- Limite mensal de tokens por conta -->
+        <div class="space-y-1">
+          <Label for="core-limite">Limite mensal de tokens por conta (padrão)</Label>
+          <Input id="core-limite" v-model.number="form.limiteTokensMensalPadrao" type="number" min="0"
+            placeholder="Ex.: 500000 — vazio ou 0 = ilimitado" />
+          <p class="text-[11px] text-muted-foreground">
+            Teto mensal de tokens de IA por conta. Cada conta pode ter um override próprio. Vazio ou 0 = sem limite.
+          </p>
+        </div>
+
+        <!-- Consumo do mês (plataforma) -->
+        <div v-if="uso" class="rounded-lg border border-border/70 bg-background/70 p-3">
+          <div class="text-sm font-medium text-foreground">Consumo do mês (plataforma)</div>
+          <div class="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+            <span><strong class="text-foreground">{{ uso.totalTokens.toLocaleString('pt-BR') }}</strong> tokens</span>
+            <span><strong class="text-foreground">{{ uso.chamadas.toLocaleString('pt-BR') }}</strong> chamadas</span>
+          </div>
+          <div v-if="uso.porFeature.length" class="mt-2 flex flex-wrap gap-1">
+            <span v-for="f in uso.porFeature" :key="f.feature"
+              class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+              {{ f.feature }}: {{ f.tokens.toLocaleString('pt-BR') }}
+            </span>
+          </div>
         </div>
 
         <!-- Prompt de sistema -->

@@ -45,6 +45,7 @@ export interface IaCoreConfig {
   ativo: boolean
   apiKeyMasked: string
   apiKeyConfigured: boolean
+  limiteTokensMensalPadrao: number | null
   createdAt: string
   updatedAt: string
 }
@@ -55,6 +56,14 @@ export interface IaCoreConfigPayload {
   apiKey?: string
   systemPrompt?: string
   ativo?: boolean
+  limiteTokensMensalPadrao?: number | null
+}
+
+export interface IaUsoResumo {
+  mesInicio: string
+  totalTokens: number
+  chamadas: number
+  porFeature: { feature: string; tokens: number }[]
 }
 
 // Configuração de IA da plataforma (área do CEO / super admin).
@@ -108,5 +117,10 @@ export class IaAdminRepository {
   static async saveCoreConfig(payload: IaCoreConfigPayload) {
     const res = await http.put('/admin/ia/core', payload)
     return res.data.data as IaCoreConfig
+  }
+
+  static async getUso() {
+    const res = await http.get('/admin/ia/uso')
+    return res.data.data as IaUsoResumo
   }
 }
