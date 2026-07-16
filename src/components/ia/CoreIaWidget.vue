@@ -35,7 +35,7 @@ function toggle() {
     >
       <div
         v-show="open"
-        class="fixed left-0 right-0 top-16 bottom-20 z-[60] flex flex-col overflow-hidden md:rounded-xl border border-border bg-card shadow-2xl md:left-auto md:right-6 md:top-auto md:bottom-24 md:h-[min(72vh,660px)] md:w-[400px]"
+        class="fixed left-0 right-0 top-16 bottom-20 z-[60] flex flex-col overflow-hidden md:rounded-xl border border-border bg-card shadow-2xl md:left-auto md:right-6 md:top-auto md:bottom-24 md:h-[min(72vh,660px)] md:w-[400px] xl:w-[500px]"
       >
         <ChatPage embedded />
       </div>
