@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import {
   Bot,
   Coins,
   Cpu,
+  FilterX,
   Gauge,
   LoaderCircle,
   RotateCcw,
@@ -16,11 +17,16 @@ import {
   Zap,
 } from 'lucide-vue-next'
 import PieChart from '@/components/graficos/PieChart.vue'
+import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { IaAdminRepository, type IaUsoResumo } from '@/repositories/ia-admin-repository'
 
 const toast = useToast()
 const loading = ref(false)
 const uso = ref<IaUsoResumo | null>(null)
+
+// Filtros do painel.
+const filtroPeriodo = ref<[Date, Date] | []>([])
+const filtroContaId = ref<number | null>(null)
 
 // Rótulos amigáveis para as features (o "local de uso" da IA).
 const FEATURE_LABELS: Record<string, string> = {
@@ -29,6 +35,11 @@ const FEATURE_LABELS: Record<string, string> = {
   produto_descricao: 'Descrição de produto',
   texto_assistente: 'Assistente de texto',
   os_redigir: 'Redação de O.S.',
+  atendimento_sugestao: 'Sugestão de resposta',
+  atendimento_resumo: 'Resumo de conversa',
+  insights_dashboard: 'Análise do dashboard',
+  financeiro_categorizar: 'Categorização financeira',
+  estoque_reposicao: 'Sugestão de reposição',
 }
 const featureLabel = (f: string) => FEATURE_LABELS[f] || f
 
@@ -72,12 +83,24 @@ const fmtCusto = (v: number) =>
   })
 
 const mesLabel = computed(() => {
-  if (!uso.value?.mesInicio) return ''
-  return new Date(uso.value.mesInicio).toLocaleDateString('pt-BR', {
-    month: 'long',
-    year: 'numeric',
-  })
+  const i = uso.value?.mesInicio ? new Date(uso.value.mesInicio) : null
+  const f = uso.value?.mesFim ? new Date(uso.value.mesFim) : null
+  if (!i) return ''
+  if (f) return `${i.toLocaleDateString('pt-BR')} — ${f.toLocaleDateString('pt-BR')}`
+  return i.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 })
+
+const assinanteSelecionado = computed(
+  () => uso.value?.assinantes.find((a) => a.contaId === filtroContaId.value) || null,
+)
+const temFiltro = computed(
+  () => filtroContaId.value != null || (Array.isArray(filtroPeriodo.value) && filtroPeriodo.value.length === 2),
+)
+
+function limparFiltros() {
+  filtroContaId.value = null
+  filtroPeriodo.value = []
+}
 
 const modeloMaisUsado = computed(() => uso.value?.porModelo?.[0] || null)
 const funcaoMaisUsada = computed(() => uso.value?.porFeature?.[0] || null)
@@ -122,13 +145,22 @@ const featurePieData = computed(() => {
 async function load() {
   try {
     loading.value = true
-    uso.value = await IaAdminRepository.getUso()
+    const periodo = Array.isArray(filtroPeriodo.value) ? filtroPeriodo.value : []
+    uso.value = await IaAdminRepository.getUso({
+      inicio: periodo[0] ? periodo[0].toISOString() : null,
+      fim: periodo[1] ? periodo[1].toISOString() : null,
+      contaId: filtroContaId.value,
+    })
   } catch (error: any) {
     toast.error(error?.response?.data?.message || 'Erro ao carregar o consumo de IA.')
   } finally {
     loading.value = false
   }
 }
+
+// Recarrega automaticamente ao mudar o assinante ou o período (um único disparo mesmo quando
+// os dois mudam juntos, ex.: ao limpar os filtros).
+watch([filtroContaId, filtroPeriodo], load, { deep: true })
 
 onMounted(load)
 </script>
@@ -145,6 +177,7 @@ onMounted(load)
           <p class="text-sm text-muted-foreground">
             Uso de tokens, chamadas e custo estimado da plataforma
             <span v-if="mesLabel"> — <strong class="capitalize text-foreground">{{ mesLabel }}</strong></span>
+            <span v-if="assinanteSelecionado"> · <strong class="text-foreground">{{ assinanteSelecionado.nome }}</strong></span>
           </p>
         </div>
       </div>
@@ -154,6 +187,27 @@ onMounted(load)
         Atualizar
       </Button>
     </header>
+
+    <!-- Filtros -->
+    <Card class="border-border/70">
+      <CardContent class="flex flex-col gap-3 p-3 sm:flex-row sm:items-end">
+        <div class="flex-1">
+          <label class="mb-1 block text-xs font-medium text-muted-foreground">Período</label>
+          <Calendarpicker class="w-full" :range="true" v-model="filtroPeriodo" :teleport="true" />
+        </div>
+        <div class="flex-1">
+          <label class="mb-1 block text-xs font-medium text-muted-foreground">Assinante</label>
+          <select v-model="filtroContaId"
+            class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/40">
+            <option :value="null">Todos os assinantes</option>
+            <option v-for="a in uso?.assinantes || []" :key="a.contaId" :value="a.contaId">{{ a.nome }}</option>
+          </select>
+        </div>
+        <Button v-if="temFiltro" variant="outline" size="sm" class="gap-2" :disabled="loading" @click="limparFiltros">
+          <FilterX class="h-4 w-4" /> Limpar
+        </Button>
+      </CardContent>
+    </Card>
 
     <div v-if="loading && !uso" class="flex items-center justify-center p-16 text-sm text-muted-foreground">
       <LoaderCircle class="mr-2 h-4 w-4 animate-spin" /> Carregando...

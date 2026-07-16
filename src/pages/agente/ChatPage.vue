@@ -17,6 +17,7 @@ import {
 import { GeminiRepository } from '@/repositories/gemini-repository';
 import IaUsageIndicator from '@/components/ia/IaUsageIndicator.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
+import { useCoreIaWidget } from '@/composables/useCoreIaWidget';
 import { POSITION, useToast } from 'vue-toastification';
 import { Separator } from '@/components/ui/separator';
 
@@ -26,6 +27,7 @@ const props = defineProps<{ embedded?: boolean }>();
 // --- Variáveis ---
 const chatHistory = ref<any[]>([]);
 const storeUi = useUiStore();
+const { habilitado: widgetFlutuanteHabilitado } = useCoreIaWidget();
 const toast = useToast();
 // --- Interfaces ---
 interface Message {
@@ -71,11 +73,6 @@ watch(messages, () => {
 
 const toggleSettings = () => {
     isSettingsOpen.value = !isSettingsOpen.value;
-};
-
-const saveSettings = () => {
-    localStorage.setItem('openai_key', apiKey.value.trim());
-    isSettingsOpen.value = false;
 };
 
 const formatMessage = (text: string) => {
@@ -181,8 +178,10 @@ const callIA = async (message: string) => {
             // 1. Atualiza o histórico local com o que voltou do servidor
             chatHistory.value = newHistory;
 
-            // 2. Exibe a mensagem na tela
-            addMessage(reply, false);
+            // 2. Exibe a mensagem na tela (nunca um balão vazio — usa um fallback de confirmação
+            //    caso o modelo não devolva texto após executar uma ação).
+            const replyText = typeof reply === 'string' && reply.trim() ? reply : 'Pronto! ✅';
+            addMessage(replyText, false);
 
             // 3. Atualiza o indicador de uso de IA (consumiu tokens)
             usageIndicator.value?.refresh();
@@ -228,20 +227,26 @@ const clearChat = () => {
 <template>
     <div :class="['flex flex-col rounded-md bg-card font-sans', props.embedded ? 'h-full' : 'h-[calc(100vh-6rem)] md:h-[calc(100vh-5.3rem)] -m-4']">
         <!-- Header -->
-        <header class="border-b rounded-t-md p-4 flex justify-between items-center shadow-sm">
-            <div class="flex items-center gap-2">
-                <div class="bg-blue-600 p-2 rounded-lg text-white">
-                    <Bot :size="24" />
+        <header class="border-b rounded-t-md p-3 flex items-center justify-between gap-2 shadow-sm">
+            <div class="flex items-center gap-2 min-w-0">
+                <div class="bg-blue-600 p-2 rounded-lg text-white shrink-0">
+                    <Bot :size="22" />
                 </div>
-                <div>
-                    <h1 class="font-bold text-foreground">Core IA</h1>
-                    <span class="text-xs flex items-center gap-1" :class="'text-green-500'">
-                        <span class="w-2 h-2 rounded-full" :class="['bg-green-500 animate-pulse']"></span>
-                        {{ 'Pronto para usar' }}
+                <div class="min-w-0">
+                    <h1 class="font-bold leading-tight text-foreground truncate">Core IA</h1>
+                    <span class="text-[11px] flex items-center gap-1 text-green-500 whitespace-nowrap">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></span>
+                        Pronto para usar
                     </span>
                 </div>
             </div>
-            <IaUsageIndicator ref="usageIndicator" />
+            <div class="flex items-center gap-1.5 shrink-0">
+                <IaUsageIndicator ref="usageIndicator" />
+                <button type="button" title="Configurações" @click="toggleSettings"
+                    class="shrink-0 rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                    <Settings :size="20" />
+                </button>
+            </div>
         </header>
 
         <!-- Modal de Configuração -->
@@ -254,18 +259,20 @@ const clearChat = () => {
                     </button>
                 </div>
 
-                <label class="block text-sm font-medium text-gray-700 mb-1">OpenAI API Key</label>
-                <input v-model="apiKey" type="password" placeholder="sk-..."
-                    class="w-full p-2 border rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 outline-none">
-                <p class="text-xs text-gray-500 mb-6 italic">*Sua chave fica salva apenas no seu navegador.</p>
+                <!-- Preferência: botão flutuante do Core IA em todo o sistema -->
+                <label class="mb-6 flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border p-3">
+                    <span class="text-sm">
+                        <span class="block font-medium text-foreground">Botão flutuante</span>
+                        <span class="text-xs text-muted-foreground">Mostrar o atalho do Core IA em todas as telas.</span>
+                    </span>
+                    <input v-model="widgetFlutuanteHabilitado" type="checkbox"
+                        class="h-5 w-5 shrink-0 accent-blue-600 cursor-pointer">
+                </label>
 
-                <div class="flex justify-end gap-2">
-                    <button @click="toggleSettings" class="px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg">
-                        Cancelar
-                    </button>
-                    <button @click="saveSettings"
+                <div class="flex justify-end">
+                    <button @click="toggleSettings"
                         class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
-                        Salvar
+                        Fechar
                     </button>
                 </div>
             </div>

@@ -86,8 +86,14 @@ export interface IaUsoConta {
   custoEstimado: number
 }
 
+export interface IaUsoAssinante {
+  contaId: number
+  nome: string
+}
+
 export interface IaUsoResumo {
   mesInicio: string
+  mesFim: string | null
   totalTokens: number
   promptTokens: number
   completionTokens: number
@@ -97,6 +103,13 @@ export interface IaUsoResumo {
   porFeature: IaUsoFeature[]
   porModelo: IaUsoModelo[]
   porConta: IaUsoConta[]
+  assinantes: IaUsoAssinante[]
+}
+
+export interface IaUsoFiltro {
+  inicio?: string | null
+  fim?: string | null
+  contaId?: number | null
 }
 
 // Configuração de IA da plataforma (área do CEO / super admin).
@@ -152,8 +165,12 @@ export class IaAdminRepository {
     return res.data.data as IaCoreConfig
   }
 
-  static async getUso() {
-    const res = await http.get('/admin/ia/uso')
+  static async getUso(filtro: IaUsoFiltro = {}) {
+    const params: Record<string, string> = {}
+    if (filtro.inicio) params.inicio = filtro.inicio
+    if (filtro.fim) params.fim = filtro.fim
+    if (filtro.contaId) params.contaId = String(filtro.contaId)
+    const res = await http.get('/admin/ia/uso', { params })
     return res.data.data as IaUsoResumo
   }
 }

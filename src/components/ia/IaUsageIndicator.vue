@@ -1,9 +1,9 @@
 <template>
-  <div v-if="uso" class="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-3 py-1.5"
+  <div v-if="uso" class="flex shrink-0 items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-2.5 py-1.5"
     :title="tooltip">
     <Sparkles class="h-4 w-4 shrink-0 text-primary" />
-    <div class="min-w-[120px]">
-      <div class="flex items-center justify-between gap-2 text-[11px] leading-tight">
+    <div class="min-w-[92px]">
+      <div class="flex items-center justify-between gap-2 whitespace-nowrap text-[11px] leading-tight">
         <span class="text-muted-foreground">IA restante</span>
         <span class="font-semibold" :class="corTexto">{{ rotuloRestante }}</span>
       </div>

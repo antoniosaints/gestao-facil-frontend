@@ -3,14 +3,19 @@ import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { Bot, X } from 'lucide-vue-next'
 import { useUiStore } from '@/stores/ui/uiStore'
+import { useCoreIaWidget } from '@/composables/useCoreIaWidget'
 import ChatPage from '@/pages/agente/ChatPage.vue'
 
 const storeUi = useUiStore()
 const route = useRoute()
 const open = ref(false)
+const { habilitado } = useCoreIaWidget()
 
-// Aparece em todo o sistema, mas só com o app core-ia ativo e fora da própria página do Core IA.
-const visivel = computed(() => storeUi.hasActiveModule('core-ia') && route.name !== 'ia')
+// Aparece em todo o sistema, mas só quando: o app core-ia está ativo, o usuário não desativou o
+// botão flutuante e não estamos na própria página do Core IA.
+const visivel = computed(
+  () => storeUi.hasActiveModule('core-ia') && habilitado.value && route.name !== 'ia',
+)
 
 function toggle() {
   open.value = !open.value
