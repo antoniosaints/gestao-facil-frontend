@@ -72,6 +72,19 @@ function resetar() {
   itens.value = [novaLinha()]
 }
 
+// Pré-preenche as linhas a partir das sugestões da IA e abre o modal. O custo fica em branco
+// para o usuário confirmar o valor de compra.
+function carregarSugestoes(sugestoes: { produtoId: number; quantidade: number }[]) {
+  resetar()
+  const linhas = sugestoes
+    .filter((s) => s.produtoId && s.quantidade > 0)
+    .map((s) => ({ produtoId: s.produtoId, quantidade: s.quantidade, custo: '' }))
+  itens.value = linhas.length ? linhas : [novaLinha()]
+  open.value = true
+}
+
+defineExpose({ carregarSugestoes })
+
 function validar(): boolean {
   const preenchidos = itens.value.filter((item) => item.produtoId)
   if (!preenchidos.length) {

@@ -12,6 +12,16 @@ export interface IaMeuUso {
   custoEstimado: number
 }
 
+export interface IaReposicaoSugestao {
+  produtoId: number
+  nome: string
+  estoqueAtual: number
+  estoqueMinimo: number
+  coberturaDias: number | null
+  quantidade: number
+  justificativa: string
+}
+
 // Repositório das features de IA (Gemini). Todos os endpoints exigem o app "core-ia" ativo e
 // respeitam o limite mensal de tokens da conta (429 quando excedido).
 export class IaRepository {
@@ -72,6 +82,15 @@ export class IaRepository {
     tipo?: 'RECEITA' | 'DESPESA' | null
   }): Promise<{ categoria: { id: number; nome: string } | null }> {
     const { data } = await http.post('/ia/financeiro/categorizar', payload)
+    return data.data
+  }
+
+  // Fase 4 — reposição inteligente de estoque.
+  static async reposicaoSugestao(dias?: number): Promise<{
+    sugestoes: IaReposicaoSugestao[]
+    analisadoEmDias: number
+  }> {
+    const { data } = await http.post('/ia/estoque/reposicao-sugestao', dias ? { dias } : {})
     return data.data
   }
 

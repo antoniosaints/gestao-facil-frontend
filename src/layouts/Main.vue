@@ -52,6 +52,7 @@
         </main>
         <InstallPrompt />
         <ConfirmModal />
+        <CoreIaWidget />
     </div>
 </template>
 
@@ -66,6 +67,7 @@ import InstallPrompt from '@/components/layout/installPrompt.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
 import { PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
+import CoreIaWidget from '@/components/ia/CoreIaWidget.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import NavUserSidebar from '@/components/layout/navUserSidebar.vue'

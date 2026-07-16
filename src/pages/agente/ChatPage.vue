@@ -20,6 +20,9 @@ import { useUiStore } from '@/stores/ui/uiStore';
 import { POSITION, useToast } from 'vue-toastification';
 import { Separator } from '@/components/ui/separator';
 
+// Modo embutido: usado pelo widget flutuante (ocupa o painel, sem a altura/margens de página).
+const props = defineProps<{ embedded?: boolean }>();
+
 // --- Variáveis ---
 const chatHistory = ref<any[]>([]);
 const storeUi = useUiStore();
@@ -223,7 +226,7 @@ const clearChat = () => {
 </script>
 
 <template>
-    <div class="flex flex-col h-[calc(100vh-6rem)] md:h-[calc(100vh-5.3rem)] -m-4 rounded-md bg-card font-sans">
+    <div :class="['flex flex-col rounded-md bg-card font-sans', props.embedded ? 'h-full' : 'h-[calc(100vh-6rem)] md:h-[calc(100vh-5.3rem)] -m-4']">
         <!-- Header -->
         <header class="border-b rounded-t-md p-4 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-2">
