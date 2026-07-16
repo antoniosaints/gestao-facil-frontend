@@ -15,6 +15,7 @@ import { vMaska } from "maska/vue"
 import { moneyMaskOptions } from "@/lib/imaska";
 import { HandCoins, Trash } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
+import IaTextAssistant from "@/components/ia/IaTextAssistant.vue";
 import { useClientesStore } from "@/stores/clientes/useClientes";
 import { useUiStore } from "@/stores/ui/uiStore";
 import { hasPermission } from "@/hooks/authorize";
@@ -309,7 +310,12 @@ onMounted(() => {
 
             <!-- Observações -->
             <div>
-                <label class="block text-sm mb-1">Observações</label>
+                <div class="mb-1 flex items-center justify-between gap-2">
+                    <label class="block text-sm">Observações</label>
+                    <IaTextAssistant v-model="store.form.observacoes"
+                        contexto="Observações de uma venda em um sistema de gestão (ERP)."
+                        title="Observações da venda com IA" />
+                </div>
                 <textarea v-model="store.form.observacoes" name="observacoes" id="input_observacoes_venda_formulario"
                     class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
                     rows="3" placeholder="Observações da venda..."></textarea>

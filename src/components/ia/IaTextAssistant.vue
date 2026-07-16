@@ -80,7 +80,7 @@ const props = withDefaults(
   },
 )
 
-const model = defineModel<string>({ default: '' })
+const model = defineModel<string | null>({ default: '' })
 const toast = useToast()
 
 const open = ref(false)

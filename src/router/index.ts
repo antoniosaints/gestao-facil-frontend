@@ -153,6 +153,11 @@ const routes: RouteInterface[] = [
         name: 'admin-ia-core',
         component: () => import('@/pages/admin/inteligencia/CoreIA.vue'),
       },
+      {
+        path: 'inteligencia/consumo',
+        name: 'admin-ia-consumo',
+        component: () => import('@/pages/admin/inteligencia/Consumo.vue'),
+      },
     ],
   },
   {

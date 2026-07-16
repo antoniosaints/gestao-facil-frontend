@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import IaTextAssistant from '@/components/ia/IaTextAssistant.vue'
 import { ClienteRepository } from '@/repositories/cliente-repository'
 import { useClientesStore } from '@/stores/clientes/useClientes'
 import { useToast } from 'vue-toastification'
@@ -106,7 +107,12 @@ async function submit() {
           <Input id="endereco" v-model="store.form.endereco" placeholder="Endereço" />
         </div>
         <div class="w-full gap-2 flex flex-col col-span-2">
-          <Label for="observacoes">Observações</Label>
+          <div class="flex items-center justify-between gap-2">
+            <Label for="observacoes">Observações</Label>
+            <IaTextAssistant v-model="store.form.observacaos"
+              contexto="Observações sobre um cliente em um sistema de gestão (ERP)."
+              title="Observações do cliente com IA" />
+          </div>
           <Textarea
             id="observacoes"
             v-model="store.form.observacaos"

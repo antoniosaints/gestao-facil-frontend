@@ -12,6 +12,8 @@ import { vMaska } from "maska/vue"
 import { moneyMaskOptions } from "@/lib/imaska";
 import { FilePlus, HandCoins, PackagePlus, Trash } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
+import IaTextAssistant from "@/components/ia/IaTextAssistant.vue";
+import { IaRepository } from "@/repositories/ia-repository";
 import { useClientesStore } from "@/stores/clientes/useClientes";
 import { useUiStore } from "@/stores/ui/uiStore";
 import { hasPermission } from "@/hooks/authorize";
@@ -26,6 +28,15 @@ const title = ref('Cadastro de OS')
 const description = ref('Preencha os campos abaixo')
 const toast = useToast()
 const store = useOrdemServicoStore()
+
+// Redige a mensagem ao cliente a partir do relato da OS (feature "os_redigir").
+async function gerarMensagemClienteOs() {
+  const r = await IaRepository.redigirOs({
+    tipo: 'mensagem_cliente',
+    problema: store.form.descricao || '',
+  })
+  return r.text
+}
 const storeUi = useUiStore()
 const storeCliente = useClientesStore()
 const adicionarTipo = ref<'PRODUTO' | 'SERVICO'>('PRODUTO')
@@ -344,13 +355,23 @@ onMounted(() => {
         </div>
         <!-- Observações -->
         <div class="col-span-12 md:col-span-6">
-          <label for="descricao_os" class="block text-sm mb-1">Descrição</label>
+          <div class="mb-1 flex items-center justify-between gap-2">
+            <label for="descricao_os" class="block text-sm">Descrição</label>
+            <IaTextAssistant v-model="store.form.descricao"
+              contexto="Descrição/relato de uma ordem de serviço (problema e serviço executado)."
+              title="Descrição da OS com IA" />
+          </div>
           <textarea v-model="store.form.descricao" name="observacoes" id="descricao_os"
             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
             rows="3" placeholder="Descrição da OS..."></textarea>
         </div>
         <div class="col-span-12 md:col-span-6">
-          <label for="observacoes_internas_os" class="block text-sm mb-1">Observações cliente</label>
+          <div class="mb-1 flex items-center justify-between gap-2">
+            <label for="observacoes_internas_os" class="block text-sm">Observações cliente</label>
+            <IaTextAssistant v-model="store.form.descricaoCliente" :modos="['gerar', 'melhorar']"
+              title="Mensagem ao cliente com IA" button-label="Redigir com IA"
+              :custom-generate="gerarMensagemClienteOs" />
+          </div>
           <textarea v-model="store.form.descricaoCliente" name="observacoes" id="observacoes_internas_os"
             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
             rows="3" placeholder="Observações para a equipe..."></textarea>

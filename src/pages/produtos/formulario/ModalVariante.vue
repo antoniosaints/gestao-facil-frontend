@@ -8,6 +8,8 @@ import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import VarianteImagemField from '@/pages/produtos/formulario/VarianteImagemField.vue'
 import CollapsibleSection from './CollapsibleSection.vue'
 import ProdutoFiscalFields from './ProdutoFiscalFields.vue'
+import IaTextAssistant from '@/components/ia/IaTextAssistant.vue'
+import { IaRepository } from '@/repositories/ia-repository'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -29,6 +31,17 @@ const description = computed(() =>
     : 'Selecione o produto base e preencha somente o que muda nesta nova variante.',
 )
 const controlaEstoqueAtivo = computed(() => store.varianteForm.controlaEstoque)
+
+// Geração da descrição da variante com IA (usada pelo IaTextAssistant).
+async function gerarDescricaoVarianteIa(modo: 'gerar' | 'melhorar' | 'resumir') {
+  const atributos = store.varianteForm.unidade ? `Unidade: ${store.varianteForm.unidade}` : null
+  const r = await IaRepository.descricaoProduto({
+    nome: store.varianteForm.nomeVariante,
+    atributos,
+    descricaoAtual: modo === 'melhorar' ? store.varianteForm.descricao : null,
+  })
+  return r.text
+}
 
 const saving = ref(false)
 
@@ -325,7 +338,12 @@ async function submit() {
       <CollapsibleSection v-model:open="secDescricao" title="Descrição e imagem" :icon="FileText">
         <div class="grid gap-4">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-foreground">Descrição</label>
+            <div class="mb-1.5 flex items-center justify-between gap-2">
+              <label class="block text-sm font-medium text-foreground">Descrição</label>
+              <IaTextAssistant v-model="store.varianteForm.descricao" :modos="['gerar', 'melhorar']"
+                title="Descrição da variante com IA" button-label="Gerar com IA"
+                :custom-generate="gerarDescricaoVarianteIa" />
+            </div>
             <Textarea v-model="store.varianteForm.descricao" rows="4"
               placeholder="Descreva esta variante: detalhes, medidas, composição, diferenciais"
               class="bg-background dark:bg-background/60" />

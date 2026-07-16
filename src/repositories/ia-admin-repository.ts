@@ -63,13 +63,40 @@ export interface IaCoreConfigPayload {
   limiteTokensMensalPadrao?: number | null
 }
 
+export interface IaUsoFeature {
+  feature: string
+  tokens: number
+  chamadas: number
+  custoEstimado: number
+}
+
+export interface IaUsoModelo {
+  modelId: string
+  nome: string
+  tokens: number
+  chamadas: number
+  custoEstimado: number
+}
+
+export interface IaUsoConta {
+  contaId: number
+  nome: string
+  tokens: number
+  chamadas: number
+  custoEstimado: number
+}
+
 export interface IaUsoResumo {
   mesInicio: string
   totalTokens: number
+  promptTokens: number
+  completionTokens: number
   chamadas: number
   custoEstimado: number
-  porFeature: { feature: string; tokens: number }[]
-  porModelo: { modelId: string; tokens: number; custoEstimado: number }[]
+  assinantesAtivos: number
+  porFeature: IaUsoFeature[]
+  porModelo: IaUsoModelo[]
+  porConta: IaUsoConta[]
 }
 
 // Configuração de IA da plataforma (área do CEO / super admin).

@@ -14,7 +14,6 @@ import {
   type IaCoreConfig,
   type IaCoreConfigPayload,
   type IaModelo,
-  type IaUsoResumo,
 } from '@/repositories/ia-admin-repository'
 
 const toast = useToast()
@@ -22,7 +21,6 @@ const loading = ref(false)
 const saving = ref(false)
 const config = ref<IaCoreConfig | null>(null)
 const modelos = ref<IaModelo[]>([])
-const uso = ref<IaUsoResumo | null>(null)
 
 // Opções do select de modelo do Core IA: modelos cadastrados. Se o modelo salvo não estiver
 // cadastrado, mantém como opção para não perder a seleção.
@@ -46,14 +44,12 @@ const form = ref<{ modelId: string; apiKey: string; systemPrompt: string; ativo:
 async function load() {
   try {
     loading.value = true
-    const [cfg, listaModelos, resumoUso] = await Promise.all([
+    const [cfg, listaModelos] = await Promise.all([
       IaAdminRepository.getCoreConfig(),
       IaAdminRepository.listModelos().catch(() => [] as IaModelo[]),
-      IaAdminRepository.getUso().catch(() => null),
     ])
     config.value = cfg
     modelos.value = listaModelos
-    uso.value = resumoUso
     form.value = {
       modelId: cfg.modelId,
       apiKey: '',
@@ -188,28 +184,6 @@ onMounted(load)
           <p class="text-[11px] text-muted-foreground">
             Teto mensal de tokens de IA por conta. Cada conta pode ter um override próprio. Vazio ou 0 = sem limite.
           </p>
-        </div>
-
-        <!-- Consumo do mês (plataforma) -->
-        <div v-if="uso" class="rounded-lg border border-border/70 bg-background/70 p-3">
-          <div class="text-sm font-medium text-foreground">Consumo do mês (plataforma)</div>
-          <div class="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-            <span><strong class="text-foreground">{{ uso.totalTokens.toLocaleString('pt-BR') }}</strong> tokens</span>
-            <span><strong class="text-foreground">{{ uso.chamadas.toLocaleString('pt-BR') }}</strong> chamadas</span>
-            <span>Custo estimado: <strong class="text-foreground">{{ uso.custoEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) }}</strong></span>
-          </div>
-          <div v-if="uso.porModelo?.length" class="mt-2 flex flex-wrap gap-1">
-            <span v-for="m in uso.porModelo" :key="m.modelId"
-              class="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-              {{ m.modelId }}: {{ m.tokens.toLocaleString('pt-BR') }} tok · {{ m.custoEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) }}
-            </span>
-          </div>
-          <div v-if="uso.porFeature.length" class="mt-2 flex flex-wrap gap-1">
-            <span v-for="f in uso.porFeature" :key="f.feature"
-              class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
-              {{ f.feature }}: {{ f.tokens.toLocaleString('pt-BR') }}
-            </span>
-          </div>
         </div>
 
         <!-- Prompt de sistema -->
