@@ -11,6 +11,7 @@ import {
   FileSliders,
   Gauge,
   GitBranchPlus,
+  Globe2,
   HandCoins,
   KeyRound,
   Lock,
@@ -62,6 +63,13 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.configuracoes.visualizar,
       color: 'indigo',
       link: '/admin/configuracoes',
+    },
+    {
+      nome: 'Site',
+      icone: Globe2,
+      show: permissions.superadmin,
+      color: 'cyan',
+      link: '/admin/site',
     },
     {
       nome: 'Inteligência',

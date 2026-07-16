@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue';
+import { computed, ref, onMounted, nextTick, watch } from 'vue';
 import {
     Bot,
     Settings,
@@ -12,9 +12,10 @@ import {
     Tag,
     Trash,
     Wrench,
-    FileQuestion
+    FileQuestion,
+    ImagePlus
 } from 'lucide-vue-next';
-import { GeminiRepository } from '@/repositories/gemini-repository';
+import { GeminiRepository, type GeminiChatImage } from '@/repositories/gemini-repository';
 import IaUsageIndicator from '@/components/ia/IaUsageIndicator.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import { useCoreIaWidget } from '@/composables/useCoreIaWidget';
@@ -34,6 +35,8 @@ interface Message {
     id: number;
     text: string;
     isUser: boolean;
+    imagePreview?: string;
+    imageName?: string;
 }
 
 // --- Estado ---
@@ -50,6 +53,9 @@ const apiKey = ref('');
 const isSettingsOpen = ref(false);
 const isTyping = ref(false);
 const chatContainer = ref<HTMLElement | null>(null);
+const imageInput = ref<HTMLInputElement | null>(null);
+const selectedImage = ref<{ dataUrl: string; data: string; mimeType: string; name: string } | null>(null);
+const canSend = computed(() => Boolean(userInput.value.trim() || selectedImage.value) && !isTyping.value);
 
 // --- Lógica ---
 onMounted(() => {
@@ -89,33 +95,6 @@ const formatMessage = (text: string) => {
             return `<pre class="code-block my-3 bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto"><code>${code.trim()}</code></pre>`;
         })
 
-        // --- NOVO: 3. Tabelas Markdown ---
-        .replace(/^(\|.*\|)\n(\|[:\-\s|]+\|)\n((?:\|.*\|(?:\n|$))*)/gm, (match, headerLine, separatorLine, bodyLines) => {
-            const parseRow = (row: string) => {
-                // Remove os pipes das extremidades e divide por |
-                const cells = row.replace(/^\||\|$/g, '').split('|');
-                return cells;
-            };
-
-            const headers = parseRow(headerLine);
-            const rows = bodyLines.trim().split('\n').filter((r: any) => r.trim() !== '');
-
-            const headerHtml = `<thead><tr class="bg-gray-100 dark:bg-gray-900">` +
-                headers.map(h => `<th class="px-4 py-2 border border-gray-300 dark:border-gray-600 font-bold text-left">${h.trim()}</th>`).join('') +
-                `</tr></thead>`;
-
-            const bodyHtml = `<tbody>` +
-                rows.map((row: any) => {
-                    const cells = parseRow(row);
-                    return `<tr class="border-b border-gray-200 dark:border-gray-700">` +
-                        cells.map(c => `<td class="px-4 py-2 border border-gray-300 dark:border-gray-600">${c.trim()}</td>`).join('') +
-                        `</tr>`;
-                }).join('') +
-                `</tbody>`;
-
-            return `<div class="overflow-x-auto border border-gray-300 dark:border-gray-600 my-4 rounded-lg"><table class="min-w-full border-collapse rounded-md text-sm text-left">${headerHtml}${bodyHtml}</table></div>`;
-        })
-
         // 4. Código Inline (`código`)
         .replace(/`([^`]+)`/g, '<code class="bg-gray-200 dark:bg-gray-900 px-1.5 py-0.5 rounded font-mono text-sm">$1</code>')
 
@@ -149,15 +128,17 @@ const formatMessage = (text: string) => {
 };
 const usageIndicator = ref<{ refresh: () => void } | null>(null);
 
-const addMessage = (text: string, isUser: boolean) => {
+const addMessage = (text: string, isUser: boolean, image?: { preview: string; name: string }) => {
     messages.value.push({
         id: Date.now(),
         text,
-        isUser
+        isUser,
+        imagePreview: image?.preview,
+        imageName: image?.name,
     });
 };
 
-const callIA = async (message: string) => {
+const callIA = async (message: string, image?: GeminiChatImage | null) => {
     // Se você não precisar mais da chave API no front (pois o backend resolve), 
     // pode remover a validação de apiKey.value ou mantê-la se o backend exigir via Header.
 
@@ -166,7 +147,7 @@ const callIA = async (message: string) => {
     try {
         // Chamada ao repository que você criou
         // Enviamos o prompt atual e o histórico acumulado
-        const response = await GeminiRepository.chat(message, chatHistory.value);
+        const response = await GeminiRepository.chat(message, chatHistory.value, image);
 
         /* 
            Baseado no seu retorno:
@@ -199,10 +180,17 @@ const callIA = async (message: string) => {
 
 const handleSendMessage = () => {
     const text = userInput.value.trim();
-    if (text && !isTyping.value) {
-        addMessage(text, true);
+    const image = selectedImage.value;
+
+    if ((text || image) && !isTyping.value) {
+        addMessage(text || 'Analisar imagem', true, image ? { preview: image.dataUrl, name: image.name } : undefined);
         userInput.value = '';
-        callIA(text);
+        selectedImage.value = null;
+        callIA(text || 'Analise a imagem enviada e responda em português.', image ? {
+            data: image.data,
+            mimeType: image.mimeType,
+            name: image.name,
+        } : null);
     }
 };
 
@@ -212,10 +200,94 @@ const quickAction = (action: string) => {
     callIA(action);
 };
 
+const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('NÃ£o foi possÃ­vel ler a imagem.'));
+    reader.readAsDataURL(file);
+});
+
+const loadImageFromDataUrl = (dataUrl: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('NÃ£o foi possÃ­vel preparar a imagem.'));
+    image.src = dataUrl;
+});
+
+const resizeImageForCoreIa = async (file: File) => {
+    const originalDataUrl = await readFileAsDataUrl(file);
+    const image = await loadImageFromDataUrl(originalDataUrl);
+    const attempts = [
+        { maxDimension: 1600, quality: 0.84 },
+        { maxDimension: 1280, quality: 0.78 },
+        { maxDimension: 1024, quality: 0.72 },
+        { maxDimension: 768, quality: 0.68 },
+    ];
+    const maxBase64Bytes = 4 * 1024 * 1024;
+    let bestDataUrl = originalDataUrl;
+
+    for (const attempt of attempts) {
+        const naturalWidth = image.naturalWidth || image.width;
+        const naturalHeight = image.naturalHeight || image.height;
+        const largestSide = Math.max(naturalWidth, naturalHeight);
+        const scale = largestSide > attempt.maxDimension ? attempt.maxDimension / largestSide : 1;
+        const width = Math.max(1, Math.round(naturalWidth * scale));
+        const height = Math.max(1, Math.round(naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) break;
+
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', attempt.quality);
+        bestDataUrl = dataUrl;
+        const base64 = dataUrl.split(',')[1] || '';
+        if (base64.length <= maxBase64Bytes) {
+            return { dataUrl, data: base64, mimeType: 'image/jpeg', name: file.name };
+        }
+    }
+
+    const data = bestDataUrl.split(',')[1] || '';
+    return { dataUrl: bestDataUrl, data, mimeType: 'image/jpeg', name: file.name };
+};
+
+const handleImageChange = async (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        toast.error('Selecione um arquivo de imagem.');
+        return;
+    }
+
+    const maxBytes = 10 * 1024 * 1024;
+    if (file.size > maxBytes) {
+        toast.error('A imagem deve ter no máximo 10 MB.');
+        return;
+    }
+
+    try {
+        selectedImage.value = await resizeImageForCoreIa(file);
+    } catch (error: any) {
+        toast.error(error?.message || 'Não foi possível processar a imagem.');
+    }
+};
+
+const removeSelectedImage = () => {
+    selectedImage.value = null;
+};
+
 const clearChat = () => {
     messages.value = [];
     chatHistory.value = [];
     userInput.value = '';
+    selectedImage.value = null;
     addMessage(`Olá, ${storeUi.usuarioLogged.nome.split(' ')[0]}, bem vindo ao Core! Como posso ajudar?`, false);
     toast.success("Chat limpo com sucesso!", {
         timeout: 2000,
@@ -297,6 +369,9 @@ const clearChat = () => {
                         : 'bg-white dark:bg-gray-800 text-foreground rounded-tl-none border-gray-100 dark:border-gray-700'
                 ]">
                     <!-- Substituído o <p>{{ msg.text }}</p> por esta div com v-html -->
+                    <div v-if="msg.imagePreview" class="mb-2 overflow-hidden rounded-xl border border-white/20 bg-black/5">
+                        <img :src="msg.imagePreview" :alt="msg.imageName || 'Imagem enviada'" class="max-h-56 w-full object-contain" />
+                    </div>
                     <div class="text-sm md:text-base leading-relaxed message-content" v-html="formatMessage(msg.text)">
                     </div>
                 </div>
@@ -342,12 +417,29 @@ const clearChat = () => {
                     </button>
                 </div>
 
+                <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="handleImageChange">
+
+                <div v-if="selectedImage" class="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-2 text-sm dark:border-blue-900 dark:bg-blue-950/40">
+                    <img :src="selectedImage.dataUrl" :alt="selectedImage.name" class="h-12 w-12 rounded-lg object-cover">
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate font-medium text-foreground">{{ selectedImage.name }}</p>
+                        <p class="text-xs text-muted-foreground">A imagem será processada e descartada após a resposta.</p>
+                    </div>
+                    <button type="button" class="rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100 dark:hover:bg-red-950" @click="removeSelectedImage">
+                        Remover
+                    </button>
+                </div>
+
                 <!-- Input Area -->
                 <div class="relative hidden md:flex items-center">
+                    <button type="button" title="Anexar imagem" :disabled="isTyping" @click="imageInput?.click()"
+                        class="absolute left-2 p-2 text-muted-foreground rounded-xl hover:bg-muted hover:text-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <ImagePlus :size="20" />
+                    </button>
                     <input v-model="userInput" @keyup.enter="handleSendMessage" type="text"
                         placeholder="Digite sua mensagem..."
-                        class="w-full p-4 pr-12 rounded-2xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition">
-                    <button @click="handleSendMessage" :disabled="!userInput.trim() || isTyping"
+                        class="w-full p-4 pl-12 pr-12 rounded-2xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition">
+                    <button @click="handleSendMessage" :disabled="!canSend"
                         class="absolute right-2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <SendHorizontal :size="20" />
                     </button>
@@ -357,10 +449,14 @@ const clearChat = () => {
         <nav
             class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around h-20 shadow-lg z-20">
             <div class="relative flex w-full px-3 items-center">
+                <button type="button" title="Anexar imagem" :disabled="isTyping" @click="imageInput?.click()"
+                    class="absolute left-5 p-2 text-muted-foreground rounded-xl hover:bg-muted hover:text-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    <ImagePlus :size="20" />
+                </button>
                 <input v-model="userInput" @keyup.enter="handleSendMessage" type="text"
                     placeholder="Digite sua mensagem..."
-                    class="w-full p-4 pr-14 rounded-2xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition">
-                <button @click="handleSendMessage" :disabled="!userInput.trim() || isTyping"
+                    class="w-full p-4 pl-12 pr-14 rounded-2xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm transition">
+                <button @click="handleSendMessage" :disabled="!canSend"
                     class="absolute right-6 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <SendHorizontal :size="20" />
                 </button>

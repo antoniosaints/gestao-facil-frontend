@@ -139,6 +139,11 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/admin/configuracoes/Home.vue'),
       },
       {
+        path: 'site',
+        name: 'admin-site',
+        component: () => import('@/pages/admin/site/Home.vue'),
+      },
+      {
         path: 'inteligencia/modelos',
         name: 'admin-ia-modelos',
         component: () => import('@/pages/admin/inteligencia/Modelos.vue'),

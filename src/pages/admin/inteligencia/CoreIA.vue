@@ -33,12 +33,12 @@ const modeloOptions = computed(() => {
 })
 
 // Formulário: a chave só é enviada quando o CEO digita uma nova (não recarregamos a existente).
-const form = ref<{ modelId: string; apiKey: string; systemPrompt: string; ativo: boolean; limiteTokensMensalPadrao: number | null }>({
+const form = ref<{ modelId: string; apiKey: string; systemPrompt: string; ativo: boolean; limiteTokensMensalPadrao: number | undefined }>({
   modelId: '',
   apiKey: '',
   systemPrompt: '',
   ativo: true,
-  limiteTokensMensalPadrao: null,
+  limiteTokensMensalPadrao: undefined,
 })
 
 async function load() {
@@ -55,7 +55,7 @@ async function load() {
       apiKey: '',
       systemPrompt: cfg.systemPrompt,
       ativo: cfg.ativo,
-      limiteTokensMensalPadrao: cfg.limiteTokensMensalPadrao ?? null,
+    limiteTokensMensalPadrao: cfg.limiteTokensMensalPadrao ?? undefined,
     }
   } catch (error: any) {
     toast.error(error?.response?.data?.message || 'Erro ao carregar a configuração do Core IA.')

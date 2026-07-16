@@ -50,7 +50,7 @@ const appSavingId = ref<number | null>(null)
 const status = ref<'ATIVO' | 'INATIVO' | 'BLOQUEADO'>('ATIVO')
 const vencimento = ref<Date | null>(new Date())
 const apps = ref<AssinanteAdminAppItem[]>([])
-const iaLimiteTokensMensal = ref<number | null>(null)
+const iaLimiteTokensMensal = ref<number | undefined>(undefined)
 const iaUsoMes = ref<{ totalTokens: number; limite: number | null; restante: number | null; custoEstimado: number } | null>(null)
 
 const dados = ref({
@@ -180,7 +180,7 @@ async function loadApps(contaId: number) {
     appsLoading.value = true
     const response = await ContaRepository.listarAppsAssinante(contaId)
     apps.value = response.data || []
-    iaLimiteTokensMensal.value = response.resumo?.iaLimiteTokensMensal ?? null
+    iaLimiteTokensMensal.value = response.resumo?.iaLimiteTokensMensal ?? undefined
     iaUsoMes.value = response.resumo?.iaUsoMes ?? null
   } catch (error: any) {
     console.error(error)

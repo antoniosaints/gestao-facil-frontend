@@ -23,15 +23,15 @@ const form = reactive<{
   nome: string
   provider: string
   ativo: boolean
-  custoInputMilhao: number | null
-  custoOutputMilhao: number | null
+  custoInputMilhao: number | undefined
+  custoOutputMilhao: number | undefined
 }>({
   modelId: '',
   nome: '',
   provider: 'gemini',
   ativo: true,
-  custoInputMilhao: null,
-  custoOutputMilhao: null,
+  custoInputMilhao: undefined,
+  custoOutputMilhao: undefined,
 })
 
 async function load() {
@@ -49,7 +49,7 @@ function openCreate() {
   dialog.editingId = null
   Object.assign(form, {
     modelId: '', nome: '', provider: 'gemini', ativo: true,
-    custoInputMilhao: null, custoOutputMilhao: null,
+    custoInputMilhao: undefined, custoOutputMilhao: undefined,
   })
   dialog.open = true
 }
@@ -58,8 +58,8 @@ function openEdit(modelo: IaModelo) {
   dialog.editingId = modelo.id
   Object.assign(form, {
     modelId: modelo.modelId, nome: modelo.nome, provider: modelo.provider, ativo: modelo.ativo,
-    custoInputMilhao: modelo.custoInputMilhao != null ? Number(modelo.custoInputMilhao) : null,
-    custoOutputMilhao: modelo.custoOutputMilhao != null ? Number(modelo.custoOutputMilhao) : null,
+    custoInputMilhao: modelo.custoInputMilhao != null ? Number(modelo.custoInputMilhao) : undefined,
+    custoOutputMilhao: modelo.custoOutputMilhao != null ? Number(modelo.custoOutputMilhao) : undefined,
   })
   dialog.open = true
 }
