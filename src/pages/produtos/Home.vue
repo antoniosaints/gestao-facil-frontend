@@ -82,7 +82,11 @@ const relatorioGeral = async () => {
                     class="bg-violet-600 text-white px-2 py-1.5 text-sm rounded-md">
                     <Store class="w-5 h-5" />
                 </button>
-                <button @click="store.openSave" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
+                <button @click="store.openSaveVariante()" title="Nova variante de um produto existente"
+                    class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
+                    <Layers3 class="w-5 h-5" />
+                </button>
+                <button @click="store.openSaveProduto" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo Produto</span>
                 </button>
                 <button @click="store.updateTable"

@@ -1,18 +1,20 @@
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
+import { useDebounceFn } from '@vueuse/core'
 import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import VarianteImagemField from '@/pages/produtos/formulario/VarianteImagemField.vue'
+import CollapsibleSection from './CollapsibleSection.vue'
+import ProdutoFiscalFields from './ProdutoFiscalFields.vue'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
 import { ProdutoRepository, ProdutoVarianteRepository } from '@/repositories/produto-repository'
-import { BadgePlus, CircleDollarSign, Layers3, LoaderCircle, Lock, Package2, Settings2, Sparkles, Tag } from 'lucide-vue-next'
+import { BadgePlus, CircleDollarSign, FileText, LoaderCircle, Lock, Settings2, Sparkles, Tag } from 'lucide-vue-next'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 import { formatToNumberValue } from '@/utils/formatters'
@@ -23,6 +25,12 @@ const toast = useToast()
 
 function isBlank(value: string | number | null | undefined) {
   return String(value ?? '').trim() === ''
+}
+
+function toNullableNumber(value: unknown): number | null {
+  if (value === '' || value === null || value === undefined) return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
 }
 
 const title = computed(() => (store.form.id ? 'Editar produto' : 'Novo produto'))
@@ -38,12 +46,45 @@ const controlaEstoqueAtivo = computed(() => store.form.controlaEstoque)
 // Bloqueia o botão salvar enquanto o produto + upload de imagem estão em andamento.
 const saving = ref(false)
 
+// Estado de abertura das seções colapsáveis.
+const secPrecos = ref(true)
+const secDescricao = ref(true)
+const secControle = ref(false)
+
+// Erros de validação por campo (todos exibidos de uma vez, inline).
+const errors = reactive<Record<string, string>>({})
+function clearError(field: string) {
+  if (errors[field]) delete errors[field]
+}
+
 // Intenção de mudança de imagem da variante padrão, persistida após salvar o produto.
 const imagemChange = ref<{ file: File | null; remove: boolean }>({ file: null, remove: false })
 watch(
   () => store.openModal,
   (open) => {
-    if (open) imagemChange.value = { file: null, remove: false }
+    if (open) {
+      imagemChange.value = { file: null, remove: false }
+      Object.keys(errors).forEach((k) => delete errors[k])
+      secPrecos.value = true
+      secDescricao.value = true
+      secControle.value = false
+    }
+  },
+)
+
+// Gera o SKU automaticamente ao digitar o nome (apenas em produto novo, código vazio e não bloqueado).
+const autoGerarSku = useDebounceFn(() => {
+  if (store.form.id || store.form.skuBloqueado) return
+  if (!isBlank(store.form.codigo)) return
+  if (isBlank(store.form.nome)) return
+  store.gerarSkuProduto()
+}, 600)
+
+watch(
+  () => store.form.nome,
+  () => {
+    if (!store.openModal) return
+    autoGerarSku()
   },
 )
 
@@ -69,55 +110,49 @@ function buildPayload() {
     custoMedioProducao: isBlank(store.form.custoMedioProducao)
       ? undefined
       : Number(store.form.custoMedioProducao),
+    // Fiscais (normalizados)
+    ncm: store.form.ncm?.toString().trim() || null,
+    cest: store.form.cest?.toString().trim() || null,
+    cfop: store.form.cfop?.toString().trim() || null,
+    codigoProduto: store.form.codigoProduto?.toString().trim() || null,
+    origem: store.form.origem ?? null,
+    aliquotaIcms: toNullableNumber(store.form.aliquotaIcms),
+    aliquotaIpi: toNullableNumber(store.form.aliquotaIpi),
+    aliquotaPis: toNullableNumber(store.form.aliquotaPis),
+    aliquotaCofins: toNullableNumber(store.form.aliquotaCofins),
+    issAliquota: toNullableNumber(store.form.issAliquota),
   }
 }
 
 function validateForm() {
-  if (!store.form.nome.trim()) {
-    toast.error('Informe o nome do produto')
-    return false
-  }
+  Object.keys(errors).forEach((k) => delete errors[k])
 
-  if (!store.form.nomeVariante.trim()) {
-    toast.error('Informe o nome da variante padrao')
-    return false
-  }
-
-  if (!store.form.unidade) {
-    toast.error('Selecione a unidade')
-    return false
-  }
-
-  if (formatToNumberValue(store.form.preco) <= 0) {
-    toast.error('Informe um preco de venda valido')
-    return false
-  }
-
+  if (!store.form.nome.trim()) errors.nome = 'Informe o nome do produto'
+  if (!store.form.nomeVariante.trim()) errors.nomeVariante = 'Informe o nome da variante padrão'
+  if (!store.form.unidade) errors.unidade = 'Selecione a unidade'
+  if (formatToNumberValue(store.form.preco) <= 0) errors.preco = 'Informe um preço de venda válido'
   if (
     !isBlank(store.form.precoPromocional) &&
     formatToNumberValue(store.form.precoPromocional) >= formatToNumberValue(store.form.preco)
   ) {
-    toast.error('O preço promocional deve ser menor que o preço de venda')
-    return false
+    errors.precoPromocional = 'O preço promocional deve ser menor que o preço de venda'
   }
+  if (Number(store.form.estoque) < 0) errors.estoque = 'O estoque inicial não pode ser negativo'
+  if (Number(store.form.minimo) < 0) errors.minimo = 'O estoque mínimo não pode ser negativo'
 
-  if (Number(store.form.estoque) < 0) {
-    toast.error('O estoque inicial nao pode ser negativo')
-    return false
-  }
+  // Abre a seção que contém campo com erro, para o usuário enxergar.
+  if (errors.precoPromocional) secPrecos.value = true
 
-  if (Number(store.form.minimo) < 0) {
-    toast.error('O estoque minimo nao pode ser negativo')
-    return false
-  }
-
-  return true
+  return Object.keys(errors).length === 0
 }
 
 async function submit() {
   if (saving.value) return
   try {
-    if (!validateForm()) return
+    if (!validateForm()) {
+      toast.error('Revise os campos destacados')
+      return
+    }
     saving.value = true
 
     const payload = buildPayload()
@@ -144,10 +179,10 @@ async function submit() {
     store.openModal = false
   } catch (error: any) {
     console.log(error)
-    const errors = error?.response?.data?.data
+    const errs = error?.response?.data?.data
       ? error.response.data.data.map((item: any) => item.message).join('\n')
       : 'Ocorreu um erro ao salvar o produto'
-    toast.error(errors)
+    toast.error(errs)
   } finally {
     saving.value = false
   }
@@ -158,13 +193,16 @@ async function submit() {
   <div>
     <ModalView v-model:open="store.openModal" :title="title" :description="description" size="5xl">
       <form @submit.prevent="submit" class="grid gap-4 px-4 pb-1">
+        <!-- ESSENCIAL -->
         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
           <div class="md:col-span-7">
             <label class="mb-1.5 block text-sm font-medium text-foreground">
               Nome do produto <span class="text-red-500">*</span>
             </label>
-            <Input v-model="store.form.nome" required type="text" placeholder="Ex: Camiseta Dry Fit"
-              class="bg-background dark:bg-background/60" />
+            <Input v-model="store.form.nome" type="text" placeholder="Ex: Camiseta Dry Fit"
+              :class="['bg-background dark:bg-background/60', errors.nome && 'border-danger']"
+              @update:model-value="clearError('nome')" />
+            <p v-if="errors.nome" class="mt-1 text-xs text-danger">{{ errors.nome }}</p>
           </div>
 
           <div class="md:col-span-5">
@@ -179,29 +217,15 @@ async function submit() {
           </div>
         </div>
 
-        <div class="rounded-xl">
-          <label class="mb-1.5 block text-sm font-medium text-foreground">Descricao</label>
-          <Textarea v-model="store.form.descricao" rows="4"
-            placeholder="Adicione observacoes ou detalhes sobre o produto"
-            class="bg-background dark:bg-background/70" />
-        </div>
-
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-foreground">Imagem da variante</label>
-          <VarianteImagemField
-            :key="store.form.id ?? 'novo'"
-            :existing="store.form.imagem"
-            @change="imagemChange = $event"
-          />
-        </div>
-
         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
           <div class="md:col-span-5">
             <label class="mb-1.5 block text-sm font-medium text-foreground">
               Nome da variante <span class="text-red-500">*</span>
             </label>
-            <Input v-model="store.form.nomeVariante" required type="text" placeholder="Ex: Padrão, Azul G, 1L"
-              class="bg-background dark:bg-background/60" />
+            <Input v-model="store.form.nomeVariante" type="text" placeholder="Ex: Padrão, Azul G, 1L"
+              :class="['bg-background dark:bg-background/60', errors.nomeVariante && 'border-danger']"
+              @update:model-value="clearError('nomeVariante')" />
+            <p v-if="errors.nomeVariante" class="mt-1 text-xs text-danger">{{ errors.nomeVariante }}</p>
           </div>
 
           <div class="md:col-span-4">
@@ -226,8 +250,8 @@ async function submit() {
             <label class="mb-1.5 block text-sm font-medium text-foreground">
               Unidade <span class="text-red-500">*</span>
             </label>
-            <Select v-model="store.form.unidade" required>
-              <SelectTrigger class="w-full bg-background dark:bg-background/60">
+            <Select v-model="store.form.unidade" @update:model-value="clearError('unidade')">
+              <SelectTrigger class="w-full bg-background dark:bg-background/60" :class="errors.unidade && 'border-danger'">
                 <SelectValue placeholder="Selecione a unidade" />
               </SelectTrigger>
               <SelectContent>
@@ -245,104 +269,132 @@ async function submit() {
                 </SelectGroup>
               </SelectContent>
             </Select>
+            <p v-if="errors.unidade" class="mt-1 text-xs text-danger">{{ errors.unidade }}</p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-          <div class="md:col-span-3">
-            <label class="mb-1.5 block text-sm font-medium text-foreground">Preco de compra</label>
-            <Input v-model="store.form.precoCompra" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
-              class="bg-background dark:bg-background/70" />
-          </div>
-
-          <div class="md:col-span-3">
+          <div class="md:col-span-4">
             <label class="mb-1.5 block text-sm font-medium text-foreground">
-              Preco de venda <span class="text-red-500">*</span>
+              Preço de venda <span class="text-red-500">*</span>
             </label>
-            <Input v-model="store.form.preco" v-maska="moneyMaskOptions" required type="text" placeholder="0,00"
-              class="bg-background dark:bg-background/70" />
+            <Input v-model="store.form.preco" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
+              :class="['bg-background dark:bg-background/70', errors.preco && 'border-danger']"
+              @update:model-value="clearError('preco')" />
+            <p v-if="errors.preco" class="mt-1 text-xs text-danger">{{ errors.preco }}</p>
           </div>
 
-          <div class="md:col-span-3">
-            <label class="mb-1.5 flex items-center gap-1 text-sm font-medium text-foreground">
-              Preço promocional
-              <Tag class="h-3.5 w-3.5 text-red-500" />
-            </label>
-            <Input v-model="store.form.precoPromocional" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
-              class="bg-background dark:bg-background/70" />
-            <p class="mt-1 text-xs text-muted-foreground">Ativa a seção "Promoções" na loja online.</p>
-          </div>
-
-          <div class="md:col-span-3">
-            <label class="mb-1.5 block text-sm font-medium text-foreground">Custo medio producao</label>
-            <Input placeholder="0,00" v-model="store.form.custoMedioProducao" type="number" min="0" step="0.01"
-              class="bg-background dark:bg-background/70" />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-          <div class="md:col-span-6">
+          <div class="md:col-span-4">
             <label class="mb-1.5 block text-sm font-medium text-foreground">
-              Estoque inicial <span class="text-red-500">* <span class="text-xs" v-if="estoqueReadonly">Campo não
-                  pode ser editado.</span></span>
+              Estoque inicial <span class="text-red-500">* <span class="text-xs" v-if="estoqueReadonly">Não
+                  editável.</span></span>
             </label>
             <Input v-model="store.form.estoque" :readonly="estoqueReadonly" :disabled="!controlaEstoqueAtivo"
-              class="bg-background read-only:cursor-not-allowed read-only:bg-muted disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70"
-              required type="number" min="0" />
+              :class="['bg-background read-only:cursor-not-allowed read-only:bg-muted disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70', errors.estoque && 'border-danger']"
+              type="number" min="0" @update:model-value="clearError('estoque')" />
+            <p v-if="errors.estoque" class="mt-1 text-xs text-danger">{{ errors.estoque }}</p>
           </div>
 
-          <div class="md:col-span-6">
+          <div class="md:col-span-4">
             <label class="mb-1.5 block text-sm font-medium text-foreground">
-              Estoque minimo <span class="text-red-500">*</span>
+              Estoque mínimo <span class="text-red-500">*</span>
             </label>
-            <Input v-model="store.form.minimo" required type="number" min="0" :disabled="!controlaEstoqueAtivo"
-              class="bg-background disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70" />
+            <Input v-model="store.form.minimo" type="number" min="0" :disabled="!controlaEstoqueAtivo"
+              :class="['bg-background disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70', errors.minimo && 'border-danger']"
+              @update:model-value="clearError('minimo')" />
+            <p v-if="errors.minimo" class="mt-1 text-xs text-danger">{{ errors.minimo }}</p>
           </div>
         </div>
-        <hr>
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <label
-            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-            <span>Permite saidas</span>
-            <Switch v-model:model-value="store.form.saidas" />
-          </label>
 
-          <label
-            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-            <span>Permite entradas</span>
-            <Switch v-model:model-value="store.form.entradas" />
-          </label>
+        <!-- PREÇOS E CUSTOS -->
+        <CollapsibleSection v-model:open="secPrecos" title="Preços e custos" :icon="CircleDollarSign">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+            <div class="md:col-span-4">
+              <label class="mb-1.5 block text-sm font-medium text-foreground">Preço de compra</label>
+              <Input v-model="store.form.precoCompra" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
+                class="bg-background dark:bg-background/70" />
+            </div>
 
-          <label
-            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-            <span>Producao local</span>
-            <Switch v-model:model-value="store.form.producaoLocal" />
-          </label>
+            <div class="md:col-span-4">
+              <label class="mb-1.5 flex items-center gap-1 text-sm font-medium text-foreground">
+                Preço promocional
+                <Tag class="h-3.5 w-3.5 text-red-500" />
+              </label>
+              <Input v-model="store.form.precoPromocional" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
+                :class="['bg-background dark:bg-background/70', errors.precoPromocional && 'border-danger']"
+                @update:model-value="clearError('precoPromocional')" />
+              <p v-if="errors.precoPromocional" class="mt-1 text-xs text-danger">{{ errors.precoPromocional }}</p>
+              <p v-else class="mt-1 text-xs text-muted-foreground">Ativa a seção "Promoções" na loja online.</p>
+            </div>
 
-          <label
-            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-            <span>Controla estoque</span>
-            <Switch v-model:model-value="store.form.controlaEstoque" />
-          </label>
+            <div class="md:col-span-4">
+              <label class="mb-1.5 block text-sm font-medium text-foreground">Custo médio produção</label>
+              <Input placeholder="0,00" v-model="store.form.custoMedioProducao" type="number" min="0" step="0.01"
+                class="bg-background dark:bg-background/70" />
+            </div>
+          </div>
+        </CollapsibleSection>
 
-          <label
-            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-            <span>Mostrar no PDV</span>
-            <Switch v-model:model-value="store.form.mostrarNoPdv" />
-          </label>
+        <!-- DESCRIÇÃO E IMAGEM -->
+        <CollapsibleSection v-model:open="secDescricao" title="Descrição e imagem" :icon="FileText">
+          <div class="grid gap-4">
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-foreground">Descrição</label>
+              <Textarea v-model="store.form.descricao" rows="4"
+                placeholder="Adicione observações ou detalhes sobre o produto"
+                class="bg-background dark:bg-background/70" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-foreground">Imagem da variante</label>
+              <VarianteImagemField :key="store.form.id ?? 'novo'" :existing="store.form.imagem"
+                @change="imagemChange = $event" />
+            </div>
+          </div>
+        </CollapsibleSection>
 
-          <label
-            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-            <span>Mostrar no catálogo online</span>
-            <Switch v-model:model-value="store.form.mostrarNoCatalogo" />
-          </label>
+        <!-- CONTROLE E VISIBILIDADE -->
+        <CollapsibleSection v-model:open="secControle" title="Controle e visibilidade" :icon="Settings2">
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <label
+              class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+              <span>Controla estoque</span>
+              <Switch v-model:model-value="store.form.controlaEstoque" />
+            </label>
+            <label
+              class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+              <span>Mostrar no PDV</span>
+              <Switch v-model:model-value="store.form.mostrarNoPdv" />
+            </label>
+            <label
+              class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+              <span>Mostrar no catálogo online</span>
+              <Switch v-model:model-value="store.form.mostrarNoCatalogo" />
+            </label>
+            <label
+              class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+              <span>Permite saídas</span>
+              <Switch v-model:model-value="store.form.saidas" />
+            </label>
+            <label
+              class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+              <span>Permite entradas</span>
+              <Switch v-model:model-value="store.form.entradas" />
+            </label>
+            <label
+              class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+              <span>Produção local</span>
+              <Switch v-model:model-value="store.form.producaoLocal" />
+            </label>
+            <label
+              class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+              <span>Matéria prima</span>
+              <Switch v-model:model-value="store.form.materiaPrima" />
+            </label>
+          </div>
+        </CollapsibleSection>
 
-          <label
-            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-            <span>Materia prima</span>
-            <Switch v-model:model-value="store.form.materiaPrima" />
-          </label>
-        </div>
+        <!-- FISCAL -->
+        <ProdutoFiscalFields :form="store.form" />
 
         <div class="flex flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" :disabled="saving" @click="store.openModal = false">Fechar</Button>

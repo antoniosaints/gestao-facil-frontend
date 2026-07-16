@@ -294,7 +294,7 @@ export interface ProdutoBase {
   ncm?: string | null
   cest?: string | null
   cfop?: string | null
-  origem?: string | null
+  origem?: number | string | null
   aliquotaIcms?: number | string | null
   aliquotaIpi?: number | string | null
   aliquotaPis?: number | string | null

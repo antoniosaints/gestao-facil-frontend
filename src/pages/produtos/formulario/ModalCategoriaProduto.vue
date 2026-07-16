@@ -20,10 +20,15 @@ async function submit() {
       return
     }
 
-    await ProdutoCategoriaRepository.save({
+    const criando = !store.categoriaForm.id
+    const categoria = await ProdutoCategoriaRepository.save({
       ...store.categoriaForm,
       nome: store.categoriaForm.nome.trim(),
     })
+    // Ao criar pelo botão "+" de dentro do cadastro de produto, já seleciona a nova categoria.
+    if (criando && store.openModal && categoria?.id) {
+      store.form.categoriaId = categoria.id
+    }
     toast.success('Categoria salva com sucesso')
     store.resetCategoria()
     store.openModalCategoria = false

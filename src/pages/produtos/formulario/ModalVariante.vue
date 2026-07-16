@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
+import { useDebounceFn } from '@vueuse/core'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import VarianteImagemField from '@/pages/produtos/formulario/VarianteImagemField.vue'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import CollapsibleSection from './CollapsibleSection.vue'
+import ProdutoFiscalFields from './ProdutoFiscalFields.vue'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -15,7 +17,7 @@ import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 import { formatToNumberValue } from '@/utils/formatters'
-import { CircleDollarSign, LoaderCircle, Lock, PackagePlus, Settings2, Sparkles, Tag } from 'lucide-vue-next'
+import { CircleDollarSign, FileText, LoaderCircle, Lock, Settings2, Sparkles, Tag } from 'lucide-vue-next'
 
 const store = useProdutoStore()
 const toast = useToast()
@@ -28,21 +30,59 @@ const description = computed(() =>
 )
 const controlaEstoqueAtivo = computed(() => store.varianteForm.controlaEstoque)
 
-// Bloqueia o botão salvar enquanto a variante + upload de imagem estão em andamento.
 const saving = ref(false)
+
+// Estado das seções colapsáveis.
+const secPrecos = ref(true)
+const secDescricao = ref(true)
+const secControle = ref(false)
+
+// Erros de validação por campo.
+const errors = reactive<Record<string, string>>({})
+function clearError(field: string) {
+  if (errors[field]) delete errors[field]
+}
 
 // Intenção de mudança de imagem (arquivo novo ou remoção), persistida após salvar a variante.
 const imagemChange = ref<{ file: File | null; remove: boolean }>({ file: null, remove: false })
 watch(
   () => store.openModalVariante,
   (open) => {
-    if (open) imagemChange.value = { file: null, remove: false }
+    if (open) {
+      imagemChange.value = { file: null, remove: false }
+      Object.keys(errors).forEach((k) => delete errors[k])
+      secPrecos.value = true
+      secDescricao.value = true
+      secControle.value = false
+    }
   },
 )
 
 function isBlank(value: string | number | null | undefined) {
   return String(value ?? '').trim() === ''
 }
+
+function toNullableNumber(value: unknown): number | null {
+  if (value === '' || value === null || value === undefined) return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+// Gera o SKU automaticamente ao definir base + nome da variante (variante nova, código vazio, não bloqueado).
+const autoGerarSku = useDebounceFn(() => {
+  if (store.varianteForm.id || store.varianteForm.skuBloqueado) return
+  if (!isBlank(store.varianteForm.codigo)) return
+  if (!store.varianteForm.produtoBaseId || isBlank(store.varianteForm.nomeVariante)) return
+  store.gerarSkuVariante()
+}, 600)
+
+watch(
+  () => [store.varianteForm.nomeVariante, store.varianteForm.produtoBaseId],
+  () => {
+    if (!store.openModalVariante) return
+    autoGerarSku()
+  },
+)
 
 function buildPayload() {
   return {
@@ -73,60 +113,53 @@ function buildPayload() {
     custoMedioProducao: isBlank(store.varianteForm.custoMedioProducao)
       ? undefined
       : Number(store.varianteForm.custoMedioProducao),
+    // Fiscais (normalizados)
+    ncm: store.varianteForm.ncm?.toString().trim() || null,
+    cest: store.varianteForm.cest?.toString().trim() || null,
+    cfop: store.varianteForm.cfop?.toString().trim() || null,
+    codigoProduto: store.varianteForm.codigoProduto?.toString().trim() || null,
+    origem: store.varianteForm.origem ?? null,
+    aliquotaIcms: toNullableNumber(store.varianteForm.aliquotaIcms),
+    aliquotaIpi: toNullableNumber(store.varianteForm.aliquotaIpi),
+    aliquotaPis: toNullableNumber(store.varianteForm.aliquotaPis),
+    aliquotaCofins: toNullableNumber(store.varianteForm.aliquotaCofins),
+    issAliquota: toNullableNumber(store.varianteForm.issAliquota),
   }
 }
 
 function validateForm() {
-  if (!store.varianteForm.produtoBaseId) {
-    toast.error('Produto base nao informado')
-    return false
-  }
+  Object.keys(errors).forEach((k) => delete errors[k])
 
-  if (!store.varianteForm.nomeVariante.trim()) {
-    toast.error('Informe o nome da variante')
-    return false
-  }
-
-  if (!store.varianteForm.unidade) {
-    toast.error('Selecione a unidade')
-    return false
-  }
-
-  if (formatToNumberValue(store.varianteForm.preco) <= 0) {
-    toast.error('Informe um preco de venda valido')
-    return false
-  }
-
+  if (!store.varianteForm.produtoBaseId) errors.produtoBaseId = 'Selecione o produto base'
+  if (!store.varianteForm.nomeVariante.trim()) errors.nomeVariante = 'Informe o nome da variante'
+  if (!store.varianteForm.unidade) errors.unidade = 'Selecione a unidade'
+  if (formatToNumberValue(store.varianteForm.preco) <= 0) errors.preco = 'Informe um preço de venda válido'
   if (
     !isBlank(store.varianteForm.precoPromocional) &&
     formatToNumberValue(store.varianteForm.precoPromocional) >= formatToNumberValue(store.varianteForm.preco)
   ) {
-    toast.error('O preço promocional deve ser menor que o preço de venda')
-    return false
+    errors.precoPromocional = 'O preço promocional deve ser menor que o preço de venda'
   }
+  if (Number(store.varianteForm.estoque) < 0) errors.estoque = 'O estoque não pode ser negativo'
+  if (Number(store.varianteForm.minimo) < 0) errors.minimo = 'O estoque mínimo não pode ser negativo'
 
-  if (Number(store.varianteForm.estoque) < 0) {
-    toast.error('O estoque da variante nao pode ser negativo')
-    return false
-  }
+  if (errors.precoPromocional) secPrecos.value = true
 
-  if (Number(store.varianteForm.minimo) < 0) {
-    toast.error('O estoque minimo da variante nao pode ser negativo')
-    return false
-  }
-
-  return true
+  return Object.keys(errors).length === 0
 }
 
 async function submit() {
   if (saving.value) return
   try {
-    if (!validateForm()) return
+    if (!validateForm()) {
+      toast.error('Revise os campos destacados')
+      return
+    }
     saving.value = true
 
     const payload = buildPayload()
     if (payload.produtoBaseId == null) {
-      toast.error('Produto base nao informado')
+      toast.error('Produto base não informado')
       return
     }
 
@@ -152,10 +185,10 @@ async function submit() {
     store.updateTable()
   } catch (error: any) {
     console.log(error)
-    const errors = error?.response?.data?.data
+    const errs = error?.response?.data?.data
       ? error.response.data.data.map((item: any) => item.message).join('\n')
       : error?.response?.data?.message || 'Erro ao salvar a variante'
-    toast.error(errors)
+    toast.error(errs)
   } finally {
     saving.value = false
   }
@@ -164,7 +197,8 @@ async function submit() {
 
 <template>
   <ModalView v-model:open="store.openModalVariante" :title="title" :description="description" size="4xl">
-    <form @submit.prevent="submit" class="grid gap-5 px-4 pb-1">
+    <form @submit.prevent="submit" class="grid gap-4 px-4 pb-1">
+      <!-- ESSENCIAL -->
       <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
         <div class="md:col-span-12">
           <label class="mb-1.5 block text-sm font-medium text-foreground">
@@ -172,15 +206,18 @@ async function submit() {
           </label>
           <Select2Ajax v-model:model-value="store.varianteForm.produtoBaseId" class="w-full" url="/produtos/select2"
             :params="[{ key: 'baseOnly', value: true }]" placeholder="Selecione o produto para receber a nova variante"
-            :disabled="!!store.varianteForm.id" />
+            :disabled="!!store.varianteForm.id" @update:model-value="clearError('produtoBaseId')" />
+          <p v-if="errors.produtoBaseId" class="mt-1 text-xs text-danger">{{ errors.produtoBaseId }}</p>
         </div>
 
         <div class="md:col-span-6">
           <label class="mb-1.5 block text-sm font-medium text-foreground">
             Nome da variante <span class="text-red-500">*</span>
           </label>
-          <Input v-model="store.varianteForm.nomeVariante" required type="text" placeholder="Ex: Azul G, Caixa 12un, 1L"
-            class="bg-background dark:bg-background/60" />
+          <Input v-model="store.varianteForm.nomeVariante" type="text" placeholder="Ex: Azul G, Caixa 12un, 1L"
+            :class="['bg-background dark:bg-background/60', errors.nomeVariante && 'border-danger']"
+            @update:model-value="clearError('nomeVariante')" />
+          <p v-if="errors.nomeVariante" class="mt-1 text-xs text-danger">{{ errors.nomeVariante }}</p>
         </div>
 
         <div class="md:col-span-3">
@@ -197,7 +234,7 @@ async function submit() {
             </Button>
           </div>
           <p v-if="store.varianteForm.skuBloqueado" class="mt-1 text-xs text-amber-600 dark:text-amber-400">
-            SKU bloqueado: existem vendas ou ordens de serviço vinculadas. Remova essas conexões para poder alterar.
+            SKU bloqueado: existem vendas ou ordens de serviço vinculadas.
           </p>
         </div>
 
@@ -205,8 +242,8 @@ async function submit() {
           <label class="mb-1.5 block text-sm font-medium text-foreground">
             Unidade <span class="text-red-500">*</span>
           </label>
-          <Select v-model="store.varianteForm.unidade" required>
-            <SelectTrigger class="w-full bg-background dark:bg-background/60">
+          <Select v-model="store.varianteForm.unidade" @update:model-value="clearError('unidade')">
+            <SelectTrigger class="w-full bg-background dark:bg-background/60" :class="errors.unidade && 'border-danger'">
               <SelectValue placeholder="Selecione a unidade" />
             </SelectTrigger>
             <SelectContent>
@@ -224,117 +261,127 @@ async function submit() {
               </SelectGroup>
             </SelectContent>
           </Select>
-        </div>
-      </div>
-
-      <div>
-        <label class="mb-1.5 block text-sm font-medium text-foreground">Descrição</label>
-        <Textarea v-model="store.varianteForm.descricao" rows="4"
-          placeholder="Descreva esta variante: detalhes, medidas, composição, diferenciais"
-          class="bg-background dark:bg-background/60" />
-      </div>
-
-      <div>
-        <label class="mb-1.5 block text-sm font-medium text-foreground">Imagem da variante</label>
-        <VarianteImagemField
-          :key="store.varianteForm.id ?? 'nova'"
-          :existing="store.varianteForm.imagem"
-          @change="imagemChange = $event"
-        />
-      </div>
-
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-        <div class="md:col-span-3">
-          <label class="mb-1.5 block text-sm font-medium text-foreground">Preco de compra</label>
-          <Input v-model="store.varianteForm.precoCompra" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
-            class="bg-background dark:bg-background/70" />
+          <p v-if="errors.unidade" class="mt-1 text-xs text-danger">{{ errors.unidade }}</p>
         </div>
 
-        <div class="md:col-span-3">
+        <div class="md:col-span-4">
           <label class="mb-1.5 block text-sm font-medium text-foreground">
-            Preco de venda <span class="text-red-500">*</span>
+            Preço de venda <span class="text-red-500">*</span>
           </label>
-          <Input v-model="store.varianteForm.preco" v-maska="moneyMaskOptions" required type="text" placeholder="0,00"
-            class="bg-background dark:bg-background/70" />
+          <Input v-model="store.varianteForm.preco" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
+            :class="['bg-background dark:bg-background/70', errors.preco && 'border-danger']"
+            @update:model-value="clearError('preco')" />
+          <p v-if="errors.preco" class="mt-1 text-xs text-danger">{{ errors.preco }}</p>
         </div>
 
-        <div class="md:col-span-3">
-          <label class="mb-1.5 flex items-center gap-1 text-sm font-medium text-foreground">
-            Preço promocional
-            <Tag class="h-3.5 w-3.5 text-red-500" />
-          </label>
-          <Input v-model="store.varianteForm.precoPromocional" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
-            class="bg-background dark:bg-background/70" />
-        </div>
-
-        <div class="md:col-span-3">
-          <label class="mb-1.5 block text-sm font-medium text-foreground">Custo medio producao</label>
-          <Input v-model="store.varianteForm.custoMedioProducao" type="number" min="0" step="0.01"
-            class="bg-background dark:bg-background/70" />
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-        <div class="md:col-span-6">
+        <div class="md:col-span-4">
           <label class="mb-1.5 block text-sm font-medium text-foreground">
             Estoque <span class="text-red-500">*</span>
           </label>
-          <Input v-model="store.varianteForm.estoque" required type="number" min="0" :disabled="!controlaEstoqueAtivo"
-            class="bg-background disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70" />
+          <Input v-model="store.varianteForm.estoque" type="number" min="0" :disabled="!controlaEstoqueAtivo"
+            :class="['bg-background disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70', errors.estoque && 'border-danger']"
+            @update:model-value="clearError('estoque')" />
+          <p v-if="errors.estoque" class="mt-1 text-xs text-danger">{{ errors.estoque }}</p>
         </div>
 
-        <div class="md:col-span-6">
+        <div class="md:col-span-4">
           <label class="mb-1.5 block text-sm font-medium text-foreground">
-            Estoque minimo <span class="text-red-500">*</span>
+            Estoque mínimo <span class="text-red-500">*</span>
           </label>
-          <Input v-model="store.varianteForm.minimo" required type="number" min="0" :disabled="!controlaEstoqueAtivo"
-            class="bg-background disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70" />
+          <Input v-model="store.varianteForm.minimo" type="number" min="0" :disabled="!controlaEstoqueAtivo"
+            :class="['bg-background disabled:cursor-not-allowed disabled:bg-muted dark:bg-background/70', errors.minimo && 'border-danger']"
+            @update:model-value="clearError('minimo')" />
+          <p v-if="errors.minimo" class="mt-1 text-xs text-danger">{{ errors.minimo }}</p>
         </div>
       </div>
-      <hr>
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <label
-          class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-          <span>Permite saidas</span>
-          <Switch v-model:model-value="store.varianteForm.saidas" />
-        </label>
 
-        <label
-          class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-          <span>Permite entradas</span>
-          <Switch v-model:model-value="store.varianteForm.entradas" />
-        </label>
+      <!-- PREÇOS E CUSTOS -->
+      <CollapsibleSection v-model:open="secPrecos" title="Preços e custos" :icon="CircleDollarSign">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+          <div class="md:col-span-4">
+            <label class="mb-1.5 block text-sm font-medium text-foreground">Preço de compra</label>
+            <Input v-model="store.varianteForm.precoCompra" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
+              class="bg-background dark:bg-background/70" />
+          </div>
+          <div class="md:col-span-4">
+            <label class="mb-1.5 flex items-center gap-1 text-sm font-medium text-foreground">
+              Preço promocional
+              <Tag class="h-3.5 w-3.5 text-red-500" />
+            </label>
+            <Input v-model="store.varianteForm.precoPromocional" v-maska="moneyMaskOptions" type="text" placeholder="0,00"
+              :class="['bg-background dark:bg-background/70', errors.precoPromocional && 'border-danger']"
+              @update:model-value="clearError('precoPromocional')" />
+            <p v-if="errors.precoPromocional" class="mt-1 text-xs text-danger">{{ errors.precoPromocional }}</p>
+          </div>
+          <div class="md:col-span-4">
+            <label class="mb-1.5 block text-sm font-medium text-foreground">Custo médio produção</label>
+            <Input v-model="store.varianteForm.custoMedioProducao" type="number" min="0" step="0.01" placeholder="0,00"
+              class="bg-background dark:bg-background/70" />
+          </div>
+        </div>
+      </CollapsibleSection>
 
-        <label
-          class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-          <span>Producao local</span>
-          <Switch v-model:model-value="store.varianteForm.producaoLocal" />
-        </label>
+      <!-- DESCRIÇÃO E IMAGEM -->
+      <CollapsibleSection v-model:open="secDescricao" title="Descrição e imagem" :icon="FileText">
+        <div class="grid gap-4">
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-foreground">Descrição</label>
+            <Textarea v-model="store.varianteForm.descricao" rows="4"
+              placeholder="Descreva esta variante: detalhes, medidas, composição, diferenciais"
+              class="bg-background dark:bg-background/60" />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-foreground">Imagem da variante</label>
+            <VarianteImagemField :key="store.varianteForm.id ?? 'nova'" :existing="store.varianteForm.imagem"
+              @change="imagemChange = $event" />
+          </div>
+        </div>
+      </CollapsibleSection>
 
-        <label
-          class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-          <span>Controla estoque</span>
-          <Switch v-model:model-value="store.varianteForm.controlaEstoque" />
-        </label>
+      <!-- CONTROLE E VISIBILIDADE -->
+      <CollapsibleSection v-model:open="secControle" title="Controle e visibilidade" :icon="Settings2">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <label
+            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+            <span>Controla estoque</span>
+            <Switch v-model:model-value="store.varianteForm.controlaEstoque" />
+          </label>
+          <label
+            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+            <span>Mostrar no PDV</span>
+            <Switch v-model:model-value="store.varianteForm.mostrarNoPdv" />
+          </label>
+          <label
+            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+            <span>Mostrar no catálogo online</span>
+            <Switch v-model:model-value="store.varianteForm.mostrarNoCatalogo" />
+          </label>
+          <label
+            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+            <span>Permite saídas</span>
+            <Switch v-model:model-value="store.varianteForm.saidas" />
+          </label>
+          <label
+            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+            <span>Permite entradas</span>
+            <Switch v-model:model-value="store.varianteForm.entradas" />
+          </label>
+          <label
+            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+            <span>Produção local</span>
+            <Switch v-model:model-value="store.varianteForm.producaoLocal" />
+          </label>
+          <label
+            class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
+            <span>Matéria prima</span>
+            <Switch v-model:model-value="store.varianteForm.materiaPrima" />
+          </label>
+        </div>
+      </CollapsibleSection>
 
-        <label
-          class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-          <span>Mostrar no PDV</span>
-          <Switch v-model:model-value="store.varianteForm.mostrarNoPdv" />
-        </label>
+      <!-- FISCAL -->
+      <ProdutoFiscalFields :form="store.varianteForm" />
 
-        <label
-          class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-          <span>Mostrar no catálogo online</span>
-          <Switch v-model:model-value="store.varianteForm.mostrarNoCatalogo" />
-        </label>
-
-        <label
-          class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 dark:bg-background/40 dark:hover:bg-muted/20">
-          <span>Materia prima</span>
-          <Switch v-model:model-value="store.varianteForm.materiaPrima" />
-        </label>
-      </div>
       <div class="flex flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="secondary" :disabled="saving" @click="store.openModalVariante = false">Fechar</Button>
         <Button class="text-white" type="submit" :disabled="saving">

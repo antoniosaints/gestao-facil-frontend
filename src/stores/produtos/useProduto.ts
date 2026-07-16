@@ -35,6 +35,17 @@ type ProdutoForm = {
   nomeVariante: string
   skuBloqueado?: boolean
   imagem?: string | null
+  // Fiscais (NF-e) — opcionais, ficam na variante padrão.
+  ncm?: string | null
+  cest?: string | null
+  cfop?: string | null
+  origem?: number | null
+  codigoProduto?: string | null
+  aliquotaIcms?: number | string | null
+  aliquotaIpi?: number | string | null
+  aliquotaPis?: number | string | null
+  aliquotaCofins?: number | string | null
+  issAliquota?: number | string | null
 }
 
 type ProdutoVarianteForm = {
@@ -62,6 +73,17 @@ type ProdutoVarianteForm = {
   categoriaId: number | null
   skuBloqueado?: boolean
   imagem?: string | null
+  // Fiscais (NF-e)
+  ncm?: string | null
+  cest?: string | null
+  cfop?: string | null
+  origem?: number | null
+  codigoProduto?: string | null
+  aliquotaIcms?: number | string | null
+  aliquotaIpi?: number | string | null
+  aliquotaPis?: number | string | null
+  aliquotaCofins?: number | string | null
+  issAliquota?: number | string | null
 }
 
 type ProdutoCategoriaForm = {
@@ -81,9 +103,41 @@ type ProductReportForm = {
   orderBy: 'asc' | 'desc'
 }
 
+function getDefaultFiscalFields() {
+  return {
+    ncm: null,
+    cest: null,
+    cfop: null,
+    origem: null,
+    codigoProduto: null,
+    aliquotaIcms: null,
+    aliquotaIpi: null,
+    aliquotaPis: null,
+    aliquotaCofins: null,
+    issAliquota: null,
+  }
+}
+
+// Extrai os campos fiscais de um produto/variante retornado pelo backend (edição).
+function extractFiscalFields(data: any) {
+  return {
+    ncm: data?.ncm ?? null,
+    cest: data?.cest ?? null,
+    cfop: data?.cfop ?? null,
+    origem: data?.origem ?? null,
+    codigoProduto: data?.codigoProduto ?? null,
+    aliquotaIcms: data?.aliquotaIcms ?? null,
+    aliquotaIpi: data?.aliquotaIpi ?? null,
+    aliquotaPis: data?.aliquotaPis ?? null,
+    aliquotaCofins: data?.aliquotaCofins ?? null,
+    issAliquota: data?.issAliquota ?? null,
+  }
+}
+
 function getDefaultProdutoForm(): ProdutoForm {
   return {
     id: undefined,
+    ...getDefaultFiscalFields(),
     categoriaId: null,
     codigo: '',
     descricao: '',
@@ -112,6 +166,7 @@ function getDefaultProdutoForm(): ProdutoForm {
 function getDefaultVarianteForm(produtoBaseId: number | null = null): ProdutoVarianteForm {
   return {
     id: undefined,
+    ...getDefaultFiscalFields(),
     produtoBaseId,
     codigo: '',
     descricao: '',
@@ -284,6 +339,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
       const { data } = await ProdutoRepository.get(id)
       form.value = {
         id,
+        ...extractFiscalFields(data),
         status: data?.status,
         nome: data?.nome,
         categoriaId: data?.categoriaId ?? null,
@@ -324,6 +380,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
       const { data } = await ProdutoVarianteRepository.get(id)
       varianteForm.value = {
         id: data.id,
+        ...extractFiscalFields(data),
         produtoBaseId: data.produtoBaseId ?? null,
         status: data.status,
         nome: data.nome,

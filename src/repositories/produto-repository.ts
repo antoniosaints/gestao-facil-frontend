@@ -497,7 +497,8 @@ export class ProdutoCategoriaRepository {
   }
 
   static async save(categoria: Partial<ProdutoCategoria>) {
-    await http.post(`/produtos/categorias`, categoria)
+    const { data } = await http.post(`/produtos/categorias`, categoria)
+    return data.data as ProdutoCategoria
   }
 
   static async remove(id: number) {
