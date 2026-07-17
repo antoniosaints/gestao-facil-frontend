@@ -1,5 +1,27 @@
 <template>
-    <div :class="{ 'pdv-basic-pro': proMode }">
+    <div :class="['relative', { 'pdv-basic-pro': proMode }]">
+        <div v-if="proMode && !caixaStore.caixaAtivo?.id"
+            class="absolute inset-0 z-30 flex items-center justify-center rounded bg-background/90 p-6 backdrop-blur-sm">
+            <div class="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-2xl">
+                <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
+                    <MonitorDown class="h-7 w-7" />
+                </div>
+                <h2 class="mt-4 text-2xl font-black tracking-tight">Caixa fechado</h2>
+                <p class="mt-2 text-sm text-muted-foreground">
+                    Abra um caixa para liberar a busca de produtos, o carrinho e a finalizacao da venda.
+                </p>
+                <div class="mt-5 grid gap-2 sm:grid-cols-2">
+                    <Button type="button" class="h-11 text-white" @click="abrirModalCaixa">
+                        <MonitorDown class="h-4 w-4" />
+                        Abrir caixa
+                    </Button>
+                    <Button type="button" variant="outline" class="h-11" :disabled="caixaStore.loading"
+                        @click="caixaStore.loadContexto()">
+                        Atualizar
+                    </Button>
+                </div>
+            </div>
+        </div>
         <div class="flex flex-col xl:flex-row gap-4 xl:max-h-[calc(100vh-8rem)] rounded">
             <!-- Área Principal - Produtos -->
             <div class="flex-1 flex flex-col">
@@ -152,6 +174,10 @@
                             <h2 class="text-xl font-semibold flex items-center gap-2">
                                 <ShoppingCart class="w-6 h-6 inline-flex" />
                                 Carrinho
+                                <span v-if="proMode"
+                                    class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                                    {{ quantidadeItens }} item(ns)
+                                </span>
                             </h2>
                             <button @click="limparCarrinho" :title="cart.length ? 'Limpar carrinho' : 'Carrinho vazio'"
                                 class="text-red-500 dark:text-red-300 bg-red-100 px-3 py-1 rounded-md bg-red-10 dark:bg-red-900">
@@ -215,7 +241,32 @@
                 <!-- Footer do Carrinho -->
                 <div class="px-4 py-2 border-border dark:border-border-dark bg-background border-t">
                     <!-- Totais -->
-                    <div class="mb-2">
+                    <div v-if="proMode" class="mb-3 rounded-xl border border-border bg-card/70 p-3">
+                        <div class="grid grid-cols-3 gap-2 text-xs">
+                            <div class="rounded-lg bg-background p-2">
+                                <span class="block text-muted-foreground">Itens</span>
+                                <strong class="text-base">{{ quantidadeItens }}</strong>
+                            </div>
+                            <div class="rounded-lg bg-background p-2">
+                                <span class="block text-muted-foreground">Desconto</span>
+                                <strong class="text-base text-red-500">{{ formatCurrencyBR(discount) }}</strong>
+                            </div>
+                            <div class="rounded-lg bg-background p-2">
+                                <span class="block text-muted-foreground">Pagamento</span>
+                                <strong class="text-base">{{ getPaymentMethodLabel(paymentMethod) }}</strong>
+                            </div>
+                        </div>
+                        <div class="mt-3 rounded-xl bg-primary/10 p-3">
+                            <div class="flex items-center justify-between text-xs font-semibold text-primary">
+                                <span>Total da venda</span>
+                                <span>{{ caixaStore.caixaAtivo?.codigo || 'Caixa fechado' }}</span>
+                            </div>
+                            <div class="mt-1 text-3xl font-black tracking-tight text-primary">
+                                {{ formatCurrencyBR(total) }}
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="mb-2">
                         <div class="flex justify-between text-sm">
                             <span>Subtotal:</span>
                             <span id="subtotal">R$ {{ resumoVenda.subtotal.toFixed(2).replace('.', ',') }}</span>
@@ -233,7 +284,21 @@
                     <!-- Forma de Pagamento -->
                     <div class="mb-4 flex flex-col gap-2">
                         <label class="block text-sm font-medium text-gray-700 dark:text-white">Pagamento</label>
-                        <div class="grid grid-cols-8 md:grid-cols-8 gap-2">
+                        <div v-if="proMode" class="grid grid-cols-2 gap-2">
+                            <button v-for="metodo in metodosPagamentoRapido" :key="metodo.value" type="button"
+                                class="flex min-h-16 items-center gap-2 rounded-xl border p-3 text-left transition hover:border-primary hover:bg-primary/5"
+                                :class="paymentMethod === metodo.value
+                                    ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                                    : 'border-border bg-background text-foreground'"
+                                @click="selecionarPagamento(metodo.value)">
+                                <component :is="metodo.icon" class="h-5 w-5 shrink-0" />
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-bold">{{ metodo.label }}</span>
+                                    <span class="block truncate text-[11px] text-muted-foreground">{{ metodo.hint }}</span>
+                                </span>
+                            </button>
+                        </div>
+                        <div v-else class="grid grid-cols-8 md:grid-cols-8 gap-2">
                             <div class="col-span-6">
                                 <Select v-model="paymentMethod">
                                     <SelectTrigger>
@@ -273,29 +338,29 @@
                                 type="text" placeholder="Valor recebido" />
                             <div class="flex justify-between text-sm font-medium">
                                 <span>Troco:</span>
-                                <span>R$ {{ change.toFixed(2).replace('.', ',') }}</span>
+                                <span>{{ formatCurrencyBR(change) }}</span>
                             </div>
                         </div>
                         <div class="space-y-2" v-if="paymentMethod === 'CREDIARIO'">
-                            <p class="text-xs text-muted-foreground">
-                                Ao finalizar, escolha as parcelas e a data da primeira parcela.
-                            </p>
-                            <p class="hidden">
-                                Será criado um financeiro pendente em {{ crediarioParcelas }}x vinculado à venda.
-                            </p>
                         </div>
                     </div>
 
                     <!-- Botões de finalização -->
+                    <p v-if="proMode && !podeFinalizarPDV"
+                        class="mb-2 rounded-lg border border-dashed border-border bg-muted/30 p-2 text-xs text-muted-foreground">
+                        {{ !caixaStore.caixaAtivo?.id ? 'Abra o caixa para finalizar vendas.' : 'Adicione itens ao carrinho para finalizar.' }}
+                    </p>
                     <div class="flex flex-col gap-2 sm:flex-row">
                         <Button @click="finalizarVendaPDV()"
-                            class="w-full text-white py-3 px-4 h-10 text-sm rounded-lg transition-colors"
+                            class="w-full text-white py-3 px-4 rounded-lg transition-colors"
+                            :class="proMode ? 'h-12 text-base font-bold' : 'h-10 text-sm'"
                             :disabled="!podeFinalizarPDV">
                             <ShoppingBasket />
-                            Finalizar Venda
+                            Finalizar venda
                         </Button>
                         <Button type="button" variant="outline"
-                            class="w-full sm:w-auto flex items-center justify-center rounded-lg gap-2 h-10"
+                            class="w-full sm:w-auto flex items-center justify-center rounded-lg gap-2"
+                            :class="proMode ? 'h-12 px-4' : 'h-10'"
                             :disabled="!podeFinalizarPDV"
                             @click="finalizarVendaPDV({ print: true })">
                             <Printer class="w-4 h-4" />
@@ -340,7 +405,7 @@
         </ModalView>
 
         <ModalView v-model:open="openModalVendaFinalizada" title="Comprovante da venda"
-            description="Ticket da venda pronto para imprimir, baixar ou enviar." size="xl">
+            description="Ticket da venda pronto para imprimir, baixar ou enviar." size="2xl">
             <div class="p-4 space-y-4">
                 
                 <div class="mx-auto w-full rounded-3xl border border-dashed border-border bg-card px-6 py-5 shadow-sm">
@@ -351,14 +416,14 @@
                         </div>
                     </div>
                     <div class="text-center font-mono text-xs text-muted-foreground">
-                        <p class="text-sm font-semibold tracking-[0.25em] text-foreground">COMPROVANTE</p>
+                        <p class="text-lg font-semibold tracking-[0.25em] text-foreground">COMPROVANTE</p>
                         <p class="mt-1">Venda finalizada com sucesso</p>
                         <p>{{ vendaRecibo?.createdAt ? new Date(vendaRecibo.createdAt).toLocaleString('pt-BR') : '—' }}</p>
                     </div>
 
                     <div class="my-4 border-t border-dashed border-border"></div>
 
-                    <div class="space-y-1 font-mono text-xs text-foreground">
+                    <div class="space-y-1 font-mono text-sm text-foreground">
                         <div class="flex items-center justify-between gap-3">
                             <span>Venda</span>
                             <span class="font-semibold">{{ vendaRecibo?.uid || `#${vendaRecibo?.id}` }}</span>
@@ -375,7 +440,7 @@
 
                     <div class="my-4 border-t border-dashed border-border"></div>
 
-                    <div class="space-y-3 font-mono text-xs text-foreground">
+                    <div class="space-y-3 font-mono text-sm text-foreground">
                         <div v-if="vendaRecibo?.items?.length" class="space-y-2">
                             <div v-for="item in vendaRecibo.items" :key="item.id" class="space-y-1">
                                 <div class="truncate font-medium max-w-[25rem]">{{ item.label }}</div>
@@ -416,29 +481,33 @@
                     </div>
                 </div>
 
-                <Card class="border-border/70 shadow-sm rounded-xl">
-                    <CardHeader class="py-2 -mb-2">
+                <Card class="border-border/70 shadow-sm rounded-2xl">
+                    <CardHeader class="py-2 px-5 -mb-4">
                         <CardTitle class="text-base">Destino do envio</CardTitle>
                     </CardHeader>
-                    <CardContent class="space-y-1 px-6 py-3">
-                        <div class="grid grid-cols-7 gap-2">
-                            <Select2Ajax class="col-span-6" placeholder="Selecione o cliente" :url="'/clientes/select2'"
+                    <CardContent class="space-y-1 px-4 py-3">
+                        <div class="grid grid-cols-12 gap-2">
+                            <Select2Ajax class="col-span-10 md:col-span-11" placeholder="Selecione o cliente" :url="'/clientes/select2'"
                                 v-model:model-value="clienteEnvio" :allowClear="true" />
-                            <button type="button" @click="storeCliente.openSave"
-                                class="bg-primary px-2 text-white rounded border border-border dark:border-border-dark flex justify-center items-center">
-                                <UserPlus class="w-5 inline-flex" />
-                            </button>
+                            <Button type="Button" @click="storeCliente.openSave"
+                                class="bg-primary px-2 col-span-2 md:col-span-1 text-white w-full border border-border dark:border-border-dark flex justify-center items-center">
+                                <UserPlus :stroke-width="2.5" class="w-5 h-5 inline-flex" />
+                            </Button>
                         </div>
-                        <p class="text-xs text-muted-foreground">
+                        <p class="text-xs text-muted-foreground pl-1">
                             Número para envio:
-                            <span class="font-mono text-foreground">
+                            <span class="text-foreground">
                                 {{ numeroPreview || 'Selecione um cliente com telefone/WhatsApp' }}
                             </span>
                         </p>
                     </CardContent>
                 </Card>
 
-                <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-[1.35fr_1fr_1fr_1fr]">
+                    <Button type="button" class="text-white" @click="novaVendaAposComprovante">
+                        <PlusCircleIcon class="w-4 h-4 mr-2" />
+                        Nova venda
+                    </Button>
                     <Button type="button" variant="outline" class="h-9" @click="imprimirComprovante"
                         :disabled="!vendaRecibo?.id || printingCupom">
                         <Printer class="w-4 h-4 mr-2" />
@@ -453,13 +522,6 @@
                         :disabled="!vendaRecibo?.id">
                         <Send class="w-4 h-4 mr-2" />
                         Enviar
-                    </Button>
-                </div>
-
-                <div class="flex justify-end pt-2">
-                    <Button type="button" class="text-white" @click="openModalVendaFinalizada = false">
-                        <Plus class="w-4 h-4 mr-2" />
-                        Nova venda
                     </Button>
                 </div>
             </div>
@@ -626,52 +688,97 @@
                 <Button type="button" @click="aplicarDesconto" class="w-full">Aplicar desconto</Button>
             </div>
         </ModalView>
-        <ModalView v-model:open="openModalAcoes" title="Ações do PDV" description="Escolha a ação que deseja realizar"
-            size="sm">
-            <!-- Desconto -->
-            <div class="px-4 gap-4 grid grid-cols-2">
-                <div @click="abrirMovimento('SANGRIA')"
-                    class="flex cursor-pointer hover:bg-secondary/80 transition flex-col items-center gap-2 mb-2 text-yellow-700 dark:text-yellow-400 border rounded-md py-7">
-                    <HandGrab />
-                    <h1>Sangria</h1>
+        <ModalView v-model:open="openModalAcoes" title="Caixa do PDV"
+            description="Acompanhe o turno e registre movimentacoes do caixa." size="xl">
+            <div class="grid gap-4 px-4">
+                <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    <div class="rounded-xl border bg-card p-3">
+                        <span class="text-xs text-muted-foreground">Saldo esperado</span>
+                        <strong class="mt-1 block text-md">{{ formatCurrencyBR(caixaStore.caixaAtivo?.saldoEsperado || 0) }}</strong>
+                    </div>
+                    <div class="rounded-xl border bg-card p-3">
+                        <span class="text-xs text-muted-foreground">Vendas do turno</span>
+                        <strong class="mt-1 block text-md">{{ vendasTurno }}</strong>
+                    </div>
+                    <div class="rounded-xl border bg-card p-3">
+                        <span class="text-xs text-muted-foreground">Total vendido</span>
+                        <strong class="mt-1 block text-md text-emerald-600">{{ formatCurrencyBR(totalVendidoTurno) }}</strong>
+                    </div>
+                    <div class="rounded-xl border bg-card p-3">
+                        <span class="text-xs text-muted-foreground">Aberto por</span>
+                        <strong class="mt-1 block truncate text-sm">{{ caixaStore.caixaAtivo?.abertoPor?.nome || 'Operador' }}</strong>
+                    </div>
                 </div>
-                <div @click="abrirMovimento('REFORCO')"
-                    class="flex cursor-pointer hover:bg-secondary/80 transition  flex-col items-center gap-2 mb-2 text-green-700 dark:text-green-400 border rounded-md py-7">
-                    <HandCoins />
-                    <h1>Reforço</h1>
+
+                <div class="grid gap-3 md:grid-cols-3">
+                    <button type="button" @click="abrirMovimento('SANGRIA')"
+                        class="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-yellow-700 transition hover:border-yellow-400 hover:bg-yellow-100 dark:border-yellow-900 dark:bg-yellow-950/30 dark:text-yellow-300">
+                        <HandGrab class="h-6 w-6" />
+                        <strong>Sangria</strong>
+                        <span class="text-xs opacity-80">Retirada de valor</span>
+                    </button>
+                    <button type="button" @click="abrirMovimento('REFORCO')"
+                        class="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+                        <HandCoins class="h-6 w-6" />
+                        <strong>Reforco</strong>
+                        <span class="text-xs opacity-80">Entrada manual</span>
+                    </button>
+                    <button type="button" @click="fecharCaixa"
+                        class="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-700 transition hover:border-blue-400 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-300">
+                        <MonitorDown class="h-6 w-6" />
+                        <strong>Fechar caixa</strong>
+                        <span class="text-xs opacity-80">{{ formatCurrencyBR(caixaStore.caixaAtivo?.saldoEsperado || 0) }}</span>
+                    </button>
                 </div>
-                <div @click="fecharCaixa"
-                    class="col-span-2 flex cursor-pointer hover:bg-secondary/80 transition flex-col items-center gap-2 text-blue-700 dark:text-blue-400 border rounded-md py-5">
-                    <MonitorDown />
-                    <h1>Fechar caixa</h1>
-                    <span class="text-xs text-muted-foreground">
-                        Saldo esperado: {{ formatCurrencyBR(caixaStore.caixaAtivo?.saldoEsperado || 0) }}
-                    </span>
+
+                <div class="rounded-xl border bg-card p-4">
+                    <div class="mb-3 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold">Movimentos recentes</h3>
+                        <span v-if="caixaRelatorioLoading" class="text-xs text-muted-foreground">Carregando...</span>
+                    </div>
+                    <div v-if="!movimentosCaixaRecentes.length" class="py-4 text-center text-sm text-muted-foreground">
+                        Nenhuma sangria ou reforco registrado neste caixa.
+                    </div>
+                    <div v-else class="grid gap-2">
+                        <div v-for="movimento in movimentosCaixaRecentes" :key="movimento.id"
+                            class="flex items-center justify-between rounded-lg border bg-background px-3 py-2 text-sm">
+                            <div>
+                                <strong>{{ movimento.tipo === 'SANGRIA' ? 'Sangria' : 'Reforco' }}</strong>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ movimento.descricao || 'Sem descricao' }} - {{ formatDateTimeBR(movimento.createdAt) }}
+                                </p>
+                            </div>
+                            <span :class="movimento.tipo === 'SANGRIA' ? 'text-yellow-600' : 'text-emerald-600'"
+                                class="font-semibold">
+                                {{ formatCurrencyBR(movimento.valor || 0) }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </ModalView>
 
-        <ModalView v-model:open="caixaStore.openModalSelecionarCaixa" title="Caixa do PDV"
-            description="Abra um caixa ou entre em um caixa aberto para vender." size="lg">
+        <ModalView v-model:open="caixaStore.openModalSelecionarCaixa" title="Abrir caixa"
+            description="Informe o saldo inicial para liberar as vendas neste terminal." size="lg">
             <div class="grid gap-4 px-4">
                 <div class="rounded-md border bg-card p-4">
-                    <h3 class="text-sm font-semibold">Abrir novo caixa</h3>
-                    <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs text-muted-foreground">PDV</label>
-                            <select v-model="abrirCaixaForm.pdvId"
-                                class="h-10 rounded-md border bg-background px-3 text-sm">
-                                <option :value="null">Sem PDV especifico</option>
-                                <option v-for="pdv in caixaStore.pdvs" :key="pdv.id" :value="pdv.id">
-                                    {{ pdv.nome }}
-                                </option>
-                            </select>
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 class="text-sm font-semibold">Novo caixa</h3>
+                            <p class="mt-1 text-xs text-muted-foreground">
+                                O caixa sera aberto para o terminal atual.
+                            </p>
                         </div>
+                        <div class="rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+                            Terminal principal
+                        </div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div class="flex flex-col gap-1">
                             <label class="text-xs text-muted-foreground">Saldo inicial</label>
                             <Input v-model="abrirCaixaForm.valorInicial" placeholder="0,00" />
                         </div>
-                        <div class="md:col-span-2 flex flex-col gap-1">
+                        <div class="flex flex-col gap-1">
                             <label class="text-xs text-muted-foreground">Observacao</label>
                             <Input v-model="abrirCaixaForm.observacao" placeholder="Ex.: Abertura do turno" />
                         </div>
@@ -782,14 +889,15 @@ import { useClientesStore } from '@/stores/clientes/useClientes';
 import { useCaixaStore } from '@/stores/vendas/useCaixa';
 import { ClienteRepository } from '@/repositories/cliente-repository';
 import { VendaRepository } from '@/repositories/venda-repository';
+import { CaixaRepository } from '@/repositories/caixa-repository';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import BadgeCell from '@/components/tabela/BadgeCell.vue';
-import { CirclePercent, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Package, Plus, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
+import { Banknote, CirclePercent, CreditCard, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Package, PlusCircleIcon, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
-import type { ProdutoVariante } from '@/types/schemas';
+import type { CaixaRelatorioResponse, ProdutoVariante } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
 import { resolveFileUrl } from '@/utils/fileUrl';
 import router from '@/router';
@@ -838,7 +946,6 @@ const clienteSelectRef = ref<{ open: () => void } | null>(null)
 const discountInputRef = ref<{ $el?: HTMLElement } | null>(null)
 const descontoPresets = [5, 10, 15, 20]
 const abrirCaixaForm = ref({
-    pdvId: null as number | null,
     valorInicial: '0',
     observacao: '',
 })
@@ -847,6 +954,8 @@ const movimentoForm = ref({
     valor: '',
     descricao: '',
 })
+const caixaRelatorio = ref<CaixaRelatorioResponse | null>(null)
+const caixaRelatorioLoading = ref(false)
 const fechamentoForm = ref({
     valorFechamento: '',
     descricao: '',
@@ -894,12 +1003,26 @@ interface CartItem extends ProdutoVariante {
     quantity: number
 }
 
+type PaymentMethod = 'PIX' | 'DINHEIRO' | 'CARTAO' | 'CREDIARIO' | 'BOLETO'
+
+const metodosPagamentoRapido = [
+    { value: 'PIX', label: 'PIX', hint: 'Pagamento instantaneo', icon: Send },
+    { value: 'DINHEIRO', label: 'Dinheiro', hint: 'Calcula troco', icon: Banknote },
+    { value: 'CARTAO', label: 'Cartao', hint: 'Credito ou debito', icon: CreditCard },
+    { value: 'CREDIARIO', label: 'Crediario', hint: 'Parcelado no cliente', icon: HandCoins },
+] as const satisfies ReadonlyArray<{
+    value: PaymentMethod
+    label: string
+    hint: string
+    icon: unknown
+}>
+
 const products = ref<ProdutoVariante[]>([])
 const cart = ref<CartItem[]>(JSON.parse(localStorage.getItem("gestao_facil:cartPDV") || "[]"))
 const searchTerm = ref("")
 const discountType = ref<"percentage" | "value">("percentage")
 const discountValue = ref<number | null>(null)
-const paymentMethod = ref("PIX")
+const paymentMethod = ref<PaymentMethod>("PIX")
 const receivedAmount = ref<string | null>(null)
 const crediarioParcelas = ref(1)
 const crediarioPrimeiroVencimento = ref<Date | string | null>(getDefaultCrediarioFirstDueDate())
@@ -967,13 +1090,51 @@ async function fecharCaixa() {
     openModalAcoes.value = false
 }
 
+function abrirModalCaixa() {
+    caixaStore.openModalSelecionarCaixa = true
+    openModalAcoes.value = false
+}
+
+async function carregarRelatorioCaixaAtivo() {
+    const caixa = caixaStore.caixaAtivo
+    if (!caixa?.id) return
+    try {
+        caixaRelatorioLoading.value = true
+        caixaRelatorio.value = await CaixaRepository.relatorio({
+            caixaId: caixa.id,
+            inicio: new Date(caixa.abertoEm).toISOString(),
+            fim: new Date().toISOString(),
+        })
+    } catch {
+        caixaRelatorio.value = null
+    } finally {
+        caixaRelatorioLoading.value = false
+    }
+}
+
+function abrirAcoesCaixa() {
+    if (!caixaStore.caixaAtivo?.id) {
+        abrirModalCaixa()
+        return
+    }
+    openModalAcoes.value = true
+    void carregarRelatorioCaixaAtivo()
+}
+
+function abrirOuFecharCaixa() {
+    if (!caixaStore.caixaAtivo?.id) {
+        abrirModalCaixa()
+        return
+    }
+    void fecharCaixa()
+}
+
 async function submitAbrirCaixa() {
     await caixaStore.abrirCaixa({
-        pdvId: abrirCaixaForm.value.pdvId,
         valorInicial: formatToNumberValue(abrirCaixaForm.value.valorInicial),
         observacao: abrirCaixaForm.value.observacao || undefined,
     })
-    abrirCaixaForm.value = { pdvId: null, valorInicial: '0', observacao: '' }
+    abrirCaixaForm.value = { valorInicial: '0', observacao: '' }
     syncPodeFinalizarPDV()
     searchInputField.value?.focus()
 }
@@ -1002,6 +1163,7 @@ async function submitMovimentoCaixa() {
         descricao: movimentoForm.value.descricao || undefined,
     })
     movimentoForm.value = { tipo: 'SANGRIA', valor: '', descricao: '' }
+    await carregarRelatorioCaixaAtivo()
 }
 
 async function submitFechamentoCaixa() {
@@ -1066,6 +1228,20 @@ const change = computed(() => {
     return Math.max(0, (receivedAmount.value ? parseFloat(receivedAmount.value?.replace(",", ".")) : 0) - total.value)
 })
 
+const caixaRelatorioAtual = computed(() => {
+    const caixaId = caixaStore.caixaAtivo?.id
+    if (!caixaId) return null
+    return caixaRelatorio.value?.caixas.find((item) => item.caixa.id === caixaId) || null
+})
+
+const vendasTurno = computed(() => caixaRelatorioAtual.value?.resumo.totalVendas || 0)
+const totalVendidoTurno = computed(() => caixaRelatorioAtual.value?.resumo.totalVendido || 0)
+const movimentosCaixaRecentes = computed(() => {
+    return (caixaRelatorioAtual.value?.movimentos || [])
+        .filter((movimento) => ['SANGRIA', 'REFORCO'].includes(String(movimento.tipo)))
+        .slice(0, 5)
+})
+
 function getPaymentMethodLabel(method?: string | null) {
     switch (method) {
         case 'DINHEIRO':
@@ -1081,6 +1257,13 @@ function getPaymentMethodLabel(method?: string | null) {
         default:
             return method || 'Pagamento'
     }
+}
+
+function formatDateTimeBR(value?: string | Date | null) {
+    if (!value) return ''
+    const date = value instanceof Date ? value : new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 function getPaymentMethodBadge(method?: string | null) {
@@ -1106,6 +1289,11 @@ function openModalSelecionarEnvio() {
         return
     }
     openModalEnvioComprovante.value = true
+}
+
+function novaVendaAposComprovante() {
+    openModalVendaFinalizada.value = false
+    setTimeout(() => searchInputField.value?.focus(), 60)
 }
 
 async function fetchProducts() {
@@ -1174,10 +1362,16 @@ function removerUltimoItem() {
     toast.info('Último item removido do cupom')
 }
 
+function selecionarPagamento(method: PaymentMethod) {
+    paymentMethod.value = method
+    if (method !== 'DINHEIRO') receivedAmount.value = null
+    searchInputField.value?.focus()
+}
+
 function alternarPagamento() {
-    const metodos = ['DINHEIRO', 'CARTAO', 'CREDIARIO', 'PIX', 'BOLETO']
-    const indiceAtual = metodos.indexOf(paymentMethod.value)
-    paymentMethod.value = metodos[(indiceAtual + 1) % metodos.length]
+    const metodos = metodosPagamentoRapido.map((metodo) => metodo.value)
+    const indiceAtual = metodos.indexOf(paymentMethod.value as any)
+    selecionarPagamento(metodos[(indiceAtual + 1) % metodos.length])
     toast.info(`Pagamento: ${getPaymentMethodLabel(paymentMethod.value)}`)
 }
 
@@ -1432,7 +1626,9 @@ defineExpose({
     finalizarVendaPDV,
     focusSearch: () => searchInputField.value?.focus(),
     limparCarrinho,
-    abrirAcoesCaixa: () => { openModalAcoes.value = true },
+    abrirAcoesCaixa,
+    abrirModalCaixa,
+    abrirOuFecharCaixa,
     abrirCadastroCliente: () => storeCliente.openSave(),
     abrirSelecaoCliente: () => clienteSelectRef.value?.open(),
     abrirDesconto: () => { openModalDesconto.value = true },
@@ -1443,6 +1639,8 @@ defineExpose({
     confirmarSaidaCaixa,
     sairCaixa,
     subtotal,
+    discount,
+    paymentMethod,
     total,
 })
 

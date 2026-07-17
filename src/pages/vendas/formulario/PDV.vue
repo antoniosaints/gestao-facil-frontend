@@ -60,17 +60,35 @@
 
     <main class="pdv-pro__workspace">
       <div class="pdv-pro__status">
-        <div class="pdv-pro__logo-panel">
-          <div class="pdv-pro__brand-orbit"><ShoppingBasket class="h-11 w-11" /></div>
+        <div class="pdv-pro__metric-header">
+          <p class="text-[10px] uppercase tracking-wider text-muted-foreground">Resumo do caixa</p>
+          <strong>{{ caixaAtivo?.codigo || 'Caixa fechado' }}</strong>
+          <span :class="caixaAtivo ? 'text-emerald-600' : 'text-amber-600'">
+            {{ caixaAtivo ? 'Disponivel para venda' : 'Aguardando abertura' }}
+          </span>
+        </div>
+        <div class="pdv-pro__metric-grid">
           <div>
-          <p class="text-xl font-black">Venda ágil</p>
-          <p class="text-xs text-muted-foreground">Busque, adicione e finalize sem tirar as mãos do teclado.</p>
+            <span>Itens</span>
+            <strong>{{ quantidadeItens }}</strong>
+          </div>
+          <div>
+            <span>Subtotal</span>
+            <strong>{{ formatCurrencyBR(subtotal) }}</strong>
+          </div>
+          <div>
+            <span>Desconto</span>
+            <strong>{{ formatCurrencyBR(desconto) }}</strong>
+          </div>
+          <div>
+            <span>Total</span>
+            <strong>{{ formatCurrencyBR(total) }}</strong>
           </div>
         </div>
         <div class="pdv-pro__mini-status">
           <span><Wifi class="h-4 w-4 text-emerald-500" /> Sistema online</span>
-          <span><ReceiptText class="h-4 w-4" /> {{ quantidadeItens }} item(ns) no cupom</span>
-          <span><CircleDollarSign class="h-4 w-4" /> Total {{ formatCurrencyBR(total) }}</span>
+          <span><CreditCard class="h-4 w-4" /> {{ metodoPagamentoLabel }}</span>
+          <span><UserRound class="h-4 w-4" /> {{ uiStore.usuarioLogged.nome || 'Operador' }}</span>
         </div>
       </div>
 
@@ -135,7 +153,6 @@ import {
   BadgePercent,
   BanknoteArrowDown,
   Box,
-  CircleDollarSign,
   CircleX,
   CreditCard,
   DoorOpen,
@@ -146,7 +163,6 @@ import {
   ReceiptText,
   ScanBarcode,
   ShieldCheck,
-  ShoppingBasket,
   ShoppingCart,
   Store,
   UserRound,
@@ -248,11 +264,28 @@ watch(openModalSenha, (open) => {
 
 const caixaAtivo = computed(() => pdvRef.value?.caixaAtivo || null)
 const quantidadeItens = computed(() => Number(pdvRef.value?.quantidadeItens || 0))
+const subtotal = computed(() => Number(pdvRef.value?.subtotal || 0))
+const desconto = computed(() => Number(pdvRef.value?.discount || 0))
 const total = computed(() => Number(pdvRef.value?.total || 0))
+const metodoPagamento = computed(() => String(pdvRef.value?.paymentMethod || 'PIX'))
+const metodoPagamentoLabel = computed(() => {
+  switch (metodoPagamento.value) {
+    case 'DINHEIRO':
+      return 'Dinheiro'
+    case 'CARTAO':
+      return 'Cartao'
+    case 'CREDIARIO':
+      return 'Crediario'
+    case 'BOLETO':
+      return 'Boleto'
+    default:
+      return 'PIX'
+  }
+})
 const dataAtual = computed(() => agora.value.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }))
 const horaAtual = computed(() => agora.value.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
 
-const atalhos = [
+const atalhos = computed(() => [
   { key: 'F1', label: 'Produtos', icon: Box, action: 'produtos' as const },
   { key: 'F2', label: 'Leitor', icon: ScanBarcode, action: 'leitor' as const },
   { key: 'F3', label: 'Adicionar', icon: ShoppingCart, action: 'adicionar' as const },
@@ -263,9 +296,14 @@ const atalhos = [
   { key: 'F8', label: 'Imprimir', icon: Printer, action: 'imprimir' as const },
   { key: 'F9', label: 'Pagamento', icon: CreditCard, action: 'pagamento' as const },
   { key: 'F10', label: 'Desconto', icon: BadgePercent, action: 'desconto' as const },
-  { key: 'F11', label: 'Fechar caixa', icon: Store, action: 'fechar-caixa' as const },
+  {
+    key: 'F11',
+    label: caixaAtivo.value ? 'Fechar caixa' : 'Abrir caixa',
+    icon: caixaAtivo.value ? Store : BanknoteArrowDown,
+    action: 'fechar-caixa' as const,
+  },
   { key: 'F12', label: 'Fechar venda', icon: ReceiptText, action: 'finalizar' as const, primary: true },
-]
+])
 
 async function executarAcao(acao: AcaoAtalho) {
   const pdv = pdvRef.value
@@ -301,14 +339,14 @@ async function executarAcao(acao: AcaoAtalho) {
     imprimir: pdv.imprimirUltimoComprovante,
     pagamento: pdv.alternarPagamento,
     desconto: pdv.abrirDesconto,
-    'fechar-caixa': pdv.fecharCaixa,
+    'fechar-caixa': pdv.abrirOuFecharCaixa,
     finalizar: pdv.finalizarVendaPDV,
   }
   actions[acao]?.()
 }
 
 function handleShortcut(event: KeyboardEvent) {
-  const atalho = atalhos.find((item) => item.key === event.key)
+  const atalho = atalhos.value.find((item) => item.key === event.key)
   if (!atalho || modeloPdv.value !== 'PRO') return
   // Enquanto o terminal pede a senha, os atalhos ficam bloqueados
   if (openModalSenha.value) return
@@ -422,11 +460,16 @@ onUnmounted(() => {
 .pdv-pro__clock strong { font-variant-numeric: tabular-nums; font-size: 1.25rem; letter-spacing: .04em; }
 .pdv-pro__workspace { display: grid; min-height: 0; grid-template-columns: 12rem minmax(0, 1fr); gap: .8rem; overflow: hidden; padding: .8rem; }
 .pdv-pro__status { display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border: 1px solid hsl(var(--border)); border-radius: 1rem; padding: .9rem; background: color-mix(in srgb, hsl(var(--card)) 92%, var(--pdv-accent) 8%); }
-.pdv-pro__logo-panel { display: flex; flex-direction: column; gap: 1rem; }
-.pdv-pro__brand-orbit { display: grid; width: 5.5rem; height: 5.5rem; place-items: center; border: 1px solid color-mix(in srgb, var(--pdv-accent) 35%, hsl(var(--border))); border-radius: 50%; color: var(--pdv-accent); background: hsl(var(--background)); box-shadow: inset 0 0 0 .5rem color-mix(in srgb, var(--pdv-accent) 7%, transparent); }
+.pdv-pro__metric-header { display: grid; gap: .18rem; border: 1px solid color-mix(in srgb, var(--pdv-accent) 32%, hsl(var(--border))); border-radius: .85rem; padding: .7rem; background: hsl(var(--background)); }
+.pdv-pro__metric-header strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .95rem; }
+.pdv-pro__metric-header span { font-size: .68rem; font-weight: 800; }
+.pdv-pro__metric-grid { display: grid; gap: .45rem; }
+.pdv-pro__metric-grid div { border: 1px solid hsl(var(--border)); border-radius: .8rem; background: hsl(var(--background)); padding: .65rem; }
+.pdv-pro__metric-grid span { display: block; color: hsl(var(--muted-foreground)); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.pdv-pro__metric-grid strong { display: block; margin-top: .15rem; font-size: .92rem; line-height: 1.1; }
 .pdv-pro__mini-status { display: grid; gap: .35rem; border: 1px solid color-mix(in srgb, var(--pdv-accent) 32%, hsl(var(--border))); border-radius: .8rem; padding: .65rem; background: hsl(var(--background)); font-size: .68rem; }
 .pdv-pro__mini-status span { display: flex; align-items: center; gap: .4rem; }
-.pdv-pro__core { min-width: 0; min-height: 0; overflow: hidden; }
+.pdv-pro__core { min-width: 0; min-height: 0; overflow: hidden; padding-left: 2px; }
 .pdv-pro__shortcuts { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: .35rem; border-top: 1px solid hsl(var(--border)); padding: .55rem; background: hsl(var(--card)); }
 .pdv-pro__shortcuts button { display: flex; min-height: 4.3rem; flex-direction: column; align-items: center; justify-content: center; gap: .2rem; border: 1px solid hsl(var(--border)); border-radius: .7rem; background: hsl(var(--background)); color: hsl(var(--foreground)); transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
 .pdv-pro__shortcuts button:hover { transform: translateY(-2px); border-color: var(--pdv-accent); box-shadow: 0 8px 20px rgb(15 23 42 / .08); }
