@@ -25,7 +25,7 @@ const { data } = defineProps<{
 async function excluir() {
   const ok = await useConfirm().confirm({
     title: 'Excluir plano',
-    message: 'Tem certeza que deseja excluir este plano de assinatura?',
+    message: 'Tem certeza que deseja excluir este plano de contrato?',
     confirmText: 'Sim, excluir',
   })
   if (!ok) return

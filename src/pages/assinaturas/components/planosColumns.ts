@@ -91,7 +91,7 @@ export const columnsPlanosAssinatura: ColumnDef<PlanoAssinaturaListItem>[] = [
       render(
         'div',
         { class: 'text-sm text-muted-foreground' },
-        `${row.original.resumo.itens} item(ns) • ${row.original.resumo.assinaturasVinculadas} assinatura(s)`,
+        `${row.original.resumo.itens} item(ns) • ${row.original.resumo.assinaturasVinculadas} contrato(s)`,
       ),
     enableSorting: false,
   },

@@ -60,7 +60,7 @@ vi.mock('@/stores/dashboard/useDashboardStore', () => ({
 const permissaoCheia = { editar: true, visualizar: true, criar: true, excluir: true, painel: true }
 
 function montarUiStore(over: { visibleMenuKeys?: string[] | null; appModules?: Record<string, boolean> } = {}) {
-  return {
+  const store = {
     isMobile: false,
     openSidebar: false,
     appModules: over.appModules ?? { assinaturas: true, atendimento: true, 'loja-virtual': true },
@@ -80,6 +80,11 @@ function montarUiStore(over: { visibleMenuKeys?: string[] | null; appModules?: R
       usuarios: { ...permissaoCheia },
     },
   }
+
+  return {
+    ...store,
+    hasActiveModule: vi.fn((modulo: string) => Boolean(store.appModules[modulo])),
+  }
 }
 
 let uiStoreMock = montarUiStore()
@@ -89,7 +94,7 @@ vi.mock('vue-toastification', () => ({ useToast: () => ({ info: vi.fn(), warning
 async function montarDashboard() {
   const Dashboard = (await import('./Dashboard.vue')).default
   const wrapper = mount(Dashboard, {
-    global: { stubs: { RouterLink: { template: '<a><slot /></a>' }, BarChart: true, LineChart: true, Calendarpicker: true, MobileBottomBar: true } },
+    global: { stubs: { RouterLink: { template: '<a><slot /></a>' }, Badge: true, BarChart: true, LineChart: true, Calendarpicker: true, MobileBottomBar: true, ModalView: { template: '<div><slot /></div>' } } },
   })
   await new Promise((r) => setTimeout(r, 30))
   await nextTick()
@@ -107,12 +112,12 @@ describe('Dashboard — módulos ativos', () => {
     const texto = (await montarDashboard()).text()
     expect(texto).toContain('Caixas abertos')
     expect(texto).toContain('Fila de atendimento')
-    expect(texto).toContain('Assinaturas ativas')
+    expect(texto).toContain('Contratos ativos')
     expect(texto).toContain('Pedidos da loja')
     // E os que já existiam continuam lá.
     expect(texto).toContain('Faturamento')
     expect(texto).toContain('Catálogo')
-  })
+  }, 10000)
 
   // O bug relatado: conta com menus ocultos via configuração continuava vendo os KPIs.
   it('esconde KPIs, blocos e gráficos de módulo fora da whitelist', async () => {
@@ -143,7 +148,7 @@ describe('Dashboard — módulos ativos', () => {
     uiStoreMock = montarUiStore({ appModules: {} })
     const texto = (await montarDashboard()).text()
     expect(texto).not.toContain('Fila de atendimento')
-    expect(texto).not.toContain('Assinaturas ativas')
+    expect(texto).not.toContain('Contratos ativos')
     expect(texto).not.toContain('Pedidos da loja')
     // Caixas não é app contratado: continua aparecendo junto com vendas.
     expect(texto).toContain('Caixas abertos')

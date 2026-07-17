@@ -247,7 +247,7 @@
                                         type="text" placeholder="Sua chave aqui..." />
                                 </div>
                                 <div class="space-y-2">
-                                    <Label for="contaFinanceiraPadrao">Conta financeira padrÃ£o</Label>
+                                    <Label for="contaFinanceiraPadrao">Conta financeira padrão</Label>
                                     <Select2Ajax id="contaFinanceiraPadrao"
                                         v-model="formularioFinanceiro.contaFinanceiraPadraoId"
                                         url="/lancamentos/contas/select2" :allow-clear="true"

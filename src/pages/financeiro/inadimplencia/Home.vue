@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -56,6 +57,7 @@ const total = ref(0)
 const totalPages = ref(1)
 const selected = ref<Set<number>>(new Set())
 const enviandoId = ref<number | null>(null)
+const alternandoLembreteIds = ref<Set<number>>(new Set())
 
 // Modal
 const modalOpen = ref(false)
@@ -164,6 +166,44 @@ function configFromItem(item: InadimplenciaItem): LembreteConfigPayload {
     canalSms: item.lembrete.canais.sms,
     // Mensagem própria do lembrete → senão o template padrão do sistema.
     mensagemCustom: item.lembrete.mensagemCustom ?? padraoMensagem(),
+  }
+}
+
+function setAlternandoLembrete(id: number, value: boolean) {
+  const next = new Set(alternandoLembreteIds.value)
+  if (value) next.add(id)
+  else next.delete(id)
+  alternandoLembreteIds.value = next
+}
+
+function isAlternandoLembrete(id: number) {
+  return alternandoLembreteIds.value.has(id)
+}
+
+function configToggleFromItem(item: InadimplenciaItem, ativo: boolean): LembreteConfigPayload {
+  const base = item.lembrete.ativo || item.lembrete.temOverride ? configFromItem(item) : defaultConfig()
+  return {
+    ...base,
+    ativo,
+    dias: base.dias.length ? base.dias : padraoDias(),
+    canalWhatsapp: base.canalWhatsapp ?? true,
+    canalEmail: base.canalEmail ?? false,
+    canalSms: base.canalSms ?? false,
+    mensagemCustom: base.mensagemCustom ?? padraoMensagem(),
+  }
+}
+
+async function alternarLembrete(item: InadimplenciaItem, value: boolean) {
+  const ativo = Boolean(value)
+  try {
+    setAlternandoLembrete(item.id, true)
+    await InadimplenciaRepository.salvarLembreteLancamento(item.id, configToggleFromItem(item, ativo))
+    toast.success(ativo ? 'Lembrete ativado.' : 'Lembrete desativado.')
+    await load()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível alterar o lembrete.')
+  } finally {
+    setAlternandoLembrete(item.id, false)
   }
 }
 
@@ -338,15 +378,16 @@ onMounted(load)
             <th class="px-3 py-2 text-center">Parcelas</th>
             <th class="px-3 py-2 text-center">Atraso</th>
             <th class="px-3 py-2">Lembrete</th>
+            <th class="px-3 py-2 text-center">Ativo</th>
             <th class="px-3 py-2 text-right">Ações</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading && !items.length">
-            <td colspan="7" class="px-3 py-8 text-center text-muted-foreground">Carregando...</td>
+            <td colspan="8" class="px-3 py-8 text-center text-muted-foreground">Carregando...</td>
           </tr>
           <tr v-else-if="!items.length">
-            <td colspan="7" class="px-3 py-8 text-center text-muted-foreground">Nenhum lançamento a receber encontrado.</td>
+            <td colspan="8" class="px-3 py-8 text-center text-muted-foreground">Nenhum lançamento a receber encontrado.</td>
           </tr>
           <tr v-for="item in items" :key="item.id" class="border-t hover:bg-muted/20">
             <td class="px-3 py-2">
@@ -375,6 +416,14 @@ onMounted(load)
               <div v-if="item.lembrete.ativo && item.proximoLembrete" class="mt-0.5 text-[11px] text-muted-foreground">
                 próximo: {{ fmtData(item.proximoLembrete) }}
               </div>
+            </td>
+            <td class="px-3 py-2 text-center">
+              <Switch
+                :model-value="item.lembrete.ativo"
+                :disabled="isAlternandoLembrete(item.id)"
+                :title="item.lembrete.ativo ? 'Desativar lembrete deste lançamento' : 'Ativar lembrete deste lançamento'"
+                @update:model-value="(value) => alternarLembrete(item, value)"
+              />
             </td>
             <td class="px-3 py-2">
               <div class="flex justify-end gap-1">
@@ -421,12 +470,25 @@ onMounted(load)
             <Badge v-if="item.diasAtraso > 0" class="bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300">{{ item.diasAtraso }}d atraso</Badge>
           </div>
         </div>
-        <div class="mt-2 flex items-center justify-between">
-          <Badge :class="lembreteBadge(item).cls">{{ lembreteBadge(item).label }}</Badge>
-          <div class="flex gap-1">
-            <Button size="sm" variant="outline" @click="abrirOverride(item)"><Settings2 class="h-4 w-4" /></Button>
-            <Button size="sm" variant="outline" :disabled="!item.cliente" @click="abrirCliente(item)"><UserCog class="h-4 w-4" /></Button>
-            <Button size="sm" variant="outline" :disabled="enviandoId === item.id" @click="enviarAgora(item)"><Send class="h-4 w-4" /></Button>
+        <div class="mt-2 flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <Badge :class="lembreteBadge(item).cls">{{ lembreteBadge(item).label }}</Badge>
+            <div v-if="item.lembrete.ativo && item.proximoLembrete" class="mt-0.5 text-[11px] text-muted-foreground">
+              próximo: {{ fmtData(item.proximoLembrete) }}
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <Switch
+              :model-value="item.lembrete.ativo"
+              :disabled="isAlternandoLembrete(item.id)"
+              :title="item.lembrete.ativo ? 'Desativar lembrete deste lançamento' : 'Ativar lembrete deste lançamento'"
+              @update:model-value="(value) => alternarLembrete(item, value)"
+            />
+            <div class="flex gap-1">
+              <Button size="sm" variant="outline" @click="abrirOverride(item)"><Settings2 class="h-4 w-4" /></Button>
+              <Button size="sm" variant="outline" :disabled="!item.cliente" @click="abrirCliente(item)"><UserCog class="h-4 w-4" /></Button>
+              <Button size="sm" variant="outline" :disabled="enviandoId === item.id" @click="enviarAgora(item)"><Send class="h-4 w-4" /></Button>
+            </div>
           </div>
         </div>
       </article>

@@ -116,7 +116,7 @@ export const columnsComodatosAssinatura: ColumnDef<AssinaturaComodatoListItem>[]
         render(
           RouterLink,
           { to: `/assinaturas/assinaturas/${row.original.assinatura.id}` },
-          () => render(Button, { variant: 'outline', size: 'sm' }, () => 'Abrir assinatura'),
+          () => render(Button, { variant: 'outline', size: 'sm' }, () => 'Abrir contrato'),
         ),
       ]),
   },

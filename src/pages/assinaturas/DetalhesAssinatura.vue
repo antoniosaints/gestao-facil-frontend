@@ -60,7 +60,7 @@ const activeTab = ref<ActiveTab>('resumo')
 const subscriptionId = computed(() => Number(route.params.id || route.query.id || 0))
 const comodatos = computed(() => detalhe.value?.itens.flatMap((entry) => entry.comodatos) || [])
 
-const pageTitle = computed(() => detalhe.value?.nomeContrato || 'Detalhes da assinatura')
+const pageTitle = computed(() => detalhe.value?.nomeContrato || 'Detalhes do contrato')
 const pageSubtitle = computed(() => {
   if (!detalhe.value) return 'Contrato recorrente'
   return `${detalhe.value.cliente?.nome || 'Cliente não informado'} • ${detalhe.value.Uid || '-'}`
@@ -103,7 +103,7 @@ const overviewHighlights = computed(() => {
 async function loadDetalhe(showFeedback = false) {
   try {
     if (!subscriptionId.value) {
-      toast.error('Assinatura inválida.')
+      toast.error('Contrato inválido.')
       router.push('/assinaturas/assinaturas')
       return
     }
@@ -114,11 +114,11 @@ async function loadDetalhe(showFeedback = false) {
     nextStatus.value = response.data.status
 
     if (showFeedback) {
-      toast.success('Detalhes da assinatura atualizados.')
+      toast.success('Detalhes do contrato atualizados.')
     }
   } catch (error: any) {
     console.error(error)
-    toast.error(error?.response?.data?.message || 'Erro ao carregar os detalhes da assinatura.')
+    toast.error(error?.response?.data?.message || 'Erro ao carregar os detalhes do contrato.')
   } finally {
     loading.value = false
   }
@@ -133,7 +133,7 @@ async function changeStatus() {
     await loadDetalhe()
   } catch (error: any) {
     console.error(error)
-    toast.error(error?.response?.data?.message || 'Erro ao atualizar o status da assinatura.')
+    toast.error(error?.response?.data?.message || 'Erro ao atualizar o status do contrato.')
   } finally {
     statusLoading.value = false
   }
@@ -154,7 +154,7 @@ async function confirmGenerateCycle() {
     await loadDetalhe()
   } catch (error: any) {
     console.error(error)
-    toast.error(error?.response?.data?.message || 'Erro ao gerar o ciclo da assinatura.')
+    toast.error(error?.response?.data?.message || 'Erro ao gerar o ciclo do contrato.')
   } finally {
     cycleLoading.value = false
   }
@@ -215,7 +215,7 @@ onMounted(() => {
 
     <div v-if="loading && !detalhe"
       class="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
-      Carregando detalhes da assinatura...
+      Carregando detalhes do contrato...
     </div>
 
     <template v-else-if="detalhe">
@@ -357,7 +357,7 @@ onMounted(() => {
                   </div>
 
                   <div v-else class="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
-                    Esta assinatura ainda não possui itens cadastrados.
+                    Este contrato ainda não possui itens cadastrados.
                   </div>
                 </div>
               </CardContent>
@@ -403,7 +403,7 @@ onMounted(() => {
 
                 <div class="grid grid-cols-4 gap-2 items-end">
                   <div class="space-y-2 col-span-3">
-                    <label class="text-sm font-medium">Status da assinatura</label>
+                    <label class="text-sm font-medium">Status do contrato</label>
                     <Select v-model="nextStatus">
                       <SelectTrigger class="w-full bg-card">
                         <SelectValue placeholder="Status" />
@@ -489,7 +489,7 @@ onMounted(() => {
 
               <div v-if="!detalhe.ciclos.length"
                 class="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
-                Esta assinatura ainda não possui ciclos gerados.
+                Este contrato ainda não possui ciclos gerados.
               </div>
             </CardContent>
           </Card>
@@ -527,7 +527,7 @@ onMounted(() => {
 
               <div v-if="!comodatos.length"
                 class="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
-                Esta assinatura ainda não possui itens em comodato.
+                Este contrato ainda não possui itens em comodato.
               </div>
             </CardContent>
           </Card>
@@ -541,7 +541,7 @@ onMounted(() => {
                 Histórico
               </CardTitle>
               <CardDescription>
-                Eventos registrados para a assinatura, cobrança e operação do contrato.
+                Eventos registrados para o contrato, cobrança e operação.
               </CardDescription>
             </CardHeader>
             <CardContent class="space-y-3">
@@ -555,7 +555,7 @@ onMounted(() => {
 
               <div v-if="!detalhe.historico.length"
                 class="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
-                Nenhum evento registrado para esta assinatura.
+                Nenhum evento registrado para este contrato.
               </div>
             </CardContent>
           </Card>
@@ -591,11 +591,11 @@ onMounted(() => {
     </MobileBottomBar>
 
     <ModalView v-model:open="cycleModalOpen" title="Gerar ciclo manual"
-      description="Essa ação cria um novo ciclo para a assinatura e pode disparar geração automática de lançamento financeiro e cobrança no gateway, conforme a configuração atual do contrato."
+      description="Essa ação cria um novo ciclo para o contrato e pode disparar geração automática de lançamento financeiro e cobrança no gateway, conforme a configuração atual."
       size="sm">
       <div class="space-y-4 px-4">
         <div class="rounded-xl border border-border/60 bg-muted/10 p-3 text-sm text-muted-foreground">
-          <p><strong class="text-foreground">Assinatura:</strong> {{ detalhe?.nomeContrato || '-' }}</p>
+          <p><strong class="text-foreground">Contrato:</strong> {{ detalhe?.nomeContrato || '-' }}</p>
           <p><strong class="text-foreground">Próxima cobrança:</strong> {{ detalhe?.proximaCobranca ?
             formatDateToPtBR(detalhe.proximaCobranca) : '-' }}</p>
         </div>

@@ -50,7 +50,7 @@ export const MAIN_MENU_VISIBILITY_OPTIONS = [
   { key: 'produtos', nome: 'Produtos', descricao: 'Cadastro e painel de produtos.' },
   { key: 'servicos', nome: 'Serviços', descricao: 'Ordens de serviço e cadastro de serviços.' },
   { key: 'clientes', nome: 'Clientes', descricao: 'Clientes e fornecedores.' },
-  { key: 'assinaturas', nome: 'Assinaturas', descricao: 'Módulo adicional de assinaturas.' },
+  { key: 'assinaturas', nome: 'Contratos', descricao: 'Módulo adicional de contratos recorrentes.' },
   { key: 'loja-virtual', nome: 'Loja Virtual', descricao: 'Módulo adicional de vitrine e pedidos online.' },
   { key: 'core-ia', nome: 'Core IA', descricao: 'Módulo adicional de inteligência artificial.' },
   { key: 'whatsapp', nome: 'WhatsApp', descricao: 'Módulo adicional de instâncias e conexão.' },
@@ -122,7 +122,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
   ],
   assinaturas: [
     { key: 'assinaturas:painel', nome: 'Painel' },
-    { key: 'assinaturas:lista', nome: 'Assinaturas' },
+    { key: 'assinaturas:lista', nome: 'Contratos' },
     { key: 'assinaturas:planos', nome: 'Planos' },
     { key: 'assinaturas:cobrancas', nome: 'Cobranças' },
     { key: 'assinaturas:comodatos', nome: 'Comodatos' },
@@ -470,7 +470,7 @@ export const sidebarMenuOptions = (
     },
     {
       key: 'assinaturas',
-      nome: 'Assinaturas',
+      nome: 'Contratos',
       icone: FileCheck2,
       color: 'violet',
       show: permissions.financeiro.visualizar && hasAssinaturasApp,
@@ -484,7 +484,7 @@ export const sidebarMenuOptions = (
         },
         {
           key: 'assinaturas:lista',
-          nome: 'Assinaturas',
+          nome: 'Contratos',
           link: '/assinaturas/assinaturas',
           icone: Sparkles,
           color: 'violet',

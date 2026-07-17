@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, type ComponentPublicInstance } from 'vue'
 import { Info, Settings2 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 
@@ -30,8 +30,18 @@ const saving = ref(false)
 const horaEnvio = ref('10')
 const dias = ref<number[]>([-3, -1, 0, 1])
 const mensagem = ref('')
+const mensagemTextarea = ref<ComponentPublicInstance | null>(null)
 
 const horas = Array.from({ length: 24 }, (_, h) => h)
+const templateVariables = [
+  { token: '{cliente}', label: 'Cliente' },
+  { token: '{descricao}', label: 'Descrição' },
+  { token: '{valor}', label: 'Total pendente' },
+  { token: '{valorParcela}', label: 'Próxima parcela' },
+  { token: '{vencimento}', label: 'Vencimento' },
+  { token: '{parcela}', label: 'Nº parcela' },
+  { token: '{totalParcelas}', label: 'Total parcelas' },
+]
 
 watch(
   () => props.open,
@@ -71,6 +81,18 @@ async function salvar() {
 
 function pad(h: number) {
   return `${String(h).padStart(2, '0')}:00`
+}
+
+function insertVariable(token: string) {
+  const textarea = mensagemTextarea.value?.$el as HTMLTextAreaElement | undefined
+  const start = textarea?.selectionStart ?? mensagem.value.length
+  const end = textarea?.selectionEnd ?? start
+  mensagem.value = `${mensagem.value.slice(0, start)}${token}${mensagem.value.slice(end)}`
+
+  requestAnimationFrame(() => {
+    textarea?.focus()
+    textarea?.setSelectionRange(start + token.length, start + token.length)
+  })
 }
 </script>
 
@@ -113,13 +135,27 @@ function pad(h: number) {
       <div>
         <Label class="mb-1 block text-sm font-semibold">Mensagem padrão (opcional)</Label>
         <Textarea
+          ref="mensagemTextarea"
           v-model="mensagem"
           rows="3"
-          placeholder="Olá {cliente}, sua parcela de {valor} vence em {vencimento}."
+          placeholder="Olá {cliente}, sua parcela de {valorParcela} vence em {vencimento}."
         />
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <Button
+            v-for="variable in templateVariables"
+            :key="variable.token"
+            type="button"
+            size="sm"
+            variant="outline"
+            class="h-7 px-2 text-[11px]"
+            @mousedown.prevent="insertVariable(variable.token)"
+          >
+            {{ variable.label }}
+          </Button>
+        </div>
         <p class="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
           <Info class="h-3 w-3" />
-          Variáveis: {cliente}, {descricao}, {valor}, {vencimento}, {parcela}. Sem preencher, usamos um texto padrão.
+          Clique em uma variável para inserir no texto. Sem preencher, usamos um texto padrão.
         </p>
       </div>
 

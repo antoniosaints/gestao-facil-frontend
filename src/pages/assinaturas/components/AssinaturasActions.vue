@@ -26,7 +26,7 @@ const { data } = defineProps<{
 async function gerarCiclo() {
   const ok = await useConfirm().confirm({
     title: 'Gerar ciclo manual',
-    message: 'Tem certeza que deseja gerar um novo ciclo para esta assinatura agora?',
+    message: 'Tem certeza que deseja gerar um novo ciclo para este contrato agora?',
     confirmText: 'Sim, gerar ciclo',
     cancelText: 'Cancelar',
     colorButton: 'primary',
@@ -41,7 +41,7 @@ async function gerarCiclo() {
     store.refreshCobrancas()
   } catch (error: any) {
     console.error(error)
-    toast.error(error?.response?.data?.message || 'Erro ao gerar o ciclo da assinatura.')
+    toast.error(error?.response?.data?.message || 'Erro ao gerar o ciclo do contrato.')
   } finally {
     processing.value = null
   }
@@ -49,8 +49,8 @@ async function gerarCiclo() {
 
 async function excluir() {
   const ok = await useConfirm().confirm({
-    title: 'Excluir assinatura',
-    message: 'Tem certeza que deseja excluir esta assinatura? Essa ação remove o contrato e seus vínculos permitidos.',
+    title: 'Excluir contrato',
+    message: 'Tem certeza que deseja excluir este contrato? Essa ação remove o contrato e seus vínculos permitidos.',
     confirmText: 'Sim, excluir',
   })
   if (!ok) return
@@ -58,13 +58,13 @@ async function excluir() {
   try {
     processing.value = 'excluir'
     await AssinaturaRepository.deletarAssinatura(data.id)
-    toast.success('Assinatura excluída com sucesso.')
+    toast.success('Contrato excluído com sucesso.')
     store.refreshAssinaturas()
     store.refreshCobrancas()
     store.refreshComodatos()
   } catch (error: any) {
     console.error(error)
-    toast.error(error?.response?.data?.message || 'Erro ao excluir a assinatura.')
+    toast.error(error?.response?.data?.message || 'Erro ao excluir o contrato.')
   } finally {
     processing.value = null
   }
@@ -97,7 +97,7 @@ async function excluir() {
       <DropdownMenuSeparator />
       <DropdownMenuItem class="text-danger" :disabled="processing !== null" @click="excluir">
         <Trash2 class="mr-2 h-4 w-4" />
-        Excluir assinatura
+        Excluir contrato
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

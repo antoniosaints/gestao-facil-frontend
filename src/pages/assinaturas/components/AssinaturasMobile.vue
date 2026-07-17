@@ -44,7 +44,7 @@ async function loadMobile(page = 1) {
   } catch (error) {
     console.error(error)
     dataMobile.value = []
-    toast.error('Erro ao carregar as assinaturas.')
+    toast.error('Erro ao carregar os contratos.')
   } finally {
     loading.value = false
   }
@@ -61,7 +61,7 @@ function nextPage() {
 async function gerarCiclo(row: AssinaturaClienteListItem) {
   const ok = await useConfirm().confirm({
     title: 'Gerar ciclo manual',
-    message: 'Tem certeza que deseja gerar um novo ciclo para esta assinatura agora?',
+    message: 'Tem certeza que deseja gerar um novo ciclo para este contrato agora?',
     confirmText: 'Sim, gerar ciclo',
     cancelText: 'Cancelar',
     colorButton: 'primary',
@@ -75,7 +75,7 @@ async function gerarCiclo(row: AssinaturaClienteListItem) {
     await loadMobile(currentPage.value)
   } catch (error: any) {
     console.error(error)
-    toast.error(error?.response?.data?.message || 'Erro ao gerar o ciclo da assinatura.')
+    toast.error(error?.response?.data?.message || 'Erro ao gerar o ciclo do contrato.')
   } finally {
     processingId.value = null
   }
@@ -83,8 +83,8 @@ async function gerarCiclo(row: AssinaturaClienteListItem) {
 
 async function excluir(row: AssinaturaClienteListItem) {
   const ok = await useConfirm().confirm({
-    title: 'Excluir assinatura',
-    message: 'Tem certeza que deseja excluir esta assinatura?',
+    title: 'Excluir contrato',
+    message: 'Tem certeza que deseja excluir este contrato?',
     confirmText: 'Sim, excluir',
   })
   if (!ok) return
@@ -92,11 +92,11 @@ async function excluir(row: AssinaturaClienteListItem) {
   try {
     processingId.value = row.id
     await AssinaturaRepository.deletarAssinatura(row.id)
-    toast.success('Assinatura excluída com sucesso.')
+    toast.success('Contrato excluído com sucesso.')
     await loadMobile(currentPage.value)
   } catch (error: any) {
     console.error(error)
-    toast.error(error?.response?.data?.message || 'Erro ao excluir a assinatura.')
+    toast.error(error?.response?.data?.message || 'Erro ao excluir o contrato.')
   } finally {
     processingId.value = null
   }
@@ -125,7 +125,7 @@ onMounted(() => loadMobile())
       >
         <div class="text-center">
           <i class="fa-solid fa-box-open mb-4 text-4xl text-gray-500 dark:text-gray-300"></i>
-          <p class="text-gray-500 dark:text-gray-300">Nenhuma assinatura encontrada.</p>
+          <p class="text-gray-500 dark:text-gray-300">Nenhum contrato encontrado.</p>
         </div>
       </div>
 
@@ -184,7 +184,7 @@ onMounted(() => loadMobile())
       </article>
     </div>
 
-    <ModalView v-model:open="showSearchModal" title="Buscar assinaturas" description="Refine por contrato, cliente ou UID.">
+    <ModalView v-model:open="showSearchModal" title="Buscar contratos" description="Refine por contrato, cliente ou UID.">
       <div class="space-y-4 px-4">
         <div class="space-y-2">
           <label class="text-sm font-medium text-foreground">Busca</label>

@@ -30,7 +30,7 @@ const loading = ref(true)
 const dashboard = ref<AssinaturaDashboardResponse['data'] | null>(null)
 
 const atalhos = [
-  { titulo: 'Assinaturas', link: '/assinaturas/assinaturas', icon: Sparkles },
+  { titulo: 'Contratos', link: '/assinaturas/assinaturas', icon: Sparkles },
   { titulo: 'Planos', link: '/assinaturas/planos', icon: Layers3 },
   { titulo: 'Cobranças', link: '/assinaturas/cobrancas', icon: ReceiptText },
   { titulo: 'Comodatos', link: '/assinaturas/comodatos', icon: Package },
@@ -43,11 +43,11 @@ async function loadDashboard(showFeedback = false) {
     dashboard.value = response.data
 
     if (showFeedback) {
-      toast.success('Painel de assinaturas atualizado.')
+      toast.success('Painel de contratos atualizado.')
     }
   } catch (error) {
     console.error(error)
-    toast.error('Erro ao carregar o painel de assinaturas.')
+    toast.error('Erro ao carregar o painel de contratos.')
   } finally {
     loading.value = false
   }
@@ -64,7 +64,7 @@ onMounted(() => {
       <div>
         <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
           <ChartPie class="h-6 w-6 text-primary" :stroke-width="2.5" />
-          Painel de assinaturas
+          Painel de contratos
         </h2>
         <p class="text-sm text-muted-foreground">
           Visão executiva da receita recorrente, vencimentos e comodatos do ERP.
@@ -93,7 +93,7 @@ onMounted(() => {
       <Card class="border-border/70 bg-card shadow-sm">
         <CardHeader class="pb-2">
           <CardTitle class="flex items-center gap-2 text-sm">
-            <Sparkles class="h-4 w-4 text-primary" /> Assinaturas ativas
+            <Sparkles class="h-4 w-4 text-primary" /> Contratos ativos
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -170,7 +170,7 @@ onMounted(() => {
             <CalendarClock class="h-5 w-5 text-primary" /> Próximos vencimentos
           </CardTitle>
           <CardDescription>
-            Assinaturas priorizadas por vencimento para ação rápida da operação.
+            Contratos priorizados por vencimento para ação rápida da operação.
           </CardDescription>
         </CardHeader>
         <CardContent class="space-y-3">
@@ -201,7 +201,7 @@ onMounted(() => {
             </div>
           </div>
           <div v-if="!dashboard?.proximosVencimentos?.length" class="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-            Nenhuma assinatura cadastrada ainda neste módulo.
+            Nenhum contrato cadastrado ainda neste módulo.
           </div>
         </CardContent>
       </Card>
@@ -220,7 +220,7 @@ onMounted(() => {
           </div>
           <div class="rounded-xl border border-border/60 bg-muted/10 p-4">
             <p class="font-medium text-foreground">2. Vincule clientes e itens</p>
-            <p class="mt-1 text-sm text-muted-foreground">Assinaturas podem misturar serviços, produtos recorrentes e comodato.</p>
+            <p class="mt-1 text-sm text-muted-foreground">Contratos podem misturar serviços, produtos recorrentes e comodato.</p>
           </div>
           <div class="rounded-xl border border-border/60 bg-muted/10 p-4">
             <p class="font-medium text-foreground">3. Gere ciclos e acompanhe atrasos</p>
@@ -233,7 +233,7 @@ onMounted(() => {
     <MobileBottomBar v-if="uiStore.isMobile">
       <RouterLink to="/assinaturas/assinaturas" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
         <Sparkles class="h-5 w-5" />
-        <span class="text-xs">Assinaturas</span>
+        <span class="text-xs">Contratos</span>
       </RouterLink>
       <RouterLink to="/assinaturas/planos" class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300">
         <Layers3 class="h-5 w-5" />

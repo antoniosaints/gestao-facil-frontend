@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
 import { AlarmClock, Info, Trash2 } from 'lucide-vue-next'
 
 import ModalView from '@/components/formulario/ModalView.vue'
@@ -32,6 +32,17 @@ const canalWhatsapp = ref(true)
 const canalEmail = ref(false)
 const canalSms = ref(false)
 const mensagemCustom = ref('')
+const mensagemTextarea = ref<ComponentPublicInstance | null>(null)
+
+const templateVariables = [
+  { token: '{cliente}', label: 'Cliente' },
+  { token: '{descricao}', label: 'Descrição' },
+  { token: '{valor}', label: 'Total pendente' },
+  { token: '{valorParcela}', label: 'Próxima parcela' },
+  { token: '{vencimento}', label: 'Vencimento' },
+  { token: '{parcela}', label: 'Nº parcela' },
+  { token: '{totalParcelas}', label: 'Total parcelas' },
+]
 
 watch(
   () => props.open,
@@ -57,6 +68,18 @@ function salvar() {
     canalEmail: canalEmail.value,
     canalSms: canalSms.value,
     mensagemCustom: mensagemCustom.value.trim() || null,
+  })
+}
+
+function insertVariable(token: string) {
+  const textarea = mensagemTextarea.value?.$el as HTMLTextAreaElement | undefined
+  const start = textarea?.selectionStart ?? mensagemCustom.value.length
+  const end = textarea?.selectionEnd ?? start
+  mensagemCustom.value = `${mensagemCustom.value.slice(0, start)}${token}${mensagemCustom.value.slice(end)}`
+
+  requestAnimationFrame(() => {
+    textarea?.focus()
+    textarea?.setSelectionRange(start + token.length, start + token.length)
   })
 }
 </script>
@@ -114,13 +137,27 @@ function salvar() {
         <div>
           <Label class="mb-1 block text-xs uppercase tracking-wide text-muted-foreground">Mensagem personalizada (opcional)</Label>
           <Textarea
+            ref="mensagemTextarea"
             v-model="mensagemCustom"
             rows="3"
-            placeholder="Olá {cliente}, sua parcela de {valor} vence em {vencimento}."
+            placeholder="Olá {cliente}, sua parcela de {valorParcela} vence em {vencimento}."
           />
+          <div class="mt-2 flex flex-wrap gap-1.5">
+            <Button
+              v-for="variable in templateVariables"
+              :key="variable.token"
+              type="button"
+              size="sm"
+              variant="outline"
+              class="h-7 px-2 text-[11px]"
+              @mousedown.prevent="insertVariable(variable.token)"
+            >
+              {{ variable.label }}
+            </Button>
+          </div>
           <p class="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
             <Info class="h-3 w-3" />
-            Variáveis: {cliente}, {descricao}, {valor}, {vencimento}, {parcela}
+            Clique em uma variável para inserir no texto.
           </p>
         </div>
       </template>

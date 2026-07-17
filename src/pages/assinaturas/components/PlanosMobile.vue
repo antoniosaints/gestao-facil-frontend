@@ -61,7 +61,7 @@ function nextPage() {
 async function excluir(row: PlanoAssinaturaListItem) {
   const ok = await useConfirm().confirm({
     title: 'Excluir plano',
-    message: 'Tem certeza que deseja excluir este plano de assinatura?',
+    message: 'Tem certeza que deseja excluir este plano de contrato?',
     confirmText: 'Sim, excluir',
   })
   if (!ok) return
@@ -125,7 +125,7 @@ onMounted(() => loadMobile())
           {{ formatCurrencyBR(row.valorBase) }} • {{ getPeriodicidadeLabel(row.periodicidadePadrao) }}
         </div>
         <div class="text-xs text-gray-500 dark:text-gray-400">
-          {{ row.resumo.itens }} item(ns) • {{ row.resumo.assinaturasVinculadas }} assinatura(s)
+          {{ row.resumo.itens }} item(ns) • {{ row.resumo.assinaturasVinculadas }} contrato(s)
         </div>
 
         <div class="mt-3 flex justify-between gap-2">

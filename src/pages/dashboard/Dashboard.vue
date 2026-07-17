@@ -296,7 +296,7 @@ const todosKpis = computed<KpiCard[]>(() => {
     },
     {
       modulo: 'assinaturas',
-      titulo: 'Assinaturas ativas',
+      titulo: 'Contratos ativos',
       valor: `${assinaturas?.kpis.assinaturasAtivas || 0}`,
       detalhe: uiStore.permissoes.financeiro.painel
         ? `MRR estimado ${formatCurrencyBR(assinaturas?.kpis.mrrEstimado || 0)}`

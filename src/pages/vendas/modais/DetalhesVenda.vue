@@ -274,7 +274,7 @@ async function excluirLancamentoFinanceiro(id?: number) {
 
     try {
         await LancamentosRepository.remove(id)
-        toast.success('Lançamento financeiro excluí­do com sucesso')
+        toast.success('Lançamento financeiro excluído com sucesso')
         store.updateTable()
         if (store.idMutation) {
             await store.openDetalhes(store.idMutation)

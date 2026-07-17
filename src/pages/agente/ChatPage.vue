@@ -203,14 +203,14 @@ const quickAction = (action: string) => {
 const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(new Error('NÃ£o foi possÃ­vel ler a imagem.'));
+    reader.onerror = () => reject(new Error('Não foi possível ler a imagem.'));
     reader.readAsDataURL(file);
 });
 
 const loadImageFromDataUrl = (dataUrl: string) => new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('NÃ£o foi possÃ­vel preparar a imagem.'));
+    image.onerror = () => reject(new Error('Não foi possível preparar a imagem.'));
     image.src = dataUrl;
 });
 

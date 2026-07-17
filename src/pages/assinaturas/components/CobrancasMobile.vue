@@ -121,7 +121,7 @@ onMounted(() => loadMobile())
 
         <div class="mt-3 flex items-center justify-between gap-2">
           <RouterLink :to="`/assinaturas/assinaturas/${row.assinatura.id}`" class="block flex-1">
-            <Button variant="outline" class="w-full">Abrir assinatura</Button>
+            <Button variant="outline" class="w-full">Abrir contrato</Button>
           </RouterLink>
           <CobrancasActions :data="row" :on-changed="() => loadMobile(currentPage)" />
         </div>
@@ -164,7 +164,7 @@ onMounted(() => loadMobile())
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
       >
         <CalendarClock class="h-5 w-5" />
-        <span class="text-xs">Assinaturas</span>
+        <span class="text-xs">Contratos</span>
       </RouterLink>
       <button
         type="button"

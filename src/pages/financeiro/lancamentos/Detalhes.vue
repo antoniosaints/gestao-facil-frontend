@@ -241,12 +241,12 @@ async function adicionarParcela() {
 
   const valor = formatToNumberValue(novaParcela.value.valor)
   if (!valor || valor <= 0) {
-    toast.error('Informe um valor vÃ¡lido para a parcela')
+    toast.error('Informe um valor válido para a parcela')
     return
   }
 
   if (!novaParcela.value.vencimento || Number.isNaN(new Date(novaParcela.value.vencimento).getTime())) {
-    toast.error('Informe uma data de vencimento vÃ¡lida')
+    toast.error('Informe uma data de vencimento válida')
     return
   }
 
@@ -282,7 +282,7 @@ async function excluirParcela(parcela: ParcelaDetalhe) {
 
   try {
     const response = await LancamentosRepository.deletarParcela(parcela.id)
-    toast.success(response?.message || 'Parcela excluÃ­da com sucesso')
+    toast.success(response?.message || 'Parcela excluída com sucesso')
     store.updateTable()
     await loadLancamento()
   } catch (error: any) {

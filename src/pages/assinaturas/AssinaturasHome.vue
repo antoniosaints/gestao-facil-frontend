@@ -2,14 +2,22 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { BadgePlus, Layers3, RefreshCcw, Sparkles } from 'lucide-vue-next'
+import {
+  BadgePlus,
+  CircleDollarSign,
+  FileText,
+  Layers3,
+  LoaderCircle,
+  PackagePlus,
+  RefreshCcw,
+  Settings2,
+  Sparkles,
+} from 'lucide-vue-next'
 
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -19,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import {
   AssinaturaRepository,
@@ -37,6 +46,7 @@ import {
   tipoCobrancaOptions,
   toDateOnlyIso,
 } from './shared'
+import CollapsibleSection from '@/pages/produtos/formulario/CollapsibleSection.vue'
 import AssinaturasTabela from './components/AssinaturasTabela.vue'
 import AssinaturasMobile from './components/AssinaturasMobile.vue'
 
@@ -47,6 +57,10 @@ const store = useAssinaturasStore()
 const saving = ref(false)
 const loadingModal = ref(false)
 const planos = ref<PlanoAssinaturaListItem[]>([])
+const secCobranca = ref(true)
+const secObservacoes = ref(false)
+const secItens = ref(true)
+const secControle = ref(false)
 
 const form = reactive<any>({
   id: undefined,
@@ -71,11 +85,11 @@ const form = reactive<any>({
   gerarPrimeiroCiclo: true,
 })
 
-const modalTitle = computed(() => (store.editingAssinaturaId ? 'Editar assinatura' : 'Nova assinatura'))
+const modalTitle = computed(() => (store.editingAssinaturaId ? 'Editar contrato' : 'Novo contrato'))
 const modalDescription = computed(() =>
   store.editingAssinaturaId
-    ? 'Atualize contrato, cobrança e itens recorrentes usando o mesmo padrão de modal do restante do projeto.'
-    : 'Cadastre o contrato recorrente com select com busca, datepicker padrão e estrutura consistente com os outros formulários.',
+    ? 'Atualize cliente, cobrança e itens recorrentes no padrão dos formulários principais.'
+    : 'Cadastre o contrato recorrente, os dados de cobrança e os itens vinculados.',
 )
 
 function resetForm() {
@@ -201,6 +215,10 @@ watch(
 
     try {
       loadingModal.value = true
+      secCobranca.value = true
+      secObservacoes.value = false
+      secItens.value = true
+      secControle.value = false
       await loadPlanos()
 
       if (store.editingAssinaturaId) {
@@ -211,7 +229,7 @@ watch(
       }
     } catch (error) {
       console.error(error)
-      toast.error('Erro ao preparar o formulário da assinatura.')
+      toast.error('Erro ao preparar o formulário do contrato.')
       store.closeAssinaturaModal()
     } finally {
       loadingModal.value = false
@@ -222,7 +240,7 @@ watch(
 async function save() {
   try {
     if (!form.clienteId) {
-      toast.error('Selecione um cliente para a assinatura.')
+      toast.error('Selecione um cliente para o contrato.')
       return
     }
 
@@ -236,7 +254,7 @@ async function save() {
     const proximaCobranca = toDateOnlyIso(form.proximaCobranca)
 
     if (!inicio || !proximaCobranca) {
-      toast.error('Preencha as datas obrigatórias da assinatura.')
+      toast.error('Preencha as datas obrigatórias do contrato.')
       return
     }
 
@@ -264,13 +282,13 @@ async function save() {
     }
 
     await AssinaturaRepository.salvarAssinatura(payload)
-    toast.success(store.editingAssinaturaId ? 'Assinatura atualizada com sucesso.' : 'Assinatura salva com sucesso.')
+    toast.success(store.editingAssinaturaId ? 'Contrato atualizado com sucesso.' : 'Contrato salvo com sucesso.')
     store.closeAssinaturaModal()
     resetForm()
     store.refreshAssinaturas()
   } catch (error) {
     console.error(error)
-    toast.error('Erro ao salvar a assinatura.')
+    toast.error('Erro ao salvar o contrato.')
   } finally {
     saving.value = false
   }
@@ -283,10 +301,10 @@ async function save() {
       <div>
         <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
           <Sparkles class="h-6 w-6 text-primary" :stroke-width="2.5" />
-          Assinaturas
+          Contratos
         </h2>
         <p class="text-sm text-muted-foreground">
-          Contratos recorrentes e assinaturas.
+          Contratos recorrentes, ciclos e cobranças.
         </p>
       </div>
 
@@ -310,7 +328,7 @@ async function save() {
           <RefreshCcw class="h-4 w-4" /> Atualizar
         </Button>
         <Button class="gap-2" @click="store.openCreateAssinatura()">
-          <BadgePlus class="h-4 w-4" /> Nova assinatura
+          <BadgePlus class="h-4 w-4" /> Novo contrato
         </Button>
       </div>
     </div>
@@ -322,49 +340,83 @@ async function save() {
       <AssinaturasMobile />
     </div>
 
-    <ModalView v-model:open="store.openAssinaturaModal" :title="modalTitle" :description="modalDescription" size="4xl">
+    <ModalView v-model:open="store.openAssinaturaModal" :title="modalTitle" :description="modalDescription" size="5xl">
       <div v-if="loadingModal" class="px-4 py-8 text-center text-sm text-muted-foreground">
-        Preparando formulário da assinatura...
+        Preparando formulário do contrato...
       </div>
 
-      <form v-else class="grid gap-4 px-4" @submit.prevent="save">
-        <Card class="border-none shadow-none bg-transparent">
-          <CardContent class="grid gap-2 md:grid-cols-4 p-0">
-            <div class="space-y-1 md:col-span-2">
-              <Label for="assinaturaCliente">Cliente</Label>
-              <Select2Ajax id="assinaturaCliente" v-model="form.clienteId" url="/clientes/select2" class="w-full" />
-            </div>
+      <form v-else class="grid gap-4 px-4 pb-1" @submit.prevent="save">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+          <div class="md:col-span-5">
+            <Label for="assinaturaCliente" class="mb-1.5 block text-sm font-medium">
+              Cliente <span class="text-red-500">*</span>
+            </Label>
+            <Select2Ajax id="assinaturaCliente" v-model="form.clienteId" url="/clientes/select2" class="w-full" />
+          </div>
+          <div class="md:col-span-4">
+            <Label for="nomeContrato" class="mb-1.5 block text-sm font-medium">
+              Nome do contrato <span class="text-red-500">*</span>
+            </Label>
+            <Input id="nomeContrato" v-model="form.nomeContrato" class="bg-background dark:bg-background/60" placeholder="Ex: Suporte premium mensal" />
+          </div>
+          <div class="md:col-span-3">
+            <Label class="mb-1.5 block text-sm font-medium">Status</Label>
+            <Select v-model="form.status">
+              <SelectTrigger class="w-full bg-background dark:bg-background/60">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="item in statusAssinaturaOptions.filter((entry) => entry.value !== 'TODOS')" :key="item.value" :value="item.value">
+                  {{ item.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-            <div class="space-y-1 md:col-span-2">
-              <Label for="assinaturaPlano">Plano base</Label>
-              <Select2Ajax id="assinaturaPlano" v-model="form.planoId" url="/assinaturas/planos/select2" allowClear
-                class="w-full" />
-            </div>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+          <div class="md:col-span-5">
+            <Label for="assinaturaPlano" class="mb-1.5 block text-sm font-medium">Plano base</Label>
+            <Select2Ajax id="assinaturaPlano" v-model="form.planoId" url="/assinaturas/planos/select2" allowClear class="w-full" />
+          </div>
+          <div class="md:col-span-4">
+            <Label class="mb-1.5 block text-sm font-medium">Periodicidade</Label>
+            <Select v-model="form.periodicidade">
+              <SelectTrigger class="w-full bg-background dark:bg-background/60">
+                <SelectValue placeholder="Periodicidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="item in periodicidadeOptions" :key="item.value" :value="item.value">
+                  {{ item.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div v-if="form.periodicidade === 'PERSONALIZADO'" class="md:col-span-3">
+            <Label for="intervaloPersonalizadoAssinatura" class="mb-1.5 block text-sm font-medium">Intervalo em dias</Label>
+            <Input id="intervaloPersonalizadoAssinatura" v-model="form.intervaloDiasPersonalizado" class="bg-background dark:bg-background/60" type="number" min="1" step="1" placeholder="30" />
+          </div>
+          <div v-else class="md:col-span-3">
+            <Label class="mb-1.5 block text-sm font-medium">Modo de valor</Label>
+            <Select v-model="form.modoValor">
+              <SelectTrigger class="w-full bg-background dark:bg-background/60">
+                <SelectValue placeholder="Modo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="item in modoValorOptions" :key="item.value" :value="item.value">
+                  {{ item.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-            <div class="space-y-1 md:col-span-2">
-              <Label for="nomeContrato">Nome do contrato</Label>
-              <Input id="nomeContrato" v-model="form.nomeContrato" placeholder="Ex: Mensalidade suporte premium" />
-            </div>
-
-            <div class="space-y-1 md:col-span-2">
-              <Label>Status da assinatura</Label>
-              <Select v-model="form.status">
-                <SelectTrigger class="w-full bg-card">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem v-for="item in statusAssinaturaOptions.filter((entry) => entry.value !== 'TODOS')"
-                    :key="item.value" :value="item.value">
-                    {{ item.label }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div class="space-y-1">
-              <Label>Modo de valor</Label>
+        <CollapsibleSection v-model:open="secCobranca" title="Cobrança e datas" class="bg-black/5 dark:bg-card" :icon="CircleDollarSign">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+            <div v-if="form.periodicidade === 'PERSONALIZADO'" class="md:col-span-3">
+              <Label class="mb-1.5 block text-sm font-medium">Modo de valor</Label>
               <Select v-model="form.modoValor">
-                <SelectTrigger class="w-full bg-card">
+                <SelectTrigger class="w-full bg-background dark:bg-background/60">
                   <SelectValue placeholder="Modo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -374,67 +426,43 @@ async function save() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div v-if="form.modoValor === 'MANUAL'" class="space-y-1">
-              <Label for="valorManualAssinatura">Valor manual</Label>
-              <Input id="valorManualAssinatura" v-model="form.valorManual" type="number" min="0" step="0.01"
-                placeholder="0,00" />
+            <div v-if="form.modoValor === 'MANUAL'" class="md:col-span-3">
+              <Label for="valorManualAssinatura" class="mb-1.5 block text-sm font-medium">Valor manual</Label>
+              <Input id="valorManualAssinatura" v-model="form.valorManual" class="bg-background dark:bg-background/60" type="number" min="0" step="0.01" placeholder="0,00" />
             </div>
-
-            <div class="space-y-1">
-              <Label>Periodicidade</Label>
-              <Select v-model="form.periodicidade">
-                <SelectTrigger class="w-full bg-card">
-                  <SelectValue placeholder="Periodicidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem v-for="item in periodicidadeOptions" :key="item.value" :value="item.value">
-                    {{ item.label }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div v-if="form.periodicidade === 'PERSONALIZADO'" class="space-y-1">
-              <Label for="intervaloPersonalizadoAssinatura">Intervalo em dias</Label>
-              <Input id="intervaloPersonalizadoAssinatura" v-model="form.intervaloDiasPersonalizado" type="number"
-                min="1" step="1" placeholder="30" />
-            </div>
-
-            <div class="space-y-1">
-              <Label for="inicioAssinatura">Início</Label>
+            <div class="md:col-span-3">
+              <Label for="inicioAssinatura" class="mb-1.5 block text-sm font-medium">Início</Label>
               <Calendarpicker id="inicioAssinatura" v-model="form.inicio" :teleport="true" />
             </div>
-
-            <div class="space-y-1">
-              <Label for="proximaCobrancaAssinatura">Próxima cobrança</Label>
+            <div class="md:col-span-3">
+              <Label for="proximaCobrancaAssinatura" class="mb-1.5 block text-sm font-medium">Próxima cobrança</Label>
               <Calendarpicker id="proximaCobrancaAssinatura" v-model="form.proximaCobranca" :teleport="true" />
             </div>
-
-            <div v-if="!form.recorrenciaIndefinida" class="space-y-1 md:col-span-2">
-              <Label for="fimAssinatura">Data final</Label>
+            <label class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm transition-colors hover:bg-muted/40 dark:bg-background/40 md:col-span-3">
+              <span>Sem data final</span>
+              <Switch v-model:model-value="form.recorrenciaIndefinida" />
+            </label>
+            <div v-if="!form.recorrenciaIndefinida" class="md:col-span-3">
+              <Label for="fimAssinatura" class="mb-1.5 block text-sm font-medium">Data final</Label>
               <Calendarpicker id="fimAssinatura" v-model="form.fim" :teleport="true" />
             </div>
-
-            <div class="space-y-1">
-              <Label>Gateway</Label>
+            <div class="md:col-span-3">
+              <Label class="mb-1.5 block text-sm font-medium">Gateway</Label>
               <Select v-model="form.gateway">
-                <SelectTrigger class="w-full bg-card">
+                <SelectTrigger class="w-full bg-background dark:bg-background/60">
                   <SelectValue placeholder="Selecione o gateway" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem v-for="item in gatewayOptions" :key="item.value" :value="item.value"
-                    :disabled="item.disabled">
+                  <SelectItem v-for="item in gatewayOptions" :key="item.value" :value="item.value" :disabled="item.disabled">
                     {{ item.label }}
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            <div class="space-y-1">
-              <Label>Tipo de pagamento</Label>
+            <div class="md:col-span-3">
+              <Label class="mb-1.5 block text-sm font-medium">Tipo de pagamento</Label>
               <Select v-model="form.tipoCobranca">
-                <SelectTrigger class="w-full bg-card">
+                <SelectTrigger class="w-full bg-background dark:bg-background/60">
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -444,56 +472,24 @@ async function save() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+        </CollapsibleSection>
 
-            <div class="space-y-1 md:col-span-2">
-              <label for="recorrenciaIndefinida" class="flex items-center gap-2 rounded-md cursor-pointer border border-border/60 bg-card p-3">
-                <Checkbox id="recorrenciaIndefinida" v-model="form.recorrenciaIndefinida" />
-                <div>
-                  <Label class="cursor-pointer">Recorrência sem data final</Label>
-                  <p class="text-xs text-muted-foreground">Desmarque para informar uma data de encerramento do contrato.
-                  </p>
-                </div>
-              </label>
+        <CollapsibleSection v-model:open="secObservacoes" title="Observações" class="bg-black/5 dark:bg-card" :icon="FileText">
+          <Textarea id="observacoesAssinatura" v-model="form.observacoes" rows="4" placeholder="Contexto do contrato, SLA, regra de renovação..." class="bg-background dark:bg-background/70" />
+        </CollapsibleSection>
+
+        <CollapsibleSection v-model:open="secItens" title="Itens do contrato" class="bg-black/5 dark:bg-card" :icon="PackagePlus">
+          <div class="space-y-3">
+            <div class="flex justify-end">
+              <Button type="button" variant="outline" size="sm" @click="addItem">Adicionar item</Button>
             </div>
-
-            <div class="space-y-1 md:col-span-4">
-              <Label for="observacoesAssinatura">Observações</Label>
-              <Textarea id="observacoesAssinatura" v-model="form.observacoes" rows="4"
-                placeholder="Contexto do contrato, SLA, regra de renovação..." />
-            </div>
-          </CardContent>
-        </Card>
-
-        <div class="grid gap-3 md:grid-cols-3">
-          <label class="flex items-center gap-2 rounded-md cursor-pointer border border-border/60 bg-card px-3 py-2 text-sm text-foreground">
-            <Checkbox v-model="form.cobrancaAutomatica" />
-            Cobrança automática
-          </label>
-          <label class="flex items-center gap-2 rounded-md cursor-pointer border border-border/60 bg-card px-3 py-2 text-sm text-foreground">
-            <Checkbox v-model="form.gerarLancamentoFinanceiro" />
-            Gerar lançamento financeiro
-          </label>
-          <label class="flex items-center gap-2 rounded-md cursor-pointer border border-border/60 bg-card px-3 py-2 text-sm text-foreground">
-            <Checkbox v-model="form.gerarPrimeiroCiclo" />
-            Gerar primeiro ciclo agora
-          </label>
-        </div>
-
-        <Card class="border-none bg-card shadow-sm dark:bg-card rounded-md flex flex-col gap-1">
-          <CardHeader class="flex flex-row items-center justify-between py-2 gap-4 space-y-0 px-2 pl-4 border border-border rounded-md">
-            <div>
-              <CardTitle class="text-base">Itens da assinatura</CardTitle>
-            </div>
-            <Button type="button" variant="outline" size="sm" @click="addItem">Adicionar item</Button>
-          </CardHeader>
-          <div v-for="(item, index) in form.itens" :key="index"
-              class="rounded-md border border-border/60 bg-muted/10 p-4">
+            <div v-for="(item, index) in form.itens" :key="index" class="rounded-xl border border-border/70 bg-background/60 p-4 dark:bg-background/30">
               <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div class="space-y-1">
-                  <Label>Tipo</Label>
-                  <Select :model-value="item.tipoItem"
-                    @update:model-value="handleTipoItemChange(item, $event as 'SERVICO' | 'PRODUTO')">
-                    <SelectTrigger class="w-full bg-card">
+                <div>
+                  <Label class="mb-1.5 block text-sm font-medium">Tipo</Label>
+                  <Select :model-value="item.tipoItem" @update:model-value="handleTipoItemChange(item, $event as 'SERVICO' | 'PRODUTO')">
+                    <SelectTrigger class="w-full bg-background dark:bg-background/60">
                       <SelectValue placeholder="Tipo do item" />
                     </SelectTrigger>
                     <SelectContent>
@@ -502,79 +498,86 @@ async function save() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div v-if="item.tipoItem === 'SERVICO'" class="space-y-1 xl:col-span-2">
-                  <Label>Serviço</Label>
+                <div v-if="item.tipoItem === 'SERVICO'" class="xl:col-span-2">
+                  <Label class="mb-1.5 block text-sm font-medium">Serviço</Label>
                   <Select2Ajax v-model="item.servicoId" url="/servicos/select2" allowClear class="w-full" />
                 </div>
-
-                <div v-else class="space-y-1 xl:col-span-2">
-                  <Label>Produto</Label>
+                <div v-else class="xl:col-span-2">
+                  <Label class="mb-1.5 block text-sm font-medium">Produto</Label>
                   <Select2Ajax v-model="item.produtoId" url="/produtos/select2" allowClear class="w-full" />
                 </div>
-
-                <div class="space-y-1">
-                  <Label>Quantidade</Label>
-                  <Input v-model="item.quantidade" type="number" min="1" step="1" />
+                <div>
+                  <Label class="mb-1.5 block text-sm font-medium">Quantidade</Label>
+                  <Input v-model="item.quantidade" class="bg-background dark:bg-background/60" type="number" min="1" step="1" />
                 </div>
-
-                <div class="space-y-1 xl:col-span-2">
-                  <Label>Descrição</Label>
-                  <Input v-model="item.descricaoSnapshot" placeholder="Como o item deve aparecer no contrato" />
+                <div class="xl:col-span-2">
+                  <Label class="mb-1.5 block text-sm font-medium">Descrição</Label>
+                  <Input v-model="item.descricaoSnapshot" class="bg-background dark:bg-background/60" placeholder="Como o item deve aparecer no contrato" />
                 </div>
-
-                <div class="space-y-1 xl:col-span-2">
-                  <Label>Valor unitário</Label>
-                  <Input v-model="item.valorUnitario" type="number" min="0" step="0.01" />
+                <div class="xl:col-span-2">
+                  <Label class="mb-1.5 block text-sm font-medium">Valor unitário</Label>
+                  <Input v-model="item.valorUnitario" class="bg-background dark:bg-background/60" type="number" min="0" step="0.01" />
                 </div>
-
                 <template v-if="item.tipoItem === 'PRODUTO' && item.comodato">
-                  <div class="space-y-1">
-                    <Label>Identificação</Label>
-                    <Input v-model="item.identificacao" placeholder="Patrimônio, série ou referência" />
+                  <div>
+                    <Label class="mb-1.5 block text-sm font-medium">Identificação</Label>
+                    <Input v-model="item.identificacao" class="bg-background dark:bg-background/60" placeholder="Patrimônio, série ou referência" />
                   </div>
-                  <div class="space-y-1">
-                    <Label>Previsão de devolução</Label>
+                  <div>
+                    <Label class="mb-1.5 block text-sm font-medium">Previsão de devolução</Label>
                     <Calendarpicker v-model="item.dataPrevistaDevolucao" :teleport="true" />
                   </div>
-                  <div class="space-y-1 md:col-span-2 xl:col-span-2">
-                    <Label>Observações do comodato</Label>
-                    <Input v-model="item.observacoes"
-                      placeholder="Condição, observações de entrega, restrições..." />
+                  <div class="md:col-span-2 xl:col-span-2">
+                    <Label class="mb-1.5 block text-sm font-medium">Observações do comodato</Label>
+                    <Input v-model="item.observacoes" class="bg-background dark:bg-background/60" placeholder="Condição, observações de entrega, restrições..." />
                   </div>
                 </template>
-
-                <div class="space-y-1 xl:col-span-4">
-                  <div class="flex flex-wrap items-center gap-4 rounded-md border border-border/60 bg-card px-2 py-1">
-                    <label class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md cursor-pointer border-border text-foreground">
-                      <Checkbox v-model="item.cobrar" />
-                      Cobrar no valor recorrente
-                    </label>
-                    <label class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md cursor-pointer border-border text-foreground">
-                      <Checkbox v-model="item.comodato" :disabled="item.tipoItem !== 'PRODUTO'" />
-                      Item em comodato
-                    </label>
-                    <label class="flex items-center gap-2 text-sm border py-1 px-2 rounded-md cursor-pointer border-border text-foreground">
-                      <Checkbox v-model="item.ativo" />
-                      Item ativo
-                    </label>
-                    <Button type="button" variant="ghost" size="sm" class="ml-auto text-rose-600"
-                      @click="removeItem(index as number)">
-                      Remover
-                    </Button>
-                  </div>
-                </div>
+              </div>
+              <div class="mt-3 grid gap-2 md:grid-cols-3">
+                <label class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm transition-colors hover:bg-muted/40 dark:bg-background/40">
+                  <span>Cobrar no valor recorrente</span>
+                  <Switch v-model:model-value="item.cobrar" />
+                </label>
+                <label class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm transition-colors hover:bg-muted/40 dark:bg-background/40">
+                  <span>Item em comodato</span>
+                  <Switch v-model:model-value="item.comodato" :disabled="item.tipoItem !== 'PRODUTO'" />
+                </label>
+                <label class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm transition-colors hover:bg-muted/40 dark:bg-background/40">
+                  <span>Item ativo</span>
+                  <Switch v-model:model-value="item.ativo" />
+                </label>
+              </div>
+              <div class="mt-3 flex justify-end">
+                <Button type="button" variant="ghost" size="sm" class="text-rose-600" @click="removeItem(index as number)">Remover item</Button>
               </div>
             </div>
-        </Card>
+          </div>
+        </CollapsibleSection>
 
-        <div class="flex justify-end gap-2 pb-1">
+        <CollapsibleSection v-model:open="secControle" title="Controle e automação" class="bg-black/5 dark:bg-card" :icon="Settings2">
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <label class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm transition-colors hover:bg-muted/40 dark:bg-background/40">
+              <span>Cobrança automática</span>
+              <Switch v-model:model-value="form.cobrancaAutomatica" />
+            </label>
+            <label class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm transition-colors hover:bg-muted/40 dark:bg-background/40">
+              <span>Gerar lançamento financeiro</span>
+              <Switch v-model:model-value="form.gerarLancamentoFinanceiro" />
+            </label>
+            <label class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm transition-colors hover:bg-muted/40 dark:bg-background/40">
+              <span>Gerar primeiro ciclo agora</span>
+              <Switch v-model:model-value="form.gerarPrimeiroCiclo" />
+            </label>
+          </div>
+        </CollapsibleSection>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" :disabled="saving" @click="store.closeAssinaturaModal()">
             Cancelar
           </Button>
           <Button type="submit" class="text-white" :disabled="saving">
-            <RefreshCcw v-if="saving" class="mr-2 h-4 w-4 animate-spin" />
-            {{ saving ? 'Salvando...' : store.editingAssinaturaId ? 'Salvar alterações' : 'Salvar assinatura' }}
+            <LoaderCircle v-if="saving" class="mr-2 h-4 w-4 animate-spin" />
+            {{ saving ? 'Salvando...' : store.editingAssinaturaId ? 'Salvar alterações' : 'Salvar contrato' }}
           </Button>
         </div>
       </form>

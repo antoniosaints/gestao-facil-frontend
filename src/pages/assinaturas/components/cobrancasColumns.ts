@@ -161,7 +161,7 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
         render(
           RouterLink,
           { to: `/assinaturas/assinaturas/${row.original.assinatura.id}` },
-          () => render(Button, { variant: 'outline', size: 'sm' }, () => 'Abrir assinatura'),
+          () => render(Button, { variant: 'outline', size: 'sm' }, () => 'Abrir contrato'),
         ),
         render(CobrancasActions, { data: row.original }),
       ]),

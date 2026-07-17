@@ -105,7 +105,7 @@ onMounted(() => loadMobile())
         </div>
 
         <RouterLink :to="`/assinaturas/assinaturas/${row.assinatura.id}`" class="mt-3 block">
-          <Button variant="outline" class="w-full">Abrir assinatura</Button>
+          <Button variant="outline" class="w-full">Abrir contrato</Button>
         </RouterLink>
       </article>
     </div>
@@ -146,7 +146,7 @@ onMounted(() => loadMobile())
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
       >
         <Package class="h-5 w-5" />
-        <span class="text-xs">Assinaturas</span>
+        <span class="text-xs">Contratos</span>
       </RouterLink>
       <button
         type="button"
