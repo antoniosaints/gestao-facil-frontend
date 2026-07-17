@@ -38,6 +38,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
@@ -411,10 +412,10 @@ watch(() => store.filters.update, loadLancamento)
           <Badge v-if="lancamento?.vendaId" variant="outline">Lançamento automático</Badge>
         </div>
         <div>
-          <h1 class="flex flex-wrap items-center gap-2 text-xl font-semibold text-foreground">
+          <div class="flex flex-wrap items-center gap-2 text-xl font-semibold text-foreground">
             <BadgeDollarSign class="h-5 w-5 text-primary dark:text-yellow-400" />
             {{ lancamento?.descricao || 'Detalhes do lançamento' }}
-          </h1>
+          </div>
           <p class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>#{{ lancamento?.Uid || 'N/A' }}</span>
             <button type="button"
@@ -430,29 +431,41 @@ watch(() => store.filters.update, loadLancamento)
         <Button variant="outline" @click="goBack">
           <ArrowLeft class="h-4 w-4" /> Voltar
         </Button>
-        <Button variant="outline" @click="loadLancamento">
-          <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
-        </Button>
-        <Button variant="outline" :disabled="!lancamento?.id" @click="editarLancamento">
-          <PenLine class="h-4 w-4" /> Editar
-        </Button>
-        <Button variant="outline" :disabled="!lancamento?.id" @click="toggleNotificacaoVencimento">
-          <BellOff v-if="lancamento?.notificarVencimento" class="h-4 w-4" />
-          <Bell v-else class="h-4 w-4" />
-          {{ lancamento?.notificarVencimento ? 'Não lembrar' : 'Lembrar' }}
-        </Button>
-        <Button v-if="podeNotificarCliente" variant="outline" :disabled="!lancamento?.id" @click="toggleNotificacaoClienteVencimento">
-          <BellOff v-if="lancamento?.notificarClienteVencimento" class="h-4 w-4" />
-          <Bell v-else class="h-4 w-4" />
-          {{ lancamento?.notificarClienteVencimento ? 'Desativar cliente' : 'Notificar cliente' }}
-        </Button>
         <Button v-if="uiStore.canCreateCharge" class="bg-success text-white hover:bg-success/80"
           :disabled="!parcelasOrdenadas.some((parcela) => !parcela.pago)" @click="gerarCobrancaFatura">
           <CircleDollarSign class="h-4 w-4" /> Gerar cobrança
         </Button>
-        <Button variant="destructive" :disabled="!lancamento?.id" @click="deletar(lancamento?.id!)">
-          <Trash2 class="h-4 w-4" /> Excluir
-        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline" class="gap-1">
+              <MoreVertical class="h-4 w-4" /> Mais ações
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-60">
+            <DropdownMenuItem :disabled="!lancamento?.id" @click="editarLancamento">
+              <PenLine class="mr-2 h-4 w-4" /> Editar lançamento
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="loadLancamento">
+              <RotateCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': loading }" /> Atualizar dados
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem :disabled="!lancamento?.id" @click="toggleNotificacaoVencimento">
+              <BellOff v-if="lancamento?.notificarVencimento" class="mr-2 h-4 w-4" />
+              <Bell v-else class="mr-2 h-4 w-4" />
+              {{ lancamento?.notificarVencimento ? 'Não lembrar vencimento' : 'Lembrar vencimento' }}
+            </DropdownMenuItem>
+            <DropdownMenuItem v-if="podeNotificarCliente" :disabled="!lancamento?.id" @click="toggleNotificacaoClienteVencimento">
+              <BellOff v-if="lancamento?.notificarClienteVencimento" class="mr-2 h-4 w-4" />
+              <Bell v-else class="mr-2 h-4 w-4" />
+              {{ lancamento?.notificarClienteVencimento ? 'Desativar aviso ao cliente' : 'Notificar cliente' }}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem class="text-red-600 focus:text-red-600" :disabled="!lancamento?.id" @click="deletar(lancamento?.id!)">
+              <Trash2 class="mr-2 h-4 w-4" /> Excluir lançamento
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
 

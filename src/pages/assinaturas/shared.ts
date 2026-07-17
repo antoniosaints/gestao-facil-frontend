@@ -143,6 +143,8 @@ export function createEmptyItem(): AssinaturaItemForm {
     cobrar: true,
     comodato: false,
     ativo: true,
+    modoCobranca: 'MENSALIDADE',
+    cobrarVezes: null,
     identificacao: '',
     dataPrevistaDevolucao: null,
     observacoes: '',

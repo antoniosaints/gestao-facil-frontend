@@ -209,8 +209,6 @@ async function load() {
   }
 }
 
-// Recarrega automaticamente ao mudar o assinante ou o período (um único disparo mesmo quando
-// os dois mudam juntos, ex.: ao limpar os filtros).
 watch([filtroContaId, filtroPeriodo], load, { deep: true })
 watch(custoMedioMilhaoPeriodo, (value) => {
   if (value > 0 && custoMilhaoCalculadora.value === 0) usarCustoMedioPeriodo()
@@ -220,7 +218,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="container mx-auto flex max-w-6xl flex-col gap-4 py-4">
+  <div class="container mx-auto flex w-full flex-col gap-4 py-4">
     <header class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">

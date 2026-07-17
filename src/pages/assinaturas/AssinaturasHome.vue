@@ -4,14 +4,18 @@ import { RouterLink } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import {
   BadgePlus,
+  Check,
+  ChevronLeft,
+  ChevronRight,
   CircleDollarSign,
-  FileText,
+  ClipboardList,
   Layers3,
   LoaderCircle,
   PackagePlus,
   RefreshCcw,
   Settings2,
   Sparkles,
+  Trash,
 } from 'lucide-vue-next'
 
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
@@ -46,7 +50,6 @@ import {
   tipoCobrancaOptions,
   toDateOnlyIso,
 } from './shared'
-import CollapsibleSection from '@/pages/produtos/formulario/CollapsibleSection.vue'
 import AssinaturasTabela from './components/AssinaturasTabela.vue'
 import AssinaturasMobile from './components/AssinaturasMobile.vue'
 
@@ -57,10 +60,27 @@ const store = useAssinaturasStore()
 const saving = ref(false)
 const loadingModal = ref(false)
 const planos = ref<PlanoAssinaturaListItem[]>([])
-const secCobranca = ref(true)
-const secObservacoes = ref(false)
-const secItens = ref(true)
-const secControle = ref(false)
+const steps = [
+  { key: 'dados', label: 'Dados', icon: ClipboardList },
+  { key: 'cobranca', label: 'Cobrança e datas', icon: CircleDollarSign },
+  { key: 'itens', label: 'Itens', icon: PackagePlus },
+  { key: 'automacao', label: 'Automação', icon: Settings2 },
+] as const
+type StepKey = (typeof steps)[number]['key']
+const currentStep = ref<StepKey>('dados')
+const currentStepIndex = computed(() => steps.findIndex((step) => step.key === currentStep.value))
+const isFirstStep = computed(() => currentStepIndex.value <= 0)
+const isLastStep = computed(() => currentStepIndex.value >= steps.length - 1)
+
+function goToStep(key: StepKey) {
+  currentStep.value = key
+}
+function nextStep() {
+  if (!isLastStep.value) currentStep.value = steps[currentStepIndex.value + 1].key
+}
+function prevStep() {
+  if (!isFirstStep.value) currentStep.value = steps[currentStepIndex.value - 1].key
+}
 
 const form = reactive<any>({
   id: undefined,
@@ -80,10 +100,15 @@ const form = reactive<any>({
   gateway: 'mercadopago',
   tipoCobranca: 'PIX',
   gerarLancamentoFinanceiro: false,
+  contaFinanceiraId: null,
+  categoriaId: null,
   observacoes: '',
   itens: [createEmptyItem()],
   gerarPrimeiroCiclo: true,
 })
+
+const opcoesContasFinanceiro = ref<{ id: number; label: string }[]>([])
+const opcoesCategorias = ref<{ id: number; label: string }[]>([])
 
 const modalTitle = computed(() => (store.editingAssinaturaId ? 'Editar contrato' : 'Novo contrato'))
 const modalDescription = computed(() =>
@@ -110,6 +135,8 @@ function resetForm() {
   form.gateway = 'mercadopago'
   form.tipoCobranca = 'PIX'
   form.gerarLancamentoFinanceiro = false
+  form.contaFinanceiraId = null
+  form.categoriaId = null
   form.observacoes = ''
   form.itens = [createEmptyItem()]
   form.gerarPrimeiroCiclo = true
@@ -133,6 +160,8 @@ function hydrateFormFromDetalhe(data: any) {
   form.gateway = data.gateway || 'mercadopago'
   form.tipoCobranca = data.tipoCobranca || 'PIX'
   form.gerarLancamentoFinanceiro = data.gerarLancamentoFinanceiro
+  form.contaFinanceiraId = data.contaFinanceiraId ? String(data.contaFinanceiraId) : null
+  form.categoriaId = data.categoriaId ? String(data.categoriaId) : null
   form.observacoes = data.observacoes || ''
   form.itens = data.itens.length
     ? data.itens.map((item: any) => ({
@@ -151,6 +180,16 @@ function hydrateFormFromDetalhe(data: any) {
 async function loadPlanos() {
   const planosResponse = await AssinaturaRepository.listarPlanos({ status: 'TODOS' })
   planos.value = planosResponse.data
+}
+
+async function loadOpcoesFinanceiras() {
+  try {
+    const { data } = await AssinaturaRepository.opcoes()
+    opcoesContasFinanceiro.value = data.contasFinanceiro || []
+    opcoesCategorias.value = data.categorias || []
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 function addItem() {
@@ -215,11 +254,8 @@ watch(
 
     try {
       loadingModal.value = true
-      secCobranca.value = true
-      secObservacoes.value = false
-      secItens.value = true
-      secControle.value = false
-      await loadPlanos()
+      currentStep.value = 'dados'
+      await Promise.all([loadPlanos(), loadOpcoesFinanceiras()])
 
       if (store.editingAssinaturaId) {
         const response = await AssinaturaRepository.detalhes(store.editingAssinaturaId)
@@ -240,11 +276,13 @@ watch(
 async function save() {
   try {
     if (!form.clienteId) {
+      goToStep('dados')
       toast.error('Selecione um cliente para o contrato.')
       return
     }
 
     if (!form.nomeContrato.trim()) {
+      goToStep('dados')
       toast.error('Informe o nome do contrato.')
       return
     }
@@ -254,6 +292,7 @@ async function save() {
     const proximaCobranca = toDateOnlyIso(form.proximaCobranca)
 
     if (!inicio || !proximaCobranca) {
+      goToStep('cobranca')
       toast.error('Preencha as datas obrigatórias do contrato.')
       return
     }
@@ -269,6 +308,8 @@ async function save() {
       inicio,
       fim,
       proximaCobranca,
+      contaFinanceiraId: form.contaFinanceiraId ? Number(form.contaFinanceiraId) : undefined,
+      categoriaId: form.categoriaId ? Number(form.categoriaId) : undefined,
       itens: form.itens.map((item: any) => ({
         ...item,
         servicoId: item.tipoItem === 'SERVICO' ? Number(item.servicoId || 0) || undefined : undefined,
@@ -276,6 +317,9 @@ async function save() {
         quantidade: Number(item.quantidade || 1),
         valorUnitario: Number(item.valorUnitario || 0),
         comodato: item.tipoItem === 'PRODUTO' ? Boolean(item.comodato) : false,
+        modoCobranca: item.modoCobranca || 'MENSALIDADE',
+        cobrarVezes:
+          item.modoCobranca === 'PARCELADA' ? Number(item.cobrarVezes || 0) || undefined : undefined,
         dataPrevistaDevolucao:
           item.tipoItem === 'PRODUTO' && item.comodato ? toDateOnlyIso(item.dataPrevistaDevolucao) : undefined,
       })),
@@ -346,6 +390,30 @@ async function save() {
       </div>
 
       <form v-else class="grid gap-4 px-4 pb-1" @submit.prevent="save">
+        <nav class="grid grid-cols-2 gap-2 rounded-xl border border-border/70 bg-muted/40 p-2 sm:grid-cols-4">
+          <button
+            v-for="(step, index) in steps"
+            :key="step.key"
+            type="button"
+            class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left transition"
+            :class="currentStep === step.key ? 'bg-background shadow-sm ring-1 ring-primary/40' : 'hover:bg-background/60'"
+            @click="goToStep(step.key)"
+          >
+            <span
+              class="flex h-7 w-7 flex-none items-center justify-center rounded-full text-xs font-semibold"
+              :class="index < currentStepIndex || currentStep === step.key ? 'bg-primary text-primary-foreground' : 'border border-border bg-background text-muted-foreground'"
+            >
+              <Check v-if="index < currentStepIndex" class="h-4 w-4" />
+              <template v-else>{{ index + 1 }}</template>
+            </span>
+            <span class="flex min-w-0 flex-col leading-tight">
+              <span class="text-[10px] uppercase tracking-wide text-muted-foreground">Etapa {{ index + 1 }}</span>
+              <span class="truncate text-sm font-medium" :class="currentStep === step.key ? 'text-foreground' : 'text-muted-foreground'">{{ step.label }}</span>
+            </span>
+          </button>
+        </nav>
+
+        <div v-show="currentStep === 'dados'" class="space-y-4">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
           <div class="md:col-span-5">
             <Label for="assinaturaCliente" class="mb-1.5 block text-sm font-medium">
@@ -411,7 +479,9 @@ async function save() {
           </div>
         </div>
 
-        <CollapsibleSection v-model:open="secCobranca" title="Cobrança e datas" class="bg-black/5 dark:bg-card" :icon="CircleDollarSign">
+        </div>
+
+        <div v-show="currentStep === 'cobranca'" class="space-y-4">
           <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
             <div v-if="form.periodicidade === 'PERSONALIZADO'" class="md:col-span-3">
               <Label class="mb-1.5 block text-sm font-medium">Modo de valor</Label>
@@ -473,19 +543,16 @@ async function save() {
               </Select>
             </div>
           </div>
-        </CollapsibleSection>
+        </div>
 
-        <CollapsibleSection v-model:open="secObservacoes" title="Observações" class="bg-black/5 dark:bg-card" :icon="FileText">
-          <Textarea id="observacoesAssinatura" v-model="form.observacoes" rows="4" placeholder="Contexto do contrato, SLA, regra de renovação..." class="bg-background dark:bg-background/70" />
-        </CollapsibleSection>
-
-        <CollapsibleSection v-model:open="secItens" title="Itens do contrato" class="bg-black/5 dark:bg-card" :icon="PackagePlus">
+        <div v-show="currentStep === 'itens'" class="space-y-4">
           <div class="space-y-3">
             <div class="flex justify-end">
               <Button type="button" variant="outline" size="sm" @click="addItem">Adicionar item</Button>
             </div>
-            <div v-for="(item, index) in form.itens" :key="index" class="rounded-xl border border-border/70 bg-background/60 p-4 dark:bg-background/30">
-              <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div v-for="(item, index) in form.itens" :key="index" class="rounded-xl border border-border/70 bg-background/60 relative p-4 dark:bg-background/30">
+              <button type="button" class="absolute top-2 right-3 p-1 mt-0 rounded-full hover:bg-foreground/10" @click="removeItem(index as number)"><Trash class="h-4 w-4 text-red-500" /></button>
+              <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
                 <div>
                   <Label class="mb-1.5 block text-sm font-medium">Tipo</Label>
                   <Select :model-value="item.tipoItem" @update:model-value="handleTipoItemChange(item, $event as 'SERVICO' | 'PRODUTO')">
@@ -514,20 +581,37 @@ async function save() {
                   <Label class="mb-1.5 block text-sm font-medium">Descrição</Label>
                   <Input v-model="item.descricaoSnapshot" class="bg-background dark:bg-background/60" placeholder="Como o item deve aparecer no contrato" />
                 </div>
-                <div class="xl:col-span-2">
+                <div class="xl:col-span-1">
                   <Label class="mb-1.5 block text-sm font-medium">Valor unitário</Label>
                   <Input v-model="item.valorUnitario" class="bg-background dark:bg-background/60" type="number" min="0" step="0.01" />
                 </div>
+                <div :class="{ 'xl:col-span-1': item.modoCobranca === 'PARCELADA', 'xl:col-span-2': item.modoCobranca !== 'PARCELADA' }">
+                  <Label class="mb-1.5 block text-sm font-medium">Forma de cobrança</Label>
+                  <Select v-model="item.modoCobranca">
+                    <SelectTrigger class="w-full bg-background dark:bg-background/60">
+                      <SelectValue placeholder="Forma de cobrança" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MENSALIDADE">Sempre (entra na mensalidade)</SelectItem>
+                      <SelectItem value="UNICA">Uma única vez</SelectItem>
+                      <SelectItem value="PARCELADA">Cobrar N vezes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div v-if="item.modoCobranca === 'PARCELADA'">
+                  <Label class="mb-1.5 block text-sm font-medium">Cobrar por (vezes)</Label>
+                  <Input v-model="item.cobrarVezes" class="bg-background dark:bg-background/60" type="number" min="1" step="1" placeholder="Ex.: 3" />
+                </div>
                 <template v-if="item.tipoItem === 'PRODUTO' && item.comodato">
-                  <div>
+                  <div class="md:col-span-2">
                     <Label class="mb-1.5 block text-sm font-medium">Identificação</Label>
                     <Input v-model="item.identificacao" class="bg-background dark:bg-background/60" placeholder="Patrimônio, série ou referência" />
                   </div>
-                  <div>
-                    <Label class="mb-1.5 block text-sm font-medium">Previsão de devolução</Label>
+                  <div class="md:col-span-1">
+                    <Label class="mb-1.5 block text-sm font-medium">Devolução</Label>
                     <Calendarpicker v-model="item.dataPrevistaDevolucao" :teleport="true" />
                   </div>
-                  <div class="md:col-span-2 xl:col-span-2">
+                  <div class="md:col-span-2 xl:col-span-6">
                     <Label class="mb-1.5 block text-sm font-medium">Observações do comodato</Label>
                     <Input v-model="item.observacoes" class="bg-background dark:bg-background/60" placeholder="Condição, observações de entrega, restrições..." />
                   </div>
@@ -547,15 +631,16 @@ async function save() {
                   <Switch v-model:model-value="item.ativo" />
                 </label>
               </div>
-              <div class="mt-3 flex justify-end">
-                <Button type="button" variant="ghost" size="sm" class="text-rose-600" @click="removeItem(index as number)">Remover item</Button>
-              </div>
             </div>
           </div>
-        </CollapsibleSection>
+        </div>
 
-        <CollapsibleSection v-model:open="secControle" title="Controle e automação" class="bg-black/5 dark:bg-card" :icon="Settings2">
-          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div v-show="currentStep === 'automacao'" class="space-y-4">
+          <div>
+            <Label for="observacoesAssinatura" class="mb-1.5 block text-sm font-medium">Observações</Label>
+            <Textarea id="observacoesAssinatura" v-model="form.observacoes" rows="4" placeholder="Contexto do contrato, SLA, regra de renovação..." class="bg-background dark:bg-background/70" />
+          </div>
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
             <label class="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 text-sm transition-colors hover:bg-muted/40 dark:bg-background/40">
               <span>Cobrança automática</span>
               <Switch v-model:model-value="form.cobrancaAutomatica" />
@@ -569,16 +654,55 @@ async function save() {
               <Switch v-model:model-value="form.gerarPrimeiroCiclo" />
             </label>
           </div>
-        </CollapsibleSection>
 
-        <div class="flex flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:justify-end">
-          <Button type="button" variant="secondary" :disabled="saving" @click="store.closeAssinaturaModal()">
-            Cancelar
+          <div v-if="form.gerarLancamentoFinanceiro" class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <Label class="mb-1.5 block text-sm font-medium">Conta financeira</Label>
+              <Select v-model="form.contaFinanceiraId">
+                <SelectTrigger class="w-full bg-background dark:bg-background/60">
+                  <SelectValue placeholder="Padrão (primeira conta cadastrada)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem v-for="opt in opcoesContasFinanceiro" :key="opt.id" :value="String(opt.id)">
+                    {{ opt.label }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label class="mb-1.5 block text-sm font-medium">Categoria financeira</Label>
+              <Select v-model="form.categoriaId">
+                <SelectTrigger class="w-full bg-background dark:bg-background/60">
+                  <SelectValue placeholder="Padrão (primeira categoria)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem v-for="opt in opcoesCategorias" :key="opt.id" :value="String(opt.id)">
+                    {{ opt.label }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <Button type="button" variant="ghost" class="gap-1" :disabled="isFirstStep || saving" @click="prevStep">
+            <ChevronLeft class="h-4 w-4" />
+            Voltar
           </Button>
-          <Button type="submit" class="text-white" :disabled="saving">
-            <LoaderCircle v-if="saving" class="mr-2 h-4 w-4 animate-spin" />
-            {{ saving ? 'Salvando...' : store.editingAssinaturaId ? 'Salvar alterações' : 'Salvar contrato' }}
-          </Button>
+          <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" :disabled="saving" @click="store.closeAssinaturaModal()">
+              Cancelar
+            </Button>
+            <Button v-if="!isLastStep" type="button" class="gap-1 text-white" @click="nextStep">
+              Próximo
+              <ChevronRight class="h-4 w-4" />
+            </Button>
+            <Button v-else type="submit" class="text-white" :disabled="saving">
+              <LoaderCircle v-if="saving" class="mr-2 h-4 w-4 animate-spin" />
+              {{ saving ? 'Salvando...' : store.editingAssinaturaId ? 'Salvar alterações' : 'Salvar contrato' }}
+            </Button>
+          </div>
         </div>
       </form>
     </ModalView>

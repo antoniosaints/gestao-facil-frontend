@@ -74,15 +74,9 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
     accessorKey: 'assinatura',
     header: () => render('div', {}, 'Contrato / cliente'),
     cell: ({ row }) =>
-      render('div', { class: 'space-y-1' }, [
+      render('div', {}, [
         render('div', { class: 'font-medium text-foreground' }, row.original.assinatura.nomeContrato),
-        render(BadgeCell, {
-          label: row.original.assinatura.cliente,
-          color: 'blue',
-          icon: UserRound,
-          capitalize: false,
-          size: 'sm',
-        }),
+        render('div', { class: 'text-xs text-muted-foreground' }, row.original.assinatura.cliente),
       ]),
     enableSorting: false,
   },
@@ -98,15 +92,10 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
         () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render('div', { class: 'space-y-1' }, [
-        render(BadgeCell, {
-          label: formatCurrencyBR(row.original.valorCobrado),
-          color: 'green',
-          icon: CircleDollarSign,
-          capitalize: false,
-        }),
+      render('div', { class: 'space-y-0' }, [
+        render('div', { class: 'font-medium text-md -m-1 pl-1 text-foreground' }, formatCurrencyBR(row.original.valorCobrado)),
         row.original.cobranca?.idCobranca
-          ? render('div', { class: 'text-xs text-muted-foreground' }, `Ref. gateway: ${row.original.cobranca.idCobranca}`)
+          ? render('div', { class: 'text-xs text-muted-foreground' }, `Cobrança: ${row.original.cobranca.idCobranca}`)
           : null,
       ]),
   },
@@ -118,9 +107,8 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
         return render('div', { class: 'text-sm text-muted-foreground' }, 'Sem cobrança vinculada')
       }
 
-      return render('div', { class: 'space-y-1' }, [
-        render('div', { class: 'text-sm font-medium text-foreground' }, row.original.cobranca.gateway),
-        render('div', { class: 'text-xs text-muted-foreground' }, row.original.tipoCobrancaUsado || '-'),
+      return render('div', { class: 'space-y-0' }, [
+        render('div', { class: 'text-sm font-medium text-foreground' }, `${row.original.cobranca.gateway} / ${row.original.tipoCobrancaUsado || '-'}`),
         row.original.cobranca.externalLink
           ? render(
               'a',
@@ -161,7 +149,12 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
         render(
           RouterLink,
           { to: `/assinaturas/assinaturas/${row.original.assinatura.id}` },
-          () => render(Button, { variant: 'outline', size: 'sm' }, () => 'Abrir contrato'),
+          () => render(Button, { variant: 'outline', size: 'sm' }, () => {
+            return [
+              render(ReceiptText, { class: 'h-4 w-4' }),
+              render('span', { class: 'ml-2' }, 'Detalhes'),
+            ]
+          }),
         ),
         render(CobrancasActions, { data: row.original }),
       ]),

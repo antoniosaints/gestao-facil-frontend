@@ -153,7 +153,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-5xl space-y-5">
+  <div class="mx-auto w-full space-y-5">
     <div class="flex items-center gap-3">
       <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-white">
         <Cog class="h-6 w-6" :stroke-width="2.5" />
@@ -178,7 +178,7 @@ onMounted(() => {
       </CardHeader>
       <CardContent class="space-y-4">
         <div class="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
-          <div class="space-y-2">
+          <div class="space-y-2 rounded-lg border border-border/70 bg-background/70 p-3">
             <Label for="gateway-plataforma">Gateway</Label>
             <Select v-model="gateway">
               <SelectTrigger id="gateway-plataforma" class="w-full bg-background/80">
@@ -220,7 +220,7 @@ onMounted(() => {
           </div>
         </div>
       </CardContent>
-      <CardFooter class="flex items-center justify-between gap-3 border-t pt-4">
+      <CardFooter class="flex items-center justify-between gap-3 border-t py-3">
         <p v-if="updatedAccounts !== null" class="text-xs text-muted-foreground">
           Última sincronização: <span class="font-medium text-foreground">{{ updatedAccounts }}</span> conta(s) afetada(s).
         </p>

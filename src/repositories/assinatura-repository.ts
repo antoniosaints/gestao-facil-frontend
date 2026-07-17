@@ -14,6 +14,7 @@ export type StatusPlanoAssinatura = 'ATIVO' | 'INATIVO'
 export type StatusAssinaturaCliente = 'ATIVA' | 'SUSPENSA' | 'CANCELADA' | 'ENCERRADA'
 export type ModoValorAssinatura = 'MANUAL' | 'DINAMICO'
 export type TipoItemAssinatura = 'SERVICO' | 'PRODUTO'
+export type ModoCobrancaItem = 'MENSALIDADE' | 'UNICA' | 'PARCELADA'
 export type StatusCicloAssinatura = 'PENDENTE' | 'COBRADO' | 'PAGO' | 'ATRASADO' | 'CANCELADO' | 'FALHA'
 export type StatusComodatoAssinatura = 'EM_USO' | 'DEVOLVIDO' | 'PERDIDO' | 'AVARIADO'
 export type StatusCobrancaGateway = 'PENDENTE' | 'EFETIVADO' | 'ESTORNADO' | 'CANCELADO'
@@ -48,6 +49,8 @@ export interface AssinaturaItemForm {
   cobrar: boolean
   comodato: boolean
   ativo?: boolean
+  modoCobranca?: ModoCobrancaItem
+  cobrarVezes?: number | null
   identificacao?: string | null
   dataPrevistaDevolucao?: string | Date | null
   observacoes?: string | null
@@ -85,6 +88,8 @@ export interface AssinaturaClientePayload {
   gateway?: GatewayAssinatura
   tipoCobranca?: TipoCobrancaAssinatura
   gerarLancamentoFinanceiro: boolean
+  contaFinanceiraId?: number | string | null
+  categoriaId?: number | string | null
   observacoes?: string
   itens: AssinaturaItemForm[]
   gerarPrimeiroCiclo?: boolean
@@ -147,11 +152,31 @@ export interface AssinaturaDashboardResponse {
       assinaturasSuspensas: number
       assinaturasCanceladas: number
       mrrEstimado: number
+      ticketMedio: number
+      recebidoMes: number
       inadimplencia: number
       cobrancasPendentes: number
       cobrancasAtrasadas: number
       comodatosEmUso: number
     }
+    serieReceita: {
+      labels: string[]
+      recebido: number[]
+      previsto: number[]
+    }
+    contratosPorStatus: {
+      labels: string[]
+      data: number[]
+    }
+    cobrancasPorStatus: {
+      labels: string[]
+      data: number[]
+    }
+    contratosPorPeriodicidade: {
+      labels: string[]
+      data: number[]
+    }
+    topClientes: Array<{ nome: string; valor: number }>
     proximosVencimentos: Array<{
       id: number
       Uid: string
@@ -185,6 +210,10 @@ export interface AssinaturaDetalheResponse {
     gateway?: GatewayAssinatura | null
     tipoCobranca?: TipoCobrancaAssinatura | null
     gerarLancamentoFinanceiro: boolean
+    contaFinanceiraId?: number | null
+    categoriaId?: number | null
+    contaFinanceira?: { id: number; nome: string } | null
+    categoria?: { id: number; nome: string } | null
     observacoes?: string | null
     cliente?: { id: number; nome: string; Uid: string } | null
     plano?: { id: number; nome: string; valorBase: number; periodicidadePadrao: PeriodicidadeAssinatura } | null
@@ -207,6 +236,9 @@ export interface AssinaturaDetalheResponse {
       cobrar: boolean
       comodato: boolean
       ativo: boolean
+      modoCobranca: ModoCobrancaItem
+      cobrarVezes?: number | null
+      vezesCobradas: number
       servico?: { id: number; nome: string } | null
       produto?: { id: number; nome: string; variante?: string | null } | null
       comodatos: Array<{
@@ -290,7 +322,15 @@ export class AssinaturaRepository {
     return data
   }
 
-  static async opcoes(): Promise<{ data: { clientes: AssinaturaOption[]; servicos: AssinaturaOption[]; produtos: AssinaturaOption[] } }> {
+  static async opcoes(): Promise<{
+    data: {
+      clientes: AssinaturaOption[]
+      servicos: AssinaturaOption[]
+      produtos: AssinaturaOption[]
+      contasFinanceiro: AssinaturaOption[]
+      categorias: AssinaturaOption[]
+    }
+  }> {
     const { data } = await http.get('/assinaturas/opcoes')
     return data
   }
@@ -337,6 +377,16 @@ export class AssinaturaRepository {
 
   static async gerarCiclo(id: number) {
     const { data } = await http.post(`/assinaturas/assinaturas/${id}/gerar-ciclo`)
+    return data
+  }
+
+  static async adicionarItem(id: number, payload: AssinaturaItemForm) {
+    const { data } = await http.post(`/assinaturas/assinaturas/${id}/itens`, payload)
+    return data
+  }
+
+  static async removerItem(id: number, itemId: number) {
+    const { data } = await http.delete(`/assinaturas/assinaturas/${id}/itens/${itemId}`)
     return data
   }
 
