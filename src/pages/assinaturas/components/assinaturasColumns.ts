@@ -4,7 +4,7 @@ import { render } from '@/lib/utils'
 import type { AssinaturaClienteListItem } from '@/repositories/assinatura-repository'
 import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, CalendarClock, CircleDollarSign, Sparkles, UserRound } from 'lucide-vue-next'
+import { ArrowUpDown, CalendarClock, CircleDollarSign, FilePenLineIcon, UserRound } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import AssinaturasActions from './AssinaturasActions.vue'
 import { getPeriodicidadeLabel, getStatusAssinaturaMeta } from '../shared'
@@ -18,7 +18,7 @@ export const columnsAssinaturas: ColumnDef<AssinaturaClienteListItem>[] = [
         render(BadgeCell, {
           label: row.original.Uid,
           color: 'gray',
-          icon: Sparkles,
+          icon: FilePenLineIcon,
           capitalize: false,
         }),
       ),

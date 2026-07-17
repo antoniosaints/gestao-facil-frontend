@@ -9,12 +9,12 @@ import {
   ChevronRight,
   CircleDollarSign,
   ClipboardList,
+  FilePenLineIcon,
   Layers3,
   LoaderCircle,
   PackagePlus,
   RefreshCcw,
   Settings2,
-  Sparkles,
   Trash,
 } from 'lucide-vue-next'
 
@@ -344,7 +344,7 @@ async function save() {
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div>
         <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
-          <Sparkles class="h-6 w-6 text-primary" :stroke-width="2.5" />
+          <FilePenLineIcon class="h-6 w-6 text-primary" :stroke-width="2.5" />
           Contratos
         </h2>
         <p class="text-sm text-muted-foreground">

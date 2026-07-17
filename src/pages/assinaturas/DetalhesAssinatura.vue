@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   CalendarClock,
   CircleDollarSign,
+  FilePenLineIcon,
   FileText,
   History,
   Layers3,
@@ -351,7 +352,7 @@ onMounted(() => {
 
           <div class="space-y-1">
             <div class="flex items-center gap-2 text-lg font-semibold text-foreground md:text-2xl">
-              <Sparkles class="h-6 w-6 text-primary" />
+              <FilePenLineIcon class="h-6 w-6 text-primary" />
               {{ pageTitle }}
             </div>
             <p class="text-sm text-muted-foreground">
