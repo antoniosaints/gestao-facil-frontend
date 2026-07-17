@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import {
   AlarmClock,
   BellRing,
+  Check,
   ChevronLeft,
   ChevronRight,
   RotateCw,
@@ -409,11 +410,14 @@ onMounted(load)
               <Badge v-if="item.diasAtraso > 0" class="bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300">
                 {{ item.diasAtraso }}d
               </Badge>
-              <span v-else class="text-xs text-muted-foreground">em dia</span>
+              <Badge v-else variant="outline">
+                <Check class="mr-2 h-4 w-4" />
+                Em dia
+              </Badge>
             </td>
-            <td class="px-3 py-2">
-              <Badge :class="lembreteBadge(item).cls">{{ lembreteBadge(item).label }}</Badge>
-              <div v-if="item.lembrete.ativo && item.proximoLembrete" class="mt-0.5 text-[11px] text-muted-foreground">
+            <td class="px-3 py-1">
+              <span class="inline-block rounded-lg px-2 py-0.5 text-sm border border-dotted" :class="lembreteBadge(item).cls">{{ lembreteBadge(item).label }}</span>
+              <div v-if="item.lembrete.ativo && item.proximoLembrete" class="ml-1 text-[11px] text-muted-foreground">
                 próximo: {{ fmtData(item.proximoLembrete) }}
               </div>
             </td>
