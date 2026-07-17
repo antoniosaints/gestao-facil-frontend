@@ -12,7 +12,7 @@
 
         <Tabs v-model="tab" class="w-auto">
             <div class="overflow-auto max-w-full">
-                <TabsList class="grid w-max" :class="isRootUser ? 'grid-cols-7' : 'grid-cols-6'">
+                <TabsList class="grid w-max border" :class="isRootUser ? 'grid-cols-7' : 'grid-cols-6'">
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i>
@@ -44,7 +44,9 @@
                 <Card class="rounded-t-none bg-background">
                     <form @submit.prevent="submit(formularioNotificacoes)">
                         <CardHeader>
-                            <CardTitle class="font-normal">Notificações</CardTitle>
+                            <CardTitle class="font-normal flex items-center gap-2">
+                                <Bell class="w-5 h-5 text-primary" /> Notificações
+                            </CardTitle>
                             <CardDescription>Configure e-mails e push de eventos.</CardDescription>
                         </CardHeader>
                         <CardContent class="space-y-6">
@@ -96,7 +98,8 @@
                                 <label for="financeiroVencimentosNotificacoesAtivo"
                                     class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
                                     <span>Alertas de vencimentos financeiros
-                                        <p class="text-xs text-muted-foreground">Avisos 3 dias antes, 1 dia antes, no dia e 1 dia depois para itens marcados.</p>
+                                        <p class="text-xs text-muted-foreground">Avisos 3 dias antes, 1 dia antes, no
+                                            dia e 1 dia depois para itens marcados.</p>
                                     </span>
                                     <Switch id="financeiroVencimentosNotificacoesAtivo"
                                         v-model="formularioNotificacoes.financeiroVencimentosNotificacoesAtivo" />
@@ -108,15 +111,19 @@
                                     <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                                         <div>
                                             <Label class="text-md">WhatsApp</Label>
-                                            <p class="text-sm text-muted-foreground">Envie notificações administrativas usando a instância principal do módulo WhatsApp.</p>
+                                            <p class="text-sm text-muted-foreground">Envie notificações administrativas
+                                                usando a instância principal do módulo WhatsApp.</p>
                                         </div>
-                                        <Button type="button" variant="outline" :disabled="loadingWhatsappInstances" @click="loadWhatsappInstances">
-                                            <LoaderIcon v-if="loadingWhatsappInstances" class="mr-2 h-4 w-4 animate-spin" />
+                                        <Button type="button" variant="outline" :disabled="loadingWhatsappInstances"
+                                            @click="loadWhatsappInstances">
+                                            <LoaderIcon v-if="loadingWhatsappInstances"
+                                                class="mr-2 h-4 w-4 animate-spin" />
                                             Atualizar instâncias
                                         </Button>
                                     </div>
 
-                                    <div v-if="!whatsappInstances.length" class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                                    <div v-if="!whatsappInstances.length"
+                                        class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                                         Cadastre uma instância de WhatsApp antes de ativar notificações por WhatsApp.
                                     </div>
 
@@ -125,7 +132,8 @@
                                             class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer"
                                             :class="!whatsappInstances.length ? 'opacity-70' : ''">
                                             <span>Notificações por WhatsApp
-                                                <p class="text-xs text-muted-foreground">Usa a api do WhatsApp W-API para envio de notificações para admins.</p>
+                                                <p class="text-xs text-muted-foreground">Usa a api do WhatsApp W-API
+                                                    para envio de notificações para admins.</p>
                                             </span>
                                             <Switch id="whatsappNotificacoesAtivo"
                                                 v-model="formularioNotificacoes.whatsappNotificacoesAtivo"
@@ -139,7 +147,8 @@
                                                 class="h-10 w-full rounded-md border bg-background px-3 text-sm"
                                                 :disabled="!formularioNotificacoes.whatsappNotificacoesAtivo || !whatsappInstances.length">
                                                 <option :value="null">Selecionar instância...</option>
-                                                <option v-for="instance in whatsappInstances" :key="instance.id" :value="instance.id">
+                                                <option v-for="instance in whatsappInstances" :key="instance.id"
+                                                    :value="instance.id">
                                                     {{ instance.nome }} - {{ instance.status }}
                                                 </option>
                                             </select>
@@ -147,15 +156,15 @@
                                     </div>
 
                                     <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                        <label v-for="event in whatsappNotificationEvents" :key="event.field" :for="event.field"
+                                        <label v-for="event in whatsappNotificationEvents" :key="event.field"
+                                            :for="event.field"
                                             class="flex min-h-24 flex-col justify-between rounded-lg border bg-body/70 p-3 px-4"
                                             :class="!formularioNotificacoes.whatsappNotificacoesAtivo ? 'opacity-70' : ''">
                                             <span>{{ event.label }}
                                                 <p class="text-xs text-muted-foreground">{{ event.description }}</p>
                                             </span>
                                             <div class="mt-3 flex justify-end">
-                                                <Switch :id="event.field"
-                                                    v-model="formularioNotificacoes[event.field]"
+                                                <Switch :id="event.field" v-model="formularioNotificacoes[event.field]"
                                                     :disabled="!formularioNotificacoes.whatsappNotificacoesAtivo" />
                                             </div>
                                         </label>
@@ -182,8 +191,12 @@
                 <Card class="rounded-t-none bg-background">
                     <form @submit.prevent="submit(formularioVendas)">
                         <CardHeader>
-                            <CardTitle class="font-normal">Modelo do ponto de venda</CardTitle>
-                            <CardDescription>Escolha a experiência usada ao abrir o PDV. A troca não altera vendas, estoque ou caixas.</CardDescription>
+                            <CardTitle class="font-normal flex items-center gap-2">
+                                <Printer class="w-5 h-5 text-primary" /> Modelos de impressão
+                            </CardTitle>
+                            <CardDescription>Escolha a experiência usada ao abrir o PDV. A troca não altera vendas,
+                                estoque ou
+                                caixas.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div class="grid gap-4 lg:grid-cols-2">
@@ -201,16 +214,20 @@
                                             <div>
                                                 <div class="flex items-center gap-2">
                                                     <p class="font-semibold">PDV {{ modelo.label }}</p>
-                                                    <span v-if="modelo.value === 'PRO'" class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">Novo</span>
+                                                    <span v-if="modelo.value === 'PRO'"
+                                                        class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">Novo</span>
                                                 </div>
-                                                <p class="mt-1 text-sm text-muted-foreground">{{ modelo.description }}</p>
+                                                <p class="mt-1 text-sm text-muted-foreground">{{ modelo.description }}
+                                                </p>
                                             </div>
                                         </div>
-                                        <CircleCheck v-if="formularioVendas.modeloPdv === modelo.value" class="h-5 w-5 shrink-0 text-primary" />
+                                        <CircleCheck v-if="formularioVendas.modeloPdv === modelo.value"
+                                            class="h-5 w-5 shrink-0 text-primary" />
                                         <span v-else class="h-5 w-5 shrink-0 rounded-full border-2" />
                                     </div>
                                     <div class="mt-5 flex flex-wrap gap-2">
-                                        <span v-for="feature in modelo.features" :key="feature" class="rounded-full border bg-background/80 px-2.5 py-1 text-xs text-muted-foreground">
+                                        <span v-for="feature in modelo.features" :key="feature"
+                                            class="rounded-full border bg-background/80 px-2.5 py-1 text-xs text-muted-foreground">
                                             {{ feature }}
                                         </span>
                                     </div>
@@ -236,8 +253,11 @@
                 <Card class="rounded-t-none bg-background">
                     <form @submit.prevent="submit(formularioFinanceiro)">
                         <CardHeader>
-                            <CardTitle class="font-normal">Financeiro</CardTitle>
-                            <CardDescription>Configure apenas os parâmetros financeiros operacionais da sua conta.</CardDescription>
+                            <CardTitle class="font-normal flex items-center gap-2">
+                                <DollarSign class="w-5 h-5 text-primary" /> Financeiro
+                            </CardTitle>
+                            <CardDescription>Configure apenas os parâmetros financeiros operacionais da sua conta.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent class="space-y-6">
                             <div class="grid md:grid-cols-2 gap-3">
@@ -253,7 +273,8 @@
                                         url="/lancamentos/contas/select2" :allow-clear="true"
                                         placeholder="Usar quando nenhuma conta for informada" />
                                     <p class="text-xs text-muted-foreground">
-                                        Usada em novos lançamentos e efetivações quando o usuário não escolher uma conta manualmente.
+                                        Usada em novos lançamentos e efetivações quando o usuário não escolher uma conta
+                                        manualmente.
                                     </p>
                                 </div>
                             </div>
@@ -264,7 +285,9 @@
                                 <label for="permitirLancamentoRetroativo"
                                     class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
                                     <span>Lançamento retroativo
-                                        <p class="text-xs text-muted-foreground">Permite criar lançamentos com data anterior a hoje.</p>
+                                        <p class="text-xs text-muted-foreground">Permite criar lançamentos com data
+                                            anterior a hoje.
+                                        </p>
                                     </span>
                                     <Switch id="permitirLancamentoRetroativo"
                                         v-model="formularioFinanceiro.permitirLancamentoRetroativo" />
@@ -273,7 +296,9 @@
                                 <label for="permitirEfetivacaoFutura"
                                     class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
                                     <span>Efetivação futura
-                                        <p class="text-xs text-muted-foreground">Permite baixar/efetivar lançamentos com data futura.</p>
+                                        <p class="text-xs text-muted-foreground">Permite baixar/efetivar lançamentos com
+                                            data
+                                            futura.</p>
                                     </span>
                                     <Switch id="permitirEfetivacaoFutura"
                                         v-model="formularioFinanceiro.permitirEfetivacaoFutura" />
@@ -282,7 +307,9 @@
                                 <label for="permitirTransferenciaContaFinanceira"
                                     class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
                                     <span>Transferências entre contas
-                                        <p class="text-xs text-muted-foreground">Libera transferências financeiras e remanejamento entre contas.</p>
+                                        <p class="text-xs text-muted-foreground">Libera transferências financeiras e
+                                            remanejamento
+                                            entre contas.</p>
                                     </span>
                                     <Switch id="permitirTransferenciaContaFinanceira"
                                         v-model="formularioFinanceiro.permitirTransferenciaContaFinanceira" />
@@ -291,7 +318,9 @@
                                 <label for="permitirCriacaoCobranca"
                                     class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
                                     <span>Criação de cobranças
-                                        <p class="text-xs text-muted-foreground">Bloqueia ou permite gerar cobranças em toda a aplicação.</p>
+                                        <p class="text-xs text-muted-foreground">Bloqueia ou permite gerar cobranças em
+                                            toda a
+                                            aplicação.</p>
                                     </span>
                                     <Switch id="permitirCriacaoCobranca"
                                         v-model="formularioFinanceiro.permitirCriacaoCobranca" />
@@ -313,21 +342,28 @@
                 <Card class="rounded-t-none bg-background">
                     <form @submit.prevent="submit(formularioMenus)">
                         <CardHeader>
-                            <CardTitle class="font-normal">Menus</CardTitle>
-                            <CardDescription>Escolha quais atalhos aparecem na sidebar do sistema. Em cada menu você pode
-                                ocultar também os submenus, deixando visíveis apenas as funções que você realmente usa.</CardDescription>
+                            <CardTitle class="font-normal flex items-center gap-2">
+                                <Menu class="w-5 h-5 text-primary" /> Controle de menus
+                            </CardTitle>
+                            <CardDescription>Escolha quais atalhos aparecem na sidebar do sistema. Em cada menu você
+                                pode
+                                ocultar também os submenus, deixando visíveis apenas as funções que você realmente usa.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                                 <div v-for="menu in menuVisibilityOptions" :key="menu.key"
-                                    class="flex min-h-[132px] flex-col rounded-lg border bg-body/70 p-4 transition"
+                                    class="flex min-h-[110px] flex-col rounded-lg border bg-body/70 p-4 transition"
                                     :class="{
                                         'border-primary bg-primary/5': isMenuSelected(menu.key),
                                         'opacity-80': isMenuLocked(menu.key),
                                     }">
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="space-y-1">
-                                            <p class="font-medium leading-none">{{ menu.nome }}</p>
+                                            <div class="font-medium leading-none flex items-center gap-2">
+                                                <component :is="menu.icon" class="h-4 w-4" />
+                                                {{ menu.nome }}
+                                            </div>
                                             <p class="text-xs text-muted-foreground">{{ menu.descricao }}</p>
                                             <p v-if="isMenuLocked(menu.key)" class="text-xs text-muted-foreground">
                                                 Mantido para acesso do root.
@@ -348,7 +384,8 @@
                                                         <ListChecks class="h-4 w-4" /> Submenus
                                                     </span>
                                                     <span class="flex items-center gap-1 text-xs text-muted-foreground">
-                                                        {{ submenusVisiveisCount(menu.key) }}/{{ getSubmenus(menu.key).length }}
+                                                        {{ submenusVisiveisCount(menu.key) }}/{{
+                                                            getSubmenus(menu.key).length }}
                                                         <ChevronDown class="h-4 w-4" />
                                                     </span>
                                                 </Button>
@@ -409,7 +446,7 @@ import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Banknote, ChevronDown, CircleCheck, Cog, Keyboard, LayoutGrid, ListChecks, LoaderIcon, Menu, Palette, ShoppingCart, Undo2 } from 'lucide-vue-next'
+import { Banknote, Bell, ChevronDown, CircleCheck, Cog, DollarSign, Keyboard, LayoutGrid, ListChecks, LoaderIcon, Menu, Palette, Printer, ShoppingCart, Undo2 } from 'lucide-vue-next'
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,

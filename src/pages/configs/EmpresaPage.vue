@@ -1,7 +1,9 @@
 <template>
     <Card class="rounded-t-none bg-background">
         <CardHeader>
-            <CardTitle class="font-normal">Dados da empresa</CardTitle>
+            <CardTitle class="font-normal flex items-center gap-2">
+                <Building class="w-5 h-5 text-primary" /> Dados da empresa
+            </CardTitle>
             <CardDescription>Informações exibidas em notas, recibos e relatórios.</CardDescription>
         </CardHeader>
 
@@ -100,7 +102,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ContaRepository, type UpdateConta } from '@/repositories/conta-repository'
 import { useToast } from 'vue-toastification'
-import { CircleCheck, LoaderIcon } from 'lucide-vue-next'
+import { Building, CircleCheck, LoaderIcon } from 'lucide-vue-next'
 import { vMaska } from 'maska/vue'
 import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'

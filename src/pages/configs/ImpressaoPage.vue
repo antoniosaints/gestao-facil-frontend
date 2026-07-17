@@ -1,148 +1,152 @@
 <template>
-  <Card class="w-full bg-background mx-auto rounded-none rounded-b-xl">
-    <CardHeader>
-      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="space-y-2">
-          <CardTitle class="font-normal">Configurar impressora</CardTitle>
-          <CardDescription>
-            Escolha a impressora usada pelo PDV, verifique se o QZTray está instalado corretamente.
-          </CardDescription>
+  <div class="grid md:grid-cols-2 gap-2">
+    <Card class="w-full bg-background mx-auto rounded-none rounded-b-xl">
+      <CardHeader>
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="space-y-2">
+            <CardTitle class="font-normal flex items-center gap-2">
+              <Printer class="w-5 h-5 text-primary" /> Configurar impressão
+            </CardTitle>
+            <CardDescription>
+              Escolha a impressora usada pelo PDV.
+            </CardDescription>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <Badge class="px-3 py-1 font-normal cursor-pointer text-white bg-primary hover:bg-primary/80"
+              @click="isOpen = true">
+              <Download class="w-5 h-5 mr-2 inline-flex" />
+              Dowloads
+            </Badge>
+            <Badge v-if="isConected" class="px-3 py-1 text-white font-normal bg-success hover:bg-success/80">
+              <Link2 class="mr-2 w-5 h-5" /> Conectado
+            </Badge>
+            <Badge v-else variant="destructive" class="px-3 py-1 text-white font-normal">
+              <Link2Off class="mr-2 w-5 h-5" /> Desconectado
+            </Badge>
+          </div>
         </div>
+      </CardHeader>
 
-        <div class="flex items-center gap-2">
-          <Badge class="px-3 py-1 font-normal cursor-pointer text-white bg-primary hover:bg-primary/80"
-            @click="isOpen = true">
-            <Download class="w-5 h-5 mr-2 inline-flex" />
-            Dowloads
-          </Badge>
-          <Badge v-if="isConected" class="px-3 py-1 text-white font-normal bg-success hover:bg-success/80">
-            <Link2 class="mr-2 w-5 h-5" /> Conectado
-          </Badge>
-          <Badge v-else variant="destructive" class="px-3 py-1 text-white font-normal">
-            <Link2Off class="mr-2 w-5 h-5" /> Desconectado
-          </Badge>
-        </div>
-      </div>
-    </CardHeader>
-
-    <CardContent class="space-y-4">
-      <div class="flex gap-2">
-        <Select v-model="paperSize" @update:modelValue="saveSizePaper">
-          <SelectTrigger class="w-16 md:w-36 max-w-36">
-            <SelectValue placeholder="Selecione" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="A4">A4</SelectItem>
-            <SelectItem value="A5">A5</SelectItem>
-            <SelectItem value="Letter">Carta (US Letter)</SelectItem>
-            <SelectItem value="80mm">Térmica 80mm</SelectItem>
-            <SelectItem value="58mm">Térmica 58mm</SelectItem>
-          </SelectContent>
-        </Select>
-        <Input v-model="filter" placeholder="Filtrar impressoras..." @input="filterPrinters" class="flex-1" />
-        <Button class="text-white" :loading="loading" @click="loadPrinters">
-          <Search /> <span class="hidden md:inline">Buscar</span>
-        </Button>
-      </div>
-
-      <div v-if="loading" class="text-center py-4 space-y-2 text-muted-foreground">
-        <Printer class="h-10 w-10 text-primary dark:text-blue-500 animate-bounce mx-auto" />
-        Buscando impressoras...
-      </div>
-
-      <div v-if="printers.length" class="grid gap-2">
-        <label class="text-sm font-medium text-muted-foreground">Impressoras encontradas</label>
-
-        <div class="grid gap-2">
-          <button v-for="p in filtered" :key="p" @click="selectPrinter(p)" :class="buttonClass(p)"
-            class="text-left p-3 rounded-lg border hover:shadow-sm transition">
-            <div class="flex items-center justify-between">
-              <div class="truncate">
-                <div class="font-semibold">{{ p }}</div>
-                <div class="text-xs truncate">{{ shortName(p) }}</div>
-              </div>
-              <div class="ml-3">
-                <svg v-if="p === selected" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
-                  fill="currentColor">
-                  <path fill-rule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414L8.414 15 5 11.586a1 1 0 011.414-1.414L8.414 12.172 15.293 5.293a1 1 0 011.414 0z"
-                    clip-rule="evenodd" />
-                </svg>
-              </div>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      <p v-if="!printers.length && !loading" class="text-center py-4 space-y-2 text-muted-foreground">
-        <CircleOff class="h-10 w-10 text-danger text-red-500 animate-fade-in mx-auto" />
-        Nenhuma impressora encontrada. Tente buscar.
-      </p>
-
-      <div class="flex flex-col md:flex-row items-center justify-between gap-2">
-        <div class="text-sm text-foreground border p-3 rounded-lg">
-          Impressora salva:
-          <span class="font-medium text-primary dark:text-blue-400" v-if="saved">{{ saved }}</span>
-          <span v-else class="italic">Nenhuma</span>
-        </div>
-
+      <CardContent class="space-y-4">
         <div class="flex gap-2">
-          <Button variant="outline" @click="clearSaved" v-if="saved">Limpar</Button>
-          <Button variant="outline" class="bg-success hover:bg-success/80 text-white hover:text-white"
-            @click="testarImpressao" v-if="saved && isConected">
-            <PrinterCheck /> <span class="hidden md:inline">Testar conexão</span>
-          </Button>
-          <Button class="text-white" v-if="isConected" :disabled="!selected" @click="saveSelected">
-            <Save /> Salvar
+          <Select v-model="paperSize" @update:modelValue="saveSizePaper">
+            <SelectTrigger class="w-16 md:w-36 max-w-36">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="A4">A4</SelectItem>
+              <SelectItem value="A5">A5</SelectItem>
+              <SelectItem value="Letter">Carta (US Letter)</SelectItem>
+              <SelectItem value="80mm">Térmica 80mm</SelectItem>
+              <SelectItem value="58mm">Térmica 58mm</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input v-model="filter" placeholder="Filtrar impressoras..." @input="filterPrinters" class="flex-1" />
+          <Button class="text-white" :loading="loading" @click="loadPrinters">
+            <Search /> <span class="hidden md:inline">Buscar</span>
           </Button>
         </div>
-      </div>
-    </CardContent>
-    <ModalView v-model:open="isOpen" title="QZ Tray — Instalação"
-      description="Siga os passos abaixo para habilitar a impressão direta." :icon="CircleFadingPlus" size="md">
-      <div class="px-4 py-2 space-y-4">
 
-        <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-          Para configurar a impressora, instale o QZ Tray e adicione o certificado de segurança.
-          Esse processo é rápido e necessário para que a impressão funcione corretamente.
-          <strong>(Disponível apenas para Windows)</strong>
+        <div v-if="loading" class="text-center py-4 space-y-2 text-muted-foreground">
+          <Printer class="h-10 w-10 text-primary dark:text-blue-500 animate-bounce mx-auto" />
+          Buscando impressoras...
+        </div>
+
+        <div v-if="printers.length" class="grid gap-2">
+          <label class="text-sm font-medium text-muted-foreground">Impressoras encontradas</label>
+
+          <div class="grid gap-2">
+            <button v-for="p in filtered" :key="p" @click="selectPrinter(p)" :class="buttonClass(p)"
+              class="text-left p-3 rounded-lg border hover:shadow-sm transition">
+              <div class="flex items-center justify-between">
+                <div class="truncate">
+                  <div class="font-semibold">{{ p }}</div>
+                  <div class="text-xs truncate">{{ shortName(p) }}</div>
+                </div>
+                <div class="ml-3">
+                  <svg v-if="p === selected" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414L8.414 15 5 11.586a1 1 0 011.414-1.414L8.414 12.172 15.293 5.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <p v-if="!printers.length && !loading" class="text-center py-4 space-y-2 text-muted-foreground">
+          <CircleOff class="h-10 w-10 text-danger text-red-500 animate-fade-in mx-auto" />
+          Nenhuma impressora encontrada. Tente buscar.
         </p>
 
-        <!-- Card de instruções -->
-        <div
-          class="bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
-          <p class="font-medium text-gray-800 dark:text-gray-200 text-sm">
-            Passos da instalação:
+        <div class="flex flex-col md:flex-row items-center justify-between gap-2">
+          <div class="text-sm text-foreground border p-3 rounded-lg">
+            Impressora salva:
+            <span class="font-medium text-primary dark:text-blue-400" v-if="saved">{{ saved }}</span>
+            <span v-else class="italic">Nenhuma</span>
+          </div>
+
+          <div class="flex gap-2">
+            <Button variant="outline" @click="clearSaved" v-if="saved">Limpar</Button>
+            <Button variant="outline" class="bg-success hover:bg-success/80 text-white hover:text-white"
+              @click="testarImpressao" v-if="saved && isConected">
+              <PrinterCheck /> <span class="hidden md:inline">Testar conexão</span>
+            </Button>
+            <Button class="text-white" v-if="isConected" :disabled="!selected" @click="saveSelected">
+              <Save /> Salvar
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+      <ModalView v-model:open="isOpen" title="QZ Tray — Instalação"
+        description="Siga os passos abaixo para habilitar a impressão direta." :icon="CircleFadingPlus" size="md">
+        <div class="px-4 py-2 space-y-4">
+
+          <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            Para configurar a impressora, instale o QZ Tray e adicione o certificado de segurança.
+            Esse processo é rápido e necessário para que a impressão funcione corretamente.
+            <strong>(Disponível apenas para Windows)</strong>
           </p>
 
-          <ul class="list-disc pl-5 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-            <li>Baixe e instale o QZ Tray em seu computador.</li>
-            <li>Baixe o certificado de impressão.</li>
-            <li>Abra o QZ Tray e clique em Advanced -> Site Manager.</li>
-            <li>Na tela que abrir, clique no "<strong class="text-info dark:text-cyan-400">+</strong>", depois em
-              "Browse..." e adicione o
-              certificado baixado.
-            </li>
-            <li>Concorde com as opções, recarregue a página e pronto, comece a imprimir 🎉.</li>
-          </ul>
-        </div>
+          <!-- Card de instruções -->
+          <div
+            class="bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+            <p class="font-medium text-gray-800 dark:text-gray-200 text-sm">
+              Passos da instalação:
+            </p>
 
-        <!-- Botões -->
-        <div class="flex gap-3 pt-2">
-          <Button class="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-2" @click="baixarPluguin">
-            <Download />
-            Baixar QZ Tray
-          </Button>
-          <Button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2" @click="baixarCertificado">
-            <Download />
-            Baixar Certificado
-          </Button>
-        </div>
-      </div>
-    </ModalView>
-  </Card>
+            <ul class="list-disc pl-5 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+              <li>Baixe e instale o QZ Tray em seu computador.</li>
+              <li>Baixe o certificado de impressão.</li>
+              <li>Abra o QZ Tray e clique em Advanced -> Site Manager.</li>
+              <li>Na tela que abrir, clique no "<strong class="text-info dark:text-cyan-400">+</strong>", depois em
+                "Browse..." e adicione o
+                certificado baixado.
+              </li>
+              <li>Concorde com as opções, recarregue a página e pronto, comece a imprimir 🎉.</li>
+            </ul>
+          </div>
 
-  <EtiquetasModelosPage />
+          <!-- Botões -->
+          <div class="flex gap-3 pt-2">
+            <Button class="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-2" @click="baixarPluguin">
+              <Download />
+              Baixar QZ Tray
+            </Button>
+            <Button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2" @click="baixarCertificado">
+              <Download />
+              Baixar Certificado
+            </Button>
+          </div>
+        </div>
+      </ModalView>
+    </Card>
+
+    <EtiquetasModelosPage />
+  </div>
 </template>
 
 <script setup lang="ts">

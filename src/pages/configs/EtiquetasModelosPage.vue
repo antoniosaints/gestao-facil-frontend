@@ -1,5 +1,5 @@
 <template>
-  <Card class="w-full bg-background mx-auto rounded-none rounded-b-xl mt-4">
+  <Card class="w-full bg-background mx-auto rounded-none rounded-b-xl">
     <CardHeader>
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div class="space-y-2">
@@ -7,8 +7,7 @@
             <Tag class="w-5 h-5 text-primary" /> Modelos de etiquetas
           </CardTitle>
           <CardDescription>
-            Cadastre o formato do papel adesivo que você usa (A4, A5, personalizado), o número de colunas/linhas e o
-            tamanho de cada etiqueta. Na hora de imprimir, o código de barras se ajusta ao tamanho definido.
+            Cadastre o formato do papel adesivo que você usa.
           </CardDescription>
         </div>
         <Button class="text-white shrink-0" @click="novoModelo">

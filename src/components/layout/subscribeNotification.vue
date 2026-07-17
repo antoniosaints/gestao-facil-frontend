@@ -140,16 +140,16 @@ function urlBase64ToUint8Array(base64String: string) {
 </script>
 
 <template>
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-2 w-full">
         <label>Receber notificações</label>
         <div>
             <button type="button" v-if="isSupported && !isSubscribed" @click="subscribeUserOnReceiverPush"
-                class="px-3 py-1 rounded-md bg-blue-100 border-2 border-blue-500 text-blue-500 dark:bg-blue-900 dark:text-blue-200">
+                class="px-3 py-1 w-full rounded-md bg-blue-100 border-2 border-blue-500 text-blue-500 dark:bg-blue-900 dark:text-blue-200">
                 <i class="fa-solid fa-bell"></i> Inscrever para receber notificações
             </button>
 
             <button type="button" v-if="isSupported && isSubscribed" @click="unsubscribeUserToReceivePush"
-                class="px-3 py-1 rounded-md bg-red-100 border-2 border-red-500 text-red-500 dark:bg-red-900 dark:text-red-200">
+                class="px-3 py-1 w-full rounded-md bg-red-100 border-2 border-red-500 text-red-500 dark:bg-red-900 dark:text-red-200">
                 <i class="fa-solid fa-bell-slash"></i> Cancelar inscrição de notificações
             </button>
 
