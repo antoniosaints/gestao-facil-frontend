@@ -62,7 +62,7 @@ provide('openModalFiltroVendas', openFilter);
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova Venda</span>
                 </button>
                 <RouterLink to="/vendas/pdv"
-                    class="border border-body bg-secondary hover:border-secondary px-2 py-1.5 text-sm rounded-lg flex items-center gap-1">
+                    class="border border-black/10 dark:border-card bg-secondary hover:border-secondary px-2 py-1.5 text-sm rounded-lg flex items-center gap-1">
                     <ShoppingCart class="w-5 h-5 inline-flex" /> PDV
                 </RouterLink>
                 <button @click="store.updateTable"
