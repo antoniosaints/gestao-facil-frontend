@@ -7,6 +7,7 @@ import {
   CalendarClock,
   ChartPie,
   CircleDollarSign,
+  FilePenLineIcon,
   Layers3,
   Package,
   ReceiptText,
@@ -346,23 +347,23 @@ onMounted(() => {
             <div
               v-for="item in dashboard?.proximosVencimentos || []"
               :key="item.id"
-              class="rounded-2xl border border-border/70 bg-muted/10 px-4 py-3"
+              class="rounded-xl border border-border/70 bg-muted/10 px-4 py-2"
             >
               <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p class="font-medium text-foreground">{{ item.nomeContrato }}</p>
+                  <p class="font-medium text-foreground flex items-center gap-1"><FilePenLineIcon class="h-4 w-4 inline-flex" /> {{ item.nomeContrato }}</p>
                   <p class="text-sm text-muted-foreground">{{ item.cliente }} • {{ item.Uid }}</p>
                   <p class="text-xs text-muted-foreground">
                     Próxima cobrança em {{ formatDateToPtBR(item.proximaCobranca) }}
                   </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <Badge :class="item.atrasada ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'">
+                  <span class="px-2 py-1 text-sm rounded-sm border" :class="item.atrasada ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'">
                     {{ item.atrasada ? 'Atrasada' : 'No radar' }}
-                  </Badge>
-                  <Badge class="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  </span>
+                  <span class="px-2 py-1 text-sm rounded-sm border bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                     {{ formatCurrencyBR(item.valorPrevisto) }}
-                  </Badge>
+                  </span>
                   <RouterLink :to="`/assinaturas/assinaturas/${item.id}`">
                     <Button variant="outline" size="sm">Abrir</Button>
                   </RouterLink>
