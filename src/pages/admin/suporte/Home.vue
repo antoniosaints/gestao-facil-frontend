@@ -1,160 +1,104 @@
-<template>
-  <div class="space-y-4">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h1 class="flex items-center gap-2 text-xl font-semibold">
-          <LifeBuoy class="h-5 w-5" />
-          Acessos de suporte
-        </h1>
-        <p class="text-sm text-muted-foreground">
-          Todo acesso do CEO à conta de um assinante fica registrado aqui.
-        </p>
-      </div>
-      <div class="flex items-center gap-2">
-        <div class="relative">
-          <Search class="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input v-model="search" class="pl-8" placeholder="Conta, e-mail ou motivo" />
-        </div>
-        <Button variant="outline" :disabled="loading" @click="carregar">
-          <RefreshCcw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
-        </Button>
-      </div>
-    </div>
-
-    <div v-if="loading" class="flex justify-center py-12">
-      <Loader class="h-6 w-6 animate-spin text-primary" />
-    </div>
-
-    <Empty v-else-if="!registros.length" class="py-12">
-      <EmptyHeader>
-        <EmptyMedia>
-          <LifeBuoy class="h-8 w-8 text-muted-foreground" />
-        </EmptyMedia>
-        <EmptyTitle>Nenhum acesso registrado</EmptyTitle>
-        <EmptyDescription>
-          Os acessos de suporte às contas dos assinantes aparecerão aqui.
-        </EmptyDescription>
-      </EmptyHeader>
-    </Empty>
-
-    <div v-else class="space-y-3">
-      <div v-for="registro in registros" :key="registro.id"
-        class="rounded-lg border p-4"
-        :class="registro.ativa ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20' : ''">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div class="space-y-1">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="font-medium">{{ registro.contaNome }}</span>
-              <span class="text-xs text-muted-foreground">#{{ registro.contaId }}</span>
-              <span v-if="registro.ativa"
-                class="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-medium text-amber-950">
-                Em andamento
-              </span>
-              <span v-else-if="registro.encerradoPor === 'REVOGADO'"
-                class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-950 dark:text-red-300">
-                Revogado
-              </span>
-              <span v-else
-                class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                Encerrado
-              </span>
-            </div>
-            <p class="text-sm">
-              <strong>{{ registro.superAdminNome }}</strong>
-              <span class="text-muted-foreground"> ({{ registro.superAdminEmail }}) acessou como </span>
-              {{ registro.usuarioAlvoEmail }}
-            </p>
-            <p class="text-sm text-muted-foreground">Motivo: {{ registro.motivo }}</p>
-            <p class="text-xs text-muted-foreground">
-              {{ formatDateToPtBR(registro.iniciadoEm, true) }}
-              <span v-if="registro.encerradoEm"> — encerrado em {{ formatDateToPtBR(registro.encerradoEm, true) }}</span>
-              <span v-else> — expira em {{ formatDateToPtBR(registro.expiraEm, true) }}</span>
-              <span v-if="registro.ip"> · IP {{ registro.ip }}</span>
-            </p>
-          </div>
-          <Button v-if="registro.ativa" variant="destructive" size="sm" :disabled="revogando === registro.id"
-            @click="revogar(registro)">
-            <Loader v-if="revogando === registro.id" class="h-4 w-4 animate-spin" />
-            <Ban v-else class="h-4 w-4" />
-            Revogar
-          </Button>
-        </div>
-      </div>
-
-      <div v-if="totalPages > 1" class="flex items-center justify-between pt-2">
-        <span class="text-sm text-muted-foreground">
-          Página {{ currentPage }} de {{ totalPages }} — {{ total }} registro(s)
-        </span>
-        <div class="flex gap-2">
-          <Button variant="outline" size="sm" :disabled="currentPage <= 1" @click="currentPage--">
-            <ArrowLeft class="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">
-            <ArrowRight class="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
-import { useToast } from 'vue-toastification'
-import { ArrowLeft, ArrowRight, Ban, LifeBuoy, Loader, RefreshCcw, Search } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import BadgeCell from '@/components/tabela/BadgeCell.vue'
+import ModalView from '@/components/formulario/ModalView.vue'
+import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { useConfirm } from '@/composables/useConfirm'
 import { type AcessoSuporteLog, ContaRepository } from '@/repositories/conta-repository'
+import { useUiStore } from '@/stores/ui/uiStore'
 import { formatDateToPtBR } from '@/utils/formatters'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Ban,
+  LifeBuoy,
+  Loader,
+  RefreshCcw,
+  Search,
+  SlidersHorizontal,
+} from 'lucide-vue-next'
+import { reactive, ref, watch } from 'vue'
+import { useToast } from 'vue-toastification'
+import Tabela from './tabela/Tabela.vue'
+import { getSituacaoBadge } from './tabela/columnDef'
+import { useAcessosSuporte } from './useAcessosSuporte'
 
+const uiStore = useUiStore()
 const toast = useToast()
 const confirm = useConfirm()
+const { refreshKey, triggerRefresh } = useAcessosSuporte()
 
-const registros = ref<AcessoSuporteLog[]>([])
+const situacao = ref('TODOS')
+const search = ref('')
 const loading = ref(false)
 const revogando = ref<number | null>(null)
-const search = ref('')
+const acessos = ref<AcessoSuporteLog[]>([])
 const currentPage = ref(1)
 const totalPages = ref(1)
 const total = ref(0)
+const showSearchModal = ref(false)
+const showActionsModal = ref(false)
 
-let searchTimer: ReturnType<typeof setTimeout> | undefined
+const tableFilters = reactive({
+  situacao: 'TODOS',
+  update: 0,
+})
 
-async function carregar() {
+const situacaoOptions = [
+  { label: 'Todas', value: 'TODOS' },
+  { label: 'Em andamento', value: 'ATIVAS' },
+  { label: 'Encerradas', value: 'ENCERRADAS' },
+]
+
+async function loadAcessos() {
   try {
     loading.value = true
-    const res = await ContaRepository.listarAcessosSuporte({
+    const response = await ContaRepository.listarAcessosSuporte({
       page: currentPage.value,
       pageSize: 10,
-      search: search.value.trim() || undefined,
+      search: search.value,
+      situacao: situacao.value,
     })
-    registros.value = res.data
-    totalPages.value = res.totalPages || 1
-    total.value = res.total
-  } catch (error: any) {
+
+    acessos.value = response.data || []
+    total.value = response.total || 0
+    totalPages.value = response.totalPages || 1
+    currentPage.value = response.page || 1
+  } catch (error) {
     console.log(error)
-    toast.error(error.response?.data?.message || 'Erro ao carregar os acessos de suporte')
+    toast.error('Erro ao carregar os acessos de suporte')
   } finally {
     loading.value = false
   }
 }
 
-async function revogar(registro: AcessoSuporteLog) {
+function refreshDesktopTable() {
+  tableFilters.situacao = situacao.value
+  tableFilters.update = Date.now()
+}
+
+function refreshAll() {
+  refreshDesktopTable()
+  loadAcessos()
+}
+
+async function revogarMobile(item: AcessoSuporteLog) {
   const ok = await confirm.confirm({
     title: 'Revogar acesso',
-    message: `Encerrar agora a sessão de ${registro.superAdminNome} na conta "${registro.contaNome}"? A sessão cai na próxima requisição.`,
+    message: `Encerrar agora a sessão de ${item.superAdminNome} na conta "${item.contaNome}"? A sessão cai na próxima requisição.`,
     confirmText: 'Revogar',
     colorButton: 'danger',
   })
   if (!ok) return
 
   try {
-    revogando.value = registro.id
-    const res = await ContaRepository.revogarAcessoSuporte(registro.id)
+    revogando.value = item.id
+    const res = await ContaRepository.revogarAcessoSuporte(item.id)
     toast.success(res?.message || 'Sessão revogada')
-    await carregar()
+    refreshAll()
   } catch (error: any) {
     console.log(error)
     toast.error(error.response?.data?.message || 'Erro ao revogar a sessão')
@@ -163,14 +107,241 @@ async function revogar(registro: AcessoSuporteLog) {
   }
 }
 
-watch(currentPage, carregar)
-watch(search, () => {
-  if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    currentPage.value = 1
-    carregar()
-  }, 400)
+function applySearch() {
+  currentPage.value = 1
+  showSearchModal.value = false
+  loadAcessos()
+}
+
+function clearSearch() {
+  search.value = ''
+  currentPage.value = 1
+  showSearchModal.value = false
+  loadAcessos()
+}
+
+function previousPage() {
+  if (currentPage.value > 1) {
+    currentPage.value -= 1
+  }
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value += 1
+  }
+}
+
+watch(situacao, () => {
+  currentPage.value = 1
+  refreshDesktopTable()
 })
 
-onMounted(carregar)
+watch(
+  [situacao, currentPage],
+  () => {
+    loadAcessos()
+  },
+  { immediate: true },
+)
+
+watch(refreshKey, () => {
+  refreshAll()
+})
 </script>
+
+<template>
+  <div class="space-y-4">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+          <LifeBuoy class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
+          Acessos de suporte
+        </h2>
+        <p class="text-sm text-muted-foreground">
+          Todo acesso do CEO à conta de um assinante fica registrado aqui.
+        </p>
+      </div>
+
+      <div class="hidden flex-col gap-2 sm:flex-row sm:items-center md:flex">
+        <Select v-model="situacao">
+          <SelectTrigger class="w-full bg-card sm:w-[180px]">
+            <SelectValue placeholder="Filtrar situação" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="option in situacaoOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Button variant="outline" class="gap-2 bg-card" @click="refreshAll">
+          <RefreshCcw class="h-4 w-4" />
+          Atualizar
+        </Button>
+      </div>
+    </div>
+
+    <div v-if="!uiStore.isMobile" class="rounded-lg">
+      <Tabela :filters="tableFilters" />
+    </div>
+
+    <div v-else class="flex max-h-[calc(100vh-13rem)] flex-col gap-2 overflow-auto md:max-h-full">
+      <div class="text-xs text-muted-foreground">
+        {{ total }} acesso(s) • página {{ currentPage }} de {{ totalPages }}
+      </div>
+
+      <div v-if="loading && !acessos.length" class="rounded-2xl border border-border p-6">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Loader class="h-6 w-6 animate-spin text-info" />
+            </EmptyMedia>
+            <EmptyTitle>Carregando acessos...</EmptyTitle>
+            <EmptyDescription>Buscando o histórico de sessões de suporte.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </div>
+
+      <div v-else class="flex flex-col gap-2 pb-20">
+        <div v-if="!loading && !acessos.length" class="rounded-2xl border border-border p-6">
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LifeBuoy class="h-6 w-6" />
+              </EmptyMedia>
+              <EmptyTitle>Nenhum acesso encontrado</EmptyTitle>
+              <EmptyDescription>Ajuste a busca ou o filtro para localizar outra sessão.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </div>
+
+        <article
+          v-for="item in acessos"
+          :key="item.id"
+          class="rounded-2xl border border-border bg-card p-4 shadow-sm"
+        >
+          <div class="flex justify-between gap-3">
+            <div class="text-sm font-semibold text-foreground">{{ item.Uid }}</div>
+            <div class="text-xs text-muted-foreground">{{ formatDateToPtBR(item.iniciadoEm, true) }}</div>
+          </div>
+
+          <div class="text-sm font-medium text-foreground">{{ item.contaNome }}</div>
+          <div class="text-xs text-muted-foreground">como {{ item.usuarioAlvoEmail }}</div>
+
+          <div class="mt-2 text-xs text-muted-foreground">
+            Por <span class="font-medium text-foreground">{{ item.superAdminNome }}</span>
+            ({{ item.superAdminEmail }})
+          </div>
+          <div class="text-xs text-muted-foreground">Motivo: {{ item.motivo }}</div>
+          <div class="text-xs text-muted-foreground">
+            {{ item.encerradoEm ? 'Encerrado' : 'Expira' }} em
+            {{ formatDateToPtBR(item.encerradoEm || item.expiraEm, true) }}
+            <span v-if="item.ip"> • IP {{ item.ip }}</span>
+          </div>
+
+          <div class="mt-3 flex items-center justify-between gap-2">
+            <BadgeCell
+              :label="getSituacaoBadge(item).label"
+              :color="getSituacaoBadge(item).color"
+              :icon="getSituacaoBadge(item).icon"
+              :capitalize="false"
+            />
+            <button
+              v-if="item.ativa"
+              type="button"
+              title="Revogar acesso"
+              class="rounded-md bg-red-100 px-2 py-1 text-sm text-red-700 disabled:opacity-60 dark:bg-red-950 dark:text-red-300"
+              :disabled="revogando === item.id"
+              @click="revogarMobile(item)"
+            >
+              <Loader v-if="revogando === item.id" class="h-5 w-5 animate-spin" />
+              <Ban v-else class="h-5 w-5" />
+            </button>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <ModalView
+      v-model:open="showSearchModal"
+      title="Buscar acessos"
+      description="Busque por conta, e-mail ou motivo."
+    >
+      <div class="space-y-3 px-4">
+        <Input
+          v-model="search"
+          type="search"
+          placeholder="Buscar conta, e-mail ou motivo..."
+          @keyup.enter="applySearch"
+        />
+        <div class="flex gap-2">
+          <Button variant="outline" class="flex-1" @click="clearSearch">Limpar</Button>
+          <Button class="flex-1" @click="applySearch">Buscar</Button>
+        </div>
+      </div>
+    </ModalView>
+
+    <ModalView v-model:open="showActionsModal" title="Ações" description="Filtros e atalhos da listagem mobile">
+      <div class="space-y-4 px-4">
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground">Situação</label>
+          <Select v-model="situacao">
+            <SelectTrigger class="w-full bg-card">
+              <SelectValue placeholder="Filtrar situação" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="option in situacaoOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <Button variant="outline" @click="refreshAll">
+            <RefreshCcw class="mr-2 h-4 w-4" />
+            Atualizar
+          </Button>
+          <Button variant="outline" @click="showActionsModal = false">Fechar</Button>
+        </div>
+      </div>
+    </ModalView>
+
+    <MobileBottomBar v-if="uiStore.isMobile">
+      <button
+        type="button"
+        :disabled="currentPage <= 1 || loading"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
+        @click="previousPage"
+      >
+        <ArrowLeft class="h-5 w-5" />
+        <span class="text-xs">Anterior</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="showSearchModal = true"
+      >
+        <Search class="h-5 w-5" />
+        <span class="text-xs">Busca</span>
+      </button>
+      <button
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="showActionsModal = true"
+      >
+        <SlidersHorizontal class="h-5 w-5" />
+        <span class="text-xs">Filtros</span>
+      </button>
+      <button
+        type="button"
+        :disabled="currentPage >= totalPages || loading"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
+        @click="nextPage"
+      >
+        <ArrowRight class="h-5 w-5" />
+        <span class="text-xs">Próximo</span>
+      </button>
+    </MobileBottomBar>
+  </div>
+</template>

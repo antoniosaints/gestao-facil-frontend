@@ -517,7 +517,7 @@ onMounted(load)
                 <Input v-model.number="tokensCalculadora" type="number" min="0" step="1" />
               </div>
               <div class="space-y-1">
-                <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center justify-between gap-2 pt-2">
                   <Label>Custo / 1M tokens ({{ MOEDA_TOKENS }})</Label>
                   <button
                     type="button"
@@ -525,7 +525,7 @@ onMounted(load)
                     :disabled="!custoMedioMilhaoPeriodo"
                     @click="usarCustoMedioPeriodo"
                   >
-                    usar média
+                    Usar média
                   </button>
                 </div>
                 <Input v-model.number="custoMilhaoCalculadora" type="number" min="0" step="0.000001" />
