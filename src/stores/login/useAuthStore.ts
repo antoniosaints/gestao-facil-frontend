@@ -5,6 +5,7 @@ import http from '@/utils/axios'
 import { useToast } from 'vue-toastification'
 import router from '@/router'
 import axios from 'axios'
+import { clearSupport } from '@/utils/supportSession'
 
 type LoginResponse = {
   email: string
@@ -44,6 +45,8 @@ export const useAuthStore = defineStore('authStore', () => {
     localStorage.removeItem('gestao_facil:token')
     localStorage.removeItem('gestao_facil:refreshToken')
     localStorage.removeItem('gestao_facil:usuario')
+    // Um logout durante o suporte não pode deixar as chaves de backup para trás.
+    clearSupport()
   }
 
   const login = async (email: string, senha: string) => {

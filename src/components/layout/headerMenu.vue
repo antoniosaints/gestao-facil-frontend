@@ -9,6 +9,7 @@
       <Breadcrumb />
     </div>
     <div class="flex items-center justify-center gap-2">
+      <SupportBadge v-if="isSupportActive()" class="mr-2" />
       <ColorToggle class="mr-2" v-if="!uiStore.isMobile" />
       <div class="flex justify-between flex-col text-sm text-left">
         <div>Olá, {{ uiStore.usuarioLogged.nome }}</div>
@@ -24,6 +25,8 @@ import Breadcrumb from './breadcrumb.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import { PanelLeftOpen, PanelRightOpen } from 'lucide-vue-next';
 import ColorToggle from './colorToggle.vue';
+import SupportBadge from './SupportBadge.vue';
+import { isSupportActive } from '@/utils/supportSession';
 const uiStore = useUiStore()
 const horarioSistemaAtual = ref('')
 

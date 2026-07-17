@@ -4,6 +4,7 @@ import { useToast } from 'vue-toastification'
 import { hasPermission } from '@/hooks/authorize'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
+import { isSupportActive } from '@/utils/supportSession'
 
 export const useControlRouter = async () => {
   try {
@@ -63,21 +64,27 @@ export async function handleRouteGuard(to: typed, from: typed) {
   // ----- Modo CEO persistente -----
   // Ao entrar no /admin o root fica no modo CEO (inclusive apos recarregar a
   // pagina) ate navegar explicitamente de volta para o ERP a partir do admin.
+  //
+  // Durante uma sessao de suporte o bloco inteiro nao se aplica: o usuarioLogged
+  // e o root do assinante (superAdmin false), o que faria o guard apagar o
+  // ceo_mode do CEO e baguncar o retorno ao painel.
   const CEO_MODE_KEY = 'gestao_facil:ceo_mode'
   const isSuperAdmin = Boolean((storeUi.usuarioLogged as any)?.superAdmin)
-  if (isSuperAdmin) {
-    if (to.path.startsWith('/admin')) {
-      localStorage.setItem(CEO_MODE_KEY, '1')
-    } else if (localStorage.getItem(CEO_MODE_KEY) === '1') {
-      if (from.path.startsWith('/admin')) {
-        // Saida explicita (ex: clique em "Modo ERP" dentro do admin)
-        localStorage.removeItem(CEO_MODE_KEY)
-      } else if (!allowedRouteNames.includes(to.name as string)) {
-        return { name: 'admin-home' }
+  if (!isSupportActive()) {
+    if (isSuperAdmin) {
+      if (to.path.startsWith('/admin')) {
+        localStorage.setItem(CEO_MODE_KEY, '1')
+      } else if (localStorage.getItem(CEO_MODE_KEY) === '1') {
+        if (from.path.startsWith('/admin')) {
+          // Saida explicita (ex: clique em "Modo ERP" dentro do admin)
+          localStorage.removeItem(CEO_MODE_KEY)
+        } else if (!allowedRouteNames.includes(to.name as string)) {
+          return { name: 'admin-home' }
+        }
       }
+    } else if (localStorage.getItem(CEO_MODE_KEY) === '1') {
+      localStorage.removeItem(CEO_MODE_KEY)
     }
-  } else if (localStorage.getItem(CEO_MODE_KEY) === '1') {
-    localStorage.removeItem(CEO_MODE_KEY)
   }
 
   if (!allowedRouteNames.includes(to.name as string)) {

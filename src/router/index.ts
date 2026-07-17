@@ -119,6 +119,11 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/admin/assinantes/Home.vue'),
       },
       {
+        path: 'suporte',
+        name: 'admin-suporte',
+        component: () => import('@/pages/admin/suporte/Home.vue'),
+      },
+      {
         path: 'faturas',
         name: 'admin-faturas',
         component: () => import('@/pages/admin/faturas/Home.vue'),

@@ -12,9 +12,9 @@ import {
 import { useConfirm } from '@/composables/useConfirm'
 import { ContaRepository, type ContaAssinanteAdmin } from '@/repositories/conta-repository'
 import { useAssinantesAdmin } from '../useAssinantesAdmin'
-import { Loader, Menu, Trash2 } from 'lucide-vue-next'
+import { Loader, LogIn, Menu, Trash2 } from 'lucide-vue-next'
 
-const { openManage, triggerRefresh } = useAssinantesAdmin()
+const { openManage, openAcessar, triggerRefresh } = useAssinantesAdmin()
 const confirm = useConfirm()
 const toast = useToast()
 const deleting = ref(false)
@@ -65,6 +65,10 @@ async function apagarAssinante() {
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuItem @click="openManage(data)">Gerenciar conta</DropdownMenuItem>
+      <DropdownMenuItem @click="openAcessar(data)">
+        <LogIn class="h-4 w-4" />
+        Acessar conta (suporte)
+      </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem class="text-red-600 focus:text-red-600" @click="apagarAssinante">
         <Trash2 class="h-4 w-4" />

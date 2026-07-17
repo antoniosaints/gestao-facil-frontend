@@ -196,12 +196,7 @@ export const columnsLancamentos: ColumnDef<
                 icon: Tag,
                 capitalize: false,
                 size: 'sm',
-              }),
-              render(
-                'span',
-                { class: 'text-xs text-muted-foreground truncate max-w-[260px]' },
-                row.original.assinaturaPagar.nomeServico,
-              ),
+              })
             ])
           : null,
       ]),

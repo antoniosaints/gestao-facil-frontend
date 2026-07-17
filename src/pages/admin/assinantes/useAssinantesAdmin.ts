@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 const openModal = ref(false)
 const openCreateModal = ref(false)
+const openAcessarModal = ref(false)
 const selectedConta = ref<ContaAssinanteAdmin | null>(null)
 const refreshKey = ref(0)
 
@@ -17,6 +18,11 @@ export function useAssinantesAdmin() {
     selectedConta.value = null
   }
 
+  function openAcessar(conta: ContaAssinanteAdmin) {
+    selectedConta.value = { ...conta }
+    openAcessarModal.value = true
+  }
+
   function openCreate() {
     openCreateModal.value = true
   }
@@ -28,10 +34,12 @@ export function useAssinantesAdmin() {
   return {
     openModal,
     openCreateModal,
+    openAcessarModal,
     selectedConta,
     refreshKey,
     openManage,
     closeManage,
+    openAcessar,
     openCreate,
     triggerRefresh,
   }

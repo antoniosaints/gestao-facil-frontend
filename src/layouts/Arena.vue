@@ -31,6 +31,11 @@
             class="min-h-0 flex-1 overflow-y-auto p-6 mt-0 text-gray-700 transition-all duration-300 ease-in-out dark:text-gray-300"
             :class="{ 'md:ml-64': store.openSidebar }">
             <div class="max-w-7xl mx-auto" id="content">
+                <!-- O header é hidden md:flex, então no mobile o badge de suporte
+                     não apareceria. Aqui ele cobre esse caso. -->
+                <div v-if="isSupportActive()" class="mb-4 flex justify-end md:hidden">
+                    <SupportBadge />
+                </div>
                 <AlertTopbar />
                 <div v-if="store.loading || progress > 0"
                     class="absolute hidden md:block top-14 h-2 transition-all duration-100 ease-linear"
@@ -62,6 +67,8 @@ import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import InstallPrompt from '@/components/layout/installPrompt.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
+import SupportBadge from '@/components/layout/SupportBadge.vue'
+import { isSupportActive } from '@/utils/supportSession'
 import { PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
 import { onMounted, ref, watch } from 'vue'

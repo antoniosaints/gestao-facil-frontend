@@ -15,6 +15,7 @@ import {
   CalendarClock,
   CircleOff,
   Loader,
+  LogIn,
   RefreshCcw,
   Search,
   ShieldCheck,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-vue-next'
 import { reactive, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
+import ModalAcessarConta from './ModalAcessarConta.vue'
 import ModalGerenciarAssinante from './ModalGerenciarAssinante.vue'
 import ModalNovoAssinante from './ModalNovoAssinante.vue'
 import Tabela from './tabela/Tabela.vue'
@@ -32,7 +34,7 @@ import { useAssinantesAdmin } from './useAssinantesAdmin'
 
 const uiStore = useUiStore()
 const toast = useToast()
-const { openModal, selectedConta, openManage, openCreate, refreshKey } = useAssinantesAdmin()
+const { openModal, selectedConta, openManage, openAcessar, openCreate, refreshKey } = useAssinantesAdmin()
 
 const status = ref('ATIVO')
 const search = ref('')
@@ -297,6 +299,14 @@ watch(refreshKey, () => {
               >
                 <SquarePen class="h-5 w-5" />
               </button>
+              <button
+                type="button"
+                title="Acessar conta (suporte)"
+                class="rounded-md bg-slate-200 px-2 py-1 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+                @click="openAcessar(item)"
+              >
+                <LogIn class="h-5 w-5" />
+              </button>
             </div>
           </div>
         </article>
@@ -390,5 +400,6 @@ watch(refreshKey, () => {
       @saved="handleSaved"
     />
     <ModalNovoAssinante />
+    <ModalAcessarConta />
   </div>
 </template>

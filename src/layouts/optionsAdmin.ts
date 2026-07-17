@@ -14,6 +14,7 @@ import {
   Globe2,
   HandCoins,
   KeyRound,
+  LifeBuoy,
   Lock,
   ServerCog,
   Sparkles,
@@ -56,6 +57,13 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.clientes.visualizar,
       color: 'violet',
       link: '/admin/assinantes',
+    },
+    {
+      nome: 'Acessos de suporte',
+      icone: LifeBuoy,
+      show: permissions.superadmin,
+      color: 'yellow',
+      link: '/admin/suporte',
     },
     {
       nome: 'Configurações',

@@ -35,6 +35,34 @@ export interface PaginatedAdminResponse<T> {
   totalPages: number
 }
 
+export interface AcessoSuporteResponse {
+  token: string
+  sessaoId: number
+  expiraEm: string
+  conta: { id: number; nome: string; status: string }
+  usuarioAlvo: { id: number; nome: string; email: string }
+}
+
+export interface AcessoSuporteLog {
+  id: number
+  Uid: string
+  contaId: number
+  contaNome: string
+  superAdminId: number
+  superAdminNome: string
+  superAdminEmail: string
+  usuarioAlvoId: number
+  usuarioAlvoEmail: string
+  motivo: string
+  ip?: string | null
+  userAgent?: string | null
+  iniciadoEm: string
+  expiraEm: string
+  encerradoEm?: string | null
+  encerradoPor?: string | null
+  ativa: boolean
+}
+
 export interface UpdateAssinanteAdminPayload {
   status: 'ATIVO' | 'INATIVO' | 'BLOQUEADO'
   vencimento?: string
@@ -434,6 +462,31 @@ export class ContaRepository {
     data?: { contaId: number; email: string; nome: string; totalUsuariosRoot: number }
   }> {
     const res = await http.post(`/admin/assinantes/${id}/reset-senha-root`, { senha })
+    return res.data
+  }
+
+  static async acessarContaAdmin(
+    id: number,
+    payload: { senha: string; motivo: string },
+  ): Promise<{ message?: string; data: AcessoSuporteResponse }> {
+    const res = await http.post(`/admin/assinantes/${id}/acessar`, payload)
+    return res.data
+  }
+
+  static async encerrarSuporte() {
+    const res = await http.post('/auth/suporte/encerrar')
+    return res.data
+  }
+
+  static async listarAcessosSuporte(
+    params?: Record<string, any>,
+  ): Promise<PaginatedAdminResponse<AcessoSuporteLog>> {
+    const res = await http.get('/admin/suporte/acessos', { params })
+    return res.data
+  }
+
+  static async revogarAcessoSuporte(id: number) {
+    const res = await http.post(`/admin/suporte/acessos/${id}/revogar`)
     return res.data
   }
 
