@@ -837,15 +837,56 @@
         <ModalView v-model:open="caixaStore.openModalFechamento" title="Fechar caixa"
             description="Informe o saldo contado para concluir o caixa." size="sm">
             <form class="grid gap-3 px-4" @submit.prevent="submitFechamentoCaixa">
-                <div class="rounded-md border bg-card p-3 text-sm">
-                    <div class="flex justify-between">
-                        <span>Saldo esperado</span>
-                        <strong>{{ formatCurrencyBR(caixaStore.caixaAtivo?.saldoEsperado || 0) }}</strong>
+                <div class="space-y-2">
+                    <span class="text-xs font-medium text-muted-foreground">Saldo esperado por método</span>
+                    <div class="overflow-hidden rounded-md border">
+                        <div class="border-b bg-amber-50 px-3 py-2 dark:bg-amber-950/20">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex min-w-0 flex-col">
+                                    <span class="text-sm font-medium">Dinheiro</span>
+                                    <span class="text-[11px] text-amber-600">Conferir em espécie</span>
+                                </div>
+                                <strong class="text-sm">{{ formatCurrencyBR(esperadoPorMetodoFechamento.dinheiro) }}</strong>
+                            </div>
+                            <div class="mt-2">
+                                <Input v-model="fechamentoForm.valorFechamento" type="text" class="h-9"
+                                    placeholder="Valor contado (espécie)" />
+                            </div>
+                        </div>
+                        <div v-for="metodo in esperadoPorMetodoFechamento.outros" :key="metodo.metodo"
+                            class="border-b bg-background px-3 py-2 last:border-b-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex min-w-0 flex-col">
+                                    <span class="text-sm">{{ metodo.label }}</span>
+                                    <span class="text-[11px] text-muted-foreground">
+                                        {{ (proMode && contagemMetodos[metodo.metodo]?.habilitado)
+                                            ? 'Informe o valor contado' : 'Direto — não precisa contar' }}
+                                    </span>
+                                </div>
+                                <div class="flex shrink-0 items-center gap-2">
+                                    <span class="text-sm">{{ formatCurrencyBR(metodo.valor) }}</span>
+                                    <button v-if="proMode" type="button"
+                                        title="Informar valor contado deste método"
+                                        @click="toggleContagemMetodo(metodo.metodo, metodo.valor)"
+                                        class="grid h-7 w-7 place-items-center rounded-md border transition"
+                                        :class="contagemMetodos[metodo.metodo]?.habilitado
+                                            ? 'border-primary bg-primary/10 text-primary'
+                                            : 'border-border text-muted-foreground hover:bg-muted'">
+                                        <Coins class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div v-if="proMode && contagemMetodos[metodo.metodo]?.habilitado" class="mt-2">
+                                <Input v-model="contagemMetodos[metodo.metodo].contado" type="text"
+                                    class="h-9" placeholder="Valor contado (opcional)" />
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs text-muted-foreground">Saldo contado</label>
-                    <Input v-model="fechamentoForm.valorFechamento" placeholder="0,00" />
+                    <p class="text-[11px] text-muted-foreground">
+                        {{ proMode
+                            ? 'Clique no ícone de moeda ao lado de um método para informar o valor contado..'
+                            : 'Confira apenas o dinheiro em caixa. PIX, cartão e crediário entram automaticamente.' }}
+                    </p>
                 </div>
                 <div class="flex flex-col gap-1">
                     <label class="text-xs text-muted-foreground">Observacao</label>
@@ -889,12 +930,12 @@ import { useClientesStore } from '@/stores/clientes/useClientes';
 import { useCaixaStore } from '@/stores/vendas/useCaixa';
 import { ClienteRepository } from '@/repositories/cliente-repository';
 import { VendaRepository } from '@/repositories/venda-repository';
-import { CaixaRepository } from '@/repositories/caixa-repository';
+import { CaixaRepository, type MetodoContado } from '@/repositories/caixa-repository';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import BadgeCell from '@/components/tabela/BadgeCell.vue';
-import { Banknote, CirclePercent, CreditCard, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Package, PlusCircleIcon, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
+import { Banknote, CirclePercent, Coins, CreditCard, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Package, PlusCircleIcon, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import type { CaixaRelatorioResponse, ProdutoVariante } from '@/types/schemas';
@@ -1018,6 +1059,11 @@ const metodosPagamentoRapido = [
 }>
 
 const products = ref<ProdutoVariante[]>([])
+// PDV PRO: paginação server-side dos produtos (16 por página).
+const PDV_PAGE_SIZE = 16
+const paginaProdutos = ref(1)
+const temProximaPaginaProdutos = ref(false)
+const temPaginaAnteriorProdutos = computed(() => paginaProdutos.value > 1)
 const cart = ref<CartItem[]>(JSON.parse(localStorage.getItem("gestao_facil:cartPDV") || "[]"))
 const searchTerm = ref("")
 const discountType = ref<"percentage" | "value">("percentage")
@@ -1086,6 +1132,7 @@ async function fecharCaixa() {
     })
     if (!result) return
     fechamentoForm.value.valorFechamento = String(caixaStore.caixaAtivo.saldoEsperado || '')
+    contagemMetodos.value = {}
     caixaStore.openModalFechamento = true
     openModalAcoes.value = false
 }
@@ -1168,16 +1215,46 @@ async function submitMovimentoCaixa() {
 
 async function submitFechamentoCaixa() {
     if (!caixaStore.caixaAtivo?.id) return toast.error('Nenhum caixa aberto')
+    const dinheiroContado = formatToNumberValue(fechamentoForm.value.valorFechamento)
+
+    // No PDV PRO, envia a contagem por método; dinheiro sempre entra, os demais só se informados.
+    let metodosContados: MetodoContado[] | undefined
+    if (proMode) {
+        const dinheiroEsperado = Number(esperadoPorMetodoFechamento.value.dinheiro || 0)
+        metodosContados = [
+            {
+                metodo: 'DINHEIRO',
+                esperado: dinheiroEsperado,
+                contado: dinheiroContado,
+                diferenca: dinheiroContado - dinheiroEsperado,
+            },
+            ...esperadoPorMetodoFechamento.value.outros.map((m) => {
+                const estado = contagemMetodos.value[m.metodo]
+                const informado = estado?.habilitado && String(estado.contado).trim() !== ''
+                const contado = informado ? formatToNumberValue(estado!.contado) : m.valor
+                return {
+                    metodo: m.metodo,
+                    esperado: m.valor,
+                    contado,
+                    diferenca: contado - m.valor,
+                }
+            }),
+        ]
+    }
+
     await caixaStore.fecharCaixa({
         caixaId: caixaStore.caixaAtivo.id,
-        valorFechamento: formatToNumberValue(fechamentoForm.value.valorFechamento),
+        valorFechamento: dinheiroContado,
         descricao: fechamentoForm.value.descricao || undefined,
+        metodosContados,
     })
     fechamentoForm.value = { valorFechamento: '', descricao: '' }
+    contagemMetodos.value = {}
     syncPodeFinalizarPDV()
 }
 
 watch(() => searchTerm.value, () => {
+    paginaProdutos.value = 1
     fetchProducts()
 })
 
@@ -1248,14 +1325,49 @@ function getPaymentMethodLabel(method?: string | null) {
             return 'Dinheiro'
         case 'CARTAO':
             return 'Cartão'
+        case 'CREDITO':
+            return 'Crédito'
+        case 'DEBITO':
+            return 'Débito'
         case 'CREDIARIO':
             return 'Crediário'
         case 'PIX':
             return 'PIX'
         case 'BOLETO':
             return 'Boleto'
+        case 'TRANSFERENCIA':
+            return 'Transferência'
+        case 'CHEQUE':
+            return 'Cheque'
+        case 'GATEWAY':
+            return 'Gateway'
+        case 'OUTRO':
+            return 'Outro'
         default:
             return method || 'Pagamento'
+    }
+}
+
+// Fechamento: dinheiro é o único conferido em espécie (saldoEsperado já inclui
+// saldo inicial + reforços − sangrias); os demais métodos são diretos e apenas informados.
+const esperadoPorMetodoFechamento = computed(() => {
+    const dinheiro = Number(caixaStore.caixaAtivo?.saldoEsperado || 0)
+    const outros = Object.entries(caixaRelatorioAtual.value?.resumo.porMetodo || {})
+        .filter(([metodo, valor]) => metodo !== 'DINHEIRO' && Number(valor) > 0)
+        .map(([metodo, valor]) => ({ metodo, label: getPaymentMethodLabel(metodo), valor: Number(valor) }))
+    return { dinheiro, outros }
+})
+
+// PDV PRO: contagem opcional por método. Só entra no fechamento se o operador habilitar
+// (clicando no ícone de moeda) e informar um valor; senão, considera-se o esperado como correto.
+const contagemMetodos = ref<Record<string, { habilitado: boolean; contado: string }>>({})
+
+function toggleContagemMetodo(metodo: string, esperado: number) {
+    const atual = contagemMetodos.value[metodo]
+    if (atual?.habilitado) {
+        contagemMetodos.value[metodo] = { habilitado: false, contado: '' }
+    } else {
+        contagemMetodos.value[metodo] = { habilitado: true, contado: String(esperado ?? '') }
     }
 }
 
@@ -1298,14 +1410,36 @@ function novaVendaAposComprovante() {
 
 async function fetchProducts() {
     try {
+        // No PDV PRO pagina de 16 em 16; busca 1 a mais para saber se existe próxima página.
+        const limit = proMode ? PDV_PAGE_SIZE + 1 : 12
+        const skip = proMode ? (paginaProdutos.value - 1) * PDV_PAGE_SIZE : 0
         const { data } = await http.get("/produtos/lista/geral", {
-            params: { search: searchTerm.value, limit: 12, pdv: true },
+            params: { search: searchTerm.value, limit, pdv: true, ...(skip ? { skip } : {}) },
         })
-        products.value = data.data;
+        let lista = data.data as ProdutoVariante[]
+        if (proMode) {
+            temProximaPaginaProdutos.value = lista.length > PDV_PAGE_SIZE
+            lista = lista.slice(0, PDV_PAGE_SIZE)
+        } else {
+            temProximaPaginaProdutos.value = false
+        }
+        products.value = lista
         syncPodeFinalizarPDV()
     } catch {
         alert("Erro ao buscar produtos")
     }
+}
+
+function proximaPaginaProdutos() {
+    if (!temProximaPaginaProdutos.value) return
+    paginaProdutos.value++
+    fetchProducts()
+}
+
+function paginaAnteriorProdutos() {
+    if (paginaProdutos.value <= 1) return
+    paginaProdutos.value--
+    fetchProducts()
 }
 
 // ---- Carrinho ----
@@ -1642,6 +1776,11 @@ defineExpose({
     discount,
     paymentMethod,
     total,
+    paginaProdutos,
+    temProximaPaginaProdutos,
+    temPaginaAnteriorProdutos,
+    proximaPaginaProdutos,
+    paginaAnteriorProdutos,
 })
 
 onMounted(async () => {

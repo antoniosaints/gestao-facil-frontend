@@ -29,6 +29,7 @@ import {
   Users,
   Wallet,
   Wrench,
+  Eye,
 } from 'lucide-vue-next'
 
 import BarChart from '@/components/graficos/BarChart.vue'
@@ -41,7 +42,7 @@ import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { optionsChartBar, optionsChartBarDefault, optionsChartLine } from '@/composables/useChartOptions'
+import { PALETTE, useChartTheme } from '@/composables/useChartTheme'
 import { isModuleActive, type ModuleKey } from '@/layouts/moduleAccess'
 import { AssinaturaRepository, type AssinaturaDashboardResponse } from '@/repositories/assinatura-repository'
 import { CaixaRepository, type ResumoCaixas } from '@/repositories/caixa-repository'
@@ -94,10 +95,14 @@ type ChartCard = {
   descricao: string
   icone: any
   iconClass: string
-  tipo: 'bar' | 'line'
+  tipo: 'bar' | 'line' | 'bar-dual' | 'ranking'
   data: any
-  options: any
+  options?: any
 }
+
+const mapperIndex = (index: any): string => String(index + 1).padStart(2, '0')
+
+const { primary, primarySoft, lineOptions, barOptions, barDualAxisOptions } = useChartTheme()
 
 const store = useDashboardStore()
 const uiStore = useUiStore()
@@ -466,6 +471,78 @@ const summaryBlocks = computed(() =>
   todosSummaryBlocks.value.filter((block) => modulos.value[block.modulo]),
 )
 
+// As séries do backend vêm com cores fixas; reconstruímos os datasets no front
+// aplicando as cores do tema (reativas ao dark/light) — mesmo padrão dos painéis.
+const vendasMensaisChart = computed(() => {
+  const src = dataVendasMensais.value
+  const dsValor = src?.datasets?.[0]
+  const dsQtd = src?.datasets?.[1]
+  const datasets: any[] = []
+  if (dsValor) {
+    datasets.push({
+      label: dsValor.label || 'Valor Total (R$)',
+      data: dsValor.data ?? [],
+      backgroundColor: primary.value,
+      yAxisID: 'y1',
+      borderRadius: 6,
+    })
+  }
+  if (dsQtd) {
+    datasets.push({
+      label: dsQtd.label || 'Qtd de vendas',
+      data: dsQtd.data ?? [],
+      backgroundColor: PALETTE[3],
+      yAxisID: 'y2',
+      borderRadius: 6,
+    })
+  }
+  return { labels: src?.labels ?? [], datasets }
+})
+
+const saldoMensalChart = computed(() => {
+  const src = dataSaldoMensal.value
+  const ds = src?.datasets?.[0]
+  return {
+    labels: src?.labels ?? [],
+    datasets: [{
+      label: ds?.label || 'Saldo',
+      data: ds?.data ?? [],
+      borderColor: primary.value,
+      backgroundColor: primarySoft.value,
+      fill: true,
+      tension: 0.35,
+      borderWidth: 2,
+      pointRadius: 2,
+      pointHoverRadius: 5,
+    }],
+  }
+})
+
+const ticketMedioChart = computed(() => {
+  const src = dataTicketMedio.value
+  const ds = src?.datasets?.[0]
+  return {
+    labels: src?.labels ?? [],
+    datasets: [{
+      label: ds?.label || 'Ticket médio',
+      data: ds?.data ?? [],
+      backgroundColor: primary.value,
+      borderRadius: 6,
+    }],
+  }
+})
+
+// Top produtos vira lista ranqueada: o backend retorna quantidade por produto.
+const topProdutosRanking = computed(() => {
+  const labels: string[] = dataTopProdutos.value?.labels ?? []
+  const valores: number[] = dataTopProdutos.value?.datasets?.[0]?.data ?? []
+  const max = Math.max(1, ...valores.map((v) => Number(v) || 0))
+  return labels.map((nome, i) => {
+    const qtd = Number(valores[i]) || 0
+    return { nome, qtd, pct: (qtd / max) * 100 }
+  })
+})
+
 // Gráficos também seguem o módulo: um gráfico de estoque numa conta sem Produtos é ruído.
 const charts = computed<ChartCard[]>(() =>
   [
@@ -475,9 +552,9 @@ const charts = computed<ChartCard[]>(() =>
       descricao: 'Receita e volume vendidos ao longo dos meses.',
       icone: Tags,
       iconClass: 'text-green-600',
-      tipo: 'bar' as const,
-      data: dataVendasMensais.value,
-      options: optionsChartBar,
+      tipo: 'bar-dual' as const,
+      data: vendasMensaisChart.value,
+      options: barDualAxisOptions.value,
     },
     {
       modulo: 'financeiro' as const,
@@ -486,8 +563,8 @@ const charts = computed<ChartCard[]>(() =>
       icone: HandCoins,
       iconClass: 'text-emerald-600',
       tipo: 'line' as const,
-      data: dataSaldoMensal.value,
-      options: optionsChartLine,
+      data: saldoMensalChart.value,
+      options: lineOptions.value,
     },
     {
       modulo: 'vendas' as const,
@@ -496,8 +573,8 @@ const charts = computed<ChartCard[]>(() =>
       icone: Receipt,
       iconClass: 'text-blue-600',
       tipo: 'bar' as const,
-      data: dataTicketMedio.value,
-      options: optionsChartBarDefault,
+      data: ticketMedioChart.value,
+      options: barOptions.value,
     },
     {
       modulo: 'produtos' as const,
@@ -505,9 +582,8 @@ const charts = computed<ChartCard[]>(() =>
       descricao: 'Itens com melhor saída no período filtrado.',
       icone: Boxes,
       iconClass: 'text-violet-600',
-      tipo: 'bar' as const,
-      data: dataTopProdutos.value,
-      options: optionsChartBarDefault,
+      tipo: 'ranking' as const,
+      data: topProdutosRanking.value,
     },
   ].filter((chart) => modulos.value[chart.modulo]),
 )
@@ -718,9 +794,12 @@ onMounted(async () => {
     </div>
 
     <Card class="border-border/70 bg-card shadow-sm">
-      <CardContent class="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+      <CardContent class="flex flex-col gap-3 px-3 py-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <p class="text-sm font-medium text-foreground">Visão executiva do negócio</p>
+          <div class="text-sm font-medium text-foreground flex items-center gap-1">
+            <Eye class="h-4 w-4 text-foreground" />
+            Visão executiva do negócio
+          </div>
           <p class="text-xs text-muted-foreground">
             {{ periodoDescricao }} • {{ resumoModulosLabel }}
           </p>
@@ -737,10 +816,10 @@ onMounted(async () => {
     </Card>
 
     <section v-if="metasSlider.length" class="rounded-2xl border border-border/70 bg-card p-3 shadow-sm">
-      <div class="mb-3 flex items-center justify-between gap-3">
+      <div class="mb-2 flex items-center justify-between gap-3">
         <div>
           <p class="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Target class="h-4 w-4 text-primary" />
+            <Target class="h-4 w-4 text-foreground" />
             Metas em andamento
           </p>
           <p class="text-xs text-muted-foreground">Acompanhamento discreto do período atual.</p>
@@ -765,7 +844,7 @@ onMounted(async () => {
               {{ meta.atingida ? '100%' : `${meta.percentual}%` }}
             </Badge>
           </div>
-          <div class="mt-3 h-2 rounded-full bg-muted">
+          <div class="mt-1 h-1 rounded-full bg-muted">
             <div class="h-2 rounded-full" :class="meta.atingida ? 'bg-emerald-500' : 'bg-primary'"
               :style="{ width: `${Math.min(meta.percentual, 100)}%` }" />
           </div>
@@ -937,8 +1016,32 @@ onMounted(async () => {
           <CardDescription>{{ chart.descricao }}</CardDescription>
         </CardHeader>
         <CardContent>
-          <BarChart v-if="chart.tipo === 'bar'" class="max-h-72" :data="chart.data" :options="chart.options" />
-          <LineChart v-else class="max-h-72" :data="chart.data" :options="chart.options" />
+          <!-- Top produtos: lista ranqueada com barras de progresso -->
+          <div v-if="chart.tipo === 'ranking'">
+            <div v-if="!chart.data.length" class="flex h-72 items-center justify-center text-sm text-muted-foreground">
+              Sem itens vendidos no período.
+            </div>
+            <ul v-else class="space-y-3">
+              <li v-for="(item, i) in chart.data" :key="i" class="space-y-1">
+                <div class="flex items-center justify-between gap-2 text-sm">
+                  <span class="flex min-w-0 items-center gap-2">
+                    <span
+                      class="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">{{
+                      mapperIndex(i) }}</span>
+                    <span class="truncate font-medium" :title="item.nome">{{ item.nome }}</span>
+                  </span>
+                  <span class="shrink-0 text-xs text-muted-foreground">{{ item.qtd }} un</span>
+                </div>
+                <div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div class="h-full rounded-full bg-primary" :style="{ width: `${item.pct}%` }" />
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div v-else class="h-72">
+            <LineChart v-if="chart.tipo === 'line'" :data="chart.data" :options="chart.options" />
+            <BarChart v-else :data="chart.data" :options="chart.options" />
+          </div>
         </CardContent>
       </Card>
     </AutoGrid>
@@ -987,23 +1090,28 @@ onMounted(async () => {
   font-weight: 600;
   margin: 0.75rem 0 0.35rem;
 }
+
 .ia-markdown :deep(h3) {
   font-size: 0.95rem;
   font-weight: 600;
   margin: 0.65rem 0 0.3rem;
 }
+
 .ia-markdown :deep(h4) {
   font-weight: 600;
   margin: 0.5rem 0 0.25rem;
 }
+
 .ia-markdown :deep(p) {
   margin: 0.35rem 0;
 }
+
 .ia-markdown :deep(ul) {
   list-style: disc;
   padding-left: 1.25rem;
   margin: 0.35rem 0;
 }
+
 .ia-markdown :deep(li) {
   margin: 0.15rem 0;
 }

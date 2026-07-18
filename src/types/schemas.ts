@@ -625,6 +625,12 @@ export interface CaixaRelatorioResponse {
     resumo: CaixaRelatorioResumo & {
       saldoInicial: number
       saldoContado?: number | null
+      fechamentoMetodos?: Array<{
+        metodo: string
+        esperado: number
+        contado: number
+        diferenca: number
+      }> | null
     }
     produtosMaisVendidos: Array<{
       nome: string
@@ -634,6 +640,12 @@ export interface CaixaRelatorioResponse {
     movimentos: CaixaMovimento[]
     vendas: Vendas[]
   }>
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
 }
 
 export interface ContasFinanceiro {

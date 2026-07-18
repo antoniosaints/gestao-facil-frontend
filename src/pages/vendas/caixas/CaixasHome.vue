@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { endOfDay, endOfMonth, startOfDay, startOfMonth } from 'date-fns'
+import { endOfDay, endOfMonth, startOfDay, startOfMonth, subDays, subMonths } from 'date-fns'
 import { useToast } from 'vue-toastification'
 import {
   BanknoteArrowDown,
@@ -53,8 +53,24 @@ const vendasStore = useVendasStore()
 const loading = ref(false)
 const openModalFiltros = ref(false)
 const openModalDetalhes = ref(false)
-const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
+const filtroPeriodo = ref<[Date, Date]>([startOfMonth(new Date()), endOfMonth(new Date())])
 const filtroStatus = ref<'TODOS' | 'ABERTO' | 'FECHADO' | 'CANCELADO'>('TODOS')
+const presetAtivo = ref<string>('month')
+const page = ref(1)
+
+const presets = [
+  { key: 'today', label: 'Hoje' },
+  { key: '7d', label: '7 dias' },
+  { key: '30d', label: '30 dias' },
+  { key: 'month', label: 'Este mês' },
+  { key: 'last-month', label: 'Mês passado' },
+]
+
+const filtroLabel = computed(() => {
+  const [i, f] = filtroPeriodo.value
+  if (!i || !f) return ''
+  return `${i.toLocaleDateString('pt-BR')} — ${f.toLocaleDateString('pt-BR')}`
+})
 const relatorio = ref<CaixaRelatorioResponse | null>(null)
 const caixaSelecionado = ref<CaixaRelatorioResponse['caixas'][number] | null>(null)
 const exportingPdfId = ref<number | null>(null)
@@ -160,6 +176,8 @@ function buildParams(): CaixaRelatorioParams {
     inicio: startOfDay(filtroPeriodo.value[0] || new Date()).toISOString(),
     fim: endOfDay(filtroPeriodo.value[1] || new Date()).toISOString(),
     status: filtroStatus.value === 'TODOS' ? null : filtroStatus.value,
+    page: page.value,
+    limit: 10,
   }
 }
 
@@ -167,6 +185,8 @@ async function carregarRelatorio() {
   try {
     loading.value = true
     relatorio.value = await CaixaRepository.relatorio(buildParams())
+    // O backend pode ter feito clamp da página (ex.: filtro reduziu o total).
+    page.value = relatorio.value?.pagination?.page ?? 1
   } catch (error: any) {
     console.log(error)
     toast.error(error.response?.data?.message || 'Erro ao carregar relatorio de caixas')
@@ -175,14 +195,38 @@ async function carregarRelatorio() {
   }
 }
 
-function applyPreset(preset: 'today' | 'current-month') {
-  if (preset === 'today') {
-    filtroPeriodo.value = [startOfDay(new Date()), endOfDay(new Date())]
+function applyPreset(key: string) {
+  const hoje = new Date()
+  if (key === 'today') {
+    filtroPeriodo.value = [startOfDay(hoje), endOfDay(hoje)]
+  } else if (key === '7d') {
+    filtroPeriodo.value = [startOfDay(subDays(hoje, 6)), endOfDay(hoje)]
+  } else if (key === '30d') {
+    filtroPeriodo.value = [startOfDay(subDays(hoje, 29)), endOfDay(hoje)]
+  } else if (key === 'month') {
+    filtroPeriodo.value = [startOfMonth(hoje), endOfMonth(hoje)]
+  } else if (key === 'last-month') {
+    const mesPassado = subMonths(hoje, 1)
+    filtroPeriodo.value = [startOfMonth(mesPassado), endOfMonth(mesPassado)]
   }
+  presetAtivo.value = key
+  page.value = 1
+  carregarRelatorio()
+}
 
-  if (preset === 'current-month') {
-    filtroPeriodo.value = [startOfMonth(new Date()), endOfMonth(new Date())]
-  }
+function aplicarCustom() {
+  presetAtivo.value = ''
+  page.value = 1
+  openModalFiltros.value = false
+  carregarRelatorio()
+}
+
+function irParaPagina(novaPagina: number) {
+  const totalPages = relatorio.value?.pagination?.totalPages ?? 1
+  const alvo = Math.min(Math.max(novaPagina, 1), totalPages)
+  if (alvo === page.value) return
+  page.value = alvo
+  carregarRelatorio()
 }
 
 function getPaymentMethodLabel(method?: string | null) {
@@ -190,17 +234,40 @@ function getPaymentMethodLabel(method?: string | null) {
     case 'DINHEIRO':
       return 'Dinheiro'
     case 'CARTAO':
-      return 'Cartao'
+      return 'Cartão'
+    case 'CREDITO':
+      return 'Crédito'
+    case 'DEBITO':
+      return 'Débito'
     case 'CREDIARIO':
       return 'Crediário'
     case 'PIX':
       return 'PIX'
     case 'BOLETO':
       return 'Boleto'
+    case 'TRANSFERENCIA':
+      return 'Transferência'
+    case 'CHEQUE':
+      return 'Cheque'
+    case 'GATEWAY':
+      return 'Gateway'
+    case 'OUTRO':
+      return 'Outro'
     default:
-      return '-'
+      return method || '-'
   }
 }
+
+// Fechamento: dinheiro é o único conferido em espécie (saldoEsperado já inclui
+// saldo inicial + reforços − sangrias); os demais métodos são diretos e apenas informados.
+const esperadoPorMetodoFechamento = computed(() => {
+  const resumo = caixaParaFechar.value?.resumo
+  const dinheiro = Number(resumo?.saldoEsperado || 0)
+  const outros = Object.entries(resumo?.porMetodo || {})
+    .filter(([metodo, valor]) => metodo !== 'DINHEIRO' && Number(valor) > 0)
+    .map(([metodo, valor]) => ({ label: getPaymentMethodLabel(metodo), valor: Number(valor) }))
+  return { dinheiro, outros }
+})
 
 function abrirDetalhes(caixa: CaixaRelatorioResponse['caixas'][number]) {
   caixaSelecionado.value = caixa
@@ -335,28 +402,37 @@ onMounted(() => {
 
 <template>
   <div class="space-y-4 pb-24 md:pb-0">
-    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-      <div>
-        <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
-          <HandCoins class="h-6 w-6 text-primary" />
-          Caixas do PDV
-        </h2>
-        <p class="text-sm text-muted-foreground">Conferencia operacional de aberturas, vendas e fechamentos.</p>
+    <div class="flex flex-col">
+      <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+            <HandCoins class="h-6 w-6 text-primary" />
+            Caixas do PDV
+          </h2>
+          <!-- <p class="text-sm text-muted-foreground">Conferencia operacional de aberturas, vendas e fechamentos.</p> -->
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="hidden flex-wrap items-center rounded-lg border border-border bg-card p-1 md:flex">
+            <button v-for="p in presets" :key="p.key" type="button" @click="applyPreset(p.key)"
+              class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+              :class="presetAtivo === p.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'">
+              {{ p.label }}
+            </button>
+          </div>
+          <Button variant="outline" size="sm" @click="openModalFiltros = true">
+            <Filter class="h-4 w-4" /> Filtros
+          </Button>
+          <Button variant="outline" size="icon" :disabled="loading" @click="carregarRelatorio">
+            <RefreshCw class="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <Button variant="outline" @click="openModalFiltros = true">
-          <Filter class="h-4 w-4" /> Filtros
-        </Button>
-        <Button variant="outline" size="icon" :disabled="loading" @click="carregarRelatorio">
-          <RefreshCw class="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
 
-    <div class="flex flex-wrap gap-2">
-      <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
-        {{ item }}
-      </Badge>
+      <div class="flex flex-wrap gap-2">
+        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
+          {{ item }}
+        </Badge>
+      </div>
     </div>
 
     <section class="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -407,7 +483,7 @@ onMounted(() => {
           <BarChart class="max-h-52" :data="resumoOperacionalChart" :options="optionsChartBarDefault" />
         </CardContent>
       </Card>
-      
+
       <section class="rounded-md border bg-card p-4 xl:col-span-2">
         <h3 class="mb-3 font-semibold">Produtos mais vendidos</h3>
         <div v-if="!relatorio?.produtosMaisVendidos.length" class="py-8 text-center text-sm text-muted-foreground">
@@ -430,7 +506,8 @@ onMounted(() => {
       <section class="rounded-md border bg-card p-4 xl:col-span-3">
         <div class="mb-3 flex items-center justify-between">
           <h3 class="font-semibold">Caixas</h3>
-          <span class="text-xs text-muted-foreground">{{ relatorio?.caixas.length || 0 }} registro(s)</span>
+          <span class="text-xs text-muted-foreground">{{ relatorio?.pagination?.total ?? relatorio?.caixas.length ?? 0
+            }} registro(s)</span>
         </div>
         <div v-if="loading" class="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
         <div v-else-if="!relatorio?.caixas.length" class="py-8 text-center text-sm text-muted-foreground">
@@ -470,8 +547,7 @@ onMounted(() => {
                     <Button variant="outline" size="sm" @click="abrirDetalhes(item)">
                       <Eye class="h-4 w-4" /> Detalhes
                     </Button>
-                    <Button v-if="canCloseCaixas && item.caixa.status === 'ABERTO'" size="sm"
-                      title="Fechar caixa"
+                    <Button v-if="canCloseCaixas && item.caixa.status === 'ABERTO'" size="sm" title="Fechar caixa"
                       @click="abrirFecharCaixa(item)">
                       <Lock class="h-4 w-4" /> Fechar
                     </Button>
@@ -487,25 +563,38 @@ onMounted(() => {
             </tbody>
           </table>
         </div>
+        <div v-if="(relatorio?.pagination?.totalPages || 1) > 1" class="mt-3 flex items-center justify-end gap-2">
+          <span class="flex-1 text-xs text-muted-foreground">
+            Página {{ relatorio?.pagination?.page || 1 }} de {{ relatorio?.pagination?.totalPages || 1 }}
+          </span>
+          <Button variant="outline" size="sm" :disabled="loading || (relatorio?.pagination?.page || 1) <= 1"
+            @click="irParaPagina((relatorio?.pagination?.page || 1) - 1)">
+            Anterior
+          </Button>
+          <Button variant="outline" size="sm"
+            :disabled="loading || (relatorio?.pagination?.page || 1) >= (relatorio?.pagination?.totalPages || 1)"
+            @click="irParaPagina((relatorio?.pagination?.page || 1) + 1)">
+            Próximo
+          </Button>
+        </div>
       </section>
     </div>
 
     <ModalView v-model:open="openModalFiltros" title="Filtros de caixas" size="lg">
       <div class="grid gap-4 p-4">
         <div class="space-y-2">
-          <label class="text-sm font-medium">Atalhos</label>
+          <label class="text-sm font-medium">Atalhos rápidos</label>
           <div class="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" @click="applyPreset('today')">
-              <CalendarDays class="h-4 w-4" /> Hoje
-            </Button>
-            <Button type="button" variant="outline" size="sm" @click="applyPreset('current-month')">
-              Mes atual
+            <Button v-for="p in presets" :key="p.key" type="button" variant="outline" size="sm"
+              @click="applyPreset(p.key); openModalFiltros = false">
+              {{ p.label }}
             </Button>
           </div>
         </div>
         <div class="space-y-2">
-          <label class="text-sm font-medium">Periodo</label>
+          <label class="text-sm font-medium">Intervalo de datas</label>
           <Calendarpicker class="w-full" :range="true" v-model="filtroPeriodo" />
+          <p v-if="filtroLabel" class="text-xs text-muted-foreground">{{ filtroLabel }}</p>
         </div>
         <div class="space-y-2">
           <label class="text-sm font-medium">Status</label>
@@ -518,8 +607,8 @@ onMounted(() => {
         </div>
         <div class="flex justify-end gap-2">
           <Button variant="outline" @click="openModalFiltros = false">Cancelar</Button>
-          <Button @click="openModalFiltros = false; carregarRelatorio()">
-            Aplicar
+          <Button @click="aplicarCustom">
+            <Filter class="h-4 w-4" /> Aplicar
           </Button>
         </div>
       </div>
@@ -608,6 +697,38 @@ onMounted(() => {
               <strong>{{ formatCurrencyBR(valor) }}</strong>
             </div>
           </div>
+        </section>
+
+        <section v-if="caixaSelecionado.resumo.fechamentoMetodos?.length" class="rounded-md border bg-card p-3">
+          <h3 class="mb-2 text-sm font-semibold">Conferência por método (fechamento)</h3>
+          <div class="overflow-hidden rounded-md border">
+            <div
+              class="hidden grid-cols-4 gap-2 border-b bg-muted/40 px-3 py-2 text-[11px] font-medium text-muted-foreground sm:grid">
+              <span>Método</span>
+              <span class="text-right">Esperado</span>
+              <span class="text-right">Contado</span>
+              <span class="text-right">Diferença</span>
+            </div>
+            <div v-for="m in caixaSelecionado.resumo.fechamentoMetodos" :key="m.metodo"
+              class="grid grid-cols-2 gap-x-2 gap-y-1 border-b bg-background px-3 py-2 text-sm last:border-b-0 sm:grid-cols-4">
+              <span class="font-medium">{{ getPaymentMethodLabel(m.metodo) }}</span>
+              <span class="text-right text-muted-foreground">
+                <span class="text-[11px] sm:hidden">Esperado: </span>{{ formatCurrencyBR(m.esperado) }}
+              </span>
+              <span class="text-right">
+                <span class="text-[11px] text-muted-foreground sm:hidden">Contado: </span>{{ formatCurrencyBR(m.contado)
+                }}
+              </span>
+              <span class="text-right font-semibold"
+                :class="m.diferenca === 0 ? 'text-muted-foreground' : m.diferenca > 0 ? 'text-emerald-600' : 'text-rose-600'">
+                <span class="text-[11px] font-normal text-muted-foreground sm:hidden">Diferença: </span>{{
+                  formatCurrencyBR(m.diferenca) }}
+              </span>
+            </div>
+          </div>
+          <p class="mt-2 text-[11px] text-muted-foreground">
+            Diferença por método informada no fechamento. Métodos sem valor contado são considerados corretos.
+          </p>
         </section>
 
         <section class="rounded-md border bg-card p-3">
@@ -756,18 +877,39 @@ onMounted(() => {
             <span class="text-muted-foreground">Operador</span>
             <span>{{ caixaParaFechar.caixa.abertoPor?.nome || '-' }}</span>
           </div>
-          <div class="flex justify-between">
-            <span class="text-muted-foreground">Saldo esperado</span>
-            <strong>{{ formatCurrencyBR(caixaParaFechar.resumo.saldoEsperado || 0) }}</strong>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Saldo esperado por método</label>
+          <div class="overflow-hidden rounded-md border">
+            <div class="flex items-center justify-between gap-2 border-b bg-amber-50 px-3 py-2 dark:bg-amber-950/20">
+              <div class="flex flex-col">
+                <span class="text-sm font-medium">Dinheiro</span>
+                <span class="text-[11px] text-amber-600">Conferir em espécie</span>
+              </div>
+              <strong class="text-sm">{{ formatCurrencyBR(esperadoPorMetodoFechamento.dinheiro) }}</strong>
+            </div>
+            <div v-for="metodo in esperadoPorMetodoFechamento.outros" :key="metodo.label"
+              class="flex items-center justify-between gap-2 border-b bg-background px-3 py-2 last:border-b-0">
+              <div class="flex flex-col">
+                <span class="text-sm">{{ metodo.label }}</span>
+                <span class="text-[11px] text-muted-foreground">Direto — não precisa contar</span>
+              </div>
+              <span class="text-sm">{{ formatCurrencyBR(metodo.valor) }}</span>
+            </div>
           </div>
         </div>
 
         <div class="space-y-1.5">
-          <label class="text-sm font-medium">Valor contado (fechamento)</label>
-          <Input v-model.number="valorFechamento" type="number" min="0" step="0.01" placeholder="0,00" />
+          <label class="text-sm font-medium">Dinheiro contado (espécie)</label>
+          <Input v-model.number="(valorFechamento as any)" type="number" min="0" step="0.01" placeholder="0,00" />
+          <p class="text-[11px] text-muted-foreground">
+            Confira apenas o dinheiro em caixa. PIX, cartão e crediário entram automaticamente.
+          </p>
         </div>
 
-        <div class="rounded-md border p-3 text-sm" :class="diferencaFechamento === 0 ? 'text-muted-foreground' : diferencaFechamento > 0 ? 'text-emerald-600' : 'text-rose-600'">
+        <div class="rounded-md border p-3 text-sm"
+          :class="diferencaFechamento === 0 ? 'text-muted-foreground' : diferencaFechamento > 0 ? 'text-emerald-600' : 'text-rose-600'">
           <div class="flex justify-between">
             <span>Diferença</span>
             <strong>{{ formatCurrencyBR(diferencaFechamento) }}</strong>
@@ -821,13 +963,13 @@ onMounted(() => {
       </button>
       <button type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        @click="applyPreset('today'); carregarRelatorio()">
+        @click="applyPreset('today')">
         <CalendarDays class="h-5 w-5" />
         <span class="text-xs">Hoje</span>
       </button>
       <button type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        @click="applyPreset('current-month'); carregarRelatorio()">
+        @click="applyPreset('month')">
         <HandCoins class="h-5 w-5" />
         <span class="text-xs">Mes</span>
       </button>

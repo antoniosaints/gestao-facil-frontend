@@ -15,10 +15,18 @@ export interface MovimentarCaixaPayload {
   valor: number
 }
 
+export interface MetodoContado {
+  metodo: string
+  esperado: number
+  contado: number
+  diferenca: number
+}
+
 export interface FecharCaixaPayload {
   caixaId: number
   valorFechamento: number
   descricao?: string
+  metodosContados?: MetodoContado[]
 }
 
 export interface CaixaContextoResponse {
@@ -33,6 +41,8 @@ export interface CaixaRelatorioParams {
   caixaId?: number | string | null
   usuarioId?: number | string | null
   status?: 'ABERTO' | 'FECHADO' | 'CANCELADO' | null
+  page?: number
+  limit?: number
 }
 
 function downloadBlob(data: BlobPart, filename: string) {
@@ -147,6 +157,8 @@ export class CaixaRepository {
         ...(params.caixaId ? { caixaId: params.caixaId } : {}),
         ...(params.usuarioId ? { usuarioId: params.usuarioId } : {}),
         ...(params.status ? { status: params.status } : {}),
+        ...(params.page ? { page: params.page } : {}),
+        ...(params.limit ? { limit: params.limit } : {}),
       },
     })
     return data.data as CaixaRelatorioResponse

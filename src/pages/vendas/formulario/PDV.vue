@@ -85,10 +85,23 @@
             <strong>{{ formatCurrencyBR(total) }}</strong>
           </div>
         </div>
+        <div class="flex flex-col gap-2">
+          <div class="pdv-pro__pager">
+          <button type="button" title="Página anterior de produtos" :disabled="!temPaginaAnteriorProdutos"
+            @click="pdvRef?.paginaAnteriorProdutos()">
+            <ChevronLeft class="h-5 w-5" />
+          </button>
+          <span>Produtos · pág. {{ paginaProdutos }}</span>
+          <button type="button" title="Próxima página de produtos" :disabled="!temProximaPaginaProdutos"
+            @click="pdvRef?.proximaPaginaProdutos()">
+            <ChevronRight class="h-5 w-5" />
+          </button>
+        </div>
         <div class="pdv-pro__mini-status">
           <span><Wifi class="h-4 w-4 text-emerald-500" /> Sistema online</span>
           <span><CreditCard class="h-4 w-4" /> {{ metodoPagamentoLabel }}</span>
           <span><UserRound class="h-4 w-4" /> {{ uiStore.usuarioLogged.nome || 'Operador' }}</span>
+        </div>
         </div>
       </div>
 
@@ -153,6 +166,8 @@ import {
   BadgePercent,
   BanknoteArrowDown,
   Box,
+  ChevronLeft,
+  ChevronRight,
   CircleX,
   CreditCard,
   DoorOpen,
@@ -267,6 +282,9 @@ const quantidadeItens = computed(() => Number(pdvRef.value?.quantidadeItens || 0
 const subtotal = computed(() => Number(pdvRef.value?.subtotal || 0))
 const desconto = computed(() => Number(pdvRef.value?.discount || 0))
 const total = computed(() => Number(pdvRef.value?.total || 0))
+const paginaProdutos = computed(() => Number(pdvRef.value?.paginaProdutos || 1))
+const temProximaPaginaProdutos = computed(() => Boolean(pdvRef.value?.temProximaPaginaProdutos))
+const temPaginaAnteriorProdutos = computed(() => Boolean(pdvRef.value?.temPaginaAnteriorProdutos))
 const metodoPagamento = computed(() => String(pdvRef.value?.paymentMethod || 'PIX'))
 const metodoPagamentoLabel = computed(() => {
   switch (metodoPagamento.value) {
@@ -469,6 +487,10 @@ onUnmounted(() => {
 .pdv-pro__metric-grid strong { display: block; margin-top: .15rem; font-size: .92rem; line-height: 1.1; }
 .pdv-pro__mini-status { display: grid; gap: .35rem; border: 1px solid color-mix(in srgb, var(--pdv-accent) 32%, hsl(var(--border))); border-radius: .8rem; padding: .65rem; background: hsl(var(--background)); font-size: .68rem; }
 .pdv-pro__mini-status span { display: flex; align-items: center; gap: .4rem; }
+.pdv-pro__pager { display: flex; align-items: center; justify-content: space-between; gap: .4rem; border: 1px solid hsl(var(--border)); border-radius: .8rem; padding: .35rem .5rem; background: hsl(var(--background)); font-size: .68rem; font-weight: 700; color: hsl(var(--muted-foreground)); }
+.pdv-pro__pager button { display: grid; place-items: center; height: 2rem; width: 2rem; border-radius: .6rem; border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); transition: background .15s, color .15s; }
+.pdv-pro__pager button:hover:not(:disabled) { background: color-mix(in srgb, var(--pdv-accent) 14%, hsl(var(--background))); border-color: color-mix(in srgb, var(--pdv-accent) 40%, hsl(var(--border))); color: var(--pdv-accent); }
+.pdv-pro__pager button:disabled { opacity: .4; cursor: not-allowed; }
 .pdv-pro__core { min-width: 0; min-height: 0; overflow: hidden; padding-left: 2px; }
 .pdv-pro__shortcuts { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: .35rem; border-top: 1px solid hsl(var(--border)); padding: .55rem; background: hsl(var(--card)); }
 .pdv-pro__shortcuts button { display: flex; min-height: 4.3rem; flex-direction: column; align-items: center; justify-content: center; gap: .2rem; border: 1px solid hsl(var(--border)); border-radius: .7rem; background: hsl(var(--background)); color: hsl(var(--foreground)); transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
