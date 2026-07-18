@@ -42,6 +42,7 @@ const templateVariables = [
   { token: '{vencimento}', label: 'Vencimento' },
   { token: '{parcela}', label: 'Nº parcela' },
   { token: '{totalParcelas}', label: 'Total parcelas' },
+  { token: '{situacao}', label: 'Situação' },
 ]
 
 watch(

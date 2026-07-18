@@ -55,6 +55,7 @@ export interface InadimplenciaConfig {
   horaEnvio: number
   dias: number[]
   mensagem: string | null
+  mensagemModelo: string
 }
 
 export interface LembreteConfigPayload {
@@ -110,9 +111,10 @@ export class InadimplenciaRepository {
     return data
   }
 
-  static async enviarAgora(lancamentoId: number, mensagem?: string) {
+  static async enviarAgora(lancamentoId: number, mensagem?: string, parcelaId?: number) {
     const { data } = await http.post(`/lancamentos/inadimplencia/lancamento/${lancamentoId}/enviar-agora`, {
       mensagem: mensagem || undefined,
+      parcelaId: parcelaId || undefined,
     })
     return data
   }

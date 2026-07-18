@@ -28,6 +28,7 @@ import {
   Plus,
   RotateCw,
   Search,
+  Send,
   TrendingDown,
   TrendingUp,
   Undo2,
@@ -56,6 +57,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
+import { InadimplenciaRepository } from '@/repositories/inadimplencia-repository'
 import type { CategoriaFinanceiro, ContasFinanceiro } from '@/types/schemas'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { goBack, goTo } from '@/hooks/links'
@@ -72,6 +74,7 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import FinanceiroCalendario from './FinanceiroCalendario.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
+import CobrancaRapidaModal from '../../inadimplencia/CobrancaRapidaModal.vue'
 
 type FiltroTipo = 'TODOS' | 'RECEITA' | 'DESPESA'
 type FiltroStatus = 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
@@ -161,6 +164,9 @@ const quickPreset = ref<Preset>('all')
 const dias = ref<DiaLancamento[]>([])
 const calendarioData = ref(new Date(store.currentMonth))
 const eventoSelecionado = ref<LancamentoDia | null>(null)
+const cobrancaRapidaItem = ref<LancamentoDia | null>(null)
+const cobrancaRapidaOpen = ref(false)
+const cobrancaRapidaSending = ref(false)
 const pendingLaunchDate = ref<Date | null>(null)
 const resumo = ref<ResumoMensal>({
   saldoInicialPeriodo: 0,
@@ -176,6 +182,7 @@ const resumo = ref<ResumoMensal>({
 })
 const contas = ref<ContasFinanceiro[]>([])
 const categorias = ref<CategoriaFinanceiro[]>([])
+const mensagemCobrancaPadrao = ref('')
 
 const tipoTravado = computed<FiltroTipo | null>(() => {
   if (props.mode === 'receitas') return 'RECEITA'
@@ -235,13 +242,15 @@ function getRequestFilters() {
 
 async function carregarOpcoes() {
   try {
-    const [responseContas, responseCategorias] = await Promise.all([
+    const [responseContas, responseCategorias, inadimplenciaConfig] = await Promise.all([
       LancamentosRepository.listarContas(),
       LancamentosRepository.listarCategorias(),
+      InadimplenciaRepository.getConfig(),
     ])
 
     contas.value = responseContas.data ?? []
     categorias.value = responseCategorias.data ?? []
+    mensagemCobrancaPadrao.value = inadimplenciaConfig.mensagemModelo
   } catch (error) {
     console.error(error)
     toast.warning('Não foi possível carregar contas e categorias do filtro.')
@@ -435,6 +444,27 @@ function openLinkCobranca(link?: string | null) {
 function openResumoParcela(item: LancamentoDia) {
   eventoSelecionado.value = item
   openModalEvento.value = true
+}
+
+function abrirCobrancaRapida(item: LancamentoDia) {
+  openModalEvento.value = false
+  cobrancaRapidaItem.value = item
+  cobrancaRapidaOpen.value = true
+}
+
+async function enviarCobrancaRapida(mensagem?: string) {
+  if (!cobrancaRapidaItem.value) return
+
+  try {
+    cobrancaRapidaSending.value = true
+    await InadimplenciaRepository.enviarAgora(cobrancaRapidaItem.value.id, mensagem)
+    toast.success('Cobrança colocada na fila para envio imediato.')
+    cobrancaRapidaOpen.value = false
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Falha ao enfileirar a cobrança.')
+  } finally {
+    cobrancaRapidaSending.value = false
+  }
 }
 
 function openEventoCalendario(evento: any) {
@@ -842,6 +872,11 @@ onMounted(async () => {
                         :data-testid="`abrir-cobranca-${item.parcelaId}`" @click="openLinkCobranca(item.cobrancaLink)">
                         <ExternalLink class="h-4 w-4" />
                       </Button>
+                      <Button v-if="props.mode === 'receitas' && !item.pago" variant="outline" size="icon"
+                        class="h-8 w-8" title="Enviar cobrança pelo WhatsApp"
+                        :data-testid="`enviar-cobranca-${item.parcelaId}`" @click="abrirCobrancaRapida(item)">
+                        <Send class="h-4 w-4" />
+                      </Button>
                       <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
                         <Button variant="outline" size="icon" class="h-8 w-8">
                           <Info class="h-4 w-4" />
@@ -873,6 +908,9 @@ onMounted(async () => {
                         <DropdownMenuItem v-if="uiStore.canCreateCharge && !item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink"
                           @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
                           <CircleDollarSign class="mr-2 h-4 w-4" /> Cobrança
+                        </DropdownMenuItem>
+                        <DropdownMenuItem v-if="props.mode === 'receitas' && !item.pago" @click="abrirCobrancaRapida(item)">
+                          <Send class="mr-2 h-4 w-4" /> Enviar pelo WhatsApp
                         </DropdownMenuItem>
                         <DropdownMenuItem v-if="item.cobrancaLink" @click="openLinkCobranca(item.cobrancaLink)">
                           <Info class="mr-2 h-4 w-4" /> Abrir cobrança
@@ -1058,6 +1096,10 @@ onMounted(async () => {
               @click="handleGerarCobrancaFromModal(eventoSelecionado)">
               <CircleDollarSign class="h-4 w-4" /> Gerar cobrança
             </Button>
+            <Button v-if="props.mode === 'receitas' && !eventoSelecionado.pago" variant="outline"
+              class="min-w-[9rem] flex-1" @click="abrirCobrancaRapida(eventoSelecionado)">
+              <Send class="h-4 w-4" /> Enviar pelo WhatsApp
+            </Button>
             <Button v-if="eventoSelecionado.cobrancaLink" variant="outline" class="min-w-[9rem] flex-1"
               @click="openLinkCobranca(eventoSelecionado.cobrancaLink)">
               <ExternalLink class="h-4 w-4" /> Abrir cobrança
@@ -1183,5 +1225,14 @@ onMounted(async () => {
     <ModalParcela />
     <LancamentoModal />
     <ClientesModal />
+    <CobrancaRapidaModal
+      v-model:open="cobrancaRapidaOpen"
+      :cliente="cobrancaRapidaItem?.cliente"
+      :descricao="cobrancaRapidaItem?.descricao"
+      :valor="cobrancaRapidaItem?.valor"
+      :mensagem-inicial="mensagemCobrancaPadrao"
+      :sending="cobrancaRapidaSending"
+      @enviar="enviarCobrancaRapida"
+    />
   </div>
 </template>

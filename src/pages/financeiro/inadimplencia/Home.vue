@@ -6,6 +6,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   RotateCw,
   Send,
   Settings2,
@@ -42,6 +43,7 @@ import {
 } from '@/repositories/inadimplencia-repository'
 import LembreteModal from './LembreteModal.vue'
 import ConfiguracoesModal from './ConfiguracoesModal.vue'
+import CobrancaRapidaModal from './CobrancaRapidaModal.vue'
 
 const toast = useToast()
 const uiStore = useUiStore()
@@ -70,6 +72,8 @@ const modalShowRemover = ref(false)
 const modalMode = ref<'cliente' | 'lancamento' | 'massa'>('lancamento')
 const modalTargetId = ref<number | null>(null)
 const configOpen = ref(false)
+const cobrancaRapidaOpen = ref(false)
+const cobrancaRapidaItem = ref<InadimplenciaItem | null>(null)
 
 function padraoDias(): number[] {
   return sistemaConfig.value?.dias?.length ? [...sistemaConfig.value.dias] : [-3, -1, 0, 1]
@@ -275,13 +279,22 @@ async function removerOverride() {
   }
 }
 
-async function enviarAgora(item: InadimplenciaItem) {
+function abrirCobrancaRapida(item: InadimplenciaItem) {
+  cobrancaRapidaItem.value = item
+  cobrancaRapidaOpen.value = true
+}
+
+async function enviarAgora(mensagem?: string) {
+  const item = cobrancaRapidaItem.value
+  if (!item) return
+
   try {
     enviandoId.value = item.id
-    await InadimplenciaRepository.enviarAgora(item.id)
-    toast.success('Lembrete enviado pelo WhatsApp.')
+    await InadimplenciaRepository.enviarAgora(item.id, mensagem)
+    toast.success('Cobrança colocada na fila para envio imediato.')
+    cobrancaRapidaOpen.value = false
   } catch (error: any) {
-    toast.error(error?.response?.data?.message || 'Falha ao enviar o lembrete.')
+    toast.error(error?.response?.data?.message || 'Falha ao enfileirar a cobrança.')
   } finally {
     enviandoId.value = null
   }
@@ -437,12 +450,17 @@ onMounted(load)
                 <Button size="icon" variant="ghost" title="Padrão do cliente" :disabled="!item.cliente" @click="abrirCliente(item)">
                   <UserCog class="h-4 w-4" />
                 </Button>
+                <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
+                  <Button size="icon" variant="ghost" title="Abrir lançamento financeiro">
+                    <ExternalLink class="h-4 w-4" />
+                  </Button>
+                </RouterLink>
                 <Button
                   size="icon"
                   variant="ghost"
                   title="Enviar lembrete agora (WhatsApp)"
                   :disabled="enviandoId === item.id"
-                  @click="enviarAgora(item)"
+                  @click="abrirCobrancaRapida(item)"
                 >
                   <Send class="h-4 w-4" :class="enviandoId === item.id ? 'animate-pulse' : ''" />
                 </Button>
@@ -491,7 +509,10 @@ onMounted(load)
             <div class="flex gap-1">
               <Button size="sm" variant="outline" @click="abrirOverride(item)"><Settings2 class="h-4 w-4" /></Button>
               <Button size="sm" variant="outline" :disabled="!item.cliente" @click="abrirCliente(item)"><UserCog class="h-4 w-4" /></Button>
-              <Button size="sm" variant="outline" :disabled="enviandoId === item.id" @click="enviarAgora(item)"><Send class="h-4 w-4" /></Button>
+              <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
+                <Button size="sm" variant="outline" title="Abrir lançamento financeiro"><ExternalLink class="h-4 w-4" /></Button>
+              </RouterLink>
+              <Button size="sm" variant="outline" :disabled="enviandoId === item.id" @click="abrirCobrancaRapida(item)"><Send class="h-4 w-4" /></Button>
             </div>
           </div>
         </div>
@@ -520,5 +541,14 @@ onMounted(load)
     />
 
     <ConfiguracoesModal v-model:open="configOpen" @salvo="load" />
+    <CobrancaRapidaModal
+      v-model:open="cobrancaRapidaOpen"
+      :cliente="cobrancaRapidaItem?.cliente?.nome"
+      :descricao="cobrancaRapidaItem?.descricao"
+      :valor="cobrancaRapidaItem?.valorPendente"
+      :mensagem-inicial="cobrancaRapidaItem?.lembrete.mensagemCustom || sistemaConfig?.mensagemModelo"
+      :sending="enviandoId === cobrancaRapidaItem?.id"
+      @enviar="enviarAgora"
+    />
   </div>
 </template>

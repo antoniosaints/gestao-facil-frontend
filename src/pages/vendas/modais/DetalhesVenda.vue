@@ -135,6 +135,12 @@
                             <span class="text-sm font-semibold text-orange-700 dark:text-orange-300">
                                 {{ formatCurrencyBR(Number(lancamento.valorTotal || 0)) }}
                             </span>
+                            <Button type="button" size="sm" variant="outline"
+                                title="Abrir detalhes do lançamento financeiro"
+                                @click="abrirLancamentoFinanceiro(lancamento.id)">
+                                <ExternalLink class="h-4 w-4" />
+                                <span class="hidden sm:inline">Detalhes</span>
+                            </Button>
                             <Button type="button" size="sm" variant="destructive"
                                 @click="excluirLancamentoFinanceiro(lancamento.id)">
                                 <Trash2 class="h-4 w-4" />
@@ -231,8 +237,9 @@ import { Button } from '@/components/ui/button';
 import { useVendasStore } from '@/stores/vendas/useVenda';
 import { formatCurrencyBR } from '@/utils/formatters';
 import { addDays } from 'date-fns';
-import { FileText, Trash2 } from 'lucide-vue-next';
+import { ExternalLink, FileText, Trash2 } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { gerarCupomVenda } from '../ActionsVendas';
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas';
 import { useUiStore } from '@/stores/ui/uiStore';
@@ -243,6 +250,7 @@ const store = useVendasStore()
 const storeCobranca = useCobrancasFinanceirasStore()
 const uiStore = useUiStore()
 const toast = useToast()
+const router = useRouter()
 const subtotal = computed(() => {
     return store.venda?.ItensVendas.reduce((acc, item) => acc + item.quantidade * item.valor, 0)
 })
@@ -259,6 +267,12 @@ function formatDate(value: Date | string | null | undefined) {
     if (!value) return '-'
     const date = new Date(value)
     return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString('pt-BR')
+}
+
+function abrirLancamentoFinanceiro(id?: number) {
+    if (!id) return
+    store.openModalDetalhes = false
+    router.push({ path: '/financeiro/detalhes', query: { id } })
 }
 
 async function excluirLancamentoFinanceiro(id?: number) {

@@ -19,6 +19,8 @@ import {
   PenLine,
   Plus,
   RotateCw,
+  Send,
+  ShoppingCart,
   Tags,
   Trash2,
   Undo2,
@@ -43,10 +45,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
+import { InadimplenciaRepository } from '@/repositories/inadimplencia-repository'
 import { useConfirm } from '@/composables/useConfirm'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import { useUiStore } from '@/stores/ui/uiStore'
+import { useVendasStore } from '@/stores/vendas/useVenda'
 import { goBack } from '@/hooks/links'
 import router from '@/router'
 import type {
@@ -63,6 +67,8 @@ import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import FormularioEfertivar from './modais/FormularioEfertivar.vue'
 import ModalParcela from './modais/ModalParcela.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
+import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue'
+import CobrancaRapidaModal from '../inadimplencia/CobrancaRapidaModal.vue'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 
@@ -83,10 +89,15 @@ const toast = useToast()
 const store = useLancamentosStore()
 const storeCobranca = useCobrancasFinanceirasStore()
 const uiStore = useUiStore()
+const vendasStore = useVendasStore()
 
 const loading = ref(false)
 const salvandoParcela = ref(false)
 const openAdicionarParcela = ref(false)
+const cobrancaRapidaOpen = ref(false)
+const cobrancaRapidaSending = ref(false)
+const cobrancaRapidaParcela = ref<ParcelaDetalhe | null>(null)
+const mensagemCobrancaPadrao = ref('')
 const lancamento = ref<LancamentoDetalhe | null>(null)
 const novaParcela = ref({
   descricao: '',
@@ -116,6 +127,43 @@ async function loadLancamento() {
     toast.error('Erro ao buscar o lançamento')
   } finally {
     loading.value = false
+  }
+}
+
+async function abrirVendaVinculada() {
+  if (!lancamento.value?.vendaId) return
+  await vendasStore.openDetalhes(lancamento.value.vendaId)
+}
+
+async function abrirCobrancaRapida(parcela: ParcelaDetalhe) {
+  cobrancaRapidaParcela.value = parcela
+  if (!mensagemCobrancaPadrao.value) {
+    try {
+      mensagemCobrancaPadrao.value = (await InadimplenciaRepository.getConfig()).mensagemModelo
+    } catch (error) {
+      console.error(error)
+      toast.warning('Não foi possível carregar o modelo padrão da cobrança.')
+    }
+  }
+  cobrancaRapidaOpen.value = true
+}
+
+async function enviarCobrancaRapida(mensagem?: string) {
+  if (!lancamento.value?.id || !cobrancaRapidaParcela.value?.id) return
+
+  try {
+    cobrancaRapidaSending.value = true
+    await InadimplenciaRepository.enviarAgora(
+      lancamento.value.id,
+      mensagem,
+      cobrancaRapidaParcela.value.id,
+    )
+    toast.success('Cobrança colocada na fila para envio imediato.')
+    cobrancaRapidaOpen.value = false
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Falha ao enfileirar a cobrança.')
+  } finally {
+    cobrancaRapidaSending.value = false
   }
 }
 
@@ -431,6 +479,9 @@ watch(() => store.filters.update, loadLancamento)
         <Button variant="outline" @click="goBack">
           <ArrowLeft class="h-4 w-4" /> Voltar
         </Button>
+        <Button v-if="lancamento?.vendaId" variant="outline" @click="abrirVendaVinculada">
+          <ShoppingCart class="h-4 w-4" /> Detalhes da venda
+        </Button>
         <Button v-if="uiStore.canCreateCharge" class="bg-success text-white hover:bg-success/80"
           :disabled="!parcelasOrdenadas.some((parcela) => !parcela.pago)" @click="gerarCobrancaFatura">
           <CircleDollarSign class="h-4 w-4" /> Gerar cobrança
@@ -704,6 +755,11 @@ watch(() => store.filters.update, loadLancamento)
                   @click="openLinkCobranca(parcela.CobrancasFinanceiras[0].externalLink)">
                   <ExternalLink class="h-4 w-4" />
                 </Button>
+                <Button v-if="lancamento?.tipo === 'RECEITA' && lancamento?.clienteId && !parcela.pago"
+                  variant="outline" size="icon" class="h-8 w-8" title="Enviar cobrança pelo WhatsApp"
+                  @click="abrirCobrancaRapida(parcela)">
+                  <Send class="h-4 w-4" />
+                </Button>
                 <Button v-if="!parcela.pago" size="icon" class="h-8 w-8 dark:text-white"
                   @click="efetivarParcela(parcela.id!)">
                   <CheckCircle2 class="h-4 w-4" />
@@ -744,6 +800,10 @@ watch(() => store.filters.update, loadLancamento)
                     @click="openLinkCobranca(parcela.CobrancasFinanceiras[0].externalLink)">
                     <ExternalLink class="mr-2 h-4 w-4" /> Abrir cobrança
                   </DropdownMenuItem>
+                  <DropdownMenuItem v-if="lancamento?.tipo === 'RECEITA' && lancamento?.clienteId && !parcela.pago"
+                    @click="abrirCobrancaRapida(parcela)">
+                    <Send class="mr-2 h-4 w-4" /> Enviar pelo WhatsApp
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -768,6 +828,15 @@ watch(() => store.filters.update, loadLancamento)
       >
         <RotateCw class="h-5 w-5" :class="{ 'animate-spin': loading }" />
         <span class="text-xs">Atualizar</span>
+      </button>
+      <button
+        v-if="lancamento?.vendaId"
+        type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
+        @click="abrirVendaVinculada"
+      >
+        <ShoppingCart class="h-5 w-5" />
+        <span class="text-xs">Venda</span>
       </button>
       <button
         type="button"
@@ -832,6 +901,16 @@ watch(() => store.filters.update, loadLancamento)
     <GerarCobranca />
     <LancamentoModal />
     <ClientesModal />
+    <DetalhesVenda />
+    <CobrancaRapidaModal
+      v-model:open="cobrancaRapidaOpen"
+      :cliente="lancamento?.cliente?.nome"
+      :descricao="cobrancaRapidaParcela ? `${lancamento?.descricao} • ${getNumeroParcelaLabel(cobrancaRapidaParcela)}` : lancamento?.descricao"
+      :valor="Number(cobrancaRapidaParcela?.valor || 0)"
+      :mensagem-inicial="mensagemCobrancaPadrao"
+      :sending="cobrancaRapidaSending"
+      @enviar="enviarCobrancaRapida"
+    />
     <ModalParcela />
     <ModalView
       v-model:open="openAdicionarParcela"
