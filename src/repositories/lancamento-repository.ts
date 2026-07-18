@@ -189,7 +189,12 @@ export class LancamentosRepository {
     await http.delete(`/lancamentos/contas/${id}`)
   }
   static async criarCategoria(data: Pick<CategoriaFinanceiro, 'nome'> & { id?: number; categoriaPai?: number | null }) {
-    await http.post(`/lancamentos/categorias`, data)
+    const response = await http.post(`/lancamentos/categorias`, data)
+    return response.data as {
+      status: number
+      message: string
+      data: { id: number; nome: string } | null
+    }
   }
   static async deletarCategoria(id: number) {
     await http.delete(`/lancamentos/categorias/${id}`)

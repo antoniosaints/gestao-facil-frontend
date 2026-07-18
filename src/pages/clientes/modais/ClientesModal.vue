@@ -21,11 +21,13 @@ const store = useClientesStore()
 
 async function submit() {
   try {
-    await ClienteRepository.save({
+    const resposta = await ClienteRepository.save({
       ...store.form,
     })
     toast.success('Registro salvo com sucesso!')
     store.updateTable()
+    // Auto-seleciona o cliente recém-criado no select que abriu o cadastro.
+    if (resposta?.data) store.notifyCreated(resposta.data)
     store.reset()
     store.openModal = false
   } catch (e: any) {

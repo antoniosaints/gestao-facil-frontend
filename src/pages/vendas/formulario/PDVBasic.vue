@@ -189,7 +189,7 @@
                         <div class="grid grid-cols-7 gap-2">
                             <Select2Ajax ref="clienteSelectRef" class="col-span-6" placeholder="Selecione o cliente"
                                 :url="'/clientes/select2'" v-model:model-value="cliente" :allowClear="true" />
-                            <button type="button" @click="storeCliente.openSave"
+                            <button type="button" @click="abrirCadastroClientePdv"
                                 class="bg-primary px-2 text-white rounded border border-border dark:border-border-dark flex justify-center items-center">
                                 <UserPlus class="w-5 inline-flex" />
                             </button>
@@ -335,13 +335,11 @@
 
                         <div class="space-y-2" v-if="paymentMethod === 'DINHEIRO'">
                             <Input :required="paymentMethod === 'DINHEIRO'" v-model="(receivedAmount as string)"
-                                type="text" placeholder="Valor recebido" />
+                                type="text" placeholder="Valor recebido do cliente" />
                             <div class="flex justify-between text-sm font-medium">
                                 <span>Troco:</span>
                                 <span>{{ formatCurrencyBR(change) }}</span>
                             </div>
-                        </div>
-                        <div class="space-y-2" v-if="paymentMethod === 'CREDIARIO'">
                         </div>
                     </div>
 
@@ -489,7 +487,7 @@
                         <div class="grid grid-cols-12 gap-2">
                             <Select2Ajax class="col-span-10 md:col-span-11" placeholder="Selecione o cliente" :url="'/clientes/select2'"
                                 v-model:model-value="clienteEnvio" :allowClear="true" />
-                            <Button type="Button" @click="storeCliente.openSave"
+                            <Button type="Button" @click="abrirCadastroClienteEnvio"
                                 class="bg-primary px-2 col-span-2 md:col-span-1 text-white w-full border border-border dark:border-border-dark flex justify-center items-center">
                                 <UserPlus :stroke-width="2.5" class="w-5 h-5 inline-flex" />
                             </Button>
@@ -938,7 +936,7 @@ import BadgeCell from '@/components/tabela/BadgeCell.vue';
 import { Banknote, CirclePercent, Coins, CreditCard, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Package, PlusCircleIcon, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
-import type { CaixaRelatorioResponse, ProdutoVariante } from '@/types/schemas';
+import type { CaixaRelatorioResponse, ClientesFornecedores, ProdutoVariante } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
 import { resolveFileUrl } from '@/utils/fileUrl';
 import router from '@/router';
@@ -1074,6 +1072,19 @@ const crediarioParcelas = ref(1)
 const crediarioPrimeiroVencimento = ref<Date | string | null>(getDefaultCrediarioFirstDueDate())
 const crediarioFinalizeOptions = ref<{ print?: boolean } | null>(null)
 const cliente = ref(null)
+
+// Abre o cadastro de cliente e já seleciona o recém-criado no respectivo select.
+function abrirCadastroClientePdv() {
+    storeCliente.openSave((novo: ClientesFornecedores) => {
+        if (novo?.id != null) cliente.value = novo.id as any
+    })
+}
+function abrirCadastroClienteEnvio() {
+    storeCliente.openSave((novo: ClientesFornecedores) => {
+        if (novo?.id != null) clienteEnvio.value = Number(novo.id)
+    })
+}
+
 const subtotal = computed(() =>
     cart.value.reduce((t, item) => t + Number(item.preco) * item.quantity, 0)
 )

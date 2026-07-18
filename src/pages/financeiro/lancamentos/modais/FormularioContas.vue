@@ -7,16 +7,19 @@ import { ref } from 'vue';
 import { useToast } from 'vue-toastification';
 
 const toast = useToast()
+const emit = defineEmits<{ (e: 'created', id: number): void }>()
 const open = ref(false)
 const nome = ref('')
 
 async function submit() {
     try {
-        await LancamentosRepository.criarConta({
+        const resposta = await LancamentosRepository.criarConta({
             nome: nome.value,
             saldoInicial: 0
         })
         toast.success("Registro salvo com sucesso!")
+        const novaId = resposta?.data?.id
+        if (novaId) emit('created', Number(novaId))
         nome.value = ''
         open.value = false
     } catch (error) {

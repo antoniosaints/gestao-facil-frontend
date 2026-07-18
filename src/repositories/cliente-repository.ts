@@ -32,7 +32,12 @@ export class ClienteRepository {
     await http.post(`/clientes`, data)
   }
   static async save(data: Omit<ClientesFornecedores, 'id'>) {
-    await http.post(`/clientes`, data)
+    const response = await http.post(`/clientes`, data)
+    return response.data as {
+      status: number
+      message: string
+      data: ClientesFornecedores | null
+    }
   }
   static async getStats(id: number) {
     const { data } = await http.get(`/clientes/${id}/estatisticas`)

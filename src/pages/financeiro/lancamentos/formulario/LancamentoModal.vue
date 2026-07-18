@@ -16,7 +16,7 @@ import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { computed, ref, watch } from 'vue'
 import { vMaska } from 'maska/vue'
 import { moneyMaskOptions } from '@/lib/imaska'
-import type { FormularioLancamento } from '@/types/schemas'
+import type { ClientesFornecedores, FormularioLancamento } from '@/types/schemas'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { POSITION, useToast } from 'vue-toastification'
 import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
@@ -76,6 +76,21 @@ function aplicarCategoriaIa() {
 }
 const storeCliente = useClientesStore()
 const toast = useToast()
+
+// Auto-seleciona no formulário o registro recém-criado pelos modais rápidos.
+function abrirCadastroClienteLancamento() {
+  storeCliente.openSave((novo: ClientesFornecedores) => {
+    if (novo?.id != null) store.form.clienteId = Number(novo.id)
+  })
+}
+
+function aplicarCategoriaCriada(id: number) {
+  store.form.categoriaId = id
+}
+
+function aplicarContaCriada(id: number) {
+  store.form.contasFinanceiroId = id
+}
 const erros = ref<{ [key: string]: string }>({})
 
 const params = ref<{
@@ -361,7 +376,9 @@ watch(
           <div>
             <label for="clienteIdLancamentoEdicao" class="mb-1 block text-sm font-medium">
               {{ store.form.tipo === 'RECEITA' ? 'Cliente' : 'Fornecedor' }}
-              <a @click="storeCliente.openSave" class="cursor-pointer px-2 text-blue-500">+ Novo</a>
+              <a @click="abrirCadastroClienteLancamento" class="cursor-pointer px-2 text-blue-500"
+                >+ Novo</a
+              >
             </label>
             <Select2Ajax
               id="clienteIdLancamentoEdicao"
@@ -374,7 +391,7 @@ watch(
           <div>
             <label for="categoriaIdLancamentoEdicao" class="mb-1 block text-sm font-medium">
               Categoria *
-              <FormularioCategorias class="cursor-pointer px-2 text-blue-500"
+              <FormularioCategorias class="cursor-pointer px-2 text-blue-500" @created="aplicarCategoriaCriada"
                 >+ Nova</FormularioCategorias
               >
               <button v-if="iaFinanceiroAtivo" type="button"
@@ -400,7 +417,9 @@ watch(
           <div>
             <label for="contasFinanceiroIdEdicao" class="mb-1 block text-sm font-medium">
               Conta *
-              <FormularioContas class="cursor-pointer px-2 text-blue-500">+ Nova</FormularioContas>
+              <FormularioContas class="cursor-pointer px-2 text-blue-500" @created="aplicarContaCriada"
+                >+ Nova</FormularioContas
+              >
             </label>
             <Select2Ajax
               id="contasFinanceiroIdEdicao"
@@ -674,7 +693,7 @@ watch(
             <div class="col-span-6">
               <label for="clienteIdLancamento" class="mb-1 block text-sm font-medium">
                 {{ store.form.tipo === 'RECEITA' ? 'Cliente' : 'Fornecedor' }}
-                <a @click="storeCliente.openSave" class="cursor-pointer px-2 text-blue-500"
+                <a @click="abrirCadastroClienteLancamento" class="cursor-pointer px-2 text-blue-500"
                   >+ Novo</a
                 >
               </label>
@@ -689,7 +708,7 @@ watch(
             <div class="col-span-6">
               <label for="categoriaIdLancamento" class="mb-1 block text-sm font-medium">
                 Categoria *
-                <FormularioCategorias class="cursor-pointer px-2 text-blue-500"
+                <FormularioCategorias class="cursor-pointer px-2 text-blue-500" @created="aplicarCategoriaCriada"
                   >+ Nova</FormularioCategorias
                 >
                 <button v-if="iaFinanceiroAtivo" type="button"
@@ -715,7 +734,7 @@ watch(
             <div class="col-span-6">
               <label for="contasFinanceiroId" class="mb-1 block text-sm font-medium">
                 Conta *
-                <FormularioContas class="cursor-pointer px-2 text-blue-500"
+                <FormularioContas class="cursor-pointer px-2 text-blue-500" @created="aplicarContaCriada"
                   >+ Nova</FormularioContas
                 >
               </label>

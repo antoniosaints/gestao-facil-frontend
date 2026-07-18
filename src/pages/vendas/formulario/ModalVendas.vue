@@ -7,7 +7,7 @@ import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncre
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProdutoVarianteRepository } from "@/repositories/produto-repository";
 import { useVendasStore } from "@/stores/vendas/useVenda";
-import type { FormularioVenda } from "@/types/schemas";
+import type { ClientesFornecedores, FormularioVenda } from "@/types/schemas";
 import http from "@/utils/axios";
 import { computed, onMounted, ref, watch } from "vue";
 import { POSITION, useToast } from "vue-toastification";
@@ -35,6 +35,43 @@ const addItemForm = ref<{ id: number | null, preco: number | string | null, quan
     quantidade: 1
 })
 
+// Forma de pagamento da venda. No crediário, a venda gera o financeiro parcelado
+// a receber (mesma lógica do PDV PRO).
+function getDefaultCrediarioFirstDueDate() {
+    const data = new Date()
+    data.setMonth(data.getMonth() + 1)
+    return data
+}
+
+function formatCrediarioDateForApi(value: Date | string | null) {
+    if (!value) return null
+    const parsed = value instanceof Date ? value : new Date(value)
+    if (Number.isNaN(parsed.getTime())) return null
+    return parsed.toISOString()
+}
+
+const paymentMethod = ref<string>('DINHEIRO')
+const crediarioParcelas = ref<number>(1)
+const crediarioPrimeiroVencimento = ref<Date | string | null>(getDefaultCrediarioFirstDueDate())
+
+const valorParcelaCrediario = computed(() => {
+    const parcelas = Math.max(1, Number(crediarioParcelas.value) || 1)
+    return resumoCarrinho.value.total / parcelas
+})
+
+function resetPagamentoVenda() {
+    paymentMethod.value = 'DINHEIRO'
+    crediarioParcelas.value = 1
+    crediarioPrimeiroVencimento.value = getDefaultCrediarioFirstDueDate()
+}
+
+// Abre o cadastro de cliente e já seleciona o recém-criado no select da venda.
+function abrirCadastroClienteVenda() {
+    storeCliente.openSave((novo: ClientesFornecedores) => {
+        if (novo?.id != null) store.form.clienteId = Number(novo.id)
+    })
+}
+
 async function submitFormularioVenda() {
     if (store.carrinho.length === 0) {
         toast.error('Adicione pelo menos um item ao carrinho', { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
@@ -48,9 +85,28 @@ async function submitFormularioVenda() {
         return;
     }
 
+    // Validações do crediário (apenas em nova venda), espelhando o PDV PRO.
+    if (!hasId && paymentMethod.value === 'CREDIARIO') {
+        if (!store.form.clienteId) {
+            toast.error('Selecione um cliente para lançar o crediário da venda', { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
+            return;
+        }
+        if (!Number.isInteger(Number(crediarioParcelas.value)) || Number(crediarioParcelas.value) < 1) {
+            toast.error('Informe em quantas vezes será o crediário', { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
+            return;
+        }
+        if (!formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)) {
+            toast.error('Informe uma data válida para a primeira parcela', { timeout: 3000, position: POSITION.BOTTOM_RIGHT });
+            return;
+        }
+    }
+
     try {
         const data: FormularioVenda & {
             itens: { id: number, nome: string, quantidade: number, tipo: 'SERVICO' | 'PRODUTO', preco: number }[]
+            pagamento?: string
+            crediarioParcelas?: number | null
+            crediarioPrimeiroVencimento?: string | null
         } = {
             id: store.form.id,
             data: store.form.data!,
@@ -60,6 +116,11 @@ async function submitFormularioVenda() {
             vendedorId: store.form.vendedorId,
             garantia: store.form.garantia,
             observacoes: store.form.observacoes,
+            pagamento: paymentMethod.value,
+            crediarioParcelas: paymentMethod.value === 'CREDIARIO' ? Number(crediarioParcelas.value) : null,
+            crediarioPrimeiroVencimento: paymentMethod.value === 'CREDIARIO'
+                ? formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)
+                : null,
             itens: store.carrinho.map(item => ({
                 id: item.id,
                 nome: item.produto,
@@ -76,6 +137,7 @@ async function submitFormularioVenda() {
             toast.success('Venda criada com sucesso!');
         }
 
+        resetPagamentoVenda();
         store.updateTable();
         store.openModal = false;
     } catch (error: any) {
@@ -215,6 +277,11 @@ clearCartVendas();
 onMounted(() => {
     store.form.vendedorId = storeUi.usuarioLogged.id || null
 })
+
+// Ao abrir o modal para uma nova venda, começa com o pagamento no padrão.
+watch(() => store.openModal, (open) => {
+    if (open && !store.form.id) resetPagamentoVenda()
+})
 </script>
 
 <template>
@@ -227,7 +294,7 @@ onMounted(() => {
                     <div class="flex items-center justify-center gap-2">
                         <Select2Ajax v-model="store.form.clienteId" class="w-full" url="/clientes/select2"
                             :allow-clear="true" />
-                        <button type="button" @click="storeCliente.openSave"
+                        <button type="button" @click="abrirCadastroClienteVenda"
                             class="bg-primary px-4 py-1.5 text-white rounded-md border border-border dark:border-border-dark flex justify-center items-center">+</button>
                     </div>
                 </div>
@@ -263,7 +330,8 @@ onMounted(() => {
                     </Select>
                 </div>
 
-                <div class="col-span-6">
+                <div class="col-span-6"
+                    :class="{ 'md:col-span-6': paymentMethod === 'CREDIARIO', 'md:col-span-3': paymentMethod !== 'CREDIARIO' }">
                     <label class="block text-sm mb-1">Vendedor <span class="text-red-500">*</span></label>
                     <Select2Ajax :disabled="(hasPermission(storeUi.usuarioLogged, 3) ? false : true)" required
                         v-model="store.form.vendedorId" class="w-full" url="/usuarios/select2" />
@@ -306,8 +374,51 @@ onMounted(() => {
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
                         placeholder="Ex: 1,99" />
                 </div>
-            </div>
+                <div v-if="!store.form.id" class="col-span-12 grid grid-cols-12 gap-4"
+                    :class="{ 'md:col-span-12': paymentMethod === 'CREDIARIO', 'md:col-span-3': paymentMethod !== 'CREDIARIO' }">
+                    <div class="col-span-12"
+                        :class="{ 'md:col-span-4': paymentMethod === 'CREDIARIO', 'md:col-span-12': paymentMethod !== 'CREDIARIO' }">
+                        <label class="block text-sm mb-1">Forma de pagamento <span class="text-red-500">*</span></label>
+                        <Select v-model="paymentMethod">
+                            <SelectTrigger class="w-full bg-card dark:bg-card-dark">
+                                <SelectValue placeholder="Forma de pagamento" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="DINHEIRO">Dinheiro</SelectItem>
+                                <SelectItem value="PIX">PIX</SelectItem>
+                                <SelectItem value="CARTAO">Cartão</SelectItem>
+                                <SelectItem value="CREDIARIO">Crediário</SelectItem>
+                                <SelectItem value="BOLETO">Boleto</SelectItem>
+                                <SelectItem value="TRANSFERENCIA">Transferência</SelectItem>
+                                <SelectItem value="OUTRO">Outro</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
+                    <template v-if="paymentMethod === 'CREDIARIO'">
+                        <div class="col-span-6 md:col-span-4">
+                            <label class="block text-sm mb-1">Parcelas <span class="text-red-500">*</span></label>
+                            <Input v-model.number="crediarioParcelas" type="number" min="1" max="36"
+                                class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
+                        </div>
+                        <div class="col-span-6 md:col-span-4">
+                            <label class="block text-sm mb-1">Data da 1ª parcela <span
+                                    class="text-red-500">*</span></label>
+                            <Calendarpicker v-model="crediarioPrimeiroVencimento" :range="false" />
+                        </div>
+                        <div class="col-span-12">
+                            <div
+                                class="rounded-md border border-border dark:border-border-dark bg-card dark:bg-card-dark p-3 text-sm flex items-center justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">
+                                    <HandCoins class="inline w-4 h-4 mr-1" />
+                                    {{ crediarioParcelas || 1 }}x de aproximadamente
+                                </span>
+                                <strong>{{ formatCurrencyBR(valorParcelaCrediario) }}</strong>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
             <!-- Observações -->
             <div>
                 <div class="mb-1 flex items-center justify-between gap-2">
