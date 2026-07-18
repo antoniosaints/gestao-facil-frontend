@@ -112,8 +112,16 @@ const formatMessage = (text: string) => {
         // 8. Listas (Linhas começando com - ou *)
         .replace(/^\s*[-*]\s+(.*)$/gm, '<li class="ml-4 list-disc">$1</li>')
 
-        // 9. Links ([texto](url))
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
+        // 9. Links ([texto](url)) — só http(s) e aspas escapadas. Sem isso, uma URL
+        // como `javascript:...` ou contendo `"` permitiria XSS (a IA pode ser
+        // induzida por prompt-injection a emitir esse conteúdo).
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match: string, label: string, url: string) => {
+            const trimmed = url.trim();
+            const safeUrl = /^https?:\/\//i.test(trimmed)
+                ? trimmed.replace(/"/g, '&quot;')
+                : '#';
+            return `<a href="${safeUrl}" class="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">${label}</a>`;
+        })
 
         // 10. Citações (> texto)
         .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 italic my-2">$1</blockquote>')

@@ -800,7 +800,7 @@ onMounted(async () => {
             <Eye class="h-4 w-4 text-foreground" />
             Visão executiva do negócio
           </div>
-          <p class="text-xs text-muted-foreground">
+          <p class="text-xs text-muted-foreground truncate max-w-[500px]">
             {{ periodoDescricao }} • {{ resumoModulosLabel }}
           </p>
         </div>
