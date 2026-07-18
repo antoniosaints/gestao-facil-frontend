@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from "vue"
+import { ref, watch, onMounted, nextTick, getCurrentInstance } from "vue"
 import http from "@/utils/axios"
 import { X } from "lucide-vue-next"
 import {
@@ -50,6 +50,11 @@ const search = ref("")
 const loading = ref(false)
 let timeout: ReturnType<typeof setTimeout> | null = null
 
+// Navegação por teclado na lista de resultados (setas + Enter).
+// O primeiro resultado fica pré-destacado após cada busca.
+const highlightedIndex = ref(-1)
+const instanceUid = getCurrentInstance()?.uid ?? 0
+
 const clearSelection = () => {
     selectedId.value = null
     selectedItem.value = null
@@ -72,8 +77,60 @@ const fetchItems = async () => {
         let url = buildUrl(`?search=${encodeURIComponent(search.value || "")}`)
         const { data } = await http.get(url)
         items.value = data.results ?? []
+        // Pré-marca o primeiro resultado para permitir seleção rápida com Enter.
+        highlightedIndex.value = items.value.length ? 0 : -1
     } finally {
         loading.value = false
+    }
+}
+
+// Move o destaque entre os resultados (setas para cima/baixo).
+function moverDestaque(delta: number) {
+    if (!items.value.length) return
+    const total = items.value.length
+    const proximo = highlightedIndex.value + delta
+    highlightedIndex.value = Math.max(0, Math.min(total - 1, proximo))
+    scrollDestaqueIntoView()
+}
+
+// Seleciona o item atualmente destacado (Enter).
+function selecionarDestaque() {
+    const item = items.value[highlightedIndex.value]
+    if (item) selecionarItem(item)
+}
+
+// Seleciona um item por completo, mantendo o mesmo estado de um clique.
+function selecionarItem(item: Item) {
+    selectedItem.value = item
+    label.value = item.label
+    selectedId.value = item.id
+    search.value = ''
+    isOpen.value = false
+}
+
+function scrollDestaqueIntoView() {
+    nextTick(() => {
+        const el = document.querySelector(
+            `[data-sa-uid="${instanceUid}"][data-sa-index="${highlightedIndex.value}"]`,
+        ) as HTMLElement | null
+        el?.scrollIntoView({ block: "nearest" })
+    })
+}
+
+// Handler de teclado do campo de busca. Preserva o comportamento atual de
+// impedir a navegação/typeahead nativa do Select (stopPropagation) e adiciona
+// setas + Enter para navegar/selecionar os resultados.
+function onSearchKeydown(e: KeyboardEvent) {
+    e.stopPropagation()
+    if (e.key === "ArrowDown") {
+        e.preventDefault()
+        moverDestaque(1)
+    } else if (e.key === "ArrowUp") {
+        e.preventDefault()
+        moverDestaque(-1)
+    } else if (e.key === "Enter") {
+        e.preventDefault()
+        selecionarDestaque()
     }
 }
 
@@ -158,7 +215,7 @@ onMounted(fetchItems)
             <SelectContent class="w-min">
                 <div class="p-1">
                     <Input ref="searchInputRef" v-model="search" placeholder="Buscar..." class="w-full"
-                        @keydown.stop />
+                        @keydown="onSearchKeydown" />
                 </div>
                 <hr class="m-1">
                 <SelectGroup class="max-h-60 overflow-y-auto">
@@ -169,8 +226,10 @@ onMounted(fetchItems)
                         <div class="p-2 text-sm text-muted-foreground">Nenhum resultado</div>
                     </template>
                     <template v-else>
-                        <SelectItem class="cursor-pointer" @click.stop="(search = '')" v-for="item in items"
-                            :key="item.id" :value="item.id">
+                        <SelectItem class="cursor-pointer" v-for="(item, index) in items" :key="item.id"
+                            :value="item.id" :data-sa-uid="instanceUid" :data-sa-index="index"
+                            :class="index === highlightedIndex ? 'bg-accent text-accent-foreground' : ''"
+                            @mouseenter="highlightedIndex = index" @click.stop="(search = '')">
                             {{ item.label }}
                         </SelectItem>
                     </template>

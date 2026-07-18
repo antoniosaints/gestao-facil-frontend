@@ -21,7 +21,6 @@ import { useUiStore } from "@/stores/ui/uiStore";
 import { hasPermission } from "@/hooks/authorize";
 import { formatCurrencyBR } from "@/utils/formatters";
 
-const title = ref('Cadastro de venda')
 const description = ref('Preencha os campos abaixo')
 const toast = useToast()
 const store = useVendasStore()
