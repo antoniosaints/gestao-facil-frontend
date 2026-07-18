@@ -832,74 +832,12 @@
             </form>
         </ModalView>
 
-        <ModalView v-model:open="caixaStore.openModalFechamento" title="Fechar caixa"
-            description="Informe o saldo contado para concluir o caixa." size="sm">
-            <form class="grid gap-3 px-4" @submit.prevent="submitFechamentoCaixa">
-                <div class="space-y-2">
-                    <span class="text-xs font-medium text-muted-foreground">Saldo esperado por método</span>
-                    <div class="overflow-hidden rounded-md border">
-                        <div class="border-b bg-amber-50 px-3 py-2 dark:bg-amber-950/20">
-                            <div class="flex items-center justify-between gap-2">
-                                <div class="flex min-w-0 flex-col">
-                                    <span class="text-sm font-medium">Dinheiro</span>
-                                    <span class="text-[11px] text-amber-600">Conferir em espécie</span>
-                                </div>
-                                <strong class="text-sm">{{ formatCurrencyBR(esperadoPorMetodoFechamento.dinheiro) }}</strong>
-                            </div>
-                            <div class="mt-2">
-                                <Input v-model="fechamentoForm.valorFechamento" type="text" class="h-9"
-                                    placeholder="Valor contado (espécie)" />
-                            </div>
-                        </div>
-                        <div v-for="metodo in esperadoPorMetodoFechamento.outros" :key="metodo.metodo"
-                            class="border-b bg-background px-3 py-2 last:border-b-0">
-                            <div class="flex items-center justify-between gap-2">
-                                <div class="flex min-w-0 flex-col">
-                                    <span class="text-sm">{{ metodo.label }}</span>
-                                    <span class="text-[11px] text-muted-foreground">
-                                        {{ (proMode && contagemMetodos[metodo.metodo]?.habilitado)
-                                            ? 'Informe o valor contado' : 'Direto — não precisa contar' }}
-                                    </span>
-                                </div>
-                                <div class="flex shrink-0 items-center gap-2">
-                                    <span class="text-sm">{{ formatCurrencyBR(metodo.valor) }}</span>
-                                    <button v-if="proMode" type="button"
-                                        title="Informar valor contado deste método"
-                                        @click="toggleContagemMetodo(metodo.metodo, metodo.valor)"
-                                        class="grid h-7 w-7 place-items-center rounded-md border transition"
-                                        :class="contagemMetodos[metodo.metodo]?.habilitado
-                                            ? 'border-primary bg-primary/10 text-primary'
-                                            : 'border-border text-muted-foreground hover:bg-muted'">
-                                        <Coins class="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                            <div v-if="proMode && contagemMetodos[metodo.metodo]?.habilitado" class="mt-2">
-                                <Input v-model="contagemMetodos[metodo.metodo].contado" type="text"
-                                    class="h-9" placeholder="Valor contado (opcional)" />
-                            </div>
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-muted-foreground">
-                        {{ proMode
-                            ? 'Clique no ícone de moeda ao lado de um método para informar o valor contado..'
-                            : 'Confira apenas o dinheiro em caixa. PIX, cartão e crediário entram automaticamente.' }}
-                    </p>
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs text-muted-foreground">Observacao</label>
-                    <Input v-model="fechamentoForm.descricao" placeholder="Conferencia do fechamento" />
-                </div>
-                <div class="flex justify-end gap-2">
-                    <Button type="button" variant="outline" @click="caixaStore.openModalFechamento = false">
-                        Cancelar
-                    </Button>
-                    <Button type="submit" :disabled="caixaStore.loading">
-                        Fechar caixa
-                    </Button>
-                </div>
-            </form>
-        </ModalView>
+        <ModalFechamentoCaixa v-model:open="caixaStore.openModalFechamento"
+            :caixa="caixaStore.caixaAtivo"
+            :saldo-esperado="esperadoPorMetodoFechamento.dinheiro"
+            :por-metodo="caixaRelatorioAtual?.resumo.porMetodo || {}"
+            :loading="caixaStore.loading"
+            @confirmar="submitFechamentoCaixa" />
 
         <ClientesModal />
         <!-- <ModalFechamento v-model:open="openModalFechamento" /> -->
@@ -928,13 +866,14 @@ import { useClientesStore } from '@/stores/clientes/useClientes';
 import { useCaixaStore } from '@/stores/vendas/useCaixa';
 import { ClienteRepository } from '@/repositories/cliente-repository';
 import { VendaRepository } from '@/repositories/venda-repository';
-import { CaixaRepository, type MetodoContado } from '@/repositories/caixa-repository';
+import { CaixaRepository, type FecharCaixaPayload } from '@/repositories/caixa-repository';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import BadgeCell from '@/components/tabela/BadgeCell.vue';
-import { Banknote, CirclePercent, Coins, CreditCard, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Package, PlusCircleIcon, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
+import { Banknote, CirclePercent, CreditCard, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Package, PlusCircleIcon, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
+import ModalFechamentoCaixa from '@/pages/vendas/caixas/ModalFechamentoCaixa.vue';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import type { CaixaRelatorioResponse, ClientesFornecedores, ProdutoVariante } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
@@ -995,10 +934,6 @@ const movimentoForm = ref({
 })
 const caixaRelatorio = ref<CaixaRelatorioResponse | null>(null)
 const caixaRelatorioLoading = ref(false)
-const fechamentoForm = ref({
-    valorFechamento: '',
-    descricao: '',
-})
 function focusDiscountInput() {
     setTimeout(() => {
         const el = discountInputRef.value?.$el as HTMLInputElement | undefined
@@ -1142,8 +1077,7 @@ async function fecharCaixa() {
         title: 'Fechar caixa'
     })
     if (!result) return
-    fechamentoForm.value.valorFechamento = String(caixaStore.caixaAtivo.saldoEsperado || '')
-    contagemMetodos.value = {}
+    await carregarRelatorioCaixaAtivo()
     caixaStore.openModalFechamento = true
     openModalAcoes.value = false
 }
@@ -1224,43 +1158,12 @@ async function submitMovimentoCaixa() {
     await carregarRelatorioCaixaAtivo()
 }
 
-async function submitFechamentoCaixa() {
+async function submitFechamentoCaixa(payload: Omit<FecharCaixaPayload, 'caixaId'>) {
     if (!caixaStore.caixaAtivo?.id) return toast.error('Nenhum caixa aberto')
-    const dinheiroContado = formatToNumberValue(fechamentoForm.value.valorFechamento)
-
-    // No PDV PRO, envia a contagem por método; dinheiro sempre entra, os demais só se informados.
-    let metodosContados: MetodoContado[] | undefined
-    if (proMode) {
-        const dinheiroEsperado = Number(esperadoPorMetodoFechamento.value.dinheiro || 0)
-        metodosContados = [
-            {
-                metodo: 'DINHEIRO',
-                esperado: dinheiroEsperado,
-                contado: dinheiroContado,
-                diferenca: dinheiroContado - dinheiroEsperado,
-            },
-            ...esperadoPorMetodoFechamento.value.outros.map((m) => {
-                const estado = contagemMetodos.value[m.metodo]
-                const informado = estado?.habilitado && String(estado.contado).trim() !== ''
-                const contado = informado ? formatToNumberValue(estado!.contado) : m.valor
-                return {
-                    metodo: m.metodo,
-                    esperado: m.valor,
-                    contado,
-                    diferenca: contado - m.valor,
-                }
-            }),
-        ]
-    }
-
     await caixaStore.fecharCaixa({
         caixaId: caixaStore.caixaAtivo.id,
-        valorFechamento: dinheiroContado,
-        descricao: fechamentoForm.value.descricao || undefined,
-        metodosContados,
+        ...payload,
     })
-    fechamentoForm.value = { valorFechamento: '', descricao: '' }
-    contagemMetodos.value = {}
     syncPodeFinalizarPDV()
 }
 
@@ -1368,19 +1271,6 @@ const esperadoPorMetodoFechamento = computed(() => {
         .map(([metodo, valor]) => ({ metodo, label: getPaymentMethodLabel(metodo), valor: Number(valor) }))
     return { dinheiro, outros }
 })
-
-// PDV PRO: contagem opcional por método. Só entra no fechamento se o operador habilitar
-// (clicando no ícone de moeda) e informar um valor; senão, considera-se o esperado como correto.
-const contagemMetodos = ref<Record<string, { habilitado: boolean; contado: string }>>({})
-
-function toggleContagemMetodo(metodo: string, esperado: number) {
-    const atual = contagemMetodos.value[metodo]
-    if (atual?.habilitado) {
-        contagemMetodos.value[metodo] = { habilitado: false, contado: '' }
-    } else {
-        contagemMetodos.value[metodo] = { habilitado: true, contado: String(esperado ?? '') }
-    }
-}
 
 function formatDateTimeBR(value?: string | Date | null) {
     if (!value) return ''

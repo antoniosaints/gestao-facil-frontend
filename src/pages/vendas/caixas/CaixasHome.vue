@@ -26,6 +26,7 @@ import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue'
+import ModalFechamentoCaixa from '@/pages/vendas/caixas/ModalFechamentoCaixa.vue'
 import PieChart from '@/components/graficos/PieChart.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,7 @@ import { optionsChartBarDefault, optionsChartPie } from '@/composables/useChartO
 import {
   CaixaRepository,
   type CaixaRelatorioParams,
+  type FecharCaixaPayload,
 } from '@/repositories/caixa-repository'
 import {
   ContaRepository,
@@ -90,8 +92,6 @@ const canCloseCaixas = computed(() => storeUi.permissoes.admin)
 
 const openModalFechar = ref(false)
 const caixaParaFechar = ref<CaixaRelatorioResponse['caixas'][number] | null>(null)
-const valorFechamento = ref<number | null>(null)
-const descricaoFechamento = ref('')
 const fechandoCaixa = ref(false)
 
 const filtrosAtivos = computed(() => {
@@ -258,17 +258,6 @@ function getPaymentMethodLabel(method?: string | null) {
   }
 }
 
-// Fechamento: dinheiro é o único conferido em espécie (saldoEsperado já inclui
-// saldo inicial + reforços − sangrias); os demais métodos são diretos e apenas informados.
-const esperadoPorMetodoFechamento = computed(() => {
-  const resumo = caixaParaFechar.value?.resumo
-  const dinheiro = Number(resumo?.saldoEsperado || 0)
-  const outros = Object.entries(resumo?.porMetodo || {})
-    .filter(([metodo, valor]) => metodo !== 'DINHEIRO' && Number(valor) > 0)
-    .map(([metodo, valor]) => ({ label: getPaymentMethodLabel(metodo), valor: Number(valor) }))
-  return { dinheiro, outros }
-})
-
 function abrirDetalhes(caixa: CaixaRelatorioResponse['caixas'][number]) {
   caixaSelecionado.value = caixa
   openModalDetalhes.value = true
@@ -325,22 +314,16 @@ async function deletarCaixa(item: CaixaRelatorioResponse['caixas'][number]) {
 
 function abrirFecharCaixa(item: CaixaRelatorioResponse['caixas'][number]) {
   caixaParaFechar.value = item
-  valorFechamento.value = Number(item.resumo.saldoEsperado || 0)
-  descricaoFechamento.value = ''
   openModalFechar.value = true
 }
 
-async function confirmarFecharCaixa() {
-  if (!caixaParaFechar.value || valorFechamento.value === null || valorFechamento.value < 0) {
-    toast.error('Informe o valor contado no fechamento.')
-    return
-  }
+async function confirmarFecharCaixa(payload: Omit<FecharCaixaPayload, 'caixaId'>) {
+  if (!caixaParaFechar.value) return
   try {
     fechandoCaixa.value = true
     await CaixaRepository.fecharCaixaGerencial({
       caixaId: caixaParaFechar.value.caixa.id,
-      valorFechamento: Number(valorFechamento.value),
-      descricao: descricaoFechamento.value.trim() || undefined,
+      ...payload,
     })
     toast.success('Caixa fechado com sucesso')
     openModalFechar.value = false
@@ -352,11 +335,6 @@ async function confirmarFecharCaixa() {
     fechandoCaixa.value = false
   }
 }
-
-const diferencaFechamento = computed(() => {
-  if (!caixaParaFechar.value || valorFechamento.value === null) return 0
-  return Number(valorFechamento.value) - Number(caixaParaFechar.value.resumo.saldoEsperado || 0)
-})
 
 async function carregarInstanciasWhatsapp() {
   try {
@@ -866,70 +844,13 @@ onMounted(() => {
         </section>
       </div>
     </ModalView>
-    <ModalView v-model:open="openModalFechar" title="Fechar caixa" size="md">
-      <div v-if="caixaParaFechar" class="grid gap-4 p-4">
-        <div class="rounded-md border bg-muted/30 p-3 text-sm">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground">Caixa</span>
-            <strong>{{ caixaParaFechar.caixa.codigo }}</strong>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-muted-foreground">Operador</span>
-            <span>{{ caixaParaFechar.caixa.abertoPor?.nome || '-' }}</span>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <label class="text-sm font-medium">Saldo esperado por método</label>
-          <div class="overflow-hidden rounded-md border">
-            <div class="flex items-center justify-between gap-2 border-b bg-amber-50 px-3 py-2 dark:bg-amber-950/20">
-              <div class="flex flex-col">
-                <span class="text-sm font-medium">Dinheiro</span>
-                <span class="text-[11px] text-amber-600">Conferir em espécie</span>
-              </div>
-              <strong class="text-sm">{{ formatCurrencyBR(esperadoPorMetodoFechamento.dinheiro) }}</strong>
-            </div>
-            <div v-for="metodo in esperadoPorMetodoFechamento.outros" :key="metodo.label"
-              class="flex items-center justify-between gap-2 border-b bg-background px-3 py-2 last:border-b-0">
-              <div class="flex flex-col">
-                <span class="text-sm">{{ metodo.label }}</span>
-                <span class="text-[11px] text-muted-foreground">Direto — não precisa contar</span>
-              </div>
-              <span class="text-sm">{{ formatCurrencyBR(metodo.valor) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="space-y-1.5">
-          <label class="text-sm font-medium">Dinheiro contado (espécie)</label>
-          <Input v-model.number="(valorFechamento as any)" type="number" min="0" step="0.01" placeholder="0,00" />
-          <p class="text-[11px] text-muted-foreground">
-            Confira apenas o dinheiro em caixa. PIX, cartão e crediário entram automaticamente.
-          </p>
-        </div>
-
-        <div class="rounded-md border p-3 text-sm"
-          :class="diferencaFechamento === 0 ? 'text-muted-foreground' : diferencaFechamento > 0 ? 'text-emerald-600' : 'text-rose-600'">
-          <div class="flex justify-between">
-            <span>Diferença</span>
-            <strong>{{ formatCurrencyBR(diferencaFechamento) }}</strong>
-          </div>
-        </div>
-
-        <div class="space-y-1.5">
-          <label class="text-sm font-medium">Observação (opcional)</label>
-          <Input v-model="descricaoFechamento" placeholder="Ex.: Fechamento gerencial pela tabela" />
-        </div>
-
-        <div class="flex justify-end gap-2">
-          <Button variant="outline" :disabled="fechandoCaixa" @click="openModalFechar = false">Cancelar</Button>
-          <Button :disabled="fechandoCaixa || valorFechamento === null" @click="confirmarFecharCaixa">
-            <Lock class="h-4 w-4" />
-            {{ fechandoCaixa ? 'Fechando...' : 'Fechar caixa' }}
-          </Button>
-        </div>
-      </div>
-    </ModalView>
+    <ModalFechamentoCaixa v-model:open="openModalFechar"
+      :caixa="caixaParaFechar?.caixa || null"
+      :saldo-esperado="Number(caixaParaFechar?.resumo.saldoEsperado || 0)"
+      :por-metodo="caixaParaFechar?.resumo.porMetodo || {}"
+      :loading="fechandoCaixa"
+      observacao-placeholder="Ex.: Fechamento gerencial pelo painel"
+      @confirmar="confirmarFecharCaixa" />
 
     <ModalView v-model:open="openModalReenvio" title="Reenviar resumo via WhatsApp" size="md">
       <div class="grid gap-4 p-4">
