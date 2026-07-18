@@ -22,6 +22,13 @@ type ApiResponse<T> = AxiosResponse<{
   status: number
 }>
 
+type LoginResult = {
+  ok: boolean
+  rateLimited?: boolean
+  retryAfter?: number
+  message?: string
+}
+
 const toast = useToast()
 
 export const useAuthStore = defineStore('authStore', () => {
@@ -49,15 +56,28 @@ export const useAuthStore = defineStore('authStore', () => {
     clearSupport()
   }
 
-  const login = async (email: string, senha: string) => {
+  const login = async (email: string, senha: string): Promise<LoginResult> => {
     try {
       const { data } = await http.post<any, ApiResponse<LoginResponse>>('/login', { email, senha })
       saveSession(data.data)
       toast.success('Login efetuado com sucesso!')
       router.push('/')
+      return { ok: true }
     } catch (error: any) {
       console.error(error)
+      // 429 = rate limit. A tela de login mostra um aviso visual com contagem
+      // regressiva, então aqui só devolvemos os dados (sem toast duplicado).
+      if (error.response?.status === 429) {
+        const retryAfter = Number(error.response?.data?.retryAfter) || 60
+        return {
+          ok: false,
+          rateLimited: true,
+          retryAfter,
+          message: error.response?.data?.message,
+        }
+      }
       toast.error(error.response?.data?.message || 'Erro ao efetuar login')
+      return { ok: false }
     }
   }
 

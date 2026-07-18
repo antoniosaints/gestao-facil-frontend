@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores/login/useAuthStore';
 import {
     Loader2, LogIn, Mail, Lock, Eye, EyeOff,
     ScanLine, Boxes, Wallet, LineChart,
-    ShieldCheck, DatabaseBackup, Headset, ArrowRight,
+    ShieldCheck, DatabaseBackup, Headset, ArrowRight, TriangleAlert,
 } from 'lucide-vue-next';
 
 // Shadcn Components
@@ -33,6 +33,29 @@ const loading = ref(false);
 const showForgotPasswordDialog = ref(false);
 const saveDataLogin = ref<boolean>(localStorage.getItem('gestao_facil:credentials_login') == 'true' || false);
 
+// Bloqueio por excesso de tentativas (429 do rate limiter). Enquanto > 0,
+// mostramos um aviso visual com contagem regressiva e travamos o botão.
+const rateLimitSeconds = ref(0);
+const rateLimitMessage = ref('');
+let rateLimitTimer: ReturnType<typeof setInterval> | null = null;
+
+function startRateLimitCountdown(seconds: number, message?: string) {
+    if (rateLimitTimer) clearInterval(rateLimitTimer);
+    rateLimitSeconds.value = Math.max(1, Math.ceil(seconds));
+    rateLimitMessage.value = message || 'Muitas tentativas de login.';
+    rateLimitTimer = setInterval(() => {
+        rateLimitSeconds.value -= 1;
+        if (rateLimitSeconds.value <= 0 && rateLimitTimer) {
+            clearInterval(rateLimitTimer);
+            rateLimitTimer = null;
+        }
+    }, 1000);
+}
+
+onUnmounted(() => {
+    if (rateLimitTimer) clearInterval(rateLimitTimer);
+});
+
 const features = [
     { icon: ScanLine, title: 'Vendas e PDV', desc: 'Caixa rápido e cupom' },
     { icon: Boxes, title: 'Estoque', desc: 'Controle em tempo real' },
@@ -47,10 +70,14 @@ const trust = [
 ];
 
 async function loginUsuario() {
+    if (rateLimitSeconds.value > 0) return;
     loading.value = true;
     try {
         localStorage.setItem('gestao_facil:credentials_login', saveDataLogin.value.toString());
-        await store.login(login.value.email, login.value.password);
+        const result = await store.login(login.value.email, login.value.password);
+        if (result?.rateLimited) {
+            startRateLimitCountdown(result.retryAfter ?? 60, result.message);
+        }
     } catch (error) {
         console.error("Login falhou", error);
     } finally {
@@ -144,6 +171,18 @@ function togglePasswordVisibility() {
                     <p class="text-muted-foreground">Bem-vindo de volta. Acesse para continuar gerenciando seu negócio.</p>
                 </div>
 
+                <!-- Aviso de bloqueio por excesso de tentativas (rate limit / 429) -->
+                <div v-if="rateLimitSeconds > 0" role="alert"
+                    class="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                    <TriangleAlert class="mt-0.5 h-5 w-5 shrink-0" />
+                    <div class="space-y-0.5 text-sm">
+                        <p class="font-semibold">Você excedeu o limite de tentativas de login</p>
+                        <p>Por segurança, aguarde
+                            <span class="font-bold tabular-nums">{{ rateLimitSeconds }}s</span>
+                            e tente novamente.</p>
+                    </div>
+                </div>
+
                 <form @submit.prevent="loginUsuario" class="space-y-5">
                     <div class="space-y-2">
                         <Label for="email">E-mail</Label>
@@ -183,10 +222,10 @@ function togglePasswordVisibility() {
                     </div>
 
                     <Button type="submit" class="h-11 w-full text-base font-bold text-white dark:text-white"
-                        :disabled="loading">
+                        :disabled="loading || rateLimitSeconds > 0">
                         <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
                         <LogIn v-else class="mr-2 h-4 w-4" />
-                        {{ loading ? 'Entrando...' : 'Entrar' }}
+                        {{ loading ? 'Entrando...' : (rateLimitSeconds > 0 ? `Aguarde ${rateLimitSeconds}s` : 'Entrar') }}
                     </Button>
                 </form>
 
