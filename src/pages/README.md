@@ -20,6 +20,7 @@ Cada domínio tende a repetir esta estrutura:
 - O router define qual página é renderizada e qual layout será usado.
 - `VITE_MODE_SYSTEM` altera a escolha de algumas telas, principalmente entre ERP e `arena`.
 - Rotas privadas dependem de autenticação, status da conta e `permissao`.
+- A rota pública `/site/termos-politica` centraliza os Termos de Uso e a Política de Privacidade em `site/TermosPolitica.vue`; os hashes `#termos` e `#privacidade` abrem diretamente o documento correspondente e devem ser usados pelos links do site, cadastro e login.
 - Páginas de dashboard devem refletir filtros operacionais reais do domínio, como período e agregações segregadas por conta.
 - No financeiro, o domínio pode combinar uma listagem geral de lançamentos com telas operacionais separadas para acompanhamento, contas a pagar, contas a receber e assinaturas a pagar, reutilizando a mesma base de parcelas, filtros e ações rápidas quando a segmentação melhorar a UX.
 - A tela `financeiro/inadimplencia/Home.vue` deve manter as ações rápidas de lembrete na própria listagem: configurar lançamento, configurar padrão do cliente, enviar agora e ativar/desativar o lembrete por lançamento via switch sem abrir o registro.

@@ -269,9 +269,9 @@ function togglePasswordVisibility() {
 
                 <p class="text-center text-xs text-muted-foreground">
                     Ao continuar, você concorda com os
-                    <RouterLink to="/site/termos-politica" class="underline underline-offset-2 hover:text-foreground">Termos</RouterLink>
+                    <RouterLink to="/site/termos-politica#termos" class="underline underline-offset-2 hover:text-foreground">Termos</RouterLink>
                     e a
-                    <RouterLink to="/site/termos-politica" class="underline underline-offset-2 hover:text-foreground">Política de Privacidade</RouterLink>.
+                    <RouterLink to="/site/termos-politica#privacidade" class="underline underline-offset-2 hover:text-foreground">Política de Privacidade</RouterLink>.
                 </p>
             </div>
         </div>

@@ -222,9 +222,9 @@
                                 <Checkbox id="terms" v-model="store.form.terms" />
                                 <label for="terms"
                                     class="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Aceito os <RouterLink to="/site/termos-politica" target="_blank"
+                                    Aceito os <RouterLink to="/site/termos-politica#termos" target="_blank"
                                         class="text-primary hover:underline">Termos de Uso</RouterLink> e <RouterLink
-                                        to="/site/termos-politica" target="_blank" class="text-primary hover:underline">
+                                        to="/site/termos-politica#privacidade" target="_blank" class="text-primary hover:underline">
                                         Política de Privacidade</RouterLink>.
                                 </label>
                             </div>

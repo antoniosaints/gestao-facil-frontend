@@ -419,8 +419,8 @@
                     <div>
                         <h4 class="font-bold mb-4 text-white dark:text-foreground">Legal</h4>
                         <ul class="space-y-2 text-sm text-zinc-400">
-                            <li><RouterLink to="/site/termos-politica" class="hover:text-primary transition-colors">Termos de Uso</RouterLink></li>
-                            <li><RouterLink to="/site/termos-politica" class="hover:text-primary transition-colors">Privacidade</RouterLink></li>
+                            <li><RouterLink to="/site/termos-politica#termos" class="hover:text-primary transition-colors">Termos de Uso</RouterLink></li>
+                            <li><RouterLink to="/site/termos-politica#privacidade" class="hover:text-primary transition-colors">Privacidade</RouterLink></li>
                             <li><RouterLink to="/login" class="hover:text-primary transition-colors">Entrar</RouterLink></li>
                         </ul>
                     </div>
