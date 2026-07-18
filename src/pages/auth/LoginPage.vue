@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores/login/useAuthStore';
+import http from '@/utils/axios';
+import { useToast } from 'vue-toastification';
 import {
     Loader2, LogIn, Mail, Lock, Eye, EyeOff,
     ScanLine, Boxes, Wallet, LineChart,
@@ -22,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 
 const store = useAuthStore();
+const toast = useToast();
 
 const login = ref({
     email: '',
@@ -31,6 +34,29 @@ const login = ref({
 const showPassword = ref(false);
 const loading = ref(false);
 const showForgotPasswordDialog = ref(false);
+
+// Recuperação de senha (envia e-mail via Resend no backend).
+const forgotEmail = ref('');
+const forgotLoading = ref(false);
+
+async function enviarRecuperacao() {
+    const email = forgotEmail.value.trim();
+    if (!email) {
+        toast.error('Informe o e-mail da sua conta.');
+        return;
+    }
+    forgotLoading.value = true;
+    try {
+        const { data } = await http.post('/auth/recuperar-senha', { email });
+        toast.success(data?.message || 'Se o e-mail estiver cadastrado, enviaremos as instruções.');
+        showForgotPasswordDialog.value = false;
+        forgotEmail.value = '';
+    } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Não foi possível enviar o e-mail. Tente novamente.');
+    } finally {
+        forgotLoading.value = false;
+    }
+}
 const saveDataLogin = ref<boolean>(localStorage.getItem('gestao_facil:credentials_login') == 'true' || false);
 
 // Bloqueio por excesso de tentativas (429 do rate limiter). Enquanto > 0,
@@ -259,16 +285,21 @@ function togglePasswordVisibility() {
                         Digite o e-mail associado à sua conta para receber as instruções de recuperação.
                     </DialogDescription>
                 </DialogHeader>
-                <div class="grid gap-4 py-4">
+                <form @submit.prevent="enviarRecuperacao" class="grid gap-4 py-4">
                     <div class="grid gap-2">
                         <Label for="reset-email">E-mail</Label>
-                        <Input id="reset-email" placeholder="seu@email.com" />
+                        <Input id="reset-email" type="email" v-model="forgotEmail" placeholder="seu@email.com"
+                            required />
                     </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" @click="showForgotPasswordDialog = false">Cancelar</Button>
-                    <Button type="submit" class="font-bold text-white dark:text-white">Enviar Instruções</Button>
-                </DialogFooter>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" @click="showForgotPasswordDialog = false"
+                            :disabled="forgotLoading">Cancelar</Button>
+                        <Button type="submit" class="font-bold text-white dark:text-white" :disabled="forgotLoading">
+                            <Loader2 v-if="forgotLoading" class="mr-2 h-4 w-4 animate-spin" />
+                            {{ forgotLoading ? 'Enviando...' : 'Enviar Instruções' }}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
 

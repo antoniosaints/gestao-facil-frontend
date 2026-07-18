@@ -820,6 +820,14 @@ const routes: RouteInterface[] = [
     },
   },
   {
+    path: '/redefinir-senha',
+    name: 'redefinir-senha',
+    component: () => import('@/pages/auth/ResetPasswordPage.vue'),
+    meta: {
+      isPublic: true,
+    },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'notfound',
     component: () => import('@/pages/errors/NotFound.vue' as string),
