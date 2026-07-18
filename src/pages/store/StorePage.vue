@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Banknote,
   Bot,
+  CalendarCheck,
   CircleCheck,
   CircleDollarSign,
   CreditCard,
@@ -33,6 +34,7 @@ import {
   ShoppingCart,
   Sparkles,
   Trash2,
+  Wrench,
 } from 'lucide-vue-next'
 
 const toast = useToast()
@@ -67,6 +69,8 @@ const iconMap = {
   assinaturas: Sparkles,
   whatsapp: MessageCircle,
   atendimento: Headset,
+  servicos: Wrench,
+  arena: CalendarCheck,
   'mercado-pago': CreditCard,
   abacatepay: Banknote,
 } as const
@@ -86,18 +90,21 @@ const iconShellClassMap: Record<string, string> = {
   assinaturas: 'bg-fuchsia-500/15 text-fuchsia-300 ring-1 ring-fuchsia-500/20',
   whatsapp: 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/20',
   atendimento: 'bg-green-500/15 text-green-300 ring-1 ring-green-500/20',
+  servicos: 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/20',
+  arena: 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/20',
   'mercado-pago': 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/20',
   abacatepay: 'bg-lime-500/15 text-lime-300 ring-1 ring-lime-500/20',
 }
 
 const categoryOrder: Record<string, number> = {
-  financeiro: 0,
-  recorrencia: 1,
-  notificacoes: 2,
-  'chat inteligente': 3,
-  'canais de comunicacao': 4,
-  'sistemas de gestao': 5,
-  crm: 6,
+  extensoes: 0,
+  financeiro: 1,
+  produtividade: 2,
+  notificacoes: 3,
+  'chat inteligente': 4,
+  'canais de comunicacao': 5,
+  'sistemas de gestao': 6,
+  crm: 7,
 }
 
 const mercadoPagoConfigured = computed(() => Boolean(formMercadoPago.MercadoPagoApiKey))

@@ -270,12 +270,9 @@ const routes: RouteInterface[] = [
   {
     path: '/agendamento/:conta',
     name: 'reservar-horario',
-    component: () => {
-      if (env.VITE_MODE_SYSTEM === 'arena') {
-        return import('@/pages/arena/publico/ReservarHorario.vue')
-      }
-      return import('@/pages/errors/NotFound.vue' as string)
-    },
+    // Página pública de reserva. Disponível também no ERP (Arena é um módulo da loja),
+    // não apenas no build dedicado do modo arena.
+    component: () => import('@/pages/arena/publico/ReservarHorario.vue'),
     meta: {
       isPublic: true,
     },
@@ -401,6 +398,17 @@ const routes: RouteInterface[] = [
         meta: {
           layout: 'main',
           permissao: 2,
+          modulo: 'arena',
+        },
+      },
+      {
+        path: 'painel',
+        name: 'arena-painel',
+        component: () => import('@/pages/arena/reservas/PainelReservas.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 2,
+          modulo: 'arena',
         },
       },
       {
@@ -410,6 +418,7 @@ const routes: RouteInterface[] = [
         meta: {
           layout: 'main',
           permissao: 2,
+          modulo: 'arena',
         },
       },
       {
@@ -419,6 +428,7 @@ const routes: RouteInterface[] = [
         meta: {
           layout: 'main',
           permissao: 2,
+          modulo: 'arena',
         },
       },
       {
@@ -428,6 +438,7 @@ const routes: RouteInterface[] = [
         meta: {
           layout: 'main',
           permissao: 2,
+          modulo: 'arena',
         },
       },
       {
@@ -437,6 +448,7 @@ const routes: RouteInterface[] = [
         meta: {
           layout: 'main',
           permissao: 3,
+          modulo: 'arena',
         },
       },
       {
@@ -446,6 +458,7 @@ const routes: RouteInterface[] = [
         meta: {
           layout: 'main',
           permissao: 2,
+          modulo: 'arena',
         },
       },
     ],

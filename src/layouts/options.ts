@@ -52,6 +52,7 @@ export const MAIN_MENU_VISIBILITY_OPTIONS = [
   { key: 'clientes', nome: 'Clientes', descricao: 'Clientes e fornecedores.', icon: Users },
   { key: 'assinaturas', nome: 'Contratos', descricao: 'Módulo adicional de contratos recorrentes.', icon: FilePenLineIcon },
   { key: 'loja-virtual', nome: 'Loja Virtual', descricao: 'Módulo adicional de vitrine e pedidos online.', icon: Package },
+  { key: 'arena', nome: 'Arena', descricao: 'Módulo adicional de quadras, reservas, calendário e comandas.', icon: CalendarCheck },
   { key: 'core-ia', nome: 'Core IA', descricao: 'Módulo adicional de inteligência artificial.', icon: Bot },
   { key: 'whatsapp', nome: 'WhatsApp', descricao: 'Módulo adicional de instâncias e conexão.', icon: MessageCircle },
   { key: 'usuarios', nome: 'Usuários', descricao: 'Administração de usuários.', icon: User },
@@ -67,6 +68,7 @@ export const APP_MENU_MODULE_KEYS: Partial<Record<MainMenuVisibilityKey, string>
   atendimento: 'atendimento',
   assinaturas: 'assinaturas',
   'loja-virtual': 'loja-virtual',
+  arena: 'arena',
   'core-ia': 'core-ia',
   whatsapp: 'whatsapp',
 }
@@ -119,6 +121,13 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'servicos:painel', nome: 'Painel' },
     { key: 'servicos:os', nome: 'Ordens de serviço' },
     { key: 'servicos:lista', nome: 'Serviços' },
+  ],
+  arena: [
+    { key: 'arena:painel', nome: 'Painel' },
+    { key: 'arena:calendario', nome: 'Calendário' },
+    { key: 'arena:reservas', nome: 'Reservas' },
+    { key: 'arena:quadras', nome: 'Quadras' },
+    { key: 'arena:comandas', nome: 'Comandas' },
   ],
   assinaturas: [
     { key: 'assinaturas:painel', nome: 'Painel' },
@@ -180,6 +189,7 @@ export const sidebarMenuOptions = (
   const hasWhatsappApp = Boolean(appModules.whatsapp)
   const hasAtendimentoApp = Boolean(appModules.atendimento)
   const hasLojaApp = Boolean(appModules['loja-virtual'])
+  const hasArenaApp = Boolean(appModules.arena)
   const hasVisibleAppsSection =
     (permissions.financeiro.visualizar && hasAssinaturasApp) ||
     (permissions.vendas.visualizar && hasCoreIaApp) ||
@@ -240,33 +250,45 @@ export const sidebarMenuOptions = (
       ],
     },
     {
+      key: 'arena',
       nome: 'Arena',
       icone: CalendarCheck,
-      show: false,
+      show: permissions.vendas.visualizar && hasArenaApp,
       color: 'blue',
       children: [
         {
+          key: 'arena:painel',
           nome: 'Painel',
-          link: '/vendas/dashboard',
+          link: '/arena/painel',
           icone: ChartPie,
           color: 'blue',
         },
         {
+          key: 'arena:calendario',
           nome: 'Calendário',
-          link: '/vendas',
+          link: '/arena/calendario',
           icone: CalendarCheck2,
           color: 'blue',
         },
         {
+          key: 'arena:reservas',
           nome: 'Reservas',
-          link: '/vendas/dashboard',
+          link: '/arena/reservas',
           icone: TicketCheck,
           color: 'blue',
         },
         {
+          key: 'arena:quadras',
           nome: 'Quadras',
-          link: '/vendas/dashboard',
+          link: '/arena/quadras',
           icone: MapPinned,
+          color: 'blue',
+        },
+        {
+          key: 'arena:comandas',
+          nome: 'Comandas',
+          link: '/arena/comandas',
+          icone: ClipboardList,
           color: 'blue',
         },
       ],
