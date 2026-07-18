@@ -17,6 +17,7 @@
                 <SidebarMenu :menu="sidebarMenu" />
             </div>
             <div>
+                <InstallAppButton />
                 <div class="grid grid-cols-12 gap-2 items-center justify-center">
                     <LogoutButton class="col-span-10 md:col-span-12" />
                     <ColorToggle class="col-span-2 h-full w-full" v-if="store.isMobile" />
@@ -69,6 +70,7 @@ import { filterSidebarMenuByVisibility, sidebarMenuOptions } from './options'
 import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import InstallPrompt from '@/components/layout/installPrompt.vue'
+import InstallAppButton from '@/components/layout/InstallAppButton.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
 import SupportBadge from '@/components/layout/SupportBadge.vue'
 import { isSupportActive } from '@/utils/supportSession'

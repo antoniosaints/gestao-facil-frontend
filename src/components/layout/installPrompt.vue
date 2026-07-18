@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue"
+import { ref, watch } from "vue"
 import {
     AlertDialog,
     AlertDialogContent,
@@ -10,33 +10,26 @@ import {
     AlertDialogCancel,
     AlertDialogAction
 } from "@/components/ui/alert-dialog"
+import { usePwaInstall } from "@/composables/usePwaInstall"
 
+const { canInstall, promptInstall } = usePwaInstall()
 const showDialog = ref(false)
-const deferredPrompt = ref<any>(null)
 
-onMounted(() => {
-    window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault()
-        deferredPrompt.value = e
-
-        // Só mostra se o usuário nunca recusou
-        if (!localStorage.getItem("pwaInstallDismissed")) {
+// Abre o diálogo automaticamente quando o app fica instalável, a menos que o
+// usuário já tenha recusado antes.
+watch(
+    canInstall,
+    (value) => {
+        if (value && !localStorage.getItem("pwaInstallDismissed")) {
             showDialog.value = true
         }
-    })
-})
+    },
+    { immediate: true },
+)
 
 const instalarApp = async () => {
-    if (!deferredPrompt.value) return
-    deferredPrompt.value.prompt()
-    const choice = await deferredPrompt.value.userChoice
-    if (choice.outcome === "accepted") {
-        console.log("Usuário aceitou instalar")
-        localStorage.setItem("pwaInstallDismissed", "true")
-    } else {
-        console.log("Usuário recusou instalar")
-        localStorage.setItem("pwaInstallDismissed", "true")
-    }
+    await promptInstall()
+    localStorage.setItem("pwaInstallDismissed", "true")
     showDialog.value = false
 }
 
