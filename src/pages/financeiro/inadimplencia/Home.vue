@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ExternalLink,
   RotateCw,
+  Search,
   Send,
   Settings2,
   SlidersHorizontal,
@@ -359,7 +360,8 @@ onMounted(load)
           <SelectItem value="A_VENCER">Somente a vencer</SelectItem>
         </SelectContent>
       </Select>
-      <Button variant="secondary" @click="aplicarFiltros">Buscar</Button>
+      <Button variant="outline" @click="aplicarFiltros">
+        <Search class="mr-2 h-4 w-4" /> Buscar</Button>
       <Button variant="outline" class="md:ml-auto" @click="configOpen = true">
         <SlidersHorizontal class="mr-2 h-4 w-4" /> Configurações
       </Button>
@@ -381,7 +383,7 @@ onMounted(load)
 
     <!-- Tabela desktop -->
     <div v-if="!uiStore.isMobile" class="overflow-hidden rounded-xl border">
-      <table class="w-full text-sm">
+      <table class="w-full text-sm bg-card">
         <thead class="bg-muted/40 text-left text-xs uppercase text-muted-foreground">
           <tr>
             <th class="w-10 px-3 py-2">
