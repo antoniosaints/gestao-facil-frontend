@@ -6,7 +6,7 @@ export type ClienteWhatsappPayload =
   | { tipo: 'MENSAGEM'; mensagem: string }
   | { tipo: 'LANCAMENTO'; lancamentoId: number }
   | { tipo: 'ORCAMENTO_VENDA'; vendaId: number }
-  | { tipo: 'COMPROVANTE_VENDA'; vendaId: number }
+  | { tipo: 'COMPROVANTE_VENDA'; vendaId: number; telefone?: string }
 
 export type ClienteDetalhesTab = 'cobrancas' | 'lancamentos' | 'vendas' | 'ordens'
 

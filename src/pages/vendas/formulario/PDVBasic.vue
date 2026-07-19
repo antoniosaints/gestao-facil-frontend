@@ -528,23 +528,34 @@
             description="Escolha como deseja compartilhar o comprovante com o cliente." size="sm">
             <div class="p-4 space-y-4">
                 <div class="rounded-xl border border-border bg-background p-3 text-sm">
-                    <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-start justify-between gap-3">
                         <div>
                             <div class="font-medium text-foreground">Destino selecionado</div>
                             <div class="text-xs text-muted-foreground">
-                                {{ numeroPreview || 'Selecione um cliente com telefone ou WhatsApp' }}
+                                {{ numeroEnvioValido ? numeroPreview : 'Informe um WhatsApp para continuar' }}
                             </div>
                         </div>
-                        <BadgeCell :label="numeroPreview ? 'Pronto para envio' : 'Destino pendente'"
-                            :color="numeroPreview ? 'green' : 'orange'" :icon="MessageCircleMore" :capitalize="false"
+                        <BadgeCell :label="numeroEnvioValido ? 'Pronto para envio' : 'Destino pendente'"
+                            :color="numeroEnvioValido ? 'green' : 'orange'" :icon="MessageCircleMore" :capitalize="false"
                             size="sm" />
+                    </div>
+                    <div class="mt-3 space-y-1.5">
+                        <label for="whatsapp-comprovante" class="text-xs font-medium text-foreground">
+                            WhatsApp para envio
+                        </label>
+                        <Input id="whatsapp-comprovante" v-model="numeroPreview" type="tel" inputmode="tel"
+                            autocomplete="tel" maxlength="20" placeholder="(00) 00000-0000"
+                            :aria-invalid="Boolean(numeroPreview) && !numeroEnvioValido" />
+                        <p class="text-xs text-muted-foreground">
+                            O número pode ser informado manualmente e não altera o cadastro do cliente.
+                        </p>
                     </div>
                 </div>
 
                 <div class="grid gap-3">
                     <button type="button" @click="enviarComprovanteViaLink"
                         class="rounded-xl border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-muted/40"
-                        :disabled="!numeroPreview">
+                        :disabled="!numeroEnvioValido">
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <div class="font-medium text-foreground flex items-center gap-2">
@@ -562,7 +573,7 @@
 
                     <button type="button" @click="enviarComprovanteViaApi"
                         class="rounded-xl border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-muted/30"
-                        :disabled="!numeroPreview || sendingCupomWhatsapp">
+                        :disabled="!numeroEnvioValido || sendingCupomWhatsapp">
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <div class="font-medium text-foreground flex items-center gap-2">
@@ -919,6 +930,10 @@ const vendaRecibo = ref<{
 } | null>(null)
 const clienteEnvio = ref<number | null>(null)
 const numeroPreview = ref<string>('')
+const numeroEnvioValido = computed(() => {
+    const numeroLimpo = numeroPreview.value.replace(/\D/g, '')
+    return numeroLimpo.length >= 10 && numeroLimpo.length <= 13
+})
 const searchInputField = ref<HTMLInputElement | null>(null)
 const clienteSelectRef = ref<{ open: () => void } | null>(null)
 const discountInputRef = ref<{ $el?: HTMLElement } | null>(null)
@@ -1496,8 +1511,8 @@ async function baixarComprovantePdf() {
 }
 
 function enviarComprovanteViaLink() {
-    if (!numeroPreview.value) {
-        toast.error('Selecione um cliente com telefone ou WhatsApp para enviar o comprovante')
+    if (!numeroEnvioValido.value) {
+        toast.error('Informe um telefone ou WhatsApp válido para enviar o comprovante')
         return
     }
     const numeroLimpo = numeroPreview.value.replace(/\D/g, '')
@@ -1523,12 +1538,17 @@ async function enviarComprovanteViaApi() {
         toast.error('Selecione um cliente para enviar o comprovante')
         return
     }
+    if (!numeroEnvioValido.value) {
+        toast.error('Informe um telefone ou WhatsApp válido para enviar o comprovante')
+        return
+    }
 
     try {
         sendingCupomWhatsapp.value = true
         await ClienteRepository.enviarWhatsapp(Number(clienteEnvio.value), {
             tipo: 'COMPROVANTE_VENDA',
             vendaId: vendaRecibo.value.id,
+            telefone: numeroPreview.value,
         })
         toast.success('Comprovante enviado pelo WhatsApp')
         openModalEnvioComprovante.value = false
