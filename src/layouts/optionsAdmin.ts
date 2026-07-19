@@ -13,6 +13,7 @@ import {
   GitBranchPlus,
   Globe2,
   HandCoins,
+  Megaphone,
   KeyRound,
   LifeBuoy,
   Lock,
@@ -116,6 +117,13 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       icone: ServerCog,
       color: 'orange',
       link: '/admin/insights',
+    },
+    {
+      nome: 'Informativos',
+      icone: Megaphone,
+      color: 'cyan',
+      show: permissions.superadmin,
+      link: '/admin/informativos',
     },
     {
       nome: 'ERP',

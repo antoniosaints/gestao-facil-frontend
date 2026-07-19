@@ -17,6 +17,7 @@
                 <SidebarMenuArena :menu="sidebarMenuArenaOptions(store.permissoes)" />
             </div>
             <div>
+                <InformativosStatusButton v-if="store.isMobile" sidebar class="mb-2" />
                 <div class="grid grid-cols-12 gap-2 items-center justify-center">
                     <LogoutButton class="col-span-10 md:col-span-12" />
                     <ColorToggle class="col-span-2 h-full w-full" v-if="store.isMobile" />
@@ -68,6 +69,7 @@ import { useUiStore } from '@/stores/ui/uiStore'
 import InstallPrompt from '@/components/layout/installPrompt.vue'
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
 import SupportBadge from '@/components/layout/SupportBadge.vue'
+import InformativosStatusButton from '@/components/layout/InformativosStatusButton.vue'
 import { isSupportActive } from '@/utils/supportSession'
 import { PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'

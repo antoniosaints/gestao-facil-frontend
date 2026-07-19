@@ -139,6 +139,11 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/admin/monitoramento/Home.vue'),
       },
       {
+        path: 'informativos',
+        name: 'admin-informativos',
+        component: () => import('@/pages/admin/informativos/Home.vue'),
+      },
+      {
         path: 'configuracoes',
         name: 'admin-configuracoes',
         component: () => import('@/pages/admin/configuracoes/Home.vue'),
