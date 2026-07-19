@@ -818,11 +818,11 @@ onMounted(async () => {
 
                 <div class="flex items-center justify-between gap-3">
                   <div class="min-w-0 flex-1 space-y-1.5 pl-1">
-                    <div class="flex flex-wrap items-center gap-1.5">
-                      <Badge v-if="item.cobrancaLink" variant="outline" class="px-2 py-0 text-[10px]">Cobrança</Badge>
+                    <div v-if="item.cobrancaLink" class="flex flex-wrap items-center gap-1.5">
+                      <Badge variant="outline" class="px-2 py-0 text-[10px]">Cobrança</Badge>
                     </div>
 
-                    <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center justify-between gap-3">
                       <div class="min-w-0">
                         <p class="truncate text-sm font-semibold text-foreground">{{ item.descricao }}</p>
                         <p class="truncate text-xs text-muted-foreground">
