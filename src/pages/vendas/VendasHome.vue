@@ -11,6 +11,7 @@ import { onMounted, onUnmounted, provide, ref } from 'vue';
 import ClientesModal from '../clientes/modais/ClientesModal.vue';
 import { BadgePlus, FileDown, Funnel, RotateCw, ShoppingCart, Tags } from 'lucide-vue-next';
 import DetalhesVenda from './modais/DetalhesVenda.vue';
+import ModalEnvioComprovante from './modais/ModalEnvioComprovante.vue';
 import { getSocket } from '@/pluguins/socket';
 import type { Socket } from 'socket.io-client';
 import GerarCobranca from '../financeiro/lancamentos/modais/GerarCobranca.vue';
@@ -81,6 +82,9 @@ provide('openModalFiltroVendas', openFilter);
         <ModalFiltro />
         <ClientesModal />
         <DetalhesVenda />
+        <ModalEnvioComprovante v-model:open="store.openModalComprovante" :venda-id="store.vendaComprovante?.id"
+            :uid="store.vendaComprovante?.uid" :total="store.vendaComprovante?.total"
+            :cliente-id="store.vendaComprovante?.clienteId" />
         <GerarCobranca />
         <ModalRelatorioVendas v-model:open="openReport" />
     </div>

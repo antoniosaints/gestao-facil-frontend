@@ -43,6 +43,10 @@ export function openModalFaturarVenda(id: number) {
   store.openModalFaturar = true
 }
 
+export function enviarComprovanteVenda(venda: Vendas) {
+  store.openComprovante(venda)
+}
+
 export async function deletarVenda(id: number) {
   if (!id) return toast.error('ID nao informado!')
   const confirm = await useConfirm().confirm({

@@ -82,7 +82,7 @@ if (!props.sidebar) {
       </button>
     </PopoverTrigger>
     <PopoverContent align="end" class="w-[min(24rem,calc(100vw-2rem))] p-0">
-      <div class="border-b p-4">
+      <div class="border-b px-4 py-2">
         <div class="flex items-center justify-between gap-3">
           <div>
             <h3 class="font-semibold">Status dos serviços</h3>
@@ -96,7 +96,7 @@ if (!props.sidebar) {
         <div v-else-if="!itens.length" class="py-8 text-center text-sm text-muted-foreground">
           Nenhum informativo ativo no momento.
         </div>
-        <article v-for="item in itens" :key="item.id" class="rounded-xl border p-3" :class="severityClass(item)">
+        <article v-for="item in itens" :key="item.id" class="rounded-md border p-3" :class="severityClass(item)">
           <div class="flex items-start gap-2.5">
             <component :is="itemIcon(item)" class="mt-0.5 h-4 w-4 shrink-0" />
             <div class="min-w-0 flex-1">

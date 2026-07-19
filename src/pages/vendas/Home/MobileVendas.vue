@@ -37,6 +37,10 @@
                             class="bg-orange-200 text-orange-900 dark:text-orange-100 dark:bg-orange-800 px-2 py-1 rounded-md text-sm">
                             <FileChartLine class="w-5 h-5" />
                         </button>
+                        <button @click="enviarComprovanteVenda(venda)"
+                            class="bg-teal-200 text-teal-900 dark:text-teal-100 dark:bg-teal-800 px-2 py-1 rounded-md text-sm">
+                            <Send class="w-5 h-5" />
+                        </button>
                         <button v-if="!venda.faturado" @click="openModalFaturarVenda(venda.id!)"
                             class="bg-emerald-200 text-emerald-900 dark:text-emerald-100 dark:bg-emerald-800 px-2 py-1 rounded-md text-sm">
                             <BadgeCheck class="w-5 h-5" />
@@ -150,11 +154,11 @@
 import { ref, onMounted, watch, inject } from "vue";
 import http from "@/utils/axios";
 import type { Vendas } from "@/types/schemas";
-import { deletarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from "../ActionsVendas";
+import { deletarVenda, enviarComprovanteVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from "../ActionsVendas";
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
-import { BadgeCheck, BadgePlus, Eye, FileChartLine, PenLine, ShoppingBasket, Trash, Undo2 } from "lucide-vue-next";
+import { BadgeCheck, BadgePlus, Eye, FileChartLine, PenLine, Send, ShoppingBasket, Trash, Undo2 } from "lucide-vue-next";
 const store = useVendasStore();
 const openFilter = inject('openModalFiltroVendas', ref(false));
 const vendas = ref<Vendas[]>([]);

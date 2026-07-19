@@ -60,7 +60,7 @@ import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { InadimplenciaRepository } from '@/repositories/inadimplencia-repository'
 import type { CategoriaFinanceiro, ContasFinanceiro } from '@/types/schemas'
 import { formatCurrencyBR } from '@/utils/formatters'
-import { goBack, goTo } from '@/hooks/links'
+import { goBack } from '@/hooks/links'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -687,21 +687,26 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl space-y-4">
-    <div class="rounded-lg border bg-card p-4 shadow-sm">
+  <div class="max-w-7xl space-y-2 pb-8 md:pb-0">
+    <div class="rounded-lg">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center justify-center lg:justify-between">
         <div class="space-y-1">
-          <h2 class="flex items-center gap-2 text-base lg:text-2xl font-bold text-foreground">
+          <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
             <component :is="headerIcon" class="h-5 w-5 lg:h-6 lg:w-6 text-primary dark:text-blue-500" />
             {{ title }}
           </h2>
-          <p class="text-xs text-muted-foreground truncate hidden lg:block">
-            {{ description }}
-          </p>
+          <div v-if="filtrosAtivos.length" class="text-xs text-muted-foreground truncate hidden lg:block">
+            <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
+              {{ item }}
+            </Badge>
+          </div>
+          <div v-else class="text-sm text-muted-foreground truncate hidden lg:block">
+            <span>{{ description }}</span>
+          </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-center lg:justify-between gap-2 self-center lg:self-auto">
-          <Button variant="outline" size="icon" @click="navigateMonth('prev')">
+        <div class="hidden lg:flex flex-wrap items-center justify-center lg:justify-between gap-2 self-center lg:self-auto">
+          <Button variant="outline" size="icon" class="hidden lg:inline-flex" @click="navigateMonth('prev')">
             <ArrowLeft class="h-4 w-4" />
           </Button>
           <div class="min-w-max text-center">
@@ -712,10 +717,10 @@ onMounted(async () => {
               Saldo inicial: {{ formatCurrencyBR(resumo.saldoInicialPeriodo) }}
             </p>
           </div>
-          <Button variant="outline" size="icon" @click="navigateMonth('next')">
+          <Button variant="outline" size="icon" class="hidden lg:inline-flex" @click="navigateMonth('next')">
             <ArrowRight class="h-4 w-4" />
           </Button>
-          <Button variant="outline" @click="openModalFiltros = true">
+          <Button variant="outline" class="hidden lg:inline-flex" @click="openModalFiltros = true">
             <Filter class="h-4 w-4" /> <span>Filtrar</span>
           </Button>
           <Button class="dark:text-white hidden lg:inline-flex" @click="handleNewLancamento">
@@ -726,33 +731,35 @@ onMounted(async () => {
           </Button>
         </div>
       </div>
-
-      <div v-if="filtrosAtivos.length" class="mt-3 flex flex-wrap gap-2">
-        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline" class="text-xs">
-          {{ item }}
-        </Badge>
-      </div>
     </div>
 
     <Tabs v-model="activeTab" default-value="geral" class="space-y-2">
-      <div class="overflow-x-auto">
-        <TabsList class="inline-flex w-max min-w-full justify-start gap-2 rounded-md border bg-card p-1">
-          <TabsTrigger value="geral" class="px-4">
-            <span class="flex items-center gap-2">
-              <BarChart class="h-4 w-4" />Geral
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="calendario" class="px-4">
-            <span class="flex items-center gap-2">
-              <CalendarDays class="h-4 w-4" />Calendário
-            </span>
-          </TabsTrigger>
-          <TabsTrigger value="resumo" class="px-4">
-            <span class="flex items-center gap-2">
-              <FileText class="h-4 w-4" />Resumo
-            </span>
-          </TabsTrigger>
-        </TabsList>
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div class="relative w-full sm:max-w-xs">
+          <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input v-model="filtros.search" class="pl-9" placeholder="Buscar lançamento..."
+            @keydown.enter.prevent="carregarLancamentos(true)" />
+        </div>
+
+        <div class="overflow-x-auto">
+          <TabsList class="inline-flex w-full md:w-max justify-start gap-2 rounded-md border p-1">
+            <TabsTrigger value="geral" class="px-4">
+              <span class="flex items-center gap-2">
+                <BarChart class="h-4 w-4" />Geral
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="calendario" class="px-4">
+              <span class="flex items-center gap-2">
+                <CalendarDays class="h-4 w-4" />Calendário
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="resumo" class="px-4">
+              <span class="flex items-center gap-2">
+                <FileText class="h-4 w-4" />Resumo
+              </span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
       </div>
 
       <TabsContent value="geral" class="space-y-4">
@@ -774,8 +781,7 @@ onMounted(async () => {
           <div v-for="dia in displayedDias" :key="String(dia.dia)" class="space-y-0">
             <div
               class="flex flex-row relative gap-2 rounded-t-md rounded-bl-md border bg-card px-3 py-1.5 shadow-sm md:flex-row md:items-center justify-between border-none">
-              <div class="absolute left-0 top-0 h-full w-1 rounded-l-md"
-                  :class="'bg-blue-500'" />
+              <div class="absolute left-0 top-0 h-full w-1 rounded-l-md" :class="'bg-blue-500'" />
               <div>
                 <p class="text-sm font-semibold capitalize text-foreground">{{ getDayLabel(dia.dia) }}</p>
                 <p class="text-xs text-muted-foreground">
@@ -783,10 +789,12 @@ onMounted(async () => {
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <Badge class="border-0 py-2 flex gap-1 shadow-none bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 hover:bg-blue-200">
+                <Badge
+                  class="border-0 py-2 flex gap-1 shadow-none bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 hover:bg-blue-200">
                   <span class="hidden md:inline-flex">Realizado</span> {{ formatCurrencyBR(dia.saldoRealizado) }}
                 </Badge>
-                <Badge class="border-0 py-2 flex gap-1 shadow-none bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-200">
+                <Badge
+                  class="border-0 py-2 flex gap-1 shadow-none bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-200">
                   <span class="hidden md:inline-flex">Previsto</span> {{ formatCurrencyBR(dia.saldoPrevisto) }}
                 </Badge>
                 <Button variant="outline" size="icon" class="h-8 w-8" @click="handleQuickCreate(dia.dia)">
@@ -796,13 +804,10 @@ onMounted(async () => {
             </div>
 
             <div class="grid gap-0 md:pl-4">
-              <div v-for="item in dia.lancamentos" :key="item.parcelaId"
-                role="button"
-                tabindex="0"
+              <div v-for="item in dia.lancamentos" :key="item.parcelaId" role="button" tabindex="0"
                 :data-testid="`lancamento-row-${item.parcelaId}`"
                 class="relative cursor-pointer overflow-hidden border-t bg-card px-3 py-1 shadow-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 fist:rounded-t-none last:rounded-b-md"
-                @click="openResumoParcela(item)"
-                @keydown.enter.prevent="openResumoParcela(item)"
+                @click="openResumoParcela(item)" @keydown.enter.prevent="openResumoParcela(item)"
                 @keydown.space.prevent="openResumoParcela(item)">
                 <div class="absolute left-0 top-0 h-full w-1"
                   :class="item.tipo === 'DESPESA' ? 'bg-rose-500' : 'bg-emerald-500'" />
@@ -830,18 +835,17 @@ onMounted(async () => {
                       </div>
 
                       <div class="flex flex-col gap-1 text-right">
-                        <p :class="item.tipo === 'DESPESA' ? 
-                        'text-rose-600 dark:text-rose-400' : 
-                        'text-emerald-600 dark:text-emerald-400'"
-                          class="text-md font-semibold px-2 rounded-md">
+                        <p :class="item.tipo === 'DESPESA' ?
+                          'text-rose-600 dark:text-rose-400' :
+                          'text-emerald-600 dark:text-emerald-400'" class="text-md font-semibold px-2 rounded-md">
                           {{ formatCurrencyBR(item.valor) }}
                         </p>
                         <div class="flex flex-wrap justify-end gap-1">
                           <span class="border shadow-none rounded-sm border-dashed px-2 py-0 text-[10px]"
-                            :class="item.status === 'PAGO' 
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-300 dark:border-blue-950' 
-                            : item.status === 'ATRASADO' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-300 dark:border-rose-950' 
-                            : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300 dark:border-amber-950'">
+                            :class="item.status === 'PAGO'
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-300 dark:border-blue-950'
+                              : item.status === 'ATRASADO' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-300 dark:border-rose-950'
+                                : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300 dark:border-amber-950'">
                             {{ mapStatus(item.status, item.tipo) }}
                           </span>
                         </div>
@@ -863,9 +867,11 @@ onMounted(async () => {
                         :data-testid="`estornar-parcela-${item.parcelaId}`" @click="estornarParcela(item.parcelaId)">
                         <Undo2 class="h-4 w-4" />
                       </Button>
-                      <Button v-if="uiStore.canCreateCharge && !item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink" size="icon"
-                        class="h-8 w-8 bg-success text-white hover:bg-success/80"
-                        :data-testid="`cobranca-parcela-${item.parcelaId}`" @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
+                      <Button
+                        v-if="uiStore.canCreateCharge && !item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink"
+                        size="icon" class="h-8 w-8 bg-success text-white hover:bg-success/80"
+                        :data-testid="`cobranca-parcela-${item.parcelaId}`"
+                        @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
                         <CircleDollarSign class="h-4 w-4" />
                       </Button>
                       <Button v-if="item.cobrancaLink" variant="outline" size="icon" class="h-8 w-8"
@@ -905,11 +911,13 @@ onMounted(async () => {
                         <DropdownMenuItem v-else @click="estornarParcela(item.parcelaId)">
                           <Undo2 class="mr-2 h-4 w-4" /> Estornar
                         </DropdownMenuItem>
-                        <DropdownMenuItem v-if="uiStore.canCreateCharge && !item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink"
+                        <DropdownMenuItem
+                          v-if="uiStore.canCreateCharge && !item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink"
                           @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
                           <CircleDollarSign class="mr-2 h-4 w-4" /> Cobrança
                         </DropdownMenuItem>
-                        <DropdownMenuItem v-if="props.mode === 'receitas' && !item.pago" @click="abrirCobrancaRapida(item)">
+                        <DropdownMenuItem v-if="props.mode === 'receitas' && !item.pago"
+                          @click="abrirCobrancaRapida(item)">
                           <Send class="mr-2 h-4 w-4" /> Enviar pelo WhatsApp
                         </DropdownMenuItem>
                         <DropdownMenuItem v-if="item.cobrancaLink" @click="openLinkCobranca(item.cobrancaLink)">
@@ -945,45 +953,61 @@ onMounted(async () => {
               <p class="text-base font-semibold text-gray-700 dark:text-gray-200 md:text-lg">
                 {{ formatCurrencyBR(item.valor) }}
               </p>
-              <p class="text-xs leading-relaxed text-muted-foreground truncate" :title="item.detalhe">{{ item.detalhe }}</p>
+              <p class="text-xs leading-relaxed text-muted-foreground truncate" :title="item.detalhe">{{ item.detalhe }}
+              </p>
             </CardContent>
           </Card>
         </section>
       </TabsContent>
     </Tabs>
 
+    <div v-if="uiStore.isMobile"
+      class="fixed inset-x-0 bottom-20 z-20 flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-2 text-xs dark:border-border-dark dark:bg-card-dark md:hidden">
+      <span class="font-semibold capitalize text-foreground">
+        {{ format(store.currentMonth, 'MMMM yyyy', { locale: ptBR }) }}
+      </span>
+      <div class="flex items-center gap-4">
+        <span class="text-muted-foreground">
+          Inicial <span class="font-semibold text-foreground">{{ formatCurrencyBR(resumo.saldoInicialPeriodo) }}</span>
+        </span>
+        <span class="text-muted-foreground">
+          Esperado <span class="font-semibold text-foreground">{{ formatCurrencyBR(resumo.saldoPossivelDia) }}</span>
+        </span>
+      </div>
+    </div>
+
     <MobileBottomBar v-if="uiStore.isMobile">
-      <button
-        type="button"
+      <button type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        @click="goTo('/financeiro/lancamentos')"
-      >
+        @click="navigateMonth('prev')">
         <ArrowLeft class="h-5 w-5" />
-        <span class="text-xs">Lista</span>
+        <span class="text-xs">Anterior</span>
       </button>
-      <button
-        type="button"
+      <button type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        @click="handleNewLancamento"
-      >
-        <BadgePlus class="h-5 w-5" />
-        <span class="text-xs">Novo</span>
+        @click="openModalFiltros = true">
+        <Filter class="h-5 w-5" />
+        <span class="text-xs">Filtrar</span>
       </button>
-      <button
-        type="button"
+      <button type="button"
+        class="-mt-4 flex flex-col items-center text-primary"
+        @click="handleNewLancamento">
+        <span class="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg dark:text-white">
+          <BadgePlus class="h-6 w-6" />
+        </span>
+        <span class="mt-0.5 text-xs">Novo</span>
+      </button>
+      <button type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        @click="goBack"
-      >
+        @click="goBack">
         <Undo2 class="h-5 w-5" />
         <span class="text-xs">Voltar</span>
       </button>
-      <button
-        type="button"
+      <button type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        @click="recarregarMantendoPosicao(true)"
-      >
-        <RotateCw class="h-5 w-5" :class="{ 'animate-spin': carregando }" />
-        <span class="text-xs">Atualizar</span>
+        @click="navigateMonth('next')">
+        <ArrowRight class="h-5 w-5" />
+        <span class="text-xs">Próximo</span>
       </button>
     </MobileBottomBar>
 
@@ -1005,8 +1029,7 @@ onMounted(async () => {
       </div>
     </ModalView>
 
-    <ModalView v-model:open="openModalEvento" :title="eventoSelecionado?.descricao || 'Resumo da parcela'"
-      size="lg">
+    <ModalView v-model:open="openModalEvento" :title="eventoSelecionado?.descricao || 'Resumo da parcela'" size="lg">
       <div v-if="eventoSelecionado" class="space-y-4 p-4 -mt-6">
         <div class="flex flex-wrap gap-2 -mb-2">
           <span class="border border-dashed border-muted shadow-none px-2 rounded-sm text-sm"
@@ -1060,7 +1083,8 @@ onMounted(async () => {
             <div class="min-w-0">
               <p class="text-xs uppercase tracking-wide text-muted-foreground">Conta / contato</p>
               <p class="truncate text-sm text-foreground">
-                {{ [eventoSelecionado.conta, eventoSelecionado.cliente].filter(Boolean).join(' • ') || 'Não informado' }}
+                {{ [eventoSelecionado.conta, eventoSelecionado.cliente].filter(Boolean).join(' • ') || 'Não informado'
+                }}
               </p>
             </div>
           </div>
@@ -1225,14 +1249,8 @@ onMounted(async () => {
     <ModalParcela />
     <LancamentoModal />
     <ClientesModal />
-    <CobrancaRapidaModal
-      v-model:open="cobrancaRapidaOpen"
-      :cliente="cobrancaRapidaItem?.cliente"
-      :descricao="cobrancaRapidaItem?.descricao"
-      :valor="cobrancaRapidaItem?.valor"
-      :mensagem-inicial="mensagemCobrancaPadrao"
-      :sending="cobrancaRapidaSending"
-      @enviar="enviarCobrancaRapida"
-    />
+    <CobrancaRapidaModal v-model:open="cobrancaRapidaOpen" :cliente="cobrancaRapidaItem?.cliente"
+      :descricao="cobrancaRapidaItem?.descricao" :valor="cobrancaRapidaItem?.valor"
+      :mensagem-inicial="mensagemCobrancaPadrao" :sending="cobrancaRapidaSending" @enviar="enviarCobrancaRapida" />
   </div>
 </template>

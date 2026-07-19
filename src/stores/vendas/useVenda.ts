@@ -27,6 +27,13 @@ export const useVendasStore = defineStore('vendasStore', () => {
   const openModalPropor = ref(false)
   const openModalFaturar = ref(false)
   const openModalDetalhes = ref(false)
+  const openModalComprovante = ref(false)
+  const vendaComprovante = ref<{
+    id: number
+    uid: string | null
+    total: number
+    clienteId: number | null
+  } | null>(null)
   const idMutation = ref<number | null>(null)
   // Ids das vendas a serem faturadas em massa (mesmo modal/dados de pagamento).
   const idsFaturarMassa = ref<number[]>([])
@@ -68,6 +75,19 @@ export const useVendasStore = defineStore('vendasStore', () => {
   const openSave = () => {
     if (form.value.id) reset()
     openModal.value = true
+  }
+  const openComprovante = (venda: Vendas) => {
+    if (!venda?.id) {
+      toast.info('ID nao informado!')
+      return
+    }
+    vendaComprovante.value = {
+      id: venda.id,
+      uid: venda.Uid ?? null,
+      total: Number(venda.valor ?? 0),
+      clienteId: venda.clienteId ?? null,
+    }
+    openModalComprovante.value = true
   }
   const openDetalhes = async (id: number) => {
     try {
@@ -141,7 +161,10 @@ export const useVendasStore = defineStore('vendasStore', () => {
     openModalPropor,
     openModalFaturar,
     openModalDetalhes,
+    openModalComprovante,
+    vendaComprovante,
     openSave,
+    openComprovante,
     openDetalhes,
     venda,
     tipoDesconto,

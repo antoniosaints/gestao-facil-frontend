@@ -524,81 +524,11 @@
                 </div>
             </div>
         </ModalView>
-        <ModalView v-model:open="openModalEnvioComprovante" title="Enviar comprovante"
-            description="Escolha como deseja compartilhar o comprovante com o cliente." size="sm">
-            <div class="p-4 space-y-4">
-                <div class="rounded-xl border border-border bg-background p-3 text-sm">
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <div class="font-medium text-foreground">Destino selecionado</div>
-                            <div class="text-xs text-muted-foreground">
-                                {{ numeroEnvioValido ? numeroPreview : 'Informe um WhatsApp para continuar' }}
-                            </div>
-                        </div>
-                        <BadgeCell :label="numeroEnvioValido ? 'Pronto para envio' : 'Destino pendente'"
-                            :color="numeroEnvioValido ? 'green' : 'orange'" :icon="MessageCircleMore" :capitalize="false"
-                            size="sm" />
-                    </div>
-                    <div class="mt-3 space-y-1.5">
-                        <label for="whatsapp-comprovante" class="text-xs font-medium text-foreground">
-                            WhatsApp para envio
-                        </label>
-                        <Input id="whatsapp-comprovante" v-model="numeroPreview" type="tel" inputmode="tel"
-                            autocomplete="tel" maxlength="20" placeholder="(00) 00000-0000"
-                            :aria-invalid="Boolean(numeroPreview) && !numeroEnvioValido" />
-                        <p class="text-xs text-muted-foreground">
-                            O número pode ser informado manualmente e não altera o cadastro do cliente.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="grid gap-3">
-                    <button type="button" @click="enviarComprovanteViaLink"
-                        class="rounded-xl border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-muted/40"
-                        :disabled="!numeroEnvioValido">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <div class="font-medium text-foreground flex items-center gap-2">
-                                    <Link2 class="w-4 h-4 text-primary" />
-                                    Enviar via link
-                                </div>
-                                <p class="mt-1 text-xs text-muted-foreground">
-                                    Abre o WhatsApp com a mensagem pronta para você concluir o envio.
-                                </p>
-                            </div>
-                            <BadgeCell label="Disponível" color="green" :icon="Send" :capitalize="false"
-                                size="sm" />
-                        </div>
-                    </button>
-
-                    <button type="button" @click="enviarComprovanteViaApi"
-                        class="rounded-xl border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-muted/30"
-                        :disabled="!numeroEnvioValido || sendingCupomWhatsapp">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <div class="font-medium text-foreground flex items-center gap-2">
-                                    <Send class="w-4 h-4 text-primary" />
-                                    Enviar via API
-                                </div>
-                                <p class="mt-1 text-xs text-muted-foreground">
-                                    Envia o comprovante direto pela instancia principal configurada.
-                                </p>
-                            </div>
-                            <BadgeCell :label="sendingCupomWhatsapp ? 'Enviando' : 'Disponivel'" color="green" :icon="Send"
-                                :capitalize="false" size="sm" />
-                        </div>
-                    </button>
-                </div>
-
-                <Separator />
-
-                <div class="flex justify-end gap-2">
-                    <Button type="button" variant="secondary" @click="openModalEnvioComprovante = false">
-                        Fechar
-                    </Button>
-                </div>
-            </div>
-        </ModalView>
+        <ModalEnvioComprovante v-model:open="openModalEnvioComprovante" :venda-id="vendaRecibo?.id"
+            :uid="vendaRecibo?.uid" :total="vendaRecibo?.total" :cliente-id="clienteEnvio" />
+        <ModalEnvioComprovante v-model:open="openModalComprovanteCaixa" :venda-id="vendaComprovanteCaixa?.id"
+            :uid="vendaComprovanteCaixa?.uid" :total="vendaComprovanteCaixa?.total"
+            :cliente-id="vendaComprovanteCaixa?.clienteId" />
         <ModalView v-model:open="openModalDesconto" title="Aplicar desconto"
             description="Informe o desconto a ser aplicado" size="sm">
             <!-- Desconto (PDV PRO): otimizado para uso apenas com o teclado -->
@@ -745,22 +675,30 @@
                         <h3 class="text-sm font-semibold">Movimentos recentes</h3>
                         <span v-if="caixaRelatorioLoading" class="text-xs text-muted-foreground">Carregando...</span>
                     </div>
-                    <div v-if="!movimentosCaixaRecentes.length" class="py-4 text-center text-sm text-muted-foreground">
-                        Nenhuma sangria ou reforco registrado neste caixa.
+                    <div v-if="!movimentacoesCaixaRecentes.length" class="py-4 text-center text-sm text-muted-foreground">
+                        Nenhuma movimentacao registrada neste caixa.
                     </div>
                     <div v-else class="grid gap-2">
-                        <div v-for="movimento in movimentosCaixaRecentes" :key="movimento.id"
-                            class="flex items-center justify-between rounded-lg border bg-background px-3 py-2 text-sm">
-                            <div>
-                                <strong>{{ movimento.tipo === 'SANGRIA' ? 'Sangria' : 'Reforco' }}</strong>
-                                <p class="text-xs text-muted-foreground">
-                                    {{ movimento.descricao || 'Sem descricao' }} - {{ formatDateTimeBR(movimento.createdAt) }}
+                        <div v-for="item in movimentacoesCaixaRecentes" :key="item.key"
+                            class="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-sm">
+                            <div class="min-w-0">
+                                <strong>{{ item.titulo }}</strong>
+                                <p class="truncate text-xs text-muted-foreground">
+                                    {{ item.subtitulo }}
                                 </p>
                             </div>
-                            <span :class="movimento.tipo === 'SANGRIA' ? 'text-yellow-600' : 'text-emerald-600'"
-                                class="font-semibold">
-                                {{ formatCurrencyBR(movimento.valor || 0) }}
-                            </span>
+                            <div class="flex items-center gap-2">
+                                <span :class="item.kind === 'SANGRIA' ? 'text-yellow-600' : 'text-emerald-600'"
+                                    class="whitespace-nowrap font-semibold">
+                                    {{ formatCurrencyBR(item.valor || 0) }}
+                                </span>
+                                <Button v-if="item.kind === 'VENDA' && item.venda" type="button" size="sm"
+                                    variant="outline" class="h-8 gap-1 px-2"
+                                    @click="enviarComprovanteVendaCaixa(item.venda)">
+                                    <Send class="h-4 w-4" />
+                                    <span class="hidden sm:inline">Comprovante</span>
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -880,13 +818,12 @@ import { VendaRepository } from '@/repositories/venda-repository';
 import { CaixaRepository, type FecharCaixaPayload } from '@/repositories/caixa-repository';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import BadgeCell from '@/components/tabela/BadgeCell.vue';
-import { Banknote, CirclePercent, CreditCard, Dot, Download, HandCoins, HandGrab, Link2, MessageCircleMore, MonitorDown, Package, PlusCircleIcon, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
+import { Banknote, CirclePercent, CreditCard, Dot, Download, HandCoins, HandGrab, MonitorDown, Package, PlusCircleIcon, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
 import ModalView from '@/components/formulario/ModalView.vue';
+import ModalEnvioComprovante from '../modais/ModalEnvioComprovante.vue';
 import ModalFechamentoCaixa from '@/pages/vendas/caixas/ModalFechamentoCaixa.vue';
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
-import type { CaixaRelatorioResponse, ClientesFornecedores, ProdutoVariante } from '@/types/schemas';
+import type { CaixaRelatorioResponse, ClientesFornecedores, ProdutoVariante, Vendas } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
 import { resolveFileUrl } from '@/utils/fileUrl';
 import router from '@/router';
@@ -907,7 +844,6 @@ const openModalEnvioComprovante = ref(false)
 const openModalCrediario = ref(false)
 const printingCupom = ref(false)
 const downloadingCupom = ref(false)
-const sendingCupomWhatsapp = ref(false)
 const vendaRecibo = ref<{
     id: number
     uid?: string | null
@@ -930,10 +866,13 @@ const vendaRecibo = ref<{
 } | null>(null)
 const clienteEnvio = ref<number | null>(null)
 const numeroPreview = ref<string>('')
-const numeroEnvioValido = computed(() => {
-    const numeroLimpo = numeroPreview.value.replace(/\D/g, '')
-    return numeroLimpo.length >= 10 && numeroLimpo.length <= 13
-})
+const openModalComprovanteCaixa = ref(false)
+const vendaComprovanteCaixa = ref<{
+    id: number
+    uid: string | null
+    total: number
+    clienteId: number | null
+} | null>(null)
 const searchInputField = ref<HTMLInputElement | null>(null)
 const clienteSelectRef = ref<{ open: () => void } | null>(null)
 const discountInputRef = ref<{ $el?: HTMLElement } | null>(null)
@@ -1242,11 +1181,60 @@ const caixaRelatorioAtual = computed(() => {
 
 const vendasTurno = computed(() => caixaRelatorioAtual.value?.resumo.totalVendas || 0)
 const totalVendidoTurno = computed(() => caixaRelatorioAtual.value?.resumo.totalVendido || 0)
-const movimentosCaixaRecentes = computed(() => {
-    return (caixaRelatorioAtual.value?.movimentos || [])
+type MovimentacaoCaixaItem = {
+    key: string
+    kind: 'VENDA' | 'SANGRIA' | 'REFORCO'
+    titulo: string
+    subtitulo: string
+    valor: number
+    timestamp: number
+    venda?: Vendas
+}
+
+// Unifica vendas + sangrias/reforcos do turno, sempre com o evento mais recente no topo.
+const movimentacoesCaixaRecentes = computed<MovimentacaoCaixaItem[]>(() => {
+    const relatorio = caixaRelatorioAtual.value
+    if (!relatorio) return []
+
+    const vendasItems: MovimentacaoCaixaItem[] = (relatorio.vendas || []).map((venda) => ({
+        key: `venda-${venda.id}`,
+        kind: 'VENDA',
+        titulo: `Venda ${venda.Uid || `#${venda.id}`}`,
+        subtitulo: `${getPaymentMethodLabel(venda.PagamentoVendas?.metodo)} - ${formatDateTimeBR(venda.data)}`,
+        valor: Number(venda.valor || 0),
+        timestamp: new Date(venda.data as any).getTime() || 0,
+        venda,
+    }))
+
+    const movimentosItems: MovimentacaoCaixaItem[] = (relatorio.movimentos || [])
         .filter((movimento) => ['SANGRIA', 'REFORCO'].includes(String(movimento.tipo)))
-        .slice(0, 5)
+        .map((movimento) => ({
+            key: `mov-${movimento.id}`,
+            kind: movimento.tipo === 'SANGRIA' ? 'SANGRIA' : 'REFORCO',
+            titulo: movimento.tipo === 'SANGRIA' ? 'Sangria' : 'Reforco',
+            subtitulo: `${movimento.descricao || 'Sem descricao'} - ${formatDateTimeBR(movimento.createdAt)}`,
+            valor: Number(movimento.valor || 0),
+            timestamp: new Date(movimento.createdAt as any).getTime() || 0,
+        }))
+
+    return [...vendasItems, ...movimentosItems]
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 8)
 })
+
+function enviarComprovanteVendaCaixa(venda: Vendas) {
+    if (!venda?.id) {
+        toast.error('Venda invalida para envio de comprovante')
+        return
+    }
+    vendaComprovanteCaixa.value = {
+        id: venda.id,
+        uid: venda.Uid ?? null,
+        total: Number(venda.valor ?? 0),
+        clienteId: venda.clienteId ?? null,
+    }
+    openModalComprovanteCaixa.value = true
+}
 
 function getPaymentMethodLabel(method?: string | null) {
     switch (method) {
@@ -1507,56 +1495,6 @@ async function baixarComprovantePdf() {
         toast.error('Erro ao gerar o PDF do comprovante')
     } finally {
         downloadingCupom.value = false
-    }
-}
-
-function enviarComprovanteViaLink() {
-    if (!numeroEnvioValido.value) {
-        toast.error('Informe um telefone ou WhatsApp válido para enviar o comprovante')
-        return
-    }
-    const numeroLimpo = numeroPreview.value.replace(/\D/g, '')
-    if (!numeroLimpo) {
-        toast.error('Número inválido para envio')
-        return
-    }
-    const identificadorVenda = vendaRecibo.value?.uid || `#${vendaRecibo.value?.id}`
-    const valorFormatado = formatCurrencyBR(vendaRecibo.value?.total || 0)
-    const mensagem = encodeURIComponent(`Olá! Segue o comprovante da venda ${identificadorVenda} no valor de ${valorFormatado}.`)
-    const url = `https://wa.me/${numeroLimpo}?text=${mensagem}`
-    window.open(url, '_blank')
-    openModalEnvioComprovante.value = false
-    toast.success('Link de envio aberto com sucesso!')
-}
-
-async function enviarComprovanteViaApi() {
-    if (!vendaRecibo.value?.id) {
-        toast.error('Nenhum comprovante disponivel para envio')
-        return
-    }
-    if (!clienteEnvio.value) {
-        toast.error('Selecione um cliente para enviar o comprovante')
-        return
-    }
-    if (!numeroEnvioValido.value) {
-        toast.error('Informe um telefone ou WhatsApp válido para enviar o comprovante')
-        return
-    }
-
-    try {
-        sendingCupomWhatsapp.value = true
-        await ClienteRepository.enviarWhatsapp(Number(clienteEnvio.value), {
-            tipo: 'COMPROVANTE_VENDA',
-            vendaId: vendaRecibo.value.id,
-            telefone: numeroPreview.value,
-        })
-        toast.success('Comprovante enviado pelo WhatsApp')
-        openModalEnvioComprovante.value = false
-    } catch (error: any) {
-        console.log(error)
-        toast.error(error?.response?.data?.message || 'Erro ao enviar comprovante pelo WhatsApp')
-    } finally {
-        sendingCupomWhatsapp.value = false
     }
 }
 

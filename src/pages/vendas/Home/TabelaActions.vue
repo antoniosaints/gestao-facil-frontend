@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Menu, Printer } from 'lucide-vue-next'
+import { Menu, Printer, Send } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { Vendas } from '@/types/schemas';
 import type { Table } from '@tanstack/vue-table';
-import { deletarVenda, editarVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from '../ActionsVendas';
+import { deletarVenda, editarVenda, enviarComprovanteVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from '../ActionsVendas';
 import { VendaRepository } from '@/repositories/venda-repository';
 const { data } = defineProps<{
     data: Vendas,
@@ -41,6 +41,10 @@ async function printCupom(id: number) {
                 <DropdownMenuItem @click="printCupom(data.id!)">
                     <Printer />
                     Imprimir
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="enviarComprovanteVenda(data)">
+                    <Send class="w-4 h-4 mr-1" />
+                    Enviar comprovante
                 </DropdownMenuItem>
                 <DropdownMenuItem @click="openModalFaturarVenda(data.id!)" v-if="data.status !== 'FATURADO'">
                     <i class="fa-solid fa-dollar-sign mr-1"></i>
