@@ -1336,7 +1336,7 @@ onMounted(async () => {
               type="button"
               class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs transition"
               :class="activeInstanceId === instance.id ? 'border-primary bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'"
-              :title="instance.nome"
+              v-tooltip="instance.nome"
               @click="setActiveInstance(instance.id)"
             >
               <span class="h-2 w-2 rounded-full" :class="instanceStatusDotClass(instance.status)"></span>
@@ -1476,7 +1476,7 @@ onMounted(async () => {
               v-if="selectedConversation.status === 'ABERTA'"
               variant="outline"
               size="sm"
-              title="Transferir atendimento para outro usuário"
+              v-tooltip="'Transferir atendimento para outro usuário'"
               @click="openTransfer"
             >
               <ArrowRightLeft class="mr-1 h-4 w-4" />
@@ -1503,14 +1503,14 @@ onMounted(async () => {
               variant="ghost"
               size="icon"
               class="text-destructive hover:text-destructive"
-              title="Apagar conversa"
+              v-tooltip="'Apagar conversa'"
               :disabled="deleting"
               @click="deleteChat"
             >
               <LoaderCircle v-if="deleting" class="h-4 w-4 animate-spin" />
               <Trash2 v-else class="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" @click="showDetails = !showDetails">
+            <Button variant="ghost" size="icon" v-tooltip="showDetails ? 'Ocultar detalhes' : 'Ver detalhes'" @click="showDetails = !showDetails">
               <ChevronDown class="h-4 w-4 transition" :class="showDetails ? 'rotate-180' : ''" />
             </Button>
           </div>
@@ -1522,7 +1522,7 @@ onMounted(async () => {
             <Label>Cliente ERP</Label>
             <div class="flex gap-2">
               <Input v-model="customerSearch" placeholder="Buscar cliente" @keyup.enter="loadCustomers" />
-              <Button variant="outline" size="icon" @click="loadCustomers"><Search class="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" v-tooltip="'Buscar'" @click="loadCustomers"><Search class="h-4 w-4" /></Button>
             </div>
             <select
               v-if="customerOptions.length"
@@ -1572,7 +1572,7 @@ onMounted(async () => {
                 type="button"
                 class="shrink-0 rounded-full p-1.5 text-muted-foreground opacity-0 transition hover:bg-muted focus:opacity-100 group-hover:opacity-100"
                 :class="message.direcao === 'SAIDA' ? '' : 'order-last'"
-                title="Responder"
+                v-tooltip="'Responder'"
                 @click="startReply(message)"
               >
                 <Reply class="h-4 w-4" />
@@ -1760,7 +1760,7 @@ onMounted(async () => {
               </p>
               <p class="line-clamp-2 text-xs text-muted-foreground">{{ messageSnippet(replyingTo) }}</p>
             </div>
-            <button type="button" class="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted" title="Cancelar resposta" @click="cancelReply">
+            <button type="button" class="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted" v-tooltip="'Cancelar resposta'" @click="cancelReply">
               <X class="h-4 w-4" />
             </button>
           </div>
@@ -1770,7 +1770,7 @@ onMounted(async () => {
 
           <!-- Gravando áudio -->
           <div v-if="audioRec.state === 'recording'" class="flex items-center gap-3">
-            <Button type="button" variant="ghost" size="icon" class="h-10 w-10 shrink-0 rounded-full text-destructive" title="Cancelar" @click="cancelRecording">
+            <Button type="button" variant="ghost" size="icon" class="h-10 w-10 shrink-0 rounded-full text-destructive" v-tooltip="'Cancelar'" @click="cancelRecording">
               <Trash2 class="h-5 w-5" />
             </Button>
             <div class="flex flex-1 items-center gap-2 text-sm">
@@ -1778,18 +1778,18 @@ onMounted(async () => {
               <span class="text-muted-foreground">Gravando</span>
               <span class="font-mono tabular-nums">{{ formatSeconds(audioRec.seconds) }}</span>
             </div>
-            <Button type="button" size="icon" class="h-10 w-10 shrink-0 rounded-full text-white" title="Parar gravação" @click="stopRecording">
+            <Button type="button" size="icon" class="h-10 w-10 shrink-0 rounded-full text-white" v-tooltip="'Parar gravação'" @click="stopRecording">
               <Square class="h-4 w-4" />
             </Button>
           </div>
 
           <!-- Pré-escuta do áudio gravado -->
           <div v-else-if="audioRec.state === 'preview'" class="flex items-center gap-2">
-            <Button type="button" variant="ghost" size="icon" class="h-10 w-10 shrink-0 rounded-full text-destructive" title="Descartar" :disabled="audioRec.sending" @click="discardAudio">
+            <Button type="button" variant="ghost" size="icon" class="h-10 w-10 shrink-0 rounded-full text-destructive" v-tooltip="'Descartar'" :disabled="audioRec.sending" @click="discardAudio">
               <Trash2 class="h-5 w-5" />
             </Button>
             <audio :src="audioUrl" controls class="h-10 flex-1"></audio>
-            <Button type="button" size="icon" class="h-10 w-10 shrink-0 rounded-full text-white" title="Enviar áudio" :disabled="audioRec.sending" @click="confirmSendAudio">
+            <Button type="button" size="icon" class="h-10 w-10 shrink-0 rounded-full text-white" v-tooltip="'Enviar áudio'" :disabled="audioRec.sending" @click="confirmSendAudio">
               <LoaderCircle v-if="audioRec.sending" class="h-4 w-4 animate-spin" />
               <Send v-else class="h-4 w-4" />
             </Button>
@@ -1805,7 +1805,7 @@ onMounted(async () => {
                   variant="ghost"
                   size="icon"
                   class="h-10 w-10 shrink-0 rounded-full text-muted-foreground"
-                  title="Anexar"
+                  v-tooltip="'Anexar'"
                 >
                   <Plus class="h-5 w-5" />
                 </Button>
@@ -1841,7 +1841,7 @@ onMounted(async () => {
                   variant="ghost"
                   size="icon"
                   class="h-10 w-10 shrink-0 rounded-full text-violet-500"
-                  title="Assistente de IA"
+                  v-tooltip="'Assistente de IA'"
                   :disabled="iaComposing"
                 >
                   <LoaderCircle v-if="iaComposing" class="h-5 w-5 animate-spin" />
@@ -1875,7 +1875,7 @@ onMounted(async () => {
               size="icon"
               class="h-10 w-10 shrink-0 rounded-full text-white"
               :disabled="sending || !canSendMessage"
-              title="Enviar"
+              v-tooltip="'Enviar'"
             >
               <LoaderCircle v-if="sending" class="h-4 w-4 animate-spin" />
               <Send v-else class="h-4 w-4" />
@@ -1886,7 +1886,7 @@ onMounted(async () => {
               size="icon"
               class="h-10 w-10 shrink-0 rounded-full text-white"
               :disabled="selectedConversation.Instancia?.status !== 'CONECTADA'"
-              title="Gravar áudio"
+              v-tooltip="'Gravar áudio'"
               @click="startRecording"
             >
               <Mic class="h-5 w-5" />
@@ -1922,7 +1922,7 @@ onMounted(async () => {
         <div class="space-y-3">
           <div class="flex gap-2">
             <Input v-model="saleTool.search" placeholder="Buscar por código (ex.: VEN_001)" @keyup.enter="loadSaleToolItems" />
-            <Button variant="outline" size="icon" :disabled="saleTool.loading" @click="loadSaleToolItems">
+            <Button variant="outline" size="icon" v-tooltip="'Buscar'" :disabled="saleTool.loading" @click="loadSaleToolItems">
               <LoaderCircle v-if="saleTool.loading" class="h-4 w-4 animate-spin" />
               <Search v-else class="h-4 w-4" />
             </Button>

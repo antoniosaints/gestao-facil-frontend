@@ -49,7 +49,7 @@ provide('openModalFiltroVendas', openFilter);
                 <p class="text-sm text-muted-foreground">Listagem de vendas cadastrados</p>
             </div>
             <div class="justify-between gap-2 items-center hidden md:flex">
-                <button @click="openFilter = true"
+                <button @click="openFilter = true" v-tooltip="'Filtrar'"
                     class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-lg">
                     <Funnel class="w-4 h-4 inline-flex" />
                 </button>
@@ -66,7 +66,7 @@ provide('openModalFiltroVendas', openFilter);
                     class="border border-black/10 dark:border-card bg-secondary hover:border-secondary px-2 py-1.5 text-sm rounded-lg flex items-center gap-1">
                     <ShoppingCart class="w-5 h-5 inline-flex" /> PDV
                 </RouterLink>
-                <button @click="store.updateTable"
+                <button @click="store.updateTable" v-tooltip="'Atualizar'"
                     class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
                     <RotateCw class="w-5 h-5" />
                 </button>

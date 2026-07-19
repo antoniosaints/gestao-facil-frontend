@@ -162,12 +162,12 @@ onMounted(load)
             <p class="mt-0.5 font-mono text-xs text-muted-foreground">{{ chave.provider }} · {{ chave.apiKeyMasked }}</p>
           </div>
           <div class="flex shrink-0 items-center gap-1">
-            <Button variant="ghost" size="icon" title="Editar" @click="openEdit(chave)"><Pencil class="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" v-tooltip="'Editar'" @click="openEdit(chave)"><Pencil class="h-4 w-4" /></Button>
             <Button
               variant="ghost"
               size="icon"
               class="text-destructive hover:text-destructive"
-              title="Remover"
+              v-tooltip="'Remover'"
               :disabled="busyId === chave.id"
               @click="remove(chave)"
             >

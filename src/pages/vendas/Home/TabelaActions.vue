@@ -24,7 +24,7 @@ async function printCupom(id: number) {
     <div>
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
-                <Button variant="default" class="w-8 h-8 p-0 text-white">
+                <Button variant="default" class="w-8 h-8 p-0 text-white" v-tooltip="'Opções'">
                     <span class="sr-only">Abrir opções</span>
                     <Menu class="w-4 h-4" />
                 </Button>

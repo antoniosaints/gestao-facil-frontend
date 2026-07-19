@@ -208,7 +208,7 @@ onMounted(carregar)
         <Button variant="outline" size="sm" @click="openModalFiltros = true">
           <Filter class="h-4 w-4" /> Período
         </Button>
-        <Button variant="outline" size="icon" class="h-9 w-9" :disabled="loading" @click="carregar">
+        <Button variant="outline" size="icon" class="h-9 w-9" v-tooltip="'Atualizar'" :disabled="loading" @click="carregar">
           <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
         </Button>
       </div>

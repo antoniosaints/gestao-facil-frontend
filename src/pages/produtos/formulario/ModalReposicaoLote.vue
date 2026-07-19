@@ -217,6 +217,7 @@ async function submit() {
                 variant="ghost"
                 size="icon"
                 class="text-red-500 hover:text-red-600"
+                v-tooltip="'Remover linha'"
                 @click="removerLinha(index)"
               >
                 <Trash2 class="h-4 w-4" />

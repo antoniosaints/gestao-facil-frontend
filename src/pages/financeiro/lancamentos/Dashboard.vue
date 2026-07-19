@@ -399,7 +399,7 @@ onMounted(async () => {
           <Button variant="outline" @click="openModalFiltros = true">
             <Filter class="h-4 w-4" /> Filtros
           </Button>
-          <Button variant="outline" size="icon" @click="carregarDashboard(true)">
+          <Button variant="outline" size="icon" v-tooltip="'Atualizar'" @click="carregarDashboard(true)">
             <RefreshCw class="h-4 w-4" />
           </Button>
         </div>

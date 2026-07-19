@@ -237,7 +237,7 @@ onMounted(getDataConta)
         <h1 class="text-xl font-bold text-foreground md:text-2xl">Sua assinatura</h1>
         <p class="text-sm text-muted-foreground">Acompanhe seu plano e mantenha o acesso ativo.</p>
       </div>
-      <Button variant="ghost" size="icon" :disabled="refresh" title="Atualizar" @click="getDataConta">
+      <Button variant="ghost" size="icon" :disabled="refresh" v-tooltip="'Atualizar'" @click="getDataConta">
         <RefreshCcw class="h-5 w-5" :class="refresh ? 'animate-spin' : ''" />
       </Button>
     </header>

@@ -68,7 +68,7 @@ if (!props.sidebar) {
   <Popover :open="open" @update:open="onOpenChange">
     <PopoverTrigger as-child>
       <Button v-if="!props.sidebar" variant="ghost" size="icon" aria-label="Status dos serviços"
-        class="relative h-9 w-10 rounded-xl border bg-card hover:bg-card/80">
+        v-tooltip="'Status dos serviços'" class="relative h-9 w-10 rounded-xl border bg-card hover:bg-card/80">
         <Bell class="h-4 w-4" />
         <span v-if="store.naoLidos" class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full ring-2 ring-background"
           :class="indicadorClass"></span>

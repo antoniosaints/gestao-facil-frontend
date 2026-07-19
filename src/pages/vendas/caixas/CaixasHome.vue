@@ -400,7 +400,7 @@ onMounted(() => {
           <Button variant="outline" size="sm" @click="openModalFiltros = true">
             <Filter class="h-4 w-4" /> Filtros
           </Button>
-          <Button variant="outline" size="icon" :disabled="loading" @click="carregarRelatorio">
+          <Button variant="outline" size="icon" v-tooltip="'Atualizar'" :disabled="loading" @click="carregarRelatorio">
             <RefreshCw class="h-4 w-4" />
           </Button>
         </div>

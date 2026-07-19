@@ -241,7 +241,7 @@ async function submit() {
           <div class="flex gap-2">
             <Input v-model="store.varianteForm.codigo" type="text" placeholder="Gerado automaticamente se vazio"
               :disabled="store.varianteForm.skuBloqueado" class="bg-background dark:bg-background/60" />
-            <Button type="button" variant="outline" size="icon" title="Gerar SKU automaticamente"
+            <Button type="button" variant="outline" size="icon" v-tooltip="'Gerar SKU automaticamente'"
               :disabled="store.varianteForm.skuBloqueado" @click="store.gerarSkuVariante()">
               <Sparkles class="h-4 w-4" />
             </Button>

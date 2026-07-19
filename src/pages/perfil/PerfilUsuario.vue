@@ -553,6 +553,7 @@ async function saveProfile() {
                         variant="ghost"
                         size="icon"
                         class="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                        v-tooltip="showPassword.current ? 'Ocultar senha' : 'Mostrar senha'"
                         @click="showPassword.current = !showPassword.current"
                       >
                         <Eye v-if="!showPassword.current" class="h-4 w-4" />
@@ -577,6 +578,7 @@ async function saveProfile() {
                           variant="ghost"
                           size="icon"
                           class="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                          v-tooltip="showPassword.next ? 'Ocultar senha' : 'Mostrar senha'"
                           @click="showPassword.next = !showPassword.next"
                         >
                           <Eye v-if="!showPassword.next" class="h-4 w-4" />
@@ -600,6 +602,7 @@ async function saveProfile() {
                           variant="ghost"
                           size="icon"
                           class="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                          v-tooltip="showPassword.confirm ? 'Ocultar senha' : 'Mostrar senha'"
                           @click="showPassword.confirm = !showPassword.confirm"
                         >
                           <Eye v-if="!showPassword.confirm" class="h-4 w-4" />

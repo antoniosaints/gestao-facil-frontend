@@ -739,33 +739,33 @@ watch(() => store.filters.update, loadLancamento)
 
             <div class="flex items-center gap-1">
               <div class="hidden items-center gap-1 md:flex">
-                <Button v-if="!parcela.pago" variant="outline" size="icon" class="h-8 w-8" @click="editarParcela(parcela)">
+                <Button v-if="!parcela.pago" variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Editar'" @click="editarParcela(parcela)">
                   <PenLine class="h-4 w-4" />
                 </Button>
                 <Button v-if="!parcela.pago" variant="outline" size="icon" class="h-8 w-8 text-rose-600 hover:text-rose-700"
-                  @click="excluirParcela(parcela)">
+                  v-tooltip="'Excluir'" @click="excluirParcela(parcela)">
                   <Trash2 class="h-4 w-4" />
                 </Button>
                 <Button v-if="uiStore.canCreateCharge && !parcela.pago && !parcela.CobrancasFinanceiras?.length" size="icon"
-                  class="h-8 w-8 bg-success text-white hover:bg-success/80"
+                  class="h-8 w-8 bg-success text-white hover:bg-success/80" v-tooltip="'Gerar cobrança'"
                   @click="gerarCobrancaParcela(parcela.id!, Number(parcela.valor || 0))">
                   <CircleDollarSign class="h-4 w-4" />
                 </Button>
                 <Button v-if="parcela.CobrancasFinanceiras?.length" variant="outline" size="icon" class="h-8 w-8"
-                  @click="openLinkCobranca(parcela.CobrancasFinanceiras[0].externalLink)">
+                  v-tooltip="'Abrir cobrança'" @click="openLinkCobranca(parcela.CobrancasFinanceiras[0].externalLink)">
                   <ExternalLink class="h-4 w-4" />
                 </Button>
                 <Button v-if="lancamento?.tipo === 'RECEITA' && lancamento?.clienteId && !parcela.pago"
-                  variant="outline" size="icon" class="h-8 w-8" title="Enviar cobrança pelo WhatsApp"
+                  variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Enviar cobrança pelo WhatsApp'"
                   @click="abrirCobrancaRapida(parcela)">
                   <Send class="h-4 w-4" />
                 </Button>
                 <Button v-if="!parcela.pago" size="icon" class="h-8 w-8 dark:text-white"
-                  @click="efetivarParcela(parcela.id!)">
+                  v-tooltip="lancamento?.tipo === 'DESPESA' ? 'Pagar' : 'Receber'" @click="efetivarParcela(parcela.id!)">
                   <CheckCircle2 class="h-4 w-4" />
                 </Button>
                 <Button v-else size="icon" class="h-8 w-8 bg-warning text-white hover:bg-warning/80"
-                  @click="estornarParcela(parcela.id!)">
+                  v-tooltip="'Estornar'" @click="estornarParcela(parcela.id!)">
                   <Undo2 class="h-4 w-4" />
                 </Button>
               </div>

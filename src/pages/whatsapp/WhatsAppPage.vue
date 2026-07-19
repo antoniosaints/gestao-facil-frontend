@@ -51,7 +51,7 @@
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon" class="h-8 w-8 shrink-0 text-muted-foreground">
+                    <Button variant="ghost" v-tooltip="'Opções'" size="icon" class="h-8 w-8 shrink-0 text-muted-foreground">
                       <MoreVertical class="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -126,19 +126,19 @@
                   <QrCode v-else class="mr-1.5 h-4 w-4" />
                   Conectar
                 </Button>
-                <Button variant="outline" size="icon" class="h-8 w-8" title="Verificar status" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'status')">
+                <Button variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Verificar status'" :disabled="isAnyInstanceActionLoading(instance.id)" @click="runInstanceAction(instance, 'status')">
                   <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'status')" class="h-4 w-4 animate-spin" />
                   <Wifi v-else class="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon" class="h-8 w-8" title="Configurar webhooks" :disabled="loadingWebhookConfig || isAnyInstanceActionLoading(instance.id)" @click="openWebhookModal(instance)">
+                <Button variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Configurar webhook'" :disabled="loadingWebhookConfig || isAnyInstanceActionLoading(instance.id)" @click="openWebhookModal(instance)">
                   <LoaderIcon v-if="loadingWebhookConfig && webhookInstance?.id === instance.id" class="h-4 w-4 animate-spin" />
                   <Webhook v-else class="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon" class="h-8 w-8" title="Reiniciar instância" :disabled="isAnyInstanceActionLoading(instance.id)" @click="confirmInstanceAction(instance, 'restart')">
+                <Button variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Reiniciar instância'" :disabled="isAnyInstanceActionLoading(instance.id)" @click="confirmInstanceAction(instance, 'restart')">
                   <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'restart')" class="h-4 w-4 animate-spin" />
                   <RefreshCw v-else class="h-4 w-4" />
                 </Button>
-                <Button v-if="instance.status === 'CONECTADA'" variant="outline" size="icon" class="h-8 w-8 text-amber-600 hover:text-amber-700" title="Desconectar" :disabled="isAnyInstanceActionLoading(instance.id)" @click="confirmInstanceAction(instance, 'disconnect')">
+                <Button v-if="instance.status === 'CONECTADA'" variant="outline" size="icon" class="h-8 w-8 text-amber-600 hover:text-amber-700" v-tooltip="'Desconectar'" :disabled="isAnyInstanceActionLoading(instance.id)" @click="confirmInstanceAction(instance, 'disconnect')">
                   <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'disconnect')" class="h-4 w-4 animate-spin" />
                   <WifiOff v-else class="h-4 w-4" />
                 </Button>
@@ -152,7 +152,7 @@
                       size="icon"
                       class="ml-auto h-8 w-8"
                       :class="instance.atendimentoNaoPerturbe ? 'text-amber-600 hover:text-amber-700' : ''"
-                      :title="instance.atendimentoNaoPerturbe ? 'Atendimento: não perturbe ativo' : 'Ações de atendimento'"
+                      v-tooltip="instance.atendimentoNaoPerturbe ? 'Atendimento: não perturbe ativo' : 'Ações de atendimento'"
                       @click="openAtendimento(instance)"
                     >
                       <BellOff v-if="instance.atendimentoNaoPerturbe" class="h-4 w-4" />

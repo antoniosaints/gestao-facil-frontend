@@ -149,7 +149,7 @@ onMounted(carregar)
         <Input :model-value="secao.nome" class="h-8 font-medium" @update:model-value="renomear(secao, String($event))" />
         <div class="ml-auto flex shrink-0 items-center gap-2">
           <Switch :model-value="secao.ativo" title="Mostrar na loja" @update:model-value="alternarAtivo(secao, $event)" />
-          <Button type="button" variant="ghost" size="icon" class="h-8 w-8 text-red-600" title="Excluir seção" @click="excluirSecao(secao)">
+          <Button type="button" variant="ghost" size="icon" class="h-8 w-8 text-red-600" v-tooltip="'Excluir seção'" @click="excluirSecao(secao)">
             <Trash2 class="h-4 w-4" />
           </Button>
         </div>

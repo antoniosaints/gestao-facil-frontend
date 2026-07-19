@@ -831,7 +831,7 @@ onMounted(async () => {
                             variant="ghost"
                             size="icon"
                             class="h-8 w-8"
-                            :title="'Focar esta variante'"
+                            v-tooltip="'Focar esta variante'"
                             @click="selectedVariantId = String(item.id); activeTab = 'variante'"
                           >
                             <Box class="h-4 w-4" />
@@ -841,7 +841,7 @@ onMounted(async () => {
                             variant="ghost"
                             size="icon"
                             class="h-8 w-8"
-                            :title="'Editar variante'"
+                            v-tooltip="'Editar variante'"
                             @click="store.openUpdateVariante(item.id!)"
                           >
                             <PencilLine class="h-4 w-4" />
@@ -851,7 +851,7 @@ onMounted(async () => {
                             variant="ghost"
                             size="icon"
                             class="h-8 w-8"
-                            :title="'Reposição de estoque'"
+                            v-tooltip="'Reposição de estoque'"
                             @click="store.idMutation = item.id!; store.openModalReposicao = true"
                           >
                             <ArchiveRestore class="h-4 w-4" />
@@ -861,7 +861,7 @@ onMounted(async () => {
                             variant="ghost"
                             size="icon"
                             class="h-8 w-8"
-                            :title="'Descarte de estoque'"
+                            v-tooltip="'Descarte de estoque'"
                             @click="store.idMutation = item.id!; store.openModalDescarte = true"
                           >
                             <PackageX class="h-4 w-4" />
@@ -871,7 +871,7 @@ onMounted(async () => {
                             variant="ghost"
                             size="icon"
                             class="h-8 w-8 text-red-600 hover:text-red-700"
-                            :title="item.ehPadrao ? 'Variante padrão não pode ser excluída' : 'Excluir variante'"
+                            v-tooltip="item.ehPadrao ? 'Variante padrão não pode ser excluída' : 'Excluir variante'"
                             :disabled="item.ehPadrao"
                             @click="deletarVariante(item.id)"
                           >

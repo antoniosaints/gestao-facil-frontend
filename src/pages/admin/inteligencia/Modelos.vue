@@ -168,12 +168,12 @@ onMounted(load)
           </p>
         </div>
         <Switch :model-value="modelo.ativo" :disabled="busyId === modelo.id" @update:model-value="(v) => toggleAtivo(modelo, Boolean(v))" />
-        <Button variant="ghost" size="icon" title="Editar" @click="openEdit(modelo)"><Pencil class="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" v-tooltip="'Editar'" @click="openEdit(modelo)"><Pencil class="h-4 w-4" /></Button>
         <Button
           variant="ghost"
           size="icon"
           class="text-destructive hover:text-destructive"
-          title="Remover"
+          v-tooltip="'Remover'"
           :disabled="busyId === modelo.id"
           @click="remove(modelo)"
         >

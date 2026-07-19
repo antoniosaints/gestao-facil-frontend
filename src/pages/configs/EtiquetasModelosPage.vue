@@ -37,13 +37,13 @@
             </div>
           </div>
           <div class="flex flex-col gap-1 shrink-0">
-            <Button variant="ghost" size="icon" title="Editar" @click="editarModelo(m)">
+            <Button variant="ghost" size="icon" v-tooltip="'Editar'" @click="editarModelo(m)">
               <Pencil class="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" title="Duplicar" @click="duplicarModelo(m)">
+            <Button variant="ghost" size="icon" v-tooltip="'Duplicar'" @click="duplicarModelo(m)">
               <Copy class="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" class="text-danger" title="Excluir" @click="excluirModelo(m)">
+            <Button variant="ghost" size="icon" class="text-danger" v-tooltip="'Excluir'" @click="excluirModelo(m)">
               <Trash2 class="w-4 h-4" />
             </Button>
           </div>

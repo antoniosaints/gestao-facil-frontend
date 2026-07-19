@@ -177,7 +177,7 @@ onMounted(async () => {
         <Button variant="outline" size="sm" @click="openModalFiltros = true">
           <Filter class="h-4 w-4" /> Período
         </Button>
-        <Button variant="outline" size="icon" class="h-9 w-9" :disabled="loadingResumo" @click="aplicarFiltros">
+        <Button variant="outline" size="icon" class="h-9 w-9" v-tooltip="'Atualizar'" :disabled="loadingResumo" @click="aplicarFiltros">
           <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': loadingResumo }" />
         </Button>
       </div>

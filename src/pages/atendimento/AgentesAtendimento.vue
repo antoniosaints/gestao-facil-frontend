@@ -229,12 +229,12 @@ onMounted(loadData)
               <p class="mt-0.5 text-xs text-muted-foreground">{{ agent.modelo }}</p>
             </div>
             <div class="flex shrink-0 items-center gap-1">
-              <Button variant="ghost" size="icon" title="Editar" @click="openEdit(agent)"><Pencil class="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" v-tooltip="'Editar'" @click="openEdit(agent)"><Pencil class="h-4 w-4" /></Button>
               <Button
                 variant="ghost"
                 size="icon"
                 class="text-destructive hover:text-destructive"
-                title="Remover"
+                v-tooltip="'Remover'"
                 :disabled="deletingId === agent.id"
                 @click="removeAgent(agent)"
               >

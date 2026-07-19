@@ -700,13 +700,14 @@ onMounted(async () => {
               {{ item }}
             </Badge>
           </div>
-          <div v-else class="text-sm text-muted-foreground truncate hidden lg:block">
+          <div v-else class="text-sm text-muted-foreground truncate hidden lg:block max-w-[30rem]">
             <span>{{ description }}</span>
           </div>
         </div>
 
         <div class="hidden lg:flex flex-wrap items-center justify-center lg:justify-between gap-2 self-center lg:self-auto">
-          <Button variant="outline" size="icon" class="hidden lg:inline-flex" @click="navigateMonth('prev')">
+          <Button variant="outline" size="icon" class="hidden lg:inline-flex" v-tooltip="'Mês anterior'"
+            @click="navigateMonth('prev')">
             <ArrowLeft class="h-4 w-4" />
           </Button>
           <div class="min-w-max text-center">
@@ -717,7 +718,8 @@ onMounted(async () => {
               Saldo inicial: {{ formatCurrencyBR(resumo.saldoInicialPeriodo) }}
             </p>
           </div>
-          <Button variant="outline" size="icon" class="hidden lg:inline-flex" @click="navigateMonth('next')">
+          <Button variant="outline" size="icon" class="hidden lg:inline-flex" v-tooltip="'Próximo mês'"
+            @click="navigateMonth('next')">
             <ArrowRight class="h-4 w-4" />
           </Button>
           <Button variant="outline" class="hidden lg:inline-flex" @click="openModalFiltros = true">
@@ -726,7 +728,8 @@ onMounted(async () => {
           <Button class="dark:text-white hidden lg:inline-flex" @click="handleNewLancamento">
             <BadgePlus class="h-4 w-4" /> {{ launchLabel }}
           </Button>
-          <Button class="hidden lg:inline-flex" variant="outline" size="icon" @click="recarregarMantendoPosicao(true)">
+          <Button class="hidden lg:inline-flex" variant="outline" size="icon" v-tooltip="'Atualizar'"
+            @click="recarregarMantendoPosicao(true)">
             <RotateCw class="h-4 w-4" :class="{ 'animate-spin': carregando }" />
           </Button>
         </div>
@@ -797,7 +800,8 @@ onMounted(async () => {
                   class="border-0 py-2 flex gap-1 shadow-none bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-200">
                   <span class="hidden md:inline-flex">Previsto</span> {{ formatCurrencyBR(dia.saldoPrevisto) }}
                 </Badge>
-                <Button variant="outline" size="icon" class="h-8 w-8" @click="handleQuickCreate(dia.dia)">
+                <Button variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Adicionar lançamento'"
+                  @click="handleQuickCreate(dia.dia)">
                   <Plus class="h-4 w-4" />
                 </Button>
               </div>
@@ -855,36 +859,39 @@ onMounted(async () => {
 
                   <div class="flex items-center gap-1" @click.stop>
                     <div class="hidden items-center gap-1 lg:flex">
-                      <Button v-if="!item.pago" variant="outline" size="icon" class="h-8 w-8"
+                      <Button v-if="!item.pago" variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Editar'"
                         :data-testid="`editar-parcela-${item.parcelaId}`" @click="editarParcela(item)">
                         <PenLine class="h-4 w-4" />
                       </Button>
                       <Button v-if="!item.pago" size="icon" class="h-8 w-8 dark:text-white"
+                        v-tooltip="item.tipo === 'DESPESA' ? 'Pagar' : 'Receber'"
                         :data-testid="`efetivar-parcela-${item.parcelaId}`" @click="efetivarParcela(item.parcelaId)">
                         <CheckCircle2 class="h-4 w-4" />
                       </Button>
                       <Button v-else size="icon" class="h-8 w-8 bg-warning text-white hover:bg-warning/80"
+                        v-tooltip="'Estornar'"
                         :data-testid="`estornar-parcela-${item.parcelaId}`" @click="estornarParcela(item.parcelaId)">
                         <Undo2 class="h-4 w-4" />
                       </Button>
                       <Button
                         v-if="uiStore.canCreateCharge && !item.pago && item.tipo === 'RECEITA' && !item.cobrancaLink"
-                        size="icon" class="h-8 w-8 bg-success text-white hover:bg-success/80"
+                        size="icon" class="h-8 w-8 bg-success text-white hover:bg-success/80" v-tooltip="'Gerar cobrança'"
                         :data-testid="`cobranca-parcela-${item.parcelaId}`"
                         @click="gerarCobrancaParcela(item.parcelaId, item.valor)">
                         <CircleDollarSign class="h-4 w-4" />
                       </Button>
                       <Button v-if="item.cobrancaLink" variant="outline" size="icon" class="h-8 w-8"
+                        v-tooltip="'Abrir cobrança'"
                         :data-testid="`abrir-cobranca-${item.parcelaId}`" @click="openLinkCobranca(item.cobrancaLink)">
                         <ExternalLink class="h-4 w-4" />
                       </Button>
-                      <Button v-if="props.mode === 'receitas' && !item.pago" variant="outline" size="icon"
-                        class="h-8 w-8" title="Enviar cobrança pelo WhatsApp"
+                      <Button v-if="props.mode === 'receitas' && !item.pago" variant="outline" size="icon" class="h-8 w-8"
+                        v-tooltip="'Enviar cobrança pelo WhatsApp'"
                         :data-testid="`enviar-cobranca-${item.parcelaId}`" @click="abrirCobrancaRapida(item)">
                         <Send class="h-4 w-4" />
                       </Button>
                       <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
-                        <Button variant="outline" size="icon" class="h-8 w-8">
+                        <Button variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Detalhes'">
                           <Info class="h-4 w-4" />
                         </Button>
                       </RouterLink>

@@ -189,7 +189,7 @@ onMounted(loadContacts)
       </div>
       <div class="flex w-full max-w-sm gap-2">
         <Input v-model="search" placeholder="Buscar por nome, telefone ou cliente" @keyup.enter="loadContacts" />
-        <Button variant="outline" size="icon" @click="loadContacts"><Search class="h-4 w-4" /></Button>
+        <Button variant="outline" size="icon" v-tooltip="'Buscar'" @click="loadContacts"><Search class="h-4 w-4" /></Button>
       </div>
     </header>
 
@@ -231,7 +231,7 @@ onMounted(loadContacts)
             </div>
 
             <div class="flex shrink-0 items-center gap-2">
-              <Button variant="ghost" size="icon" title="Abrir no atendimento" @click="openConversation(contact)">
+              <Button variant="ghost" size="icon" v-tooltip="'Abrir no atendimento'" @click="openConversation(contact)">
                 <MessageCircle class="h-4 w-4" />
               </Button>
               <Button variant="outline" size="sm" @click="openEdit(contact)">Editar</Button>
@@ -240,7 +240,7 @@ onMounted(loadContacts)
                 variant="ghost"
                 size="icon"
                 class="text-destructive hover:text-destructive"
-                title="Apagar contato"
+                v-tooltip="'Apagar contato'"
                 :disabled="deletingId === contact.id"
                 @click="deleteContact(contact)"
               >
@@ -288,7 +288,7 @@ onMounted(loadContacts)
             </p>
             <div class="flex gap-2">
               <Input v-model="edit.customerSearch" placeholder="Buscar cliente" @keyup.enter="loadCustomers" />
-              <Button variant="outline" size="icon" @click="loadCustomers"><Search class="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" v-tooltip="'Buscar'" @click="loadCustomers"><Search class="h-4 w-4" /></Button>
             </div>
             <select
               v-if="edit.customerOptions.length"

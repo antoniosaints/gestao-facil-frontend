@@ -266,7 +266,7 @@ onMounted(carregar)
         <div class="mt-1 flex items-center gap-1.5">
           <span class="shrink-0 text-sm text-muted-foreground">/lojas/</span>
           <Input v-model="config.slug" class="h-8 max-w-[200px]" placeholder="minha-loja" />
-          <Button type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" :disabled="!lojaLink" title="Copiar link" @click="copiarLink">
+          <Button type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" :disabled="!lojaLink" v-tooltip="'Copiar link'" @click="copiarLink">
             <Check v-if="linkCopied" class="h-4 w-4 text-emerald-600" />
             <Copy v-else class="h-4 w-4" />
           </Button>
@@ -368,7 +368,7 @@ onMounted(carregar)
                     <div class="flex items-center gap-2">
                       <input :value="config.themeConfig?.bgColor || '#fafaf9'" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('bgColor', ($event.target as HTMLInputElement).value)" />
                       <Input :model-value="config.themeConfig?.bgColor || ''" placeholder="#fafaf9" class="h-9 min-w-0" @update:model-value="updateTheme('bgColor', String($event).trim() || null)" />
-                      <Button v-if="config.themeConfig?.bgColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('bgColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                      <Button v-if="config.themeConfig?.bgColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" v-tooltip="'Restaurar padrão'" @click="updateTheme('bgColor', null)"><Trash2 class="h-4 w-4" /></Button>
                     </div>
                   </div>
                   <div class="space-y-1">
@@ -376,7 +376,7 @@ onMounted(carregar)
                     <div class="flex items-center gap-2">
                       <input :value="config.themeConfig?.headerColor || '#ffffff'" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('headerColor', ($event.target as HTMLInputElement).value)" />
                       <Input :model-value="config.themeConfig?.headerColor || ''" placeholder="#ffffff" class="h-9 min-w-0" @update:model-value="updateTheme('headerColor', String($event).trim() || null)" />
-                      <Button v-if="config.themeConfig?.headerColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('headerColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                      <Button v-if="config.themeConfig?.headerColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" v-tooltip="'Restaurar padrão'" @click="updateTheme('headerColor', null)"><Trash2 class="h-4 w-4" /></Button>
                     </div>
                   </div>
                   <div class="space-y-1">
@@ -384,7 +384,7 @@ onMounted(carregar)
                     <div class="flex items-center gap-2">
                       <input :value="config.themeConfig?.footerColor || '#ffffff'" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('footerColor', ($event.target as HTMLInputElement).value)" />
                       <Input :model-value="config.themeConfig?.footerColor || ''" placeholder="#ffffff" class="h-9 min-w-0" @update:model-value="updateTheme('footerColor', String($event).trim() || null)" />
-                      <Button v-if="config.themeConfig?.footerColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('footerColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                      <Button v-if="config.themeConfig?.footerColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" v-tooltip="'Restaurar padrão'" @click="updateTheme('footerColor', null)"><Trash2 class="h-4 w-4" /></Button>
                     </div>
                   </div>
                 </div>
@@ -399,7 +399,7 @@ onMounted(carregar)
                     <div class="flex items-center gap-2">
                       <input :value="config.themeConfig?.promoColor || '#dc2626'" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('promoColor', ($event.target as HTMLInputElement).value)" />
                       <Input :model-value="config.themeConfig?.promoColor || ''" placeholder="#dc2626" class="h-9" @update:model-value="updateTheme('promoColor', String($event).trim() || null)" />
-                      <Button v-if="config.themeConfig?.promoColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('promoColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                      <Button v-if="config.themeConfig?.promoColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" v-tooltip="'Restaurar padrão'" @click="updateTheme('promoColor', null)"><Trash2 class="h-4 w-4" /></Button>
                     </div>
                   </div>
                   <div class="space-y-1">
@@ -407,7 +407,7 @@ onMounted(carregar)
                     <div class="flex items-center gap-2">
                       <input :value="config.themeConfig?.sectionIconColor || config.corPrimaria" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" @input="updateTheme('sectionIconColor', ($event.target as HTMLInputElement).value)" />
                       <Input :model-value="config.themeConfig?.sectionIconColor || ''" placeholder="Cor primária" class="h-9" @update:model-value="updateTheme('sectionIconColor', String($event).trim() || null)" />
-                      <Button v-if="config.themeConfig?.sectionIconColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" title="Restaurar padrão" @click="updateTheme('sectionIconColor', null)"><Trash2 class="h-4 w-4" /></Button>
+                      <Button v-if="config.themeConfig?.sectionIconColor" type="button" variant="ghost" size="icon" class="h-9 w-9 shrink-0" v-tooltip="'Restaurar padrão'" @click="updateTheme('sectionIconColor', null)"><Trash2 class="h-4 w-4" /></Button>
                     </div>
                   </div>
                 </div>

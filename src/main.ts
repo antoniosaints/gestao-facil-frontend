@@ -9,6 +9,7 @@ import 'vue-toastification/dist/index.css'
 
 import App from './App.vue'
 import router from './router'
+import { vTooltip } from './directives/tooltip'
 
 import VueDatePicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
@@ -29,5 +30,6 @@ app.use(createPinia())
 app.use(router)
 
 app.component('DatePicker', VueDatePicker)
+app.directive('tooltip', vTooltip)
 
 app.mount('#app')

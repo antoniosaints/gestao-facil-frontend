@@ -543,6 +543,7 @@ onMounted(() => {
                             :capitalize="false" size="sm" />
                           <Button size="icon" variant="ghost"
                             class="h-7 w-7 text-red-600 hover:text-red-600"
+                            v-tooltip="'Remover item'"
                             :disabled="removingItemId === item.id"
                             @click="removeItem(item.id, item.descricaoSnapshot)">
                             <RefreshCcw v-if="removingItemId === item.id" class="h-4 w-4 animate-spin" />

@@ -316,7 +316,7 @@ onMounted(load)
           Controle quem tem valores a receber e configure os lembretes de cobrança ao cliente.
         </p>
       </div>
-      <Button variant="outline" @click="load">
+      <Button variant="outline" v-tooltip="'Atualizar'" @click="load">
         <RotateCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
       </Button>
     </div>
@@ -444,21 +444,21 @@ onMounted(load)
             </td>
             <td class="px-3 py-2">
               <div class="flex justify-end gap-1">
-                <Button size="icon" variant="ghost" title="Configurar lembrete deste lançamento" @click="abrirOverride(item)">
+                <Button size="icon" variant="ghost" v-tooltip="'Configurar lembrete deste lançamento'" @click="abrirOverride(item)">
                   <Settings2 class="h-4 w-4" />
                 </Button>
-                <Button size="icon" variant="ghost" title="Padrão do cliente" :disabled="!item.cliente" @click="abrirCliente(item)">
+                <Button size="icon" variant="ghost" v-tooltip="'Padrão do cliente'" :disabled="!item.cliente" @click="abrirCliente(item)">
                   <UserCog class="h-4 w-4" />
                 </Button>
                 <RouterLink :to="`/financeiro/detalhes?id=${item.id}`">
-                  <Button size="icon" variant="ghost" title="Abrir lançamento financeiro">
+                  <Button size="icon" variant="ghost" v-tooltip="'Abrir lançamento financeiro'">
                     <ExternalLink class="h-4 w-4" />
                   </Button>
                 </RouterLink>
                 <Button
                   size="icon"
                   variant="ghost"
-                  title="Enviar lembrete agora (WhatsApp)"
+                  v-tooltip="'Enviar lembrete agora (WhatsApp)'"
                   :disabled="enviandoId === item.id"
                   @click="abrirCobrancaRapida(item)"
                 >
@@ -523,9 +523,9 @@ onMounted(load)
     <div v-if="totalPages > 1" class="flex items-center justify-between">
       <span class="text-xs text-muted-foreground">{{ total }} lançamento(s)</span>
       <div class="flex items-center gap-2">
-        <Button size="icon" variant="outline" :disabled="page <= 1" @click="irPara(page - 1)"><ChevronLeft class="h-4 w-4" /></Button>
+        <Button size="icon" variant="outline" v-tooltip="'Página anterior'" :disabled="page <= 1" @click="irPara(page - 1)"><ChevronLeft class="h-4 w-4" /></Button>
         <span class="text-sm">{{ page }} / {{ totalPages }}</span>
-        <Button size="icon" variant="outline" :disabled="page >= totalPages" @click="irPara(page + 1)"><ChevronRight class="h-4 w-4" /></Button>
+        <Button size="icon" variant="outline" v-tooltip="'Próxima página'" :disabled="page >= totalPages" @click="irPara(page + 1)"><ChevronRight class="h-4 w-4" /></Button>
       </div>
     </div>
 

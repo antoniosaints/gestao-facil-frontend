@@ -787,7 +787,7 @@ onMounted(async () => {
           <Sparkles v-else class="h-4 w-4" />
           Analisar com IA
         </Button>
-        <Button variant="outline" size="icon" class="h-9 w-9" :disabled="loading" @click="getDataDashboard(true)">
+        <Button variant="outline" size="icon" class="h-9 w-9" v-tooltip="'Atualizar'" :disabled="loading" @click="getDataDashboard(true)">
           <RotateCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
         </Button>
       </div>

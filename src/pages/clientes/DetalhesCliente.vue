@@ -65,7 +65,7 @@
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
-                <Button type="button" variant="outline" size="icon" :disabled="clienteActionLoading" title="Mais ações">
+                <Button type="button" variant="outline" size="icon" :disabled="clienteActionLoading" v-tooltip="'Mais ações'">
                   <MoreVertical class="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>

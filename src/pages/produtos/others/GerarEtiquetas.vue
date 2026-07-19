@@ -60,7 +60,7 @@
                             </div>
                             <div class="flex md:col-span-1 md:justify-center">
                                 <Button type="button" variant="ghost" size="icon" class="text-red-500 hover:text-red-600"
-                                    @click="removerLinha(index)">
+                                    v-tooltip="'Remover linha'" @click="removerLinha(index)">
                                     <Trash2 class="h-4 w-4" />
                                 </Button>
                             </div>

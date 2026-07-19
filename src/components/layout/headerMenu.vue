@@ -12,8 +12,8 @@
       <SupportBadge v-if="isSupportActive()" class="mr-2" />
       <InformativosStatusButton />
       <ColorToggle class="mr-2" v-if="!uiStore.isMobile" />
-      <div class="flex justify-between flex-col text-sm text-left">
-        <div>Olá, {{ uiStore.usuarioLogged.nome }}</div>
+      <div class="flex justify-between flex-col text-sm truncate text-left max-w-34">
+        <div class="truncate">Olá, {{ uiStore.usuarioLogged.nome }}</div>
         <p class="text-xs">{{ horarioSistemaAtual }}</p>
       </div>
     </div>
