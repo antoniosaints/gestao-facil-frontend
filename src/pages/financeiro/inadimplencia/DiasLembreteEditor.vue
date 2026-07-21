@@ -5,6 +5,7 @@ import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { ArrowBigLeftDashIcon, ArrowBigRightDashIcon } from 'lucide-vue-next'
 
 const props = defineProps<{ modelValue: number[] }>()
 const emit = defineEmits<{ (e: 'update:modelValue', value: number[]): void }>()
@@ -125,10 +126,10 @@ function addCustomDia(sinal: -1 | 1) {
     <div class="flex items-end gap-2">
       <div>
         <span class="text-xs text-muted-foreground">Dia personalizado</span>
-        <Input v-model.number="customDia" type="number" min="1" max="60" placeholder="Ex.: 10" class="mt-1 w-28" />
+        <Input v-model.number="(customDia as number)" type="number" min="1" max="60" placeholder="Ex.: 10" class="mt-1 w-28" />
       </div>
-      <Button type="button" variant="outline" size="sm" @click="addCustomDia(-1)">Antes</Button>
-      <Button type="button" variant="outline" size="sm" @click="addCustomDia(1)">Depois</Button>
+      <Button type="button" variant="outline" @click="addCustomDia(-1)"><ArrowBigLeftDashIcon class="h-4 w-4" /> Antes</Button>
+      <Button type="button" variant="outline" @click="addCustomDia(1)"><ArrowBigRightDashIcon class="h-4 w-4" /> Depois</Button>
     </div>
   </div>
 </template>

@@ -91,7 +91,7 @@ function insertVariable(token: string) {
     :icon="AlarmClock"
     :title="titulo"
     :description="descricao"
-    size="2xl"
+    size="3xl"
     @update:open="emit('update:open', $event)"
   >
     <div class="space-y-5 px-4">
@@ -118,7 +118,7 @@ function insertVariable(token: string) {
         <!-- Canais -->
         <div>
           <Label class="mb-2 block text-xs uppercase tracking-wide text-muted-foreground">Canais</Label>
-          <div class="space-y-2">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-2">
             <div class="flex items-center justify-between rounded-lg border p-3">
               <span class="text-sm font-medium">WhatsApp</span>
               <Switch :model-value="canalWhatsapp" @update:model-value="canalWhatsapp = $event" />

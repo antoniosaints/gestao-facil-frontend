@@ -102,7 +102,7 @@ function insertVariable(token: string) {
     :icon="Settings2"
     title="Configurações padrão de lembretes"
     description="Valores padrão do sistema para os lembretes de cobrança ao cliente."
-    size="2xl"
+    size="3xl"
     @update:open="emit('update:open', $event)"
   >
     <div class="space-y-5 px-4">
