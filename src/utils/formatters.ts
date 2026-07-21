@@ -42,6 +42,40 @@ export function formatCurrencyBR(value: number | string): string {
   }).format(valueFormated)
 }
 
+/**
+ * Rótulo legível de um método de pagamento (`MetodoPagamento` do Prisma).
+ * Devolve o próprio valor quando o método não é conhecido, para não engolir
+ * dados vindos de contas antigas.
+ */
+export function formatPaymentMethodLabel(method?: string | null): string {
+  switch (method) {
+    case 'DINHEIRO':
+      return 'Dinheiro'
+    case 'CARTAO':
+      return 'Cartão'
+    case 'CREDITO':
+      return 'Crédito'
+    case 'DEBITO':
+      return 'Débito'
+    case 'CREDIARIO':
+      return 'Crediário'
+    case 'PIX':
+      return 'PIX'
+    case 'BOLETO':
+      return 'Boleto'
+    case 'TRANSFERENCIA':
+      return 'Transferência'
+    case 'CHEQUE':
+      return 'Cheque'
+    case 'GATEWAY':
+      return 'Gateway'
+    case 'OUTRO':
+      return 'Outro'
+    default:
+      return method || '-'
+  }
+}
+
 export const formatLabel = (
   label: string,
   color: string,

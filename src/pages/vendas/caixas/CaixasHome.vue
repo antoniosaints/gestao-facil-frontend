@@ -13,19 +13,17 @@ import {
   HandCoins,
   Lock,
   MessageCircleMore,
-  ReceiptText,
   RefreshCcw,
   RefreshCw,
-  ShoppingCart,
   Trash2,
   TrendingUp,
-  UserRound,
 } from 'lucide-vue-next'
 import BarChart from '@/components/graficos/BarChart.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue'
+import ModalDetalhesCaixa from '@/pages/vendas/caixas/ModalDetalhesCaixa.vue'
 import ModalFechamentoCaixa from '@/pages/vendas/caixas/ModalFechamentoCaixa.vue'
 import PieChart from '@/components/graficos/PieChart.vue'
 import { Badge } from '@/components/ui/badge'
@@ -46,7 +44,7 @@ import {
 import { useUiStore } from '@/stores/ui/uiStore'
 import { useVendasStore } from '@/stores/vendas/useVenda'
 import type { CaixaRelatorioResponse } from '@/types/schemas'
-import { formatCurrencyBR } from '@/utils/formatters'
+import { formatCurrencyBR, formatPaymentMethodLabel } from '@/utils/formatters'
 
 const toast = useToast()
 const confirm = useConfirm()
@@ -140,7 +138,7 @@ const metodoPagamentoChart = computed(() => {
   const entries = Object.entries(porMetodo).filter(([, valor]) => Number(valor) > 0)
 
   return {
-    labels: entries.map(([metodo]) => getPaymentMethodLabel(metodo)),
+    labels: entries.map(([metodo]) => formatPaymentMethodLabel(metodo)),
     datasets: [
       {
         data: entries.map(([, valor]) => Number(valor)),
@@ -227,35 +225,6 @@ function irParaPagina(novaPagina: number) {
   if (alvo === page.value) return
   page.value = alvo
   carregarRelatorio()
-}
-
-function getPaymentMethodLabel(method?: string | null) {
-  switch (method) {
-    case 'DINHEIRO':
-      return 'Dinheiro'
-    case 'CARTAO':
-      return 'Cartão'
-    case 'CREDITO':
-      return 'Crédito'
-    case 'DEBITO':
-      return 'Débito'
-    case 'CREDIARIO':
-      return 'Crediário'
-    case 'PIX':
-      return 'PIX'
-    case 'BOLETO':
-      return 'Boleto'
-    case 'TRANSFERENCIA':
-      return 'Transferência'
-    case 'CHEQUE':
-      return 'Cheque'
-    case 'GATEWAY':
-      return 'Gateway'
-    case 'OUTRO':
-      return 'Outro'
-    default:
-      return method || '-'
-  }
 }
 
 function abrirDetalhes(caixa: CaixaRelatorioResponse['caixas'][number]) {
@@ -592,258 +561,11 @@ onMounted(() => {
       </div>
     </ModalView>
 
-    <ModalView v-model:open="openModalDetalhes" title="Detalhes do caixa" size="5xl">
-      <div v-if="caixaSelecionado" class="grid gap-3 px-3 pb-4 md:gap-4 md:p-4">
-        <div class="rounded-md border bg-background p-4">
-          <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <h3 class="truncate text-lg font-semibold">{{ caixaSelecionado.caixa.codigo }}</h3>
-                <Badge variant="outline">{{ caixaSelecionado.caixa.status }}</Badge>
-              </div>
-              <p class="mt-1 text-sm text-muted-foreground">
-                Aberto em {{ new Date(caixaSelecionado.caixa.abertoEm).toLocaleString('pt-BR') }}
-                por {{ caixaSelecionado.caixa.abertoPor?.nome || '-' }}
-              </p>
-              <p v-if="caixaSelecionado.caixa.fechadoEm" class="text-sm text-muted-foreground">
-                Fechado em {{ new Date(caixaSelecionado.caixa.fechadoEm).toLocaleString('pt-BR') }}
-                por {{ caixaSelecionado.caixa.fechadoPor?.nome || '-' }}
-              </p>
-            </div>
-            <div class="flex w-full flex-col gap-2 md:w-auto md:flex-row">
-              <Button v-if="canResendWhatsapp" variant="outline" class="w-full md:w-auto" @click="abrirModalReenvio">
-                <MessageCircleMore class="h-4 w-4" /> Reenviar WhatsApp
-              </Button>
-              <Button variant="outline" class="w-full md:w-auto"
-                :disabled="exportingPdfId === caixaSelecionado.caixa.id"
-                @click="exportarPdf(caixaSelecionado.caixa.id)">
-                <FileDown class="h-4 w-4" /> Exportar PDF
-              </Button>
-            </div>
-          </div>
-        </div>
+    <ModalDetalhesCaixa v-model:open="openModalDetalhes" :caixa="caixaSelecionado"
+      :can-resend-whatsapp="canResendWhatsapp"
+      :exportando="exportingPdfId !== null && exportingPdfId === caixaSelecionado?.caixa.id"
+      @exportar-pdf="exportarPdf" @reenviar-whatsapp="abrirModalReenvio" @ver-venda="abrirDetalhesVenda" />
 
-        <section class="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4 md:gap-3">
-          <div class="rounded-md border bg-card p-3">
-            <p class="text-xs text-muted-foreground">Vendido</p>
-            <p class="font-semibold">{{ formatCurrencyBR(caixaSelecionado.resumo.totalVendido || 0) }}</p>
-          </div>
-          <div class="rounded-md border bg-card p-3">
-            <p class="text-xs text-muted-foreground">Sangrias</p>
-            <p class="font-semibold">{{ formatCurrencyBR(caixaSelecionado.resumo.totalSangrias || 0) }}</p>
-          </div>
-          <div class="rounded-md border bg-card p-3">
-            <p class="text-xs text-muted-foreground">Reforcos</p>
-            <p class="font-semibold">{{ formatCurrencyBR(caixaSelecionado.resumo.totalReforcos || 0) }}</p>
-          </div>
-          <div class="rounded-md border bg-card p-3">
-            <p class="text-xs text-muted-foreground">Diferenca</p>
-            <p class="font-semibold">{{ formatCurrencyBR(caixaSelecionado.resumo.diferenca || 0) }}</p>
-          </div>
-        </section>
-
-        <section class="grid gap-2 md:grid-cols-3 md:gap-3">
-          <div class="rounded-md border bg-card p-3">
-            <div class="flex items-center gap-2 text-xs text-muted-foreground">
-              <ShoppingCart class="h-4 w-4" />
-              Vendas vinculadas
-            </div>
-            <p class="mt-1 text-lg font-semibold">{{ caixaSelecionado.resumo.totalVendas }}</p>
-          </div>
-          <div class="rounded-md border bg-card p-3">
-            <div class="flex items-center gap-2 text-xs text-muted-foreground">
-              <UserRound class="h-4 w-4" />
-              Operadores
-            </div>
-            <p class="mt-1 text-lg font-semibold">{{ caixaSelecionado.caixa.operadores?.length || 1 }}</p>
-          </div>
-          <div class="rounded-md border bg-card p-3">
-            <div class="flex items-center gap-2 text-xs text-muted-foreground">
-              <ReceiptText class="h-4 w-4" />
-              Movimentos
-            </div>
-            <p class="mt-1 text-lg font-semibold">{{ caixaSelecionado.movimentos.length }}</p>
-          </div>
-        </section>
-
-        <section class="rounded-md border bg-card p-3">
-          <h3 class="mb-2 text-sm font-semibold">Por metodo de pagamento</h3>
-          <div class="grid gap-2 sm:grid-cols-2">
-            <div v-for="(valor, metodo) in caixaSelecionado.resumo.porMetodo" :key="metodo"
-              class="flex justify-between rounded-md border bg-background px-3 py-2 text-sm">
-              <span>{{ metodo }}</span>
-              <strong>{{ formatCurrencyBR(valor) }}</strong>
-            </div>
-          </div>
-        </section>
-
-        <section v-if="caixaSelecionado.resumo.fechamentoMetodos?.length" class="rounded-md border bg-card p-3">
-          <h3 class="mb-2 text-sm font-semibold">Conferência por método (fechamento)</h3>
-          <div class="overflow-hidden rounded-md border">
-            <div
-              class="hidden grid-cols-4 gap-2 border-b bg-muted/40 px-3 py-2 text-[11px] font-medium text-muted-foreground sm:grid">
-              <span>Método</span>
-              <span class="text-right">Esperado</span>
-              <span class="text-right">Contado</span>
-              <span class="text-right">Diferença</span>
-            </div>
-            <div v-for="m in caixaSelecionado.resumo.fechamentoMetodos" :key="m.metodo"
-              class="grid grid-cols-2 gap-x-2 gap-y-1 border-b bg-background px-3 py-2 text-sm last:border-b-0 sm:grid-cols-4">
-              <span class="font-medium">{{ getPaymentMethodLabel(m.metodo) }}</span>
-              <span class="text-right text-muted-foreground">
-                <span class="text-[11px] sm:hidden">Esperado: </span>{{ formatCurrencyBR(m.esperado) }}
-              </span>
-              <span class="text-right">
-                <span class="text-[11px] text-muted-foreground sm:hidden">Contado: </span>{{ formatCurrencyBR(m.contado)
-                }}
-              </span>
-              <span class="text-right font-semibold"
-                :class="m.diferenca === 0 ? 'text-muted-foreground' : m.diferenca > 0 ? 'text-emerald-600' : 'text-rose-600'">
-                <span class="text-[11px] font-normal text-muted-foreground sm:hidden">Diferença: </span>{{
-                  formatCurrencyBR(m.diferenca) }}
-              </span>
-            </div>
-          </div>
-          <p class="mt-2 text-[11px] text-muted-foreground">
-            Diferença por método informada no fechamento. Métodos sem valor contado são considerados corretos.
-          </p>
-        </section>
-
-        <section class="rounded-md border bg-card p-3">
-          <div class="mb-2 flex items-center justify-between">
-            <h3 class="text-sm font-semibold">Vendas vinculadas</h3>
-            <span class="text-xs text-muted-foreground">{{ caixaSelecionado.vendas.length }} registro(s)</span>
-          </div>
-          <div v-if="!caixaSelecionado.vendas.length" class="py-6 text-center text-sm text-muted-foreground">
-            Nenhuma venda vinculada a este caixa.
-          </div>
-          <div v-if="caixaSelecionado.vendas.length" class="space-y-2 md:hidden">
-            <article v-for="venda in caixaSelecionado.vendas" :key="venda.id"
-              class="rounded-md border bg-background p-3">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-semibold">{{ venda.Uid || `#${venda.id}` }}</p>
-                  <p class="text-xs text-muted-foreground">{{ new Date(venda.data).toLocaleString('pt-BR') }}</p>
-                </div>
-                <Badge variant="outline">{{ venda.status }}</Badge>
-              </div>
-              <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div class="rounded-md bg-muted/40 p-2">
-                  <span class="block text-muted-foreground">Pagamento</span>
-                  <strong>{{ getPaymentMethodLabel(venda.PagamentoVendas?.metodo) }}</strong>
-                </div>
-                <div class="rounded-md bg-muted/40 p-2 text-right">
-                  <span class="block text-muted-foreground">Valor</span>
-                  <strong>{{ formatCurrencyBR(venda.valor || 0) }}</strong>
-                </div>
-              </div>
-              <Button type="button" variant="outline" size="sm" class="mt-3 w-full"
-                @click="abrirDetalhesVenda(venda.id)">
-                <Eye class="h-4 w-4" />
-                Detalhes da venda
-              </Button>
-            </article>
-          </div>
-          <div v-if="caixaSelecionado.vendas.length" class="hidden max-h-72 overflow-auto md:block">
-            <table class="w-full min-w-[760px] text-sm">
-              <thead class="border-b text-left text-xs text-muted-foreground">
-                <tr>
-                  <th class="py-2">Venda</th>
-                  <th class="py-2">Data</th>
-                  <th class="py-2">Status</th>
-                  <th class="py-2">Pagamento</th>
-                  <th class="py-2 text-right">Valor</th>
-                  <th class="py-2 text-right">Acoes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="venda in caixaSelecionado.vendas" :key="venda.id" class="border-b last:border-b-0">
-                  <td class="py-2 font-medium">{{ venda.Uid || `#${venda.id}` }}</td>
-                  <td class="py-2">{{ new Date(venda.data).toLocaleString('pt-BR') }}</td>
-                  <td class="py-2">
-                    <Badge variant="outline">{{ venda.status }}</Badge>
-                  </td>
-                  <td class="py-2">{{ getPaymentMethodLabel(venda.PagamentoVendas?.metodo) }}</td>
-                  <td class="py-2 text-right">{{ formatCurrencyBR(venda.valor || 0) }}</td>
-                  <td class="py-2 text-right">
-                    <Button type="button" variant="outline" size="sm" @click="abrirDetalhesVenda(venda.id)">
-                      <Eye class="h-4 w-4" />
-                      Detalhes
-                    </Button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="rounded-md border bg-card p-3">
-          <h3 class="mb-2 text-sm font-semibold">Movimentos</h3>
-          <div v-if="!caixaSelecionado.movimentos.length" class="py-6 text-center text-sm text-muted-foreground">
-            Nenhum movimento registrado neste caixa.
-          </div>
-          <div v-if="caixaSelecionado.movimentos.length" class="space-y-2 md:hidden">
-            <article v-for="movimento in caixaSelecionado.movimentos" :key="movimento.id"
-              class="rounded-md border bg-background p-3">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-semibold">{{ movimento.descricao || movimento.tipo }}</p>
-                  <p class="text-xs text-muted-foreground">{{ new Date(movimento.createdAt).toLocaleString('pt-BR') }}
-                  </p>
-                </div>
-                <span class="text-sm font-semibold">{{ formatCurrencyBR(movimento.valor || 0) }}</span>
-              </div>
-              <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div class="rounded-md bg-muted/40 p-2">
-                  <span class="block text-muted-foreground">Tipo</span>
-                  <strong>{{ movimento.tipo }}</strong>
-                </div>
-                <div class="rounded-md bg-muted/40 p-2">
-                  <span class="block text-muted-foreground">Metodo</span>
-                  <strong>{{ getPaymentMethodLabel(movimento.metodoPagamento) }}</strong>
-                </div>
-              </div>
-              <Button v-if="movimento.vendaId" type="button" variant="outline" size="sm" class="mt-3 w-full"
-                @click="abrirDetalhesVenda(movimento.vendaId)">
-                <Eye class="h-4 w-4" />
-                Ver venda
-              </Button>
-            </article>
-          </div>
-          <div v-if="caixaSelecionado.movimentos.length" class="hidden max-h-72 overflow-auto md:block">
-            <table class="w-full min-w-[660px] text-sm">
-              <thead class="border-b text-left text-xs text-muted-foreground">
-                <tr>
-                  <th class="py-2">Data</th>
-                  <th class="py-2">Tipo</th>
-                  <th class="py-2">Metodo</th>
-                  <th class="py-2">Descricao</th>
-                  <th class="py-2 text-right">Valor</th>
-                  <th class="py-2 text-right">Venda</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="movimento in caixaSelecionado.movimentos" :key="movimento.id"
-                  class="border-b last:border-b-0">
-                  <td class="py-2">{{ new Date(movimento.createdAt).toLocaleString('pt-BR') }}</td>
-                  <td class="py-2">{{ movimento.tipo }}</td>
-                  <td class="py-2">{{ getPaymentMethodLabel(movimento.metodoPagamento) }}</td>
-                  <td class="py-2">{{ movimento.descricao || '-' }}</td>
-                  <td class="py-2 text-right">{{ formatCurrencyBR(movimento.valor || 0) }}</td>
-                  <td class="py-2 text-right">
-                    <Button v-if="movimento.vendaId" type="button" variant="outline" size="sm"
-                      @click="abrirDetalhesVenda(movimento.vendaId)">
-                      <Eye class="h-4 w-4" />
-                    </Button>
-                    <span v-else class="text-xs text-muted-foreground">-</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-    </ModalView>
     <ModalFechamentoCaixa v-model:open="openModalFechar"
       :caixa="caixaParaFechar?.caixa || null"
       :saldo-esperado="Number(caixaParaFechar?.resumo.saldoEsperado || 0)"
