@@ -1123,7 +1123,7 @@ async function submitFechamentoCaixa(payload: Omit<FecharCaixaPayload, 'caixaId'
 
 watch(() => searchTerm.value, () => {
     paginaProdutos.value = 1
-    fetchProducts()
+    agendarBuscaProdutos()
 })
 
 watch(() => cart.value, () => {
@@ -1139,16 +1139,57 @@ watch(() => clienteEnvio.value, (value) => {
     atualizarNumeroPreview(value)
 })
 
-function quickAddCard() {
-    const search = searchTerm.value.toLowerCase();
-    if (!search) return toast.error('Informe o produto a ser adicionado')
-    const itemProduto = products.value.find(item =>
-        [item.nome, item.nomeVariante || '', item.codigo || ''].join(' ').toLowerCase().includes(search)
-    )
-    if (itemProduto?.nome) {
-        adicionarAoCarrinho(itemProduto)
-        searchInputField.value?.focus()
+// Normaliza ignorando caixa, acentos e espaços nas pontas. O MySQL casa "cafe" com "Café",
+// o `includes` do JS não — sem isso a grade mostra o produto e o Enter não acha nada.
+function normalizarBusca(valor: unknown) {
+    return String(valor ?? '')
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .trim()
+        .toLowerCase()
+}
+
+function escolherProdutoDaBusca(lista: ProdutoVariante[], termo: string) {
+    if (!lista.length) return null
+    const alvo = normalizarBusca(termo)
+    // Código de barras: casamento exato do `codigo` tem prioridade sobre qualquer parcial.
+    const porCodigo = lista.find((item) => item.codigo && normalizarBusca(item.codigo) === alvo)
+    if (porCodigo) return porCodigo
+    if (lista.length === 1) return lista[0]
+    return lista.find((item) =>
+        normalizarBusca([item.nome, item.nomeVariante || '', item.codigo || ''].join(' ')).includes(alvo)
+    ) || null
+}
+
+// Consulta o termo direto no servidor em vez de olhar `products` (a grade). O leitor envia
+// o Enter poucos milissegundos depois do último dígito, quando a requisição da grade ainda
+// está em voo — ler `products` aqui pegava a lista anterior e a função saía em silêncio,
+// sem adicionar nada e sem avisar o operador.
+async function quickAddCard() {
+    const termo = searchTerm.value.trim()
+    if (!termo) return toast.error('Informe o produto a ser adicionado')
+
+    let candidatos: ProdutoVariante[] = []
+    try {
+        const { data } = await http.get('/produtos/lista/geral', {
+            params: { search: termo, limit: 5, pdv: true },
+        })
+        candidatos = (data?.data || []) as ProdutoVariante[]
+    } catch {
+        return toast.error('Nao foi possivel buscar o produto. Tente novamente.', {
+            timeout: 3000,
+            position: POSITION.BOTTOM_CENTER,
+        })
     }
+
+    const itemProduto = escolherProdutoDaBusca(candidatos, termo)
+    if (!itemProduto?.nome) {
+        toast.error(`Produto nao encontrado: ${termo}`, { timeout: 3000, position: POSITION.BOTTOM_CENTER })
+        searchInputField.value?.focus()
+        return
+    }
+    adicionarAoCarrinho(itemProduto)
+    searchInputField.value?.focus()
 }
 
 function onKey(e: KeyboardEvent) {
@@ -1312,7 +1353,14 @@ function novaVendaAposComprovante() {
     setTimeout(() => searchInputField.value?.focus(), 60)
 }
 
+// O leitor de código de barras é um teclado HID: ele "digita" os 13 dígitos em poucos
+// milissegundos, disparando uma requisição por caractere. Sem uma guarda de sequência a
+// resposta de um prefixo pode chegar DEPOIS da resposta do código completo e sobrescrever
+// a grade com a lista errada.
+let buscaProdutosSeq = 0
+
 async function fetchProducts() {
+    const seq = ++buscaProdutosSeq
     try {
         // No PDV PRO pagina de 16 em 16; busca 1 a mais para saber se existe próxima página.
         const limit = proMode ? PDV_PAGE_SIZE + 1 : 12
@@ -1320,6 +1368,7 @@ async function fetchProducts() {
         const { data } = await http.get("/produtos/lista/geral", {
             params: { search: searchTerm.value, limit, pdv: true, ...(skip ? { skip } : {}) },
         })
+        if (seq !== buscaProdutosSeq) return
         let lista = data.data as ProdutoVariante[]
         if (proMode) {
             temProximaPaginaProdutos.value = lista.length > PDV_PAGE_SIZE
@@ -1330,8 +1379,19 @@ async function fetchProducts() {
         products.value = lista
         syncPodeFinalizarPDV()
     } catch {
-        alert("Erro ao buscar produtos")
+        if (seq !== buscaProdutosSeq) return
+        toast.error("Erro ao buscar produtos")
     }
+}
+
+// Agrupa as teclas de uma leitura inteira numa única requisição.
+let buscaProdutosTimer: ReturnType<typeof setTimeout> | null = null
+function agendarBuscaProdutos() {
+    if (buscaProdutosTimer) clearTimeout(buscaProdutosTimer)
+    buscaProdutosTimer = setTimeout(() => {
+        buscaProdutosTimer = null
+        fetchProducts()
+    }, 200)
 }
 
 function proximaPaginaProdutos() {
@@ -1652,5 +1712,8 @@ onMounted(async () => {
     window.addEventListener('keydown', onKey)
 })
 
-onUnmounted(() => window.removeEventListener('keydown', onKey))
+onUnmounted(() => {
+    if (buscaProdutosTimer) clearTimeout(buscaProdutosTimer)
+    window.removeEventListener('keydown', onKey)
+})
 </script>
