@@ -1,7 +1,26 @@
 import { describe, expect, it } from 'vitest'
 
-import { filterSidebarMenuByVisibility, getMainMenuVisibilityOptions, MAIN_MENU_VISIBILITY_OPTIONS } from './options'
+import {
+  ALL_SUBMENU_VISIBILITY_KEYS,
+  filterSidebarMenuByVisibility,
+  getMainMenuVisibilityOptions,
+  MAIN_MENU_VISIBILITY_OPTIONS,
+  MENU_SUBMENU_VISIBILITY_OPTIONS,
+  sidebarMenuOptions,
+} from './options'
+import type { Permissoes } from '@/stores/ui/uiStore'
 import type { SidebarMenuType } from '@/types/sidebar'
+
+function permissoes(nivel: number): Permissoes {
+  const modulo = {
+    editar: nivel >= 2,
+    visualizar: nivel >= 1,
+    criar: nivel >= 2,
+    excluir: nivel >= 3,
+    painel: nivel >= 3,
+  }
+  return new Proxy({} as Permissoes, { get: () => modulo })
+}
 
 describe('MAIN_MENU_VISIBILITY_OPTIONS', () => {
   // A tela de configurações renderiza esta lista: estar aqui é o que permite ocultar/mostrar
@@ -39,6 +58,49 @@ describe('MAIN_MENU_VISIBILITY_OPTIONS', () => {
     expect(comApps).toContain('loja-virtual')
     expect(comApps).toContain('core-ia')
     expect(comApps).toContain('whatsapp')
+  })
+})
+
+describe('PDV no submenu de Vendas', () => {
+  const submenusVendas = (nivel: number) =>
+    sidebarMenuOptions(permissoes(nivel)).find((item) => item.key === 'vendas')?.children ?? []
+
+  it('fica logo acima de Caixas dentro do dropdown de Vendas', () => {
+    const chaves = submenusVendas(4).map((child) => child.key)
+
+    expect(chaves).toEqual(['vendas:painel', 'vendas:lista', 'vendas:pdv', 'vendas:caixas'])
+    expect(submenusVendas(4).find((child) => child.key === 'vendas:pdv')?.link).toBe('/vendas/pdv')
+  })
+
+  // A rota /vendas/pdv exige `permissao: 2`. Mostrar o item para o nível 1 daria um
+  // link que o roteador barra na entrada.
+  it('nao aparece para quem o roteador barraria na rota do PDV', () => {
+    expect(submenusVendas(1).find((child) => child.key === 'vendas:pdv')?.show).toBe(false)
+    expect(submenusVendas(2).find((child) => child.key === 'vendas:pdv')?.show).toBe(true)
+  })
+
+  it('pode ser ocultado individualmente pela tela de configuracoes', () => {
+    expect(MENU_SUBMENU_VISIBILITY_OPTIONS.vendas.map((s) => s.key)).toContain('vendas:pdv')
+    expect(ALL_SUBMENU_VISIBILITY_KEYS).toContain('vendas:pdv')
+  })
+
+  // Submenu é blacklist: key ausente = visível. Contas que já personalizaram o menu
+  // recebem o PDV sem precisar reconfigurar nada.
+  it('aparece para contas que ja personalizaram o menu', () => {
+    const menu: SidebarMenuType[] = [
+      {
+        key: 'vendas',
+        nome: 'Vendas',
+        show: true,
+        children: [
+          { key: 'vendas:lista', nome: 'Vendas', link: '/vendas' },
+          { key: 'vendas:pdv', nome: 'PDV', link: '/vendas/pdv' },
+        ],
+      },
+    ]
+    const [vendas] = filterSidebarMenuByVisibility(menu, ['vendas'], false, ['vendas:painel'])
+
+    expect(vendas.children?.map((child) => child.nome)).toContain('PDV')
   })
 })
 

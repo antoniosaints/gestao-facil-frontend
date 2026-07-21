@@ -25,6 +25,7 @@ import {
   Package,
   PackagePlus,
   ReceiptText,
+  ScanBarcode,
   Store,
   Tags,
   Target,
@@ -43,7 +44,7 @@ export const ROOT_ALWAYS_VISIBLE_MENU_KEYS = ['configuracoes'] as const
 export const MAIN_MENU_VISIBILITY_OPTIONS = [
   { key: 'dashboard', nome: 'Dashboard', descricao: 'Painel inicial do sistema.', icon: ChartPie },
   { key: 'metas', nome: 'Metas', descricao: 'Alvos comerciais, financeiros e de serviços.', icon: Target },
-  { key: 'vendas', nome: 'Vendas', descricao: 'Painel, vendas e caixas.', icon: HandCoins },
+  { key: 'vendas', nome: 'Vendas', descricao: 'Painel, vendas, PDV e caixas.', icon: HandCoins },
   { key: 'atendimento', nome: 'Atendimento', descricao: 'Central de atendimento e chat via WhatsApp.', icon: Headset },
   { key: 'comandas', nome: 'Comandas', descricao: 'Comandas operacionais e faturamento parcial.', icon: TicketCheck },
   { key: 'financeiro', nome: 'Financeiro', descricao: 'Lançamentos, contas e cobranças.', icon: CircleDollarSign },
@@ -99,6 +100,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
   vendas: [
     { key: 'vendas:painel', nome: 'Painel' },
     { key: 'vendas:lista', nome: 'Vendas' },
+    { key: 'vendas:pdv', nome: 'PDV' },
     { key: 'vendas:caixas', nome: 'Caixas' },
   ],
   financeiro: [
@@ -320,6 +322,16 @@ export const sidebarMenuOptions = (
           nome: 'Vendas',
           link: '/vendas',
           icone: Tags,
+          color: 'green',
+        },
+        // `criar` (nível 2) e não `visualizar` (nível 1) para casar com o `permissao: 2`
+        // da rota /vendas/pdv — senão o item apareceria para quem o roteador barra na entrada.
+        {
+          key: 'vendas:pdv',
+          nome: 'PDV',
+          link: '/vendas/pdv',
+          show: permissions.vendas.criar,
+          icone: ScanBarcode,
           color: 'green',
         },
         {
