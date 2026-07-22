@@ -233,12 +233,71 @@
                                     </div>
                                 </button>
                             </div>
+                            <div class="mt-6 space-y-4 border-t pt-6">
+                                <div>
+                                    <h3 class="flex items-center gap-2 font-normal text-lg">
+                                        <CircleDollarSign class="w-5 h-5 text-primary" /> Financeiro das vendas
+                                    </h3>
+                                    <p class="text-sm text-muted-foreground">
+                                        Define se cada venda faturada gera automaticamente um lançamento de receita.
+                                    </p>
+                                </div>
+
+                                <label
+                                    class="flex items-center justify-between gap-4 rounded-lg border bg-body/70 p-3 px-4">
+                                    <span>
+                                        Lançar financeiro automático
+                                        <p class="text-xs text-muted-foreground">
+                                            Toda venda faturada (PDV e normal) nasce com um lançamento de receita já
+                                            quitado. Vendas no crediário seguem o fluxo de parcelas e não são afetadas.
+                                        </p>
+                                    </span>
+                                    <Switch v-model="formularioVendas.vendaLancamentoAutomatico" />
+                                </label>
+
+                                <div v-if="formularioVendas.vendaLancamentoAutomatico"
+                                    class="grid gap-4 md:grid-cols-2">
+                                    <div class="flex flex-col gap-2">
+                                        <Label for="vendaCategoriaFinanceiraId" class="flex items-center gap-1">
+                                            Categoria do lançamento <span class="text-red-500">*</span>
+                                            <FormularioCategorias class="cursor-pointer px-2 text-blue-500"
+                                                @created="selecionarCategoriaVendas">
+                                                + Nova
+                                            </FormularioCategorias>
+                                        </Label>
+                                        <Select2Ajax id="vendaCategoriaFinanceiraId"
+                                            :key="`categoria-vendas-${categoriaVendasKey}`"
+                                            v-model="formularioVendas.vendaCategoriaFinanceiraId"
+                                            url="lancamentos/categorias/select2" allowClear class="w-full" />
+                                        <p class="text-xs text-muted-foreground">
+                                            Obrigatória: é a categoria usada em todo lançamento gerado pelas vendas.
+                                        </p>
+                                    </div>
+
+                                    <div class="flex flex-col gap-2">
+                                        <Label for="vendaContaFinanceiraId" class="flex items-center gap-1">
+                                            Conta do lançamento
+                                            <FormularioContas class="cursor-pointer px-2 text-blue-500"
+                                                @created="selecionarContaVendas">
+                                                + Nova
+                                            </FormularioContas>
+                                        </Label>
+                                        <Select2Ajax id="vendaContaFinanceiraId"
+                                            :key="`conta-vendas-${contaVendasKey}`"
+                                            v-model="formularioVendas.vendaContaFinanceiraId"
+                                            url="lancamentos/contas/select2" allowClear class="w-full" />
+                                        <p class="text-xs text-muted-foreground">
+                                            Opcional: sem escolha, usa a conta financeira padrão definida no Financeiro.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </CardContent>
                         <CardFooter class="justify-end">
-                            <Button :disabled="loading" class="ml-2 text-white" type="submit">
+                            <Button :disabled="vendasSubmitDisabled" class="ml-2 text-white" type="submit">
                                 <CircleCheck v-if="!loading" />
                                 <LoaderIcon v-else class="animate-spin" />
-                                {{ loading ? 'Salvando...' : 'Salvar modelo do PDV' }}
+                                {{ loading ? 'Salvando...' : 'Salvar configurações de vendas' }}
                             </Button>
                         </CardFooter>
                     </form>
@@ -445,8 +504,10 @@ import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import FormularioCategorias from '@/pages/financeiro/lancamentos/modais/FormularioCategorias.vue'
+import FormularioContas from '@/pages/financeiro/lancamentos/modais/FormularioContas.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Banknote, Bell, ChevronDown, CircleCheck, Cog, DollarSign, Keyboard, LayoutGrid, ListChecks, LoaderIcon, Menu, Palette, Printer, ShoppingCart, Undo2 } from 'lucide-vue-next'
+import { Banknote, Bell, ChevronDown, CircleCheck, CircleDollarSign, Cog, DollarSign, Keyboard, LayoutGrid, ListChecks, LoaderIcon, Menu, Palette, Printer, ShoppingCart, Undo2 } from 'lucide-vue-next'
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -557,7 +618,31 @@ const formularioFinanceiro = reactive<UpdateParametrosConta>({
 })
 const formularioVendas = reactive<UpdateParametrosConta>({
     modeloPdv: 'BASICO',
+    vendaLancamentoAutomatico: false,
+    vendaCategoriaFinanceiraId: null,
+    vendaContaFinanceiraId: null,
 })
+
+// Sem categoria definida o backend recusa o lançamento, então o Salvar fica travado
+// enquanto o automático estiver ligado sem ela.
+const vendasSubmitDisabled = computed(
+    () => loading.value || (Boolean(formularioVendas.vendaLancamentoAutomatico) && !formularioVendas.vendaCategoriaFinanceiraId),
+)
+
+// O Select2Ajax carrega as opções uma vez; trocar a key o remonta para que o
+// registro recém-criado apareça na lista já selecionado.
+const categoriaVendasKey = ref(0)
+const contaVendasKey = ref(0)
+
+function selecionarCategoriaVendas(id: number) {
+    formularioVendas.vendaCategoriaFinanceiraId = id
+    categoriaVendasKey.value += 1
+}
+
+function selecionarContaVendas(id: number) {
+    formularioVendas.vendaContaFinanceiraId = id
+    contaVendasKey.value += 1
+}
 const modelosPdv = [
     {
         value: 'BASICO' as const,
@@ -685,6 +770,9 @@ async function getParametros() {
             })
             Object.assign(formularioVendas, {
                 modeloPdv: response.data.modeloPdv === 'PRO' ? 'PRO' : 'BASICO',
+                vendaLancamentoAutomatico: response.data.vendaLancamentoAutomatico ?? false,
+                vendaCategoriaFinanceiraId: response.data.vendaCategoriaFinanceiraId ?? null,
+                vendaContaFinanceiraId: response.data.vendaContaFinanceiraId ?? null,
             })
             Object.assign(formularioMenus, {
                 menusVisiveis: Array.isArray(response.data.menusVisiveis)

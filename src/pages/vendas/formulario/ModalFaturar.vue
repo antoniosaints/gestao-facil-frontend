@@ -3,7 +3,6 @@ import { computed, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
-import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
@@ -16,14 +15,18 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import FormularioCategorias from '@/pages/financeiro/lancamentos/modais/FormularioCategorias.vue'
-import FormularioContas from '@/pages/financeiro/lancamentos/modais/FormularioContas.vue'
 import { VendaRepository, type VendaEfetivar } from '@/repositories/venda-repository'
+import { useUiStore } from '@/stores/ui/uiStore'
 import { useVendasStore } from '@/stores/vendas/useVenda'
 import { MetodoPagamento } from '@/types/schemas'
 
 const store = useVendasStore()
+const uiStore = useUiStore()
 const toast = useToast()
+
+// Com o parâmetro da conta ligado o backend lança sempre; o modal deixa de
+// oferecer a escolha para não prometer algo que ele não decide mais.
+const lancamentoSempreAutomatico = computed(() => uiStore.vendaLancamentoAutomatico)
 
 function createDefaultForm(): VendaEfetivar {
   return {
@@ -151,11 +154,13 @@ async function submit() {
           <Calendarpicker id="dataPagamento" required teleport v-model="(faturarVenda.dataPagamento as Date)" />
         </div>
 
-        <div class="col-span-1 flex items-center justify-between rounded-lg border bg-card p-3 md:col-span-2">
+        <div v-if="!lancamentoSempreAutomatico"
+          class="col-span-1 flex items-center justify-between rounded-lg border bg-card p-3 md:col-span-2">
           <div>
             <Label>Lancamento automatico</Label>
             <p class="text-sm text-muted-foreground">
-              Ative para criar o lancamento financeiro junto com o faturamento.
+              Ative para criar o lancamento financeiro junto com o faturamento, usando a conta e a categoria
+              definidas em Configuracoes &gt; Vendas.
             </p>
           </div>
           <Switch v-model="lancamentoAutomatico" />
@@ -171,45 +176,13 @@ async function submit() {
           <Switch v-model="faturarVenda.cancelarCobrancaExterna" />
         </div>
 
-        <div v-show="lancamentoAutomatico" class="flex w-full flex-col gap-2" :class="{ 'opacity-60': !lancamentoAutomatico }">
-          <Label for="contaPagamento">
-            Conta
-            <FormularioContas class="cursor-pointer px-2 text-blue-500">
-              + Nova
-            </FormularioContas>
-          </Label>
-          <Select2Ajax
-            id="contaPagamento"
-            v-model="faturarVenda.conta"
-            :required="lancamentoAutomatico"
-            :disabled="!lancamentoAutomatico"
-            class="w-full"
-            url="lancamentos/contas/select2"
-          />
-          <p class="text-xs text-muted-foreground">
-            {{ lancamentoAutomatico ? 'Selecione a conta financeira.' : 'Ative o lancamento automatico para informar a conta.' }}
-          </p>
-        </div>
-
-        <div v-show="lancamentoAutomatico" class="flex w-full flex-col gap-2" :class="{ 'opacity-60': !lancamentoAutomatico }">
-          <Label for="categoriaFinanceira">
-            Categoria
-            <FormularioCategorias class="cursor-pointer px-2 text-blue-500">
-              + Nova
-            </FormularioCategorias>
-          </Label>
-          <Select2Ajax
-            id="categoriaFinanceira"
-            v-model="faturarVenda.categoria"
-            :required="lancamentoAutomatico"
-            :disabled="!lancamentoAutomatico"
-            class="w-full"
-            url="lancamentos/categorias/select2"
-          />
-          <p class="text-xs text-muted-foreground">
-            {{ lancamentoAutomatico ? 'Selecione a categoria financeira.' : 'Ative o lancamento automatico para informar a categoria.' }}
-          </p>
-        </div>
+        <p
+          v-if="lancamentoSempreAutomatico"
+          class="col-span-1 rounded-lg border border-dashed bg-card p-3 text-sm text-muted-foreground md:col-span-2"
+        >
+          O lancamento financeiro sera criado automaticamente, com a conta e a categoria definidas em
+          Configuracoes &gt; Vendas.
+        </p>
       </div>
 
       <div class="mt-4 flex justify-end gap-2">

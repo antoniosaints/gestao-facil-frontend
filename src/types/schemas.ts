@@ -489,6 +489,9 @@ export interface UpdateParametrosConta {
   permitirTransferenciaContaFinanceira?: boolean | null
   permitirCriacaoCobranca?: boolean | null
   contaFinanceiraPadraoId?: number | null
+  vendaLancamentoAutomatico?: boolean | null
+  vendaCategoriaFinanceiraId?: number | null
+  vendaContaFinanceiraId?: number | null
   MercadoPagoApiKey?: string | null
   MercadoPagoEnv?: string | null
   AbacatePayApiKey?: string | null

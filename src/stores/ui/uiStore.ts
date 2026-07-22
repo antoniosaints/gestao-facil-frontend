@@ -31,6 +31,7 @@ export interface FinanceiroFlags {
   permitirEfetivacaoFutura: boolean
   permitirTransferenciaContaFinanceira: boolean
   permitirCriacaoCobranca: boolean
+  vendaLancamentoAutomatico: boolean
 }
 
 export const useUiStore = defineStore('uiStore', () => {
@@ -46,8 +47,12 @@ export const useUiStore = defineStore('uiStore', () => {
     permitirEfetivacaoFutura: true,
     permitirTransferenciaContaFinanceira: true,
     permitirCriacaoCobranca: true,
+    vendaLancamentoAutomatico: false,
   })
   const canCreateCharge = computed(() => financeiroFlags.value.permitirCriacaoCobranca !== false)
+  // Com o lançamento automático ligado, o faturamento sempre gera financeiro: o
+  // modal de faturar não deve mais oferecer a escolha.
+  const vendaLancamentoAutomatico = computed(() => financeiroFlags.value.vendaLancamentoAutomatico === true)
   const appModules = ref<Record<string, boolean>>({})
   const appModulesLoaded = ref(false)
   const visibleMenuKeys = ref<string[] | null>(null)
@@ -228,6 +233,7 @@ export const useUiStore = defineStore('uiStore', () => {
         permitirEfetivacaoFutura: response.data?.permitirEfetivacaoFutura ?? true,
         permitirTransferenciaContaFinanceira: response.data?.permitirTransferenciaContaFinanceira ?? true,
         permitirCriacaoCobranca: response.data?.permitirCriacaoCobranca ?? true,
+        vendaLancamentoAutomatico: response.data?.vendaLancamentoAutomatico ?? false,
       }
       if (Array.isArray(response.data?.menusVisiveis)) {
         const keys = response.data.menusVisiveis as string[]
@@ -247,6 +253,7 @@ export const useUiStore = defineStore('uiStore', () => {
         permitirEfetivacaoFutura: true,
         permitirTransferenciaContaFinanceira: true,
         permitirCriacaoCobranca: true,
+        vendaLancamentoAutomatico: false,
       }
       visibleMenuKeys.value = null
       hiddenSubmenuKeys.value = []
@@ -300,6 +307,7 @@ export const useUiStore = defineStore('uiStore', () => {
     contaInfo,
     financeiroFlags,
     canCreateCharge,
+    vendaLancamentoAutomatico,
     appModules,
     appModulesLoaded,
     visibleMenuKeys,
