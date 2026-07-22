@@ -1266,7 +1266,7 @@ watch(() => store.filters.update, loadLancamento)
     <GerarCobranca />
     <LancamentoModal />
     <ClientesModal />
-    <DetalhesVenda />
+    <DetalhesVenda :acoes-host="['cobranca']" />
     <CobrancaRapidaModal
       v-model:open="cobrancaRapidaOpen"
       :cliente="lancamento?.cliente?.nome"

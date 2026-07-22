@@ -70,7 +70,7 @@ provide('openModalFiltroVendas', openFilter);
         <ModalFaturar />
         <ModalFiltro />
         <ClientesModal />
-        <DetalhesVenda />
+        <DetalhesVenda :acoes-host="['faturar', 'editar', 'cobranca']" />
         <GerarCobranca />
         <ModalRelatorioVendas v-model:open="openReport" />
     </div>

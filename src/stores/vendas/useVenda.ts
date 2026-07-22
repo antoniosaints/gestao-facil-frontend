@@ -125,6 +125,14 @@ export const useVendasStore = defineStore('vendasStore', () => {
     const { data } = (await VendaRepository.get(id)) as {
       data: Vendas & { ItensVendas: ItensVendas[] }
     }
+
+    // Editar uma venda faturada refaria itens e estoque de algo já baixado no
+    // financeiro: é preciso estornar antes. Bloqueio aqui cobre todas as telas.
+    if (data?.status === 'FATURADO') {
+      toast.error('Venda faturada não pode ser editada. Estorne o faturamento antes.')
+      return
+    }
+
     carrinho.value = []
     form.value = {
       id: id,

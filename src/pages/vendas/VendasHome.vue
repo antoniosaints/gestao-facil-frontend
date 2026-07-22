@@ -81,7 +81,7 @@ provide('openModalFiltroVendas', openFilter);
         <ModalFaturar />
         <ModalFiltro />
         <ClientesModal />
-        <DetalhesVenda />
+        <DetalhesVenda :acoes-host="['faturar', 'editar', 'comprovante', 'cobranca']" />
         <ModalEnvioComprovante v-model:open="store.openModalComprovante" :venda-id="store.vendaComprovante?.id"
             :uid="store.vendaComprovante?.uid" :total="store.vendaComprovante?.total"
             :cliente-id="store.vendaComprovante?.clienteId" />
