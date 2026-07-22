@@ -26,6 +26,7 @@ import {
   Package,
   PackagePlus,
   ReceiptText,
+  Scale,
   ScanBarcode,
   Store,
   Tags,
@@ -113,6 +114,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'financeiro:assinaturas-a-pagar', nome: 'Assinaturas' },
     { key: 'financeiro:inadimplencia', nome: 'Inadimplência' },
     { key: 'financeiro:cobrancas', nome: 'Cobranças' },
+    { key: 'financeiro:demonstrativo', nome: 'Demonstrativo' },
     { key: 'financeiro:plano-de-contas', nome: 'Plano de contas' },
   ],
   produtos: [
@@ -417,6 +419,13 @@ export const sidebarMenuOptions = (
           link: '/financeiro/cobrancas',
           icone: HandCoins,
           show: permissions.admin,
+          color: 'emerald',
+        },
+        {
+          key: 'financeiro:demonstrativo',
+          nome: 'Demonstrativo',
+          link: '/financeiro/demonstrativo',
+          icone: Scale,
           color: 'emerald',
         },
         {

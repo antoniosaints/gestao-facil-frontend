@@ -537,6 +537,15 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'demonstrativo',
+        name: 'financeiro-demonstrativo',
+        component: () => import('@/pages/financeiro/demonstrativo/Home.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
         path: 'categorias',
         name: 'financeiro-categorias',
         component: () => import('@/pages/financeiro/categorias/Home.vue'),

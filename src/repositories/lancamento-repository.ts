@@ -12,6 +12,70 @@ import type {
 } from '@/types/schemas'
 import http from '@/utils/axios'
 
+export type RegimeDemonstrativo = 'COMPETENCIA' | 'CAIXA'
+
+export type DemonstrativoFiltros = {
+  inicio: string
+  fim: string
+  regime: RegimeDemonstrativo
+  contaFinanceiraId?: number | null
+  categoriaId?: number | null
+  clienteId?: number | null
+  /// Horizonte da série mensal, independente do período filtrado.
+  mesesHistorico?: number | null
+}
+
+export type LinhaDemonstrativo = {
+  categoriaId: number | null
+  nome: string
+  valor: string | number
+  participacao: number
+  anterior: string | number
+  variacao: number | null
+  subcategorias: Array<Omit<LinhaDemonstrativo, 'subcategorias'>>
+}
+
+export type DemonstrativoResponse = {
+  periodo: {
+    inicio: string
+    fim: string
+    regime: RegimeDemonstrativo
+    anterior: { inicio: string; fim: string }
+    serie: { inicio: string; fim: string; meses: number }
+  }
+  resumo: {
+    receitas: string | number
+    despesas: string | number
+    resultado: string | number
+    margem: number
+    anterior: { receitas: string | number; despesas: string | number; resultado: string | number }
+    variacao: { receitas: number | null; despesas: number | null; resultado: number | null }
+    totalLancamentos: number
+  }
+  grupos: {
+    receitas: LinhaDemonstrativo[]
+    despesas: LinhaDemonstrativo[]
+  }
+  mensal: Array<{
+    mes: string
+    receitas: string | number
+    despesas: string | number
+    resultado: string | number
+  }>
+}
+
+function buildDemonstrativoParams(params: DemonstrativoFiltros) {
+  return {
+    inicio: params.inicio,
+    fim: params.fim,
+    regime: params.regime,
+    ...(params.contaFinanceiraId ? { contaFinanceiraId: params.contaFinanceiraId } : {}),
+    ...(params.categoriaId ? { categoriaId: params.categoriaId } : {}),
+    ...(params.clienteId ? { clienteId: params.clienteId } : {}),
+    ...(params.mesesHistorico ? { mesesHistorico: params.mesesHistorico } : {}),
+  }
+}
+
 export type ParcelaIgnoradaLote = { id: number; motivo: string }
 
 export type ResultadoLoteParcelas<T = Record<string, never>> = {
@@ -263,6 +327,22 @@ export class LancamentosRepository {
     })
     return data.data
   }
+  static async getDemonstrativo(params: DemonstrativoFiltros) {
+    const response = await http.get(`/lancamentos/relatorios/demonstrativo`, {
+      params: buildDemonstrativoParams(params),
+    })
+    return response.data as { data: DemonstrativoResponse }
+  }
+
+  static async exportarDemonstrativo(params: DemonstrativoFiltros, formato: 'csv' | 'pdf') {
+    const response = await http.get(`/lancamentos/relatorios/demonstrativo/${formato}`, {
+      responseType: 'blob',
+      params: buildDemonstrativoParams(params),
+    })
+
+    downloadBlob(response.data, `demonstrativo_${params.inicio}_a_${params.fim}.${formato}`)
+  }
+
   static async gerarDRE(inicio: string, fim: string) {
     await http.get(`/lancamentos/relatorios/dre`, {
       responseType: 'blob',
