@@ -470,6 +470,8 @@ export interface FormularioLancamento {
     modoValorParcelamento?: 'TOTAL' | 'FIXO_PARCELA'
     notificarVencimento?: boolean
     notificarClienteVencimento?: boolean
+    /// Só no método RECORRENTE: configuração das ocorrências seguintes.
+    recorrencia?: RecorrenciaConfig
   }
 export interface UpdateParametrosConta {
   modeloPdv?: 'BASICO' | 'PRO' | null
@@ -749,6 +751,19 @@ export interface CategoriaFinanceiro {
   Parent?: CategoriaFinanceiroParent | null
 }
 
+/// Nó da árvore de categorias financeiras (hierarquia montada no backend).
+export interface CategoriaArvoreNode {
+  id: number
+  Uid?: string
+  nome: string
+  parentId: number | null
+  nivel: number
+  caminho: string
+  totalLancamentos: number
+  totalDescendentes: number
+  filhos: CategoriaArvoreNode[]
+}
+
 export interface LancamentoFinanceiro {
   id?: number
   Uid?: string
@@ -778,6 +793,39 @@ export interface LancamentoFinanceiro {
     icone?: string | null
     corDestaque?: string | null
   } | null
+  recorrencia?: LancamentoRecorrencia | null
+}
+
+export type FrequenciaRecorrencia =
+  | 'DIARIO'
+  | 'SEMANAL'
+  | 'QUINZENAL'
+  | 'MENSAL'
+  | 'TRIMESTRAL'
+  | 'SEMESTRAL'
+  | 'ANUAL'
+  | 'PERSONALIZADO'
+
+export interface RecorrenciaConfig {
+  frequencia: FrequenciaRecorrencia
+  intervaloDias?: number | string | null
+  dataInicio?: Date | string | null
+  dataFim?: Date | string | null
+  minimoGerado: number | string
+  maximoEmAberto: number | string
+  geracaoAutomatica: boolean
+  diasAntecedencia: number | string
+}
+
+export interface LancamentoRecorrencia extends RecorrenciaConfig {
+  id: number
+  lancamentoId: number
+  ativo: boolean
+  valorParcela: number | string
+  proximoVencimento?: Date | string | null
+  totalGerado: number
+  ultimaGeracaoEm?: Date | string | null
+  encerradaEm?: Date | string | null
 }
 
 export interface ParcelaFinanceiro {

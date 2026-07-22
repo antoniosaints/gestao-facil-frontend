@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { computed, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
+import type { CategoriaArvoreNode } from '@/types/schemas'
 
 type CategoriaOption = {
   id?: number
@@ -17,7 +18,8 @@ const open = defineModel<boolean>('open', { default: false })
 
 const props = defineProps<{
   categoria: CategoriaOption | null
-  categoriasPai: CategoriaOption[]
+  /// Árvore achatada (com `caminho` e `nivel`) para escolher qualquer nível como pai.
+  categorias: CategoriaArvoreNode[]
 }>()
 
 const emit = defineEmits<{
@@ -32,17 +34,36 @@ const form = ref({
   categoriaPai: 'null',
 })
 
-const title = computed(() => (props.categoria ? 'Editar categoria financeira' : 'Nova categoria financeira'))
+const isEdicao = computed(() => Boolean(props.categoria?.id))
+
+const title = computed(() => (isEdicao.value ? 'Editar categoria financeira' : 'Nova categoria financeira'))
 
 const description = computed(() =>
-  props.categoria
+  isEdicao.value
     ? 'Atualize os dados da categoria selecionada.'
     : 'Preencha os dados da nova categoria financeira.',
 )
 
-const categoriasPaiDisponiveis = computed(() =>
-  props.categoriasPai.filter((item) => item.id !== props.categoria?.id),
-)
+/// Não dá para virar filha de si mesma nem de uma descendente (criaria ciclo).
+const categoriasPaiDisponiveis = computed(() => {
+  const atualId = props.categoria?.id
+  if (!atualId) return props.categorias
+
+  const proibidos = new Set<number>([atualId])
+  let mudou = true
+
+  while (mudou) {
+    mudou = false
+    for (const item of props.categorias) {
+      if (item.parentId !== null && proibidos.has(item.parentId) && !proibidos.has(item.id)) {
+        proibidos.add(item.id)
+        mudou = true
+      }
+    }
+  }
+
+  return props.categorias.filter((item) => !proibidos.has(item.id))
+})
 
 watch(
   () => [open.value, props.categoria] as const,
@@ -74,9 +95,9 @@ async function submit() {
     toast.success('Categoria salva com sucesso!')
     open.value = false
     emit('saved')
-  } catch (error) {
+  } catch (error: any) {
     console.log(error)
-    toast.error('Erro ao salvar a categoria')
+    toast.error(error?.response?.data?.message || 'Erro ao salvar a categoria')
   } finally {
     saving.value = false
   }
@@ -99,9 +120,9 @@ async function submit() {
               <SelectValue placeholder="Selecione a categoria pai" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="null">Sem categoria pai</SelectItem>
+              <SelectItem value="null">Sem categoria pai (principal)</SelectItem>
               <SelectItem v-for="item in categoriasPaiDisponiveis" :key="item.id" :value="String(item.id)">
-                {{ item.nome }}
+                {{ item.caminho }}
               </SelectItem>
             </SelectContent>
           </Select>

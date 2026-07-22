@@ -16,8 +16,11 @@ import {
   ExternalLink,
   Landmark,
   MoreVertical,
+  Pause,
   PenLine,
+  Play,
   Plus,
+  Repeat,
   RotateCw,
   Send,
   ShoppingCart,
@@ -62,6 +65,7 @@ import type {
 } from '@/types/schemas'
 
 import GerarCobranca from './modais/GerarCobranca.vue'
+import FormularioRecorrencia from './modais/FormularioRecorrencia.vue'
 import LancamentoModal from './formulario/LancamentoModal.vue'
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import FormularioEfertivar from './modais/FormularioEfertivar.vue'
@@ -209,6 +213,111 @@ const parcelasVencidas = computed(() => {
 const proximaParcela = computed(() =>
   parcelasOrdenadas.value.find((parcela) => !parcela.pago) ?? null,
 )
+
+// ---- Recorrência (contas fixas: as ocorrências viram parcelas deste lançamento) ----
+const recorrenciaOpen = ref(false)
+const recorrenciaSalvando = ref(false)
+const recorrencia = computed(() => lancamento.value?.recorrencia ?? null)
+const parcelasEmAberto = computed(() => parcelasOrdenadas.value.filter((parcela) => !parcela.pago).length)
+
+const descricaoFrequenciaRecorrencia = computed(() => {
+  switch (recorrencia.value?.frequencia) {
+    case 'DIARIO':
+      return 'Diária'
+    case 'SEMANAL':
+      return 'Semanal'
+    case 'QUINZENAL':
+      return 'Quinzenal'
+    case 'TRIMESTRAL':
+      return 'Trimestral'
+    case 'SEMESTRAL':
+      return 'Semestral'
+    case 'ANUAL':
+      return 'Anual'
+    case 'PERSONALIZADO':
+      return `A cada ${recorrencia.value?.intervaloDias || 0} dia(s)`
+    default:
+      return 'Mensal'
+  }
+})
+
+const situacaoRecorrencia = computed(() => {
+  if (!recorrencia.value) return { label: 'Sem recorrência', classes: '' }
+  if (!recorrencia.value.ativo && !recorrencia.value.proximoVencimento) {
+    return {
+      label: 'Encerrada',
+      classes: 'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
+    }
+  }
+  if (!recorrencia.value.ativo) {
+    return {
+      label: 'Pausada',
+      classes: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+    }
+  }
+  return {
+    label: 'Ativa',
+    classes: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  }
+})
+
+async function gerarProximaOcorrencia() {
+  if (!lancamento.value?.id) return
+
+  try {
+    recorrenciaSalvando.value = true
+    const resposta = await LancamentosRepository.gerarProximaRecorrencia(lancamento.value.id)
+    toast.success(resposta?.message || 'Próxima ocorrência gerada.')
+    await loadLancamento()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível gerar a próxima ocorrência.')
+  } finally {
+    recorrenciaSalvando.value = false
+  }
+}
+
+async function alternarPausaRecorrencia() {
+  if (!lancamento.value?.id || !recorrencia.value) return
+
+  try {
+    recorrenciaSalvando.value = true
+    const resposta = await LancamentosRepository.atualizarStatusRecorrencia(lancamento.value.id, {
+      ativo: !recorrencia.value.ativo,
+    })
+    toast.success(resposta?.message || 'Recorrência atualizada.')
+    await loadLancamento()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível atualizar a recorrência.')
+  } finally {
+    recorrenciaSalvando.value = false
+  }
+}
+
+async function encerrarRecorrencia() {
+  if (!lancamento.value?.id) return
+
+  const confirmado = await useConfirm().confirm({
+    title: 'Encerrar recorrência',
+    message:
+      'Nenhuma nova ocorrência será gerada. As parcelas já criadas continuam em aberto normalmente.',
+    confirmText: 'Encerrar',
+  })
+
+  if (!confirmado) return
+
+  try {
+    recorrenciaSalvando.value = true
+    const resposta = await LancamentosRepository.atualizarStatusRecorrencia(lancamento.value.id, {
+      encerrar: true,
+    })
+    toast.success(resposta?.message || 'Recorrência encerrada.')
+    await loadLancamento()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível encerrar a recorrência.')
+  } finally {
+    recorrenciaSalvando.value = false
+  }
+}
 
 const resumoStatus = computed(() => {
   const status = lancamento.value?.status ?? 'PENDENTE'
@@ -458,6 +567,9 @@ watch(() => store.filters.update, loadLancamento)
             {{ resumoStatus.label }}
           </Badge>
           <Badge v-if="lancamento?.vendaId" variant="outline">Lançamento automático</Badge>
+          <Badge v-if="recorrencia" variant="outline" class="gap-1">
+            <Repeat class="h-3 w-3" /> Recorrente
+          </Badge>
         </div>
         <div>
           <div class="flex flex-wrap items-center gap-2 text-xl font-semibold text-foreground">
@@ -499,6 +611,10 @@ watch(() => store.filters.update, loadLancamento)
             </DropdownMenuItem>
             <DropdownMenuItem @click="loadLancamento">
               <RotateCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': loading }" /> Atualizar dados
+            </DropdownMenuItem>
+            <DropdownMenuItem :disabled="!lancamento?.id" @click="recorrenciaOpen = true">
+              <Repeat class="mr-2 h-4 w-4" />
+              {{ recorrencia ? 'Editar recorrência' : 'Tornar recorrente' }}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem :disabled="!lancamento?.id" @click="toggleNotificacaoVencimento">
@@ -619,7 +735,11 @@ watch(() => store.filters.update, loadLancamento)
                 </p>
                 <p class="flex items-center gap-2">
                   <BadgeInfo class="h-4 w-4" /> Modelo: <span class="font-medium text-foreground">{{
-                    lancamento?.recorrente ? 'Parcelado/recorrente' : 'Lançamento único' }}</span>
+                    recorrencia
+                      ? `Recorrente (${descricaoFrequenciaRecorrencia.toLowerCase()})`
+                      : lancamento?.recorrente
+                        ? 'Parcelado'
+                        : 'Lançamento único' }}</span>
                 </p>
               </div>
             </div>
@@ -686,6 +806,106 @@ watch(() => store.filters.update, loadLancamento)
         </CardContent>
       </Card>
     </div>
+
+    <Card v-if="recorrencia" class="shadow-sm">
+      <CardHeader class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
+        <CardTitle class="flex flex-wrap items-center gap-2 text-lg">
+          <Repeat class="h-5 w-5 text-primary" /> Recorrência
+          <Badge class="border-0" :class="situacaoRecorrencia.classes">
+            {{ situacaoRecorrencia.label }}
+          </Badge>
+        </CardTitle>
+        <div class="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="recorrenciaSalvando || !recorrencia.ativo"
+            @click="gerarProximaOcorrencia"
+          >
+            <Plus class="h-4 w-4" /> Gerar próxima
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="recorrenciaSalvando || (!recorrencia.ativo && !recorrencia.proximoVencimento)"
+            @click="alternarPausaRecorrencia"
+          >
+            <Pause v-if="recorrencia.ativo" class="h-4 w-4" />
+            <Play v-else class="h-4 w-4" />
+            {{ recorrencia.ativo ? 'Pausar' : 'Retomar' }}
+          </Button>
+          <Button variant="outline" size="sm" :disabled="recorrenciaSalvando" @click="recorrenciaOpen = true">
+            <PenLine class="h-4 w-4" /> Editar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            class="text-red-600 hover:text-red-600"
+            :disabled="recorrenciaSalvando || !recorrencia.proximoVencimento"
+            @click="encerrarRecorrencia"
+          >
+            <Undo2 class="h-4 w-4" /> Encerrar
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent class="px-4 pb-4">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div class="rounded-xl border bg-muted/30 p-4">
+            <p class="text-sm text-muted-foreground">Valor por ocorrência</p>
+            <p class="text-base font-semibold text-foreground">
+              {{ formatCurrencyBR(Number(recorrencia.valorParcela || 0)) }}
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">{{ descricaoFrequenciaRecorrencia }}</p>
+          </div>
+
+          <div class="rounded-xl border bg-muted/30 p-4">
+            <p class="text-sm text-muted-foreground">Próxima geração</p>
+            <p class="text-base font-semibold text-foreground">
+              {{
+                recorrencia.proximoVencimento
+                  ? formatDateToPtBR(recorrencia.proximoVencimento as string)
+                  : 'Encerrada'
+              }}
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">
+              {{
+                recorrencia.geracaoAutomatica
+                  ? `Automática ${recorrencia.diasAntecedencia} dia(s) antes`
+                  : 'Gerada ao pagar a parcela vigente'
+              }}
+            </p>
+          </div>
+
+          <div class="rounded-xl border bg-muted/30 p-4">
+            <p class="text-sm text-muted-foreground">Parcelas em aberto</p>
+            <p
+              class="text-base font-semibold"
+              :class="
+                parcelasEmAberto >= Number(recorrencia.maximoEmAberto)
+                  ? 'text-rose-600'
+                  : 'text-foreground'
+              "
+            >
+              {{ parcelasEmAberto }} de no máx. {{ recorrencia.maximoEmAberto }}
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">
+              Mínimo mantido: {{ recorrencia.minimoGerado }}
+            </p>
+          </div>
+
+          <div class="rounded-xl border bg-muted/30 p-4">
+            <p class="text-sm text-muted-foreground">Período</p>
+            <p class="text-base font-semibold text-foreground">
+              {{ formatDateToPtBR(recorrencia.dataInicio as string) }} →
+              {{ recorrencia.dataFim ? formatDateToPtBR(recorrencia.dataFim as string) : 'sem fim' }}
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">
+              {{ recorrencia.totalGerado }} ocorrência(s) gerada(s)
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
 
     <Card class="shadow-sm" v-if="parcelasOrdenadas.length">
       <CardHeader class="flex flex-row items-center justify-between gap-3 px-4 py-2">
@@ -948,5 +1168,14 @@ watch(() => store.filters.update, loadLancamento)
       </form>
     </ModalView>
     <FormularioEfertivar @success="loadLancamento" />
+
+    <FormularioRecorrencia
+      v-if="lancamento?.id"
+      v-model:open="recorrenciaOpen"
+      :lancamento-id="lancamento.id"
+      :recorrencia="recorrencia"
+      :valor-sugerido="proximaParcela?.valor ?? parcelasOrdenadas[0]?.valor ?? null"
+      @saved="loadLancamento"
+    />
   </div>
 </template>

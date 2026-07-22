@@ -1,125 +1,46 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import {
-  BadgePlus,
-  BadgeQuestionMark,
-  Loader,
-  RefreshCcw,
-  RotateCw,
-  Search,
-  Tags,
-  Trash,
-  X,
-} from 'lucide-vue-next'
+import { BadgePlus, RefreshCcw, RotateCw, Search, Tags, X } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import ModalView from '@/components/formulario/ModalView.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import ModalCategoria from './ModalCategoria.vue'
-import Tabela from './tabela/Tabela.vue'
+import ArvoreCategorias from './ArvoreCategorias.vue'
 import { useCategoriasFinanceirasStore } from '@/stores/lancamentos/useCategoriasFinanceiras'
-
-type CategoriaRow = {
-  id: number
-  Uid?: string
-  nome: string
-  parentId: number | null
-}
-
-type CategoriaExibicao = CategoriaRow & {
-  nivel: number
-  parentName: string | null
-}
+import type { CategoriaArvoreNode } from '@/types/schemas'
 
 const uiStore = useUiStore()
 const store = useCategoriasFinanceirasStore()
 const toast = useToast()
 
-const categorias = ref<CategoriaRow[]>([])
+const arvore = ref<CategoriaArvoreNode[]>([])
 const loading = ref(false)
 const search = ref('')
 const showSearchModal = ref(false)
 
-const categoriasPai = computed(() => categorias.value.filter((item) => item.parentId === null))
-
-const categoriasOrdenadas = computed<CategoriaExibicao[]>(() => {
-  const parents = categorias.value
-    .filter((item) => item.parentId === null)
-    .sort((a, b) => a.nome.localeCompare(b.nome))
-  const childrenByParent = new Map<number, CategoriaRow[]>()
-
-  categorias.value
-    .filter((item) => item.parentId !== null)
-    .forEach((item) => {
-      const parentId = item.parentId as number
-      const rows = childrenByParent.get(parentId) ?? []
-      rows.push(item)
-      rows.sort((a, b) => a.nome.localeCompare(b.nome))
-      childrenByParent.set(parentId, rows)
-    })
-
-  const ordered: CategoriaExibicao[] = []
-
-  for (const parent of parents) {
-    ordered.push({
-      ...parent,
-      nivel: 0,
-      parentName: null,
-    })
-
-    for (const child of childrenByParent.get(parent.id) ?? []) {
-      ordered.push({
-        ...child,
-        nivel: 1,
-        parentName: parent.nome,
-      })
+/// Lista plana usada pelo modal para escolher a categoria pai.
+const categoriasPlanas = computed<CategoriaArvoreNode[]>(() => {
+  const resultado: CategoriaArvoreNode[] = []
+  const percorrer = (nodes: CategoriaArvoreNode[]) => {
+    for (const node of nodes) {
+      resultado.push(node)
+      percorrer(node.filhos)
     }
   }
-
-  const orphanChildren = categorias.value
-    .filter((item) => item.parentId !== null && !categorias.value.some((parent) => parent.id === item.parentId))
-    .sort((a, b) => a.nome.localeCompare(b.nome))
-
-  for (const child of orphanChildren) {
-    ordered.push({
-      ...child,
-      nivel: 1,
-      parentName: 'Categoria pai removida',
-    })
-  }
-
-  return ordered
-})
-
-const categoriasFiltradas = computed(() => {
-  const term = search.value.trim().toLowerCase()
-  if (!term) return categoriasOrdenadas.value
-
-  return categoriasOrdenadas.value.filter((item) => {
-    const haystack = [item.nome, item.parentName ?? '', String(item.id), item.nivel === 0 ? 'pai' : 'filha']
-      .join(' ')
-      .toLowerCase()
-
-    return haystack.includes(term)
-  })
+  percorrer(arvore.value)
+  return resultado
 })
 
 async function loadCategorias() {
   try {
     loading.value = true
-    const response = await LancamentosRepository.listarCategorias()
-    categorias.value = (response.data ?? []).map((item: CategoriaRow) => ({
-      id: Number(item.id),
-      Uid: item.Uid,
-      nome: item.nome,
-      parentId: item.parentId ?? null,
-    }))
+    const response = await LancamentosRepository.arvoreCategorias()
+    arvore.value = response.data?.arvore ?? []
   } catch (error) {
     console.log(error)
     toast.error('Erro ao carregar as categorias')
@@ -128,26 +49,41 @@ async function loadCategorias() {
   }
 }
 
-async function removeCategoria(item: CategoriaRow) {
+async function moverCategoria(payload: { id: number; parentId: number | null }) {
   try {
-    const confirmed = await useConfirm().confirm({
-      title: 'Excluir categoria',
-      message: `Tem certeza que deseja excluir a categoria "${item.nome}"?`,
-    })
-
-    if (!confirmed) return
-
-    await LancamentosRepository.deletarCategoria(item.id)
-    toast.success('Categoria excluída com sucesso!')
-    store.updateTable()
-  } catch (error) {
-    console.log(error)
-    toast.error('Erro ao excluir a categoria')
+    await LancamentosRepository.moverCategoria(payload.id, payload.parentId)
+    toast.success(payload.parentId ? 'Categoria movida para a nova subcategoria.' : 'Categoria agora é principal.')
+    await loadCategorias()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível mover a categoria.')
   }
 }
 
-function handleSaved() {
-  store.updateTable()
+async function removeCategoria(item: CategoriaArvoreNode) {
+  const confirmed = await useConfirm().confirm({
+    title: 'Excluir categoria',
+    message: item.totalDescendentes
+      ? `A categoria "${item.nome}" possui ${item.totalDescendentes} subcategoria(s), que subirão um nível. Deseja excluir?`
+      : `Tem certeza que deseja excluir a categoria "${item.nome}"?`,
+  })
+
+  if (!confirmed) return
+
+  try {
+    await LancamentosRepository.deletarCategoria(item.id)
+    toast.success('Categoria excluída com sucesso!')
+    await loadCategorias()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Erro ao excluir a categoria')
+  }
+}
+
+function novaSubcategoria(item: CategoriaArvoreNode) {
+  store.openSave(item.id)
+}
+
+function editarCategoria(item: CategoriaArvoreNode) {
+  store.openUpdate({ id: item.id, Uid: item.Uid, nome: item.nome, parentId: item.parentId })
 }
 
 function applySearch() {
@@ -177,100 +113,47 @@ onMounted(loadCategorias)
           <Tags class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
           Categorias financeiras
         </h2>
-        <p class="text-sm text-muted-foreground">Gerencie as categorias usadas nos lançamentos financeiros</p>
+        <p class="text-sm text-muted-foreground">
+          Organize a hierarquia usada nos lançamentos financeiros
+        </p>
       </div>
-      <div class="hidden items-center justify-between gap-2 md:flex">
+      <div class="hidden items-center gap-2 md:flex">
+        <Input v-model="search" type="search" placeholder="Buscar categoria..." class="w-56" />
         <button
-          @click="store.openSave"
+          @click="store.openSave()"
           class="flex items-center gap-1 rounded-md bg-primary px-2 py-1.5 text-sm text-white"
         >
           <BadgePlus class="inline-flex h-5 w-5" />
           <span class="hidden md:inline">Nova categoria</span>
         </button>
-        <button @click="store.updateTable" class="rounded-md border border-border bg-background px-2 py-1.5 text-sm">
+        <button
+          @click="loadCategorias"
+          title="Atualizar"
+          class="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+        >
           <RotateCw class="h-5 w-5" />
         </button>
       </div>
     </div>
 
-    <div v-if="!uiStore.isMobile" class="hidden overflow-x-auto rounded-lg md:block">
-      <Tabela />
-    </div>
+    <ArvoreCategorias
+      :arvore="arvore"
+      :loading="loading"
+      :busca="search"
+      :pode-arrastar="!uiStore.isMobile"
+      @nova-sub="novaSubcategoria"
+      @editar="editarCategoria"
+      @excluir="removeCategoria"
+      @mover="moverCategoria"
+    />
 
-    <div v-else class="flex max-h-[calc(100vh-13rem)] flex-col gap-2 overflow-auto md:max-h-full">
-      <div class="text-xs text-muted-foreground">{{ categoriasFiltradas.length }} categoria(s) encontrada(s)</div>
-
-      <div v-if="loading && !categoriasFiltradas.length" class="rounded-2xl border border-border p-6">
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Loader class="h-6 w-6 animate-spin text-info" />
-            </EmptyMedia>
-            <EmptyTitle>Carregando...</EmptyTitle>
-            <EmptyDescription>Buscando categorias cadastradas.</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      </div>
-
-      <div v-else class="flex flex-col gap-2">
-        <div v-if="!loading && !categoriasFiltradas.length" class="rounded-2xl border border-border p-6">
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <BadgeQuestionMark />
-              </EmptyMedia>
-              <EmptyTitle>Nenhuma categoria encontrada</EmptyTitle>
-              <EmptyDescription>Cadastre categorias para organizar os lançamentos financeiros.</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        </div>
-
-        <article
-          v-for="item in categoriasFiltradas"
-          :key="item.id"
-          class="rounded-2xl border border-border bg-card p-4 shadow-sm"
-        >
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <div class="text-sm font-semibold text-foreground">{{ item.Uid || `#${item.id}` }}</div>
-              <div class="text-sm font-medium text-foreground">{{ item.nome }}</div>
-            </div>
-            <Badge :variant="item.nivel === 0 ? 'secondary' : 'outline'">
-              {{ item.nivel === 0 ? 'Pai' : 'Filha' }}
-            </Badge>
-          </div>
-
-          <div class="mt-1 text-xs text-muted-foreground">
-            {{ item.parentName ? `Categoria pai: ${item.parentName}` : 'Categoria principal' }}
-          </div>
-
-          <div class="mt-3 flex items-center justify-between gap-2">
-            <button
-              @click="store.openUpdate(item)"
-              class="rounded-md bg-slate-200 px-3 py-1.5 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-            >
-              Editar
-            </button>
-            <button
-              @click="removeCategoria(item)"
-              class="inline-flex items-center gap-1 rounded-md bg-red-200 px-3 py-1.5 text-sm text-red-900 dark:bg-red-800 dark:text-red-100"
-            >
-              <Trash class="h-4 w-4" />
-              Excluir
-            </button>
-          </div>
-        </article>
-      </div>
-    </div>
-
-    <ModalView v-model:open="showSearchModal" title="Buscar categorias" description="Encontre uma categoria pelo nome, nível ou identificador.">
+    <ModalView
+      v-model:open="showSearchModal"
+      title="Buscar categorias"
+      description="Encontre uma categoria pelo nome ou pelo caminho na hierarquia."
+    >
       <div class="space-y-3 px-4">
-        <Input
-          v-model="search"
-          type="search"
-          placeholder="Buscar categoria..."
-          @keyup.enter="applySearch"
-        />
+        <Input v-model="search" type="search" placeholder="Buscar categoria..." @keyup.enter="applySearch" />
         <div class="flex gap-2">
           <Button variant="outline" class="flex-1" @click="clearSearch">Limpar</Button>
           <Button class="flex-1" @click="applySearch">Buscar</Button>
@@ -298,7 +181,7 @@ onMounted(loadCategorias)
       <button
         type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        @click="store.openSave"
+        @click="store.openSave()"
       >
         <BadgePlus class="h-5 w-5" />
         <span class="text-xs">Nova</span>
@@ -316,8 +199,8 @@ onMounted(loadCategorias)
     <ModalCategoria
       v-model:open="store.openModal"
       :categoria="store.selectedCategoria"
-      :categorias-pai="categoriasPai"
-      @saved="handleSaved"
+      :categorias="categoriasPlanas"
+      @saved="loadCategorias"
     />
   </div>
 </template>

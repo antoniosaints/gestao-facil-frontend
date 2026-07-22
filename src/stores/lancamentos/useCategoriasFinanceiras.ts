@@ -17,8 +17,9 @@ export const useCategoriasFinanceirasStore = defineStore('categoriasFinanceirasS
     update: false,
   })
 
-  function openSave() {
-    selectedCategoria.value = null
+  /// `parentId` pré-seleciona a categoria pai (ação "nova subcategoria" na árvore).
+  function openSave(parentId?: number | null) {
+    selectedCategoria.value = parentId ? { nome: '', parentId } : null
     openModal.value = true
   }
 

@@ -23,7 +23,7 @@ import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils
 import { useClientesStore } from '@/stores/clientes/useClientes'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { IaRepository, isIaQuotaError } from '@/repositories/ia-repository'
-import { LoaderCircle, Sparkles } from 'lucide-vue-next'
+import { LoaderCircle, Repeat, Sparkles } from 'lucide-vue-next'
 import FormularioContas from '../modais/FormularioContas.vue'
 import FormularioCategorias from '../modais/FormularioCategorias.vue'
 
@@ -94,7 +94,7 @@ function aplicarContaCriada(id: number) {
 const erros = ref<{ [key: string]: string }>({})
 
 const params = ref<{
-  metodo: 'AVISTA' | 'PARCELADO'
+  metodo: 'AVISTA' | 'PARCELADO' | 'RECORRENTE'
   lancamentoEfetivado: boolean
   hasEntrada: boolean
 }>({
@@ -104,6 +104,8 @@ const params = ref<{
 })
 
 const isEditMode = computed(() => Boolean(store.form.id))
+const isRecorrente = computed(() => params.value.metodo === 'RECORRENTE')
+const recorrencia = computed(() => store.form.recorrencia!)
 const podeNotificarCliente = computed(
   () => store.form.tipo === 'RECEITA' && Boolean(store.form.clienteId),
 )
@@ -111,9 +113,9 @@ const podeNotificarCliente = computed(
 const title = computed(() => {
   if (isEditMode.value) return 'Editar lançamento'
   const tipo = store.form.tipo === 'RECEITA' ? 'receita' : 'despesa'
-  return params.value.metodo === 'AVISTA'
-    ? `Lançamento de ${tipo}`
-    : `Lançamento parcelado (${tipo})`
+  if (params.value.metodo === 'PARCELADO') return `Lançamento parcelado (${tipo})`
+  if (params.value.metodo === 'RECORRENTE') return `Lançamento recorrente (${tipo})`
+  return `Lançamento de ${tipo}`
 })
 
 const description = computed(() =>
@@ -123,6 +125,7 @@ const description = computed(() =>
 )
 
 const valorInputLabel = computed(() => {
+  if (isRecorrente.value) return 'Valor de cada ocorrência *'
   if (params.value.metodo === 'PARCELADO' && store.form.modoValorParcelamento === 'FIXO_PARCELA') {
     return 'Valor de cada parcela *'
   }
@@ -130,12 +133,61 @@ const valorInputLabel = computed(() => {
 })
 
 const descontoDesabilitado = computed(
-  () => params.value.metodo === 'PARCELADO' && store.form.modoValorParcelamento === 'FIXO_PARCELA',
+  () =>
+    isRecorrente.value ||
+    (params.value.metodo === 'PARCELADO' && store.form.modoValorParcelamento === 'FIXO_PARCELA'),
 )
 
 const intervaloPersonalizadoAtivo = computed(
   () => params.value.metodo === 'PARCELADO' && store.form.periodoParcelamento === 'PERSONALIZADO',
 )
+
+const intervaloRecorrenciaAtivo = computed(
+  () => isRecorrente.value && recorrencia.value.frequencia === 'PERSONALIZADO',
+)
+
+// Grade da recorrência: cada linha fecha exatamente 12 colunas em toda combinação
+// (com/sem intervalo personalizado, com/sem geração automática).
+// Linha 1: frequência [+ a cada dias] + data de fim.
+// Linha 2: mínimo + máximo [+ dias de antecedência] + switch da automação.
+const colFrequencia = computed(() =>
+  intervaloRecorrenciaAtivo.value ? 'col-span-12 md:col-span-5' : 'col-span-12 md:col-span-6',
+)
+const colIntervaloRecorrencia = 'col-span-4 md:col-span-2'
+const colDataFimRecorrencia = computed(() =>
+  intervaloRecorrenciaAtivo.value ? 'col-span-8 md:col-span-5' : 'col-span-12 md:col-span-6',
+)
+const colLimiteRecorrencia = computed(() =>
+  recorrencia.value.geracaoAutomatica ? 'col-span-4 md:col-span-2' : 'col-span-6 md:col-span-3',
+)
+const colAutomacaoRecorrencia = 'col-span-12 md:col-span-6'
+
+const labelDataPrincipal = computed(() => {
+  if (isRecorrente.value) return 'Data de início'
+  return params.value.metodo === 'AVISTA' ? 'Data vencimento' : 'Data primeira parcela'
+})
+
+const descricaoFrequencia = computed(() => {
+  switch (recorrencia.value.frequencia) {
+    case 'DIARIO':
+      return 'diária'
+    case 'SEMANAL':
+      return 'semanal'
+    case 'QUINZENAL':
+      return 'quinzenal'
+    case 'TRIMESTRAL':
+      return 'trimestral'
+    case 'SEMESTRAL':
+      return 'semestral'
+    case 'ANUAL':
+      return 'anual'
+    case 'PERSONALIZADO':
+      return `a cada ${recorrencia.value.intervaloDias || 0} dia(s)`
+    case 'MENSAL':
+    default:
+      return 'mensal'
+  }
+})
 
 watch(podeNotificarCliente, (enabled) => {
   if (!enabled) store.form.notificarClienteVencimento = false
@@ -146,7 +198,10 @@ const valorEntrada = computed(() => formatToNumberValue(store.form.valorEntrada)
 const desconto = computed(() => formatToNumberValue(store.form.desconto))
 const parcelasQuantidade = computed(() => Number(store.form.parcelas || 1))
 
+const ocorrenciasIniciais = computed(() => Math.max(1, Number(recorrencia.value.minimoGerado || 1)))
+
 const valorParcelaResumo = computed(() => {
+  if (isRecorrente.value) return valorInformado.value
   if (params.value.metodo === 'AVISTA') return valorInformado.value - desconto.value
   if (store.form.modoValorParcelamento === 'FIXO_PARCELA') return valorInformado.value
 
@@ -155,6 +210,7 @@ const valorParcelaResumo = computed(() => {
 })
 
 const totalResumo = computed(() => {
+  if (isRecorrente.value) return valorInformado.value * ocorrenciasIniciais.value
   if (params.value.metodo === 'AVISTA') return valorInformado.value - desconto.value
   if (store.form.modoValorParcelamento === 'FIXO_PARCELA') {
     return valorEntrada.value + valorInformado.value * parcelasQuantidade.value
@@ -237,9 +293,23 @@ async function submitFormulario() {
     notificarVencimento: Boolean(store.form.notificarVencimento),
     notificarClienteVencimento:
       podeNotificarCliente.value && Boolean(store.form.notificarClienteVencimento),
+    recorrencia: isRecorrente.value
+      ? {
+          frequencia: recorrencia.value.frequencia,
+          intervaloDias: intervaloRecorrenciaAtivo.value
+            ? Number(recorrencia.value.intervaloDias || 0)
+            : null,
+          dataInicio: store.form.dataLancamento,
+          dataFim: recorrencia.value.dataFim || null,
+          minimoGerado: Number(recorrencia.value.minimoGerado || 1),
+          maximoEmAberto: Number(recorrencia.value.maximoEmAberto || 6),
+          geracaoAutomatica: Boolean(recorrencia.value.geracaoAutomatica),
+          diasAntecedencia: Number(recorrencia.value.diasAntecedencia || 0),
+        }
+      : undefined,
   } as FormularioLancamento & {
     lancamentoEfetivado: boolean
-    tipoLancamentoModo: 'AVISTA' | 'PARCELADO'
+    tipoLancamentoModo: 'AVISTA' | 'PARCELADO' | 'RECORRENTE'
   }
 
   await LancamentosRepository.save(data)
@@ -268,6 +338,28 @@ const validar = () => {
 
   if (intervaloPersonalizadoAtivo.value && Number(store.form.intervaloDiasPersonalizado || 0) < 1) {
     erros.value.intervaloDiasPersonalizado = 'Informe a quantidade de dias personalizada.'
+  }
+
+  if (isRecorrente.value) {
+    if (intervaloRecorrenciaAtivo.value && Number(recorrencia.value.intervaloDias || 0) < 1) {
+      erros.value.intervaloDiasRecorrencia = 'Informe a quantidade de dias da recorrência.'
+    }
+
+    if (Number(recorrencia.value.minimoGerado || 0) < 1) {
+      erros.value.minimoGerado = 'O mínimo em aberto deve ser de ao menos 1.'
+    }
+
+    if (Number(recorrencia.value.maximoEmAberto || 0) < Number(recorrencia.value.minimoGerado || 1)) {
+      erros.value.maximoEmAberto = 'O máximo em aberto não pode ser menor que o mínimo.'
+    }
+
+    if (
+      recorrencia.value.dataFim &&
+      store.form.dataLancamento &&
+      new Date(recorrencia.value.dataFim) < new Date(store.form.dataLancamento)
+    ) {
+      erros.value.dataFimRecorrencia = 'A data de fim deve ser posterior ao início.'
+    }
   }
 }
 
@@ -298,12 +390,17 @@ watch(
 watch(
   () => params.value.metodo,
   (value) => {
-    if (value === 'AVISTA') {
+    if (value !== 'PARCELADO') {
       store.form.parcelas = 1
       store.form.periodoParcelamento = 'MENSAL'
       store.form.intervaloDiasPersonalizado = null
       store.form.modoValorParcelamento = 'TOTAL'
       params.value.hasEntrada = false
+    }
+
+    // Recorrente usa valor fixo por ocorrência: desconto e entrada não se aplicam.
+    if (value === 'RECORRENTE') {
+      store.form.desconto = ''
     }
   },
 )
@@ -329,7 +426,7 @@ watch(
 </script>
 
 <template>
-  <ModalView v-model:open="store.openModal" :title="title" :description="description" size="3xl">
+  <ModalView v-model:open="store.openModal" :title="title" :description="description" size="4xl">
     <form class="space-y-4 px-4" @submit.prevent="submit">
       <template v-if="isEditMode">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -450,7 +547,7 @@ watch(
             </div>
             <div class="col-span-6 md:col-span-4">
               <label for="dataFinanceiroLancamento" class="mb-1 block text-sm font-medium">
-                {{ params.metodo === 'AVISTA' ? 'Data vencimento' : 'Data primeira parcela' }} *
+                {{ labelDataPrincipal }} *
               </label>
               <Calendarpicker
                 id="dataFinanceiroLancamento"
@@ -497,9 +594,9 @@ watch(
             <div class="col-span-6 md:col-span-4">
               <label for="descontoFormularioLancamento" class="mb-1 block text-sm font-medium">
                 Desconto
-                <span v-if="descontoDesabilitado" class="text-xs text-muted-foreground"
-                  >(indisponível com valor fixo)</span
-                >
+                <span v-if="descontoDesabilitado" class="text-xs text-muted-foreground">
+                  {{ isRecorrente ? '(indisponível em recorrentes)' : '(indisponível com valor fixo)' }}
+                </span>
               </label>
               <Input
                 id="descontoFormularioLancamento"
@@ -514,9 +611,9 @@ watch(
 
             <div
               :class="[
-                params.metodo === 'AVISTA'
-                  ? 'col-span-6 md:col-span-6'
-                  : 'col-span-6 md:col-span-3',
+                params.metodo === 'PARCELADO'
+                  ? 'col-span-6 md:col-span-3'
+                  : 'col-span-6 md:col-span-6',
               ]"
             >
               <label for="metodoLancamentoModoLancamento" class="mb-1 block text-sm font-medium"
@@ -529,6 +626,7 @@ watch(
                 <SelectContent>
                   <SelectItem value="AVISTA">À vista</SelectItem>
                   <SelectItem value="PARCELADO">Parcelado</SelectItem>
+                  <SelectItem value="RECORRENTE">Recorrente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -549,7 +647,7 @@ watch(
             <div
               :class="[
                 'mb-1 block text-sm font-medium',
-                params.metodo === 'AVISTA' ? 'col-span-6' : 'col-span-6 md:col-span-3',
+                params.metodo === 'PARCELADO' ? 'col-span-6 md:col-span-3' : 'col-span-6',
               ]"
             >
               <span class="mb-0 block text-sm font-medium">Efetivado</span>
@@ -635,6 +733,115 @@ watch(
                 <p v-if="erros.intervaloDiasPersonalizado" class="text-sm text-red-600">
                   {{ erros.intervaloDiasPersonalizado }}
                 </p>
+              </div>
+            </template>
+
+            <template v-if="isRecorrente">
+              <div class="col-span-12 rounded-lg border border-dashed bg-muted/30 p-3">
+                <div class="mb-3 flex items-center gap-2">
+                  <Repeat class="h-4 w-4 text-primary" />
+                  <span class="text-sm font-medium">Recorrência</span>
+                  <span class="text-xs text-muted-foreground">
+                    O valor é o mesmo em todas as ocorrências. Ao pagar uma, a próxima é gerada.
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-12 gap-3">
+                  <div :class="colFrequencia">
+                    <label class="mb-1 block text-sm font-medium">Frequência *</label>
+                    <Select v-model="recorrencia.frequencia">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Frequência" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MENSAL">Mensal</SelectItem>
+                        <SelectItem value="SEMANAL">Semanal</SelectItem>
+                        <SelectItem value="DIARIO">Diário</SelectItem>
+                        <SelectItem value="QUINZENAL">Quinzenal</SelectItem>
+                        <SelectItem value="TRIMESTRAL">Trimestral</SelectItem>
+                        <SelectItem value="SEMESTRAL">Semestral</SelectItem>
+                        <SelectItem value="ANUAL">Anual</SelectItem>
+                        <SelectItem value="PERSONALIZADO">Personalizado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div v-if="intervaloRecorrenciaAtivo" :class="colIntervaloRecorrencia">
+                    <label class="mb-1 block text-sm font-medium">A cada (dias) *</label>
+                    <Input
+                      :model-value="recorrencia.intervaloDias ?? ''"
+                      @update:model-value="
+                        (value) => (recorrencia.intervaloDias = value as string | number)
+                      "
+                      type="number"
+                      min="1"
+                      placeholder="Ex: 45"
+                    />
+                    <p v-if="erros.intervaloDiasRecorrencia" class="text-sm text-red-600">
+                      {{ erros.intervaloDiasRecorrencia }}
+                    </p>
+                  </div>
+
+                  <div :class="colDataFimRecorrencia">
+                    <label for="dataFimRecorrencia" class="mb-1 block text-sm font-medium">
+                      Data de fim
+                      <span class="text-xs text-muted-foreground">(opcional)</span>
+                    </label>
+                    <Calendarpicker
+                      id="dataFimRecorrencia"
+                      :teleport="true"
+                      :required="false"
+                      name="dataFimRecorrencia"
+                      :model-value="recorrencia.dataFim ?? null"
+                      @update:model-value="(value) => (recorrencia.dataFim = value as Date | null)"
+                    />
+                    <p v-if="erros.dataFimRecorrencia" class="text-sm text-red-600">
+                      {{ erros.dataFimRecorrencia }}
+                    </p>
+                  </div>
+
+                  <div :class="colLimiteRecorrencia">
+                    <label class="mb-1 block text-sm font-medium">Mínimo *</label>
+                    <Input v-model="recorrencia.minimoGerado" type="number" min="1" placeholder="1" />
+                    <p v-if="erros.minimoGerado" class="text-sm text-red-600">
+                      {{ erros.minimoGerado }}
+                    </p>
+                  </div>
+
+                  <div :class="colLimiteRecorrencia">
+                    <label class="mb-1 block text-sm font-medium">Máximo *</label>
+                    <Input v-model="recorrencia.maximoEmAberto" type="number" min="1" placeholder="6" />
+                    <p v-if="erros.maximoEmAberto" class="text-sm text-red-600">
+                      {{ erros.maximoEmAberto }}
+                    </p>
+                  </div>
+
+                  <div v-if="recorrencia.geracaoAutomatica" :class="colLimiteRecorrencia">
+                    <label class="mb-1 block text-sm font-medium">Antecedência *</label>
+                    <Input
+                      v-model="recorrencia.diasAntecedencia"
+                      type="number"
+                      min="0"
+                      placeholder="30"
+                    />
+                  </div>
+
+                  <div :class="colAutomacaoRecorrencia">
+                    <span class="mb-1 block text-sm font-medium">Geração automática</span>
+                    <label
+                      for="geracaoAutomaticaRecorrencia"
+                      class="flex h-[36px] cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 dark:bg-card-dark"
+                    >
+                      <span class="truncate text-sm font-medium text-gray-900 dark:text-gray-300">
+                        Gerar antes do vencimento
+                      </span>
+                      <Switch
+                        id="geracaoAutomaticaRecorrencia"
+                        v-model="recorrencia.geracaoAutomatica"
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
             </template>
 
@@ -751,7 +958,30 @@ watch(
 
           <div class="flex flex-col rounded-md border bg-gray-50 px-4 py-2 dark:bg-gray-900">
             <span class="text-muted-foreground">Resumo do lançamento</span>
-            <span class="text-sm">Total previsto: {{ formatCurrencyBR(totalResumo) }}</span>
+            <span class="text-sm">
+              {{ isRecorrente ? 'Total gerado agora' : 'Total previsto' }}:
+              {{ formatCurrencyBR(totalResumo) }}
+            </span>
+
+            <template v-if="isRecorrente">
+              <span class="text-sm">
+                Ocorrência {{ descricaoFrequencia }} de {{ formatCurrencyBR(valorParcelaResumo) }}
+              </span>
+              <span class="text-sm">
+                Mantendo {{ ocorrenciasIniciais }} parcela(s) em aberto (máx.
+                {{ recorrencia.maximoEmAberto }}); ao pagar uma, a próxima é gerada.
+              </span>
+              <span class="text-sm">
+                {{
+                  recorrencia.dataFim
+                    ? `Até ${formatDateToPtBR(recorrencia.dataFim as string)}`
+                    : 'Sem data de fim'
+                }}
+                <template v-if="recorrencia.geracaoAutomatica">
+                  · geração automática {{ recorrencia.diasAntecedencia }} dia(s) antes
+                </template>
+              </span>
+            </template>
             <span v-if="desconto && !descontoDesabilitado" class="text-sm"
               >Desconto aplicado: {{ formatCurrencyBR(desconto) }}</span
             >
@@ -767,7 +997,7 @@ watch(
               Periodicidade: {{ descricaoPeriodo }}
             </span>
             <span class="text-sm">
-              {{ params.metodo === 'AVISTA' ? 'Vencimento' : 'Primeira parcela' }}:
+              {{ params.metodo === 'PARCELADO' ? 'Primeira parcela' : 'Vencimento' }}:
               {{ formatDateToPtBR(store.form.dataLancamento as string) }}
             </span>
           </div>

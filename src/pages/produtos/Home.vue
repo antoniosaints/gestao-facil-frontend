@@ -4,7 +4,15 @@ import Mobile from '@/pages/produtos/partials/Mobile.vue'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
 import ModalProdutos from './formulario/ModalProdutos.vue'
 import ModalCriarLote from './others/ModalCriarLote.vue'
-import { BadgePlus, FileChartLine, FileUp, FolderTree, Funnel, Layers3, Package, RotateCw, Store } from 'lucide-vue-next'
+import { BadgePlus, ChevronDown, FileChartLine, FileUp, FolderTree, Funnel, Layers3, Menu, Package, RotateCw, Store } from 'lucide-vue-next'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import ModalReposicao from './formulario/ModalReposicao.vue'
 import ModalDescarte from './formulario/ModalDescarte.vue'
 import ModalRelatorio from './formulario/ModalRelatorio.vue'
@@ -63,33 +71,44 @@ const relatorioGeral = async () => {
                         Variantes
                     </button>
                 </div>
-                <button @click="openFilter = true"
-                    class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-2 text-sm rounded-lg">
-                    <Funnel class="w-4 h-4" />
+                <button @click="openFilter = true" title="Filtrar produtos"
+                    class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-2 py-1.5 text-sm rounded-md">
+                    <Funnel class="w-5 h-5" />
                 </button>
-                <button @click="relatorioGeral()" class="bg-orange-600 text-white px-2 py-1.5 text-sm rounded-md">
-                    <FileChartLine class="w-5 h-5" />
-                </button>
-                <button @click="store.openModalLote = true"
-                    class="bg-green-600 text-white px-2 py-1.5 text-sm rounded-md">
-                    <FileUp class="w-5 h-5" />
-                </button>
-                <button @click="router.push('/produtos/categorias')"
-                    class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
-                    <FolderTree class="w-5 h-5" />
-                </button>
-                <button @click="openCatalogo = true" title="Catálogo online"
-                    class="bg-violet-600 text-white px-2 py-1.5 text-sm rounded-md">
-                    <Store class="w-5 h-5" />
-                </button>
-                <button @click="store.openSaveVariante()" title="Nova variante de um produto existente"
-                    class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
-                    <Layers3 class="w-5 h-5" />
-                </button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                        <button type="button" title="Mais ações"
+                            class="bg-background border border-border px-3 py-1.5 text-sm rounded-md flex items-center gap-1.5">
+                            <Menu class="w-4 h-4" /> Ações
+                            <ChevronDown class="w-4 h-4 text-muted-foreground" />
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="w-56">
+                        <DropdownMenuLabel>Cadastros</DropdownMenuLabel>
+                        <DropdownMenuItem @click="store.openSaveVariante()">
+                            <Layers3 class="mr-2 h-4 w-4" /> Nova variante
+                        </DropdownMenuItem>
+                        <DropdownMenuItem @click="router.push('/produtos/categorias')">
+                            <FolderTree class="mr-2 h-4 w-4" /> Categorias
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Dados</DropdownMenuLabel>
+                        <DropdownMenuItem @click="store.openModalLote = true">
+                            <FileUp class="mr-2 h-4 w-4" /> Importar CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem @click="relatorioGeral()">
+                            <FileChartLine class="mr-2 h-4 w-4" /> Relatório de produtos
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem @click="openCatalogo = true">
+                            <Store class="mr-2 h-4 w-4" /> Catálogo online
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <button @click="store.openSaveProduto" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo Produto</span>
                 </button>
-                <button @click="store.updateTable"
+                <button @click="store.updateTable" title="Atualizar listagem"
                     class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
                     <RotateCw class="w-5 h-5" />
                 </button>

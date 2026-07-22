@@ -1,4 +1,5 @@
 import type {
+  CategoriaArvoreNode,
   CategoriaFinanceiro,
   ContaFinanceiraDetalhesResponse,
   ContaFinanceiraSaldoAtualResponse,
@@ -7,6 +8,7 @@ import type {
   FormularioLancamento,
   MetodoPagamento,
   MetodoPagamentoFinanceiro,
+  RecorrenciaConfig,
 } from '@/types/schemas'
 import http from '@/utils/axios'
 
@@ -39,6 +41,24 @@ export class LancamentosRepository {
   }
   static async save(data: Omit<FormularioLancamento, 'id'>) {
     await http.post(`/lancamentos`, data)
+  }
+  static async salvarRecorrencia(
+    lancamentoId: number,
+    data: RecorrenciaConfig & { valorParcela?: number | string | null },
+  ) {
+    const response = await http.post(`/lancamentos/${lancamentoId}/recorrencia`, data)
+    return response.data
+  }
+  static async atualizarStatusRecorrencia(
+    lancamentoId: number,
+    data: { ativo?: boolean; encerrar?: boolean },
+  ) {
+    const response = await http.post(`/lancamentos/${lancamentoId}/recorrencia/status`, data)
+    return response.data
+  }
+  static async gerarProximaRecorrencia(lancamentoId: number) {
+    const response = await http.post(`/lancamentos/${lancamentoId}/recorrencia/gerar`)
+    return response.data
   }
   static async atualizarNotificacaoVencimento(id: number, ativo: boolean) {
     const response = await http.post(`/lancamentos/${id}/notificacao-vencimento`, { ativo })
@@ -198,6 +218,17 @@ export class LancamentosRepository {
   }
   static async deletarCategoria(id: number) {
     await http.delete(`/lancamentos/categorias/${id}`)
+  }
+  static async arvoreCategorias() {
+    const response = await http.get(`/lancamentos/categorias/arvore`)
+    return response.data as {
+      message: string
+      data: { arvore: CategoriaArvoreNode[]; total: number }
+    }
+  }
+  static async moverCategoria(id: number, parentId: number | null) {
+    const response = await http.post(`/lancamentos/categorias/${id}/mover`, { parentId })
+    return response.data
   }
   static async getSaldoMensal(inicio?: string, fim?: string) {
     const data = await http.get(`/lancamentos/graficos/saldo-mensal`, {

@@ -14,7 +14,11 @@ import { Input } from "@/components/ui/input"
 
 interface Item {
     id: string | number
+    /// Texto exibido no campo depois de escolher (curto).
     label: string
+    /// Opcional: texto mais completo para a lista de opções (ex.: hierarquia de
+    /// categorias). Quando ausente, a lista usa o próprio `label`.
+    caminho?: string
 }
 
 interface Props {
@@ -208,7 +212,7 @@ onMounted(fetchItems)
             <SelectTrigger class="bg-card dark:bg-card-dark"
                 :class="{ 'w-[calc(100%-2.5rem)]': allowClear && selectedId }">
                 <SelectValue :value="selectedId" :placeholder="placeholder">
-                    {{ selectedItem?.label ?? placeholder }}
+                    <span class="block truncate text-left">{{ selectedItem?.label ?? placeholder }}</span>
                 </SelectValue>
             </SelectTrigger>
 
@@ -230,7 +234,7 @@ onMounted(fetchItems)
                             :value="item.id" :data-sa-uid="instanceUid" :data-sa-index="index"
                             :class="index === highlightedIndex ? 'bg-accent text-accent-foreground' : ''"
                             @mouseenter="highlightedIndex = index" @click.stop="(search = '')">
-                            {{ item.label }}
+                            {{ item.caminho || item.label }}
                         </SelectItem>
                     </template>
                 </SelectGroup>

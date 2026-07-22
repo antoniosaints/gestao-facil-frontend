@@ -1,6 +1,10 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { type FormularioLancamento, type LancamentoFinanceiro } from '@/types/schemas'
+import {
+  type FormularioLancamento,
+  type LancamentoFinanceiro,
+  type RecorrenciaConfig,
+} from '@/types/schemas'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 
 interface filtro {
@@ -39,6 +43,7 @@ function createDefaultForm(
       | 'modoValorParcelamento'
       | 'notificarVencimento'
       | 'notificarClienteVencimento'
+      | 'recorrencia'
     >
   >,
 ): FormularioLancamento {
@@ -61,6 +66,20 @@ function createDefaultForm(
     modoValorParcelamento: overrides?.modoValorParcelamento ?? 'TOTAL',
     notificarVencimento: overrides?.notificarVencimento ?? false,
     notificarClienteVencimento: overrides?.notificarClienteVencimento ?? false,
+    recorrencia: { ...createDefaultRecorrencia(), ...(overrides?.recorrencia ?? {}) },
+  }
+}
+
+function createDefaultRecorrencia(): RecorrenciaConfig {
+  return {
+    frequencia: 'MENSAL',
+    intervaloDias: null,
+    dataInicio: null,
+    dataFim: null,
+    minimoGerado: 1,
+    maximoEmAberto: 6,
+    geracaoAutomatica: false,
+    diasAntecedencia: 30,
   }
 }
 
@@ -124,6 +143,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
           periodoParcelamento: form.value.periodoParcelamento,
           intervaloDiasPersonalizado: form.value.intervaloDiasPersonalizado,
           modoValorParcelamento: form.value.modoValorParcelamento,
+          recorrencia: form.value.recorrencia,
           dataLancamento: options?.preserveDate ? form.value.dataLancamento : undefined,
         }
       : undefined
