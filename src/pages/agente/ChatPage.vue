@@ -19,6 +19,7 @@ import { GeminiRepository, type GeminiChatImage } from '@/repositories/gemini-re
 import IaUsageIndicator from '@/components/ia/IaUsageIndicator.vue';
 import { useUiStore } from '@/stores/ui/uiStore';
 import { useCoreIaWidget } from '@/composables/useCoreIaWidget';
+import { renderMarkdownTables } from '@/utils/simpleMarkdown';
 import { POSITION, useToast } from 'vue-toastification';
 import { Separator } from '@/components/ui/separator';
 
@@ -84,12 +85,13 @@ const toggleSettings = () => {
 const formatMessage = (text: string) => {
     if (!text) return '';
 
-    let html = text
+    const escapado = text
         // 1. Escapar HTML perigoso (Segurança)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
+        .replace(/>/g, '&gt;');
 
+    let html = renderMarkdownTables(escapado)
         // 2. Blocos de Código (```json ... ```)
         .replace(/```(?:json|javascript|js|bash|typescript)?\n([\s\S]*?)```/g, (_match, code) => {
             return `<pre class="code-block my-3 bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto"><code>${code.trim()}</code></pre>`;
@@ -505,6 +507,36 @@ const clearChat = () => {
     white-space: pre;
     /* Mantém a indentação do código */
     font-family: monospace;
+}
+
+/* Tabelas de análise: rolam dentro do balão em vez de estourar a largura */
+:deep(.md-table-wrap) {
+    overflow-x: auto;
+    margin: 0.75rem 0;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+}
+
+:deep(.md-table-wrap table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+:deep(.md-table-wrap th),
+:deep(.md-table-wrap td) {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid hsl(var(--border));
+    white-space: nowrap;
+}
+
+:deep(.md-table-wrap th) {
+    background: hsl(var(--muted));
+    font-weight: 600;
+}
+
+:deep(.md-table-wrap tbody tr:last-child td) {
+    border-bottom: 0;
 }
 
 :deep(br) {
