@@ -12,6 +12,14 @@ import type {
 } from '@/types/schemas'
 import http from '@/utils/axios'
 
+export type ParcelaIgnoradaLote = { id: number; motivo: string }
+
+export type ResultadoLoteParcelas<T = Record<string, never>> = {
+  status: number
+  message: string
+  data: ({ ignoradas: ParcelaIgnoradaLote[] } & T) | null
+}
+
 function downloadBlob(data: BlobPart, filename: string) {
   const blob = data instanceof Blob ? data : new Blob([data])
   const url = window.URL.createObjectURL(blob)
@@ -97,8 +105,24 @@ export class LancamentosRepository {
   ) {
     await http.post(`/lancamentos/parcelas/${idParcela}/pagar`, data)
   }
-  static async pagarMultiplasParcelas(parcelas: number[]) {
-    await http.post(`/lancamentos/parcelas/pagar-multiplas`, { parcelas })
+  static async pagarMultiplasParcelas(
+    parcelas: number[],
+    data?: {
+      dataPagamento?: string
+      metodoPagamento?: MetodoPagamentoFinanceiro
+      contaPagamento?: number | null
+    },
+  ) {
+    const response = await http.post(`/lancamentos/parcelas/pagar-multiplas`, { parcelas, ...data })
+    return response.data as ResultadoLoteParcelas<{ efetivadas: number; parcelasRecorrentesGeradas: number }>
+  }
+  static async estornarMultiplasParcelas(parcelas: number[]) {
+    const response = await http.post(`/lancamentos/parcelas/estornar-multiplas`, { parcelas })
+    return response.data as ResultadoLoteParcelas<{ estornadas: number }>
+  }
+  static async deletarMultiplasParcelas(parcelas: number[]) {
+    const response = await http.post(`/lancamentos/parcelas/excluir-multiplas`, { parcelas })
+    return response.data as ResultadoLoteParcelas<{ excluidas: number }>
   }
   static async estornarParcela(id: number) {
     await http.post(`/lancamentos/parcelas/${id}/estornar`)

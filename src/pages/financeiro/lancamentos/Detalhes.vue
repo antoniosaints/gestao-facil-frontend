@@ -34,6 +34,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
@@ -47,9 +48,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
-import { LancamentosRepository } from '@/repositories/lancamento-repository'
+import { LancamentosRepository, type ParcelaIgnoradaLote } from '@/repositories/lancamento-repository'
 import { InadimplenciaRepository } from '@/repositories/inadimplencia-repository'
 import { useConfirm } from '@/composables/useConfirm'
+import { useParcelasSelecao } from '@/composables/useParcelasSelecao'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -69,6 +71,9 @@ import FormularioRecorrencia from './modais/FormularioRecorrencia.vue'
 import LancamentoModal from './formulario/LancamentoModal.vue'
 import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import FormularioEfertivar from './modais/FormularioEfertivar.vue'
+import EfetivarLoteModal from './modais/EfetivarLoteModal.vue'
+import CobrancaLoteModal from './modais/CobrancaLoteModal.vue'
+import ParcelasBulkBar from './components/ParcelasBulkBar.vue'
 import ModalParcela from './modais/ModalParcela.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue'
@@ -543,6 +548,108 @@ async function toggleNotificacaoClienteVencimento() {
   }
 }
 
+// ---- Seleção e ações em massa nas parcelas ----
+const selecao = useParcelasSelecao(() => parcelasOrdenadas.value)
+const loteProcessando = ref(false)
+const efetivarLoteOpen = ref(false)
+const cobrancaLoteOpen = ref(false)
+
+const parcelasParaCobranca = computed(() =>
+  selecao.selecionadasSemCobranca.value.map((parcela) => ({
+    id: parcela.id as number,
+    valor: Number(parcela.valor || 0),
+  })),
+)
+
+function reportarIgnoradas(ignoradas: ParcelaIgnoradaLote[]) {
+  if (!ignoradas.length) return
+
+  const porMotivo = new Map<string, number>()
+  for (const item of ignoradas) {
+    porMotivo.set(item.motivo, (porMotivo.get(item.motivo) ?? 0) + 1)
+  }
+
+  const resumo = [...porMotivo.entries()]
+    .map(([motivo, quantidade]) => `${quantidade}x ${motivo}`)
+    .join(' ')
+
+  toast.warning(`${ignoradas.length} parcela(s) ignorada(s): ${resumo}`, { timeout: 8000 })
+}
+
+async function finalizarLote() {
+  selecao.limpar()
+  store.updateTable()
+  await loadLancamento()
+}
+
+function abrirEfetivarLote() {
+  if (!selecao.pendentesSelecionadas.value.length) return
+  efetivarLoteOpen.value = true
+}
+
+function abrirCobrancaLote() {
+  if (!parcelasParaCobranca.value.length) return
+  cobrancaLoteOpen.value = true
+}
+
+async function onEfetivarLoteSalvo(resultado: { efetivadas: number; ignoradas: ParcelaIgnoradaLote[] }) {
+  toast.success(`${resultado.efetivadas} parcela(s) efetivada(s) com sucesso.`)
+  reportarIgnoradas(resultado.ignoradas)
+  await finalizarLote()
+}
+
+async function estornarSelecionadas() {
+  const ids = selecao.pagasSelecionadas.value.map((parcela) => parcela.id as number)
+  if (!ids.length) return
+
+  const confirmado = await useConfirm().confirm({
+    title: 'Estornar parcelas',
+    message: `Deseja estornar ${ids.length} parcela(s) efetivada(s)? Elas voltam para o status pendente.`,
+    confirmText: 'Sim, estornar',
+  })
+
+  if (!confirmado) return
+
+  try {
+    loteProcessando.value = true
+    const response = await LancamentosRepository.estornarMultiplasParcelas(ids)
+    toast.success(`${response.data?.estornadas ?? 0} parcela(s) estornada(s) com sucesso.`)
+    reportarIgnoradas(response.data?.ignoradas ?? [])
+    await finalizarLote()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao estornar as parcelas')
+  } finally {
+    loteProcessando.value = false
+  }
+}
+
+async function excluirSelecionadas() {
+  const ids = selecao.pendentesSelecionadas.value.map((parcela) => parcela.id as number)
+  if (!ids.length) return
+
+  const confirmado = await useConfirm().confirm({
+    title: 'Excluir parcelas',
+    message: `Deseja excluir ${ids.length} parcela(s) pendente(s)? O total do lançamento será recalculado e o lançamento manterá ao menos uma parcela.`,
+    confirmText: 'Sim, excluir',
+  })
+
+  if (!confirmado) return
+
+  try {
+    loteProcessando.value = true
+    const response = await LancamentosRepository.deletarMultiplasParcelas(ids)
+    toast.success(`${response.data?.excluidas ?? 0} parcela(s) excluída(s) com sucesso.`)
+    reportarIgnoradas(response.data?.ignoradas ?? [])
+    await finalizarLote()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao excluir as parcelas')
+  } finally {
+    loteProcessando.value = false
+  }
+}
+
 function getNumeroParcelaLabel(parcela: ParcelaDetalhe) {
   if (parcela.numero === 0) return 'Entrada'
   if (parcela.numero === 1 && parcelasOrdenadas.value.length === 1) return 'À vista'
@@ -908,22 +1015,60 @@ watch(() => store.filters.update, loadLancamento)
     </Card>
 
     <Card class="shadow-sm" v-if="parcelasOrdenadas.length">
-      <CardHeader class="flex flex-row items-center justify-between gap-3 px-4 py-2">
+      <CardHeader class="flex flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:justify-between">
         <CardTitle class="text-lg flex items-center gap-2">
           <BadgeInfo class="h-4 w-4" />
           Parcelas e cobranças
         </CardTitle>
-        <Button variant="outline" size="sm" :disabled="!lancamento?.id" @click="abrirAdicionarParcela">
-          <Plus class="h-4 w-4" /> Adicionar
-        </Button>
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+            <Checkbox :model-value="selecao.todosSelecionados.value" @update:model-value="selecao.toggleTodos()" />
+            Selecionar todas
+          </label>
+          <button type="button" class="rounded-md border px-2 py-0.5 text-xs hover:bg-muted/50"
+            @click="selecao.selecionarPendentes()">
+            Pendentes
+          </button>
+          <button type="button" class="rounded-md border px-2 py-0.5 text-xs hover:bg-muted/50"
+            @click="selecao.selecionarPagas()">
+            Pagas
+          </button>
+          <button v-if="selecao.total.value" type="button"
+            class="rounded-md border px-2 py-0.5 text-xs hover:bg-muted/50" @click="selecao.limpar()">
+            Limpar
+          </button>
+          <Button variant="outline" size="sm" :disabled="!lancamento?.id" @click="abrirAdicionarParcela">
+            <Plus class="h-4 w-4" /> Adicionar
+          </Button>
+        </div>
       </CardHeader>
       <CardContent class="space-y-2.5 px-4">
+        <ParcelasBulkBar
+          :total="selecao.total.value"
+          :valor="selecao.valorSelecionado.value"
+          :pendentes="selecao.pendentesSelecionadas.value.length"
+          :pagas="selecao.pagasSelecionadas.value.length"
+          :sem-cobranca="parcelasParaCobranca.length"
+          :processando="loteProcessando"
+          @efetivar="abrirEfetivarLote"
+          @cobrar="abrirCobrancaLote"
+          @estornar="estornarSelecionadas"
+          @excluir="excluirSelecionadas"
+          @limpar="selecao.limpar()"
+        />
+
         <div v-for="parcela in parcelasOrdenadas" :key="parcela.id"
-          class="relative overflow-hidden rounded-r-xl border bg-card px-3 py-1 shadow-sm">
+          class="relative overflow-hidden rounded-r-xl border bg-card px-3 py-1 shadow-sm"
+          :class="selecao.estaSelecionada(parcela.id) ? 'ring-1 ring-primary/40' : ''">
           <div class="absolute left-0 top-0 h-full w-1"
             :class="lancamento?.tipo === 'DESPESA' ? 'bg-rose-500' : 'bg-emerald-500'" />
 
           <div class="flex items-center justify-between gap-3">
+            <Checkbox
+              class="ml-1.5 shrink-0"
+              :model-value="selecao.estaSelecionada(parcela.id)"
+              @update:model-value="selecao.toggle(parcela.id!)"
+            />
             <div class="min-w-0 flex-1 space-y-1.5 pl-1">
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
@@ -1168,6 +1313,19 @@ watch(() => store.filters.update, loadLancamento)
       </form>
     </ModalView>
     <FormularioEfertivar @success="loadLancamento" />
+
+    <EfetivarLoteModal
+      v-model:open="efetivarLoteOpen"
+      :parcelas-ids="selecao.pendentesSelecionadas.value.map((parcela) => parcela.id!)"
+      @saved="onEfetivarLoteSalvo"
+    />
+
+    <CobrancaLoteModal
+      v-model:open="cobrancaLoteOpen"
+      :parcelas="parcelasParaCobranca"
+      :cliente-id="lancamento?.clienteId"
+      @finished="finalizarLote"
+    />
 
     <FormularioRecorrencia
       v-if="lancamento?.id"

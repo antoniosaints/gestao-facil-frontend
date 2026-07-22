@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { endOfMonth, startOfMonth, startOfDay, endOfDay } from 'date-fns'
+import { endOfMonth, startOfMonth, startOfDay, endOfDay, subDays, subMonths } from 'date-fns'
 import {
   AlertTriangle,
   CalendarDays,
+  CalendarRange,
   Filter,
   HandCoins,
   Landmark,
@@ -114,9 +115,18 @@ const contasFinanceirasStore = useContasFinanceirasStore()
 
 const loading = ref(true)
 const openModalFiltros = ref(false)
-const filtroPeriodo = ref([startOfMonth(new Date()), endOfMonth(new Date())])
+const filtroPeriodo = ref<[Date, Date]>([startOfMonth(new Date()), endOfMonth(new Date())])
+const presetAtivo = ref<string>('month')
 const contas = ref<ContasFinanceiro[]>([])
 const categorias = ref<CategoriaFinanceiro[]>([])
+
+const presets = [
+  { key: 'today', label: 'Hoje' },
+  { key: '7d', label: '7 dias' },
+  { key: '30d', label: '30 dias' },
+  { key: 'month', label: 'Este mês' },
+  { key: 'last-month', label: 'Mês passado' },
+]
 
 const filtros = ref<{
   search: string
@@ -152,14 +162,17 @@ const assinaturasPagarResumo = ref<DashboardFinanceiroResponse['data']['assinatu
   vencidas: [],
 })
 
+/// O Calendarpicker em modo range emite também o estado intermediário com uma
+/// única data, então o intervalo é sempre lido com fallback para o mês atual.
+function getIntervaloSelecionado(): [Date, Date] {
+  const inicio = filtroPeriodo.value?.[0] ?? startOfMonth(new Date())
+  const fim = filtroPeriodo.value?.[1] ?? endOfMonth(new Date())
+  return [inicio, fim]
+}
+
 function getPeriodoSelecionado() {
-  const inicio = filtroPeriodo.value?.[0]
-    ? filtroPeriodo.value[0].toISOString()
-    : startOfMonth(new Date()).toISOString()
-  const fim = filtroPeriodo.value?.[1]
-    ? filtroPeriodo.value[1].toISOString()
-    : endOfMonth(new Date()).toISOString()
-  return { inicio, fim }
+  const [inicio, fim] = getIntervaloSelecionado()
+  return { inicio: inicio.toISOString(), fim: fim.toISOString() }
 }
 
 function getRequestFilters() {
@@ -196,7 +209,7 @@ async function carregarDashboard(showFeedback = false) {
     loading.value = true
     const response = (await LancamentosRepository.getDashboardVisaoGeral(
       getRequestFilters(),
-    )) as DashboardFinanceiroResponse 
+    )) as DashboardFinanceiroResponse
 
     cards.value = response.data.cards
     fluxoChart.value = {
@@ -229,6 +242,37 @@ async function carregarDashboard(showFeedback = false) {
   }
 }
 
+function resolvePeriodoPreset(preset: string): [Date, Date] | null {
+  const now = new Date()
+
+  if (preset === 'today') return [startOfDay(now), endOfDay(now)]
+  if (preset === '7d') return [startOfDay(subDays(now, 6)), endOfDay(now)]
+  if (preset === '30d') return [startOfDay(subDays(now, 29)), endOfDay(now)]
+  if (preset === 'month') return [startOfMonth(now), endOfMonth(now)]
+  if (preset === 'last-month') {
+    const mesPassado = subMonths(now, 1)
+    return [startOfMonth(mesPassado), endOfMonth(mesPassado)]
+  }
+
+  return null
+}
+
+/// Mantém o chip do header coerente com o intervalo escolhido no calendário:
+/// se a data bater com um preset conhecido ele fica marcado, senão vira "custom".
+function sincronizarPresetAtivo() {
+  const [inicio, fim] = getIntervaloSelecionado()
+  const encontrado = presets.find((preset) => {
+    const intervalo = resolvePeriodoPreset(preset.key)
+    if (!intervalo) return false
+    return (
+      startOfDay(intervalo[0]).getTime() === startOfDay(inicio).getTime() &&
+      startOfDay(intervalo[1]).getTime() === startOfDay(fim).getTime()
+    )
+  })
+
+  presetAtivo.value = encontrado?.key ?? 'custom'
+}
+
 function clearFilters(reload = true) {
   filtros.value = {
     search: '',
@@ -237,6 +281,7 @@ function clearFilters(reload = true) {
     categoriaId: 'all',
   }
   filtroPeriodo.value = [startOfMonth(new Date()), endOfMonth(new Date())]
+  presetAtivo.value = 'month'
 
   if (reload) {
     carregarDashboard(true)
@@ -244,27 +289,23 @@ function clearFilters(reload = true) {
 }
 
 function applyFilters() {
+  sincronizarPresetAtivo()
   openModalFiltros.value = false
   carregarDashboard(true)
 }
 
-function applyPreset(preset: 'today' | 'current-month' | 'receitas' | 'despesas') {
-  if (preset === 'today') {
-    filtroPeriodo.value = [startOfDay(new Date()), endOfDay(new Date())]
-  }
+function applyPreset(preset: string) {
+  const intervalo = resolvePeriodoPreset(preset)
+  if (!intervalo) return
 
-  if (preset === 'current-month') {
-    filtroPeriodo.value = [startOfMonth(new Date()), endOfMonth(new Date())]
-    filtros.value.tipo = 'TODOS'
-  }
+  presetAtivo.value = preset
+  filtroPeriodo.value = intervalo
+  carregarDashboard(true)
+}
 
-  if (preset === 'receitas') {
-    filtros.value.tipo = 'RECEITA'
-  }
-
-  if (preset === 'despesas') {
-    filtros.value.tipo = 'DESPESA'
-  }
+function aplicarTipo(tipo: FiltroTipo) {
+  filtros.value.tipo = tipo
+  carregarDashboard(true)
 }
 
 function getContaNomeById(id: string) {
@@ -275,11 +316,13 @@ function getCategoriaNomeById(id: string) {
   return categorias.value.find((categoria) => String(categoria.id) === id)?.nome || null
 }
 
+const filtroLabel = computed(() => {
+  const [inicio, fim] = getIntervaloSelecionado()
+  return `${inicio.toLocaleDateString('pt-BR')} — ${fim.toLocaleDateString('pt-BR')}`
+})
+
 const filtrosAtivos = computed(() => {
   const items: string[] = []
-
-  const { inicio, fim } = getPeriodoSelecionado()
-  items.push(`Período: ${new Date(inicio).toLocaleDateString('pt-BR')} até ${new Date(fim).toLocaleDateString('pt-BR')}`)
 
   if (filtros.value.search.trim()) items.push(`Busca: ${filtros.value.search.trim()}`)
   if (filtros.value.tipo !== 'TODOS') items.push(`Tipo: ${filtros.value.tipo}`)
@@ -389,27 +432,33 @@ onMounted(async () => {
             <Landmark class="h-6 w-6 shrink-0 text-primary dark:text-white" :stroke-width="2.5" />
             <span class="truncate">Painel financeiro</span>
           </h2>
-          <p class="text-sm text-muted-foreground">
-            Indicadores calculados por parcela, pagamentos efetivos, vencimentos e conta financeira com uso de espaço
-            mais enxuto.
-          </p>
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <CalendarRange class="h-3.5 w-3.5 shrink-0" /> {{ filtroLabel }}
+            </p>
+            <Badge v-for="item in filtrosAtivos" :key="item" variant="outline"
+              class="max-w-full text-xs whitespace-normal break-words text-left">
+              {{ item }}
+            </Badge>
+          </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+          <div class="flex flex-wrap items-center rounded-lg border border-border bg-card p-1">
+            <button v-for="preset in presets" :key="preset.key" type="button" @click="applyPreset(preset.key)"
+              class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+              :class="presetAtivo === preset.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'">
+              {{ preset.label }}
+            </button>
+          </div>
           <Button variant="outline" @click="openModalFiltros = true">
             <Filter class="h-4 w-4" /> Filtros
           </Button>
-          <Button variant="outline" size="icon" v-tooltip="'Atualizar'" @click="carregarDashboard(true)">
-            <RefreshCw class="h-4 w-4" />
+          <Button variant="outline" size="icon" v-tooltip="'Atualizar'" :disabled="loading"
+            @click="carregarDashboard(true)">
+            <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
           </Button>
         </div>
-      </div>
-
-      <div class="mt-1 flex flex-wrap gap-2">
-        <Badge v-for="item in filtrosAtivos" :key="item" variant="outline"
-          class="max-w-full text-xs whitespace-normal break-words text-left">
-          {{ item }}
-        </Badge>
       </div>
     </div>
 
@@ -559,7 +608,8 @@ onMounted(async () => {
           <div class="flex min-w-0 flex-row gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div class="min-w-0 flex items-center gap-3">
               <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border">
-                <img v-if="conta.icone" class="h-full w-full rounded-md object-cover" :src="resolveFileUrl(conta.icone, { fallback: '/imgs/logo.png' })" alt="iconname">
+                <img v-if="conta.icone" class="h-full w-full rounded-md object-cover"
+                  :src="resolveFileUrl(conta.icone, { fallback: '/imgs/logo.png' })" alt="iconname">
                 <Wallet class="h-4 w-4" v-else />
               </div>
               <div>
@@ -625,16 +675,26 @@ onMounted(async () => {
         <div class="space-y-2 md:col-span-2">
           <label class="text-sm font-medium">Atalhos rápidos</label>
           <div class="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" @click="applyPreset('today')">Hoje</Button>
-            <Button type="button" variant="outline" size="sm" @click="applyPreset('current-month')">Este mês</Button>
-            <Button type="button" variant="outline" size="sm" @click="applyPreset('receitas')">Somente receitas</Button>
-            <Button type="button" variant="outline" size="sm" @click="applyPreset('despesas')">Somente despesas</Button>
+            <Button v-for="preset in presets" :key="preset.key" type="button" variant="outline" size="sm"
+              @click="applyPreset(preset.key); openModalFiltros = false">
+              {{ preset.label }}
+            </Button>
           </div>
         </div>
 
         <div class="space-y-2 md:col-span-2">
-          <label class="text-sm font-medium">Período</label>
-          <Calendarpicker :range="true" v-model="filtroPeriodo" />
+          <label class="text-sm font-medium">Intervalo de datas</label>
+          <Calendarpicker class="w-full" :range="true" v-model="filtroPeriodo" />
+        </div>
+
+        <div class="space-y-2 md:col-span-2">
+          <label class="text-sm font-medium">Somente um tipo</label>
+          <div class="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm"
+              @click="aplicarTipo('RECEITA'); openModalFiltros = false">Somente receitas</Button>
+            <Button type="button" variant="outline" size="sm"
+              @click="aplicarTipo('DESPESA'); openModalFiltros = false">Somente despesas</Button>
+          </div>
         </div>
 
         <div class="space-y-2 md:col-span-2">

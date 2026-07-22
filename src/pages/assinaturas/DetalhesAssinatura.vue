@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import {
@@ -47,6 +47,7 @@ import {
   type ModoCobrancaItem,
 } from '@/repositories/assinatura-repository'
 import { useConfirm } from '@/composables/useConfirm'
+import { useAssinaturasStore } from '@/stores/assinaturas/useAssinaturas'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
 import {
@@ -64,6 +65,7 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const uiStore = useUiStore()
+const store = useAssinaturasStore()
 
 const loading = ref(false)
 const statusLoading = ref(false)
@@ -331,6 +333,23 @@ async function removeItem(itemId: number, descricao: string) {
   }
 }
 
+// O botão "Atualizar" precisa recarregar o cabeçalho E as tabelas das abas:
+// as listagens são server-side e só refazem o fetch quando `tableFilters` muda.
+async function atualizarTudo() {
+  await loadDetalhe(true)
+  refreshTables()
+}
+
+// Ações de linha (cancelar, estornar, deletar cobrança e devolver comodato) sinalizam
+// pelo store global; aqui isso precisa virar refetch das abas e dos totais do contrato.
+watch(
+  () => [store.cobrancasFilters.update, store.comodatosFilters.update],
+  async () => {
+    await loadDetalhe()
+    refreshTables()
+  },
+)
+
 onMounted(() => {
   loadDetalhe()
 })
@@ -372,7 +391,7 @@ onMounted(() => {
             <ArrowLeft class="mr-2 h-4 w-4" />
             Voltar
           </Button>
-          <Button variant="outline" @click="loadDetalhe(true)" :disabled="loading">
+          <Button variant="outline" @click="atualizarTudo" :disabled="loading">
             <RefreshCcw class="mr-2 h-4 w-4" :class="loading ? 'animate-spin' : ''" />
             Atualizar
           </Button>
@@ -659,7 +678,7 @@ onMounted(() => {
       </button>
       <button type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        @click="loadDetalhe(true)">
+        @click="atualizarTudo">
         <RefreshCcw class="h-5 w-5" :class="loading ? 'animate-spin' : ''" />
         <span class="text-xs">Atualizar</span>
       </button>
