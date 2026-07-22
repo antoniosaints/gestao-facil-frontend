@@ -320,7 +320,15 @@ function gerarId() {
 }
 
 function resumoModelo(m: EtiquetaModelo) {
-  const papel = m.papel === 'CUSTOM' ? `${m.larguraPapelMm}×${m.alturaPapelMm}mm` : m.papel
+  // Papel térmico é contínuo e não tem altura definida: sem isso o resumo
+  // exibia "80×nullmm".
+  const papel =
+    m.papel === 'CUSTOM'
+      ? m.alturaPapelMm
+        ? `${m.larguraPapelMm}×${m.alturaPapelMm}mm`
+        : `${m.larguraPapelMm}mm contínuo`
+      : m.papel
+
   return `${papel} · ${m.colunas}×${m.linhas} · ${m.larguraEtiquetaMm}×${m.alturaEtiquetaMm}mm`
 }
 

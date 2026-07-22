@@ -1,37 +1,85 @@
 <template>
-  <div class="grid md:grid-cols-2 gap-2">
-    <Card class="w-full bg-background mx-auto rounded-none rounded-b-xl">
-      <CardHeader>
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div class="space-y-2">
-            <CardTitle class="font-normal flex items-center gap-2">
-              <Printer class="w-5 h-5 text-primary" /> Configurar impressão
+  <div class="grid items-start gap-3 xl:grid-cols-2">
+    <Card class="mx-auto w-full rounded-none rounded-b-xl bg-background">
+      <CardHeader class="pb-3">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div class="min-w-0 space-y-1">
+            <CardTitle class="flex items-center gap-2 font-normal">
+              <Printer class="h-5 w-5 text-primary" /> Configurar impressão
             </CardTitle>
-            <CardDescription>
-              Escolha a impressora usada pelo PDV.
-            </CardDescription>
+            <CardDescription>Escolha a impressora usada pelo PDV.</CardDescription>
           </div>
 
-          <div class="flex items-center gap-2">
-            <Badge class="px-3 py-1 font-normal cursor-pointer text-white bg-primary hover:bg-primary/80"
-              @click="isOpen = true">
-              <Download class="w-5 h-5 mr-2 inline-flex" />
-              Dowloads
-            </Badge>
-            <Badge v-if="isConected" class="px-3 py-1 text-white font-normal bg-success hover:bg-success/80">
-              <Link2 class="mr-2 w-5 h-5" /> Conectado
-            </Badge>
-            <Badge v-else variant="destructive" class="px-3 py-1 text-white font-normal">
-              <Link2Off class="mr-2 w-5 h-5" /> Desconectado
-            </Badge>
+          <div class="flex shrink-0 items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+              :class="isConected
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                : 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400'">
+              <component :is="isConected ? Link2 : Link2Off" class="h-3.5 w-3.5" />
+              {{ isConected ? 'QZ Tray conectado' : 'QZ Tray desconectado' }}
+            </span>
+            <Button variant="outline" size="sm" @click="isOpen = true">
+              <HelpCircle class="h-4 w-4" /> Instalação
+            </Button>
           </div>
         </div>
       </CardHeader>
 
       <CardContent class="space-y-4">
-        <div class="flex gap-2">
+        <!-- Sem o QZ Tray rodando nada funciona: o aviso vem antes dos controles -->
+        <div v-if="!isConected && !loading"
+          class="flex flex-col gap-3 rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 sm:flex-row sm:items-center">
+          <TriangleAlert class="h-5 w-5 shrink-0 text-rose-600" />
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-foreground">Não foi possível falar com o QZ Tray</p>
+            <p class="text-xs text-muted-foreground">
+              A impressão direta precisa do QZ Tray instalado e em execução no computador. Instale, abra o programa e
+              busque novamente.
+            </p>
+          </div>
+          <div class="flex shrink-0 gap-2">
+            <Button variant="outline" size="sm" @click="isOpen = true">
+              <Download class="h-4 w-4" /> Instalar
+            </Button>
+            <Button size="sm" class="text-white" @click="loadPrinters">
+              <RefreshCw class="h-4 w-4" /> Tentar de novo
+            </Button>
+          </div>
+        </div>
+
+        <!-- Estado atual: o que já está valendo para o PDV -->
+        <div class="rounded-xl border bg-card p-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg"
+                :class="saved ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'">
+                <PrinterCheck class="h-4 w-4" />
+              </span>
+              <div class="min-w-0">
+                <p class="text-[10px] uppercase tracking-wide text-muted-foreground">Impressora em uso</p>
+                <p class="truncate text-sm font-semibold" :class="saved ? '' : 'italic text-muted-foreground'">
+                  {{ saved || 'Nenhuma impressora salva' }}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <Button v-if="saved && isConected" variant="outline" size="sm" @click="testarImpressao">
+                <PrinterCheck class="h-4 w-4 text-emerald-600" /> Testar
+              </Button>
+              <Button v-if="saved" variant="outline" size="sm" class="text-rose-600 hover:text-rose-700"
+                @click="clearSaved">
+                <X class="h-4 w-4" /> Limpar
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tamanho do papel -->
+        <div class="grid gap-2">
+          <Label for="paperSize">Tamanho do papel do cupom</Label>
           <Select v-model="paperSize" @update:modelValue="saveSizePaper">
-            <SelectTrigger class="w-16 md:w-36 max-w-36">
+            <SelectTrigger id="paperSize" class="w-full sm:w-60">
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
@@ -42,63 +90,70 @@
               <SelectItem value="58mm">Térmica 58mm</SelectItem>
             </SelectContent>
           </Select>
-          <Input v-model="filter" placeholder="Filtrar impressoras..." @input="filterPrinters" class="flex-1" />
-          <Button class="text-white" :loading="loading" @click="loadPrinters">
-            <Search /> <span class="hidden md:inline">Buscar</span>
-          </Button>
+          <p class="text-xs text-muted-foreground">
+            Usado ao imprimir cupons e comprovantes. Não afeta as etiquetas.
+          </p>
         </div>
 
-        <div v-if="loading" class="text-center py-4 space-y-2 text-muted-foreground">
-          <Printer class="h-10 w-10 text-primary dark:text-blue-500 animate-bounce mx-auto" />
-          Buscando impressoras...
-        </div>
+        <!-- Seleção da impressora -->
+        <div class="grid gap-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <Label for="filtroImpressora">Impressoras disponíveis</Label>
+            <span v-if="printers.length" class="text-xs tabular-nums text-muted-foreground">
+              {{ filtered.length }} de {{ printers.length }}
+            </span>
+          </div>
+          <div class="flex gap-2">
+            <Input id="filtroImpressora" v-model="filter" placeholder="Filtrar impressoras..." class="flex-1"
+              @input="filterPrinters" />
+            <Button class="text-white" :disabled="loading" @click="loadPrinters">
+              <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
+              <span class="hidden sm:inline">{{ loading ? 'Buscando...' : 'Buscar' }}</span>
+            </Button>
+          </div>
 
-        <div v-if="printers.length" class="grid gap-2">
-          <label class="text-sm font-medium text-muted-foreground">Impressoras encontradas</label>
+          <div v-if="loading" class="flex flex-col items-center gap-2 py-8 text-sm text-muted-foreground">
+            <Printer class="h-8 w-8 animate-bounce text-primary" />
+            Buscando impressoras...
+          </div>
 
-          <div class="grid gap-2">
-            <button v-for="p in filtered" :key="p" @click="selectPrinter(p)" :class="buttonClass(p)"
-              class="text-left p-3 rounded-lg border hover:shadow-sm transition">
-              <div class="flex items-center justify-between">
-                <div class="truncate">
-                  <div class="font-semibold">{{ p }}</div>
-                  <div class="text-xs truncate">{{ shortName(p) }}</div>
-                </div>
-                <div class="ml-3">
-                  <svg v-if="p === selected" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
-                    fill="currentColor">
-                    <path fill-rule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414L8.414 15 5 11.586a1 1 0 011.414-1.414L8.414 12.172 15.293 5.293a1 1 0 011.414 0z"
-                      clip-rule="evenodd" />
-                  </svg>
-                </div>
-              </div>
+          <!-- A lista rola dentro de si: 10 impressoras não podem esticar a página -->
+          <div v-else-if="filtered.length" class="grid max-h-80 gap-2 overflow-y-auto pr-1">
+            <button v-for="p in filtered" :key="p" type="button"
+              class="flex items-center justify-between gap-3 rounded-lg border p-3 text-left transition hover:bg-muted/40"
+              :class="p === selected ? 'border-primary bg-primary/5 ring-1 ring-primary' : ''" @click="selectPrinter(p)">
+              <span class="flex min-w-0 items-center gap-2">
+                <Printer class="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span class="truncate text-sm font-medium">{{ p }}</span>
+              </span>
+              <span class="flex shrink-0 items-center gap-2">
+                <span v-if="p === saved"
+                  class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  Em uso
+                </span>
+                <Check v-if="p === selected" class="h-4 w-4 text-primary" />
+              </span>
             </button>
           </div>
+
+          <div v-else-if="printers.length"
+            class="flex flex-col items-center gap-2 py-8 text-center text-sm text-muted-foreground">
+            <Inbox class="h-8 w-8 opacity-50" />
+            Nenhuma impressora corresponde a "{{ filter }}".
+          </div>
+
+          <div v-else-if="isConected"
+            class="flex flex-col items-center gap-2 py-8 text-center text-sm text-muted-foreground">
+            <CircleOff class="h-8 w-8 opacity-50" />
+            Nenhuma impressora instalada foi encontrada neste computador.
+          </div>
         </div>
 
-        <p v-if="!printers.length && !loading" class="text-center py-4 space-y-2 text-muted-foreground">
-          <CircleOff class="h-10 w-10 text-danger text-red-500 animate-fade-in mx-auto" />
-          Nenhuma impressora encontrada. Tente buscar.
-        </p>
-
-        <div class="flex flex-col md:flex-row items-center justify-between gap-2">
-          <div class="text-sm text-foreground border p-3 rounded-lg">
-            Impressora salva:
-            <span class="font-medium text-primary dark:text-blue-400" v-if="saved">{{ saved }}</span>
-            <span v-else class="italic">Nenhuma</span>
-          </div>
-
-          <div class="flex gap-2">
-            <Button variant="outline" @click="clearSaved" v-if="saved">Limpar</Button>
-            <Button variant="outline" class="bg-success hover:bg-success/80 text-white hover:text-white"
-              @click="testarImpressao" v-if="saved && isConected">
-              <PrinterCheck /> <span class="hidden md:inline">Testar conexão</span>
-            </Button>
-            <Button class="text-white" v-if="isConected" :disabled="!selected" @click="saveSelected">
-              <Save /> Salvar
-            </Button>
-          </div>
+        <div v-if="isConected" class="flex justify-end border-t pt-3">
+          <Button class="text-white" :disabled="!selected || selected === saved" @click="saveSelected">
+            <Save class="h-4 w-4" />
+            {{ selected === saved ? 'Impressora já salva' : 'Salvar impressora' }}
+          </Button>
         </div>
       </CardContent>
       <ModalView v-model:open="isOpen" title="QZ Tray — Instalação"
@@ -150,13 +205,28 @@
 </template>
 
 <script setup lang="ts">
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useConfirm } from '@/composables/useConfirm'
 import qzTray from '@/utils/qzTray'
-import { CircleFadingPlus, CircleOff, Download, Link2, Link2Off, Printer, PrinterCheck, Save, Search } from 'lucide-vue-next'
+import {
+  Check,
+  CircleFadingPlus,
+  CircleOff,
+  Download,
+  HelpCircle,
+  Inbox,
+  Link2,
+  Link2Off,
+  Printer,
+  PrinterCheck,
+  RefreshCw,
+  Save,
+  TriangleAlert,
+  X,
+} from 'lucide-vue-next'
 import { ref, onMounted, computed } from 'vue'
 import { POSITION, useToast } from 'vue-toastification'
 import {
@@ -225,16 +295,6 @@ async function baixarPluguin() {
     toast.error('Erro ao baixar o qztray')
   }
 }
-function shortName(name: string) {
-  // versão curta para visual
-  if (name.length > 36) return name.slice(0, 33) + '...'
-  return name
-}
-
-function buttonClass(p: string) {
-  return p === selected.value ? 'bg-primary text-gray-200 border-primary' : ''
-}
-
 async function testarImpressao() {
   try {
     const cfn = useConfirm().confirm({
