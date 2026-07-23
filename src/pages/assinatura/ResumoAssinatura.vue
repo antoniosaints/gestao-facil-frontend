@@ -55,10 +55,17 @@ const linkParaPagar = computed(
 
 // Detalhamento da próxima renovação (base + apps − saldo de indicação).
 const renovacao = computed(() => assinatura.value?.renovacao || null)
-// Só oferecemos renovação grátis quando não há uma fatura pendente a pagar.
+// Só oferecemos renovação sem custo quando não há uma fatura pendente a pagar.
+// Derivado do total (e não da flag) para não depender do payload em cache: cobre tanto
+// o crédito de indicação cobrindo tudo quanto a mensalidade zerada.
+const semCusto = computed(
+  () => Boolean(renovacao.value) && Number(renovacao.value?.total) <= 0 && !faturaPendente.value,
+)
 const cobreTotalmente = computed(
   () => Boolean(renovacao.value?.cobreTotalmente) && !faturaPendente.value,
 )
+// Plano gratuito: nada a cobrar porque a mensalidade é zero, não porque há saldo.
+const planoGratuito = computed(() => semCusto.value && !cobreTotalmente.value)
 // Mostra o preview do cálculo quando ainda não há uma fatura fechada para pagar.
 const mostrarBreakdown = computed(() => Boolean(renovacao.value) && !faturaPendente.value)
 
@@ -69,7 +76,7 @@ const precisaGerarRenovacao = computed(
 // Valor em destaque: o que precisa ser pago agora, ou a mensalidade prevista (com desconto).
 const valorDestaque = computed(() => {
   if (faturaPendente.value) return formatCurrencyBR(Number(faturaPendente.value.valor))
-  if (cobreTotalmente.value) return "Grátis"
+  if (semCusto.value) return "Grátis"
   if (renovacao.value) return formatCurrencyBR(renovacao.value.total)
   return assinatura.value?.valor || "R$ 0,00"
 })
@@ -88,6 +95,35 @@ const diasLabel = computed(() => {
 
 // Estado único que guia todo o cartão principal (tom + textos + ícone).
 const hero = computed(() => {
+  // Renovação sem custo: a conta ainda precisa ser renovada, mas nenhum texto pode
+  // falar em pagamento — não existe cobrança a gerar.
+  if (semCusto.value) {
+    if (assinaturaVencida.value) {
+      return {
+        tone: "danger" as const,
+        icon: ShieldAlert,
+        titulo: "Sua assinatura está vencida",
+        descricao: "A renovação não tem custo: confirme para reativar o acesso agora mesmo.",
+      }
+    }
+    if (assinaturaVenceHoje.value || assinaturaEmRisco.value) {
+      return {
+        tone: "warn" as const,
+        icon: CalendarClock,
+        titulo: assinaturaVenceHoje.value ? "Sua assinatura vence hoje" : "Sua renovação está próxima",
+        descricao: "Renove sem custo e mantenha todos os seus apps ativos.",
+      }
+    }
+    return {
+      tone: "ok" as const,
+      icon: Gift,
+      titulo: cobreTotalmente.value ? "Sua renovação está coberta pelo saldo" : "Seu plano está gratuito",
+      descricao: cobreTotalmente.value
+        ? "Seu saldo de indicação cobre a próxima mensalidade por completo."
+        : "Nenhuma cobrança prevista para a próxima renovação.",
+    }
+  }
+
   if (assinaturaVencida.value) {
     return {
       tone: "danger" as const,
@@ -205,7 +241,7 @@ async function renovarGratisHandler() {
   try {
     generatingLink.value = true
     const res = await ContaRepository.renovarGratis()
-    toast.success(res.message || "Assinatura renovada com seu saldo de indicação")
+    toast.success(res.message || "Assinatura renovada sem custo")
     await getDataConta()
   } catch (error: any) {
     console.error(error)
@@ -221,7 +257,7 @@ function abrirLink(url?: string | null) {
 }
 
 function pagarPrincipal() {
-  if (cobreTotalmente.value) return renovarGratisHandler()
+  if (semCusto.value) return renovarGratisHandler()
   if (linkParaPagar.value) return abrirLink(linkParaPagar.value)
   return renovarAssinatura()
 }
@@ -286,7 +322,9 @@ onMounted(getDataConta)
         <dl class="space-y-2 text-sm">
           <div class="flex items-center justify-between">
             <dt class="text-muted-foreground">Mensalidade</dt>
-            <dd class="font-medium text-foreground">{{ formatCurrencyBR(renovacao.base) }}</dd>
+            <dd class="font-medium text-foreground">
+              {{ renovacao.base > 0 ? formatCurrencyBR(renovacao.base) : "Grátis" }}
+            </dd>
           </div>
           <div v-if="renovacao.apps > 0" class="flex items-center justify-between">
             <dt class="text-muted-foreground">Apps adicionais</dt>
@@ -297,8 +335,8 @@ onMounted(getDataConta)
             <dd class="font-medium">− {{ formatCurrencyBR(renovacao.desconto) }}</dd>
           </div>
           <div class="mt-2 flex items-center justify-between border-t pt-2">
-            <dt class="font-semibold text-foreground">{{ cobreTotalmente ? "Total" : "Total a pagar" }}</dt>
-            <dd class="text-lg font-bold text-foreground">{{ cobreTotalmente ? "Grátis" : formatCurrencyBR(renovacao.total) }}</dd>
+            <dt class="font-semibold text-foreground">{{ semCusto ? "Total" : "Total a pagar" }}</dt>
+            <dd class="text-lg font-bold text-foreground">{{ semCusto ? "Grátis" : formatCurrencyBR(renovacao.total) }}</dd>
           </div>
         </dl>
         <p
@@ -307,6 +345,13 @@ onMounted(getDataConta)
         >
           Você tem saldo de indicação suficiente para cobrir toda a mensalidade. Renove sem pagar nada —
           sobram {{ formatCurrencyBR(renovacao.saldoRestante) }} para os próximos ciclos.
+        </p>
+        <p
+          v-else-if="planoGratuito"
+          class="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+        >
+          Sua mensalidade está zerada, então esta renovação não gera cobrança. Apps pagos que você
+          ativar depois entram na próxima mensalidade.
         </p>
         <p v-else-if="renovacao.desconto > 0" class="mt-3 text-xs text-muted-foreground">
           Aplicamos {{ formatCurrencyBR(renovacao.desconto) }} do seu saldo de indicação nesta renovação.
@@ -318,14 +363,14 @@ onMounted(getDataConta)
       <div class="mt-5 flex flex-col gap-2 sm:flex-row">
         <Button
           class="h-11 flex-1 gap-2 text-base dark:text-white"
-          :class="cobreTotalmente ? 'bg-emerald-600 hover:bg-emerald-700' : ''"
+          :class="semCusto ? 'bg-emerald-600 hover:bg-emerald-700' : ''"
           :disabled="generatingLink"
           @click="pagarPrincipal"
         >
           <LoaderCircle v-if="generatingLink" class="h-4 w-4 animate-spin" />
-          <Gift v-else-if="cobreTotalmente" class="h-4 w-4" />
+          <Gift v-else-if="semCusto" class="h-4 w-4" />
           <CreditCard v-else class="h-4 w-4" />
-          {{ cobreTotalmente ? "Renovar grátis" : linkParaPagar ? "Pagar agora" : precisaGerarRenovacao ? "Gerar renovação" : "Adiantar pagamento" }}
+          {{ semCusto ? "Renovar grátis" : linkParaPagar ? "Pagar agora" : precisaGerarRenovacao ? "Gerar renovação" : "Adiantar pagamento" }}
         </Button>
         <Button as-child variant="outline" class="h-11 gap-2">
           <RouterLink to="/loja">
@@ -435,13 +480,13 @@ onMounted(getDataConta)
         type="button"
         :disabled="generatingLink"
         class="flex flex-col items-center transition disabled:opacity-50"
-        :class="cobreTotalmente ? 'text-emerald-600 dark:text-emerald-400' : 'text-primary'"
+        :class="semCusto ? 'text-emerald-600 dark:text-emerald-400' : 'text-primary'"
         @click="pagarPrincipal"
       >
         <LoaderCircle v-if="generatingLink" class="h-5 w-5 animate-spin" />
-        <Gift v-else-if="cobreTotalmente" class="h-5 w-5" />
+        <Gift v-else-if="semCusto" class="h-5 w-5" />
         <CreditCard v-else class="h-5 w-5" />
-        <span class="text-xs">{{ cobreTotalmente ? "Renovar grátis" : linkParaPagar ? "Pagar" : "Renovar" }}</span>
+        <span class="text-xs">{{ semCusto ? "Renovar grátis" : linkParaPagar ? "Pagar" : "Renovar" }}</span>
       </button>
       <RouterLink
         to="/loja"

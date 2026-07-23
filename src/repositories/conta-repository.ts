@@ -350,6 +350,10 @@ export interface RenovacaoBreakdown {
   desconto: number
   total: number
   cobreTotalmente: boolean
+  /// Mensalidade zerada (base + apps = 0): plano gratuito, não há o que cobrar.
+  planoGratuito: boolean
+  /// Nada a pagar nesta renovação — por crédito de indicação ou por plano gratuito.
+  semCusto: boolean
   saldoRestante: number
 }
 export interface StatusConta {
