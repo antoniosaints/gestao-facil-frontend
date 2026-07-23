@@ -80,6 +80,8 @@ const logoMap = {
   'loja-virtual': '/imgs/apps/loja.png',
   assinaturas: '/imgs/apps/assina.png',
   whatsapp: '/imgs/apps/wpp.avif',
+  arena: '/imgs/apps/arena.png',
+  servicos: '/imgs/apps/servicos.png',
   atendimento: '/imgs/apps/atende.png',
   'mercado-pago': '/imgs/apps/mp.png',
   abacatepay: '/imgs/apps/abacate.png',
@@ -326,7 +328,9 @@ function getCardHint(modulo: StoreModule) {
   }
 
   if (modulo.ativo) {
-    return `Próximo ciclo com este app: ${formatCurrencyBR(getMonthlyValueAfterAction(modulo))}.`
+    // App instalado: getMonthlyValueAfterAction retorna a mensalidade já SEM este app
+    // (mensalidadeAtual - preco), então a label espelha o modal ("sem este app").
+    return `Próximo ciclo sem este app: ${formatCurrencyBR(getMonthlyValueAfterAction(modulo))}.`
   }
 
   return 'Entrará na próxima mensalidade após confirmação.'
