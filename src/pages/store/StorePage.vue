@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { StoreRepository, type StoreModule, type StoreResumo } from '@/repositories/store-repository'
-import { ContaRepository } from '@/repositories/conta-repository'
+import { ContaRepository, type MercadoPagoIntegracaoStatus } from '@/repositories/conta-repository'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { isStoreModuleFree, shouldShowImmediateBillingOptions } from './billing'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -39,6 +40,8 @@ import {
 
 const toast = useToast()
 const confirm = useConfirm()
+const route = useRoute()
+const router = useRouter()
 
 const CONFIG_APP_CODES = ['mercado-pago', 'abacatepay'] as const
 
@@ -59,6 +62,9 @@ const formMercadoPago = reactive<UpdateParametrosConta>({
   MercadoPagoApiKey: '',
   MercadoPagoEnv: '',
 })
+const mercadoPagoStatus = ref<MercadoPagoIntegracaoStatus | null>(null)
+const mercadoPagoLoading = ref(false)
+const mostrarChaveManualMp = ref(false)
 const formAbacatePay = reactive<UpdateParametrosConta>({
   AbacatePayApiKey: '',
   AbacatePaySecret: '',
@@ -109,7 +115,10 @@ const categoryOrder: Record<string, number> = {
   crm: 7,
 }
 
-const mercadoPagoConfigured = computed(() => Boolean(formMercadoPago.MercadoPagoApiKey))
+const mercadoPagoConectado = computed(() => Boolean(mercadoPagoStatus.value?.conectado))
+const mercadoPagoConfigured = computed(
+  () => mercadoPagoConectado.value || Boolean(formMercadoPago.MercadoPagoApiKey),
+)
 const abacatePayConfigured = computed(() => Boolean(formAbacatePay.AbacatePayApiKey && formAbacatePay.AbacatePaySecret))
 const selectedIsConfigApp = computed(() => Boolean(moduloSelecionado.value && isConfigApp(moduloSelecionado.value.codigo)))
 
@@ -234,6 +243,10 @@ function getImmediateChargeValue(modulo: StoreModule, mode = billingMode.value) 
 function getImpactDescription(modulo: StoreModule) {
   if (isConfigApp(modulo.codigo)) {
     if (modulo.ativo) {
+      if (modulo.codigo === 'mercado-pago' && !mercadoPagoConfigured.value) {
+        return 'App gratuito ativo. Falta apenas conectar sua conta do Mercado Pago para concluir a integração.'
+      }
+
       return isModuleConfigured(modulo)
         ? 'App gratuito ativo. As credenciais operacionais desta conta já foram salvas e podem ser atualizadas a qualquer momento.'
         : 'App gratuito ativo. Falta apenas salvar as credenciais operacionais desta conta para concluir a integração.'
@@ -303,6 +316,11 @@ function getCatalogStateClass(modulo: StoreModule) {
 function getCardHint(modulo: StoreModule) {
   if (isConfigApp(modulo.codigo)) {
     if (!modulo.ativo) return 'Instale grátis para liberar a configuração desta integração.'
+    if (modulo.codigo === 'mercado-pago') {
+      if (mercadoPagoConectado.value) return 'Conta do Mercado Pago conectada.'
+      if (mercadoPagoConfigured.value) return 'Chave manual salva para esta conta.'
+      return 'App instalado. Falta conectar sua conta do Mercado Pago.'
+    }
     if (isModuleConfigured(modulo)) return 'Credenciais salvas para esta conta.'
     return 'App instalado. Falta salvar as credenciais.'
   }
@@ -367,14 +385,16 @@ async function carregarModulos() {
   try {
     loading.value = true
 
-    const [storeResponse, parametrosResponse] = await Promise.all([
+    const [storeResponse, parametrosResponse, mpStatusResponse] = await Promise.all([
       StoreRepository.listar(),
       ContaRepository.getParametros().catch(() => ({ data: {} })),
+      ContaRepository.statusMercadoPago().catch(() => null),
     ])
 
     modulos.value = storeResponse.data
     resumo.value = storeResponse.resumo
     applyParametros(parametrosResponse?.data)
+    mercadoPagoStatus.value = mpStatusResponse
 
     if (moduloSelecionado.value) {
       setModuloSelecionado(moduloSelecionado.value.id)
@@ -507,7 +527,73 @@ async function salvarConfiguracaoIntegracao(modulo: StoreModule) {
   }
 }
 
-onMounted(carregarModulos)
+async function conectarMercadoPago() {
+  try {
+    mercadoPagoLoading.value = true
+    const { url } = await ContaRepository.conectarMercadoPago()
+    window.location.href = url
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao iniciar a conexão com o Mercado Pago.')
+    mercadoPagoLoading.value = false
+  }
+}
+
+async function desconectarMercadoPago() {
+  const confirmed = await confirm.confirm({
+    title: 'Desconectar Mercado Pago',
+    message:
+      'As cobranças por PIX, boleto e link deixarão de ser geradas até você conectar novamente (ou salvar uma chave de API manual). Deseja continuar?',
+    confirmText: 'Desconectar',
+    cancelText: 'Manter conexão',
+    colorButton: 'danger',
+  })
+
+  if (!confirmed) return
+
+  try {
+    mercadoPagoLoading.value = true
+    mercadoPagoStatus.value = await ContaRepository.desconectarMercadoPago()
+    toast.success('Conta do Mercado Pago desconectada.')
+    toast.info('Remova também a autorização em "Aplicações autorizadas" na sua conta do Mercado Pago.')
+    await carregarModulos()
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao desconectar a conta do Mercado Pago.')
+  } finally {
+    mercadoPagoLoading.value = false
+  }
+}
+
+const MP_OAUTH_ERROS: Record<string, string> = {
+  'state-invalido': 'A autorização expirou ou já foi usada. Clique em Conectar novamente.',
+  'token-recusado': 'O Mercado Pago recusou a autorização. Tente novamente.',
+  'oauth-desabilitado': 'A conexão automática com o Mercado Pago não está habilitada.',
+  'retorno-invalido': 'O Mercado Pago retornou uma resposta inesperada.',
+  access_denied: 'Você cancelou a autorização no Mercado Pago.',
+}
+
+function tratarRetornoOAuth() {
+  const resultado = route.query.mercadopago as string | undefined
+  if (!resultado) return
+
+  if (resultado === 'conectado') {
+    toast.success('Conta do Mercado Pago conectada com sucesso!')
+  } else {
+    const motivo = route.query.motivo as string | undefined
+    toast.error(MP_OAUTH_ERROS[motivo || ''] || 'Não foi possível conectar a conta do Mercado Pago.')
+  }
+
+  const query = { ...route.query }
+  delete query.mercadopago
+  delete query.motivo
+  router.replace({ query })
+}
+
+onMounted(async () => {
+  tratarRetornoOAuth()
+  await carregarModulos()
+})
 </script>
 
 <template>
@@ -742,7 +828,9 @@ onMounted(carregarModulos)
           </Alert>
 
           <template v-else>
-            <Alert v-if="isModuleConfigured(moduloSelecionado)">
+            <Alert
+              v-if="isModuleConfigured(moduloSelecionado) && !(moduloSelecionado.codigo === 'mercado-pago' && mercadoPagoConectado)"
+            >
               <CircleCheck class="h-4 w-4" />
               <AlertTitle>Configuração salva</AlertTitle>
               <AlertDescription>
@@ -752,20 +840,85 @@ onMounted(carregarModulos)
 
             <div class="space-y-4 rounded-lg border border-border bg-card p-4">
               <template v-if="moduloSelecionado.codigo === 'mercado-pago'">
-                <div class="space-y-2">
-                  <Label for="store-mercado-pago-key">Mercado Pago API Key</Label>
-                  <Input
-                    id="store-mercado-pago-key"
-                    v-model="(formMercadoPago.MercadoPagoApiKey as string)"
-                    autocomplete="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    type="password"
-                    placeholder="Sua chave de acesso"
-                  />
-                  <p class="text-sm text-muted-foreground">
-                    Usado para cobranças, links de pagamento e clientes operacionais desta conta.
-                  </p>
+                <div v-if="mercadoPagoConectado" class="space-y-3">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="space-y-1">
+                      <div class="flex items-center gap-2">
+                        <CircleCheck class="h-4 w-4 text-emerald-500" />
+                        <span class="font-medium">Conta conectada</span>
+                        <Badge variant="outline">MP #{{ mercadoPagoStatus?.mpUserId }}</Badge>
+                      </div>
+                      <p class="text-sm text-muted-foreground">
+                        As cobranças desta conta são criadas direto no seu Mercado Pago. Conectado em
+                        {{ getDataFormatada(mercadoPagoStatus?.conectadoEm) }}.
+                      </p>
+                    </div>
+
+                    <Button variant="outline" :disabled="mercadoPagoLoading" @click="desconectarMercadoPago">
+                      <LoaderCircle v-if="mercadoPagoLoading" class="mr-2 h-4 w-4 animate-spin" />
+                      <Trash2 v-else class="mr-2 h-4 w-4" />
+                      Desconectar
+                    </Button>
+                  </div>
+
+                  <Alert v-if="mercadoPagoStatus?.liveMode === false">
+                    <ShieldAlert class="h-4 w-4" />
+                    <AlertTitle>Conta em modo de teste</AlertTitle>
+                    <AlertDescription>
+                      Esta conexão está em sandbox: os pagamentos gerados não são reais.
+                    </AlertDescription>
+                  </Alert>
+
+                  <Alert v-if="mercadoPagoStatus?.ultimoErro">
+                    <ShieldAlert class="h-4 w-4" />
+                    <AlertTitle>Última renovação falhou</AlertTitle>
+                    <AlertDescription>
+                      {{ mercadoPagoStatus.ultimoErro }} — se as cobranças pararem, desconecte e conecte novamente.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+
+                <div v-else-if="mercadoPagoStatus?.oauthDisponivel !== false" class="space-y-3">
+                  <div class="space-y-1">
+                    <p class="font-medium">Conecte sua conta do Mercado Pago</p>
+                    <p class="text-sm text-muted-foreground">
+                      Você será levado ao site do Mercado Pago para autorizar o Gestão Fácil. Não precisa criar
+                      chave de API nem informar sua senha aqui — nós recebemos apenas a autorização de cobrança.
+                    </p>
+                  </div>
+
+                  <Button class="gap-2" :disabled="mercadoPagoLoading" @click="conectarMercadoPago">
+                    <LoaderCircle v-if="mercadoPagoLoading" class="h-4 w-4 animate-spin" />
+                    <ExternalLink v-else class="h-4 w-4" />
+                    Conectar com Mercado Pago
+                  </Button>
+                </div>
+
+                <div class="space-y-2 border-t border-border pt-4">
+                  <button
+                    type="button"
+                    class="text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
+                    @click="mostrarChaveManualMp = !mostrarChaveManualMp"
+                  >
+                    {{ mostrarChaveManualMp ? 'Ocultar' : 'Usar' }} chave de API manual (avançado)
+                  </button>
+
+                  <div v-if="mostrarChaveManualMp" class="space-y-2 pt-2">
+                    <Label for="store-mercado-pago-key">Mercado Pago API Key</Label>
+                    <Input
+                      id="store-mercado-pago-key"
+                      v-model="(formMercadoPago.MercadoPagoApiKey as string)"
+                      autocomplete="off"
+                      autocapitalize="off"
+                      spellcheck="false"
+                      type="password"
+                      placeholder="Sua chave de acesso"
+                    />
+                    <p class="text-sm text-muted-foreground">
+                      Só é usada quando não existe conexão pelo botão acima. Mantida para contas que já
+                      configuraram a integração dessa forma.
+                    </p>
+                  </div>
                 </div>
               </template>
 
@@ -921,7 +1074,7 @@ onMounted(carregarModulos)
 
           <template v-if="moduloSelecionado && selectedIsConfigApp">
             <Button
-              v-if="moduloSelecionado.ativo"
+              v-if="moduloSelecionado.ativo && (moduloSelecionado.codigo !== 'mercado-pago' || mostrarChaveManualMp)"
               class="gap-2 px-8 dark:text-white"
               :disabled="configSavingCode === moduloSelecionado.codigo"
               @click="salvarConfiguracaoIntegracao(moduloSelecionado)"

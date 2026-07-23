@@ -3,7 +3,6 @@ import {
   ChevronsUpDown,
   Cog,
   Crown,
-  Image,
   LogOut,
   Sparkles,
 } from 'lucide-vue-next'
@@ -24,7 +23,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { computed, onMounted } from 'vue'
-import ModalUploadPerfil from '@/pages/configs/ModalUploadPerfil.vue'
 import { useAuthStore } from '@/stores/login/useAuthStore'
 import { useToast } from 'vue-toastification'
 import { getLettersName } from '@/utils/formatters'
@@ -37,12 +35,6 @@ const toast = useToast()
 onMounted(() => {
   uiStore.setLogoProfile(resolveFileUrl(uiStore.contaInfo.profile, { bustCache: true }))
 })
-
-const openModal = () => {
-  if (uiStore.permissoes.admin) {
-    uiStore.openModalProfile = true
-  }
-}
 
 function logOut() {
   store.logout()
@@ -112,10 +104,6 @@ const colorTheme = computed(() => {
               Configurações
             </DropdownMenuItem>
           </RouterLink>
-          <DropdownMenuItem @click="openModal">
-            <Image />
-            Foto do perfil
-          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator class="bg-white/15" />
         <DropdownMenuItem @click="logOut">
@@ -124,6 +112,5 @@ const colorTheme = computed(() => {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-    <ModalUploadPerfil />
   </div>
 </template>

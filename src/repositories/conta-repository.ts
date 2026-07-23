@@ -316,6 +316,19 @@ export interface WhatsAppNotificationInstanceOption {
   updatedAt: string | Date
 }
 
+export interface MercadoPagoIntegracaoStatus {
+  oauthDisponivel: boolean
+  conectado: boolean
+  modo: 'OAUTH' | 'API_KEY' | 'NENHUM'
+  mpUserId: string | null
+  liveMode: boolean | null
+  conectadoEm: string | null
+  expiraEm: string | null
+  ultimaRenovacaoEm: string | null
+  ultimoErro: string | null
+  possuiChaveManual: boolean
+}
+
 export interface StatusContaFatura {
   id: string
   asaasPaymentId: string
@@ -399,6 +412,18 @@ export class ContaRepository {
   static async concluirTourOnboarding(): Promise<any> {
     const res = await http.patch(`/contas/onboarding/tour`)
     return res.data
+  }
+  static async statusMercadoPago(): Promise<MercadoPagoIntegracaoStatus> {
+    const res = await http.get('/contas/integracoes/mercadopago/status')
+    return res.data.data
+  }
+  static async conectarMercadoPago(): Promise<{ url: string }> {
+    const res = await http.get('/contas/integracoes/mercadopago/conectar')
+    return res.data.data
+  }
+  static async desconectarMercadoPago(): Promise<MercadoPagoIntegracaoStatus> {
+    const res = await http.post('/contas/integracoes/mercadopago/desconectar')
+    return res.data.data
   }
   static async listarInstanciasWhatsappNotificacao(): Promise<WhatsAppNotificationInstanceOption[]> {
     const res = await http.get('/contas/parametros/whatsapp-instancias')

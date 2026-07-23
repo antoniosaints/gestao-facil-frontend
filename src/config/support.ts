@@ -4,8 +4,8 @@
 //     o link https://wa.me/<numero>.
 //   - email: endereço de suporte. Usado para montar o link mailto:.
 export const SUPPORT = {
-  whatsapp: '5599999999999',
-  email: 'suporte@gestaofacil.com.br',
+  whatsapp: import.meta.env.VITE_SUPPORT_WHATSAPP || '5599984140666',
+  email: import.meta.env.VITE_SUPPORT_EMAIL || 'suporte@gestaofacil.com.br',
 } as const
 
 export const supportWhatsappUrl = (mensagem?: string) => {
