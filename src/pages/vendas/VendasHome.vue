@@ -58,7 +58,7 @@ provide('openModalFiltroVendas', openFilter);
                     <FileDown class="w-4 h-4 inline-flex" />
                     <span class="hidden lg:inline">Relatório</span>
                 </button>
-                <button @click="store.openSave"
+                <button data-tour="nova-venda" @click="store.openSave"
                     class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Nova Venda</span>
                 </button>

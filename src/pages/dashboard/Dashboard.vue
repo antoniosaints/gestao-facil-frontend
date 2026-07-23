@@ -855,6 +855,7 @@ onMounted(async () => {
       </div>
     </section>
 
+    <div data-tour="dashboard-indicadores">
     <AutoGrid v-if="loading" :items="kpis" :min="200">
       <Skeleton class="h-[152px] w-full rounded-2xl" />
     </AutoGrid>
@@ -881,6 +882,7 @@ onMounted(async () => {
         </Card>
       </RouterLink>
     </AutoGrid>
+    </div>
 
     <div v-if="loading" class="grid grid-cols-1 gap-4 lg:grid-cols-6">
       <div class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm lg:col-span-4">

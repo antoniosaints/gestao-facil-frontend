@@ -59,6 +59,8 @@ export const useUiStore = defineStore('uiStore', () => {
   // Submenus ocultos (keys no formato "pai:filho"). Separado de visibleMenuKeys porque
   // no payload `menusVisiveis` as keys de topo são whitelist e as de submenu são blacklist.
   const hiddenSubmenuKeys = ref<string[]>([])
+  // Tour de boas-vindas: default true evita flash do tour antes do parametros carregar.
+  const tourConcluido = ref<boolean>(true)
   const status = ref(localStorage.getItem('gestao_facil:status') || 'INATIVO')
   const diasParaVencer = ref<number>(
     Number(localStorage.getItem('gestao_facil:diasParaVencer')) || 0,
@@ -245,6 +247,7 @@ export const useUiStore = defineStore('uiStore', () => {
         hiddenSubmenuKeys.value = []
       }
       setThemeCustomization(response.data?.temaPersonalizado)
+      tourConcluido.value = response.data?.tourOnboardingConcluido ?? false
       return financeiroFlags.value
     } catch (error) {
       console.log(error)
@@ -315,6 +318,7 @@ export const useUiStore = defineStore('uiStore', () => {
     getDataUsuario,
     loadFinanceiroFlags,
     diasParaVencer,
+    tourConcluido,
     getStatus,
     loadAppModules,
     hasActiveModule,

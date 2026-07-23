@@ -396,6 +396,10 @@ export class ContaRepository {
     const res = await http.get(`/contas/parametros`)
     return res.data
   }
+  static async concluirTourOnboarding(): Promise<any> {
+    const res = await http.patch(`/contas/onboarding/tour`)
+    return res.data
+  }
   static async listarInstanciasWhatsappNotificacao(): Promise<WhatsAppNotificationInstanceOption[]> {
     const res = await http.get('/contas/parametros/whatsapp-instancias')
     return res.data.data

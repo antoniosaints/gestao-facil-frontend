@@ -105,7 +105,7 @@ const relatorioGeral = async () => {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <button @click="store.openSaveProduto" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
+                <button data-tour="novo-produto" @click="store.openSaveProduto" class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
                     <BadgePlus class="h-5 w-5 inline-flex" /> <span class="hidden md:inline">Novo Produto</span>
                 </button>
                 <button @click="store.updateTable" title="Atualizar listagem"

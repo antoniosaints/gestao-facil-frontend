@@ -60,6 +60,8 @@
         <InstallPrompt />
         <ConfirmModal />
         <CoreIaWidget />
+        <TourOverlay />
+        <TourPicker />
     </div>
 </template>
 
@@ -79,6 +81,9 @@ import { isSupportActive } from '@/utils/supportSession'
 import { PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
 import CoreIaWidget from '@/components/ia/CoreIaWidget.vue'
+import TourOverlay from '@/components/onboarding/TourOverlay.vue'
+import TourPicker from '@/components/onboarding/TourPicker.vue'
+import { useTour } from '@/composables/useTour'
 import { computed, onMounted, ref, watch } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
@@ -156,6 +161,8 @@ useSocketEvent('sessao:updated', async () => {
 onMounted(() => {
     initialize()
     updateMetaTags()
+    // Novos assinantes: dispara o tour de boas-vindas (as regras/gates ficam em maybeAutoStart).
+    useTour().maybeAutoStart()
 })
 </script>
 

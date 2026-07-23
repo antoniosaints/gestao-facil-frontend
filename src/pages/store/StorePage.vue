@@ -291,13 +291,13 @@ function getCatalogStateLabel(modulo: StoreModule) {
 }
 
 function getCatalogStateClass(modulo: StoreModule) {
-  if (isConfigApp(modulo.codigo) && modulo.ativo && isModuleConfigured(modulo)) return 'text-emerald-300'
-  if (isConfigApp(modulo.codigo) && modulo.ativo) return 'text-amber-300'
-  if (modulo.cancelamentoAgendado) return 'text-orange-300'
-  if (modulo.ativo) return 'text-emerald-300'
-  if (modulo.cobrancaPendenteAtual) return 'text-amber-300'
-  if (modulo.pendenteAtivacao) return 'text-sky-300'
-  return 'text-sky-300'
+  if (isConfigApp(modulo.codigo) && modulo.ativo && isModuleConfigured(modulo)) return 'text-emerald-500'
+  if (isConfigApp(modulo.codigo) && modulo.ativo) return 'text-amber-500'
+  if (modulo.cancelamentoAgendado) return 'text-orange-500'
+  if (modulo.ativo) return 'text-emerald-500'
+  if (modulo.cobrancaPendenteAtual) return 'text-amber-500'
+  if (modulo.pendenteAtivacao) return 'text-sky-500'
+  return 'text-sky-500'
 }
 
 function getCardHint(modulo: StoreModule) {
@@ -653,28 +653,28 @@ onMounted(carregarModulos)
                   <Badge
                     v-if="modulo.cobrancaPendenteAtual"
                     variant="secondary"
-                    class="shrink-0 border-0 bg-amber-500/10 text-[10px] text-amber-300"
+                    class="shrink-0 border-0 bg-amber-500/10 text-[10px] text-amber-500"
                   >
                     Cobrança
                   </Badge>
                   <Badge
                     v-else-if="modulo.cancelamentoAgendado"
                     variant="secondary"
-                    class="shrink-0 border-0 bg-orange-500/10 text-[10px] text-orange-300"
+                    class="shrink-0 border-0 bg-orange-500/10 text-[10px] text-orange-500"
                   >
                     Saída
                   </Badge>
                   <Badge
                     v-else-if="isConfigApp(modulo.codigo) && modulo.ativo && isModuleConfigured(modulo)"
                     variant="secondary"
-                    class="shrink-0 border-0 bg-emerald-500/10 text-[10px] text-emerald-300"
+                    class="shrink-0 border-0 bg-emerald-500/10 text-[10px] text-emerald-500"
                   >
                     Configurado
                   </Badge>
                   <Badge
                     v-else-if="modulo.ativo"
                     variant="secondary"
-                    class="shrink-0 border-0 bg-emerald-500/10 text-[10px] text-emerald-300"
+                    class="shrink-0 border-0 bg-emerald-500/10 text-[10px] text-emerald-500"
                   >
                     Ativo
                   </Badge>

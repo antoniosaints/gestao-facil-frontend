@@ -165,6 +165,7 @@ export interface Contas {
   asaasCustomerId: string
   asaasSubscriptionId?: string
   dicasNovidades?: boolean
+  createdAt?: string | Date
 }
 
 export interface Usuarios {
