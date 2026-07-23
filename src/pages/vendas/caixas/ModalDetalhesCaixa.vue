@@ -608,7 +608,7 @@ const maiorQuantidadeProduto = computed(() =>
 
         <div v-if="vendas.length" class="hidden max-h-72 overflow-auto rounded-lg border md:block">
           <table class="w-full min-w-[760px] text-sm">
-            <thead class="sticky top-0 border-b bg-muted/40 text-left text-[11px] font-medium text-muted-foreground">
+            <thead class="sticky top-0 border-b bg-muted text-left text-[11px] font-medium text-muted-foreground">
               <tr>
                 <th class="px-3 py-2">Venda</th>
                 <th class="px-3 py-2">Data</th>
@@ -620,23 +620,23 @@ const maiorQuantidadeProduto = computed(() =>
             </thead>
             <tbody>
               <tr v-for="venda in vendas" :key="venda.id" class="border-b last:border-b-0 hover:bg-muted/30">
-                <td class="px-3 py-2 font-medium">{{ venda.Uid || `#${venda.id}` }}</td>
-                <td class="px-3 py-2 text-muted-foreground">{{ formatarDataHora(venda.data) }}</td>
-                <td class="px-3 py-2">
+                <td class="px-3 py-1 font-medium">{{ venda.Uid || `#${venda.id}` }}</td>
+                <td class="px-3 py-1 text-muted-foreground">{{ formatarDataHora(venda.data) }}</td>
+                <td class="px-3 py-1">
                   <span class="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
                     :class="statusVendaClasse[venda.status] || 'border-border bg-muted text-muted-foreground'">
                     {{ venda.status }}
                   </span>
                 </td>
-                <td class="px-3 py-2">
+                <td class="px-3 py-1">
                   <span class="flex items-center gap-1.5">
                     <component :is="iconeMetodo(venda.PagamentoVendas?.metodo || '')"
                       class="h-4 w-4 text-muted-foreground" />
                     {{ formatPaymentMethodLabel(venda.PagamentoVendas?.metodo) }}
                   </span>
                 </td>
-                <td class="px-3 py-2 text-right font-medium tabular-nums">{{ formatCurrencyBR(venda.valor || 0) }}</td>
-                <td class="px-3 py-2 text-right">
+                <td class="px-3 py-1 text-right font-medium tabular-nums">{{ formatCurrencyBR(venda.valor || 0) }}</td>
+                <td class="px-3 py-1 text-right">
                   <Button type="button" variant="outline" size="sm" title="Ver detalhes da venda"
                     @click="emit('ver-venda', venda.id)">
                     <Eye class="h-4 w-4" />
@@ -664,21 +664,23 @@ const maiorQuantidadeProduto = computed(() =>
 
         <div v-else class="max-h-80 space-y-2 overflow-auto pr-1">
           <article v-for="movimento in movimentos" :key="movimento.id"
-            class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
+            class="flex items-center gap-3 rounded-lg border bg-background px-3 py-1">
             <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg" :class="movimento.visual.classe">
               <component :is="movimento.visual.icon" class="h-4 w-4" />
             </span>
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-x-2">
-                <p class="text-sm font-semibold">{{ movimento.visual.label }}</p>
+                <p class="text-sm font-semibold">{{ movimento.visual.label }}</p> 
                 <span v-if="movimento.metodoPagamento" class="text-[11px] text-muted-foreground">
                   · {{ formatPaymentMethodLabel(movimento.metodoPagamento) }}
                 </span>
+                <p class="text-[11px] text-muted-foreground">
+                  · {{ formatarDataHora(movimento.createdAt) }}
+                </p>
               </div>
               <p class="truncate text-xs text-muted-foreground">
                 {{ movimento.descricao || 'Sem descrição' }}
               </p>
-              <p class="text-[11px] text-muted-foreground">{{ formatarDataHora(movimento.createdAt) }}</p>
             </div>
             <div class="flex shrink-0 items-center gap-2">
               <span class="text-sm font-bold tabular-nums"

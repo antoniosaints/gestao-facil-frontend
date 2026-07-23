@@ -34,6 +34,7 @@ import {
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +49,7 @@ import { VendaRepository } from '@/repositories/venda-repository'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { useVendasStore } from '@/stores/vendas/useVenda'
+import { resolveFileUrl } from '@/utils/fileUrl'
 import { formatCurrencyBR, formatPaymentMethodLabel } from '@/utils/formatters'
 import {
   deletarVenda,
@@ -428,16 +430,36 @@ watch(() => storeCobranca.filters.update, recarregar)
         <template v-else>
           <div class="overflow-hidden rounded-lg border">
             <div v-for="(item, index) in itens" :key="item.id ?? index"
-              class="flex items-center justify-between gap-3 border-b bg-background px-3 py-2 text-sm last:border-b-0">
-              <div class="min-w-0 space-y-1">
-                <BadgeCell :label="getItemMeta(item).label" :color="getItemMeta(item).color"
-                  :icon="getItemMeta(item).icon" :capitalize="false" size="sm" />
-                <p class="truncate font-medium">
-                  {{ item.produto?.nome || item.servico?.nome || item.itemName || 'Item' }}
-                </p>
-                <p class="text-xs tabular-nums text-muted-foreground">
-                  {{ item.quantidade }} x {{ formatCurrencyBR(Number(item.valor || 0)) }}
-                </p>
+              class="flex items-center justify-between gap-3 border-b bg-background pl-1 pr-3 py-1 text-sm last:border-b-0">
+              <div class="flex min-w-0 items-center gap-3">
+                <Popover v-if="item.produto?.imagem">
+                  <PopoverTrigger as-child>
+                    <button type="button"
+                      class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40 transition hover:ring-2 hover:ring-primary/40"
+                      v-tooltip="'Ver imagem'">
+                      <img :src="resolveFileUrl(item.produto.imagem)" :alt="item.produto?.nome || 'Produto'"
+                        class="h-full w-full object-cover" loading="lazy" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="right" align="start" class="w-auto p-1.5">
+                    <img :src="resolveFileUrl(item.produto.imagem)" :alt="item.produto?.nome || 'Produto'"
+                      class="h-56 w-56 rounded-md object-contain" />
+                    <p class="mt-1 max-w-56 truncate px-1 pb-0.5 text-center text-xs text-muted-foreground">
+                      {{ item.produto?.nome }}
+                    </p>
+                  </PopoverContent>
+                </Popover>
+                <div v-else class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40">
+                  <component :is="getItemMeta(item).icon" class="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div class="min-w-0">
+                  <p class="truncate font-medium">
+                    {{ item.produto?.nome || item.servico?.nome || item.itemName || 'Item' }}
+                  </p>
+                  <p class="text-xs tabular-nums text-muted-foreground">
+                    {{ item.quantidade }} x {{ formatCurrencyBR(Number(item.valor || 0)) }}
+                  </p>
+                </div>
               </div>
               <strong class="shrink-0 tabular-nums">
                 {{ formatCurrencyBR(Number(item.quantidade || 0) * Number(item.valor || 0)) }}
