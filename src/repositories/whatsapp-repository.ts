@@ -138,6 +138,10 @@ export interface WhatsAppInstance {
   atendimentoHoraFim?: string | null
   lastSyncAt?: string | null
   ultimoErro?: string | null
+  // Vencimento da assinatura e situação de pagamento da W-API. Transientes: só chegam preenchidos
+  // pelo endpoint de sincronização (`syncAllInstances`), não pela listagem simples.
+  expiresAt?: string | null
+  assinaturaStatus?: string | null
   pagamentos?: WhatsAppInstancePayment[]
   createdAt: string
   updatedAt: string
@@ -311,6 +315,13 @@ export interface WhatsAppAgentPayload {
 export class WhatsAppRepository {
   static async listInstances() {
     const { data } = await http.get('/whatsapp/instances')
+    return data.data as WhatsAppInstance[]
+  }
+
+  // Recarrega o status de todas as instâncias consultando a W-API (vencimento + pagamento).
+  // Mais lento que listInstances (N chamadas externas); usar em segundo plano.
+  static async syncAllInstances() {
+    const { data } = await http.post('/whatsapp/instances/sync-all', {})
     return data.data as WhatsAppInstance[]
   }
 

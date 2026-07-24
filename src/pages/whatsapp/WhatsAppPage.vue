@@ -85,9 +85,42 @@
                 </div>
               </div>
 
+              <!-- Vencimento da assinatura (após sincronizar com a W-API). Quando vencida, o alerta
+                   abaixo assume o destaque, então a linha compacta é ocultada. -->
+              <div
+                v-if="expiryInfoById[instance.id] && expiryInfoById[instance.id]!.tone !== 'expired'"
+                class="mt-2 flex items-center gap-1.5 text-xs"
+                :class="expiryToneClass(expiryInfoById[instance.id]!.tone)"
+              >
+                <CalendarClock class="h-3.5 w-3.5 shrink-0" />
+                <span class="truncate">{{ expiryInfoById[instance.id]!.label }}</span>
+                <span
+                  v-if="instance.assinaturaStatus"
+                  class="ml-auto shrink-0 rounded-full border px-1.5 py-0.5 text-[10px]"
+                  :class="assinaturaStatusClass(instance.assinaturaStatus)"
+                >
+                  {{ assinaturaStatusLabel(instance.assinaturaStatus) }}
+                </span>
+              </div>
+
               <div v-if="instance.ultimoErro" class="mt-3 flex items-start gap-1.5 rounded-md border border-amber-300/60 bg-amber-50 px-2.5 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-400">
                 <AlertTriangle class="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span class="min-w-0">{{ instance.ultimoErro }}</span>
+              </div>
+
+              <!-- Assinatura vencida: alerta destacado com ação direta de pagamento -->
+              <div
+                v-if="expiryInfoById[instance.id]?.tone === 'expired'"
+                class="mt-3 flex items-start gap-2 rounded-md border border-red-300/60 bg-red-50 px-2.5 py-2 text-xs text-red-800 dark:bg-red-500/10 dark:text-red-400"
+              >
+                <AlertTriangle class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium leading-tight">Assinatura vencida</p>
+                  <p class="mt-0.5 opacity-90">{{ expiryInfoById[instance.id]?.detalhe }}</p>
+                </div>
+                <Button size="sm" class="h-8 shrink-0 text-white" @click="openPaymentModal(instance)">
+                  <CreditCard class="mr-1 h-3.5 w-3.5" /> Pagar agora
+                </Button>
               </div>
 
               <!-- Mensalidades (só a mais recente; demais no modal) -->
@@ -733,6 +766,7 @@ import {
   AlertTriangle,
   BellOff,
   Brain,
+  CalendarClock,
   CheckCircle2,
   Clock,
   Copy,
@@ -777,6 +811,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
+import { formatDateToPtBR } from '@/utils/formatters'
 import { useConfirm } from '@/composables/useConfirm'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -827,6 +862,12 @@ const instanceMode = ref<'manual' | 'auto'>('auto')
 const editInstanceForm = reactive({ nome: '', instanceId: '', token: '' })
 
 const connectedInstances = computed(() => instances.value.filter((instance) => instance.status === 'CONECTADA').length)
+// Vencimento/orientação por instância, derivado do `expiresAt` transiente vindo do sync com a W-API.
+const expiryInfoById = computed(() => {
+  const map: Record<number, ReturnType<typeof instanceExpiryInfo>> = {}
+  for (const instance of instances.value) map[instance.id] = instanceExpiryInfo(instance)
+  return map
+})
 const managedInstanceId = ref<number | null>(null)
 const selectedManagedInstance = computed(() => instances.value.find((instance) => instance.id === managedInstanceId.value) || null)
 const createInstanceModalOpen = ref(false)
@@ -878,6 +919,61 @@ function paymentStatusClass(status?: string | null) {
 
 function latestPayment(instance: WhatsAppInstance) {
   return instance.pagamentos?.[0] || null
+}
+
+type ExpiryTone = 'ok' | 'warning' | 'expired'
+
+// Deriva a orientação de vencimento a partir do `expiresAt` (transiente, vindo do sync com a
+// W-API). Retorna null quando ainda não sincronizado. `tone` guia a cor e `detalhe` complementa o
+// alerta de assinatura vencida.
+function instanceExpiryInfo(instance: WhatsAppInstance): { tone: ExpiryTone; label: string; detalhe: string } | null {
+  const raw = instance.expiresAt
+  if (!raw) return null
+  const expires = new Date(raw)
+  if (Number.isNaN(expires.getTime())) return null
+
+  const diffMs = expires.getTime() - Date.now()
+  const dayMs = 24 * 60 * 60 * 1000
+  const dataStr = formatDateToPtBR(raw)
+
+  if (diffMs < 0) {
+    const passados = Math.max(1, Math.ceil(Math.abs(diffMs) / dayMs))
+    return {
+      tone: 'expired',
+      label: 'Assinatura vencida',
+      detalhe: `Venceu há ${passados} ${passados > 1 ? 'dias' : 'dia'} (${dataStr})`,
+    }
+  }
+
+  const restam = Math.ceil(diffMs / dayMs)
+  if (restam <= 3) {
+    return {
+      tone: 'warning',
+      label: restam <= 1 ? `Vence hoje/amanhã (${dataStr})` : `Vence em ${restam} dias (${dataStr})`,
+      detalhe: '',
+    }
+  }
+
+  return { tone: 'ok', label: `Válida até ${dataStr}`, detalhe: '' }
+}
+
+function expiryToneClass(tone: ExpiryTone) {
+  if (tone === 'ok') return 'text-green-600'
+  if (tone === 'warning') return 'text-amber-600'
+  return 'text-red-600'
+}
+
+function assinaturaStatusLabel(status?: string | null) {
+  if (!status) return ''
+  if (status === 'PAID') return 'Pago'
+  if (status === 'UNPAID' || status === 'EXPIRED') return 'Pendente'
+  return status
+}
+
+function assinaturaStatusClass(status?: string | null) {
+  return status === 'PAID'
+    ? 'border-green-200 bg-green-50 text-green-700'
+    : 'border-amber-200 bg-amber-50 text-amber-700'
 }
 
 function instanceStatusLabel(status?: string | null) {
@@ -954,22 +1050,45 @@ function openExternalUrl(url?: string | null) {
 }
 
 async function loadInstances() {
-  instances.value = await WhatsAppRepository.listInstances()
+  const list = await WhatsAppRepository.listInstances()
+  // `expiresAt`/`assinaturaStatus` só chegam pelo sync-all (são transientes, não vêm do GET /instances).
+  // Ao reler a lista (inclusive quando disparado pelo socket após o próprio sync), preservamos o
+  // último vencimento conhecido por instância, senão a data pisca e some.
+  const previous = new Map(instances.value.map((instance) => [instance.id, instance]))
+  instances.value = list.map((instance) => {
+    const old = previous.get(instance.id)
+    if (old && instance.expiresAt == null && old.expiresAt != null) {
+      return { ...instance, expiresAt: old.expiresAt, assinaturaStatus: old.assinaturaStatus }
+    }
+    return instance
+  })
   if (!managedInstanceId.value || !instances.value.some((instance) => instance.id === managedInstanceId.value)) {
     managedInstanceId.value = instances.value[0]?.id || null
   }
 }
 
-async function refreshAll() {
+// Sincroniza o status de TODAS as instâncias com a W-API (vencimento + pagamento). Mais lento
+// que loadInstances (N chamadas externas), então roda com o indicador de "sincronizando" e sem
+// travar a lista já exibida do cache.
+async function syncAll() {
   try {
     loading.value = true
-    await loadInstances()
+    const list = await WhatsAppRepository.syncAllInstances()
+    instances.value = list
+    if (!managedInstanceId.value || !instances.value.some((instance) => instance.id === managedInstanceId.value)) {
+      managedInstanceId.value = instances.value[0]?.id || null
+    }
   } catch (error) {
     console.error(error)
-    toast.error('Erro ao atualizar as instâncias WhatsApp.')
+    toast.error('Erro ao sincronizar as instâncias WhatsApp.')
   } finally {
     loading.value = false
   }
+}
+
+// Botão "Atualizar": força um novo sync com a W-API.
+async function refreshAll() {
+  await syncAll()
 }
 
 // --- Ações de atendimento da instância (não perturbe + janela de horário) ---
@@ -1474,8 +1593,15 @@ useSocketEvent<WhatsAppInstance>('whatsapp:instancia:updated', async () => {
   await loadInstances()
 })
 
-onMounted(() => {
-  refreshAll()
+onMounted(async () => {
   storeUi.loadAppModules()
+  // Mostra a lista do cache imediatamente e, em seguida, sincroniza com a W-API em segundo plano
+  // (recarrega o status de todas as instâncias ao entrar na página).
+  try {
+    await loadInstances()
+  } catch (error) {
+    console.error(error)
+  }
+  syncAll()
 })
 </script>
