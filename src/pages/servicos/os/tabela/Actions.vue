@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { CircleDollarSign, FileArchive, Info, Menu, Pencil, RotateCcw, Wallet } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
@@ -8,13 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { ItensOrdensServico, OrdensServico } from '@/types/schemas'
+import type { CobrancaFinanceira, ItensOrdensServico, OrdensServico } from '@/types/schemas'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import { useUiStore } from '@/stores/ui/uiStore'
+import ExportOsPdfDialog from '../ExportOsPdfDialog.vue'
 
 const store = useOrdemServicoStore()
 const storeCobranca = useCobrancasFinanceirasStore()
@@ -22,8 +24,20 @@ const uiStore = useUiStore()
 const toast = useToast()
 
 const { data } = defineProps<{
-  data: OrdensServico & { ItensOrdensServico?: ItensOrdensServico[] }
+  data: OrdensServico & {
+    ItensOrdensServico?: ItensOrdensServico[]
+    CobrancasFinanceiras?: CobrancaFinanceira[]
+  }
 }>()
+
+const exportDialogOpen = ref(false)
+
+// Cobrança PIX vinculada com copia e cola, se a linha da tabela trouxer cobranças.
+const cobrancaPixId = computed(() => {
+  const lista = data.CobrancasFinanceiras ?? []
+  const comCopia = lista.filter((c) => !!c.pixCopiaCola)
+  return (comCopia.find((c) => c.status === 'PENDENTE') ?? comCopia[0])?.id ?? null
+})
 
 function getTotal() {
   const subtotal = (data.ItensOrdensServico || []).reduce(
@@ -70,37 +84,6 @@ async function estornar(id: number) {
   }
 }
 
-async function confirmarAcao(id: number, uid: string) {
-  const ok = await useConfirm().confirm({
-    title: 'Gerar PDF',
-    message: 'Tem certeza que deseja gerar o PDF desta OS?',
-    confirmText: 'Sim, gerar!',
-    cancelText: 'Cancelar',
-    colorButton: 'primary',
-  })
-  if (!ok) return
-  await getPDFOs(id, uid)
-}
-
-async function getPDFOs(id: number, uid: string) {
-  try {
-    let pix = false
-    const ok = await useConfirm().confirm({
-      title: 'Pix na OS',
-      message: 'Deseja adicionar o PIX na OS?',
-      confirmText: 'Sim!',
-      cancelText: 'Não',
-      colorButton: 'success',
-    })
-    if (ok) pix = true
-    await OrdensServicoRepository.getOsPdf(id, uid, pix)
-    toast.success('PDF gerado com sucesso')
-  } catch (error: any) {
-    console.log(error)
-    toast.error(error?.response?.data?.message || 'Erro ao gerar PDF')
-  }
-}
-
 function abrirFaturamento(id: number) {
   store.idMutation = id
   store.openModalFaturar = true
@@ -144,9 +127,9 @@ function abrirCobranca(id: number) {
         <CircleDollarSign class="mr-2 h-4 w-4" />
         Gerar cobrança
       </DropdownMenuItem>
-      <DropdownMenuItem @click="confirmarAcao(data.id!, data.Uid!)">
+      <DropdownMenuItem @click="exportDialogOpen = true">
         <FileArchive class="mr-2 h-4 w-4" />
-        PDF A4
+        Exportar PDF
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">
@@ -155,4 +138,6 @@ function abrirCobranca(id: number) {
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
+
+  <ExportOsPdfDialog v-model:open="exportDialogOpen" :id="data.id!" :uid="data.Uid!" :cobranca-id="cobrancaPixId" />
 </template>

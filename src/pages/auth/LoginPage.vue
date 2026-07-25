@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores/login/useAuthStore';
 import http from '@/utils/axios';
 import { useToast } from 'vue-toastification';
@@ -59,6 +59,45 @@ async function enviarRecuperacao() {
 }
 const saveDataLogin = ref<boolean>(localStorage.getItem('gestao_facil:credentials_login') == 'true' || false);
 
+// "Lembrar login": guarda e-mail e senha para pré-preencher o formulário no
+// próximo acesso. A ofuscação em base64 NÃO é criptografia — apenas evita a
+// senha em texto puro à vista. Quem tiver acesso ao dispositivo/navegador ainda
+// consegue recuperá-la, então isto fica como conveniência opt-in do usuário.
+const CREDENTIALS_KEY = 'gestao_facil:credentials_saved';
+
+function salvarCredenciais() {
+    try {
+        const payload = btoa(
+            encodeURIComponent(
+                JSON.stringify({ email: login.value.email, password: login.value.password }),
+            ),
+        );
+        localStorage.setItem(CREDENTIALS_KEY, payload);
+    } catch {
+        // Se algo falhar, apenas não persistimos as credenciais.
+    }
+}
+
+function limparCredenciais() {
+    localStorage.removeItem(CREDENTIALS_KEY);
+}
+
+function restaurarCredenciais() {
+    try {
+        const raw = localStorage.getItem(CREDENTIALS_KEY);
+        if (!raw) return;
+        const dados = JSON.parse(decodeURIComponent(atob(raw)));
+        if (dados?.email) login.value.email = dados.email;
+        if (dados?.password) login.value.password = dados.password;
+    } catch {
+        limparCredenciais();
+    }
+}
+
+onMounted(() => {
+    if (saveDataLogin.value) restaurarCredenciais();
+});
+
 // Bloqueio por excesso de tentativas (429 do rate limiter). Enquanto > 0,
 // mostramos um aviso visual com contagem regressiva e travamos o botão.
 const rateLimitSeconds = ref(0);
@@ -100,6 +139,8 @@ async function loginUsuario() {
     loading.value = true;
     try {
         localStorage.setItem('gestao_facil:credentials_login', saveDataLogin.value.toString());
+        if (saveDataLogin.value) salvarCredenciais();
+        else limparCredenciais();
         const result = await store.login(login.value.email, login.value.password);
         if (result?.rateLimited) {
             startRateLimitCountdown(result.retryAfter ?? 60, result.message);
@@ -241,7 +282,7 @@ function togglePasswordVisibility() {
 
                     <div class="flex items-center space-x-2">
                         <Checkbox id="remember" :checked="saveDataLogin"
-                            @update:checked="(val: boolean) => saveDataLogin = val" />
+                            @update:checked="(val: boolean) => { saveDataLogin = val; if (!val) limparCredenciais(); }" />
                         <label for="remember" class="text-sm font-medium leading-none text-muted-foreground">
                             Manter conectado
                         </label>

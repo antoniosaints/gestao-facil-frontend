@@ -3,6 +3,7 @@ import type { SidebarMenuType } from '@/types/sidebar'
 import {
   Bot,
   BrainCircuit,
+  Bug,
   CalendarClock,
   ChartPie,
   CircleDollarSign,
@@ -124,6 +125,13 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       color: 'cyan',
       show: permissions.superadmin,
       link: '/admin/informativos',
+    },
+    {
+      nome: 'Relatos de bug',
+      icone: Bug,
+      color: 'red',
+      show: permissions.superadmin,
+      link: '/admin/bugs',
     },
     {
       nome: 'ERP',

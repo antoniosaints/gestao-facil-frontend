@@ -10,6 +10,7 @@
     </div>
     <div class="flex items-center justify-center gap-2">
       <SupportBadge v-if="isSupportActive()" class="mr-2" />
+      <ReportBugButton />
       <TourHelpButton />
       <InformativosStatusButton />
       <ColorToggle class="mr-2" v-if="!uiStore.isMobile" />
@@ -30,6 +31,7 @@ import ColorToggle from './colorToggle.vue';
 import SupportBadge from './SupportBadge.vue';
 import InformativosStatusButton from './InformativosStatusButton.vue';
 import TourHelpButton from './TourHelpButton.vue';
+import ReportBugButton from './ReportBugButton.vue';
 import { isSupportActive } from '@/utils/supportSession';
 const uiStore = useUiStore()
 const horarioSistemaAtual = ref('')

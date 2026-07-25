@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import ItensOrdemLista from './ItensOrdemLista.vue'
+import ExportOsPdfDialog from './ExportOsPdfDialog.vue'
 import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import { useOrdemServicoStore } from '@/stores/servicos/useOrdensServicos'
@@ -33,6 +34,7 @@ import {
   Clock3,
   Cog,
   FileArchive,
+  ReceiptText,
   FileClock,
   FileText,
   Inbox,
@@ -45,7 +47,6 @@ import {
   Package,
   PenLine,
   Phone,
-  ReceiptText,
   RefreshCw,
   Send,
   ShieldCheck,
@@ -65,9 +66,16 @@ const confirm = useConfirm()
 const activeTab = ref('geral')
 const novaMensagem = ref('')
 const sendingMessage = ref(false)
-const exportingPdf = ref<'default' | 'pix' | null>(null)
+const exportDialogOpen = ref(false)
 
 const ordem = computed(() => store.ordemDetalhe ?? null)
+// Cobrança PIX vinculada com copia e cola disponível (ex.: Mercado Pago),
+// preferindo uma pendente. Habilita o "Exportar PDF + cobrança".
+const cobrancaPix = computed(() => {
+  const lista = ordem.value?.CobrancasFinanceiras ?? []
+  const comCopiaCola = lista.filter((c) => !!c.pixCopiaCola)
+  return comCopiaCola.find((c) => c.status === 'PENDENTE') ?? comCopiaCola[0] ?? null
+})
 const itens = computed(() => ordem.value?.ItensOrdensServico ?? [])
 const produtos = computed(() => itens.value.filter((item) => item.tipo === 'PRODUTO'))
 const servicos = computed(() => itens.value.filter((item) => item.tipo === 'SERVICO'))
@@ -220,21 +228,6 @@ async function enviarMensagem() {
   }
 }
 
-async function gerarPdf(withPix: boolean = false) {
-  if (!ordem.value?.id || !ordem.value?.Uid || exportingPdf.value) return
-
-  try {
-    exportingPdf.value = withPix ? 'pix' : 'default'
-    await OrdensServicoRepository.getOsPdf(ordem.value.id, ordem.value.Uid, withPix)
-    toast.success(withPix ? 'PDF da OS com PIX gerado com sucesso.' : 'PDF da OS gerado com sucesso.')
-  } catch (error: any) {
-    console.log(error)
-    toast.error(error?.response?.data?.message || 'Erro ao gerar o PDF da OS.')
-  } finally {
-    exportingPdf.value = null
-  }
-}
-
 async function editarOrdem() {
   if (!ordem.value?.id) return
   const id = ordem.value.id
@@ -296,7 +289,7 @@ watch(
 
     novaMensagem.value = ''
     sendingMessage.value = false
-    exportingPdf.value = null
+    exportDialogOpen.value = false
   },
 )
 
@@ -381,19 +374,14 @@ watch(
                   <MoreVertical class="h-4 w-4" /> Mais ações
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" class="w-56">
+              <DropdownMenuContent align="end" class="w-64">
                 <DropdownMenuItem v-if="uiStore.canCreateCharge" @click="abrirCobranca">
                   <CircleDollarSign class="mr-2 h-4 w-4 text-emerald-500" /> Gerar cobrança
                 </DropdownMenuItem>
-                <DropdownMenuItem :disabled="exportingPdf !== null" @click="gerarPdf(false)">
-                  <LoaderCircle v-if="exportingPdf === 'default'" class="mr-2 h-4 w-4 animate-spin" />
-                  <FileArchive v-else class="mr-2 h-4 w-4 text-blue-500" />
-                  Exportar PDF A4
-                </DropdownMenuItem>
-                <DropdownMenuItem :disabled="exportingPdf !== null" @click="gerarPdf(true)">
-                  <LoaderCircle v-if="exportingPdf === 'pix'" class="mr-2 h-4 w-4 animate-spin" />
-                  <CircleDollarSign v-else class="mr-2 h-4 w-4 text-emerald-500" />
-                  Exportar PDF + PIX
+                <DropdownMenuSeparator />
+                <DropdownMenuItem @click="exportDialogOpen = true">
+                  <FileArchive class="mr-2 h-4 w-4 text-blue-500" />
+                  Exportar PDF
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem :disabled="store.loadingDetalhe" @click="store.reloadDetalhes()">
@@ -404,6 +392,10 @@ watch(
             </DropdownMenu>
           </div>
         </div>
+
+        <!-- Diálogo: opções de exportação de PDF -->
+        <ExportOsPdfDialog v-if="ordem?.id && ordem?.Uid" v-model:open="exportDialogOpen" :id="ordem.id"
+          :uid="ordem.Uid" :cobranca-id="cobrancaPix?.id ?? null" />
 
         <!-- Contexto do atendimento -->
         <div class="mt-4 grid gap-2 sm:grid-cols-3">

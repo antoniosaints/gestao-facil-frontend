@@ -144,6 +144,11 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/admin/informativos/Home.vue'),
       },
       {
+        path: 'bugs',
+        name: 'admin-bugs',
+        component: () => import('@/pages/admin/bugs/Home.vue'),
+      },
+      {
         path: 'configuracoes',
         name: 'admin-configuracoes',
         component: () => import('@/pages/admin/configuracoes/Home.vue'),

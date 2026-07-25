@@ -233,68 +233,9 @@
                                     </div>
                                 </button>
                             </div>
-                            <div class="mt-6 space-y-4 border-t pt-6">
-                                <div>
-                                    <h3 class="flex items-center gap-2 font-normal text-lg">
-                                        <CircleDollarSign class="w-5 h-5 text-primary" /> Financeiro das vendas
-                                    </h3>
-                                    <p class="text-sm text-muted-foreground">
-                                        Define se cada venda faturada gera automaticamente um lançamento de receita.
-                                    </p>
-                                </div>
-
-                                <label
-                                    class="flex items-center justify-between gap-4 rounded-lg border bg-body/70 p-3 px-4">
-                                    <span>
-                                        Lançar financeiro automático
-                                        <p class="text-xs text-muted-foreground">
-                                            Toda venda faturada (PDV e normal) nasce com um lançamento de receita já
-                                            quitado. Vendas no crediário seguem o fluxo de parcelas e não são afetadas.
-                                        </p>
-                                    </span>
-                                    <Switch v-model="formularioVendas.vendaLancamentoAutomatico" />
-                                </label>
-
-                                <div v-if="formularioVendas.vendaLancamentoAutomatico"
-                                    class="grid gap-4 md:grid-cols-2">
-                                    <div class="flex flex-col gap-2">
-                                        <Label for="vendaCategoriaFinanceiraId" class="flex items-center gap-1">
-                                            Categoria do lançamento <span class="text-red-500">*</span>
-                                            <FormularioCategorias class="cursor-pointer px-2 text-blue-500"
-                                                @created="selecionarCategoriaVendas">
-                                                + Nova
-                                            </FormularioCategorias>
-                                        </Label>
-                                        <Select2Ajax id="vendaCategoriaFinanceiraId"
-                                            :key="`categoria-vendas-${categoriaVendasKey}`"
-                                            v-model="formularioVendas.vendaCategoriaFinanceiraId"
-                                            url="lancamentos/categorias/select2" allowClear class="w-full" />
-                                        <p class="text-xs text-muted-foreground">
-                                            Obrigatória: é a categoria usada em todo lançamento gerado pelas vendas.
-                                        </p>
-                                    </div>
-
-                                    <div class="flex flex-col gap-2">
-                                        <Label for="vendaContaFinanceiraId" class="flex items-center gap-1">
-                                            Conta do lançamento
-                                            <FormularioContas class="cursor-pointer px-2 text-blue-500"
-                                                @created="selecionarContaVendas">
-                                                + Nova
-                                            </FormularioContas>
-                                        </Label>
-                                        <Select2Ajax id="vendaContaFinanceiraId"
-                                            :key="`conta-vendas-${contaVendasKey}`"
-                                            v-model="formularioVendas.vendaContaFinanceiraId"
-                                            url="lancamentos/contas/select2" allowClear class="w-full" />
-                                        <p class="text-xs text-muted-foreground">
-                                            Opcional: sem escolha, usa a conta financeira padrão definida no Financeiro.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
                         </CardContent>
                         <CardFooter class="justify-end">
-                            <Button :disabled="vendasSubmitDisabled" class="ml-2 text-white" type="submit">
+                            <Button :disabled="loading" class="ml-2 text-white" type="submit">
                                 <CircleCheck v-if="!loading" />
                                 <LoaderIcon v-else class="animate-spin" />
                                 {{ loading ? 'Salvando...' : 'Salvar configurações de vendas' }}
@@ -385,9 +326,148 @@
                                         v-model="formularioFinanceiro.permitirCriacaoCobranca" />
                                 </label>
                             </div>
+
+                            <Separator />
+
+                            <!-- Lançamento automático das VENDAS -->
+                            <div class="space-y-4">
+                                <div>
+                                    <h3 class="flex items-center gap-2 font-normal text-lg">
+                                        <CircleDollarSign class="w-5 h-5 text-primary" /> Financeiro das vendas
+                                    </h3>
+                                    <p class="text-sm text-muted-foreground">
+                                        Define se cada venda faturada gera automaticamente um lançamento de receita.
+                                    </p>
+                                </div>
+
+                                <label
+                                    class="flex items-center justify-between gap-4 rounded-lg border bg-body/70 p-3 px-4">
+                                    <span>
+                                        Lançar financeiro automático das vendas
+                                        <p class="text-xs text-muted-foreground">
+                                            Toda venda faturada (PDV e normal) nasce com um lançamento de receita já
+                                            quitado. Vendas no crediário seguem o fluxo de parcelas e não são afetadas.
+                                        </p>
+                                    </span>
+                                    <Switch v-model="formularioFinanceiro.vendaLancamentoAutomatico" />
+                                </label>
+
+                                <div v-if="formularioFinanceiro.vendaLancamentoAutomatico" class="grid gap-4 md:grid-cols-2">
+                                    <div class="flex flex-col gap-2">
+                                        <Label for="vendaCategoriaFinanceiraId" class="flex items-center gap-1">
+                                            Categoria do lançamento <span class="text-red-500">*</span>
+                                            <FormularioCategorias class="cursor-pointer px-2 text-blue-500"
+                                                @created="selecionarCategoriaVendas">
+                                                + Nova
+                                            </FormularioCategorias>
+                                        </Label>
+                                        <Select2Ajax id="vendaCategoriaFinanceiraId"
+                                            :key="`categoria-vendas-${categoriaVendasKey}`"
+                                            v-model="formularioFinanceiro.vendaCategoriaFinanceiraId"
+                                            url="lancamentos/categorias/select2" allowClear class="w-full" />
+                                        <p class="text-xs text-muted-foreground">
+                                            Obrigatória: é a categoria usada em todo lançamento gerado pelas vendas.
+                                        </p>
+                                    </div>
+
+                                    <div class="flex flex-col gap-2">
+                                        <Label for="vendaContaFinanceiraId" class="flex items-center gap-1">
+                                            Conta do lançamento
+                                            <FormularioContas class="cursor-pointer px-2 text-blue-500"
+                                                @created="selecionarContaVendas">
+                                                + Nova
+                                            </FormularioContas>
+                                        </Label>
+                                        <Select2Ajax id="vendaContaFinanceiraId"
+                                            :key="`conta-vendas-${contaVendasKey}`"
+                                            v-model="formularioFinanceiro.vendaContaFinanceiraId"
+                                            url="lancamentos/contas/select2" allowClear class="w-full" />
+                                        <p class="text-xs text-muted-foreground">
+                                            Opcional: sem escolha, usa a conta financeira padrão.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            <!-- Lançamento automático das ORDENS DE SERVIÇO -->
+                            <div class="space-y-4">
+                                <div>
+                                    <h3 class="flex items-center gap-2 font-normal text-lg">
+                                        <Wrench class="w-5 h-5 text-primary" /> Financeiro das ordens de serviço
+                                    </h3>
+                                    <p class="text-sm text-muted-foreground">
+                                        Define se cada OS faturada gera automaticamente um lançamento de receita.
+                                    </p>
+                                </div>
+
+                                <label
+                                    class="flex items-center justify-between gap-4 rounded-lg border bg-body/70 p-3 px-4">
+                                    <span>
+                                        Lançar financeiro automático das OS
+                                        <p class="text-xs text-muted-foreground">
+                                            Toda OS faturada nasce com um lançamento de receita já quitado, usando a
+                                            categoria e a conta definidas abaixo.
+                                        </p>
+                                    </span>
+                                    <Switch v-model="formularioFinanceiro.osLancamentoAutomatico" />
+                                </label>
+
+                                <div v-if="formularioFinanceiro.osLancamentoAutomatico" class="grid gap-4 md:grid-cols-2">
+                                    <div class="flex flex-col gap-2">
+                                        <Label for="osCategoriaFinanceiraId" class="flex items-center gap-1">
+                                            Categoria do lançamento <span class="text-red-500">*</span>
+                                            <FormularioCategorias class="cursor-pointer px-2 text-blue-500"
+                                                @created="selecionarCategoriaOs">
+                                                + Nova
+                                            </FormularioCategorias>
+                                        </Label>
+                                        <Select2Ajax id="osCategoriaFinanceiraId"
+                                            :key="`categoria-os-${categoriaOsKey}`"
+                                            v-model="formularioFinanceiro.osCategoriaFinanceiraId"
+                                            url="lancamentos/categorias/select2" allowClear class="w-full" />
+                                        <p class="text-xs text-muted-foreground">
+                                            Obrigatória: é a categoria usada em todo lançamento gerado pelas OS.
+                                        </p>
+                                    </div>
+
+                                    <div class="flex flex-col gap-2">
+                                        <Label for="osContaFinanceiraId" class="flex items-center gap-1">
+                                            Conta do lançamento
+                                            <FormularioContas class="cursor-pointer px-2 text-blue-500"
+                                                @created="selecionarContaOs">
+                                                + Nova
+                                            </FormularioContas>
+                                        </Label>
+                                        <Select2Ajax id="osContaFinanceiraId"
+                                            :key="`conta-os-${contaOsKey}`"
+                                            v-model="formularioFinanceiro.osContaFinanceiraId"
+                                            url="lancamentos/contas/select2" allowClear class="w-full" />
+                                        <p class="text-xs text-muted-foreground">
+                                            Opcional: sem escolha, usa a conta financeira padrão.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            <!-- PDF da OS -->
+                            <label
+                                class="flex items-center justify-between gap-4 rounded-lg border bg-body/70 p-3 px-4">
+                                <span>
+                                    Ocultar assinaturas no PDF da OS
+                                    <p class="text-xs text-muted-foreground">
+                                        Quando ativo, o PDF da ordem de serviço é gerado sem os campos de
+                                        assinatura do cliente e do técnico.
+                                    </p>
+                                </span>
+                                <Switch v-model="formularioFinanceiro.osOcultarAssinatura" />
+                            </label>
                         </CardContent>
                         <CardFooter class="justify-end">
-                            <Button :disabled="loading" class="ml-2 text-white" type="submit">
+                            <Button :disabled="financeiroSubmitDisabled" class="ml-2 text-white" type="submit">
                                 <CircleCheck v-if="!loading" />
                                 <LoaderIcon v-if="loading" class="animate-spin" />
                                 {{ loading ? 'Salvando...' : 'Salvar' }}
@@ -507,7 +587,7 @@ import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import FormularioCategorias from '@/pages/financeiro/lancamentos/modais/FormularioCategorias.vue'
 import FormularioContas from '@/pages/financeiro/lancamentos/modais/FormularioContas.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Banknote, Bell, ChevronDown, CircleCheck, CircleDollarSign, Cog, DollarSign, Keyboard, LayoutGrid, ListChecks, LoaderIcon, Menu, Palette, Printer, ShoppingCart, Undo2 } from 'lucide-vue-next'
+import { Banknote, Bell, ChevronDown, CircleCheck, CircleDollarSign, Cog, DollarSign, Keyboard, LayoutGrid, ListChecks, LoaderIcon, Menu, Palette, Printer, ShoppingCart, Undo2, Wrench } from 'lucide-vue-next'
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -615,33 +695,52 @@ const formularioFinanceiro = reactive<UpdateParametrosConta>({
     permitirEfetivacaoFutura: true,
     permitirTransferenciaContaFinanceira: true,
     permitirCriacaoCobranca: true,
-})
-const formularioVendas = reactive<UpdateParametrosConta>({
-    modeloPdv: 'BASICO',
     vendaLancamentoAutomatico: false,
     vendaCategoriaFinanceiraId: null,
     vendaContaFinanceiraId: null,
+    osLancamentoAutomatico: false,
+    osCategoriaFinanceiraId: null,
+    osContaFinanceiraId: null,
+    osOcultarAssinatura: false,
+})
+const formularioVendas = reactive<UpdateParametrosConta>({
+    modeloPdv: 'BASICO',
 })
 
-// Sem categoria definida o backend recusa o lançamento, então o Salvar fica travado
-// enquanto o automático estiver ligado sem ela.
-const vendasSubmitDisabled = computed(
-    () => loading.value || (Boolean(formularioVendas.vendaLancamentoAutomatico) && !formularioVendas.vendaCategoriaFinanceiraId),
+// Sem categoria definida o backend recusa o lançamento, então o Salvar do
+// Financeiro fica travado enquanto qualquer automático estiver ligado sem ela.
+const financeiroSubmitDisabled = computed(
+    () =>
+        loading.value ||
+        (Boolean(formularioFinanceiro.vendaLancamentoAutomatico) && !formularioFinanceiro.vendaCategoriaFinanceiraId) ||
+        (Boolean(formularioFinanceiro.osLancamentoAutomatico) && !formularioFinanceiro.osCategoriaFinanceiraId),
 )
 
 // O Select2Ajax carrega as opções uma vez; trocar a key o remonta para que o
 // registro recém-criado apareça na lista já selecionado.
 const categoriaVendasKey = ref(0)
 const contaVendasKey = ref(0)
+const categoriaOsKey = ref(0)
+const contaOsKey = ref(0)
 
 function selecionarCategoriaVendas(id: number) {
-    formularioVendas.vendaCategoriaFinanceiraId = id
+    formularioFinanceiro.vendaCategoriaFinanceiraId = id
     categoriaVendasKey.value += 1
 }
 
 function selecionarContaVendas(id: number) {
-    formularioVendas.vendaContaFinanceiraId = id
+    formularioFinanceiro.vendaContaFinanceiraId = id
     contaVendasKey.value += 1
+}
+
+function selecionarCategoriaOs(id: number) {
+    formularioFinanceiro.osCategoriaFinanceiraId = id
+    categoriaOsKey.value += 1
+}
+
+function selecionarContaOs(id: number) {
+    formularioFinanceiro.osContaFinanceiraId = id
+    contaOsKey.value += 1
 }
 const modelosPdv = [
     {
@@ -767,12 +866,16 @@ async function getParametros() {
                 permitirEfetivacaoFutura: response.data.permitirEfetivacaoFutura ?? true,
                 permitirTransferenciaContaFinanceira: response.data.permitirTransferenciaContaFinanceira ?? true,
                 permitirCriacaoCobranca: response.data.permitirCriacaoCobranca ?? true,
-            })
-            Object.assign(formularioVendas, {
-                modeloPdv: response.data.modeloPdv === 'PRO' ? 'PRO' : 'BASICO',
                 vendaLancamentoAutomatico: response.data.vendaLancamentoAutomatico ?? false,
                 vendaCategoriaFinanceiraId: response.data.vendaCategoriaFinanceiraId ?? null,
                 vendaContaFinanceiraId: response.data.vendaContaFinanceiraId ?? null,
+                osLancamentoAutomatico: response.data.osLancamentoAutomatico ?? false,
+                osCategoriaFinanceiraId: response.data.osCategoriaFinanceiraId ?? null,
+                osContaFinanceiraId: response.data.osContaFinanceiraId ?? null,
+                osOcultarAssinatura: response.data.osOcultarAssinatura ?? false,
+            })
+            Object.assign(formularioVendas, {
+                modeloPdv: response.data.modeloPdv === 'PRO' ? 'PRO' : 'BASICO',
             })
             Object.assign(formularioMenus, {
                 menusVisiveis: Array.isArray(response.data.menusVisiveis)

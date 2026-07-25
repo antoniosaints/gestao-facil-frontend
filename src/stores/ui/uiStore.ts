@@ -32,6 +32,7 @@ export interface FinanceiroFlags {
   permitirTransferenciaContaFinanceira: boolean
   permitirCriacaoCobranca: boolean
   vendaLancamentoAutomatico: boolean
+  osLancamentoAutomatico: boolean
 }
 
 export const useUiStore = defineStore('uiStore', () => {
@@ -47,11 +48,13 @@ export const useUiStore = defineStore('uiStore', () => {
     permitirTransferenciaContaFinanceira: true,
     permitirCriacaoCobranca: true,
     vendaLancamentoAutomatico: false,
+    osLancamentoAutomatico: false,
   })
   const canCreateCharge = computed(() => financeiroFlags.value.permitirCriacaoCobranca !== false)
   // Com o lançamento automático ligado, o faturamento sempre gera financeiro: o
   // modal de faturar não deve mais oferecer a escolha.
   const vendaLancamentoAutomatico = computed(() => financeiroFlags.value.vendaLancamentoAutomatico === true)
+  const osLancamentoAutomatico = computed(() => financeiroFlags.value.osLancamentoAutomatico === true)
   const appModules = ref<Record<string, boolean>>({})
   const appModulesLoaded = ref(false)
   const visibleMenuKeys = ref<string[] | null>(null)
@@ -235,6 +238,7 @@ export const useUiStore = defineStore('uiStore', () => {
         permitirTransferenciaContaFinanceira: response.data?.permitirTransferenciaContaFinanceira ?? true,
         permitirCriacaoCobranca: response.data?.permitirCriacaoCobranca ?? true,
         vendaLancamentoAutomatico: response.data?.vendaLancamentoAutomatico ?? false,
+        osLancamentoAutomatico: response.data?.osLancamentoAutomatico ?? false,
       }
       if (Array.isArray(response.data?.menusVisiveis)) {
         const keys = response.data.menusVisiveis as string[]
@@ -256,6 +260,7 @@ export const useUiStore = defineStore('uiStore', () => {
         permitirTransferenciaContaFinanceira: true,
         permitirCriacaoCobranca: true,
         vendaLancamentoAutomatico: false,
+        osLancamentoAutomatico: false,
       }
       visibleMenuKeys.value = null
       hiddenSubmenuKeys.value = []
@@ -309,6 +314,7 @@ export const useUiStore = defineStore('uiStore', () => {
     financeiroFlags,
     canCreateCharge,
     vendaLancamentoAutomatico,
+    osLancamentoAutomatico,
     appModules,
     appModulesLoaded,
     visibleMenuKeys,

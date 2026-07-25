@@ -118,6 +118,7 @@ export type CobrancaFinanceira = {
   idCobranca: string
   Uid?: string
   externalLink?: string | null
+  pixCopiaCola?: string | null
   valor: number
   gateway: string
   dataVencimento?: Date
@@ -493,6 +494,10 @@ export interface UpdateParametrosConta {
   vendaLancamentoAutomatico?: boolean | null
   vendaCategoriaFinanceiraId?: number | null
   vendaContaFinanceiraId?: number | null
+  osOcultarAssinatura?: boolean | null
+  osLancamentoAutomatico?: boolean | null
+  osCategoriaFinanceiraId?: number | null
+  osContaFinanceiraId?: number | null
   MercadoPagoApiKey?: string | null
   MercadoPagoEnv?: string | null
   AbacatePayApiKey?: string | null

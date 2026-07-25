@@ -31,9 +31,21 @@ export class OrdensServicoRepository {
     const { data } = await http.post(`/servicos/ordens/mensagens/${id}`, { mensagem })
     return data.data
   }
-  static async getOsPdf(id: number, UID: string, withPix: boolean = false): Promise<any> {
+  static async getOsPdf(
+    id: number,
+    UID: string,
+    withPix: boolean = false,
+    semAssinatura: boolean = false,
+    cobrancaId?: number | null,
+  ): Promise<any> {
+    const params = new URLSearchParams()
+    if (withPix) params.set('withPix', 'true')
+    if (semAssinatura) params.set('semAssinatura', 'true')
+    if (cobrancaId) params.set('cobrancaId', String(cobrancaId))
+    const query = params.toString()
+
     const data = await http.get(
-      `/servicos/ordens/relatorio/${id}${withPix ? '?withPix=true' : ''}`,
+      `/servicos/ordens/relatorio/${id}${query ? `?${query}` : ''}`,
       {
         responseType: 'blob',
         headers: {
@@ -49,6 +61,20 @@ export class OrdensServicoRepository {
     document.body.appendChild(a)
     a.click()
     a.remove()
+  }
+
+  /**
+   * Gera uma cobrança PIX no Mercado Pago vinculada à OS e retorna o
+   * "copia e cola" (payload PIX) para exibir/copiar no PDV da OS.
+   */
+  static async gerarCobrancaPix(id: number): Promise<{
+    pixCopiaCola: string
+    paymentLink: string | null
+    chargeId: number | null
+    valor: number
+  }> {
+    const { data } = await http.post(`/servicos/ordens/${id}/cobranca-pix`)
+    return data.data
   }
   static async getAll() {
     const data = await http.get(`/servicos/ordens`)
