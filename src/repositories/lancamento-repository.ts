@@ -526,7 +526,7 @@ export class LancamentosRepository {
   static async gerarCobranca(
     type: 'BOLETO' | 'LINK' | 'PIX',
     value: number,
-    gateway: 'mercadopago' | 'abacatepay' | 'pagseguro' | 'asaas',
+    gateway: 'mercadopago',
     clienteId?: number | null,
     vinculo?: {
       id: number

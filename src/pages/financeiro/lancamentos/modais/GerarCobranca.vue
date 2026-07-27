@@ -4,9 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { Copy, ExternalLink, FilePlus, Receipt } from 'lucide-vue-next'
+import { CircleAlert, Copy, ExternalLink, FilePlus, Loader2, Receipt } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { vMaska } from "maska/vue"
@@ -19,6 +18,7 @@ import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { addHours, isBefore } from 'date-fns'
 import { Textarea } from '@/components/ui/textarea'
 import { useUiStore } from '@/stores/ui/uiStore'
+import { ContaRepository } from '@/repositories/conta-repository'
 
 const storeCobranca = useCobrancasFinanceirasStore()
 const storeClientes = useClientesStore()
@@ -26,9 +26,31 @@ const uiStore = useUiStore()
 const toast = useToast()
 const submitText = ref('Gerar cobrança')
 const linkPayment = ref('')
+const mercadoPagoAtivo = ref(false)
+const verificandoMercadoPago = ref(false)
+
+async function carregarStatusMercadoPago() {
+    verificandoMercadoPago.value = true
+    mercadoPagoAtivo.value = false
+    storeCobranca.form.gateway = undefined
+
+    try {
+        const status = await ContaRepository.statusMercadoPago()
+        mercadoPagoAtivo.value = status.modo !== 'NENHUM'
+        if (mercadoPagoAtivo.value) storeCobranca.form.gateway = 'mercadopago'
+    } catch (error) {
+        console.error(error)
+        toast.error('Não foi possível verificar a integração com o Mercado Pago.')
+    } finally {
+        verificandoMercadoPago.value = false
+    }
+}
 
 async function gerarCobrancaLancamento() {
     try {
+        if (!mercadoPagoAtivo.value) {
+            return toast.error('Conecte o Mercado Pago antes de gerar uma cobrança.')
+        }
         if (!storeCobranca.form.gateway) return toast.error('Gateway de pagamento nao informado!', {
             timeout: 5000
         })
@@ -91,6 +113,13 @@ watch(
     { immediate: true },
 )
 
+watch(
+    () => storeCobranca.openModal,
+    (open) => {
+        if (open) void carregarStatusMercadoPago()
+    },
+)
+
 </script>
 
 <template>
@@ -104,19 +133,20 @@ watch(
                         <label class="block text-sm font-medium mb-1">
                             Gateway
                         </label>
-                        <Select v-model="storeCobranca.form.gateway">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="Selecione o gateway" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="mercadopago">Mercado pago</SelectItem>
-                                    <SelectItem value="abacatepay">AbacatePay</SelectItem>
-                                    <SelectItem value="asaas" disabled>Asaas</SelectItem>
-                                    <SelectItem value="pagseguro" disabled>Pagseguro</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
+                        <div v-if="verificandoMercadoPago"
+                            class="flex h-10 items-center gap-2 rounded-md border px-3 text-sm text-muted-foreground">
+                            <Loader2 class="h-4 w-4 animate-spin" />
+                            Verificando Mercado Pago...
+                        </div>
+                        <div v-else-if="mercadoPagoAtivo"
+                            class="flex h-10 items-center rounded-md border bg-muted/30 px-3 text-sm font-medium">
+                            Mercado Pago
+                        </div>
+                        <div v-else
+                            class="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
+                            <CircleAlert class="mt-0.5 h-4 w-4 shrink-0" />
+                            Conecte o Mercado Pago em Apps para gerar cobranças.
+                        </div>
                     </div>
                     <div class="md:col-span-6">
                         <label class="block text-sm font-medium mb-1">
@@ -125,7 +155,7 @@ watch(
                         <Calendarpicker :required="true" :teleport="true" v-model="storeCobranca.form.vencimento" />
                     </div>
                     <div class="md:col-span-12"
-                        v-show="storeCobranca.form.criterio === 'avulso' && storeCobranca.form.gateway">
+                        v-show="storeCobranca.form.criterio === 'avulso' && mercadoPagoAtivo">
                         <label class="block text-sm font-medium mb-1">
                             Valor da cobrança *
                         </label>
@@ -133,13 +163,13 @@ watch(
                             placeholder="R$ 0,00" />
                     </div>
                     <div class="md:col-span-12"
-                        v-show="storeCobranca.form.criterio === 'avulso' && storeCobranca.form.gateway">
+                        v-show="storeCobranca.form.criterio === 'avulso' && mercadoPagoAtivo">
                         <label class="block text-sm font-medium mb-1">
                             Observação
                         </label>
                         <Textarea v-model="storeCobranca.form.observacao" placeholder="Observação" />
                     </div>
-                    <div class="md:col-span-12" v-show="storeCobranca.form.gateway">
+                    <div class="md:col-span-12" v-show="mercadoPagoAtivo">
                         <RadioGroup v-model="storeCobranca.form.tipo" default-value="PIX" class="grid grid-cols-3">
                             <Label for="option-one"
                                 class="flex items-center text-sm p-3 px-4 gap-2 bg-success/20 border rounded-lg cursor-pointer">
@@ -162,7 +192,7 @@ watch(
                         </RadioGroup>
                     </div>
                     <div class="md:col-span-12"
-                        v-show="storeCobranca.form.gateway && storeCobranca.form.tipo === 'BOLETO'">
+                        v-show="mercadoPagoAtivo && storeCobranca.form.tipo === 'BOLETO'">
                         <label class="block text-sm font-medium mb-1">
                             Cliente * <a href="javascript:void(0)" @click="storeClientes.openSave"
                                 class="text-blue-500 px-2 cursor-pointer">+ Novo</a>
@@ -170,20 +200,12 @@ watch(
                         <Select2Ajax id="clienteIdLancamento" v-model="storeCobranca.form.clienteId"
                             url="/clientes/select2" allowClear />
                     </div>
-                    <div v-if="storeCobranca.form.gateway" class="md:col-span-12 -my-2">
+                    <div v-if="mercadoPagoAtivo" class="md:col-span-12 -my-2">
                         <hr class="mb-2">
-                        <p v-if="storeCobranca.form.tipo === 'LINK' && storeCobranca.form.gateway === 'mercadopago'"
-                            class="text-xs text-orange-800 dark:text-orange-400 text-center">Cobranças geradas com
-                            link de
-                            pagamento <span class="text-blue-500">(mercadopago)</span> não são registradas
-                            no sistema e
-                            nem tem monitoramento
-                            de status por
-                            pagamento,
-                            envie para seu cliente e peça o comprovante.
+                        <p v-if="storeCobranca.form.tipo === 'LINK'"
+                            class="text-xs text-muted-foreground text-center">
+                            A cobrança será registrada e vinculada automaticamente quando o Mercado Pago informar a criação do pagamento.
                         </p>
-                        <p v-else-if="storeCobranca.form.gateway === 'abacatepay'"
-                            class="text-xs text-muted-foreground text-center">No AbacatePay deste modal, a cobrança operacional usa as credenciais salvas pela própria conta em /configuracoes, separadas do gateway global da mensalidade SaaS.</p>
                         <p v-else class="text-xs text-muted-foreground text-center">Consulte as taxas de
                             cobrança {{ storeCobranca.form.tipo }} em cada
                             gateway, elas
@@ -222,7 +244,8 @@ watch(
                 <Button type="button" variant="secondary" @click="storeCobranca.openModal = false">
                     Fechar
                 </Button>
-                <Button v-if="!storeCobranca.form.linkExists" :disabled="storeCobranca.form.loading"
+                <Button v-if="!storeCobranca.form.linkExists"
+                    :disabled="storeCobranca.form.loading || verificandoMercadoPago || !mercadoPagoAtivo"
                     @click="gerarCobrancaLancamento" class="text-white" type="button">
                     <FilePlus />
                     {{ submitText }}

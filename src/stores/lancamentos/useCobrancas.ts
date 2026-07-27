@@ -8,7 +8,7 @@ import { useToast } from 'vue-toastification'
 export interface CobrancaOperacao {
   linkExists: boolean
   loading: boolean
-  gateway: 'mercadopago' | 'abacatepay' | 'pagseguro' | 'asaas' | undefined
+  gateway: 'mercadopago' | undefined
   valor: string
   vencimento: Date
   criterio: 'avulso'

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
-import { FilePlus } from 'lucide-vue-next'
+import { CircleAlert, FilePlus, Loader2 } from 'lucide-vue-next'
 
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
+import { ContaRepository } from '@/repositories/conta-repository'
 import { formatCurrencyBR } from '@/utils/formatters'
 
 type ParcelaCobranca = { id: number; valor: number }
@@ -26,10 +26,29 @@ const emit = defineEmits<{
 
 const toast = useToast()
 
-const gateway = ref<'mercadopago' | 'abacatepay' | undefined>(undefined)
+const gateway = ref<'mercadopago' | undefined>(undefined)
 const tipo = ref<'PIX' | 'BOLETO' | 'LINK'>('PIX')
 const processando = ref(false)
 const progresso = ref(0)
+const mercadoPagoAtivo = ref(false)
+const verificandoMercadoPago = ref(false)
+
+async function carregarStatusMercadoPago() {
+  verificandoMercadoPago.value = true
+  mercadoPagoAtivo.value = false
+  gateway.value = undefined
+
+  try {
+    const status = await ContaRepository.statusMercadoPago()
+    mercadoPagoAtivo.value = status.modo !== 'NENHUM'
+    if (mercadoPagoAtivo.value) gateway.value = 'mercadopago'
+  } catch (error) {
+    console.error(error)
+    toast.error('Não foi possível verificar a integração com o Mercado Pago.')
+  } finally {
+    verificandoMercadoPago.value = false
+  }
+}
 
 const valorTotal = computed(() => props.parcelas.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0))
 // Boleto exige cliente e valor mínimo por cobrança, igual ao fluxo individual.
@@ -42,12 +61,13 @@ watch(
     gateway.value = undefined
     tipo.value = 'PIX'
     progresso.value = 0
+    void carregarStatusMercadoPago()
   },
 )
 
 async function gerar() {
   if (!gateway.value) {
-    toast.error('Gateway de pagamento nao informado!', { timeout: 5000 })
+    toast.error('Conecte o Mercado Pago antes de gerar uma cobrança.', { timeout: 5000 })
     return
   }
 
@@ -124,20 +144,23 @@ async function gerar() {
 
       <div>
         <Label>Gateway</Label>
-        <Select v-model="gateway">
-          <SelectTrigger class="w-full">
-            <SelectValue placeholder="Selecione o gateway" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="mercadopago">Mercado pago</SelectItem>
-              <SelectItem value="abacatepay">AbacatePay</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+        <div v-if="verificandoMercadoPago"
+          class="mt-1 flex h-10 items-center gap-2 rounded-md border px-3 text-sm text-muted-foreground">
+          <Loader2 class="h-4 w-4 animate-spin" />
+          Verificando Mercado Pago...
+        </div>
+        <div v-else-if="mercadoPagoAtivo"
+          class="mt-1 flex h-10 items-center rounded-md border bg-muted/30 px-3 text-sm font-medium">
+          Mercado Pago
+        </div>
+        <div v-else
+          class="mt-1 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
+          <CircleAlert class="mt-0.5 h-4 w-4 shrink-0" />
+          Conecte o Mercado Pago em Apps para gerar cobranças.
+        </div>
       </div>
 
-      <div v-show="gateway">
+      <div v-show="mercadoPagoAtivo">
         <RadioGroup v-model="tipo" default-value="PIX" class="grid grid-cols-3">
           <Label for="lote-pix" class="flex cursor-pointer items-center gap-2 rounded-lg border bg-success/20 p-3 px-4 text-sm">
             <RadioGroupItem id="lote-pix" value="PIX" class="bg-white" />
@@ -169,7 +192,8 @@ async function gerar() {
         <Button type="button" variant="secondary" :disabled="processando" @click="emit('update:open', false)">
           Fechar
         </Button>
-        <Button type="button" class="text-white" :disabled="processando || !gateway" @click="gerar">
+        <Button type="button" class="text-white"
+          :disabled="processando || verificandoMercadoPago || !mercadoPagoAtivo || !gateway" @click="gerar">
           <FilePlus class="h-4 w-4" />
           {{ processando ? `Gerando ${progresso}/${parcelas.length}...` : 'Gerar cobranças' }}
         </Button>
