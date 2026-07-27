@@ -119,6 +119,11 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/admin/assinantes/Home.vue'),
       },
       {
+        path: 'whatsapp',
+        name: 'admin-whatsapp',
+        component: () => import('@/pages/admin/whatsapp/Home.vue'),
+      },
+      {
         path: 'suporte',
         name: 'admin-suporte',
         component: () => import('@/pages/admin/suporte/Home.vue'),

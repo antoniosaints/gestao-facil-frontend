@@ -19,6 +19,7 @@ import {
   LifeBuoy,
   Lock,
   ServerCog,
+  MessageCircle,
   Sparkles,
   User,
   UserStar,
@@ -59,6 +60,13 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.clientes.visualizar,
       color: 'violet',
       link: '/admin/assinantes',
+    },
+    {
+      nome: 'WhatsApp',
+      icone: MessageCircle,
+      show: permissions.superadmin,
+      color: 'green',
+      link: '/admin/whatsapp',
     },
     {
       nome: 'Acessos de suporte',

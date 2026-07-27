@@ -147,6 +147,24 @@ export interface WhatsAppInstance {
   updatedAt: string
 }
 
+export interface AdminWhatsAppInstance extends WhatsAppInstance {
+  Conta: {
+    id: number
+    nome: string
+    nomeFantasia?: string | null
+    email: string
+    status: string
+  }
+}
+
+export interface AdminWhatsAppInstancesResponse {
+  data: AdminWhatsAppInstance[]
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+}
+
 export interface WhatsAppContact {
   id: number
   telefone: string
@@ -313,6 +331,91 @@ export interface WhatsAppAgentPayload {
 }
 
 export class WhatsAppRepository {
+  static async listAdminInstances(params: Record<string, unknown> = {}) {
+    const { data } = await http.get('/admin/whatsapp/instances', { params })
+    return data as AdminWhatsAppInstancesResponse
+  }
+
+  static async syncAdminInstance(id: number) {
+    const { data } = await http.post(`/admin/whatsapp/instances/${id}/sync`, {})
+    return data.data as AdminWhatsAppInstance
+  }
+
+  static async updateAdminInstance(
+    id: number,
+    payload: Partial<{ nome: string; instanceId: string; token: string | null; ativo: boolean }>,
+  ) {
+    const { data } = await http.put(`/admin/whatsapp/instances/${id}`, payload)
+    return data.data as WhatsAppInstance
+  }
+
+  static async updateAdminAtendimento(
+    id: number,
+    payload: { naoPerturbe?: boolean; horaInicio?: string | null; horaFim?: string | null },
+  ) {
+    const { data } = await http.patch(`/admin/whatsapp/instances/${id}/atendimento`, payload)
+    return data.data as WhatsAppInstance
+  }
+
+  static async removeAdminInstance(id: number) {
+    const { data } = await http.delete(`/admin/whatsapp/instances/${id}`)
+    return data.data as WhatsAppInstance
+  }
+
+  static async getAdminInstanceWebhooks(id: number) {
+    const { data } = await http.get(`/admin/whatsapp/instances/${id}/webhooks`)
+    return data.data as WhatsAppWebhookConfig
+  }
+
+  static async configureAdminInstanceWebhooks(id: number, webhookUrls?: WhatsAppWebhookUrls) {
+    const { data } = await http.post(`/admin/whatsapp/instances/${id}/webhooks`, { webhookUrls })
+    return data.data as WhatsAppWebhookConfig
+  }
+
+  static async listAdminInstanceWebhookEvents(
+    id: number,
+    params: { take?: number; tipo?: string } = {},
+  ) {
+    const { data } = await http.get(`/admin/whatsapp/instances/${id}/eventos`, { params })
+    return data.data as WhatsAppWebhookEvent[]
+  }
+
+  static async adminInstanceAction(
+    id: number,
+    action:
+      | 'qrCode'
+      | 'pairingCode'
+      | 'restart'
+      | 'disconnect'
+      | 'status'
+      | 'device'
+      | 'setupWebhooks',
+    payload?: Record<string, unknown>,
+  ) {
+    const { data } = await http.post(`/admin/whatsapp/instances/${id}/${action}`, payload || {})
+    return data.data
+  }
+
+  static async createAdminPixPayment(id: number) {
+    const { data } = await http.post(`/admin/whatsapp/instances/${id}/payments/pix`, {})
+    return data.data as WhatsAppInstancePayment
+  }
+
+  static async createAdminCardSubscription(id: number) {
+    const { data } = await http.post(
+      `/admin/whatsapp/instances/${id}/payments/card-subscription`,
+      {},
+    )
+    return data.data as WhatsAppInstancePayment
+  }
+
+  static async removeAdminPayment(instanceId: number, paymentId: number) {
+    const { data } = await http.delete(
+      `/admin/whatsapp/instances/${instanceId}/payments/${paymentId}`,
+    )
+    return data.data as WhatsAppInstancePayment
+  }
+
   static async listInstances() {
     const { data } = await http.get('/whatsapp/instances')
     return data.data as WhatsAppInstance[]
