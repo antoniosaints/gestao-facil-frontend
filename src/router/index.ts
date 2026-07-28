@@ -67,6 +67,18 @@ const routes: RouteInterface[] = [
     component: () => import('@/pages/loja/publico/LojaPublica.vue'),
     meta: { isPublic: true },
   },
+  {
+    path: '/reservar/:slug',
+    name: 'reservas-publica',
+    component: () => import('@/pages/reservas/publico/Reservar.vue'),
+    meta: { isPublic: true },
+  },
+  {
+    path: '/reservar/:slug/reserva/:publicId',
+    name: 'reservas-publica-gerenciar',
+    component: () => import('@/pages/reservas/publico/GerenciarReserva.vue'),
+    meta: { isPublic: true },
+  },
   ...[
     ['login', 'login'], ['cadastro', 'register'], ['esqueci-senha', 'forgot'], ['redefinir-senha', 'reset'], ['verificar', 'verify'], ['conta', 'account'],
   ].map(([path, customerMode]) => ({
@@ -475,6 +487,43 @@ const routes: RouteInterface[] = [
           permissao: 2,
           modulo: 'arena',
         },
+      },
+    ],
+  },
+  {
+    path: '/reservas',
+    name: 'reservas',
+    redirect: { name: 'reservas-painel' },
+    children: [
+      {
+        path: 'painel',
+        name: 'reservas-painel',
+        component: () => import('@/pages/reservas/Home.vue'),
+        meta: { layout: 'main', permissao: 1, modulo: 'reservas' },
+      },
+      {
+        path: 'lista',
+        name: 'reservas-lista',
+        component: () => import('@/pages/reservas/Home.vue'),
+        meta: { layout: 'main', permissao: 1, modulo: 'reservas' },
+      },
+      {
+        path: 'calendario',
+        name: 'reservas-calendario',
+        component: () => import('@/pages/reservas/Calendario.vue'),
+        meta: { layout: 'main', permissao: 1, modulo: 'reservas' },
+      },
+      {
+        path: 'recursos',
+        name: 'reservas-recursos',
+        component: () => import('@/pages/reservas/Recursos.vue'),
+        meta: { layout: 'main', permissao: 4, modulo: 'reservas' },
+      },
+      {
+        path: 'configuracoes',
+        name: 'reservas-configuracoes',
+        component: () => import('@/pages/reservas/Configuracoes.vue'),
+        meta: { layout: 'main', permissao: 4, modulo: 'reservas' },
       },
     ],
   },

@@ -77,6 +77,7 @@ const iconMap = {
   atendimento: Headset,
   servicos: Wrench,
   arena: CalendarCheck,
+  reservas: CalendarCheck,
   'mercado-pago': CreditCard,
   abacatepay: Banknote,
 } as const
@@ -87,6 +88,7 @@ const logoMap = {
   assinaturas: '/imgs/apps/assina.png',
   whatsapp: '/imgs/apps/wpp.avif',
   arena: '/imgs/apps/arena.png',
+  reservas: '/imgs/apps/reserva.png',
   servicos: '/imgs/apps/servicos.png',
   atendimento: '/imgs/apps/atende.png',
   'mercado-pago': '/imgs/apps/mp.png',
@@ -100,6 +102,7 @@ const iconShellClassMap: Record<string, string> = {
   atendimento: 'bg-green-500/15 text-green-300 ring-1 ring-green-500/20',
   servicos: 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/20',
   arena: 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/20',
+  reservas: 'bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/20',
   'mercado-pago': 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/20',
   abacatepay: 'bg-lime-500/15 text-lime-300 ring-1 ring-lime-500/20',
 }

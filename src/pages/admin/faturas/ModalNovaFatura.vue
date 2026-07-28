@@ -101,7 +101,14 @@ async function salvar() {
       <div class="grid grid-cols-2 gap-3">
         <div class="space-y-1.5">
           <Label>Valor (R$)</Label>
-          <Input v-model.number="valor" type="number" min="0" step="0.01" placeholder="0,00" />
+          <Input
+            :model-value="valor ?? ''"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0,00"
+            @update:model-value="valor = $event === '' ? null : Number($event)"
+          />
         </div>
         <div class="space-y-1.5">
           <Label>Data do pagamento / vencimento</Label>

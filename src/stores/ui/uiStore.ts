@@ -20,6 +20,7 @@ export interface Permissoes {
   clientes: TipoPermissao
   servicos: TipoPermissao
   vendas: TipoPermissao
+  reservas: TipoPermissao
   financeiro: TipoPermissao
   relatorios: TipoPermissao
   configuracoes: TipoPermissao
@@ -96,6 +97,13 @@ export const useUiStore = defineStore('uiStore', () => {
       excluir: false,
       painel: false,
     },
+    reservas: {
+      editar: false,
+      visualizar: false,
+      criar: false,
+      excluir: false,
+      painel: false,
+    },
     servicos: {
       editar: false,
       visualizar: false,
@@ -152,6 +160,13 @@ export const useUiStore = defineStore('uiStore', () => {
         painel: hasPermission(usuarioLogged.value, 3),
       },
       vendas: {
+        editar: hasPermission(usuarioLogged.value, 2),
+        visualizar: hasPermission(usuarioLogged.value, 1),
+        criar: hasPermission(usuarioLogged.value, 2),
+        excluir: hasPermission(usuarioLogged.value, 3),
+        painel: hasPermission(usuarioLogged.value, 3),
+      },
+      reservas: {
         editar: hasPermission(usuarioLogged.value, 2),
         visualizar: hasPermission(usuarioLogged.value, 1),
         criar: hasPermission(usuarioLogged.value, 2),

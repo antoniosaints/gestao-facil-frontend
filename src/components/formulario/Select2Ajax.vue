@@ -34,7 +34,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
     allowClear: false,
     required: false,
-    placeholder: "Selecione...",
+    placeholder: "Selecione…",
 })
 
 const emit = defineEmits<{
@@ -218,13 +218,13 @@ onMounted(fetchItems)
 
             <SelectContent class="w-min">
                 <div class="p-1">
-                    <Input ref="searchInputRef" v-model="search" placeholder="Buscar..." class="w-full"
+                    <Input ref="searchInputRef" v-model="search" placeholder="Buscar…" class="w-full"
                         @keydown="onSearchKeydown" />
                 </div>
                 <hr class="m-1">
                 <SelectGroup class="max-h-60 overflow-y-auto">
                     <template v-if="loading">
-                        <div class="p-2 text-sm text-muted-foreground">Carregando...</div>
+                        <div class="p-2 text-sm text-muted-foreground">Carregando…</div>
                     </template>
                     <template v-else-if="items.length === 0">
                         <div class="p-2 text-sm text-muted-foreground">Nenhum resultado</div>

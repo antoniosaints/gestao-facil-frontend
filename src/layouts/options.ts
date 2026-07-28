@@ -56,6 +56,7 @@ export const MAIN_MENU_VISIBILITY_OPTIONS = [
   { key: 'assinaturas', nome: 'Contratos', descricao: 'Módulo adicional de contratos recorrentes.', icon: FilePenLineIcon },
   { key: 'loja-virtual', nome: 'Loja Virtual', descricao: 'Módulo adicional de vitrine e pedidos online.', icon: Package },
   { key: 'arena', nome: 'Arena', descricao: 'Módulo adicional de quadras, reservas, calendário e comandas.', icon: CalendarCheck },
+  { key: 'reservas', nome: 'Reservas', descricao: 'Agendamento público, recursos, pagamentos e automações.', icon: CalendarClock },
   { key: 'core-ia', nome: 'Core IA', descricao: 'Módulo adicional de inteligência artificial.', icon: Bot },
   { key: 'whatsapp', nome: 'WhatsApp', descricao: 'Módulo adicional de instâncias e conexão.', icon: MessageCircle },
   { key: 'usuarios', nome: 'Usuários', descricao: 'Administração de usuários.', icon: User },
@@ -72,6 +73,7 @@ export const APP_MENU_MODULE_KEYS: Partial<Record<MainMenuVisibilityKey, string>
   assinaturas: 'assinaturas',
   'loja-virtual': 'loja-virtual',
   arena: 'arena',
+  reservas: 'reservas',
   'core-ia': 'core-ia',
   whatsapp: 'whatsapp',
 }
@@ -135,6 +137,13 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'arena:quadras', nome: 'Quadras' },
     { key: 'arena:comandas', nome: 'Comandas' },
   ],
+  reservas: [
+    { key: 'reservas:painel', nome: 'Painel' },
+    { key: 'reservas:lista', nome: 'Reservas' },
+    { key: 'reservas:calendario', nome: 'Calendário' },
+    { key: 'reservas:recursos', nome: 'Recursos e horários' },
+    { key: 'reservas:configuracoes', nome: 'Configurações' },
+  ],
   assinaturas: [
     { key: 'assinaturas:painel', nome: 'Painel' },
     { key: 'assinaturas:lista', nome: 'Contratos' },
@@ -196,12 +205,14 @@ export const sidebarMenuOptions = (
   const hasAtendimentoApp = Boolean(appModules.atendimento)
   const hasLojaApp = Boolean(appModules['loja-virtual'])
   const hasArenaApp = Boolean(appModules.arena)
+  const hasReservationsApp = Boolean(appModules.reservas)
   const hasVisibleAppsSection =
     (permissions.financeiro.visualizar && hasAssinaturasApp) ||
     (permissions.vendas.visualizar && hasCoreIaApp) ||
     (permissions.configuracoes.visualizar && hasWhatsappApp) ||
     (permissions.configuracoes.visualizar && hasAtendimentoApp) ||
-    (permissions.produtos.visualizar && hasLojaApp)
+    (permissions.produtos.visualizar && hasLojaApp) ||
+    (permissions.reservas.visualizar && hasReservationsApp)
 
   return [
     {
@@ -296,6 +307,50 @@ export const sidebarMenuOptions = (
           link: '/arena/comandas',
           icone: ClipboardList,
           color: 'blue',
+        },
+      ],
+    },
+    {
+      key: 'reservas',
+      nome: 'Reservas',
+      icone: CalendarClock,
+      show: permissions.reservas.visualizar && hasReservationsApp,
+      color: 'cyan',
+      children: [
+        {
+          key: 'reservas:painel',
+          nome: 'Painel',
+          link: '/reservas/painel',
+          icone: TicketCheck,
+          color: 'cyan',
+        },
+        {
+          key: 'reservas:lista',
+          nome: 'Reservas',
+          link: '/reservas/lista',
+          icone: ClipboardList,
+          color: 'cyan',
+        },
+        {
+          key: 'reservas:calendario',
+          nome: 'Calendário',
+          link: '/reservas/calendario',
+          icone: CalendarCheck2,
+          color: 'cyan',
+        },
+        {
+          key: 'reservas:recursos',
+          nome: 'Recursos e horários',
+          link: '/reservas/recursos',
+          icone: Users,
+          color: 'cyan',
+        },
+        {
+          key: 'reservas:configuracoes',
+          nome: 'Configurações',
+          link: '/reservas/configuracoes',
+          icone: Cog,
+          color: 'cyan',
         },
       ],
     },
