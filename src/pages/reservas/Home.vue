@@ -2,6 +2,7 @@
 import { computed, h, onMounted, reactive, ref, watch } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { useToast } from 'vue-toastification'
+import { useConfirm } from '@/composables/useConfirm'
 import DataTable from '@/components/tabela/DataTable.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,9 +19,10 @@ import {
   type ReservationStatus,
 } from '@/repositories/reservas-gerais-repository'
 import { formatCurrencyBR } from '@/utils/formatters'
-import { CalendarPlus, CircleCheck, Clock3, LoaderCircle, RefreshCw, WalletCards } from 'lucide-vue-next'
+import { CalendarPlus, CircleCheck, Clock3, LoaderCircle, RefreshCw, Trash2, WalletCards } from 'lucide-vue-next'
 
 const toast = useToast()
+const confirm = useConfirm()
 const filters = reactive({ update: 0, status: '' })
 const mobileBookings = ref<ReservationBooking[]>([])
 const selected = ref<ReservationBooking | null>(null)
@@ -164,6 +166,13 @@ async function createBooking() {
 
 async function linkCustomer() {
   if (!selected.value || !clientToLink.value) return
+  const confirmed = await confirm.confirm({
+    title: 'Vincular cliente',
+    message: 'Deseja vincular o cliente selecionado a esta reserva?',
+    confirmText: 'Sim, vincular',
+    colorButton: 'primary',
+  })
+  if (!confirmed) return
   try {
     loading.value = true
     selected.value = await ReservationsRepository.linkCustomer(selected.value.id, clientToLink.value)
@@ -180,7 +189,27 @@ async function linkCustomer() {
 
 async function act(action: 'confirm' | 'complete' | 'cancel') {
   if (!selected.value) return
-  if (action === 'cancel' && !window.confirm('Confirma o cancelamento desta reserva?')) return
+  const options = {
+    confirm: {
+      title: 'Confirmar reserva',
+      message: 'Deseja confirmar esta reserva?',
+      confirmText: 'Sim, confirmar',
+      colorButton: 'success' as const,
+    },
+    complete: {
+      title: 'Concluir reserva',
+      message: 'Deseja marcar esta reserva como concluída?',
+      confirmText: 'Sim, concluir',
+      colorButton: 'success' as const,
+    },
+    cancel: {
+      title: 'Cancelar reserva',
+      message: 'Deseja cancelar esta reserva? O horário será liberado.',
+      confirmText: 'Sim, cancelar',
+      colorButton: 'danger' as const,
+    },
+  }
+  if (!await confirm.confirm(options[action])) return
   try {
     loading.value = true
     selected.value = await ReservationsRepository.act(selected.value.id, action)
@@ -198,6 +227,13 @@ async function recordPayment() {
   if (!selected.value) return
   const amount = Math.max(0, Number(selected.value.valorTotal) - Number(selected.value.valorPago))
   if (!amount) return
+  const confirmed = await confirm.confirm({
+    title: 'Registrar pagamento',
+    message: `Deseja registrar o recebimento de ${formatCurrencyBR(amount)} via PIX?`,
+    confirmText: 'Sim, registrar',
+    colorButton: 'success',
+  })
+  if (!confirmed) return
   try {
     loading.value = true
     await ReservationsRepository.recordPayment(selected.value.id, amount, 'PIX')
@@ -214,11 +250,23 @@ async function recordPayment() {
 
 async function reschedule() {
   if (!selected.value || !rescheduleAt.value) return
+  const targetDate = new Date(rescheduleAt.value)
+  if (Number.isNaN(targetDate.getTime())) {
+    toast.error('Informe uma data e um horário válidos para remarcar.')
+    return
+  }
+  const confirmed = await confirm.confirm({
+    title: 'Remarcar reserva',
+    message: `Deseja remarcar esta reserva para ${dateTime(targetDate.toISOString())}?`,
+    confirmText: 'Sim, remarcar',
+    colorButton: 'warning',
+  })
+  if (!confirmed) return
   try {
     loading.value = true
     selected.value = await ReservationsRepository.reschedule(
       selected.value.id,
-      new Date(rescheduleAt.value).toISOString(),
+      targetDate.toISOString(),
       selected.value.recursoId,
       selected.value.version,
     )
@@ -234,7 +282,13 @@ async function reschedule() {
 
 async function refund() {
   if (!selected.value) return
-  if (!window.confirm('Confirma a solicitação de estorno desta reserva?')) return
+  const confirmed = await confirm.confirm({
+    title: 'Estornar pagamento',
+    message: 'Deseja solicitar o estorno dos pagamentos desta reserva?',
+    confirmText: 'Sim, estornar',
+    colorButton: 'danger',
+  })
+  if (!confirmed) return
   try {
     loading.value = true
     await ReservationsRepository.refund(selected.value.id)
@@ -244,6 +298,29 @@ async function refund() {
     await load()
   } catch (error: any) {
     toast.error(error?.response?.data?.message || 'Não foi possível processar o estorno.')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function deleteBooking() {
+  if (!selected.value || selected.value.status !== 'CANCELADA') return
+  const confirmed = await confirm.confirm({
+    title: 'Excluir reserva cancelada',
+    message: 'Deseja excluir permanentemente esta reserva? Esta ação não pode ser desfeita.',
+    confirmText: 'Sim, excluir',
+    colorButton: 'danger',
+  })
+  if (!confirmed) return
+  try {
+    loading.value = true
+    await ReservationsRepository.deleteBooking(selected.value.id)
+    selected.value = null
+    filters.update += 1
+    await load()
+    toast.success('Reserva excluída.')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível excluir a reserva.')
   } finally {
     loading.value = false
   }
@@ -362,6 +439,7 @@ onMounted(load)
         <div v-if="!['CONCLUIDA','CANCELADA','EXPIRADA'].includes(selected.status)" class="flex items-end gap-2 rounded-lg border p-3"><div class="flex-1"><Label>Remarcar para</Label><Input v-model="rescheduleAt" type="datetime-local" class="mt-1" /></div><Button variant="outline" :disabled="loading" @click="reschedule">Remarcar</Button></div>
         <div v-if="selected.Historico?.length" class="max-h-36 space-y-2 overflow-y-auto rounded-lg bg-muted/40 p-3"><p class="text-xs font-bold uppercase tracking-wide text-muted-foreground">Histórico</p><div v-for="event in selected.Historico" :key="event.id" class="flex justify-between text-sm"><span>{{ event.evento.replace(/_/g, ' ') }}</span><span class="text-muted-foreground">{{ dateTime(event.createdAt) }}</span></div></div>
         <div class="flex flex-wrap justify-end gap-2">
+          <Button v-if="selected.status === 'CANCELADA'" variant="destructive" :disabled="loading" @click="deleteBooking"><Trash2 class="mr-2 h-4 w-4" />Excluir reserva</Button>
           <Button v-if="Number(selected.valorPago) > 0" variant="destructive" :disabled="loading" @click="refund">Estornar</Button>
           <Button v-if="Number(selected.valorPago) < Number(selected.valorTotal) && !['CANCELADA','EXPIRADA'].includes(selected.status)" variant="outline" :disabled="loading" @click="recordPayment">Registrar pagamento</Button>
           <Button v-if="selected.status === 'AGUARDANDO_PAGAMENTO'" :disabled="loading" @click="act('confirm')">Confirmar</Button>

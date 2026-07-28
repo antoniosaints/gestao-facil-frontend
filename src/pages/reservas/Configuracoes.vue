@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
+import { useConfirm } from '@/composables/useConfirm'
 import { ReservationsRepository, type ReservationResource, type ReservationService, type PaymentPolicy } from '@/repositories/reservas-gerais-repository'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
@@ -11,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { ChevronDown, ChevronUp, ExternalLink, MessageCircle, Palette, Save, Settings2, WalletCards, Wrench } from 'lucide-vue-next'
+import { ChevronDown, ChevronUp, ExternalLink, MessageCircle, Palette, Save, Settings2, Trash2, WalletCards, Wrench } from 'lucide-vue-next'
 import { FONT_OPTIONS } from '@/utils/themeCustomization'
 
 const toast = useToast()
+const confirm = useConfirm()
 const saving = ref(false)
 const config = reactive<any>({})
 const resources = ref<ReservationResource[]>([])
@@ -131,6 +133,26 @@ async function saveService() {
     })
   } catch (error: any) { toast.error(error?.response?.data?.message || 'Não foi possível configurar o serviço.') }
   finally { saving.value = false }
+}
+async function deleteService(service: ReservationService) {
+  const confirmed = await confirm.confirm({
+    title: 'Remover serviço das reservas',
+    message: `Deseja remover “${service.Servico.nome}” das reservas? O serviço continuará cadastrado no sistema.`,
+    confirmText: 'Sim, remover',
+    cancelText: 'Cancelar',
+    colorButton: 'danger',
+  })
+  if (!confirmed) return
+  try {
+    saving.value = true
+    await ReservationsRepository.deleteService(service.id)
+    toast.success('Serviço removido das reservas.')
+    configured.value = await ReservationsRepository.listServices()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível remover o serviço das reservas.')
+  } finally {
+    saving.value = false
+  }
 }
 function toggleResource(id: number) {
   serviceForm.resourceIds = serviceForm.resourceIds.includes(id)
@@ -299,7 +321,15 @@ onMounted(load)
             <CardHeader><CardTitle>Serviços publicados</CardTitle><p class="text-sm text-muted-foreground">{{ configured.length }} configurações cadastradas.</p></CardHeader>
             <CardContent class="space-y-3">
               <div v-for="service in configured" :key="service.id" class="rounded-xl border p-4">
-                <div class="flex min-w-0 justify-between gap-3"><b class="truncate">{{ service.Servico.nome }}</b><span class="shrink-0 text-sm tabular-nums text-muted-foreground">{{ service.duracaoMinutos }} min</span></div>
+                <div class="flex min-w-0 items-center justify-between gap-3">
+                  <b class="truncate">{{ service.Servico.nome }}</b>
+                  <div class="flex shrink-0 items-center gap-2">
+                    <span class="text-sm tabular-nums text-muted-foreground">{{ service.duracaoMinutos }} min</span>
+                    <Button size="icon" variant="ghost" class="h-8 w-8 text-destructive hover:text-destructive" :disabled="saving" :aria-label="`Remover ${service.Servico.nome} das reservas`" @click="deleteService(service)">
+                      <Trash2 class="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
                 <p class="mt-1 break-words text-sm text-muted-foreground">{{ service.Recursos.map(item => item.Recurso.nome).join(', ') }} · {{ service.politicaPagamento.replace(/_/g, ' ') }}</p>
               </div>
               <p v-if="!configured.length" class="py-16 text-center text-muted-foreground">Nenhum serviço publicado.</p>

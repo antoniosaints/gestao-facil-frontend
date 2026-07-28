@@ -144,6 +144,11 @@ export class ReservationsRepository {
     return data.data as ReservationResource
   }
 
+  static async deleteResource(id: number) {
+    const { data } = await http.delete(`/reservas/recursos/${id}`)
+    return data.data as { id: number }
+  }
+
   static async saveAvailability(
     resourceId: number,
     ranges: Array<{ weekday: number; startMinute: number; endMinute: number }>,
@@ -187,6 +192,11 @@ export class ReservationsRepository {
     return data.data as ReservationService
   }
 
+  static async deleteService(id: number) {
+    const { data } = await http.delete(`/reservas/servicos/${id}`)
+    return data.data as { id: number }
+  }
+
   static async listBookings(params: Record<string, unknown> = {}) {
     const { data } = await http.get('/reservas', { params })
     return data as {
@@ -203,6 +213,11 @@ export class ReservationsRepository {
   static async act(id: number, action: 'confirm' | 'complete' | 'cancel', reason?: string) {
     const { data } = await http.post(`/reservas/${id}/${action}`, { reason })
     return data.data as ReservationBooking
+  }
+
+  static async deleteBooking(id: number) {
+    const { data } = await http.delete(`/reservas/${id}`)
+    return data.data as { id: number }
   }
 
   static async linkCustomer(id: number, clientId: number) {

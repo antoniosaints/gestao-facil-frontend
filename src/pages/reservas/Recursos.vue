@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
+import { useConfirm } from '@/composables/useConfirm'
 import { ReservationsRepository, type ReservationResource } from '@/repositories/reservas-gerais-repository'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -11,9 +12,10 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { CalendarOff, Clock, Pencil, Plus, UsersRound } from 'lucide-vue-next'
+import { CalendarOff, Clock, LucidePanelsRightBottom, Pencil, Plus, ToolCaseIcon, Trash2, UsersRound } from 'lucide-vue-next'
 
 const toast = useToast()
+const confirm = useConfirm()
 const resources = ref<ReservationResource[]>([])
 const selected = ref<ReservationResource | null>(null)
 const resourceOpen = ref(false)
@@ -53,6 +55,26 @@ async function saveResource() {
     await load()
   } catch (error: any) { toast.error(error?.response?.data?.message || 'Não foi possível salvar.') }
   finally { saving.value = false }
+}
+async function deleteResource(resource: ReservationResource) {
+  const confirmed = await confirm.confirm({
+    title: 'Excluir recurso',
+    message: `Deseja excluir “${resource.nome}”? Horários, folgas e vínculos com serviços também serão removidos.`,
+    confirmText: 'Sim, excluir',
+    cancelText: 'Cancelar',
+    colorButton: 'danger',
+  })
+  if (!confirmed) return
+  try {
+    saving.value = true
+    await ReservationsRepository.deleteResource(resource.id)
+    toast.success('Recurso excluído.')
+    await load()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível excluir o recurso.')
+  } finally {
+    saving.value = false
+  }
 }
 function openSchedule(resource: ReservationResource) {
   selected.value = resource
@@ -123,11 +145,21 @@ onMounted(load)
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <Card v-for="resource in resources" :key="resource.id">
         <CardContent class="p-5">
-          <div class="flex items-start justify-between gap-3"><span class="rounded-xl bg-primary/10 p-3 text-primary"><UsersRound /></span><div class="flex flex-wrap justify-end gap-1"><Badge variant="outline">{{ resource.tipo }}</Badge><Badge :variant="resource.ativo ? 'default' : 'secondary'">{{ resource.ativo ? 'Ativo' : 'Inativo' }}</Badge></div></div>
+          <div class="flex items-start justify-between gap-3">
+            <span class="rounded-xl bg-primary/10 p-3 text-primary">
+              <UsersRound v-if="resource.tipo === 'PROFISSIONAL'" />
+              <LucidePanelsRightBottom v-else-if="resource.tipo === 'SALA'" />
+              <ToolCaseIcon v-else />
+            </span>
+            <div class="flex flex-wrap justify-end gap-1">
+              <Badge variant="outline">{{ resource.tipo }}</Badge>
+              <Badge :variant="resource.ativo ? 'default' : 'secondary'">{{ resource.ativo ? 'Ativo' : 'Inativo' }}</Badge>
+            </div>
+          </div>
           <h2 class="mt-4 truncate text-xl font-bold">{{ resource.nome }}</h2>
           <p class="min-h-10 break-words text-sm text-muted-foreground">{{ resource.descricao || 'Sem descrição.' }}</p>
           <p class="mt-3 text-xs text-muted-foreground">{{ resource.Disponibilidades?.length || 0 }} faixas semanais · {{ resource.publico ? 'visível ao público' : 'uso interno' }}</p>
-          <div class="mt-4 flex flex-wrap gap-2"><Button size="sm" variant="outline" @click="openResource(resource)"><Pencil class="mr-1 h-4 w-4" />Editar</Button><Button size="sm" variant="outline" @click="openSchedule(resource)"><Clock class="mr-1 h-4 w-4" />Horários</Button><Button size="sm" variant="ghost" @click="openBlock(resource)"><CalendarOff class="mr-1 h-4 w-4" />Folga</Button></div>
+          <div class="mt-4 flex flex-wrap gap-2"><Button size="sm" variant="outline" @click="openResource(resource)"><Pencil class="mr-1 h-4 w-4" />Editar</Button><Button size="sm" variant="outline" @click="openSchedule(resource)"><Clock class="mr-1 h-4 w-4" />Horários</Button><Button size="sm" variant="ghost" @click="openBlock(resource)"><CalendarOff class="mr-1 h-4 w-4" />Folga</Button><Button size="sm" variant="ghost" class="text-destructive hover:text-destructive" :disabled="saving" @click="deleteResource(resource)"><Trash2 class="mr-1 h-4 w-4" />Excluir</Button></div>
         </CardContent>
       </Card>
       <div v-if="!resources.length" class="col-span-full rounded-2xl border border-dashed py-20 text-center text-muted-foreground">Cadastre o primeiro recurso para começar.</div>
