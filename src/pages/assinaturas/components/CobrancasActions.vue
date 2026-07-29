@@ -23,6 +23,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import {
   AssinaturaRepository,
@@ -30,7 +32,7 @@ import {
   type AssinaturaDetalheResponse,
 } from '@/repositories/assinatura-repository'
 import { useAssinaturasStore } from '@/stores/assinaturas/useAssinaturas'
-import { formatCurrencyBR } from '@/utils/formatters'
+import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters'
 
 type CicloAssinatura = AssinaturaCicloListItem | AssinaturaDetalheResponse['data']['ciclos'][number]
 
@@ -180,7 +182,7 @@ function abrirReajuste() {
 }
 
 async function confirmarReajuste() {
-  const valor = Number(valorReajuste.value)
+  const valor = formatToNumberValue(valorReajuste.value)
   if (!valor || valor <= 0) {
     toast.error('Informe um valor válido para reajustar a cobrança.')
     return
@@ -250,7 +252,7 @@ async function confirmarReajuste() {
       <div class="space-y-4 px-4">
         <div class="space-y-2">
           <Label for="valorReajusteCobranca">Novo valor</Label>
-          <Input id="valorReajusteCobranca" v-model="valorReajuste" type="number" min="0.01" step="0.01" />
+          <Input id="valorReajusteCobranca" v-model="valorReajuste" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
           <p class="text-xs text-muted-foreground">
             Valor atual: {{ formatCurrencyBR(props.data.valorCobrado) }}
           </p>

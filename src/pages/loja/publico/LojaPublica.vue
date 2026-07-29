@@ -234,7 +234,9 @@ async function load() {
 }
 
 function cartQuantityOf(product: StoreProduct) {
-  return cart.items.value.find((item) => item.product.id === product.id)?.quantity ?? 0
+  return cart.items.value.find((item) =>
+    item.product.id === product.id && (item.product.itemType || 'PRODUTO') === (product.itemType || 'PRODUTO')
+  )?.quantity ?? 0
 }
 // Após adicionar, um modal pergunta se o cliente quer ir ao carrinho ou continuar comprando.
 const addedProduct = ref<StoreProduct | null>(null)
@@ -259,8 +261,10 @@ function onCardAction(group: GroupedProduct) {
   }
   addVariant(group.variants[0], 1)
 }
-function onDrawerSetQuantity({ productId, quantity }: { productId: number; quantity: number }) {
-  const item = cart.items.value.find((entry) => entry.product.id === productId)
+function onDrawerSetQuantity({ productId, itemType, quantity }: { productId: number; itemType?: 'PRODUTO' | 'COMBO'; quantity: number }) {
+  const item = cart.items.value.find((entry) =>
+    entry.product.id === productId && (entry.product.itemType || 'PRODUTO') === (itemType || 'PRODUTO')
+  )
   if (item) cart.set(item.product, quantity)
 }
 
@@ -272,7 +276,10 @@ async function finishOrder() {
   const payload: CheckoutPayload = {
     channel: checkout.channel,
     deliveryType: checkout.deliveryType,
-    items: cart.items.value.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+    items: cart.items.value.map((item) => ({
+      ...(item.product.itemType === 'COMBO' ? { comboId: item.product.comboId || item.product.id } : { productId: item.product.id }),
+      quantity: item.quantity,
+    })),
     customer: {
       name: c.name.trim(),
       phone: c.phone.trim(),

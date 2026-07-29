@@ -33,7 +33,7 @@
                 </div>
                 <div class="grid gap-1">
                     <Label for="novoAssinanteValor">Valor do plano (R$)</Label>
-                    <Input id="novoAssinanteValor" v-model.number="form.valorBasePlano" type="number" min="1" step="0.01" />
+                    <Input id="novoAssinanteValor" v-model="form.valorBasePlano" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
                 </div>
                 <div class="grid gap-1">
                     <Label for="novoAssinanteDias">Dias até o 1º vencimento</Label>
@@ -61,15 +61,22 @@ import { UserPlus } from 'lucide-vue-next'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import { ContaRepository, type CreateAssinanteAdminPayload } from '@/repositories/conta-repository'
+import { formatToNumberValue } from '@/utils/formatters'
 import { useAssinantesAdmin } from './useAssinantesAdmin'
 
 const toast = useToast()
 const { openCreateModal, triggerRefresh } = useAssinantesAdmin()
 const saving = ref(false)
 
-function defaultForm(): CreateAssinanteAdminPayload {
+type NovoAssinanteForm = Omit<CreateAssinanteAdminPayload, 'valorBasePlano'> & {
+    valorBasePlano: number | string
+}
+
+function defaultForm(): NovoAssinanteForm {
     return {
         conta: '',
         nomeUsuario: '',
@@ -83,7 +90,7 @@ function defaultForm(): CreateAssinanteAdminPayload {
     }
 }
 
-const form = reactive<CreateAssinanteAdminPayload>(defaultForm())
+const form = reactive<NovoAssinanteForm>(defaultForm())
 
 watch(openCreateModal, (open) => {
     if (open) Object.assign(form, defaultForm())
@@ -101,7 +108,10 @@ async function submit() {
 
     try {
         saving.value = true
-        await ContaRepository.criarAssinanteAdmin({ ...form })
+        await ContaRepository.criarAssinanteAdmin({
+            ...form,
+            valorBasePlano: formatToNumberValue(form.valorBasePlano),
+        })
         toast.success('Assinante criado com sucesso')
         openCreateModal.value = false
         triggerRefresh()

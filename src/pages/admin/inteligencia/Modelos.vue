@@ -3,6 +3,9 @@ import { onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { preciseMoneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -23,8 +26,8 @@ const form = reactive<{
   nome: string
   provider: string
   ativo: boolean
-  custoInputMilhao: number | undefined
-  custoOutputMilhao: number | undefined
+  custoInputMilhao: number | string | undefined
+  custoOutputMilhao: number | string | undefined
 }>({
   modelId: '',
   nome: '',
@@ -74,9 +77,13 @@ async function save() {
     provider: form.provider.trim() || 'gemini',
     ativo: form.ativo,
     custoInputMilhao:
-      form.custoInputMilhao != null && Number(form.custoInputMilhao) >= 0 ? Number(form.custoInputMilhao) : null,
+      form.custoInputMilhao != null && formatToNumberValue(form.custoInputMilhao) >= 0
+        ? formatToNumberValue(form.custoInputMilhao)
+        : null,
     custoOutputMilhao:
-      form.custoOutputMilhao != null && Number(form.custoOutputMilhao) >= 0 ? Number(form.custoOutputMilhao) : null,
+      form.custoOutputMilhao != null && formatToNumberValue(form.custoOutputMilhao) >= 0
+        ? formatToNumberValue(form.custoOutputMilhao)
+        : null,
   }
   try {
     saving.value = true
@@ -205,11 +212,11 @@ onMounted(load)
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-1">
               <Label>Custo entrada / 1M tokens</Label>
-              <Input v-model.number="form.custoInputMilhao" type="number" min="0" step="0.000001" placeholder="Ex.: 0.075" />
+              <Input v-model="form.custoInputMilhao" v-maska="preciseMoneyMaskOptions" type="text" inputmode="decimal" placeholder="Ex.: 0,075000" />
             </div>
             <div class="space-y-1">
               <Label>Custo saída / 1M tokens</Label>
-              <Input v-model.number="form.custoOutputMilhao" type="number" min="0" step="0.000001" placeholder="Ex.: 0.30" />
+              <Input v-model="form.custoOutputMilhao" v-maska="preciseMoneyMaskOptions" type="text" inputmode="decimal" placeholder="Ex.: 0,300000" />
             </div>
             <p class="col-span-2 text-[11px] text-muted-foreground">
               Custo por 1 milhão de tokens (na sua moeda). Usado para estimar o gasto de IA. Deixe vazio se não quiser rastrear.

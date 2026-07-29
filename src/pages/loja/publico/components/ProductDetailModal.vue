@@ -119,6 +119,14 @@ function variantLabel(variant: StoreProduct) {
           <p v-if="stockLabel" class="mt-1 text-sm font-medium" :class="soldOut ? 'text-red-600' : 'text-emerald-700'">{{ stockLabel }}</p>
 
           <p v-if="group.description" class="mt-4 whitespace-pre-line text-sm leading-relaxed text-slate-600">{{ group.description }}</p>
+          <div v-if="selected?.itemType === 'COMBO' && selected.componentes?.length" class="mt-4 rounded-xl bg-slate-50 p-3">
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Este combo inclui</p>
+            <ul class="mt-2 space-y-1 text-sm text-slate-700">
+              <li v-for="component in selected.componentes" :key="`${component.tipo}-${component.id}`">
+                {{ component.quantidade }}x {{ component.nome }}
+              </li>
+            </ul>
+          </div>
 
           <!-- Seletor de variantes -->
           <div v-if="group.hasVariants" class="mt-5">

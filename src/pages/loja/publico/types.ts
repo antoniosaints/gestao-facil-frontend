@@ -30,7 +30,7 @@ export interface GroupedProduct {
 export function groupStoreProducts(products: StoreProduct[]): GroupedProduct[] {
   const groups = new Map<string, StoreProduct[]>()
   for (const product of products) {
-    const key = product.baseId != null ? `base-${product.baseId}` : `single-${product.id}`
+    const key = product.baseId != null ? `base-${product.baseId}` : `single-${product.itemType || 'PRODUTO'}-${product.id}`
     const bucket = groups.get(key)
     if (bucket) bucket.push(product)
     else groups.set(key, [product])

@@ -683,6 +683,16 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'combos',
+        name: 'produtos-combos',
+        component: () => import('@/pages/produtos/combos/CombosPage.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 4,
+          modulo: 'combos',
+        },
+      },
+      {
         path: 'reposicao',
         name: 'produtos-reposicao',
         component: () => import('@/pages/produtos/reposicao/Home.vue'),

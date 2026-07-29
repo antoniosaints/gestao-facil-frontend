@@ -7,6 +7,9 @@ import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
@@ -23,7 +26,7 @@ const resources = ref<ReservationResource[]>([])
 const configured = ref<ReservationService[]>([])
 const serviceForm = reactive({
   serviceId: null as number | null, durationMinutes: 60, bufferBeforeMinutes: 0, bufferAfterMinutes: 0,
-  paymentPolicy: 'NENHUM' as PaymentPolicy, fixedDeposit: undefined as number | undefined,
+  paymentPolicy: 'NENHUM' as PaymentPolicy, fixedDeposit: undefined as number | string | undefined,
   percentageDeposit: undefined as number | undefined, active: true, public: true,
   allowAnyResource: true, resourceIds: [] as number[],
 })
@@ -111,7 +114,7 @@ async function saveService() {
       bufferBeforeMinutes: Number(serviceForm.bufferBeforeMinutes),
       bufferAfterMinutes: Number(serviceForm.bufferAfterMinutes),
       paymentPolicy: serviceForm.paymentPolicy,
-      fixedDeposit: serviceForm.paymentPolicy === 'SINAL_FIXO' ? Number(serviceForm.fixedDeposit) : null,
+      fixedDeposit: serviceForm.paymentPolicy === 'SINAL_FIXO' ? formatToNumberValue(serviceForm.fixedDeposit || 0) : null,
       percentageDeposit: serviceForm.paymentPolicy === 'SINAL_PERCENTUAL' ? Number(serviceForm.percentageDeposit) : null,
       active: serviceForm.active, public: serviceForm.public,
       allowAnyResource: serviceForm.allowAnyResource, resourceIds: serviceForm.resourceIds,
@@ -301,7 +304,7 @@ onMounted(load)
                   </SelectContent>
                 </Select>
               </div>
-              <div v-if="serviceForm.paymentPolicy === 'SINAL_FIXO'" class="space-y-1.5"><Label for="valor-sinal">Valor do sinal</Label><Input id="valor-sinal" v-model.number="serviceForm.fixedDeposit" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 50,00…" /></div>
+              <div v-if="serviceForm.paymentPolicy === 'SINAL_FIXO'" class="space-y-1.5"><Label for="valor-sinal">Valor do sinal</Label><Input id="valor-sinal" v-model="serviceForm.fixedDeposit" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="Ex.: 50,00" /></div>
               <div v-if="serviceForm.paymentPolicy === 'SINAL_PERCENTUAL'" class="space-y-1.5"><Label for="percentual-sinal">Percentual do sinal</Label><Input id="percentual-sinal" v-model.number="serviceForm.percentageDeposit" type="number" min="1" max="100" inputmode="numeric" placeholder="Ex.: 30…" /></div>
               <div>
                 <Label>Recursos compatíveis</Label>

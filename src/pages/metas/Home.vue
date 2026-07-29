@@ -23,6 +23,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -36,7 +38,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useConfirm } from '@/composables/useConfirm'
 import { MetasRepository, type MetaPayload, type MetaResumo } from '@/repositories/metas-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
+import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
 
 const toast = useToast()
 const uiStore = useUiStore()
@@ -155,7 +157,7 @@ async function loadMetas(showFeedback = false) {
 }
 
 async function salvarMeta() {
-  const valorAlvo = Number(String(form.valorAlvo).replace(',', '.'))
+  const valorAlvo = formatToNumberValue(form.valorAlvo)
   if (!form.nome.trim()) return toast.error('Informe o nome da meta.')
   if (!valorAlvo || valorAlvo <= 0) return toast.error('Informe um alvo maior que zero.')
   if (form.periodicidade === 'PERSONALIZADO' && !form.dataFim) return toast.error('Informe a data final da meta.')
@@ -432,7 +434,7 @@ onMounted(() => loadMetas())
           </div>
           <div>
             <Label>Alvo</Label>
-            <Input v-model="form.valorAlvo" type="number" min="0" step="0.01" required placeholder="4000" />
+            <Input v-model="form.valorAlvo" v-maska="moneyMaskOptions" type="text" inputmode="decimal" required placeholder="0,00" />
           </div>
           <div>
             <Label>Início</Label>

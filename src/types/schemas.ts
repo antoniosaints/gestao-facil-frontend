@@ -332,6 +332,27 @@ export interface OrdensServico {
   garantia: string
   desconto: number
   data: Date
+  ComboSaidas?: ComboSaida[]
+}
+
+export interface ComboSaidaComponente {
+  id: number
+  tipo: 'PRODUTO' | 'SERVICO'
+  nomeSnapshot: string
+  quantidadePorCombo: number
+  quantidadeTotal: number
+}
+
+export interface ComboSaida {
+  id: number
+  comboId: number
+  comandaItemId?: number | null
+  comandaOperacaoItemId?: number | null
+  nomeSnapshot: string
+  quantidade: number
+  precoUnitarioSnapshot: number | string
+  subtotal: number | string
+  componentes: ComboSaidaComponente[]
 }
 
 export interface MensagensInteracoesOrdemServico {
@@ -396,6 +417,7 @@ export interface Vendas {
   CobrancasFinanceiras?: CobrancaFinanceira[]
   LancamentoFinanceiro?: LancamentoFinanceiro[]
   ItensVendas?: ItensVendas[]
+  ComboSaidas?: ComboSaida[]
   ComandaItens?: ComandaItem[]
   PagamentoVendas?: PagamentoVendas | null
 }
@@ -409,6 +431,7 @@ export interface CarrinhoItem {
   produtoBaseId?: number | null
   nomeVariante?: string | null
   categoria?: string | null
+  tipo?: 'PRODUTO' | 'SERVICO' | 'COMBO'
 }
 export interface ItemVenda {
   id: number
@@ -419,7 +442,7 @@ export interface ItemOrdemServico {
   id: number
   quantidade: number
   preco: number
-  tipo: 'PRODUTO' | 'SERVICO'
+  tipo: 'PRODUTO' | 'SERVICO' | 'COMBO'
 }
 
 export interface FormularioVenda {
@@ -864,7 +887,7 @@ export interface SaveOrdemServico {
   garantia?: number | null
   itens: {
     id: number
-    tipo: 'PRODUTO' | 'SERVICO'
+    tipo: 'PRODUTO' | 'SERVICO' | 'COMBO'
     nome: string
     valor: number
     quantidade: number
@@ -967,6 +990,7 @@ export interface ComandaVenda {
   vendas?: Vendas[]
   comandaPagamentos?: ComandaPagamento[]
   resumo?: ComandaResumo
+  comboSaidas?: ComboSaida[]
   itensAbertos?: number
   valorItensAbertos?: number
   valorPendente?: number

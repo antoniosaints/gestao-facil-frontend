@@ -1,7 +1,7 @@
 import http from '@/utils/axios'
 
 export type ComandaOperacaoStatus = 'ABERTA' | 'PENDENTE' | 'FATURADA' | 'CANCELADA'
-export type ComandaOrigemTipo = 'PRODUTO' | 'SERVICO' | 'AVULSO'
+export type ComandaOrigemTipo = 'PRODUTO' | 'SERVICO' | 'AVULSO' | 'COMBO'
 export type ComandaPagamentoMetodo = 'PIX' | 'DINHEIRO' | 'CARTAO' | 'BOLETO' | 'PROMISSORIA'
 
 export type ApiResponse<T> = {
@@ -67,6 +67,16 @@ export interface ComandaOperacao {
   itens?: ComandaOperacaoItem[]
   pagamentos?: ComandaOperacaoPagamento[]
   historicos?: ComandaOperacaoHistorico[]
+  comboSaidas?: Array<{
+    id: number
+    comandaOperacaoItemId?: number | null
+    nomeSnapshot: string
+    componentes: Array<{
+      id: number
+      nomeSnapshot: string
+      quantidadePorCombo: number
+    }>
+  }>
 }
 
 export interface ComandaConfiguracao {

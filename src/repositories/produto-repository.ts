@@ -104,6 +104,16 @@ export interface CatalogoLojaConfig {
 export interface CatalogoPublico {
   conta: { id: number; nome: string; nomeFantasia: string | null; profile: string | null; telefone: string | null }
   produtos: CatalogoProduto[]
+  combos?: Array<{
+    id: number
+    nome: string
+    descricao: string | null
+    categoria: 'Combos'
+    imagem: string | null
+    preco: number
+    quantidadeDisponivel: number | null
+    componentes: Array<{ tipo: 'PRODUTO' | 'SERVICO'; id: number; nome: string; quantidade: number }>
+  }>
   categorias: string[]
   // Presente quando o módulo Loja Virtual está ativo: a vitrine vira loja personalizada.
   loja?: { ativa: boolean; config: CatalogoLojaConfig | null }

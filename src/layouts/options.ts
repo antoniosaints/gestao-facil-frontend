@@ -122,6 +122,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
   produtos: [
     { key: 'produtos:painel', nome: 'Painel' },
     { key: 'produtos:lista', nome: 'Produtos' },
+    { key: 'produtos:combos', nome: 'Combos' },
     { key: 'produtos:reposicao', nome: 'Reposição' },
     { key: 'produtos:movimentacoes', nome: 'Movimentações' },
   ],
@@ -206,6 +207,7 @@ export const sidebarMenuOptions = (
   const hasLojaApp = Boolean(appModules['loja-virtual'])
   const hasArenaApp = Boolean(appModules.arena)
   const hasReservationsApp = Boolean(appModules.reservas)
+  const hasCombosApp = Boolean(appModules.combos)
   const hasVisibleAppsSection =
     (permissions.financeiro.visualizar && hasAssinaturasApp) ||
     (permissions.vendas.visualizar && hasCoreIaApp) ||
@@ -512,6 +514,14 @@ export const sidebarMenuOptions = (
           nome: 'Produtos',
           link: '/produtos',
           icone: Boxes,
+          color: 'blue',
+        },
+        {
+          key: 'produtos:combos',
+          nome: 'Combos',
+          link: '/produtos/combos',
+          show: hasCombosApp,
+          icone: Layers3,
           color: 'blue',
         },
         {

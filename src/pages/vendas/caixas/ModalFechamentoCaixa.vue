@@ -4,6 +4,8 @@ import { Coins, Lock } from 'lucide-vue-next'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import type { MetodoContado } from '@/repositories/caixa-repository'
 import type { CaixaSessao } from '@/types/schemas'
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters'
@@ -138,7 +140,7 @@ function submit() {
               <strong class="text-sm">{{ formatCurrencyBR(saldoEsperado) }}</strong>
             </div>
             <div class="mt-2">
-              <Input v-model="valorFechamento" type="text" class="h-9"
+              <Input v-model="valorFechamento" v-maska="moneyMaskOptions" type="text" inputmode="decimal" class="h-9"
                 aria-label="Valor contado em dinheiro" placeholder="Valor contado (espécie)" />
               <p v-if="erro" class="mt-1 text-xs text-rose-600">{{ erro }}</p>
             </div>
@@ -168,7 +170,7 @@ function submit() {
               </div>
             </div>
             <div v-if="contagemMetodos[metodo.metodo]?.habilitado" class="mt-2">
-              <Input v-model="contagemMetodos[metodo.metodo].contado" type="text" class="h-9"
+              <Input v-model="contagemMetodos[metodo.metodo].contado" v-maska="moneyMaskOptions" type="text" inputmode="decimal" class="h-9"
                 :aria-label="`Valor contado em ${metodo.label}`" placeholder="Valor contado (opcional)" />
             </div>
           </div>

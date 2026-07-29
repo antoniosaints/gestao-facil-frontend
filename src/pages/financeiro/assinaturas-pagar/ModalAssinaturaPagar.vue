@@ -21,6 +21,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -312,7 +315,7 @@ async function save() {
     return
   }
 
-  if (form.valor <= 0) {
+  if (formatToNumberValue(form.valor) <= 0) {
     toast.error('Informe um valor maior que zero.')
     return
   }
@@ -327,7 +330,7 @@ async function save() {
   const payload: AssinaturaPagarPayload = {
     id: form.id,
     nomeServico: form.nomeServico.trim(),
-    valor: Number(form.valor || 0),
+    valor: formatToNumberValue(form.valor || 0),
     periodicidade: form.periodicidade,
     intervaloDiasPersonalizado: form.periodicidade === 'PERSONALIZADO' ? Number(form.intervaloDiasPersonalizado || 0) : null,
     inicio: toIsoDate(form.inicio) as string,
@@ -411,7 +414,7 @@ onBeforeUnmount(() => {
                 </div>
                 <div>
                   <Label for="assinaturaPagarValor">Valor *</Label>
-                  <Input id="assinaturaPagarValor" v-model.number="form.valor" type="number" min="0" step="0.01" placeholder="0,00" />
+                  <Input id="assinaturaPagarValor" v-model="form.valor" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
                 </div>
                 <div>
                   <Label>Status</Label>

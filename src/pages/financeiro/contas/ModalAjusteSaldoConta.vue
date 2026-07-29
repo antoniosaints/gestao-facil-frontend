@@ -3,6 +3,8 @@ import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useContasFinanceirasStore } from '@/stores/lancamentos/useContasFinanceiras'
@@ -133,7 +135,7 @@ watch(
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <label class="mb-1 block text-sm font-medium">Saldo real informado</label>
-          <Input v-model="form.saldoInformado" type="number" step="0.01" min="0" placeholder="0,00" />
+          <Input v-model="form.saldoInformado" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
         </div>
 
         <div>

@@ -123,7 +123,10 @@ export const useVendasStore = defineStore('vendasStore', () => {
 
   const openUpdate = async (id: number) => {
     const { data } = (await VendaRepository.get(id)) as {
-      data: Vendas & { ItensVendas: ItensVendas[] }
+      data: Vendas & {
+        ItensVendas: ItensVendas[]
+        ComboSaidas?: Array<{ comboId: number; nomeSnapshot: string; quantidade: number; precoUnitarioSnapshot: number | string }>
+      }
     }
 
     // Editar uma venda faturada refaria itens e estoque de algo já baixado no
@@ -154,8 +157,19 @@ export const useVendasStore = defineStore('vendasStore', () => {
         quantidade: item.quantidade,
         preco: parseFloat(String(item.valor).replace(',', '.')),
         subtotal: parseFloat(String(item.valor).replace(',', '.')) * item.quantidade,
+        tipo: item.produtoId ? 'PRODUTO' as const : 'SERVICO' as const,
       }
       carrinho.value.push(newItem)
+    })
+    data.ComboSaidas?.forEach((combo) => {
+      carrinho.value.push({
+        id: combo.comboId,
+        produto: combo.nomeSnapshot,
+        quantidade: combo.quantidade,
+        preco: Number(combo.precoUnitarioSnapshot),
+        subtotal: Number(combo.precoUnitarioSnapshot) * combo.quantidade,
+        tipo: 'COMBO',
+      })
     })
     localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(carrinho.value))
     openModal.value = true

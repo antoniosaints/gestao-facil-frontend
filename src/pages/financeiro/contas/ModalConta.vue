@@ -6,6 +6,8 @@ import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import type { ContasFinanceiro } from '@/types/schemas'
 import { formatToNumberValue } from '@/utils/formatters'
@@ -225,7 +227,7 @@ onBeforeUnmount(() => {
 
             <div>
               <label class="mb-1 block text-sm font-medium">Saldo inicial</label>
-              <Input v-model="form.saldoInicial" type="number" step="0.01" placeholder="0,00" />
+              <Input v-model="form.saldoInicial" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
               <p class="mt-1 text-xs text-muted-foreground">Usado como ponto de partida dos saldos da conta financeira.</p>
             </div>
 

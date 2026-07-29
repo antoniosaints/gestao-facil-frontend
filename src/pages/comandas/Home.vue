@@ -23,6 +23,8 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -33,9 +35,10 @@ import {
 } from '@/repositories/comanda-operacao-repository'
 import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { ServicoRepository } from '@/repositories/servico-repository'
+import { ComboRepository } from '@/repositories/combo-repository'
 import { useComandasStore, getDefaultItemForm, type ComandaItemForm } from '@/stores/comandas/useComandas'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
+import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
 
 const store = useComandasStore()
 const uiStore = useUiStore()
@@ -106,11 +109,18 @@ function statusClass(status: string) {
 function itemTypeLabel(type: string) {
   if (type === 'PRODUTO') return 'Produto'
   if (type === 'SERVICO') return 'Servico'
+  if (type === 'COMBO') return 'Combo'
   return 'Avulso'
 }
 
 function getItemTotal(item: ComandaOperacaoItem) {
   return Number(item.subtotal || 0)
+}
+
+function getComboComponents(itemId: number) {
+  return store.selectedComanda?.comboSaidas?.find(
+    (combo) => combo.comandaOperacaoItemId === itemId,
+  )?.componentes || []
 }
 
 function getClienteLabel(comanda: ComandaOperacao) {
@@ -224,6 +234,17 @@ async function hydrateItemData(form: ComandaItemForm, id: number | string | null
         toast.error('Produto sem estoque disponivel.')
       }
       form.valorUnitario = Number(response.data?.preco || 0)
+      form.quantidade = 1
+      return
+    }
+
+    if (form.origemTipo === 'COMBO') {
+      const combo = (await ComboRepository.options('COMANDA')).find((item) => item.id === Number(id))
+      if (!combo || !combo.disponivel) {
+        toast.error(combo?.motivoIndisponivel || 'Combo indisponivel.')
+        return
+      }
+      form.valorUnitario = combo.preco
       form.quantidade = 1
       return
     }
@@ -579,6 +600,7 @@ onMounted(loadComandas)
                 <SelectContent>
                   <SelectItem value="PRODUTO">Produto</SelectItem>
                   <SelectItem value="SERVICO">Servico</SelectItem>
+                  <SelectItem value="COMBO">Combo</SelectItem>
                   <SelectItem value="AVULSO">Avulso</SelectItem>
                 </SelectContent>
               </Select>
@@ -591,8 +613,8 @@ onMounted(loadComandas)
                 v-else
                 v-model="item.origemId"
                 v-model:label="createItemLabels[index]"
-                :url="item.origemTipo === 'PRODUTO' ? '/produtos/select2' : '/servicos/select2'"
-                :params="item.origemTipo === 'PRODUTO' ? [{ key: 'withStock', value: true }] : []"
+                :url="item.origemTipo === 'PRODUTO' ? '/produtos/select2' : item.origemTipo === 'COMBO' ? '/combos/opcoes' : '/servicos/select2'"
+                :params="item.origemTipo === 'PRODUTO' ? [{ key: 'withStock', value: true }] : item.origemTipo === 'COMBO' ? [{ key: 'canal', value: 'COMANDA' }] : []"
                 :allow-clear="true"
                 placeholder="Pesquisar item"
                 @update:model-value="(value) => hydrateItemData(item, value)"
@@ -606,12 +628,12 @@ onMounted(loadComandas)
 
             <div class="md:col-span-2">
               <label class="mb-1 block text-xs font-medium">Valor unitario</label>
-              <Input v-model.number="item.valorUnitario" type="number" min="0.01" step="0.01" />
+              <Input v-model="item.valorUnitario" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
             </div>
 
             <div class="flex items-end justify-between gap-2 md:col-span-2">
               <div class="pb-2 text-sm font-semibold text-foreground">
-                {{ formatCurrencyBR(Number(item.valorUnitario || 0) * Number(item.quantidade || 0)) }}
+                {{ formatCurrencyBR(formatToNumberValue(item.valorUnitario || 0) * Number(item.quantidade || 0)) }}
               </div>
               <Button type="button" variant="outline" size="sm" :disabled="store.comandaForm.itens.length === 1" @click="removeCreateItem(index)">
                 <Trash2 class="h-4 w-4" />
@@ -689,6 +711,9 @@ onMounted(loadComandas)
                 <span v-if="item.estoqueDebitado"> - estoque debitado</span>
                 <span v-if="item.pagamentoId" class="ml-1 text-emerald-600">- faturado</span>
                 <span v-else-if="store.selectedComanda.status === 'PENDENTE'" class="ml-1 text-amber-600">- em aberto</span>
+                <p v-for="component in getComboComponents(item.id)" :key="component.id" class="truncate">
+                  {{ component.quantidadePorCombo }}x {{ component.nomeSnapshot }}
+                </p>
               </div>
             </div>
             <div class="col-span-2">{{ Number(item.quantidade || 0) }}</div>
@@ -719,6 +744,7 @@ onMounted(loadComandas)
             <SelectContent>
               <SelectItem value="PRODUTO">Produto</SelectItem>
               <SelectItem value="SERVICO">Servico</SelectItem>
+              <SelectItem value="COMBO">Combo</SelectItem>
               <SelectItem value="AVULSO">Avulso</SelectItem>
             </SelectContent>
           </Select>
@@ -730,8 +756,8 @@ onMounted(loadComandas)
             v-else
             v-model="store.itemForm.origemId"
             v-model:label="itemLabel"
-            :url="store.itemForm.origemTipo === 'PRODUTO' ? '/produtos/select2' : '/servicos/select2'"
-            :params="store.itemForm.origemTipo === 'PRODUTO' ? [{ key: 'withStock', value: true }] : []"
+            :url="store.itemForm.origemTipo === 'PRODUTO' ? '/produtos/select2' : store.itemForm.origemTipo === 'COMBO' ? '/combos/opcoes' : '/servicos/select2'"
+            :params="store.itemForm.origemTipo === 'PRODUTO' ? [{ key: 'withStock', value: true }] : store.itemForm.origemTipo === 'COMBO' ? [{ key: 'canal', value: 'COMANDA' }] : []"
             :allow-clear="true"
             placeholder="Pesquisar item"
             @update:model-value="(value) => hydrateItemData(store.itemForm, value)"
@@ -743,11 +769,11 @@ onMounted(loadComandas)
         </div>
         <div class="md:col-span-6">
           <label class="mb-1 block text-sm font-medium">Valor unitario</label>
-          <Input v-model.number="store.itemForm.valorUnitario" type="number" min="0.01" step="0.01" />
+          <Input v-model="store.itemForm.valorUnitario" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
         </div>
         <div class="md:col-span-12 flex justify-between gap-2 border-t border-border pt-3">
           <div class="text-sm text-muted-foreground">
-            Subtotal: <span class="font-semibold text-foreground">{{ formatCurrencyBR(Number(store.itemForm.valorUnitario || 0) * Number(store.itemForm.quantidade || 0)) }}</span>
+            Subtotal: <span class="font-semibold text-foreground">{{ formatCurrencyBR(formatToNumberValue(store.itemForm.valorUnitario || 0) * Number(store.itemForm.quantidade || 0)) }}</span>
           </div>
           <div class="flex gap-2">
             <Button type="button" variant="secondary" @click="store.openItemModal = false">Fechar</Button>

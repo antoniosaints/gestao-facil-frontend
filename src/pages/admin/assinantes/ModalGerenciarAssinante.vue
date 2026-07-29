@@ -21,6 +21,8 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
@@ -30,7 +32,7 @@ import {
   type AssinanteAdminAppItem,
   type ContaAssinanteAdmin,
 } from '@/repositories/conta-repository'
-import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
+import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
 
 const props = defineProps<{
   conta: ContaAssinanteAdmin | null
@@ -60,7 +62,7 @@ const dados = ref({
   telefone: '',
   documento: '',
 })
-const valorBasePlano = ref<number>(0)
+const valorBasePlano = ref<number | string>(0)
 
 // valor total = base + apps ativos (para exibir o efeito da mensalidade base)
 const valorAppsAtivos = computed(() =>
@@ -235,7 +237,7 @@ async function submit() {
       email: dados.value.email.trim(),
       telefone: dados.value.telefone.trim() || null,
       documento: dados.value.documento.trim() || null,
-      valorBasePlano: Number(valorBasePlano.value || 0),
+      valorBasePlano: formatToNumberValue(valorBasePlano.value),
       iaLimiteTokensMensal:
         iaLimiteTokensMensal.value != null && Number(iaLimiteTokensMensal.value) > 0
           ? Number(iaLimiteTokensMensal.value)
@@ -314,7 +316,7 @@ async function submit() {
             <div class="text-sm font-medium text-foreground">Mensalidade</div>
             <div class="space-y-1">
               <Label>Valor base do plano (R$)</Label>
-              <Input v-model.number="valorBasePlano" type="number" min="0" step="0.01" />
+              <Input v-model="valorBasePlano" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
               <p class="text-xs text-muted-foreground">
                 Este é o valor base cobrado do cliente. O total soma os apps ativos.
               </p>

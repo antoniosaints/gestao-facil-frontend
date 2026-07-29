@@ -1,30 +1,39 @@
 import { reactive } from 'vue'
 import type { MaskInputOptions } from 'maska'
 
-export const moneyMaskOptions = reactive<MaskInputOptions>({
-  preProcess: (val) => {
-    // troca ponto por vírgula e remove caracteres inválidos
-    return val.replace('.', ',').replace(/[^\d,]/g, '')
-  },
+export function createDecimalMaskOptions(decimalPlaces = 2) {
+  return reactive<MaskInputOptions>({
+    preProcess: (val) => {
+      // troca ponto por vírgula e remove caracteres inválidos
+      const normalized = val.replace(/[^\d.,]/g, '')
+      if (normalized.includes(',') && normalized.includes('.')) {
+        return normalized.replace(/\./g, '')
+      }
+      return normalized.replace(/\./g, ',')
+    },
 
-  postProcess: (val) => {
-    if (!val) return ''
+    postProcess: (val) => {
+      if (!val) return ''
 
-    // garante apenas uma vírgula
-    const partes = val.split(',')
-    if (partes.length > 2) {
-      val = partes[0] + ',' + partes.slice(1).join('')
-    }
+      // garante apenas uma vírgula
+      const partes = val.split(',')
+      if (partes.length > 2) {
+        val = partes[0] + ',' + partes.slice(1).join('')
+      }
 
-    // limita 2 casas decimais
-    if (partes[1]) {
-      partes[1] = partes[1].slice(0, 2)
-      val = partes[0] + ',' + partes[1]
-    }
+      // limita as casas sem reduzir a precisão dos custos técnicos.
+      if (partes[1]) {
+        partes[1] = partes[1].slice(0, decimalPlaces)
+        val = partes[0] + ',' + partes[1]
+      }
 
-    return val
-  },
-})
+      return val
+    },
+  })
+}
+
+export const moneyMaskOptions = createDecimalMaskOptions(2)
+export const preciseMoneyMaskOptions = createDecimalMaskOptions(6)
 
 export const cpfCnpjMaskOptions = reactive<MaskInputOptions>({
   preProcess: (val) => {

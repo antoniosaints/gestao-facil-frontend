@@ -23,6 +23,7 @@ import { formatCurrencyBR } from "@/utils/formatters";
 import { addDays, format } from "date-fns";
 import type { SaveOrdemServico } from "@/types/schemas";
 import { OrdensServicoRepository } from "@/repositories/os-repository";
+import { ComboRepository } from "@/repositories/combo-repository";
 
 const title = ref('Cadastro de OS')
 const description = ref('Preencha os campos abaixo')
@@ -39,7 +40,7 @@ async function gerarMensagemClienteOs() {
 }
 const storeUi = useUiStore()
 const storeCliente = useClientesStore()
-const adicionarTipo = ref<'PRODUTO' | 'SERVICO'>('PRODUTO')
+const adicionarTipo = ref<'PRODUTO' | 'SERVICO' | 'COMBO'>('PRODUTO')
 const erros = ref<Record<string, string>>({})
 
 const labelProdutoInsert = ref<string>('')
@@ -149,8 +150,10 @@ function addToCartVendas() {
 }
 
 
-function removeFromCartVendas(produtoId: number) {
-  const novoCarrinho = store.carrinho.filter(item => Number(item.id) !== Number(produtoId));
+function removeFromCartVendas(produtoId: number, tipo: CarrinhoOS['tipoItem']) {
+  const novoCarrinho = store.carrinho.filter(
+    item => Number(item.id) !== Number(produtoId) || item.tipoItem !== tipo
+  );
 
   store.carrinho = novoCarrinho;
   localStorage.setItem('gestao_facil:carrinho_ordem_servico', JSON.stringify(novoCarrinho));
@@ -236,12 +239,35 @@ async function getValorServico(id: number) {
   }
 }
 
+async function getValorCombo(id: number) {
+  try {
+    ableAdd.value = true
+    const combo = (await ComboRepository.options('OS')).find(item => item.id === id)
+    if (!combo || !combo.disponivel) {
+      addItemForm.value.preco = null
+      ableAdd.value = false
+      return toast.error(combo?.motivoIndisponivel || 'Combo indisponível')
+    }
+
+    addItemForm.value.quantidade = 1
+    maxQuantidadeAdd.value = combo.quantidadeDisponivel ?? 999999999999
+    addItemForm.value.preco = combo.preco
+  } catch {
+    addItemForm.value.preco = null
+    ableAdd.value = false
+    toast.error('Erro ao buscar o combo')
+  }
+}
+
 watch(() => addItemForm.value.id, (id) => {
   if (id && adicionarTipo.value === 'PRODUTO') {
     getValorProduto(id);
   }
   else if (id && adicionarTipo.value === 'SERVICO') {
     getValorServico(id);
+  }
+  else if (id && adicionarTipo.value === 'COMBO') {
+    getValorCombo(id);
   }
   else {
     addItemForm.value.preco = null
@@ -396,6 +422,9 @@ onMounted(() => {
               <SelectItem value="SERVICO">
                 Serviço
               </SelectItem>
+              <SelectItem value="COMBO">
+                Combo
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -404,10 +433,15 @@ onMounted(() => {
           <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
             url="/produtos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
         </div>
-        <div v-else class="col-span-8 md:col-span-5">
+        <div v-else-if="adicionarTipo === 'SERVICO'" class="col-span-8 md:col-span-5">
           <label class="block text-sm mb-1">Serviço <span class="text-red-500">*</span></label>
           <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
             url="/servicos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
+        </div>
+        <div v-else class="col-span-8 md:col-span-5">
+          <label class="block text-sm mb-1">Combo <span class="text-red-500">*</span></label>
+          <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
+            url="/combos/opcoes" :params="[{ key: 'canal', value: 'OS' }]" :allow-clear="true" />
         </div>
 
         <div class="col-span-4 md:col-span-2">
@@ -461,7 +495,7 @@ onMounted(() => {
                 class="p-3 text-center text-gray-500 bg-white dark:bg-gray-900 border rounded-md">
                 Nenhum item adicionado
               </div>
-              <div v-else v-for="item in store.carrinho" :key="item.id"
+              <div v-else v-for="item in store.carrinho" :key="`${item.tipoItem}-${item.id}`"
                 class="flex justify-between items-center bg-white dark:bg-gray-900 border rounded-md p-2 shadow-sm">
                 <div class="flex flex-col text-sm">
                   <span class="font-medium text-gray-800 dark:text-gray-200">({{ item.tipoItem }}) {{ item.produto
@@ -477,7 +511,7 @@ onMounted(() => {
                       {{ formatCurrencyBR(item.preco || 0) }} x {{ item.quantidade }}
                     </span>
                   </div>
-                  <button type="button" @click="removeFromCartVendas(item.id)"
+                  <button type="button" @click="removeFromCartVendas(item.id, item.tipoItem)"
                     class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 p-2 rounded-sm">
                     <Trash class="w-4 h-4" />
                   </button>

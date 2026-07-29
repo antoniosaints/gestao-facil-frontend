@@ -27,6 +27,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -49,7 +51,7 @@ import {
 import { useConfirm } from '@/composables/useConfirm'
 import { useAssinaturasStore } from '@/stores/assinaturas/useAssinaturas'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
+import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
 import {
   getPeriodicidadeLabel,
   getStatusAssinaturaMeta,
@@ -286,7 +288,7 @@ async function submitAddItem() {
     produtoId: itemForm.tipoItem === 'PRODUTO' ? selectedId : null,
     descricaoSnapshot: itemForm.descricaoSnapshot.trim(),
     quantidade: Number(itemForm.quantidade) || 1,
-    valorUnitario: Number(itemForm.valorUnitario) || 0,
+    valorUnitario: formatToNumberValue(itemForm.valorUnitario),
     cobrar: itemForm.cobrar,
     comodato: itemForm.comodato,
     modoCobranca: itemForm.modoCobranca,
@@ -763,7 +765,7 @@ onMounted(() => {
           </div>
           <div class="space-y-2">
             <Label>Valor unitário</Label>
-            <Input v-model.number="itemForm.valorUnitario" type="number" min="0" step="0.01" />
+            <Input v-model="itemForm.valorUnitario" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
           </div>
         </div>
 

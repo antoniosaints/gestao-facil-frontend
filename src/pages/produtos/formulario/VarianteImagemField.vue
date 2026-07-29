@@ -8,7 +8,10 @@ import { ImagePlus, Trash2, Package } from 'lucide-vue-next'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import ImageCropperModal from '@/pages/produtos/formulario/ImageCropperModal.vue'
 
-const props = defineProps<{ existing?: string | null; disabled?: boolean }>()
+const props = withDefaults(
+  defineProps<{ existing?: string | null; disabled?: boolean; entityLabel?: string }>(),
+  { entityLabel: 'variante' },
+)
 const emit = defineEmits<{ (e: 'change', value: { file: File | null; remove: boolean }): void }>()
 
 const toast = useToast()
@@ -77,7 +80,7 @@ onBeforeUnmount(() => {
     <div
       class="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/30"
     >
-      <img v-if="displayUrl" :src="displayUrl" alt="Imagem da variante" class="h-full w-full object-cover" />
+      <img v-if="displayUrl" :src="displayUrl" :alt="`Imagem do ${entityLabel}`" class="h-full w-full object-cover" />
       <Package v-else class="h-8 w-8 text-muted-foreground" />
     </div>
     <div class="flex flex-col gap-2">

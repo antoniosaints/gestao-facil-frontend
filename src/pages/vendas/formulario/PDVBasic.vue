@@ -129,7 +129,7 @@
                     </div> -->
                     <div v-if="products.length"
                         class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                        <div v-for="p in products" :key="p.id"
+                        <div v-for="p in products" :key="`${p.tipoItem || 'PRODUTO'}:${p.id}`"
                             class="border border-border bg-background shadow-md rounded p-3 card-hover cursor-pointer product-card flex flex-col justify-between"
                             data-product-id="${product.id}">
                             <div class="text-center">
@@ -204,13 +204,13 @@
                                 <p>Carrinho vazio</p>
                                 <p class="text-sm">Adicione produtos para começar</p>
                             </div>
-                            <div v-for="item in cart" :key="item.id"
+                            <div v-for="item in cart" :key="`${item.tipoItem || 'PRODUTO'}:${item.id}`"
                                 class="border bg-card dark:bg-gray-800 shadow-md rounded p-1 mb-3">
                                 <div class="flex justify-between items-start">
                                     <h4 class="text-xs text-gray-800 dark:text-white p-1 truncate">
                                         {{ `${item.nome}${item.nomeVariante ? ` / ${item.nomeVariante}` : ''}` }}
                                     </h4>
-                                    <button type="button" title="Remover item" @click="atualizarQuantidade(item.id!, 0)"
+                                    <button type="button" title="Remover item" @click="atualizarQuantidade(item.id!, 0, item.tipoItem || 'PRODUTO')"
                                         class="text-red-500 hover:text-red-700 text-sm">
                                         <SquareX />
                                     </button>
@@ -218,11 +218,11 @@
                                 <div class="flex items-center justify-between px-2">
                                     <div class="flex items-center space-x-2">
                                         <button type="button" title="Diminuir quantidade"
-                                            @click="atualizarQuantidade(item.id!, item.quantity - 1)"
+                                            @click="atualizarQuantidade(item.id!, item.quantity - 1, item.tipoItem || 'PRODUTO')"
                                             class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">-</button>
                                         <span class="text-sm font-medium">{{ item.quantity }}</span>
                                         <button type="button" title="Aumentar quantidade"
-                                            @click="atualizarQuantidade(item.id!, item.quantity + 1)"
+                                            @click="atualizarQuantidade(item.id!, item.quantity + 1, item.tipoItem || 'PRODUTO')"
                                             class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">+</button>
                                     </div>
                                     <div class="text-right">
@@ -335,7 +335,7 @@
 
                         <div class="space-y-2" v-if="paymentMethod === 'DINHEIRO'">
                             <Input :required="paymentMethod === 'DINHEIRO'" v-model="(receivedAmount as string)"
-                                type="text" placeholder="Valor recebido do cliente" />
+                                v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="Valor recebido do cliente" />
                             <div class="flex justify-between text-sm font-medium">
                                 <span>Troco:</span>
                                 <span>{{ formatCurrencyBR(change) }}</span>
@@ -723,7 +723,7 @@
                     <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div class="flex flex-col gap-1">
                             <label class="text-xs text-muted-foreground">Saldo inicial</label>
-                            <Input v-model="abrirCaixaForm.valorInicial" placeholder="0,00" />
+                            <Input v-model="abrirCaixaForm.valorInicial" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
                         </div>
                         <div class="flex flex-col gap-1">
                             <label class="text-xs text-muted-foreground">Observacao</label>
@@ -764,7 +764,7 @@
             <form class="grid gap-3 px-4" @submit.prevent="submitMovimentoCaixa">
                 <div class="flex flex-col gap-1">
                     <label class="text-xs text-muted-foreground">Valor</label>
-                    <Input v-model="movimentoForm.valor" placeholder="0,00" />
+                    <Input v-model="movimentoForm.valor" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
                 </div>
                 <div class="flex flex-col gap-1">
                     <label class="text-xs text-muted-foreground">Descricao</label>
@@ -825,9 +825,12 @@ import ModalFechamentoCaixa from '@/pages/vendas/caixas/ModalFechamentoCaixa.vue
 import Calendarpicker from '@/components/formulario/calendarpicker.vue';
 import type { CaixaRelatorioResponse, ClientesFornecedores, ProdutoVariante, Vendas } from '@/types/schemas';
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
+import { moneyMaskOptions } from '@/lib/imaska';
+import { vMaska } from 'maska/vue';
 import { resolveFileUrl } from '@/utils/fileUrl';
 import router from '@/router';
 import { useConfirm } from '@/composables/useConfirm';
+import { ComboRepository } from '@/repositories/combo-repository';
 
 const { proMode = false } = defineProps<{ proMode?: boolean }>()
 
@@ -927,7 +930,11 @@ function aplicarDesconto() {
 watch(() => openModalDesconto.value, (open) => {
     if (open) focusDiscountInput()
 })
-interface CartItem extends ProdutoVariante {
+interface SaleableItem extends ProdutoVariante {
+    tipoItem?: 'PRODUTO' | 'COMBO'
+}
+
+interface CartItem extends SaleableItem {
     quantity: number
 }
 
@@ -945,7 +952,7 @@ const metodosPagamentoRapido = [
     icon: unknown
 }>
 
-const products = ref<ProdutoVariante[]>([])
+const products = ref<SaleableItem[]>([])
 // PDV PRO: paginação server-side dos produtos (16 por página).
 const PDV_PAGE_SIZE = 16
 const paginaProdutos = ref(1)
@@ -1211,7 +1218,7 @@ const total = computed(() => Math.max(0, subtotal.value - discount.value))
 
 const change = computed(() => {
     if (paymentMethod.value !== "DINHEIRO") return 0
-    return Math.max(0, (receivedAmount.value ? parseFloat(receivedAmount.value?.replace(",", ".")) : 0) - total.value)
+    return Math.max(0, formatToNumberValue(receivedAmount.value || 0) - total.value)
 })
 
 const caixaRelatorioAtual = computed(() => {
@@ -1365,9 +1372,15 @@ async function fetchProducts() {
         // No PDV PRO pagina de 16 em 16; busca 1 a mais para saber se existe próxima página.
         const limit = proMode ? PDV_PAGE_SIZE + 1 : 12
         const skip = proMode ? (paginaProdutos.value - 1) * PDV_PAGE_SIZE : 0
-        const { data } = await http.get("/produtos/lista/geral", {
-            params: { search: searchTerm.value, limit, pdv: true, ...(skip ? { skip } : {}) },
-        })
+        const [productsResponse, combos] = await Promise.all([
+            http.get("/produtos/lista/geral", {
+                params: { search: searchTerm.value, limit, pdv: true, ...(skip ? { skip } : {}) },
+            }),
+            uiStore.hasActiveModule('combos') && paginaProdutos.value === 1
+                ? ComboRepository.options('PDV', searchTerm.value || undefined).catch(() => [])
+                : Promise.resolve([]),
+        ])
+        const { data } = productsResponse
         if (seq !== buscaProdutosSeq) return
         let lista = data.data as ProdutoVariante[]
         if (proMode) {
@@ -1376,7 +1389,21 @@ async function fetchProducts() {
         } else {
             temProximaPaginaProdutos.value = false
         }
-        products.value = lista
+        products.value = [
+            ...combos.filter((combo) => combo.disponivel).map((combo) => ({
+                id: combo.id,
+                nome: combo.nome,
+                nomeVariante: 'Combo',
+                preco: combo.preco,
+                imagem: combo.imagem,
+                estoque: combo.quantidadeDisponivel ?? 999999999,
+                minimo: 0,
+                status: 'ATIVO',
+                controlaEstoque: combo.quantidadeDisponivel !== null,
+                tipoItem: 'COMBO' as const,
+            } as SaleableItem)),
+            ...lista.map((product) => ({ ...product, tipoItem: 'PRODUTO' as const })),
+        ]
         syncPodeFinalizarPDV()
     } catch {
         if (seq !== buscaProdutosSeq) return
@@ -1412,8 +1439,8 @@ function saveCart() {
     syncPodeFinalizarPDV()
 }
 
-function adicionarAoCarrinho(product: ProdutoVariante) {
-    const existing = cart.value.find((i) => i.id === product.id)
+function adicionarAoCarrinho(product: SaleableItem) {
+    const existing = cart.value.find((i) => i.id === product.id && (i.tipoItem || 'PRODUTO') === (product.tipoItem || 'PRODUTO'))
     if (existing) {
         if (product.controlaEstoque && !product.producaoLocal) {
             existing.quantity < product.estoque ? existing.quantity++ : toast.error("Estoque insuficiente!")
@@ -1431,11 +1458,11 @@ function adicionarAoCarrinho(product: ProdutoVariante) {
     saveCart()
 }
 
-function atualizarQuantidade(id: number, qty: number) {
-    const item = cart.value.find((i) => i.id === id)
+function atualizarQuantidade(id: number, qty: number, tipoItem: 'PRODUTO' | 'COMBO' = 'PRODUTO') {
+    const item = cart.value.find((i) => i.id === id && (i.tipoItem || 'PRODUTO') === tipoItem)
     if (!item) return
     if (qty <= 0) {
-        cart.value = cart.value.filter((i) => i.id !== id)
+        cart.value = cart.value.filter((i) => i.id !== id || (i.tipoItem || 'PRODUTO') !== tipoItem)
         saveCart()
         return
     }
@@ -1456,7 +1483,7 @@ function limparCarrinho() {
 function removerUltimoItem() {
     const ultimoItem = cart.value.at(-1)
     if (!ultimoItem?.id) return toast.info('Nenhum item para cancelar')
-    atualizarQuantidade(ultimoItem.id, 0)
+    atualizarQuantidade(ultimoItem.id, 0, ultimoItem.tipoItem || 'PRODUTO')
     toast.info('Último item removido do cupom')
 }
 
@@ -1569,7 +1596,7 @@ async function finalizarVendaPDV(options?: { print?: boolean, crediarioConfirmad
         caixaStore.openModalSelecionarCaixa = true
         return
     }
-    if (paymentMethod.value === "DINHEIRO" && (receivedAmount.value ? parseFloat(receivedAmount.value?.replace(",", ".")) : 0) < total.value) {
+    if (paymentMethod.value === "DINHEIRO" && formatToNumberValue(receivedAmount.value || 0) < total.value) {
         toast.error("Valor recebido insuficiente!")
         return
     }
@@ -1596,7 +1623,7 @@ async function finalizarVendaPDV(options?: { print?: boolean, crediarioConfirmad
         data: new Date().toISOString(),
         desconto: discount.value,
         pagamento: paymentMethod.value,
-        valorRecebido: paymentMethod.value === 'DINHEIRO' ? receivedAmount.value : null,
+        valorRecebido: paymentMethod.value === 'DINHEIRO' ? formatToNumberValue(receivedAmount.value || 0) : null,
         crediarioParcelas: paymentMethod.value === 'CREDIARIO' ? Number(crediarioParcelas.value) : null,
         crediarioPrimeiroVencimento: paymentMethod.value === 'CREDIARIO' ? formatCrediarioDateForApi(crediarioPrimeiroVencimento.value) : null,
         itens: cart.value.map((i) => ({
@@ -1604,7 +1631,7 @@ async function finalizarVendaPDV(options?: { print?: boolean, crediarioConfirmad
             nome: `${i.nome}${i.nomeVariante ? ` / ${i.nomeVariante}` : ''}`,
             quantidade: i.quantity,
             preco: formatToNumberValue(i.preco),
-            tipo: 'PRODUTO' as const,
+            tipo: i.tipoItem || 'PRODUTO',
         })),
     }
 
@@ -1615,7 +1642,7 @@ async function finalizarVendaPDV(options?: { print?: boolean, crediarioConfirmad
         itemCount: cart.value.reduce((acc, item) => acc + item.quantity, 0),
         paymentMethod: paymentMethod.value,
         receivedAmount: paymentMethod.value === 'DINHEIRO'
-            ? (receivedAmount.value ? parseFloat(receivedAmount.value.replace(",", ".")) : null)
+            ? (receivedAmount.value ? formatToNumberValue(receivedAmount.value) : null)
             : null,
         change: change.value,
         items: cart.value.map((item) => ({

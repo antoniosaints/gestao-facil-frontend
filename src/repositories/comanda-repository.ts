@@ -10,7 +10,7 @@ export type ComandaPayload = {
 }
 
 export type ComandaItemPayload = {
-  tipo: 'PRODUTO' | 'SERVICO'
+  tipo: 'PRODUTO' | 'SERVICO' | 'COMBO'
   itemId: number
   quantidade: number
   valor: number

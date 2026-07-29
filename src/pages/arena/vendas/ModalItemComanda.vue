@@ -5,12 +5,16 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncrement, NumberFieldInput } from '@/components/ui/number-field'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { ServicoRepository } from '@/repositories/servico-repository'
 import { ComandaRepository } from '@/repositories/comanda-repository'
 import { useComandaStore } from '@/stores/arena/comandaStore'
+import { ComboRepository } from '@/repositories/combo-repository'
 
 const store = useComandaStore()
 const toast = useToast()
@@ -35,6 +39,19 @@ async function hydrateItemData(id: number) {
       maxQuantidade.value = response.data.estoque
       store.itemForm.quantidade = 1
       store.itemForm.valor = Number(response.data.preco || 0)
+      return
+    }
+
+    if (store.itemForm.tipo === 'COMBO') {
+      const combo = (await ComboRepository.options('COMANDA')).find((item) => item.id === id)
+      if (!combo || !combo.disponivel) {
+        canEditQuantity.value = false
+        return toast.error(combo?.motivoIndisponivel || 'Combo indisponível.')
+      }
+      canEditQuantity.value = true
+      maxQuantidade.value = combo.quantidadeDisponivel ?? 999999
+      store.itemForm.quantidade = 1
+      store.itemForm.valor = combo.preco
       return
     }
 
@@ -81,7 +98,7 @@ async function submit() {
       return
     }
 
-    if (!store.itemForm.valor || store.itemForm.valor <= 0) {
+    if (!store.itemForm.valor || formatToNumberValue(store.itemForm.valor) <= 0) {
       toast.error('Informe um valor válido.')
       return
     }
@@ -91,7 +108,7 @@ async function submit() {
       tipo: store.itemForm.tipo,
       itemId: store.itemForm.itemId,
       quantidade: store.itemForm.quantidade,
-      valor: Number(store.itemForm.valor),
+      valor: formatToNumberValue(store.itemForm.valor),
     })
     toast.success('Item adicionado com sucesso.')
     store.openItemModal = false
@@ -125,19 +142,20 @@ async function submit() {
             <SelectContent>
               <SelectItem value="PRODUTO">Produto</SelectItem>
               <SelectItem value="SERVICO">Serviço</SelectItem>
+              <SelectItem value="COMBO">Combo</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div class="md:col-span-6">
           <label class="block text-sm font-medium mb-1">
-            {{ store.itemForm.tipo === 'PRODUTO' ? 'Variante' : 'Serviço' }} *
+            {{ store.itemForm.tipo === 'PRODUTO' ? 'Variante' : store.itemForm.tipo === 'COMBO' ? 'Combo' : 'Serviço' }} *
           </label>
           <Select2Ajax
             v-model="store.itemForm.itemId"
             v-model:label="itemLabel"
-            :url="store.itemForm.tipo === 'PRODUTO' ? '/produtos/select2' : '/servicos/select2'"
-            :params="store.itemForm.tipo === 'PRODUTO' ? [{ key: 'withStock', value: true }] : []"
+            :url="store.itemForm.tipo === 'PRODUTO' ? '/produtos/select2' : store.itemForm.tipo === 'COMBO' ? '/combos/opcoes' : '/servicos/select2'"
+            :params="store.itemForm.tipo === 'PRODUTO' ? [{ key: 'withStock', value: true }] : store.itemForm.tipo === 'COMBO' ? [{ key: 'canal', value: 'COMANDA' }] : []"
             :allow-clear="true"
             placeholder="Pesquisar item"
           />
@@ -156,7 +174,7 @@ async function submit() {
 
         <div class="md:col-span-6">
           <label class="block text-sm font-medium mb-1">Valor unitário *</label>
-          <Input v-model.number="store.itemForm.valor" type="number" min="0.01" step="0.01" placeholder="0,00" />
+          <Input v-model="store.itemForm.valor" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
         </div>
 
         <div class="md:col-span-12 flex justify-end gap-2">

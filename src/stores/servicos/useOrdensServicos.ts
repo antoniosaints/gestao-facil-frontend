@@ -10,7 +10,7 @@ import { OrdensServicoRepository } from '@/repositories/os-repository'
 import { formatToNumberValue } from '@/utils/formatters'
 import { useToast } from 'vue-toastification'
 export interface CarrinhoOS extends CarrinhoItem {
-  tipoItem: 'PRODUTO' | 'SERVICO'
+  tipoItem: 'PRODUTO' | 'SERVICO' | 'COMBO'
 }
 export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
   const toast = useToast()
@@ -153,6 +153,16 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
         tipoItem: item.tipo,
       }
       carrinho.value.push(newItem)
+    })
+    response.ComboSaidas?.forEach((combo) => {
+      carrinho.value.push({
+        id: combo.comboId,
+        produto: combo.nomeSnapshot,
+        quantidade: combo.quantidade,
+        preco: formatToNumberValue(combo.precoUnitarioSnapshot),
+        subtotal: formatToNumberValue(combo.subtotal),
+        tipoItem: 'COMBO',
+      })
     })
     localStorage.setItem('gestao_facil:carrinho_ordem_servico', JSON.stringify(carrinho.value))
     openModal.value = true

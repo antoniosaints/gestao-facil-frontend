@@ -15,6 +15,9 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -140,7 +143,7 @@ async function save() {
     saving.value = true
     await AssinaturaRepository.salvarPlano({
       ...form,
-      valorBase: Number(form.valorBase || 0),
+      valorBase: formatToNumberValue(form.valorBase || 0),
       intervaloDiasPadrao:
         form.periodicidadePadrao === 'PERSONALIZADO' ? Number(form.intervaloDiasPadrao || 30) : undefined,
       itens: form.itens.map((item: any) => ({
@@ -148,7 +151,7 @@ async function save() {
         servicoId: item.tipoItem === 'SERVICO' ? Number(item.servicoId || 0) || undefined : undefined,
         produtoId: item.tipoItem === 'PRODUTO' ? Number(item.produtoId || 0) || undefined : undefined,
         quantidade: Number(item.quantidade || 1),
-        valorUnitario: Number(item.valorUnitario || 0),
+        valorUnitario: formatToNumberValue(item.valorUnitario || 0),
         comodato: item.tipoItem === 'PRODUTO' ? Boolean(item.comodato) : false,
       })),
     })
@@ -288,7 +291,7 @@ watch(
             </div>
             <div class="md:col-span-3">
               <Label for="valorBasePlano" class="mb-1.5 block text-sm font-medium">Valor base</Label>
-              <Input id="valorBasePlano" v-model="form.valorBase" class="bg-background dark:bg-background/60" type="number" min="0" step="0.01" />
+              <Input id="valorBasePlano" v-model="form.valorBase" v-maska="moneyMaskOptions" class="bg-background dark:bg-background/60" type="text" inputmode="decimal" placeholder="0,00" />
             </div>
             <div class="md:col-span-3">
               <Label class="mb-1.5 block text-sm font-medium">Gateway padrão</Label>
@@ -356,7 +359,7 @@ watch(
                 </div>
                 <div class="xl:col-span-2">
                   <Label class="mb-1.5 block text-sm font-medium">Valor unitário</Label>
-                  <Input v-model="item.valorUnitario" class="bg-background dark:bg-background/60" type="number" min="0" step="0.01" />
+                  <Input v-model="item.valorUnitario" v-maska="moneyMaskOptions" class="bg-background dark:bg-background/60" type="text" inputmode="decimal" placeholder="0,00" />
                 </div>
               </div>
               <div class="mt-3 grid gap-2 md:grid-cols-2">

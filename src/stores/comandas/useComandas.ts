@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { formatToNumberValue } from '@/utils/formatters'
 import { defineStore } from 'pinia'
 import { useToast } from 'vue-toastification'
 import {
@@ -18,7 +19,7 @@ export type ComandaItemForm = {
   origemTipo: ComandaOrigemTipo
   origemId: number | string | null
   nome: string
-  valorUnitario: number | undefined
+  valorUnitario: number | string | undefined
   quantidade: number
   devolverDiferencaEstoque?: boolean
 }
@@ -83,7 +84,7 @@ export function getDefaultFaturarForm(config?: ComandaConfiguracao | null, itemI
 }
 
 export function normalizeComandaItemForm(item: ComandaItemForm): ComandaItemPayload {
-  if (!item.valorUnitario || Number(item.valorUnitario) <= 0) {
+  if (!item.valorUnitario || formatToNumberValue(item.valorUnitario) <= 0) {
     throw new Error('Informe um valor unitario valido.')
   }
 
@@ -103,7 +104,7 @@ export function normalizeComandaItemForm(item: ComandaItemForm): ComandaItemPayl
     origemTipo: item.origemTipo,
     origemId: item.origemTipo === 'AVULSO' ? null : item.origemId,
     nome: item.nome.trim() || null,
-    valorUnitario: Number(item.valorUnitario),
+    valorUnitario: formatToNumberValue(item.valorUnitario),
     quantidade: Number(item.quantidade),
   }
 }

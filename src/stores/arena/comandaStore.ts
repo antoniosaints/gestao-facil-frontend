@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { addDays } from 'date-fns'
 import { useToast } from 'vue-toastification'
-import type { ComandaVenda, TipoItemComanda } from '@/types/schemas'
+import type { ComandaVenda } from '@/types/schemas'
 import { ComandaRepository, type ComandaPayload } from '@/repositories/comanda-repository'
 
 const toast = useToast()
@@ -19,7 +19,7 @@ function getDefaultForm(): ComandaPayload {
 
 function getDefaultItemForm() {
   return {
-    tipo: 'PRODUTO' as TipoItemComanda,
+    tipo: 'PRODUTO' as 'PRODUTO' | 'SERVICO' | 'COMBO',
     itemId: null as number | null,
     quantidade: 1,
     valor: undefined as number | undefined,

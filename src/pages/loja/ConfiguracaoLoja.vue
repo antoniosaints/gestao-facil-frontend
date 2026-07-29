@@ -3,6 +3,9 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
@@ -163,8 +166,8 @@ async function salvar() {
       permitirCheckoutVisitante: config.permitirCheckoutVisitante,
       retiradaAtiva: config.retiradaAtiva,
       entregaLocalAtiva: config.entregaLocalAtiva,
-      taxaEntrega: Number(config.taxaEntrega || 0),
-      freteGratisAcima: config.freteGratisAcima ? Number(config.freteGratisAcima) : null,
+      taxaEntrega: formatToNumberValue(config.taxaEntrega || 0),
+      freteGratisAcima: config.freteGratisAcima ? formatToNumberValue(config.freteGratisAcima) : null,
       barraAvisoAtiva: config.barraAvisoAtiva,
       barraAvisoTexto: config.barraAvisoTexto?.trim() || null,
     })
@@ -590,8 +593,8 @@ onMounted(carregar)
                 <ToggleRow v-model="config.retiradaAtiva" title="Retirada no local" description="Cliente retira o pedido no endereço." />
                 <ToggleRow v-model="config.entregaLocalAtiva" title="Entrega local" description="Entrega feita pela sua equipe." />
                 <div v-if="config.entregaLocalAtiva" class="grid grid-cols-2 gap-3 rounded-lg border bg-muted/30 p-3">
-                  <div><Label class="text-xs text-muted-foreground">Taxa fixa</Label><Input v-model.number="config.taxaEntrega" type="number" min="0" class="mt-1" /></div>
-                  <div><Label class="text-xs text-muted-foreground">Frete grátis acima de</Label><Input :model-value="config.freteGratisAcima ?? ''" type="number" min="0" class="mt-1" @update:model-value="config.freteGratisAcima = $event === '' ? null : Number($event)" /></div>
+                  <div><Label class="text-xs text-muted-foreground">Taxa fixa</Label><Input v-model="config.taxaEntrega" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" class="mt-1" /></div>
+                  <div><Label class="text-xs text-muted-foreground">Frete grátis acima de</Label><Input :model-value="config.freteGratisAcima ?? ''" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" class="mt-1" @update:model-value="config.freteGratisAcima = $event === '' ? null : ($event as any)" /></div>
                 </div>
               </div>
             </template>

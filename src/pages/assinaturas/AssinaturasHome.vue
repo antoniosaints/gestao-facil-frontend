@@ -24,6 +24,9 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -93,7 +96,7 @@ function validateStep(key: StepKey): string[] {
     if (form.periodicidade === 'PERSONALIZADO' && Number(form.intervaloDiasPersonalizado || 0) < 1) {
       erros.push('Informe o intervalo em dias da periodicidade personalizada.')
     }
-    if (form.modoValor === 'MANUAL' && Number(form.valorManual || 0) <= 0) {
+    if (form.modoValor === 'MANUAL' && formatToNumberValue(form.valorManual || 0) <= 0) {
       erros.push('Informe o valor manual do contrato.')
     }
   }
@@ -127,7 +130,7 @@ function validateStep(key: StepKey): string[] {
       if (Number(item.quantidade || 0) < 1) {
         erros.push(`${rotulo}: a quantidade deve ser no mínimo 1.`)
       }
-      if (Number(item.valorUnitario || 0) < 0) {
+      if (formatToNumberValue(item.valorUnitario || 0) < 0) {
         erros.push(`${rotulo}: o valor unitário não pode ser negativo.`)
       }
       if (item.modoCobranca === 'PARCELADA' && Number(item.cobrarVezes || 0) < 1) {
@@ -422,7 +425,7 @@ async function save() {
       ...form,
       clienteId: Number(form.clienteId),
       planoId: Number(form.planoId || 0) > 0 ? Number(form.planoId) : undefined,
-      valorManual: form.modoValor === 'MANUAL' ? Number(form.valorManual || 0) : undefined,
+      valorManual: form.modoValor === 'MANUAL' ? formatToNumberValue(form.valorManual || 0) : undefined,
       intervaloDiasPersonalizado:
         form.periodicidade === 'PERSONALIZADO' ? Number(form.intervaloDiasPersonalizado || 30) : undefined,
       inicio,
@@ -435,7 +438,7 @@ async function save() {
         servicoId: item.tipoItem === 'SERVICO' ? Number(item.servicoId || 0) || undefined : undefined,
         produtoId: item.tipoItem === 'PRODUTO' ? Number(item.produtoId || 0) || undefined : undefined,
         quantidade: Number(item.quantidade || 1),
-        valorUnitario: Number(item.valorUnitario || 0),
+        valorUnitario: formatToNumberValue(item.valorUnitario || 0),
         comodato: item.tipoItem === 'PRODUTO' ? Boolean(item.comodato) : false,
         modoCobranca: item.modoCobranca || 'MENSALIDADE',
         cobrarVezes:
@@ -621,8 +624,8 @@ async function save() {
               <Label for="valorManualAssinatura" class="mb-1.5 block text-sm font-medium">
                 Valor manual <span class="text-red-500">*</span>
               </Label>
-              <Input id="valorManualAssinatura" v-model="form.valorManual" class="bg-background dark:bg-background/60"
-                type="number" min="0" step="0.01" placeholder="0,00" />
+              <Input id="valorManualAssinatura" v-model="form.valorManual" v-maska="moneyMaskOptions" class="bg-background dark:bg-background/60"
+                type="text" inputmode="decimal" placeholder="0,00" />
             </div>
           </div>
 
@@ -746,8 +749,8 @@ async function save() {
                 </div>
                 <div class="xl:col-span-1">
                   <Label class="mb-1.5 block text-sm font-medium">Valor unitário</Label>
-                  <Input v-model="item.valorUnitario" class="bg-background dark:bg-background/60" type="number" min="0"
-                    step="0.01" />
+                  <Input v-model="item.valorUnitario" v-maska="moneyMaskOptions" class="bg-background dark:bg-background/60" type="text"
+                    inputmode="decimal" placeholder="0,00" />
                 </div>
                 <div class="xl:col-span-2">
                   <Label class="mb-1.5 block text-sm font-medium">Forma de cobrança</Label>

@@ -181,6 +181,10 @@ function getItemMeta(item: any) {
     : { label: 'Produto', color: 'emerald' as BadgeColor, icon: Package }
 }
 
+function getComboComponents(item: any) {
+  return venda.value?.ComboSaidas?.find((combo) => combo.nomeSnapshot === item.itemName)?.componentes || []
+}
+
 function getParcelasPendentes(lancamento: any) {
   const parcelas = Array.isArray(lancamento.parcelas) ? lancamento.parcelas : []
   const pendentes = parcelas.filter((parcela: any) => !parcela.pago)
@@ -459,6 +463,11 @@ watch(() => storeCobranca.filters.update, recarregar)
                   <p class="text-xs tabular-nums text-muted-foreground">
                     {{ item.quantidade }} x {{ formatCurrencyBR(Number(item.valor || 0)) }}
                   </p>
+                  <div v-if="getComboComponents(item).length" class="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                    <p v-for="component in getComboComponents(item)" :key="component.id">
+                      {{ component.quantidadePorCombo }}x {{ component.nomeSnapshot }}
+                    </p>
+                  </div>
                 </div>
               </div>
               <strong class="shrink-0 tabular-nums">

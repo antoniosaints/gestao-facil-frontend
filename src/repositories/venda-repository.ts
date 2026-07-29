@@ -31,7 +31,7 @@ export interface FinalizarVendaPdvPayload {
     nome?: string
     quantidade: number
     preco: number
-    tipo: 'PRODUTO' | 'SERVICO'
+    tipo: 'PRODUTO' | 'SERVICO' | 'COMBO'
   }>
 }
 

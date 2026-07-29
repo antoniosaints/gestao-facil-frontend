@@ -15,6 +15,9 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Copy, ExternalLink, Receipt } from 'lucide-vue-next'
@@ -44,7 +47,7 @@ async function submit() {
       return
     }
 
-    if (store.checkoutForm.valor <= 0) {
+    if (formatToNumberValue(store.checkoutForm.valor) <= 0) {
       toast.error('Informe um valor valido para a cobranca.')
       return
     }
@@ -57,7 +60,7 @@ async function submit() {
     store.checkoutForm.loading = true
     const response = await ComandaRepository.checkout(store.selectedComanda.id, {
       itemIds: store.checkoutForm.itemIds,
-      valor: Number(store.checkoutForm.valor),
+      valor: formatToNumberValue(store.checkoutForm.valor),
       gateway: store.checkoutForm.gateway,
       tipoCobranca:
         store.checkoutForm.gateway === 'mercadopago' ? store.checkoutForm.tipoCobranca : null,
@@ -133,7 +136,7 @@ async function submit() {
 
         <div>
           <label class="mb-1 block text-sm font-medium">Valor da cobranca *</label>
-          <Input v-model.number="store.checkoutForm.valor" type="number" min="0.01" step="0.01" placeholder="0,00" />
+          <Input v-model="store.checkoutForm.valor" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
         </div>
 
         <div>

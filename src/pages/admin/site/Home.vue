@@ -84,7 +84,7 @@
               </div>
               <div class="space-y-2">
                 <Label>Valor mensal do plano</Label>
-                <Input v-model.number="config.hero.monthlyPrice" type="number" min="0" step="0.01" />
+                <Input v-model="(config.hero.monthlyPrice as any)" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
               </div>
               <div class="space-y-2">
                 <Label>Dias grátis</Label>
@@ -182,8 +182,8 @@
             <CardContent class="space-y-4">
               <div v-for="(app, index) in config.apps" :key="index" class="rounded-2xl border bg-background p-4">
                 <div class="mb-3 flex items-center justify-between gap-2">
-                  <Badge :variant="Number(app.price || 0) === 0 ? 'secondary' : 'outline'">
-                    {{ Number(app.price || 0) === 0 ? 'Grátis' : formatBRL(Number(app.price || 0)) }}
+                  <Badge :variant="formatToNumberValue(app.price || 0) === 0 ? 'secondary' : 'outline'">
+                    {{ formatToNumberValue(app.price || 0) === 0 ? 'Grátis' : formatBRL(formatToNumberValue(app.price || 0)) }}
                   </Badge>
                   <Button variant="ghost" size="sm" class="text-destructive" @click="removeApp(index)">
                     <Trash2 class="h-4 w-4" />
@@ -200,7 +200,7 @@
                   </div>
                   <div class="space-y-2">
                     <Label>Valor mensal</Label>
-                    <Input v-model.number="app.price" type="number" min="0" step="0.01" />
+                    <Input v-model="(app.price as any)" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
                   </div>
                   <div class="space-y-2">
                     <Label>Ícone</Label>
@@ -277,6 +277,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
@@ -352,7 +355,7 @@ const iconOptions = [
 ]
 
 const previewImage = computed(() => resolveFileUrl(config.value.hero.imageUrl, { fallback: '/imgs/dashboard.png' }))
-const pricePreview = computed(() => formatBRL(Number(config.value.hero.monthlyPrice || 0)))
+const pricePreview = computed(() => formatBRL(formatToNumberValue(config.value.hero.monthlyPrice || 0)))
 
 function formatBRL(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -363,12 +366,12 @@ function normalizeConfig(): SitePublicConfig {
     ...cloneSiteConfig(config.value),
     hero: {
       ...config.value.hero,
-      monthlyPrice: Number(config.value.hero.monthlyPrice || 0),
+      monthlyPrice: formatToNumberValue(config.value.hero.monthlyPrice || 0),
       trialDays: Number(config.value.hero.trialDays || 0),
     },
     apps: config.value.apps.map((app) => ({
       ...app,
-      price: Number(app.price || 0),
+      price: formatToNumberValue(app.price || 0),
     })),
   }
 }

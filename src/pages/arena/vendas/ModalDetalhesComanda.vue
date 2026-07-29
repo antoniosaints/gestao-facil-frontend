@@ -262,6 +262,13 @@ async function removeItem(itemId: number, itemName: string) {
     toast.error(error.response?.data?.message || 'Erro ao remover o item.')
   }
 }
+
+function getComboComponents(itemId?: number) {
+  if (!itemId) return []
+  return store.selectedComanda?.comboSaidas?.find(
+    (combo) => combo.comandaItemId === itemId,
+  )?.componentes || []
+}
 </script>
 
 <template>
@@ -418,6 +425,10 @@ async function removeItem(itemId: number, itemName: string) {
                           item.tipo }}</span>
                       <span>{{ item.quantidade }} x {{ formatCurrencyBR(Number(item.valor || 0)) }}</span>
                     </div>
+                    <p v-for="component in getComboComponents(item.id)" :key="component.id"
+                      class="mt-0.5 text-xs text-muted-foreground">
+                      {{ component.quantidadePorCombo }}x {{ component.nomeSnapshot }}
+                    </p>
                   </div>
                 </div>
 

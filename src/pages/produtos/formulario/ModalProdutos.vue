@@ -127,7 +127,7 @@ function buildPayload() {
     materiaPrima: store.form.materiaPrima,
     custoMedioProducao: isBlank(store.form.custoMedioProducao)
       ? undefined
-      : Number(store.form.custoMedioProducao),
+      : formatToNumberValue(store.form.custoMedioProducao ?? 0),
     // Fiscais (normalizados)
     ncm: store.form.ncm?.toString().trim() || null,
     cest: store.form.cest?.toString().trim() || null,
@@ -347,7 +347,7 @@ async function submit() {
 
             <div class="md:col-span-4">
               <label class="mb-1.5 block text-sm font-medium text-foreground">Custo médio produção</label>
-              <Input placeholder="0,00" v-model="store.form.custoMedioProducao" type="number" min="0" step="0.01"
+              <Input placeholder="0,00" v-model="store.form.custoMedioProducao" v-maska="moneyMaskOptions" type="text" inputmode="decimal"
                 class="bg-background dark:bg-background/70" />
             </div>
           </div>

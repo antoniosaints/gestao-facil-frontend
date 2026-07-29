@@ -7,6 +7,9 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -28,7 +31,7 @@ const toast = useToast()
 
 const contaId = ref<number | null>(null)
 const contaLabel = ref('')
-const valor = ref<number | null>(null)
+const valor = ref<number | string | null>(null)
 const descricao = ref('')
 const vencimento = ref('')
 const status = ref<'PAGO' | 'PENDENTE'>('PAGO')
@@ -49,7 +52,7 @@ watch(
   },
 )
 
-const podeSalvar = computed(() => !!contaId.value && !!valor.value && Number(valor.value) > 0)
+const podeSalvar = computed(() => !!contaId.value && !!valor.value && formatToNumberValue(valor.value) > 0)
 
 async function salvar() {
   if (!podeSalvar.value) {
@@ -60,7 +63,7 @@ async function salvar() {
     saving.value = true
     const res = await ContaRepository.criarFaturaManualAdmin({
       contaId: Number(contaId.value),
-      valor: Number(valor.value),
+      valor: formatToNumberValue(valor.value || 0),
       descricao: descricao.value.trim() || undefined,
       vencimento: vencimento.value || undefined,
       status: status.value,
@@ -103,11 +106,11 @@ async function salvar() {
           <Label>Valor (R$)</Label>
           <Input
             :model-value="valor ?? ''"
-            type="number"
-            min="0"
-            step="0.01"
+            v-maska="moneyMaskOptions"
+            type="text"
+            inputmode="decimal"
             placeholder="0,00"
-            @update:model-value="valor = $event === '' ? null : Number($event)"
+            @update:model-value="valor = $event === '' ? null : String($event)"
           />
         </div>
         <div class="space-y-1.5">

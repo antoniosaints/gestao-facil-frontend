@@ -6,6 +6,9 @@ import { Boxes, CheckCircle2, Cog, CreditCard, Gift, LoaderCircle, ShieldAlert }
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
+import { formatToNumberValue } from '@/utils/formatters'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
@@ -41,8 +44,8 @@ async function loadModulos() {
 }
 
 async function salvarModulo(modulo: AdminModuloItem) {
-  const preco = Number(modulo.preco)
-  const desconto = Number(modulo.desconto)
+  const preco = formatToNumberValue(modulo.preco)
+  const desconto = formatToNumberValue(modulo.desconto)
   if (!Number.isFinite(preco) || preco < 0) {
     toast.error('Informe um preço válido para o app.')
     return
@@ -69,7 +72,12 @@ async function salvarModulo(modulo: AdminModuloItem) {
 // Programa de indicação
 const indicacaoLoading = ref(false)
 const indicacaoSaving = ref(false)
-const indicacao = ref<AdminIndicacaoConfig>({
+type IndicacaoForm = Omit<AdminIndicacaoConfig, 'valorRecompensa' | 'valorBonusIndicado'> & {
+  valorRecompensa: number | string
+  valorBonusIndicado: number | string
+}
+
+const indicacao = ref<IndicacaoForm>({
   ativa: false,
   tipoRecompensa: 'PERCENTUAL',
   valorRecompensa: 0,
@@ -96,9 +104,9 @@ async function salvarIndicacao() {
     await ContaRepository.saveAdminIndicacaoConfig({
       ativa: indicacao.value.ativa,
       tipoRecompensa: indicacao.value.tipoRecompensa,
-      valorRecompensa: Number(indicacao.value.valorRecompensa || 0),
+      valorRecompensa: formatToNumberValue(indicacao.value.valorRecompensa),
       tipoBonusIndicado: indicacao.value.tipoBonusIndicado,
-      valorBonusIndicado: Number(indicacao.value.valorBonusIndicado || 0),
+      valorBonusIndicado: formatToNumberValue(indicacao.value.valorBonusIndicado),
     })
     toast.success('Programa de indicação atualizado com sucesso')
   } catch (error: any) {
@@ -261,13 +269,13 @@ onMounted(() => {
             <div class="mt-3 grid grid-cols-2 gap-2">
               <div class="space-y-1">
                 <Label class="text-xs">Preço (R$)</Label>
-                <Input :model-value="modulo.preco" type="number" min="0" step="0.01"
-                  @update:model-value="(v) => (modulo.preco = v === '' || v === null ? 0 : Number(v))" />
+                <Input :model-value="modulo.preco" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00"
+                  @update:model-value="(v) => (modulo.preco = v === '' || v === null ? 0 : (v as any))" />
               </div>
               <div class="space-y-1">
                 <Label class="text-xs">Desconto (R$)</Label>
-                <Input :model-value="modulo.desconto" type="number" min="0" step="0.01"
-                  @update:model-value="(v) => (modulo.desconto = v === '' || v === null ? 0 : Number(v))" />
+                <Input :model-value="modulo.desconto" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00"
+                  @update:model-value="(v) => (modulo.desconto = v === '' || v === null ? 0 : (v as any))" />
               </div>
             </div>
             <div class="mt-3 flex justify-end">
@@ -315,7 +323,7 @@ onMounted(() => {
             </div>
             <div class="space-y-1">
               <Label class="text-xs">{{ indicacao.tipoRecompensa === 'PERCENTUAL' ? 'Percentual (%)' : 'Valor (R$)' }}</Label>
-              <Input v-model.number="indicacao.valorRecompensa" type="number" min="0" step="0.01" />
+              <Input v-model="indicacao.valorRecompensa" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
             </div>
           </div>
 
@@ -333,7 +341,7 @@ onMounted(() => {
             </div>
             <div class="space-y-1">
               <Label class="text-xs">{{ indicacao.tipoBonusIndicado === 'PERCENTUAL' ? 'Percentual (%)' : 'Valor (R$)' }}</Label>
-              <Input v-model.number="indicacao.valorBonusIndicado" type="number" min="0" step="0.01" />
+              <Input v-model="indicacao.valorBonusIndicado" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
             </div>
           </div>
         </div>

@@ -79,6 +79,7 @@ const cobrancaPix = computed(() => {
 const itens = computed(() => ordem.value?.ItensOrdensServico ?? [])
 const produtos = computed(() => itens.value.filter((item) => item.tipo === 'PRODUTO'))
 const servicos = computed(() => itens.value.filter((item) => item.tipo === 'SERVICO'))
+const combos = computed(() => ordem.value?.ComboSaidas ?? [])
 const mensagens = computed(() => ordem.value?.MensagensInteracoesOrdemServico ?? [])
 const cobrancas = computed(() => ordem.value?.CobrancasFinanceiras ?? [])
 
@@ -664,6 +665,18 @@ watch(
         </TabsContent>
 
         <TabsContent value="servicos" class="mt-3">
+          <div v-if="combos.length" class="mb-3 space-y-2 rounded-xl border bg-card p-4">
+            <h3 class="text-sm font-semibold">Combos utilizados</h3>
+            <div v-for="combo in combos" :key="combo.id" class="rounded-lg border bg-background p-3">
+              <div class="flex justify-between gap-3">
+                <span class="font-medium">{{ combo.quantidade }}x {{ combo.nomeSnapshot }}</span>
+                <strong>{{ formatCurrencyBR(Number(combo.subtotal)) }}</strong>
+              </div>
+              <p v-for="component in combo.componentes" :key="component.id" class="text-xs text-muted-foreground">
+                {{ component.quantidadePorCombo }}x {{ component.nomeSnapshot }}
+              </p>
+            </div>
+          </div>
           <ItensOrdemLista
             :itens="servicos"
             titulo="Serviços"

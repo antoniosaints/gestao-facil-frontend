@@ -20,6 +20,7 @@ import { useClientesStore } from "@/stores/clientes/useClientes";
 import { useUiStore } from "@/stores/ui/uiStore";
 import { hasPermission } from "@/hooks/authorize";
 import { formatCurrencyBR } from "@/utils/formatters";
+import { ComboRepository } from "@/repositories/combo-repository";
 
 const description = ref('Preencha os campos abaixo')
 const toast = useToast()
@@ -28,10 +29,11 @@ const storeUi = useUiStore()
 const storeCliente = useClientesStore()
 
 const labelProdutoInsert = ref<string>('')
-const addItemForm = ref<{ id: number | null, preco: number | string | null, quantidade: number }>({
+const addItemForm = ref<{ id: number | null, preco: number | string | null, quantidade: number, tipo: 'PRODUTO' | 'COMBO' }>({
     id: null,
     preco: null,
-    quantidade: 1
+    quantidade: 1,
+    tipo: 'PRODUTO'
 })
 
 // Forma de pagamento da venda. No crediário, a venda gera o financeiro parcelado
@@ -102,7 +104,7 @@ async function submitFormularioVenda() {
 
     try {
         const data: FormularioVenda & {
-            itens: { id: number, nome: string, quantidade: number, tipo: 'SERVICO' | 'PRODUTO', preco: number }[]
+            itens: { id: number, nome: string, quantidade: number, tipo: 'SERVICO' | 'PRODUTO' | 'COMBO', preco: number }[]
             pagamento?: string
             crediarioParcelas?: number | null
             crediarioPrimeiroVencimento?: string | null
@@ -124,7 +126,7 @@ async function submitFormularioVenda() {
                 id: item.id,
                 nome: item.produto,
                 quantidade: item.quantidade,
-                tipo: 'PRODUTO',
+                tipo: item.tipo || 'PRODUTO',
                 preco: item.preco
             }))
         };
@@ -163,7 +165,7 @@ function addToCartVendas() {
     }
 
     // Verifica se o produto já foi adicionado
-    const exists = store.carrinho.some(item => item.id === addItemForm.value.id);
+    const exists = store.carrinho.some(item => item.id === addItemForm.value.id && (item.tipo || 'PRODUTO') === addItemForm.value.tipo);
     if (exists) {
         return toast.error('Este produto já está na lista.');
     }
@@ -173,7 +175,8 @@ function addToCartVendas() {
         produto: labelProdutoInsert.value,
         quantidade: addItemForm.value.quantidade,
         preco: parseFloat(String(addItemForm.value.preco).replace(',', '.')),
-        subtotal: +(parseFloat(String(addItemForm.value.preco).replace(',', '.')) * addItemForm.value.quantidade)
+        subtotal: +(parseFloat(String(addItemForm.value.preco).replace(',', '.')) * addItemForm.value.quantidade),
+        tipo: addItemForm.value.tipo
     };
 
     store.carrinho.push(newItem);
@@ -183,8 +186,10 @@ function addToCartVendas() {
 }
 
 
-function removeFromCartVendas(produtoId: number) {
-    const novoCarrinho = store.carrinho.filter(item => Number(item.id) !== Number(produtoId));
+function removeFromCartVendas(produtoId: number, tipo?: 'PRODUTO' | 'SERVICO' | 'COMBO') {
+    const novoCarrinho = store.carrinho.filter(item =>
+        Number(item.id) !== Number(produtoId) || (item.tipo || 'PRODUTO') !== (tipo || 'PRODUTO')
+    );
 
     store.carrinho = novoCarrinho;
     localStorage.setItem('gestao_facil:cartVendas', JSON.stringify(novoCarrinho));
@@ -226,6 +231,19 @@ const ableAdd = ref(true);
 async function getValorProduto(id: number) {
     try {
         ableAdd.value = true
+        if (addItemForm.value.tipo === 'COMBO') {
+            const combo = (await ComboRepository.options('VENDA')).find((item) => item.id === Number(id))
+            if (!combo) throw new Error('Combo não encontrado')
+            if (!combo.disponivel) {
+                ableAdd.value = false
+                addItemForm.value.id = null
+                return toast.error(combo.motivoIndisponivel || 'Combo indisponível')
+            }
+            addItemForm.value.quantidade = 1
+            maxQuantidadeAdd.value = combo.quantidadeDisponivel ?? 999999999
+            addItemForm.value.preco = combo.preco
+            return
+        }
         const { data } = await ProdutoVarianteRepository.get(id);
         if (data.estoque <= 0) {
             addItemForm.value.preco = null;
@@ -260,6 +278,12 @@ watch(() => addItemForm.value.id, (id) => {
     } else {
         addItemForm.value.preco = null
     }
+})
+
+watch(() => addItemForm.value.tipo, () => {
+    addItemForm.value.id = null
+    addItemForm.value.preco = null
+    labelProdutoInsert.value = ''
 })
 
 const resumoCarrinho = computed(() => {
@@ -435,10 +459,20 @@ watch(() => store.openModal, (open) => {
 
             <!-- Adição de produtos -->
             <div class="grid grid-cols-12 gap-4 items-end">
-                <div class="col-span-8 md:col-span-6">
-                    <label class="block text-sm mb-1">Variante <span class="text-red-500">*</span></label>
+                <div class="col-span-4 md:col-span-2">
+                    <label class="block text-sm mb-1">Tipo</label>
+                    <select v-model="addItemForm.tipo"
+                        class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                        <option value="PRODUTO">Produto</option>
+                        <option value="COMBO">Combo</option>
+                    </select>
+                </div>
+                <div class="col-span-8 md:col-span-4">
+                    <label class="block text-sm mb-1">{{ addItemForm.tipo === 'COMBO' ? 'Combo' : 'Variante' }} <span class="text-red-500">*</span></label>
                     <Select2Ajax v-model="addItemForm.id" v-model:label="labelProdutoInsert" class="w-full"
-                        url="/produtos/select2" :params="[{ key: 'withStock', value: true }]" :allow-clear="true" />
+                        :url="addItemForm.tipo === 'COMBO' ? '/combos/opcoes' : '/produtos/select2'"
+                        :params="addItemForm.tipo === 'COMBO' ? [{ key: 'canal', value: 'VENDA' }] : [{ key: 'withStock', value: true }]"
+                        :allow-clear="true" />
                 </div>
 
                 <div class="col-span-4 md:col-span-2">
@@ -506,7 +540,7 @@ watch(() => store.openModal, (open) => {
                                         <span class="font-medium text-xs text-gray-600 dark:text-gray-400">
                                             {{ formatCurrencyBR(item.preco) }}</span>
                                     </div>
-                                    <button type="button" @click="removeFromCartVendas(item.id)"
+                                    <button type="button" @click="removeFromCartVendas(item.id, item.tipo)"
                                         class="ml-3 text-red-900 bg-red-200 dark:text-red-100 dark:bg-red-800 p-2 rounded-sm">
                                         <Trash class="w-4 h-4" />
                                     </button>

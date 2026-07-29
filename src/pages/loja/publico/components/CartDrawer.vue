@@ -20,7 +20,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
-  (e: 'set-quantity', payload: { productId: number; quantity: number }): void
+  (e: 'set-quantity', payload: { productId: number; itemType?: 'PRODUTO' | 'COMBO'; quantity: number }): void
   (e: 'finish'): void
 }>()
 
@@ -100,7 +100,7 @@ function close() { emit('update:open', false) }
             </div>
 
             <ul class="divide-y divide-slate-200">
-              <li v-for="item in items" :key="item.product.id" class="flex gap-3 py-4">
+              <li v-for="item in items" :key="`${item.product.itemType || 'PRODUTO'}:${item.product.id}`" class="flex gap-3 py-4">
                 <div class="h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-slate-100">
                   <img v-if="item.product.image" :src="resolveFileUrl(item.product.image)" class="h-full w-full object-cover" />
                   <Package v-else class="mx-auto mt-6 h-7 w-7 text-slate-300" />
@@ -110,14 +110,14 @@ function close() { emit('update:open', false) }
                   <p v-if="item.product.variant && item.product.variant !== 'Padrão'" class="text-xs text-slate-500">{{ item.product.variant }}</p>
                   <div class="mt-auto flex items-center justify-between pt-2">
                     <div class="flex items-center rounded-full border border-slate-300">
-                      <button class="grid h-8 w-8 place-items-center rounded-l-full text-slate-600 hover:bg-slate-100" @click="emit('set-quantity', { productId: item.product.id, quantity: item.quantity - 1 })"><Minus class="h-3.5 w-3.5" /></button>
+                      <button class="grid h-8 w-8 place-items-center rounded-l-full text-slate-600 hover:bg-slate-100" @click="emit('set-quantity', { productId: item.product.id, itemType: item.product.itemType, quantity: item.quantity - 1 })"><Minus class="h-3.5 w-3.5" /></button>
                       <span class="w-8 text-center text-sm font-bold dark:text-black">{{ item.quantity }}</span>
-                      <button class="grid h-8 w-8 place-items-center rounded-r-full text-slate-600 hover:bg-slate-100" @click="emit('set-quantity', { productId: item.product.id, quantity: item.quantity + 1 })"><Plus class="h-3.5 w-3.5" /></button>
+                      <button class="grid h-8 w-8 place-items-center rounded-r-full text-slate-600 hover:bg-slate-100" @click="emit('set-quantity', { productId: item.product.id, itemType: item.product.itemType, quantity: item.quantity + 1 })"><Plus class="h-3.5 w-3.5" /></button>
                     </div>
                     <span class="font-black text-slate-900">{{ formatCurrencyBR(item.product.price * item.quantity) }}</span>
                   </div>
                 </div>
-                <button class="self-start rounded-full p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Remover" @click="emit('set-quantity', { productId: item.product.id, quantity: 0 })"><Trash2 class="h-4 w-4" /></button>
+                <button class="self-start rounded-full p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Remover" @click="emit('set-quantity', { productId: item.product.id, itemType: item.product.itemType, quantity: 0 })"><Trash2 class="h-4 w-4" /></button>
               </li>
             </ul>
           </div>

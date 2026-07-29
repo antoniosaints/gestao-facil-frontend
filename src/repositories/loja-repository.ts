@@ -122,6 +122,9 @@ export interface StoreProduct {
   available: number | null
   /** Total de unidades vendidas — alimenta a seção "Mais vendidos". */
   soldCount: number
+  itemType?: 'PRODUTO' | 'COMBO'
+  comboId?: number
+  componentes?: Array<{ tipo: 'PRODUTO' | 'SERVICO'; id: number; nome: string; quantidade: number }>
 }
 
 export interface StoreCustomerAddress {
@@ -147,7 +150,7 @@ export interface StoreCustomerAccount {
 }
 
 export type CheckoutPayload = {
-  items: Array<{ productId: number; quantity: number }>
+  items: Array<{ productId?: number; comboId?: number; quantity: number }>
   channel: 'WHATSAPP' | 'GATEWAY'
   deliveryType: 'RETIRADA' | 'ENTREGA_LOCAL'
   customer: { name: string; email?: string; phone: string; postalCode?: string; address?: string; number?: string; complement?: string; district?: string; city?: string; state?: string }

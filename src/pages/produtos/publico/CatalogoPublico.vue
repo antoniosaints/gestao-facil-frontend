@@ -44,7 +44,27 @@ const precoStyle = computed(() => (isLoja.value ? { color: 'var(--brand)' } : {}
 
 const produtosFiltrados = computed(() => {
   const termo = search.value.trim().toLowerCase()
-  return (catalogo.value?.produtos ?? []).filter((produto) => {
+  const combos = (catalogo.value?.combos ?? []).map((combo) => ({
+    id: combo.id,
+    nome: combo.nome,
+    descricao: combo.descricao,
+    categoria: 'Combos',
+    imagem: combo.imagem,
+    precoMin: combo.preco,
+    precoMax: combo.preco,
+    totalVariantes: 1,
+    variantes: [{
+      id: combo.id,
+      nomeVariante: 'Combo',
+      preco: combo.preco,
+      imagem: combo.imagem,
+      unidade: 'combo',
+      estoque: combo.quantidadeDisponivel ?? 999999,
+      controlaEstoque: combo.quantidadeDisponivel !== null,
+      ehPadrao: true,
+    }],
+  } satisfies CatalogoProduto))
+  return [...(catalogo.value?.produtos ?? []), ...combos].filter((produto) => {
     const okCategoria = !categoriaAtiva.value || produto.categoria === categoriaAtiva.value
     const okBusca =
       !termo ||

@@ -5,6 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { preciseMoneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import {
   Activity,
@@ -35,10 +38,10 @@ const filtroContaId = ref<number | null>(null)
 
 const MOEDA_TOKENS = 'USD'
 const moedaComparacao = ref('BRL')
-const valorBaseMoedaTokens = ref(1)
-const valorMoedaComparacao = ref(1)
+const valorBaseMoedaTokens = ref<number | string>(1)
+const valorMoedaComparacao = ref<number | string>(1)
 const tokensCalculadora = ref(1000000)
-const custoMilhaoCalculadora = ref(0)
+const custoMilhaoCalculadora = ref<number | string>(0)
 
 // Rótulos amigáveis para as features (o "local de uso" da IA).
 const FEATURE_LABELS: Record<string, string> = {
@@ -138,8 +141,8 @@ const custoPorAssinante = computed(() => {
 })
 const moedaComparacaoNormalizada = computed(() => moedaComparacao.value.trim().toUpperCase() || 'BRL')
 const taxaComparacao = computed(() => {
-  const base = Number(valorBaseMoedaTokens.value) || 0
-  const comparacao = Number(valorMoedaComparacao.value) || 0
+  const base = formatToNumberValue(valorBaseMoedaTokens.value)
+  const comparacao = formatToNumberValue(valorMoedaComparacao.value)
   if (base <= 0 || comparacao < 0) return 0
   return comparacao / base
 })
@@ -150,7 +153,7 @@ const custoMedioMilhaoPeriodo = computed(() => {
 })
 const custoTokensCalculado = computed(() => {
   const tokens = Math.max(0, Number(tokensCalculadora.value) || 0)
-  const custoMilhao = Math.max(0, Number(custoMilhaoCalculadora.value) || 0)
+  const custoMilhao = Math.max(0, formatToNumberValue(custoMilhaoCalculadora.value))
   return (tokens / 1_000_000) * custoMilhao
 })
 const custoTokensComparacao = computed(() => custoTokensCalculado.value * taxaComparacao.value)
@@ -477,7 +480,7 @@ onMounted(load)
             <div class="grid gap-3 sm:grid-cols-2">
               <div class="space-y-1">
                 <Label>Valor base em {{ MOEDA_TOKENS }}</Label>
-                <Input v-model.number="valorBaseMoedaTokens" type="number" min="0.000001" step="0.000001" />
+                <Input v-model="valorBaseMoedaTokens" v-maska="preciseMoneyMaskOptions" type="text" inputmode="decimal" placeholder="0,000000" />
               </div>
               <div class="space-y-1">
                 <Label>Moeda de comparação</Label>
@@ -485,14 +488,14 @@ onMounted(load)
               </div>
               <div class="space-y-1 sm:col-span-2">
                 <Label>Valor na moeda de comparação</Label>
-                <Input v-model.number="valorMoedaComparacao" type="number" min="0" step="0.000001" placeholder="Ex.: 5.50" />
+                <Input v-model="valorMoedaComparacao" v-maska="preciseMoneyMaskOptions" type="text" inputmode="decimal" placeholder="Ex.: 5,500000" />
               </div>
             </div>
 
             <div class="mt-3 rounded-md border border-dashed bg-background p-3 text-sm">
               <template v-if="taxaComparacao > 0">
-                {{ nfDecimal(valorBaseMoedaTokens, 6) }} {{ MOEDA_TOKENS }} =
-                {{ nfDecimal(valorMoedaComparacao, 6) }} {{ moedaComparacaoNormalizada }}
+                {{ nfDecimal(formatToNumberValue(valorBaseMoedaTokens), 6) }} {{ MOEDA_TOKENS }} =
+                {{ nfDecimal(formatToNumberValue(valorMoedaComparacao), 6) }} {{ moedaComparacaoNormalizada }}
                 <span class="text-muted-foreground">
                   · 1 {{ MOEDA_TOKENS }} = {{ fmtCustoMoeda(taxaComparacao, moedaComparacaoNormalizada) }}
                 </span>
@@ -526,7 +529,7 @@ onMounted(load)
                     Usar média
                   </button>
                 </div>
-                <Input v-model.number="custoMilhaoCalculadora" type="number" min="0" step="0.000001" />
+                <Input v-model="custoMilhaoCalculadora" v-maska="preciseMoneyMaskOptions" type="text" inputmode="decimal" placeholder="0,000000" />
               </div>
             </div>
 
