@@ -4,13 +4,14 @@ import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import VarianteImagemField from '@/pages/produtos/formulario/VarianteImagemField.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Switch } from '@/components/ui/switch'
 import { useConfirm } from '@/composables/useConfirm'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { ComboRepository, type Combo, type ComboComponentType, type ComboPayload } from '@/repositories/combo-repository'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { formatToNumberValue } from '@/utils/formatters'
-import { Boxes, Layers3, PackagePlus, Pencil, Plus, RefreshCw, Search, Trash2, Wrench, X } from 'lucide-vue-next'
+import { Boxes, ChevronDown, Layers3, PackagePlus, Pencil, Plus, RefreshCw, Search, Trash2, Wrench, X } from 'lucide-vue-next'
 import { vMaska } from 'maska/vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
@@ -180,16 +181,14 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="space-y-5">
-    <header class="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
-      <div class="flex items-start gap-3">
-        <div class="grid h-11 w-11 place-items-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-300">
-          <Layers3 class="h-6 w-6" />
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold text-foreground">Combos</h1>
-          <p class="text-sm text-muted-foreground">Agrupe produtos e serviços com preço próprio e baixa automática.</p>
-        </div>
+  <section class="space-y-4">
+    <header class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h2 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+          <Layers3 class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
+          Combos
+        </h2>
+        <p class="text-sm text-muted-foreground">Agrupe produtos e serviços com preço próprio e baixa automática.</p>
       </div>
       <div class="flex gap-2">
         <Button variant="outline" size="icon" title="Atualizar" @click="load"><RefreshCw class="h-4 w-4" /></Button>
@@ -210,9 +209,9 @@ onMounted(load)
       <Button class="text-white" @click="openCreate">Criar primeiro combo</Button>
     </div>
     <div v-else class="grid gap-3">
-      <article v-for="combo in items" :key="combo.id" class="group rounded-xl border border-border bg-card p-4 transition hover:border-blue-500/40 hover:shadow-sm">
+      <article v-for="combo in items" :key="combo.id" class="group rounded-xl border border-border bg-card px-4 py-3 transition hover:border-blue-500/40 hover:shadow-sm">
         <div class="flex flex-col gap-4 md:flex-row md:items-center">
-          <div class="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-muted">
+          <div class="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-muted">
             <img v-if="combo.imagem" :src="resolveFileUrl(combo.imagem)" :alt="combo.nome" class="h-full w-full object-cover" />
             <PackagePlus v-else class="h-6 w-6 text-muted-foreground" />
           </div>
@@ -225,9 +224,59 @@ onMounted(load)
               <span v-if="combo.mostrarNoPdv" class="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600">PDV</span>
               <span v-if="combo.mostrarOnline" class="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700">Online</span>
             </div>
-            <p class="mt-1 truncate text-sm text-muted-foreground">
-              {{ combo.componentes.map((item) => `${item.quantidade}× ${item.Produto?.nome || item.Servico?.nome}`).join(' • ') }}
-            </p>
+            <Popover>
+              <PopoverTrigger as-child>
+                <button
+                  type="button"
+                  class="mt-1 flex max-w-full items-center gap-1 text-left text-sm text-muted-foreground transition hover:text-foreground"
+                  :aria-label="`Ver composição do combo ${combo.nome}`"
+                >
+                  <span class="truncate">
+                    {{ combo.componentes.map((item) => `${item.quantidade}× ${item.Produto?.nome || item.Servico?.nome}`).join(' • ') }}
+                  </span>
+                  <ChevronDown class="h-3.5 w-3.5 shrink-0" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" class="w-80 p-0 sm:w-96">
+                <div class="border-b border-border px-4 py-3">
+                  <p class="font-semibold text-foreground">Composição do combo</p>
+                  <p class="text-xs text-muted-foreground">{{ combo.componentes.length }} item(ns)</p>
+                </div>
+                <div class="max-h-80 space-y-1 overflow-y-auto p-2">
+                  <div
+                    v-for="componente in combo.componentes"
+                    :key="componente.id"
+                    class="flex items-center gap-3 rounded-lg p-2 hover:bg-muted/60"
+                  >
+                    <div class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-muted/40">
+                      <img
+                        v-if="componente.Produto?.imagem"
+                        :src="resolveFileUrl(componente.Produto.imagem)"
+                        :alt="componente.Produto.nome"
+                        class="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                      <Boxes v-else-if="componente.tipo === 'PRODUTO'" class="h-5 w-5 text-muted-foreground" />
+                      <Wrench v-else class="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p class="truncate text-sm font-medium text-foreground">
+                        {{ componente.Produto?.nome || componente.Servico?.nome }}
+                      </p>
+                      <p v-if="componente.Produto?.nomeVariante" class="truncate text-xs text-muted-foreground">
+                        {{ componente.Produto.nomeVariante }}
+                      </p>
+                      <p v-else class="text-xs text-muted-foreground">
+                        {{ componente.tipo === 'PRODUTO' ? 'Produto' : 'Serviço' }}
+                      </p>
+                    </div>
+                    <span class="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+                      {{ componente.quantidade }}×
+                    </span>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <div class="flex items-center justify-between gap-4 md:justify-end">
             <strong class="text-lg text-foreground">{{ Number(combo.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) }}</strong>

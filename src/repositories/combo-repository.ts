@@ -8,7 +8,7 @@ export interface ComboComponent {
   quantidade: number
   produtoId?: number | null
   servicoId?: number | null
-  Produto?: { id: number; nome: string; nomeVariante?: string | null; estoque: number; controlaEstoque?: boolean | null } | null
+  Produto?: { id: number; nome: string; nomeVariante?: string | null; imagem?: string | null; estoque: number; controlaEstoque?: boolean | null } | null
   Servico?: { id: number; nome: string; status: boolean } | null
 }
 
