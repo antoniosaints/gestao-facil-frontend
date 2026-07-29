@@ -19,7 +19,7 @@ import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 import { formatToNumberValue } from '@/utils/formatters'
-import { CircleDollarSign, FileText, LoaderCircle, Lock, Settings2, Sparkles, Tag } from 'lucide-vue-next'
+import { CircleDollarSign, FileText, LoaderCircle, Settings2, Sparkles, Tag } from 'lucide-vue-next'
 
 const store = useProdutoStore()
 const toast = useToast()
@@ -81,9 +81,9 @@ function toNullableNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-// Gera o SKU automaticamente ao definir base + nome da variante (variante nova, código vazio, não bloqueado).
+// Gera o SKU automaticamente ao definir base + nome de uma variante nova com código vazio.
 const autoGerarSku = useDebounceFn(() => {
-  if (store.varianteForm.id || store.varianteForm.skuBloqueado) return
+  if (store.varianteForm.id) return
   if (!isBlank(store.varianteForm.codigo)) return
   if (!store.varianteForm.produtoBaseId || isBlank(store.varianteForm.nomeVariante)) return
   store.gerarSkuVariante()
@@ -236,19 +236,16 @@ async function submit() {
         <div class="md:col-span-3">
           <label class="mb-1.5 flex items-center gap-1 text-sm font-medium text-foreground">
             SKU / Código
-            <Lock v-if="store.varianteForm.skuBloqueado" class="h-3.5 w-3.5 text-amber-500" />
           </label>
           <div class="flex gap-2">
             <Input v-model="store.varianteForm.codigo" type="text" placeholder="Gerado automaticamente se vazio"
-              :disabled="store.varianteForm.skuBloqueado" class="bg-background dark:bg-background/60" />
+              class="bg-background dark:bg-background/60" />
             <Button type="button" variant="outline" size="icon" v-tooltip="'Gerar SKU automaticamente'"
-              :disabled="store.varianteForm.skuBloqueado" @click="store.gerarSkuVariante()">
+              @click="store.gerarSkuVariante()">
               <Sparkles class="h-4 w-4" />
             </Button>
           </div>
-          <p v-if="store.varianteForm.skuBloqueado" class="mt-1 text-xs text-amber-600 dark:text-amber-400">
-            SKU bloqueado: existem vendas ou ordens de serviço vinculadas.
-          </p>
+          <p class="mt-1 text-xs text-muted-foreground">Alterações não atualizam etiquetas já impressas.</p>
         </div>
 
         <div class="md:col-span-3">
