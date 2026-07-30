@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client'
 
 let socket: Socket
+let activeContaId: number | null = null
 
 export function getSocket() {
   if (!socket) {
@@ -10,18 +11,21 @@ export function getSocket() {
 
     socket.on('connect', () => {
       console.log('Conectado ao servidor socket:', socket.id)
+      if (activeContaId) socket.emit('entrarNaConta', activeContaId)
     })
   }
   return socket
 }
 
 export function entrarNaConta(contaId: number) {
+  activeContaId = contaId
   const s = getSocket()
-  s.emit('entrarNaConta', contaId)
+  if (s.connected) s.emit('entrarNaConta', contaId)
 }
 export function sairDaConta(contaId: number) {
+  if (activeContaId === contaId) activeContaId = null
   const s = getSocket()
-  s.emit('sairDaConta', contaId)
+  if (s.connected) s.emit('sairDaConta', contaId)
 }
 export function updateVendasTable() {
   const s = getSocket()

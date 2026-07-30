@@ -281,6 +281,11 @@ export interface WhatsAppWebhookEvent {
   tipo: string
   eventId: string
   processado: boolean
+  status: 'PENDENTE' | 'PROCESSANDO' | 'PROCESSADO' | 'IGNORADO' | 'FALHOU'
+  tentativas: number
+  proximaTentativaEm?: string | null
+  bloqueadoEm?: string | null
+  motivoIgnorado?: string | null
   erro?: string | null
   payload: string
   createdAt: string
@@ -290,6 +295,10 @@ export interface WhatsAppWebhookEvent {
 export interface PaginatedResponse<T> {
   items: T[]
   nextCursor?: number | null
+  summary?: {
+    byStatus: Partial<Record<WhatsAppConversationStatus, number>>
+    unread: number
+  }
 }
 
 export interface ConversationSaleItem {
@@ -465,9 +474,14 @@ export class WhatsAppRepository {
     return data.data as WhatsAppWebhookConfig
   }
 
-  static async listInstanceWebhookEvents(id: number, params: { take?: number; tipo?: string } = {}) {
+  static async listInstanceWebhookEvents(id: number, params: { take?: number; tipo?: string; status?: string } = {}) {
     const { data } = await http.get(`/whatsapp/instances/${id}/eventos`, { params })
     return data.data as WhatsAppWebhookEvent[]
+  }
+
+  static async retryInstanceWebhookEvent(instanceId: number, eventId: number) {
+    const { data } = await http.post(`/whatsapp/instances/${instanceId}/eventos/${eventId}/retry`)
+    return data.data as WhatsAppWebhookEvent
   }
 
   static async instanceAction(id: number, action: 'qrCode' | 'pairingCode' | 'restart' | 'disconnect' | 'status' | 'device' | 'setupWebhooks', payload?: Record<string, unknown>) {

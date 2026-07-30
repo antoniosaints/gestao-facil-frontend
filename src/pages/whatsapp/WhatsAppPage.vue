@@ -200,7 +200,7 @@
                     <div class="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-2.5">
                       <div class="min-w-0">
                         <p class="text-sm font-medium">Não perturbe</p>
-                        <p class="text-xs text-muted-foreground">Para de salvar os eventos recebidos.</p>
+                      <p class="text-xs text-muted-foreground">Pausa respostas automáticas, sem perder mensagens.</p>
                       </div>
                       <Switch :model-value="atendimentoForm.naoPerturbe" @update:model-value="(v) => (atendimentoForm.naoPerturbe = Boolean(v))" />
                     </div>
@@ -210,7 +210,7 @@
                         <Input v-model="atendimentoForm.horaInicio" type="time" class="h-9" />
                         <Input v-model="atendimentoForm.horaFim" type="time" class="h-9" />
                       </div>
-                      <p class="text-[11px] text-muted-foreground">Fora do horário também para de salvar. Vazio = sem restrição.</p>
+                      <p class="text-[11px] text-muted-foreground">Fora do horário, mensagens continuam salvas; apenas automações pausam.</p>
                     </div>
                     <Button size="sm" class="w-full text-white" :disabled="atendimentoSaving" @click="saveAtendimento">
                       <LoaderIcon v-if="atendimentoSaving" class="mr-2 h-4 w-4 animate-spin" />
@@ -362,6 +362,14 @@
             <option value="disconnected">Desconectado</option>
             <option value="presence">Presença</option>
           </select>
+          <select v-model="logsStatus" class="h-9 rounded-md border bg-background px-3 text-sm" @change="loadLogs">
+            <option value="">Todos os estados</option>
+            <option value="PENDENTE">Pendente</option>
+            <option value="PROCESSANDO">Processando</option>
+            <option value="PROCESSADO">Processado</option>
+            <option value="IGNORADO">Ignorado</option>
+            <option value="FALHOU">Falhou</option>
+          </select>
           <Button variant="outline" size="sm" class="h-9" :disabled="logsLoading" @click="loadLogs">
             <LoaderIcon v-if="logsLoading" class="mr-2 h-4 w-4 animate-spin" />
             <RefreshCw v-else class="mr-2 h-4 w-4" />
@@ -390,12 +398,29 @@
                 {{ webhookEventLabel(event.tipo) }}
               </span>
               <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">{{ formatTime(event.createdAt) }}</span>
-              <CheckCircle2 v-if="event.processado && !event.erro" class="h-4 w-4 shrink-0 text-green-600" title="Processado" />
-              <AlertTriangle v-else-if="event.erro" class="h-4 w-4 shrink-0 text-red-600" title="Erro no processamento" />
+              <CheckCircle2 v-if="event.status === 'PROCESSADO'" class="h-4 w-4 shrink-0 text-green-600" title="Processado" />
+              <AlertTriangle v-else-if="event.status === 'FALHOU'" class="h-4 w-4 shrink-0 text-red-600" title="Falha no processamento" />
               <Clock v-else class="h-4 w-4 shrink-0 text-amber-600" title="Pendente" />
             </button>
             <div v-if="expandedLogId === event.id" class="border-t p-3">
               <p v-if="event.erro" class="mb-2 rounded-md bg-red-500/10 px-2 py-1 text-xs text-red-600">Erro: {{ event.erro }}</p>
+              <p v-if="event.motivoIgnorado" class="mb-2 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                Ignorado: {{ event.motivoIgnorado }}
+              </p>
+              <div class="mb-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>{{ webhookStatusLabel(event.status) }} · {{ event.tentativas }} tentativa(s)</span>
+                <Button
+                  v-if="event.status === 'FALHOU'"
+                  size="sm"
+                  variant="outline"
+                  class="h-7"
+                  :disabled="retryingLogId === event.id"
+                  @click.stop="retryLog(event)"
+                >
+                  <LoaderIcon v-if="retryingLogId === event.id" class="mr-1 h-3.5 w-3.5 animate-spin" />
+                  Reprocessar
+                </Button>
+              </div>
               <pre class="max-h-64 overflow-auto rounded-md bg-muted/50 p-2 text-[11px] leading-relaxed">{{ prettyJson(event.payload) }}</pre>
             </div>
           </div>
@@ -891,6 +916,8 @@ const logsInstance = ref<WhatsAppInstance | null>(null)
 const logs = ref<WhatsAppWebhookEvent[]>([])
 const logsLoading = ref(false)
 const logsTipo = ref<string>('')
+const logsStatus = ref<string>('')
+const retryingLogId = ref<number | null>(null)
 const expandedLogId = ref<number | null>(null)
 const logsReceivedCount = computed(() => logs.value.filter((event) => event.tipo === 'received').length)
 
@@ -1509,6 +1536,7 @@ async function loadLogs() {
     logs.value = await WhatsAppRepository.listInstanceWebhookEvents(logsInstance.value.id, {
       take: 50,
       tipo: logsTipo.value || undefined,
+      status: logsStatus.value || undefined,
     })
   } catch (error) {
     console.error(error)
@@ -1522,10 +1550,36 @@ async function loadLogs() {
 function openLogsModal(instance: WhatsAppInstance) {
   logsInstance.value = instance
   logsTipo.value = ''
+  logsStatus.value = ''
   expandedLogId.value = null
   logs.value = []
   logsModalOpen.value = true
   loadLogs()
+}
+
+function webhookStatusLabel(status: WhatsAppWebhookEvent['status']) {
+  return {
+    PENDENTE: 'Pendente',
+    PROCESSANDO: 'Processando',
+    PROCESSADO: 'Processado',
+    IGNORADO: 'Ignorado',
+    FALHOU: 'Falhou',
+  }[status]
+}
+
+async function retryLog(event: WhatsAppWebhookEvent) {
+  if (!logsInstance.value) return
+  try {
+    retryingLogId.value = event.id
+    await WhatsAppRepository.retryInstanceWebhookEvent(logsInstance.value.id, event.id)
+    await loadLogs()
+    toast.success('Evento reenfileirado.')
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Não foi possível reenfileirar o evento.')
+  } finally {
+    retryingLogId.value = null
+  }
 }
 
 function toggleLogPayload(id: number) {

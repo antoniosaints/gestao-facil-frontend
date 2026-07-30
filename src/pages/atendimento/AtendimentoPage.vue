@@ -95,6 +95,10 @@ const newChat = reactive<{
 }>({ open: false, mode: 'cliente', clienteId: null, contatoId: null, instanciaId: null, starting: false })
 
 const conversations = ref<WhatsAppConversation[]>([])
+const conversationSummary = ref<{
+  byStatus: Partial<Record<WhatsAppConversationStatus, number>>
+  unread: number
+}>({ byStatus: {}, unread: 0 })
 const messages = ref<WhatsAppMessage[]>([])
 const selectedConversation = ref<WhatsAppConversation | null>(null)
 const conversationSearch = ref('')
@@ -140,7 +144,7 @@ const canSendMessage = computed(() => {
   return Boolean(messageForm.conteudo.trim())
 })
 
-const totalNaoLidas = computed(() => conversations.value.reduce((total, item) => total + (item.naoLidas || 0), 0))
+const totalNaoLidas = computed(() => conversationSummary.value.unread)
 const hasLinkedClient = computed(() => Boolean(selectedConversation.value?.clienteId || selectedConversation.value?.Cliente))
 
 function openSaleTool() {
@@ -368,8 +372,14 @@ function handleGlobalKeydown(event: KeyboardEvent) {
   }
 }
 
+let reconciliationTimer: ReturnType<typeof setInterval> | null = null
+let reconciliationInFlight = false
+
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleGlobalKeydown)
+  window.removeEventListener('focus', reconcileVisibleState)
+  document.removeEventListener('visibilitychange', reconcileVisibleState)
+  if (reconciliationTimer) clearInterval(reconciliationTimer)
   Object.values(mediaCache.value).forEach((url) => URL.revokeObjectURL(url))
   if (imageDraft.previewUrl) URL.revokeObjectURL(imageDraft.previewUrl)
   if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
@@ -462,9 +472,9 @@ function setStatusFilter(status: WhatsAppConversationStatus) {
   loadConversations()
 }
 
-async function loadConversations() {
+async function loadConversations(options: { background?: boolean } = {}) {
   try {
-    loading.value = true
+    if (!options.background) loading.value = true
     const response = await WhatsAppRepository.listConversations({
       search: conversationSearch.value || undefined,
       status: statusFilter.value,
@@ -472,15 +482,16 @@ async function loadConversations() {
       take: 80,
     })
     conversations.value = response.items
+    if (response.summary) conversationSummary.value = response.summary
     if (selectedConversation.value) {
       selectedConversation.value =
         conversations.value.find((item) => item.id === selectedConversation.value?.id) || selectedConversation.value
     }
   } catch (error) {
     console.error(error)
-    toast.error('Erro ao carregar as conversas de atendimento.')
+    if (!options.background) toast.error('Erro ao carregar as conversas de atendimento.')
   } finally {
-    loading.value = false
+    if (!options.background) loading.value = false
   }
 }
 
@@ -628,12 +639,27 @@ function closeConversation() {
   replyingTo.value = null
 }
 
-async function loadMessages() {
+async function loadMessages(options: { background?: boolean } = {}) {
   if (!selectedConversation.value) return
   const response = await WhatsAppRepository.listMessages(selectedConversation.value.id, { take: 80 })
+  const previousLastId = messages.value[messages.value.length - 1]?.id
   messages.value = response.items
-  await scrollToBottom()
+  const nextLastId = messages.value[messages.value.length - 1]?.id
+  if (!options.background || previousLastId !== nextLastId) await scrollToBottom()
   void prefetchMedia(messages.value)
+}
+
+async function reconcileVisibleState() {
+  if (document.visibilityState !== 'visible' || reconciliationInFlight) return
+  reconciliationInFlight = true
+  try {
+    await loadConversations({ background: true })
+    if (selectedConversation.value) await loadMessages({ background: true })
+  } catch (error) {
+    console.warn('Falha na reconciliação do atendimento', error)
+  } finally {
+    reconciliationInFlight = false
+  }
 }
 
 async function sendText() {
@@ -1288,8 +1314,15 @@ useSocketEvent<WhatsAppInstance>('whatsapp:instancia:updated', async () => {
   if (selectedConversation.value) await loadConversations()
 })
 
+useSocketEvent('connect', () => {
+  void reconcileVisibleState()
+})
+
 onMounted(async () => {
   window.addEventListener('keydown', handleGlobalKeydown)
+  window.addEventListener('focus', reconcileVisibleState)
+  document.addEventListener('visibilitychange', reconcileVisibleState)
+  reconciliationTimer = setInterval(() => void reconcileVisibleState(), 10_000)
   await loadConversations()
   await loadInstances()
   await startFromClienteQuery()
@@ -1356,15 +1389,15 @@ onMounted(async () => {
           <div class="grid grid-cols-3 gap-2 text-xs">
             <Button :variant="statusFilter === 'PENDENTE' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('PENDENTE')">
               <Clock class="mr-1 h-3.5 w-3.5" />
-              Espera
+              Espera {{ conversationSummary.byStatus.PENDENTE || 0 }}
             </Button>
             <Button :variant="statusFilter === 'ABERTA' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('ABERTA')">
               <MessageSquareDashed class="mr-1 h-3.5 w-3.5" />
-              Abertas
+              Abertas {{ conversationSummary.byStatus.ABERTA || 0 }}
             </Button>
             <Button :variant="statusFilter === 'FINALIZADA' ? 'default' : 'outline'" size="sm" @click="setStatusFilter('FINALIZADA')">
               <MessageSquareLock class="mr-1 h-3.5 w-3.5" />
-              Finalizadas
+              Finalizadas {{ conversationSummary.byStatus.FINALIZADA || 0 }}
             </Button>
           </div>
         </div>
