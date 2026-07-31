@@ -45,6 +45,7 @@ Cada domínio tende a repetir esta estrutura:
 - Ao criar funcionalidade nova, encaixar dentro do domínio correto antes de abrir uma nova área.
 - Componentes específicos da tela devem ficar próximos dela.
 - Regras de acesso devem ser refletidas tanto no router quanto na experiência visual da página.
+- Em `admin/assinantes/ModalGerenciarAssinante.vue`, a recuperação por e-mail do root deve permanecer separada da redefinição manual: confirmação antes do envio, loading independente e feedback com o destinatário retornado pelo backend.
 - Fluxos operacionais como PDV, comprovante pós-venda e modais de envio devem manter ações principais visíveis, feedback imediato e estados explícitos de disponibilidade ou desenvolvimento.
 - Informativos operacionais publicados pelo modo CEO devem permanecer sutis: indicador no header ao lado do tema e acesso equivalente na sidebar mobile, sem deslocar conteúdo, abrir modal/toast automaticamente ou bloquear a operação. A tela `admin/informativos/Home.vue` controla ciclo, período e segmentação; o cliente consulta o conteúdo por `components/layout/InformativosStatusButton.vue`.
 - Listagens mobile de domínios operacionais devem preferir cards compactos com ações rápidas e barra inferior fixa de navegação/atalhos quando o fluxo exigir paginação, busca e menu de ações, seguindo o padrão usado em vendas e produtos.

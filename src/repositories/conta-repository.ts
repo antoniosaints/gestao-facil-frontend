@@ -498,6 +498,14 @@ export class ContaRepository {
     return res.data
   }
 
+  static async enviarRecuperacaoSenhaRootAdmin(id: number): Promise<{
+    message?: string
+    data?: { contaId: number; email: string; nome: string }
+  }> {
+    const res = await http.post(`/admin/assinantes/${id}/enviar-recuperacao-senha-root`)
+    return res.data
+  }
+
   static async acessarContaAdmin(
     id: number,
     payload: { senha: string; motivo: string },

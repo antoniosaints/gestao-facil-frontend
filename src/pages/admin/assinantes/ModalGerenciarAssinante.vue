@@ -9,6 +9,7 @@ import {
   EyeOff,
   KeyRound,
   LoaderCircle,
+  Mail,
   Power,
   RefreshCw,
   ShieldCheck,
@@ -73,6 +74,7 @@ const valorTotalEstimado = computed(() => Number(valorBasePlano.value || 0) + va
 const novaSenhaRoot = ref('')
 const showSenhaRoot = ref(false)
 const resettingSenha = ref(false)
+const sendingRecoveryEmail = ref(false)
 const rootResetInfo = ref<{ email: string; nome: string; totalUsuariosRoot: number } | null>(null)
 
 const title = computed(() => (props.conta ? `Gerenciar ${props.conta.nome}` : 'Gerenciar conta'))
@@ -133,6 +135,28 @@ async function resetarSenhaRoot() {
     toast.error(error?.response?.data?.message || 'Erro ao redefinir a senha do root')
   } finally {
     resettingSenha.value = false
+  }
+}
+
+async function enviarRecuperacaoSenhaRoot() {
+  if (!props.conta?.id) return
+
+  const confirmed = await confirm.confirm({
+    title: 'Enviar recuperação de senha',
+    message: `Será enviado um link de recuperação, válido por 30 minutos, ao e-mail do usuário root da conta "${props.conta.nome}". Deseja continuar?`,
+    confirmText: 'Sim, enviar e-mail',
+  })
+  if (!confirmed) return
+
+  try {
+    sendingRecoveryEmail.value = true
+    const response = await ContaRepository.enviarRecuperacaoSenhaRootAdmin(props.conta.id)
+    toast.success(response.message || 'E-mail de recuperação enviado ao usuário root')
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.response?.data?.message || 'Erro ao enviar o e-mail de recuperação')
+  } finally {
+    sendingRecoveryEmail.value = false
   }
 }
 
@@ -541,6 +565,28 @@ async function submit() {
               </div>
             </div>
           </div>
+
+          <div class="flex flex-col gap-2 rounded-lg border border-border/70 bg-background/70 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div class="text-sm font-medium text-foreground">Enviar link por e-mail</div>
+              <div class="text-xs text-muted-foreground">
+                Envia ao e-mail cadastrado do usuário root um link válido por 30 minutos.
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              class="shrink-0 gap-2"
+              :disabled="sendingRecoveryEmail || !conta?.id"
+              @click="enviarRecuperacaoSenhaRoot"
+            >
+              <LoaderCircle v-if="sendingRecoveryEmail" class="h-4 w-4 animate-spin" />
+              <Mail v-else class="h-4 w-4" />
+              {{ sendingRecoveryEmail ? 'Enviando...' : 'Enviar recuperação' }}
+            </Button>
+          </div>
+
+          <Separator />
 
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div class="relative flex-1">

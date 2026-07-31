@@ -57,7 +57,7 @@ async function gerarPdf(kind: ExportKind) {
 
 <template>
   <ModalView v-model:open="open" title="Exportar PDF da OS"
-    description="Escolha o formato do documento que deseja gerar." size="md">
+    description="Escolha o formato do documento que deseja gerar." size="lg">
     <div class="grid gap-2 px-2">
       <Button variant="outline" class="justify-start" :disabled="exportingPdf !== null" @click="gerarPdf('simples')">
         <LoaderCircle v-if="exportingPdf === 'simples'" class="mr-2 h-4 w-4 animate-spin" />
