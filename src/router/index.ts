@@ -498,7 +498,7 @@ const routes: RouteInterface[] = [
       {
         path: 'painel',
         name: 'reservas-painel',
-        component: () => import('@/pages/reservas/Home.vue'),
+        component: () => import('@/pages/reservas/Painel.vue'),
         meta: { layout: 'main', permissao: 1, modulo: 'reservas' },
       },
       {

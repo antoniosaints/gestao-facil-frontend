@@ -2,6 +2,7 @@
 import { computed, h, onMounted, reactive, ref, watch } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { useToast } from 'vue-toastification'
+import { useRoute } from 'vue-router'
 import { useConfirm } from '@/composables/useConfirm'
 import DataTable from '@/components/tabela/DataTable.vue'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +23,7 @@ import { formatCurrencyBR } from '@/utils/formatters'
 import { CalendarPlus, CircleCheck, Clock3, LoaderCircle, RefreshCw, Trash2, WalletCards } from 'lucide-vue-next'
 
 const toast = useToast()
+const route = useRoute()
 const confirm = useConfirm()
 const filters = reactive({ update: 0, status: '' })
 const mobileBookings = ref<ReservationBooking[]>([])
@@ -329,6 +331,34 @@ async function deleteBooking() {
 watch(() => form.serviceConfigId, () => {
   form.resourceId = null
 })
+
+watch(
+  () => route.query.nova,
+  (value) => {
+    if (value === '1') createOpen.value = true
+  },
+  { immediate: true },
+)
+
+watch(
+  () => route.query.data,
+  (value) => {
+    if (typeof value === 'string' && !Number.isNaN(new Date(value).getTime())) {
+      form.startAt = value
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  [() => route.query.reserva, mobileBookings],
+  ([value]) => {
+    if (typeof value !== 'string') return
+    const booking = mobileBookings.value.find((item) => item.id === Number(value))
+    if (booking) selectBooking(booking)
+  },
+  { immediate: true },
+)
 
 onMounted(load)
 </script>

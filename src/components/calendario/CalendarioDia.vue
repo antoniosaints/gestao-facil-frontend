@@ -5,10 +5,14 @@ import Button from "../ui/button/Button.vue";
 import { computed, inject, ref } from "vue";
 import { ptBR } from "date-fns/locale";
 import { formatToCapitalize } from "@/utils/formatters";
-import type { OrdensServico } from "@/types/schemas";
+import type { CalendarEvent } from "@/components/calendario/types";
 
 const selectedDate = ref(inject("selectedDate", new Date()))
-const props = defineProps<{ eventos: OrdensServico[] }>()
+const props = defineProps<{ eventos: CalendarEvent[] }>()
+const emit = defineEmits<{
+    eventClick: [event: CalendarEvent]
+    createEvent: [date: Date]
+}>()
 const eventosHoje = computed(() =>
     props.eventos.filter(e =>
         format(new Date(e.data), "yyyy-MM-dd") === format(selectedDate.value, "yyyy-MM-dd")
@@ -57,18 +61,21 @@ const sameHour = (hour: any) => {
                 {{ format(hora, "HH:mm") }}
             </div>
             <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-                <div v-for="ev in eventosHoje.filter(e => isSameHour(new Date(e.data), hora))" :key="ev.id"
-                    class="px-3 py-2 rounded-sm bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                <button v-for="ev in eventosHoje.filter(e => isSameHour(new Date(e.data), hora))" :key="ev.id"
+                    type="button"
+                    class="rounded-sm bg-blue-100 px-3 py-2 text-left text-blue-800 hover:brightness-95 dark:bg-blue-800 dark:text-blue-100"
+                    @click="emit('eventClick', ev)">
                     <div class="font-medium truncate">
                         {{ ev.descricao || "Sem descrição" }}
                     </div>
                     <div class="text-xs">
-                        {{ format(new Date(ev.data), "HH:mm") }}
+                        {{ format(new Date(ev.data), "HH:mm") }}<span v-if="ev.detalhe"> · {{ ev.detalhe }}</span>
                     </div>
-                </div>
+                </button>
             </div>
 
-            <Button variant="outline" size="sm" class="flex-shrink-0" title="Reserva rápida">
+            <Button variant="outline" size="sm" class="flex-shrink-0" title="Criar neste horário"
+                @click="emit('createEvent', hora)">
                 <Plus class="h-4 w-4" />
             </Button>
         </div>

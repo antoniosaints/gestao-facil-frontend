@@ -114,12 +114,54 @@ export interface AvailabilitySlot {
   resourceName: string
 }
 
+export interface ReservationsDashboard {
+  periodo: { inicio: string; fim: string }
+  kpis: {
+    totalReservas: number
+    reservasValidas: number
+    taxaConfirmacao: number
+    receita: number
+    ticketMedio: number
+  }
+  agora: {
+    proximas24h: number
+    aguardandoPagamento: number
+    valorPendente: number
+  }
+  serie: Array<{ data: string; reservas: number; receita: number }>
+  distribuicaoStatus: Array<{ status: ReservationStatus; total: number }>
+  topServicos: Array<{ nome: string; reservas: number; receita: number }>
+  topRecursos: Array<{ nome: string; reservas: number; receita: number }>
+  proximas: Array<{
+    id: number
+    nomeCliente: string
+    servicoNome: string
+    recursoNome: string
+    inicio: string
+    fim: string
+    status: ReservationStatus
+    valorTotal: number
+    valorPago: number
+  }>
+  configuracao: {
+    paginaAtiva: boolean
+    slug: string | null
+    recursosAtivos: number
+    servicosAtivos: number
+  }
+}
+
 const publicHttp = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: false,
 })
 
 export class ReservationsRepository {
+  static async getDashboard(startAt: string, endAt: string) {
+    const { data } = await http.get('/reservas/painel', { params: { startAt, endAt } })
+    return data.data as ReservationsDashboard
+  }
+
   static async getConfig() {
     const { data } = await http.get('/reservas/config')
     return data.data as ReservationConfig

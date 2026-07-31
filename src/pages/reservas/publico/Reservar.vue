@@ -14,7 +14,7 @@ import {
   Sparkles,
   UserRound,
 } from 'lucide-vue-next'
-import { addDays, format } from 'date-fns'
+import { addDays, format, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { randomUUID } from '@/utils/uuid'
 import {
   ReservationsRepository,
@@ -44,7 +45,7 @@ const services = ref<ReservationService[]>([])
 const slots = ref<AvailabilitySlot[]>([])
 const selectedService = ref<ReservationService | null>(null)
 const selectedResourceId = ref<number | null>(null)
-const selectedDate = ref(format(addDays(new Date(), 1), 'yyyy-MM-dd'))
+const selectedDate = ref<Date>(addDays(startOfDay(new Date()), 1))
 const selectedSlot = ref<AvailabilitySlot | null>(null)
 const preview = ref<{ total: number; paymentAmount: number; paymentPolicy: string } | null>(null)
 const step = ref(1)
@@ -67,6 +68,10 @@ const reservationFont = computed(() => {
 })
 const compatibleResources = computed(
   () => selectedService.value?.Recursos?.map((item) => item.Recurso) || [],
+)
+const minSelectableDate = computed(() => startOfDay(new Date()))
+const maxSelectableDate = computed(() =>
+  addDays(minSelectableDate.value, Number(store.value?.bookingWindow?.horizonDays || 365)),
 )
 function sectionVisible(section: string) {
   return !Array.isArray(store.value?.sections) || store.value.sections.includes(section)
@@ -93,12 +98,13 @@ function next() {
 
 async function loadSlots() {
   if (!selectedService.value || !selectedDate.value) return
+  const selectedDateValue = format(new Date(selectedDate.value), 'yyyy-MM-dd')
   try {
     slots.value = await ReservationsRepository.publicAvailability(slug, {
       serviceConfigId: selectedService.value.id,
       resourceId: selectedResourceId.value || null,
-      dateFrom: selectedDate.value,
-      dateTo: selectedDate.value,
+      dateFrom: selectedDateValue,
+      dateTo: selectedDateValue,
     })
     selectedSlot.value = null
   } catch (error: any) {
@@ -349,7 +355,15 @@ watch([selectedDate, selectedResourceId], () => {
                 </div>
                 <div>
                   <Label for="reserva-data">Data</Label>
-                  <Input id="reserva-data" v-model="selectedDate" name="data" type="date" class="mt-1 h-11 rounded-xl" />
+                  <Calendarpicker
+                    id="reserva-data"
+                    v-model="selectedDate"
+                    class="booking-date-picker mt-1"
+                    placeholder="Escolha uma data"
+                    :min-date="minSelectableDate"
+                    :max-date="maxSelectableDate"
+                    :teleport="true"
+                  />
                 </div>
               </div>
               <div class="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -453,5 +467,14 @@ watch([selectedDate, selectedResourceId], () => {
   pointer-events: none;
   opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.booking-date-picker :deep(.dp__input) {
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  background: white;
+  color: #0f172a;
+}
+.booking-date-picker :deep(.dp__input_icon) {
+  color: var(--booking-accent);
 }
 </style>

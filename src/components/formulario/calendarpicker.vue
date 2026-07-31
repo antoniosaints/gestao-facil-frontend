@@ -2,7 +2,8 @@
     <DatePicker v-model="data" :placeholder="placeholder" :auto-position="true" :teleport-center="teleport"
         :range="range" v-bind="range ? { presetDates } : {}" @range-end="emitRangeEnd" :required="required"
         cancel-text="Cancelar" select-text="Selecionar" :format-locale="ptBR" format="dd/MM/yyyy"
-        :enable-time-picker="false" :transitions="false" :auto-apply="autoApply">
+        :enable-time-picker="false" :transitions="false" :auto-apply="autoApply"
+        :min-date="minDate" :max-date="maxDate" :week-start="0" :month-change-on-scroll="false">
         <template v-if="range" #preset-date-range-button="{ label, value, presetDate }">
             <span role="button" :tabindex="0" @click="presetDate(value)" @keyup.enter.prevent="presetDate(value)"
                 @keyup.space.prevent="presetDate(value)">
@@ -24,6 +25,8 @@ interface Props {
     required?: boolean;
     range?: boolean;
     autoApply?: boolean
+    minDate?: Date | string | number | null
+    maxDate?: Date | string | number | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -32,7 +35,9 @@ const props = withDefaults(defineProps<Props>(), {
     teleport: false,
     required: true,
     range: false,
-    autoApply: true
+    autoApply: true,
+    minDate: null,
+    maxDate: null
 })
 
 const presetDates = ref([

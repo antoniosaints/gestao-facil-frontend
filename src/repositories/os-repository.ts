@@ -16,6 +16,49 @@ export interface OrdemServicoEfetivarPayload {
   cancelarCobrancaExterna?: boolean
 }
 
+export type OrdemServicoStatus =
+  | 'ABERTA'
+  | 'ORCAMENTO'
+  | 'APROVADA'
+  | 'ANDAMENTO'
+  | 'FATURADA'
+  | 'CANCELADA'
+
+export interface PainelOrdensServico {
+  periodo: { inicio: string; fim: string }
+  kpis: {
+    valorOrdens: { atual: number; anterior: number; delta: number }
+    faturado: { atual: number; anterior: number; delta: number }
+    ticketMedio: { atual: number; anterior: number; delta: number }
+    quantidade: { atual: number; anterior: number; delta: number }
+  }
+  operacao: {
+    abertas: number
+    orcamentos: number
+    aprovadas: number
+    emAndamento: number
+    faturadas: number
+    canceladas: number
+    clientesAtendidos: number
+    servicosAtivos: number
+    taxaFaturamento: number
+  }
+  serie: Array<{ data: string; quantidade: number; valor: number; faturado: number }>
+  distribuicaoStatus: Array<{ status: OrdemServicoStatus; total: number }>
+  topServicos: Array<{ nome: string; quantidade: number; valor: number }>
+  topOperadores: Array<{ nome: string; quantidade: number; valor: number }>
+  pendentes: Array<{
+    id: number
+    uid: string
+    descricao: string | null
+    cliente: string
+    operador: string
+    status: OrdemServicoStatus
+    data: string
+    valor: number
+  }>
+}
+
 export class OrdensServicoRepository {
   static async get(
     id: number,
@@ -92,6 +135,12 @@ export class OrdensServicoRepository {
   static async getResumo() {
     const data = await http.get(`/servicos/ordens/dashboard/resumo`)
     return data.data
+  }
+  static async getPainel(inicio: string, fim: string) {
+    const { data } = await http.get(`/servicos/ordens/dashboard/painel`, {
+      params: { inicio, fim },
+    })
+    return data.data as PainelOrdensServico
   }
   static async remove(id: number) {
     await http.delete(`/servicos/ordens/${id}`)

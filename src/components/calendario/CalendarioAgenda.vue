@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import type { OrdensServico } from "@/types/schemas";
-import { format, startOfDay, addHours, isEqual, parseISO } from "date-fns"
-import { inject, ref } from "vue";
+import type { CalendarEvent } from "@/components/calendario/types";
+import { format, startOfDay, addHours, isEqual } from "date-fns"
+import { computed, inject, ref } from "vue";
 
 const selectedDate = ref(inject("selectedDate", new Date()))
-const props = defineProps<{ eventos: OrdensServico[] }>()
+const props = defineProps<{ eventos: CalendarEvent[] }>()
+const emit = defineEmits<{ eventClick: [event: CalendarEvent] }>()
 
-const hoje = selectedDate.value
-const inicioDia = startOfDay(hoje)
+const hoje = computed(() => selectedDate.value)
+const inicioDia = computed(() => startOfDay(hoje.value))
 
 // gera lista de horas (08h às 18h por exemplo)
-const horas = Array.from({ length: 18 }, (_, i) => addHours(inicioDia, i + 6))
+const horas = computed(() => Array.from({ length: 18 }, (_, i) => addHours(inicioDia.value, i + 6)))
 
 function eventosNaHora(hora: Date) {
     return props.eventos.filter(e => {
@@ -35,11 +36,12 @@ function eventosNaHora(hora: Date) {
 
                 <!-- Eventos -->
                 <div class="flex flex-col gap-1 min-h-[40px] w-full border-l p-2">
-                    <div v-for="ev in eventosNaHora(hora)" :key="ev.id"
-                        class="p-1 text-xs bg-primary text-white rounded-sm">
+                    <button v-for="ev in eventosNaHora(hora)" :key="ev.id" type="button"
+                        class="rounded-sm bg-primary p-1 text-left text-xs text-white hover:brightness-110"
+                        @click="emit('eventClick', ev)">
                         {{ format(new Date(ev.data), "HH:mm") }} -
                         {{ ev.descricao || "Sem descrição" }}
-                    </div>
+                    </button>
                 </div>
             </div>
         </div>

@@ -4,10 +4,11 @@ import { ArrowBigLeft, ArrowBigRight } from "lucide-vue-next"
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatToCapitalize } from "@/utils/formatters";
-import type { OrdensServico } from "@/types/schemas";
+import type { CalendarEvent } from "@/components/calendario/types";
 
 const visualizacao = ref<"mes" | "semana" | "dia" | "agenda">(inject("visualizacao", 'mes'))
-const props = defineProps<{ eventos: OrdensServico[] }>()
+const props = defineProps<{ eventos: CalendarEvent[] }>()
+const emit = defineEmits<{ eventClick: [event: CalendarEvent] }>()
 const hoje = new Date()
 
 const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
@@ -57,22 +58,27 @@ const navigateToDay = (dia: Date) => {
             </button>
         </div>
 
-        <div class="grid grid-cols-7 text-center text-sm font-medium mb-1">
-            <div v-for="d in diasSemana" :key="d">{{ d }}</div>
-        </div>
-
-        <div class="grid grid-cols-7 gap-1 text-xs">
-            <div v-for="(dia, i) in days" :key="i" @click="navigateToDay(dia)"
-                class="h-24 border bg-gray-200 dark:bg-gray-800 rounded cursor-pointer p-2 text-left"
-                :class="{ 'bg-white dark:bg-gray-950': isSameMonth(dia, currentMonth), 'bg-blue-200 dark:bg-slate-900': isSameDay(dia, hoje) }">
-                <div class="font-semibold">{{ format(dia, "dd") }}</div>
-                <div v-for="ev in eventosDoDia(dia).slice(0, 2)" :key="ev.id"
-                    class="mt-1 bg-primary text-white truncate px-1 rounded">
-                    {{ format(new Date(ev.data), "HH:mm") }}
-                    {{ ev.descricao || "Sem descrição" }}
+        <div class="overflow-x-auto pb-2">
+            <div class="min-w-[700px]">
+                <div class="mb-1 grid grid-cols-7 text-center text-sm font-medium">
+                    <div v-for="d in diasSemana" :key="d">{{ d }}</div>
                 </div>
-                <div v-if="eventosDoDia(dia).length > 2" class="text-xs text-gray-500 dark:text-gray-300 ">
-                    {{ eventosDoDia(dia).length - 2 }} mais ...
+
+                <div class="grid grid-cols-7 gap-1 text-xs">
+                    <div v-for="(dia, i) in days" :key="i" @click="navigateToDay(dia)"
+                        class="h-24 cursor-pointer rounded border bg-gray-200 p-2 text-left dark:bg-gray-800"
+                        :class="{ 'bg-white dark:bg-gray-950': isSameMonth(dia, currentMonth), 'bg-blue-200 dark:bg-slate-900': isSameDay(dia, hoje) }">
+                        <div class="font-semibold">{{ format(dia, "dd") }}</div>
+                        <button v-for="ev in eventosDoDia(dia).slice(0, 2)" :key="ev.id" type="button"
+                            class="mt-1 block w-full truncate rounded bg-primary px-1 text-left text-white hover:brightness-110"
+                            @click.stop="emit('eventClick', ev)">
+                            {{ format(new Date(ev.data), "HH:mm") }}
+                            {{ ev.descricao || "Sem descrição" }}
+                        </button>
+                        <div v-if="eventosDoDia(dia).length > 2" class="text-xs text-gray-500 dark:text-gray-300 ">
+                            {{ eventosDoDia(dia).length - 2 }} mais ...
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

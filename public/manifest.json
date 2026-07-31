@@ -20,15 +20,15 @@
   ],
   "screenshots": [
     {
-      "src": "/imgs/screenshot.jpg",
+      "src": "/imgs/screenshot.png",
       "sizes": "540x720",
-      "type": "image/jpg",
+      "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "/imgs/screenshot.jpg",
+      "src": "/imgs/screenshot.png",
       "sizes": "540x720",
-      "type": "image/jpg",
+      "type": "image/png",
       "form_factor": "narrow"
     }
   ]
