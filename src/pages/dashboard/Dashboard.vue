@@ -844,7 +844,7 @@ onMounted(async () => {
               {{ meta.atingida ? '100%' : `${meta.percentual}%` }}
             </Badge>
           </div>
-          <div class="mt-1 h-1 rounded-full bg-muted">
+          <div class="mt-1 h-2 rounded-full bg-muted">
             <div class="h-2 rounded-full" :class="meta.atingida ? 'bg-emerald-500' : 'bg-primary'"
               :style="{ width: `${Math.min(meta.percentual, 100)}%` }" />
           </div>
