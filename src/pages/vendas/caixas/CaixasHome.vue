@@ -431,22 +431,30 @@ onMounted(() => {
         </CardContent>
       </Card>
 
-      <section class="rounded-md border bg-card p-4 xl:col-span-2">
-        <h3 class="mb-3 font-semibold">Produtos mais vendidos</h3>
-        <div v-if="!relatorio?.produtosMaisVendidos.length" class="py-8 text-center text-sm text-muted-foreground">
-          Sem produtos vendidos.
-        </div>
-        <div v-else class="space-y-2">
-          <div v-for="produto in relatorio.produtosMaisVendidos" :key="produto.nome"
-            class="flex items-center justify-between rounded-md border bg-background p-3">
-            <div class="min-w-0">
-              <p class="truncate text-sm font-medium" :title="produto.nome">{{ produto.nome }}</p>
-              <p class="text-xs text-muted-foreground">{{ produto.quantidade }} unidade(s)</p>
-            </div>
-            <span class="text-sm font-semibold">{{ formatCurrencyBR(produto.total) }}</span>
+      <Card class="rounded-xl shadow xl:col-span-2">
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Produtos mais vendidos</CardTitle>
+          <Badge v-if="relatorio?.produtosMaisVendidos.length" variant="outline" class="text-xs">
+            {{ relatorio.produtosMaisVendidos.length }} itens
+          </Badge>
+        </CardHeader>
+        <CardContent>
+          <div v-if="!relatorio?.produtosMaisVendidos.length"
+            class="flex h-52 items-center justify-center text-sm text-muted-foreground">
+            Sem produtos vendidos.
           </div>
-        </div>
-      </section>
+          <div v-else class="max-h-52 space-y-1.5 overflow-y-auto pr-1">
+            <div v-for="produto in relatorio.produtosMaisVendidos" :key="produto.nome"
+              class="flex items-center justify-between gap-3 rounded-md border bg-background px-2.5 py-2">
+              <div class="min-w-0">
+                <p class="truncate text-xs font-medium" :title="produto.nome">{{ produto.nome }}</p>
+                <p class="text-[11px] text-muted-foreground">{{ produto.quantidade }} unidade(s)</p>
+              </div>
+              <span class="shrink-0 text-xs font-semibold">{{ formatCurrencyBR(produto.total) }}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </section>
 
     <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">

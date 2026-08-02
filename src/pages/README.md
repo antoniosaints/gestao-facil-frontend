@@ -46,6 +46,7 @@ Cada domínio tende a repetir esta estrutura:
 
 ## Regras
 - No PDV, enquanto nao houver controle operacional de terminais/pontos de venda, a abertura de caixa nao deve pedir selecao de PDV; no modo PRO, atalhos e botoes de caixa devem alternar entre abrir e fechar conforme o estado atual do caixa, o caixa fechado deve bloquear visualmente a venda, o pagamento rapido deve focar em PIX/dinheiro/cartao/crediario, o painel lateral deve priorizar metricas operacionais, o modal de caixa deve concentrar sangria/reforco/fechamento com resumo do turno, e o comprovante pos-venda deve favorecer nova venda como acao principal. No modal de envio do comprovante, o telefone/WhatsApp cadastrado deve ser preenchido inicialmente, mas pode ser informado ou corrigido manualmente sem alterar o cadastro do cliente, mantendo disponíveis o envio por link e pela API. Todo fechamento, no PDV Basico, PDV Pro ou painel de caixas, deve reutilizar `vendas/caixas/ModalFechamentoCaixa.vue`, incluindo a conferencia opcional por metodo e sem manter formularios paralelos.
+- Em `vendas/caixas/CaixasHome.vue`, o ranking de produtos mais vendidos deve permanecer compacto, alinhado à altura dos gráficos e com rolagem interna quando houver muitos itens, evitando empurrar a tabela operacional de caixas para fora da área visível.
 - Ao criar funcionalidade nova, encaixar dentro do domínio correto antes de abrir uma nova área.
 - Componentes específicos da tela devem ficar próximos dela.
 - Regras de acesso devem ser refletidas tanto no router quanto na experiência visual da página.
