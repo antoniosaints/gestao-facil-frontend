@@ -4,7 +4,16 @@ import { render } from '@/lib/utils'
 import type { ContaAssinanteAdmin } from '@/repositories/conta-repository'
 import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, CalendarClock, CircleDollarSign, CircleOff, CreditCard, ShieldCheck, UserRound } from 'lucide-vue-next'
+import {
+  ArrowUpDown,
+  CalendarClock,
+  CircleOff,
+  CreditCard,
+  ShieldCheck,
+  UserRound,
+  Wifi,
+  WifiOff,
+} from 'lucide-vue-next'
 import Actions from './Actions.vue'
 
 function getAssinaturaBadge(data: ContaAssinanteAdmin) {
@@ -146,7 +155,11 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
         () => ['Vencimento', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render('div', { class: 'text-sm text-foreground text-nowrap' }, formatDateToPtBR(row.original.vencimento)),
+      render(
+        'div',
+        { class: 'text-sm text-foreground text-nowrap' },
+        formatDateToPtBR(row.original.vencimento),
+      ),
   },
   {
     accessorKey: 'valor',
@@ -177,6 +190,22 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
         icon: CreditCard,
         capitalize: false,
       }),
+  },
+  {
+    accessorKey: 'temUsuarioOnline',
+    enableSorting: false,
+    header: () => 'Atividade',
+    cell: ({ row }) =>
+      render('div', { class: 'space-y-1.5 text-nowrap' }, [
+        render(BadgeCell, {
+          label: row.original.temUsuarioOnline
+            ? `${row.original.usuariosOnline} online`
+            : 'Offline',
+          color: row.original.temUsuarioOnline ? 'green' : 'gray',
+          icon: row.original.temUsuarioOnline ? Wifi : WifiOff,
+          capitalize: false,
+        })
+      ]),
   },
   {
     accessorKey: 'acoes',

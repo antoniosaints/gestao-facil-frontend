@@ -4,7 +4,13 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { type ContaAssinanteAdmin, ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -23,7 +29,10 @@ import {
   SquarePen,
   UserPlus,
   UserStar,
+  Wifi,
+  WifiOff,
 } from 'lucide-vue-next'
+import { useIntervalFn } from '@vueuse/core'
 import { reactive, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import ModalAcessarConta from './ModalAcessarConta.vue'
@@ -34,7 +43,8 @@ import { useAssinantesAdmin } from './useAssinantesAdmin'
 
 const uiStore = useUiStore()
 const toast = useToast()
-const { openModal, selectedConta, openManage, openAcessar, openCreate, refreshKey } = useAssinantesAdmin()
+const { openModal, selectedConta, openManage, openAcessar, openCreate, refreshKey } =
+  useAssinantesAdmin()
 
 const status = ref('ATIVO')
 const search = ref('')
@@ -143,6 +153,11 @@ function clearSearch() {
   loadAssinantes()
 }
 
+function openCreateFromActions() {
+  showActionsModal.value = false
+  openCreate()
+}
+
 function previousPage() {
   if (currentPage.value > 1) {
     currentPage.value -= 1
@@ -171,6 +186,15 @@ watch(
 watch(refreshKey, () => {
   refreshAll()
 })
+
+useIntervalFn(() => {
+  if (uiStore.isMobile) {
+    void loadAssinantes()
+    return
+  }
+
+  refreshDesktopTable()
+}, 30_000)
 </script>
 
 <template>
@@ -238,7 +262,9 @@ watch(refreshKey, () => {
                 <UserStar class="h-6 w-6" />
               </EmptyMedia>
               <EmptyTitle>Nenhum assinante encontrado</EmptyTitle>
-              <EmptyDescription>Ajuste a busca ou o filtro para localizar outra conta.</EmptyDescription>
+              <EmptyDescription
+                >Ajuste a busca ou o filtro para localizar outra conta.</EmptyDescription
+              >
             </EmptyHeader>
           </Empty>
         </div>
@@ -263,7 +289,8 @@ watch(refreshKey, () => {
           <div class="text-sm font-medium text-foreground">{{ item.nome }}</div>
           <div class="text-xs text-muted-foreground">{{ item.email }}</div>
           <div class="text-xs text-muted-foreground">
-            {{ item.telefone ? formatPhone(item.telefone) : '-' }} • Vencimento {{ formatDateToPtBR(item.vencimento) }}
+            {{ item.telefone ? formatPhone(item.telefone) : '-' }} • Vencimento
+            {{ formatDateToPtBR(item.vencimento) }}
           </div>
 
           <div class="mt-2 flex flex-wrap gap-2">
@@ -278,10 +305,26 @@ watch(refreshKey, () => {
               :icon="getAssinaturaBadge(item).icon"
               :capitalize="false"
             />
+            <BadgeCell
+              :label="item.temUsuarioOnline ? `${item.usuariosOnline} online` : 'Offline'"
+              :color="item.temUsuarioOnline ? 'green' : 'gray'"
+              :icon="item.temUsuarioOnline ? Wifi : WifiOff"
+              :capitalize="false"
+            />
+          </div>
+
+          <div class="mt-2 text-xs text-muted-foreground">
+            {{
+              item.ultimoLoginEm
+                ? `Último login: ${formatDateToPtBR(item.ultimoLoginEm, true)}`
+                : 'Sem login registrado'
+            }}
           </div>
 
           <div class="mt-3 flex items-center justify-between gap-2">
-            <div class="text-xs text-muted-foreground">{{ item.documento || 'Sem documento informado' }}</div>
+            <div class="text-xs text-muted-foreground">
+              {{ item.documento || 'Sem documento informado' }}
+            </div>
             <div class="flex items-center gap-2">
               <a
                 v-if="item.linkPagamentoPendente"
@@ -313,7 +356,11 @@ watch(refreshKey, () => {
       </div>
     </div>
 
-    <ModalView v-model:open="showSearchModal" title="Buscar assinantes" description="Busque por conta, e-mail ou documento.">
+    <ModalView
+      v-model:open="showSearchModal"
+      title="Buscar assinantes"
+      description="Busque por conta, e-mail ou documento."
+    >
       <div class="space-y-3 px-4">
         <Input
           v-model="search"
@@ -328,7 +375,11 @@ watch(refreshKey, () => {
       </div>
     </ModalView>
 
-    <ModalView v-model:open="showActionsModal" title="Ações" description="Filtros e atalhos da listagem mobile">
+    <ModalView
+      v-model:open="showActionsModal"
+      title="Ações"
+      description="Filtros e atalhos da listagem mobile"
+    >
       <div class="space-y-4 px-4">
         <div class="space-y-2">
           <label class="text-sm font-medium text-foreground">Status</label>
@@ -343,7 +394,7 @@ watch(refreshKey, () => {
             </SelectContent>
           </Select>
         </div>
-        <Button class="w-full gap-2 text-white" @click="showActionsModal = false; openCreate()">
+        <Button class="w-full gap-2 text-white" @click="openCreateFromActions">
           <UserPlus class="h-4 w-4" />
           Novo assinante
         </Button>
@@ -394,11 +445,7 @@ watch(refreshKey, () => {
       </button>
     </MobileBottomBar>
 
-    <ModalGerenciarAssinante
-      v-model:open="openModal"
-      :conta="selectedConta"
-      @saved="handleSaved"
-    />
+    <ModalGerenciarAssinante v-model:open="openModal" :conta="selectedConta" @saved="handleSaved" />
     <ModalNovoAssinante />
     <ModalAcessarConta />
   </div>

@@ -17,6 +17,7 @@ describe('socket account room', () => {
   beforeEach(() => {
     handlers.clear()
     emit.mockClear()
+    localStorage.clear()
     fakeSocket.connected = false
     vi.resetModules()
   })
@@ -42,5 +43,25 @@ describe('socket account room', () => {
 
     handlers.get('connect')?.()
     expect(emit).not.toHaveBeenCalled()
+  })
+
+  it('envia o token atual no handshake', async () => {
+    localStorage.setItem('gestao_facil:token', 'token-atual')
+    const socketModule = await import('./socket')
+    const { io } = await import('socket.io-client')
+
+    socketModule.getSocket()
+    const options = vi.mocked(io).mock.calls.at(-1)?.[1]
+    let auth: object | undefined
+    const authProvider = options?.auth
+
+    expect(typeof authProvider).toBe('function')
+    if (typeof authProvider === 'function') {
+      authProvider((value) => {
+        auth = value
+      })
+    }
+
+    expect(auth).toEqual({ token: 'token-atual' })
   })
 })

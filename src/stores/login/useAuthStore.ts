@@ -6,6 +6,7 @@ import { useToast } from 'vue-toastification'
 import router from '@/router'
 import axios from 'axios'
 import { clearSupport } from '@/utils/supportSession'
+import { disconnectSocket } from '@/pluguins/socket'
 
 type LoginResponse = {
   email: string
@@ -82,6 +83,7 @@ export const useAuthStore = defineStore('authStore', () => {
   }
 
   const logout = () => {
+    disconnectSocket()
     clearSession()
     router.push('/login')
   }

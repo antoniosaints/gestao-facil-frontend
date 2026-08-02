@@ -22,6 +22,9 @@ export interface ContaAssinanteAdmin {
   tipo?: string | null
   createdAt: Date | string
   usuariosTotal: number
+  usuariosOnline: number
+  temUsuarioOnline: boolean
+  ultimoLoginEm?: Date | string | null
   diasParaVencer: number
   statusAssinatura: 'EM_DIA' | 'VENCE_HOJE' | 'VENCIDA'
   linkPagamentoPendente?: string | null
@@ -143,7 +146,12 @@ export interface AssinanteAdminAppsResponse {
     totalAppsPendentes: number
     vencimento: string | Date
     iaLimiteTokensMensal: number | null
-    iaUsoMes: { totalTokens: number; limite: number | null; restante: number | null; custoEstimado: number }
+    iaUsoMes: {
+      totalTokens: number
+      limite: number | null
+      restante: number | null
+      custoEstimado: number
+    }
   }
 }
 
@@ -429,7 +437,9 @@ export class ContaRepository {
     const res = await http.post('/contas/integracoes/mercadopago/desconectar')
     return res.data.data
   }
-  static async listarInstanciasWhatsappNotificacao(): Promise<WhatsAppNotificationInstanceOption[]> {
+  static async listarInstanciasWhatsappNotificacao(): Promise<
+    WhatsAppNotificationInstanceOption[]
+  > {
     const res = await http.get('/contas/parametros/whatsapp-instancias')
     return res.data.data
   }
@@ -458,7 +468,9 @@ export class ContaRepository {
     })
   }
 
-  static async listarAssinantes(params?: Record<string, any>): Promise<PaginatedAdminResponse<ContaAssinanteAdmin>> {
+  static async listarAssinantes(
+    params?: Record<string, any>,
+  ): Promise<PaginatedAdminResponse<ContaAssinanteAdmin>> {
     const res = await http.get('/admin/assinantes', {
       params,
     })
@@ -475,7 +487,11 @@ export class ContaRepository {
     return res.data
   }
 
-  static async alternarAppAssinante(id: number, moduleId: number, payload: ToggleAssinanteAdminAppPayload) {
+  static async alternarAppAssinante(
+    id: number,
+    moduleId: number,
+    payload: ToggleAssinanteAdminAppPayload,
+  ) {
     const res = await http.post(`/admin/assinantes/${id}/apps/${moduleId}`, payload)
     return res.data
   }
@@ -490,7 +506,10 @@ export class ContaRepository {
     return res.data
   }
 
-  static async resetarSenhaRootAdmin(id: number, senha: string): Promise<{
+  static async resetarSenhaRootAdmin(
+    id: number,
+    senha: string,
+  ): Promise<{
     message?: string
     data?: { contaId: number; email: string; nome: string; totalUsuariosRoot: number }
   }> {
@@ -541,7 +560,9 @@ export class ContaRepository {
     return res.data.data
   }
 
-  static async listarFaturasAdmin(params?: Record<string, any>): Promise<PaginatedAdminResponse<FaturaContaAdmin>> {
+  static async listarFaturasAdmin(
+    params?: Record<string, any>,
+  ): Promise<PaginatedAdminResponse<FaturaContaAdmin>> {
     const res = await http.get('/admin/faturas', {
       params,
     })
@@ -573,7 +594,9 @@ export class ContaRepository {
     return res.data
   }
 
-  static async saveAdminGatewayConfig(payload: UpdateAdminGatewayPayload): Promise<AdminGatewayConfigResponse> {
+  static async saveAdminGatewayConfig(
+    payload: UpdateAdminGatewayPayload,
+  ): Promise<AdminGatewayConfigResponse> {
     const res = await http.post('/admin/configuracoes/gateway', payload)
     return res.data
   }

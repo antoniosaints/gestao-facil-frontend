@@ -72,6 +72,7 @@
 - Componentes de tabs devem permitir scroll horizontal nativo em telas menores quando a quantidade de abas ultrapassar a largura disponível.
 - Comportamento transversal ou reutilizável vai para `composables`.
 - Infraestrutura e detalhes técnicos ficam em `utils` ou `lib`.
+- A listagem CEO em `pages/admin/assinantes/Home.vue` e sua tabela exibem usuários online e o último login agregado de cada conta. Desktop e mobile atualizam a atividade a cada 30 segundos; `repositories/conta-repository.ts` tipa `usuariosOnline`, `temUsuarioOnline` e `ultimoLoginEm`.
 
 ## Cuidados
 - Evitar lógica de regra de negócio grande direto em componentes visuais.

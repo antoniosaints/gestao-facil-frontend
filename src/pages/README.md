@@ -56,3 +56,4 @@ Cada domínio tende a repetir esta estrutura:
 - Quando a listagem mobile não exigir paginação, a bottombar ainda deve concentrar as ações principais do módulo, como busca, criação, limpeza de filtro e atualização.
 - Tablists com múltiplas opções devem aceitar scroll lateral nativo em larguras pequenas, evitando quebra visual ou tabs inacessíveis no mobile.
 - Sempre use Tanstack table para criação de listagens desktop, acesse outras tabelas para entender o padrão
+- Em `admin/assinantes/Home.vue`, a coluna/bloco de atividade mostra quantos usuários únicos da conta estão online, ou `Offline`, e o último login conhecido. A atualização automática ocorre a cada 30 segundos e sessões de suporte do CEO não aparecem como presença do assinante.

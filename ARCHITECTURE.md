@@ -95,5 +95,6 @@ Na prática:
 - Não introduzir novo padrão de acesso HTTP fora de `repositories` sem motivo forte.
 - Manter `meta.layout`, `meta.permissao` e `meta.isPublic` coerentes com as regras existentes do router.
 - Tratar `arena` como variação real do produto, não como exceção pontual.
+- `src/pluguins/socket.ts` envia o access token no handshake, deixa o backend determinar a conta autorizada e encerra a conexão no logout. Esse contrato sustenta a presença da listagem CEO sem contar acesso de suporte como usuário do assinante.
 s regras existentes do router.
 - Tratar `arena` como variação real do produto, não como exceção pontual.
