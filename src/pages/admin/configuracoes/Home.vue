@@ -174,7 +174,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <Card class="border-border/70 bg-card/20 shadow-sm dark:bg-card">
+    <Card class="border-border/70 bg-background shadow-sm dark:bg-card">
       <CardHeader class="pb-4">
         <CardTitle class="flex items-center gap-2 text-base font-semibold">
           <CreditCard class="h-4 w-4 text-primary" />
@@ -186,7 +186,7 @@ onMounted(() => {
       </CardHeader>
       <CardContent class="space-y-4">
         <div class="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
-          <div class="space-y-2 rounded-lg border border-border/70 bg-background/70 p-3">
+          <div class="space-y-2 rounded-lg border border-border/70 bg-background/40 p-3">
             <Label for="gateway-plataforma">Gateway</Label>
             <Select v-model="gateway">
               <SelectTrigger id="gateway-plataforma" class="w-full bg-background/80">
@@ -202,7 +202,7 @@ onMounted(() => {
             </p>
           </div>
 
-          <div class="rounded-lg border border-border/70 bg-background/70 p-3">
+          <div class="rounded-lg border border-border/70 bg-background/40 p-3">
             <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Estado das credenciais</div>
             <div class="mt-2 space-y-1.5 text-sm">
               <div class="flex items-center justify-between gap-3">
