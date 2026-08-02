@@ -15,6 +15,7 @@ Cada domínio tende a repetir esta estrutura:
 - subpastas como `tabela`, `modais`, `formulario`, `dashboard`, `publico` e `others`;
 - componentes locais do módulo, mantidos junto da página para reduzir acoplamento global.
 - em produtos, a página principal pode combinar visão por produto base, visão por variante e modais distintos para novo produto versus nova variante.
+- em produtos, os dois modais de cadastro devem expor a calculadora de precificação junto ao preço de venda, mantendo a fórmula e a experiência compartilhadas no componente local `formulario/CalculadoraPrecificacao.vue`.
 
 ## Relação com router e layouts
 - O router define qual página é renderizada e qual layout será usado.
