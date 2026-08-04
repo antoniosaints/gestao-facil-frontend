@@ -20,6 +20,7 @@
 - As rotas seguem os domínios do backend, como `clientes`, `contas`, `vendas`, `lancamentos`, `servicos`, `arena`, `whatsapp` e `gemini`.
 - `loja-repository.ts` separa chamadas internas autenticadas das rotas públicas por slug. O cliente público habilita cookies para refresh token `HttpOnly`; o access token do comprador é enviado apenas quando a operação exige identidade da loja.
 - `whatsapp-repository.ts` concentra contratos do atendimento WhatsApp: instâncias, ações W-API, prévia/sincronização de webhooks por instância, conversas, mensagens, marcação de leitura e atualização de status/vínculo.
+- `restaurante-repository.ts` concentra configuração, itens, grupos, zonas de entrega, prévia/criação do checkout, acompanhamento público e fila de pedidos do Restaurante.
 - Os contracts consumidos normalmente são tipados em `src/types/schemas.ts`.
 
 ## Regras

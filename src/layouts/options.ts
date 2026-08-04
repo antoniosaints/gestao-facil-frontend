@@ -39,31 +39,108 @@ import {
   Users,
   UserStar,
   Wrench,
+  UtensilsCrossed,
 } from 'lucide-vue-next'
 
 export const ROOT_ALWAYS_VISIBLE_MENU_KEYS = ['configuracoes'] as const
 
 export const MAIN_MENU_VISIBILITY_OPTIONS = [
   { key: 'dashboard', nome: 'Dashboard', descricao: 'Painel inicial do sistema.', icon: ChartPie },
-  { key: 'metas', nome: 'Metas', descricao: 'Alvos comerciais, financeiros e de serviços.', icon: Target },
+  {
+    key: 'metas',
+    nome: 'Metas',
+    descricao: 'Alvos comerciais, financeiros e de serviços.',
+    icon: Target,
+  },
   { key: 'vendas', nome: 'Vendas', descricao: 'Painel, vendas, PDV e caixas.', icon: HandCoins },
-  { key: 'atendimento', nome: 'Atendimento', descricao: 'Central de atendimento e chat via WhatsApp.', icon: Headset },
-  { key: 'comandas', nome: 'Comandas', descricao: 'Comandas operacionais e faturamento parcial.', icon: TicketCheck },
-  { key: 'financeiro', nome: 'Financeiro', descricao: 'Lançamentos, contas e cobranças.', icon: CircleDollarSign },
+  {
+    key: 'atendimento',
+    nome: 'Atendimento',
+    descricao: 'Central de atendimento e chat via WhatsApp.',
+    icon: Headset,
+  },
+  {
+    key: 'comandas',
+    nome: 'Comandas',
+    descricao: 'Comandas operacionais e faturamento parcial.',
+    icon: TicketCheck,
+  },
+  {
+    key: 'financeiro',
+    nome: 'Financeiro',
+    descricao: 'Lançamentos, contas e cobranças.',
+    icon: CircleDollarSign,
+  },
   { key: 'produtos', nome: 'Produtos', descricao: 'Cadastro e painel de produtos.', icon: Boxes },
-  { key: 'servicos', nome: 'Serviços', descricao: 'Ordens de serviço e cadastro de serviços.', icon: Store },
+  {
+    key: 'servicos',
+    nome: 'Serviços',
+    descricao: 'Ordens de serviço e cadastro de serviços.',
+    icon: Store,
+  },
   { key: 'clientes', nome: 'Clientes', descricao: 'Clientes e fornecedores.', icon: Users },
-  { key: 'assinaturas', nome: 'Contratos', descricao: 'Módulo adicional de contratos recorrentes.', icon: FilePenLineIcon },
-  { key: 'loja-virtual', nome: 'Loja Virtual', descricao: 'Módulo adicional de vitrine e pedidos online.', icon: Package },
-  { key: 'arena', nome: 'Arena', descricao: 'Módulo adicional de quadras, reservas, calendário e comandas.', icon: CalendarCheck },
-  { key: 'reservas', nome: 'Reservas', descricao: 'Agendamento público, recursos, pagamentos e automações.', icon: CalendarClock },
-  { key: 'core-ia', nome: 'Core IA', descricao: 'Módulo adicional de inteligência artificial.', icon: Bot },
-  { key: 'whatsapp', nome: 'WhatsApp', descricao: 'Módulo adicional de instâncias e conexão.', icon: MessageCircle },
+  {
+    key: 'assinaturas',
+    nome: 'Contratos',
+    descricao: 'Módulo adicional de contratos recorrentes.',
+    icon: FilePenLineIcon,
+  },
+  {
+    key: 'loja-virtual',
+    nome: 'Loja Virtual',
+    descricao: 'Módulo adicional de vitrine e pedidos online.',
+    icon: Package,
+  },
+  {
+    key: 'arena',
+    nome: 'Arena',
+    descricao: 'Módulo adicional de quadras, reservas, calendário e comandas.',
+    icon: CalendarCheck,
+  },
+  {
+    key: 'reservas',
+    nome: 'Reservas',
+    descricao: 'Agendamento público, recursos, pagamentos e automações.',
+    icon: CalendarClock,
+  },
+  {
+    key: 'restaurante',
+    nome: 'Restaurante',
+    descricao: 'Pedidos, salão, cozinha e delivery próprio.',
+    icon: UtensilsCrossed,
+  },
+  {
+    key: 'core-ia',
+    nome: 'Core IA',
+    descricao: 'Módulo adicional de inteligência artificial.',
+    icon: Bot,
+  },
+  {
+    key: 'whatsapp',
+    nome: 'WhatsApp',
+    descricao: 'Módulo adicional de instâncias e conexão.',
+    icon: MessageCircle,
+  },
   { key: 'usuarios', nome: 'Usuários', descricao: 'Administração de usuários.', icon: User },
-  { key: 'configuracoes', nome: 'Configurações', descricao: 'Preferências da empresa e do sistema.', icon: Cog },
-  { key: 'changelog', nome: 'Atualizações', descricao: 'Histórico de novidades do sistema.', icon: ArrowRightLeft },
+  {
+    key: 'configuracoes',
+    nome: 'Configurações',
+    descricao: 'Preferências da empresa e do sistema.',
+    icon: Cog,
+  },
+  {
+    key: 'changelog',
+    nome: 'Atualizações',
+    descricao: 'Histórico de novidades do sistema.',
+    icon: ArrowRightLeft,
+  },
   { key: 'perfil', nome: 'Perfil', descricao: 'Dados do usuario logado.', icon: UserStar },
-  { key: 'loja', nome: 'App Store', descricao: 'Complementos disponíveis para a conta.', icon: PackagePlus },
+  {
+    key: 'loja',
+    nome: 'App Store',
+    descricao: 'Complementos disponíveis para a conta.',
+    icon: PackagePlus,
+  },
 ] as const
 
 export type MainMenuVisibilityKey = (typeof MAIN_MENU_VISIBILITY_OPTIONS)[number]['key']
@@ -74,6 +151,7 @@ export const APP_MENU_MODULE_KEYS: Partial<Record<MainMenuVisibilityKey, string>
   'loja-virtual': 'loja-virtual',
   arena: 'arena',
   reservas: 'reservas',
+  restaurante: 'restaurante-delivery',
   'core-ia': 'core-ia',
   whatsapp: 'whatsapp',
 }
@@ -145,6 +223,11 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'reservas:recursos', nome: 'Recursos e horários' },
     { key: 'reservas:configuracoes', nome: 'Configurações' },
   ],
+  restaurante: [
+    { key: 'restaurante:cardapio', nome: 'Cardápio' },
+    { key: 'restaurante:pedidos', nome: 'Pedidos' },
+    { key: 'restaurante:configuracoes', nome: 'Configurações' },
+  ],
   assinaturas: [
     { key: 'assinaturas:painel', nome: 'Painel' },
     { key: 'assinaturas:lista', nome: 'Contratos' },
@@ -161,9 +244,9 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
   ],
 }
 
-export const ALL_SUBMENU_VISIBILITY_KEYS = Object.values(
-  MENU_SUBMENU_VISIBILITY_OPTIONS,
-).flatMap((submenus) => submenus.map((submenu) => submenu.key))
+export const ALL_SUBMENU_VISIBILITY_KEYS = Object.values(MENU_SUBMENU_VISIBILITY_OPTIONS).flatMap(
+  (submenus) => submenus.map((submenu) => submenu.key),
+)
 
 export function filterSidebarMenuByVisibility(
   menu: SidebarMenuType[],
@@ -177,9 +260,7 @@ export function filterSidebarMenuByVisibility(
     if (!item.children || hiddenSubmenus.size === 0) return item
     return {
       ...item,
-      children: item.children.filter(
-        (child) => !child.key || !hiddenSubmenus.has(child.key),
-      ),
+      children: item.children.filter((child) => !child.key || !hiddenSubmenus.has(child.key)),
     }
   }
 
@@ -207,6 +288,7 @@ export const sidebarMenuOptions = (
   const hasLojaApp = Boolean(appModules['loja-virtual'])
   const hasArenaApp = Boolean(appModules.arena)
   const hasReservationsApp = Boolean(appModules.reservas)
+  const hasRestauranteApp = Boolean(appModules['restaurante-delivery'])
   const hasCombosApp = Boolean(appModules.combos)
   const hasVisibleAppsSection =
     (permissions.financeiro.visualizar && hasAssinaturasApp) ||
@@ -214,7 +296,8 @@ export const sidebarMenuOptions = (
     (permissions.configuracoes.visualizar && hasWhatsappApp) ||
     (permissions.configuracoes.visualizar && hasAtendimentoApp) ||
     (permissions.produtos.visualizar && hasLojaApp) ||
-    (permissions.reservas.visualizar && hasReservationsApp)
+    (permissions.reservas.visualizar && hasReservationsApp) ||
+    (permissions.vendas.visualizar && hasRestauranteApp)
 
   return [
     {
@@ -224,7 +307,7 @@ export const sidebarMenuOptions = (
       color: 'orange',
       link: '/',
     },
-      {
+    {
       key: 'atendimento',
       nome: 'Atendimento',
       icone: Headset,
@@ -353,6 +436,38 @@ export const sidebarMenuOptions = (
           link: '/reservas/configuracoes',
           icone: Cog,
           color: 'cyan',
+        },
+      ],
+    },
+    {
+      key: 'restaurante',
+      nome: 'Restaurante',
+      icone: UtensilsCrossed,
+      show: permissions.vendas.visualizar && hasRestauranteApp,
+      color: 'orange',
+      children: [
+        {
+          key: 'restaurante:cardapio',
+          nome: 'Cardápio',
+          link: '/restaurante/cardapio',
+          show: permissions.configuracoes.editar,
+          icone: UtensilsCrossed,
+          color: 'orange',
+        },
+        {
+          key: 'restaurante:pedidos',
+          nome: 'Pedidos',
+          link: '/restaurante/pedidos',
+          icone: ClipboardList,
+          color: 'orange',
+        },
+        {
+          key: 'restaurante:configuracoes',
+          nome: 'Configurações',
+          link: '/restaurante/configuracoes',
+          show: permissions.configuracoes.editar,
+          icone: Cog,
+          color: 'orange',
         },
       ],
     },
@@ -560,8 +675,20 @@ export const sidebarMenuOptions = (
           color: 'yellow',
           icone: ChartPie,
         },
-        { key: 'servicos:os', nome: 'Ordens de serviço', link: '/servicos/os', color: 'yellow', icone: FileDigit },
-        { key: 'servicos:lista', nome: 'Serviços', link: '/servicos', color: 'yellow', icone: Wrench },
+        {
+          key: 'servicos:os',
+          nome: 'Ordens de serviço',
+          link: '/servicos/os',
+          color: 'yellow',
+          icone: FileDigit,
+        },
+        {
+          key: 'servicos:lista',
+          nome: 'Serviços',
+          link: '/servicos',
+          color: 'yellow',
+          icone: Wrench,
+        },
       ],
     },
     {

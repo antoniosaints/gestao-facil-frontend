@@ -1,16 +1,21 @@
 # Páginas por Domínio
 
 ## Papel da pasta
+
 `pages` organiza as telas do produto por domínio de negócio. O router carrega essas páginas de forma lazy e usa `meta` para layout, permissão e visibilidade pública.
 
 ## Organização atual
+
 - Domínios principais: `dashboard`, `clientes`, `produtos`, `servicos`, `financeiro`, `usuarios`, `configs`, `perfil`, `vendas`.
 - Áreas complementares: `site`, `auth`, `assinatura`, `assinaturas`, `agente`, `chats`, `whatsapp` e `loja`.
+- O domínio `restaurante` separa a fila privada `Pedidos.vue`, a manutenção de itens/grupos em `Cardapio.vue`, a publicação em `Configuracoes.vue` e o cardápio visitante `CardapioPublico.vue`.
 - Modo alternativo do produto: `arena`, com rotas, telas e fluxos próprios.
 - Administração separada: `admin`.
 
 ## Padrão de composição
+
 Cada domínio tende a repetir esta estrutura:
+
 - `Home.vue` ou tela principal de listagem;
 - subpastas como `tabela`, `modais`, `formulario`, `dashboard`, `publico` e `others`;
 - componentes locais do módulo, mantidos junto da página para reduzir acoplamento global.
@@ -18,12 +23,16 @@ Cada domínio tende a repetir esta estrutura:
 - em produtos, os dois modais de cadastro devem expor a calculadora de precificação junto ao preço de venda, mantendo a fórmula e a experiência compartilhadas no componente local `formulario/CalculadoraPrecificacao.vue`.
 
 ## Relação com router e layouts
+
 - O router define qual página é renderizada e qual layout será usado.
 - `VITE_MODE_SYSTEM` altera a escolha de algumas telas, principalmente entre ERP e `arena`.
 - Rotas privadas dependem de autenticação, status da conta e `permissao`.
 - A rota pública `/site/termos-politica` centraliza os Termos de Uso e a Política de Privacidade em `site/TermosPolitica.vue`; os hashes `#termos` e `#privacidade` abrem diretamente o documento correspondente e devem ser usados pelos links do site, cadastro e login.
 - Páginas de dashboard devem refletir filtros operacionais reais do domínio, como período e agregações segregadas por conta.
 - O domínio `reservas` separa o dashboard `Painel.vue` da listagem `Home.vue`: o painel oferece períodos rápidos, KPIs, gráficos de volume/status, próximas reservas, ranking de serviços, situação da página pública e atalhos para criar, listar, abrir o calendário e configurar o módulo. `Calendario.vue` reutiliza o calendário compartilhado de Serviços nas visões mês, semana, dia e agenda, abre o resumo ao clicar no evento e encaminha a criação rápida com data/horário preenchidos.
+- Em `restaurante`, pedidos operacionais são cards com busca, filtro, loading, vazio e ação principal de avanço; as rotas privadas usam `meta.modulo: restaurante-delivery`. A rota pública `/restaurante/:slug` não usa o layout autenticado e não calcula preços localmente para a API.
+- `restaurante/Configuracoes.vue` diferencia app instalado de publicação e administra retirada, delivery, pagamentos e zonas prioritárias; `CardapioPublico.vue` usa checkout em modal, exige endereço no delivery, mostra a prévia da API e trata pagamento local, Pix e redirecionamento ao Checkout Pro.
+- `restaurante/Cardapio.vue` usa cards responsivos e modais shadcn para vincular produtos existentes, associar grupos e editar sabores/complementos; preço base e estoque continuam pertencendo ao cadastro de produtos.
 - A etapa de horário da reserva pública usa `Calendarpicker`, restringindo a seleção entre o dia atual e o horizonte configurado no backend; a API pública expõe essa janela em `bookingWindow`, mas continua validando disponibilidade e antecedência no servidor.
 - No financeiro, o domínio pode combinar uma listagem geral de lançamentos com telas operacionais separadas para acompanhamento, contas a pagar, contas a receber e assinaturas a pagar, reutilizando a mesma base de parcelas, filtros e ações rápidas quando a segmentação melhorar a UX. Vendas e lançamentos vinculados devem manter navegação bidirecional: o detalhe da venda abre o lançamento financeiro e o detalhe financeiro abre `vendas/modais/DetalhesVenda.vue` na própria tela, somente quando existir `vendaId`.
 - A tela `financeiro/inadimplencia/Home.vue` deve manter as ações rápidas de lembrete na própria listagem: configurar lançamento, configurar padrão do cliente, abrir o lançamento, enviar agora e ativar/desativar o lembrete por lançamento via switch sem abrir o registro. O envio manual, as parcelas pendentes de `financeiro/lancamentos/ContasAReceber.vue` e cada parcela pendente exibida em `financeiro/lancamentos/Detalhes.vue` devem reutilizar `financeiro/inadimplencia/CobrancaRapidaModal.vue`, preenchido com o modelo efetivo da conta ou o texto de fábrica, com os mesmos placeholders e enfileiramento imediato pelo WhatsApp, sem aguardar o horário da agenda automática. Quando iniciado nos detalhes, o envio deve respeitar a parcela selecionada.
@@ -45,6 +54,7 @@ Cada domínio tende a repetir esta estrutura:
 - `loja/LojaVirtualPage.vue` separa Pedidos e Personalização. `loja/publico/LojaPublica.vue` atende `/lojas/:slug`, usa os presets Essencial/Editorial/Impacto e precisa respeitar `mode: CATALOGO|LOJA`; em catálogo não deve expor carrinho, login ou checkout. `ContaCliente.vue` concentra as jornadas públicas de autenticação e histórico sem reutilizar a sessão do ERP.
 
 ## Regras
+
 - No PDV, enquanto nao houver controle operacional de terminais/pontos de venda, a abertura de caixa nao deve pedir selecao de PDV; no modo PRO, atalhos e botoes de caixa devem alternar entre abrir e fechar conforme o estado atual do caixa, o caixa fechado deve bloquear visualmente a venda, o pagamento rapido deve focar em PIX/dinheiro/cartao/crediario, o painel lateral deve priorizar metricas operacionais, o modal de caixa deve concentrar sangria/reforco/fechamento com resumo do turno, e o comprovante pos-venda deve favorecer nova venda como acao principal. No modal de envio do comprovante, o telefone/WhatsApp cadastrado deve ser preenchido inicialmente, mas pode ser informado ou corrigido manualmente sem alterar o cadastro do cliente, mantendo disponíveis o envio por link e pela API. Todo fechamento, no PDV Basico, PDV Pro ou painel de caixas, deve reutilizar `vendas/caixas/ModalFechamentoCaixa.vue`, incluindo a conferencia opcional por metodo e sem manter formularios paralelos.
 - Em `vendas/caixas/CaixasHome.vue`, o ranking de produtos mais vendidos deve permanecer compacto, alinhado à altura dos gráficos e com rolagem interna quando houver muitos itens, evitando empurrar a tabela operacional de caixas para fora da área visível.
 - Ao criar funcionalidade nova, encaixar dentro do domínio correto antes de abrir uma nova área.

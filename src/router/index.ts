@@ -79,14 +79,19 @@ const routes: RouteInterface[] = [
     component: () => import('@/pages/reservas/publico/GerenciarReserva.vue'),
     meta: { isPublic: true },
   },
-  ...[
-    ['login', 'login'], ['cadastro', 'register'], ['esqueci-senha', 'forgot'], ['redefinir-senha', 'reset'], ['verificar', 'verify'], ['conta', 'account'],
+  ...([
+    ['login', 'login'],
+    ['cadastro', 'register'],
+    ['esqueci-senha', 'forgot'],
+    ['redefinir-senha', 'reset'],
+    ['verificar', 'verify'],
+    ['conta', 'account'],
   ].map(([path, customerMode]) => ({
     path: `/lojas/:slug/${path}`,
     name: `loja-cliente-${customerMode}`,
     component: () => import('@/pages/loja/publico/ContaCliente.vue'),
     meta: { isPublic: true, customerMode },
-  })) as RouteInterface[],
+  })) as RouteInterface[]),
   {
     path: '/site',
     name: 'site-page',
@@ -528,6 +533,31 @@ const routes: RouteInterface[] = [
     ],
   },
   {
+    path: '/restaurante',
+    name: 'restaurante',
+    redirect: { name: 'restaurante-pedidos' },
+    children: [
+      {
+        path: 'cardapio',
+        name: 'restaurante-cardapio',
+        component: () => import('@/pages/restaurante/Cardapio.vue'),
+        meta: { layout: 'main', permissao: 4, modulo: 'restaurante-delivery' },
+      },
+      {
+        path: 'pedidos',
+        name: 'restaurante-pedidos',
+        component: () => import('@/pages/restaurante/Pedidos.vue'),
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery' },
+      },
+      {
+        path: 'configuracoes',
+        name: 'restaurante-configuracoes',
+        component: () => import('@/pages/restaurante/Configuracoes.vue'),
+        meta: { layout: 'main', permissao: 4, modulo: 'restaurante-delivery' },
+      },
+    ],
+  },
+  {
     path: '/financeiro',
     name: 'financeiro',
     redirect: { name: 'lancamentos-financeiro' },
@@ -901,6 +931,12 @@ const routes: RouteInterface[] = [
     meta: {
       isPublic: true,
     },
+  },
+  {
+    path: '/restaurante/:slug',
+    name: 'restaurante-cardapio-publico',
+    component: () => import('@/pages/restaurante/CardapioPublico.vue'),
+    meta: { isPublic: true },
   },
   {
     path: '/redefinir-senha',

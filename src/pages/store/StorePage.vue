@@ -4,19 +4,37 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
 import { formatCurrencyBR } from '@/utils/formatters'
-import { StoreRepository, type StoreModule, type StoreResumo } from '@/repositories/store-repository'
+import {
+  StoreRepository,
+  type StoreModule,
+  type StoreResumo,
+} from '@/repositories/store-repository'
 import { ContaRepository, type MercadoPagoIntegracaoStatus } from '@/repositories/conta-repository'
+import { useUiStore } from '@/stores/ui/uiStore'
 import type { UpdateParametrosConta } from '@/types/schemas'
 import { isStoreModuleFree, shouldShowImmediateBillingOptions } from './billing'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Banknote,
   Bot,
@@ -35,6 +53,7 @@ import {
   ShoppingCart,
   Sparkles,
   Trash2,
+  UtensilsCrossed,
   Wrench,
 } from 'lucide-vue-next'
 
@@ -42,6 +61,7 @@ const toast = useToast()
 const confirm = useConfirm()
 const route = useRoute()
 const router = useRouter()
+const storeUi = useUiStore()
 
 const CONFIG_APP_CODES = ['mercado-pago', 'abacatepay'] as const
 
@@ -79,6 +99,7 @@ const iconMap = {
   combos: PackagePlus,
   arena: CalendarCheck,
   reservas: CalendarCheck,
+  'restaurante-delivery': UtensilsCrossed,
   'mercado-pago': CreditCard,
   abacatepay: Banknote,
 } as const
@@ -105,6 +126,7 @@ const iconShellClassMap: Record<string, string> = {
   combos: 'bg-cyan-500/15 text-cyan-300 ring-1 ring-cyan-500/20',
   arena: 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/20',
   reservas: 'bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/20',
+  'restaurante-delivery': 'bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/20',
   'mercado-pago': 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/20',
   abacatepay: 'bg-lime-500/15 text-lime-300 ring-1 ring-lime-500/20',
 }
@@ -124,8 +146,12 @@ const mercadoPagoConectado = computed(() => Boolean(mercadoPagoStatus.value?.con
 const mercadoPagoConfigured = computed(
   () => mercadoPagoConectado.value || Boolean(formMercadoPago.MercadoPagoApiKey),
 )
-const abacatePayConfigured = computed(() => Boolean(formAbacatePay.AbacatePayApiKey && formAbacatePay.AbacatePaySecret))
-const selectedIsConfigApp = computed(() => Boolean(moduloSelecionado.value && isConfigApp(moduloSelecionado.value.codigo)))
+const abacatePayConfigured = computed(() =>
+  Boolean(formAbacatePay.AbacatePayApiKey && formAbacatePay.AbacatePaySecret),
+)
+const selectedIsConfigApp = computed(() =>
+  Boolean(moduloSelecionado.value && isConfigApp(moduloSelecionado.value.codigo)),
+)
 
 const cards = computed(() => {
   const query = search.value.trim().toLowerCase()
@@ -142,8 +168,14 @@ const cards = computed(() => {
       const matchesStatus =
         statusFilter.value === 'TODOS' ||
         (statusFilter.value === 'ATIVOS' && modulo.ativo) ||
-        (statusFilter.value === 'PENDENTES' && (modulo.pendenteAtivacao || modulo.cobrancaPendenteAtual || modulo.cancelamentoAgendado)) ||
-        (statusFilter.value === 'DISPONIVEIS' && !modulo.ativo && !modulo.pendenteAtivacao && !modulo.cancelamentoAgendado)
+        (statusFilter.value === 'PENDENTES' &&
+          (modulo.pendenteAtivacao ||
+            modulo.cobrancaPendenteAtual ||
+            modulo.cancelamentoAgendado)) ||
+        (statusFilter.value === 'DISPONIVEIS' &&
+          !modulo.ativo &&
+          !modulo.pendenteAtivacao &&
+          !modulo.cancelamentoAgendado)
 
       return matchesSearch && matchesStatus
     })
@@ -170,13 +202,20 @@ const groupedCards = computed(() => {
   }
 
   return [...grouped.entries()]
-    .sort(([a], [b]) => getCategoryPriority(a) - getCategoryPriority(b) || a.localeCompare(b, 'pt-BR'))
+    .sort(
+      ([a], [b]) => getCategoryPriority(a) - getCategoryPriority(b) || a.localeCompare(b, 'pt-BR'),
+    )
     .map(([categoria, items]) => ({ categoria, items }))
 })
 
-const totalAppsAtivos = computed(() => resumo.value?.totalAppsEmUso ?? modulos.value.filter((modulo) => modulo.ativo).length)
+const totalAppsAtivos = computed(
+  () => resumo.value?.totalAppsEmUso ?? modulos.value.filter((modulo) => modulo.ativo).length,
+)
 const totalAppsPendentes = computed(
-  () => resumo.value?.totalAppsPendentes ?? modulos.value.filter((modulo) => modulo.pendenteAtivacao || modulo.cobrancaPendenteAtual).length,
+  () =>
+    resumo.value?.totalAppsPendentes ??
+    modulos.value.filter((modulo) => modulo.pendenteAtivacao || modulo.cobrancaPendenteAtual)
+      .length,
 )
 const valorAppsProximoCiclo = computed(() => resumo.value?.valorAppsProximoCiclo || 0)
 
@@ -309,7 +348,8 @@ function getCatalogStateLabel(modulo: StoreModule) {
 }
 
 function getCatalogStateClass(modulo: StoreModule) {
-  if (isConfigApp(modulo.codigo) && modulo.ativo && isModuleConfigured(modulo)) return 'text-emerald-500'
+  if (isConfigApp(modulo.codigo) && modulo.ativo && isModuleConfigured(modulo))
+    return 'text-emerald-500'
   if (isConfigApp(modulo.codigo) && modulo.ativo) return 'text-amber-500'
   if (modulo.cancelamentoAgendado) return 'text-orange-500'
   if (modulo.ativo) return 'text-emerald-500'
@@ -445,6 +485,7 @@ async function adicionarAoPlano(modulo: StoreModule) {
     actionLoadingId.value = modulo.id
     const response = await StoreRepository.ativar(modulo.id, billingMode.value)
     await carregarModulos()
+    await storeUi.loadAppModules(true)
     setModuloSelecionado(modulo.id)
     toast.success(response.message || 'App selecionado com sucesso.')
 
@@ -491,6 +532,7 @@ async function cancelarModulo(modulo: StoreModule) {
     actionLoadingId.value = modulo.id
     const response = await StoreRepository.cancelar(modulo.id)
     await carregarModulos()
+    await storeUi.loadAppModules(true)
     setModuloSelecionado(modulo.id)
     toast.success(response.message || 'Atualização realizada com sucesso.')
   } catch (error: any) {
@@ -516,9 +558,13 @@ async function salvarConfiguracaoIntegracao(modulo: StoreModule) {
       if (webhookStatus === 'created') {
         toast.info('Webhook da AbacatePay sincronizada automaticamente para esta conta.')
       } else if (webhookStatus === 'non-https-base-url') {
-        toast.info('Credenciais salvas. A webhook da AbacatePay não foi criada automaticamente porque a BASE_URL atual não é HTTPS.')
+        toast.info(
+          'Credenciais salvas. A webhook da AbacatePay não foi criada automaticamente porque a BASE_URL atual não é HTTPS.',
+        )
       } else if (webhookStatus === 'sync-failed') {
-        toast.warning('Credenciais salvas, mas a sincronização automática da webhook da AbacatePay falhou. Revise a chave da conta ou configure a webhook no painel da AbacatePay.')
+        toast.warning(
+          'Credenciais salvas, mas a sincronização automática da webhook da AbacatePay falhou. Revise a chave da conta ou configure a webhook no painel da AbacatePay.',
+        )
       }
     }
 
@@ -560,7 +606,9 @@ async function desconectarMercadoPago() {
     mercadoPagoLoading.value = true
     mercadoPagoStatus.value = await ContaRepository.desconectarMercadoPago()
     toast.success('Conta do Mercado Pago desconectada.')
-    toast.info('Remova também a autorização em "Aplicações autorizadas" na sua conta do Mercado Pago.')
+    toast.info(
+      'Remova também a autorização em "Aplicações autorizadas" na sua conta do Mercado Pago.',
+    )
     await carregarModulos()
   } catch (error: any) {
     console.error(error)
@@ -586,7 +634,9 @@ function tratarRetornoOAuth() {
     toast.success('Conta do Mercado Pago conectada com sucesso!')
   } else {
     const motivo = route.query.motivo as string | undefined
-    toast.error(MP_OAUTH_ERROS[motivo || ''] || 'Não foi possível conectar a conta do Mercado Pago.')
+    toast.error(
+      MP_OAUTH_ERROS[motivo || ''] || 'Não foi possível conectar a conta do Mercado Pago.',
+    )
   }
 
   const query = { ...route.query }
@@ -610,7 +660,8 @@ onMounted(async () => {
           Apps
         </h2>
         <p class="text-sm text-muted-foreground">
-          Ative módulos adicionais, acompanhe o impacto na mensalidade e gerencie os apps já liberados na conta.
+          Ative módulos adicionais, acompanhe o impacto na mensalidade e gerencie os apps já
+          liberados na conta.
         </p>
       </div>
 
@@ -620,7 +671,9 @@ onMounted(async () => {
       </Button>
     </div>
 
-    <div class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_220px_180px]">
+    <div
+      class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_220px_180px]"
+    >
       <div class="flex items-center gap-2 rounded-lg border border-border/70 bg-card/80 px-3">
         <Search class="h-4 w-4 shrink-0 text-muted-foreground" />
         <Input
@@ -653,27 +706,45 @@ onMounted(async () => {
     <div class="rounded-2xl border border-border/70 bg-card/70 px-4 py-3">
       <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div class="space-y-1 xl:border-r xl:border-border/60 xl:pr-4">
-          <div class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Plano base</div>
-          <div class="text-lg font-semibold text-foreground">{{ formatCurrencyBR(resumo?.valorBasePlano || 0) }}</div>
+          <div class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            Plano base
+          </div>
+          <div class="text-lg font-semibold text-foreground">
+            {{ formatCurrencyBR(resumo?.valorBasePlano || 0) }}
+          </div>
         </div>
 
         <div class="space-y-1 xl:border-r xl:border-border/60 xl:px-4">
-          <div class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Próxima mensalidade</div>
-          <div class="text-lg font-semibold text-foreground">{{ formatCurrencyBR(resumo?.mensalidadeAtual || 0) }}</div>
-          <div class="text-xs text-muted-foreground">Apps no próximo ciclo: {{ formatCurrencyBR(valorAppsProximoCiclo) }}</div>
+          <div class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            Próxima mensalidade
+          </div>
+          <div class="text-lg font-semibold text-foreground">
+            {{ formatCurrencyBR(resumo?.mensalidadeAtual || 0) }}
+          </div>
+          <div class="text-xs text-muted-foreground">
+            Apps no próximo ciclo: {{ formatCurrencyBR(valorAppsProximoCiclo) }}
+          </div>
         </div>
 
         <div class="space-y-1 xl:border-r xl:border-border/60 xl:px-4">
-          <div class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Apps ativos</div>
+          <div class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            Apps ativos
+          </div>
           <div class="text-lg font-semibold text-foreground">{{ totalAppsAtivos }}</div>
-          <div class="text-xs text-muted-foreground">Próximo vencimento: {{ getDataFormatada(resumo?.proximoVencimento) }}</div>
+          <div class="text-xs text-muted-foreground">
+            Próximo vencimento: {{ getDataFormatada(resumo?.proximoVencimento) }}
+          </div>
         </div>
 
         <div class="space-y-1 xl:pl-4">
           <div class="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Pendentes</div>
           <div class="text-lg font-semibold text-foreground">{{ totalAppsPendentes }}</div>
           <div class="text-xs text-muted-foreground">
-            {{ resumo?.contaAtiva ? 'Conta apta para ativação imediata' : 'Aguardando próximo pagamento do plano' }}
+            {{
+              resumo?.contaAtiva
+                ? 'Conta apta para ativação imediata'
+                : 'Aguardando próximo pagamento do plano'
+            }}
           </div>
         </div>
       </div>
@@ -698,7 +769,9 @@ onMounted(async () => {
             <PackagePlus class="h-6 w-6" />
           </EmptyMedia>
           <EmptyTitle>Nenhum app encontrado</EmptyTitle>
-          <EmptyDescription>Ajuste os filtros ou a busca para localizar outro app.</EmptyDescription>
+          <EmptyDescription
+            >Ajuste os filtros ou a busca para localizar outro app.</EmptyDescription
+          >
         </EmptyHeader>
       </Empty>
     </div>
@@ -721,14 +794,21 @@ onMounted(async () => {
             @click="abrirDetalhes(modulo)"
           >
             <div class="flex items-start gap-4">
-              <div :class="['flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl', getIconShellClass(modulo)]">
+              <div
+                :class="[
+                  'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl',
+                  getIconShellClass(modulo),
+                ]"
+              >
                 <img :src="getImage(modulo)" class="h-14 w-14 rounded-2xl" />
               </div>
 
               <div class="min-w-0 flex-1">
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
-                    <div class="truncate text-2 font-semibold leading-none text-foreground md:text-lg">
+                    <div
+                      class="truncate text-2 font-semibold leading-none text-foreground md:text-lg"
+                    >
                       {{ modulo.nome }}
                     </div>
                     <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
@@ -756,7 +836,9 @@ onMounted(async () => {
                     Saída
                   </Badge>
                   <Badge
-                    v-else-if="isConfigApp(modulo.codigo) && modulo.ativo && isModuleConfigured(modulo)"
+                    v-else-if="
+                      isConfigApp(modulo.codigo) && modulo.ativo && isModuleConfigured(modulo)
+                    "
                     variant="secondary"
                     class="shrink-0 border-0 bg-emerald-500/10 text-[10px] text-emerald-500"
                   >
@@ -778,7 +860,11 @@ onMounted(async () => {
                 <div class="mt-4 flex items-center justify-between gap-3 text-xs">
                   <span class="text-muted-foreground">{{ getCardHint(modulo) }}</span>
                   <span class="font-medium text-foreground/80 group-hover:text-primary">
-                    {{ modulo.ativo || modulo.pendenteAtivacao || modulo.cancelamentoAgendado ? 'Gerenciar' : 'Ver detalhes' }}
+                    {{
+                      modulo.ativo || modulo.pendenteAtivacao || modulo.cancelamentoAgendado
+                        ? 'Gerenciar'
+                        : 'Ver detalhes'
+                    }}
                   </span>
                 </div>
               </div>
@@ -818,7 +904,9 @@ onMounted(async () => {
                 </p>
               </div>
               <div class="text-right">
-                <div class="text-xl font-black text-primary">{{ getCatalogPriceLabel(moduloSelecionado) }}</div>
+                <div class="text-xl font-black text-primary">
+                  {{ getCatalogPriceLabel(moduloSelecionado) }}
+                </div>
                 <div class="text-xs text-muted-foreground">sem impacto na mensalidade</div>
               </div>
             </div>
@@ -834,12 +922,16 @@ onMounted(async () => {
 
           <template v-else>
             <Alert
-              v-if="isModuleConfigured(moduloSelecionado) && !(moduloSelecionado.codigo === 'mercado-pago' && mercadoPagoConectado)"
+              v-if="
+                isModuleConfigured(moduloSelecionado) &&
+                !(moduloSelecionado.codigo === 'mercado-pago' && mercadoPagoConectado)
+              "
             >
               <CircleCheck class="h-4 w-4" />
               <AlertTitle>Configuração salva</AlertTitle>
               <AlertDescription>
-                As credenciais desta integração já estão cadastradas e podem ser atualizadas a qualquer momento.
+                As credenciais desta integração já estão cadastradas e podem ser atualizadas a
+                qualquer momento.
               </AlertDescription>
             </Alert>
 
@@ -854,12 +946,17 @@ onMounted(async () => {
                         <Badge variant="outline">MP #{{ mercadoPagoStatus?.mpUserId }}</Badge>
                       </div>
                       <p class="text-sm text-muted-foreground">
-                        As cobranças desta conta são criadas direto no seu Mercado Pago. Conectado em
+                        As cobranças desta conta são criadas direto no seu Mercado Pago. Conectado
+                        em
                         {{ getDataFormatada(mercadoPagoStatus?.conectadoEm) }}.
                       </p>
                     </div>
 
-                    <Button variant="outline" :disabled="mercadoPagoLoading" @click="desconectarMercadoPago">
+                    <Button
+                      variant="outline"
+                      :disabled="mercadoPagoLoading"
+                      @click="desconectarMercadoPago"
+                    >
                       <LoaderCircle v-if="mercadoPagoLoading" class="mr-2 h-4 w-4 animate-spin" />
                       <Trash2 v-else class="mr-2 h-4 w-4" />
                       Desconectar
@@ -878,7 +975,8 @@ onMounted(async () => {
                     <ShieldAlert class="h-4 w-4" />
                     <AlertTitle>Última renovação falhou</AlertTitle>
                     <AlertDescription>
-                      {{ mercadoPagoStatus.ultimoErro }} — se as cobranças pararem, desconecte e conecte novamente.
+                      {{ mercadoPagoStatus.ultimoErro }} — se as cobranças pararem, desconecte e
+                      conecte novamente.
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -887,8 +985,9 @@ onMounted(async () => {
                   <div class="space-y-1">
                     <p class="font-medium">Conecte sua conta do Mercado Pago</p>
                     <p class="text-sm text-muted-foreground">
-                      Você será levado ao site do Mercado Pago para autorizar o Gestão Fácil. Não precisa criar
-                      chave de API nem informar sua senha aqui — nós recebemos apenas a autorização de cobrança.
+                      Você será levado ao site do Mercado Pago para autorizar o Gestão Fácil. Não
+                      precisa criar chave de API nem informar sua senha aqui — nós recebemos apenas
+                      a autorização de cobrança.
                     </p>
                   </div>
 
@@ -912,7 +1011,7 @@ onMounted(async () => {
                     <Label for="store-mercado-pago-key">Mercado Pago API Key</Label>
                     <Input
                       id="store-mercado-pago-key"
-                      v-model="(formMercadoPago.MercadoPagoApiKey as string)"
+                      v-model="formMercadoPago.MercadoPagoApiKey as string"
                       autocomplete="off"
                       autocapitalize="off"
                       spellcheck="false"
@@ -920,8 +1019,8 @@ onMounted(async () => {
                       placeholder="Sua chave de acesso"
                     />
                     <p class="text-sm text-muted-foreground">
-                      Só é usada quando não existe conexão pelo botão acima. Mantida para contas que já
-                      configuraram a integração dessa forma.
+                      Só é usada quando não existe conexão pelo botão acima. Mantida para contas que
+                      já configuraram a integração dessa forma.
                     </p>
                   </div>
                 </div>
@@ -932,7 +1031,7 @@ onMounted(async () => {
                   <Label for="store-abacatepay-key">AbacatePay API Key</Label>
                   <Input
                     id="store-abacatepay-key"
-                    v-model="(formAbacatePay.AbacatePayApiKey as string)"
+                    v-model="formAbacatePay.AbacatePayApiKey as string"
                     autocomplete="off"
                     autocapitalize="off"
                     spellcheck="false"
@@ -945,7 +1044,7 @@ onMounted(async () => {
                   <Label for="store-abacatepay-secret">AbacatePay Webhook Secret</Label>
                   <Input
                     id="store-abacatepay-secret"
-                    v-model="(formAbacatePay.AbacatePaySecret as string)"
+                    v-model="formAbacatePay.AbacatePaySecret as string"
                     autocomplete="off"
                     autocapitalize="off"
                     spellcheck="false"
@@ -955,7 +1054,8 @@ onMounted(async () => {
                 </div>
 
                 <p class="text-sm text-muted-foreground">
-                  Essas credenciais pertencem à sua conta e são usadas apenas nas cobranças internas do ERP.
+                  Essas credenciais pertencem à sua conta e são usadas apenas nas cobranças internas
+                  do ERP.
                 </p>
               </template>
             </div>
@@ -967,7 +1067,9 @@ onMounted(async () => {
             <CircleDollarSign class="h-4 w-4" />
             <AlertTitle>Liberação imediata disponível</AlertTitle>
             <AlertDescription>
-              Como a assinatura do plano está ativa, você pode gerar uma cobrança avulsa para usar o app ainda neste ciclo. A próxima mensalidade já virá com o valor cheio do plano e dos apps ativos.
+              Como a assinatura do plano está ativa, você pode gerar uma cobrança avulsa para usar o
+              app ainda neste ciclo. A próxima mensalidade já virá com o valor cheio do plano e dos
+              apps ativos.
             </AlertDescription>
           </Alert>
 
@@ -995,27 +1097,34 @@ onMounted(async () => {
             <div>
               <p class="text-sm font-medium">Forma de cobrança para liberar agora</p>
               <p class="text-xs text-muted-foreground">
-                O valor da recorrência futura será o mesmo nos dois casos: plano base + app na próxima mensalidade.
+                O valor da recorrência futura será o mesmo nos dois casos: plano base + app na
+                próxima mensalidade.
               </p>
             </div>
 
             <RadioGroup v-model="billingMode" class="grid gap-3 md:grid-cols-2">
-              <label class="flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:border-primary/40">
+              <label
+                class="flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:border-primary/40"
+              >
                 <RadioGroupItem id="store-proporcional" value="PROPORCIONAL" class="mt-1" />
                 <div class="space-y-1">
                   <div class="font-medium">Proporcional até o vencimento</div>
                   <div class="text-sm text-muted-foreground">
-                    {{ formatCurrencyBR(moduloSelecionado.valorCobrancaProporcional) }} para usar o app neste ciclo.
+                    {{ formatCurrencyBR(moduloSelecionado.valorCobrancaProporcional) }} para usar o
+                    app neste ciclo.
                   </div>
                 </div>
               </label>
 
-              <label class="flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:border-primary/40">
+              <label
+                class="flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:border-primary/40"
+              >
                 <RadioGroupItem id="store-mensal" value="MENSAL" class="mt-1" />
                 <div class="space-y-1">
                   <div class="font-medium">Primeira mensalidade completa</div>
                   <div class="text-sm text-muted-foreground">
-                    {{ formatCurrencyBR(moduloSelecionado.valorCobrancaMensal) }} para liberar o app neste ciclo.
+                    {{ formatCurrencyBR(moduloSelecionado.valorCobrancaMensal) }} para liberar o app
+                    neste ciclo.
                   </div>
                 </div>
               </label>
@@ -1031,11 +1140,13 @@ onMounted(async () => {
             </div>
             <div class="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
               <span>
-                {{ moduloSelecionado.cancelamentoAgendado
-                  ? 'Próximo ciclo já ajustado'
-                  : moduloSelecionado.ativo || moduloSelecionado.pendenteAtivacao
-                    ? 'Próximo ciclo sem este app'
-                    : 'Próximo ciclo com este app' }}
+                {{
+                  moduloSelecionado.cancelamentoAgendado
+                    ? 'Próximo ciclo já ajustado'
+                    : moduloSelecionado.ativo || moduloSelecionado.pendenteAtivacao
+                      ? 'Próximo ciclo sem este app'
+                      : 'Próximo ciclo com este app'
+                }}
               </span>
               <span class="font-semibold text-foreground">
                 {{ formatCurrencyBR(getMonthlyValueAfterAction(moduloSelecionado)) }}
@@ -1053,20 +1164,31 @@ onMounted(async () => {
           </div>
 
           <div
-            v-if="moduloSelecionado.cobrancaAtual?.linkPagamento && !isStoreModuleFree(moduloSelecionado)"
+            v-if="
+              moduloSelecionado.cobrancaAtual?.linkPagamento &&
+              !isStoreModuleFree(moduloSelecionado)
+            "
             class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="space-y-1">
                 <p class="font-medium">Cobrança do app pendente</p>
                 <p>
-                  {{ moduloSelecionado.cobrancaAtual?.tipo === 'MENSAL' ? 'Primeira mensalidade completa' : 'Valor proporcional' }}
-                  de {{ formatCurrencyBR(moduloSelecionado.cobrancaAtual?.valor || 0) }} com vencimento em
-                  {{ getDataFormatada(moduloSelecionado.cobrancaAtual?.vencimento) }}.
+                  {{
+                    moduloSelecionado.cobrancaAtual?.tipo === 'MENSAL'
+                      ? 'Primeira mensalidade completa'
+                      : 'Valor proporcional'
+                  }}
+                  de {{ formatCurrencyBR(moduloSelecionado.cobrancaAtual?.valor || 0) }} com
+                  vencimento em {{ getDataFormatada(moduloSelecionado.cobrancaAtual?.vencimento) }}.
                 </p>
               </div>
 
-              <Button variant="outline" class="gap-2" @click="abrirCobranca(moduloSelecionado.cobrancaAtual?.linkPagamento)">
+              <Button
+                variant="outline"
+                class="gap-2"
+                @click="abrirCobranca(moduloSelecionado.cobrancaAtual?.linkPagamento)"
+              >
                 <ExternalLink class="h-4 w-4" />
                 Abrir cobrança
               </Button>
@@ -1079,12 +1201,18 @@ onMounted(async () => {
 
           <template v-if="moduloSelecionado && selectedIsConfigApp">
             <Button
-              v-if="moduloSelecionado.ativo && (moduloSelecionado.codigo !== 'mercado-pago' || mostrarChaveManualMp)"
+              v-if="
+                moduloSelecionado.ativo &&
+                (moduloSelecionado.codigo !== 'mercado-pago' || mostrarChaveManualMp)
+              "
               class="gap-2 px-8 dark:text-white"
               :disabled="configSavingCode === moduloSelecionado.codigo"
               @click="salvarConfiguracaoIntegracao(moduloSelecionado)"
             >
-              <LoaderCircle v-if="configSavingCode === moduloSelecionado.codigo" class="h-4 w-4 animate-spin" />
+              <LoaderCircle
+                v-if="configSavingCode === moduloSelecionado.codigo"
+                class="h-4 w-4 animate-spin"
+              />
               <CircleCheck v-else class="h-4 w-4" />
               Salvar configuração
             </Button>
@@ -1095,7 +1223,10 @@ onMounted(async () => {
               :disabled="actionLoadingId === moduloSelecionado.id"
               @click="adicionarAoPlano(moduloSelecionado)"
             >
-              <LoaderCircle v-if="actionLoadingId === moduloSelecionado.id" class="h-4 w-4 animate-spin" />
+              <LoaderCircle
+                v-if="actionLoadingId === moduloSelecionado.id"
+                class="h-4 w-4 animate-spin"
+              />
               <PackagePlus v-else class="h-4 w-4" />
               Instalar app
             </Button>
@@ -1107,7 +1238,10 @@ onMounted(async () => {
               :disabled="actionLoadingId === moduloSelecionado.id"
               @click="cancelarModulo(moduloSelecionado)"
             >
-              <LoaderCircle v-if="actionLoadingId === moduloSelecionado.id" class="h-4 w-4 animate-spin" />
+              <LoaderCircle
+                v-if="actionLoadingId === moduloSelecionado.id"
+                class="h-4 w-4 animate-spin"
+              />
               <Trash2 v-else class="h-4 w-4" />
               Remover app
             </Button>
@@ -1115,7 +1249,10 @@ onMounted(async () => {
 
           <template v-else-if="moduloSelecionado">
             <Button
-              v-if="moduloSelecionado.cobrancaAtual?.linkPagamento && !isStoreModuleFree(moduloSelecionado)"
+              v-if="
+                moduloSelecionado.cobrancaAtual?.linkPagamento &&
+                !isStoreModuleFree(moduloSelecionado)
+              "
               variant="outline"
               class="gap-2"
               @click="abrirCobranca(moduloSelecionado.cobrancaAtual.linkPagamento)"
@@ -1130,9 +1267,18 @@ onMounted(async () => {
               :disabled="actionLoadingId === moduloSelecionado.id"
               @click="adicionarAoPlano(moduloSelecionado)"
             >
-              <LoaderCircle v-if="actionLoadingId === moduloSelecionado.id" class="h-4 w-4 animate-spin" />
+              <LoaderCircle
+                v-if="actionLoadingId === moduloSelecionado.id"
+                class="h-4 w-4 animate-spin"
+              />
               <ShoppingCart v-else class="h-4 w-4" />
-              {{ shouldShowImmediateBillingOptions(moduloSelecionado) ? 'Gerar cobrança do app' : isStoreModuleFree(moduloSelecionado) ? 'Instalar app' : 'Reservar app' }}
+              {{
+                shouldShowImmediateBillingOptions(moduloSelecionado)
+                  ? 'Gerar cobrança do app'
+                  : isStoreModuleFree(moduloSelecionado)
+                    ? 'Instalar app'
+                    : 'Reservar app'
+              }}
             </Button>
 
             <Button
@@ -1142,7 +1288,10 @@ onMounted(async () => {
               :disabled="actionLoadingId === moduloSelecionado.id"
               @click="cancelarModulo(moduloSelecionado)"
             >
-              <LoaderCircle v-if="actionLoadingId === moduloSelecionado.id" class="h-4 w-4 animate-spin" />
+              <LoaderCircle
+                v-if="actionLoadingId === moduloSelecionado.id"
+                class="h-4 w-4 animate-spin"
+              />
               <Trash2 v-else class="h-4 w-4" />
               Cancelar solicitação
             </Button>
@@ -1154,7 +1303,10 @@ onMounted(async () => {
               :disabled="actionLoadingId === moduloSelecionado.id"
               @click="cancelarModulo(moduloSelecionado)"
             >
-              <LoaderCircle v-if="actionLoadingId === moduloSelecionado.id" class="h-4 w-4 animate-spin" />
+              <LoaderCircle
+                v-if="actionLoadingId === moduloSelecionado.id"
+                class="h-4 w-4 animate-spin"
+              />
               <Trash2 v-else class="h-4 w-4" />
               Desvincular app
             </Button>
