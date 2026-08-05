@@ -5,8 +5,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 withDefaults(defineProps<{
   text: string
   label?: string
+  compact?: boolean
 }>(), {
   label: 'Ver ajuda',
+  compact: false,
 })
 </script>
 
@@ -16,7 +18,8 @@ withDefaults(defineProps<{
       <TooltipTrigger as-child>
         <button
           type="button"
-          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="inline-flex shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          :class="compact ? 'h-5 w-5' : 'h-10 w-10'"
           :aria-label="label"
         >
           <CircleHelp class="h-4 w-4" />
