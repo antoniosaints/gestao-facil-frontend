@@ -1,5 +1,30 @@
 import http from '@/utils/axios'
 
+export type RestaurantePapel = 'GESTOR' | 'CAIXA' | 'GARCOM' | 'COZINHA' | 'EXPEDICAO'
+export type RestauranteCapability =
+  | 'SALAO_VISUALIZAR' | 'SALAO_OPERAR' | 'SALAO_CONFIGURAR'
+  | 'COMANDAS_OPERAR'
+  | 'KDS_VISUALIZAR' | 'KDS_OPERAR' | 'KDS_CONFIGURAR'
+  | 'IMPRESSAO_VISUALIZAR' | 'IMPRESSAO_CONFIGURAR'
+  | 'CARDAPIO_VISUALIZAR' | 'CARDAPIO_CONFIGURAR'
+  | 'PEDIDOS_VISUALIZAR' | 'PEDIDOS_OPERAR'
+  | 'CONFIGURACOES_GERENCIAR' | 'PAPEIS_GERENCIAR'
+
+export interface RestauranteAccess {
+  papeis: RestaurantePapel[]
+  capabilities: RestauranteCapability[]
+  fallbackLegado: boolean
+}
+
+export interface RestauranteUsuarioPapeis {
+  id: number
+  nome: string
+  email: string
+  status: string
+  permissao: string
+  papeis: RestaurantePapel[]
+}
+
 export type RestaurantePedidoStatus =
   | 'RECEBIDO'
   | 'CONFIRMADO'
@@ -128,6 +153,17 @@ export interface RestauranteRegraImpressao {
   ativa: boolean
   version: number
   Ponto?: { id: number; nome: string }
+  destinos: Array<{
+    id: number
+    estacaoId: number
+    fallbackEstacaoId?: number | null
+    papel: '58mm' | '80mm'
+    vias: number
+    imprimirPedidoCompleto: boolean
+    ordem: number
+    Estacao?: { id: number; nome: string }
+    FallbackEstacao?: { id: number; nome: string } | null
+  }>
   Estacao?: { id: number; nome: string }
   FallbackEstacao?: { id: number; nome: string } | null
 }
@@ -266,11 +302,27 @@ export interface RestauranteGrupoPayload {
 }
 
 export class RestauranteRepository {
+  static async acesso() {
+    const { data } = await http.get('/v1/restaurante/acesso')
+    return data.data as RestauranteAccess
+  }
+
+  static async usuariosPapeis() {
+    const { data } = await http.get('/v1/restaurante/usuarios-papeis')
+    return data.data as RestauranteUsuarioPapeis[]
+  }
+
+  static async salvarUsuarioPapeis(usuarioId: number, papeis: RestaurantePapel[]) {
+    const { data } = await http.put(`/v1/restaurante/usuarios-papeis/${usuarioId}`, { papeis })
+    return data.data as { usuarioId: number; papeis: RestaurantePapel[] }
+  }
+
   static async cardapioPublico(slug: string) {
     const { data } = await http.get(`/v1/restaurante/publico/${slug}/cardapio`)
     return data.data as {
       restaurante: {
         nome: string
+        logo?: string | null
         slug: string
         pedidoMinimo: string | number
         retiradaAtiva: boolean
@@ -470,6 +522,13 @@ export class RestauranteRepository {
     papel: '58mm' | '80mm'
     vias: number
     imprimirPedidoCompleto: boolean
+    destinosAdicionais: Array<{
+      estacaoId: number
+      fallbackEstacaoId?: number | null
+      papel: '58mm' | '80mm'
+      vias: number
+      imprimirPedidoCompleto: boolean
+    }>
     ativa: boolean
     version?: number
   }) {
@@ -484,7 +543,7 @@ export class RestauranteRepository {
 
   static async reimprimirTicket(id: number) {
     const { data } = await http.post(`/v1/restaurante/kds/${id}/reimprimir`)
-    return data.data as RestauranteTrabalhoImpressao
+    return data.data as RestauranteTrabalhoImpressao[]
   }
 
   static async heartbeatEstacao(token: string, payload: { impressoraNome: string; papel: '58mm' | '80mm' }) {

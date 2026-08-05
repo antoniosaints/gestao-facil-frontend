@@ -109,7 +109,11 @@ describe('PDV no submenu de Vendas', () => {
 })
 
 describe('Operação no submenu de Restaurante', () => {
-  const restaurante = sidebarMenuOptions(permissoes(1), { 'restaurante-delivery': true })
+  const restaurante = sidebarMenuOptions(
+    permissoes(1),
+    { 'restaurante-delivery': true },
+    ['SALAO_VISUALIZAR', 'COMANDAS_OPERAR', 'KDS_VISUALIZAR', 'IMPRESSAO_VISUALIZAR'],
+  )
     .find((item) => item.key === 'restaurante')
 
   it('mantém Salão, Comandas, KDS e Impressão dentro de Restaurante, sem depender do app Atendimento', () => {
@@ -138,6 +142,19 @@ describe('Operação no submenu de Restaurante', () => {
       'restaurante:pedidos',
       'restaurante:configuracoes',
     ])
+  })
+
+  it('oculta telas que o papel do restaurante nao permite', () => {
+    const item = sidebarMenuOptions(
+      permissoes(1),
+      { 'restaurante-delivery': true },
+      ['KDS_VISUALIZAR'],
+    ).find((menu) => menu.key === 'restaurante')
+
+    expect(item?.show).toBe(true)
+    expect(item?.children?.find((child) => child.key === 'restaurante:kds')?.show).toBe(true)
+    expect(item?.children?.find((child) => child.key === 'restaurante:salao')?.show).toBe(false)
+    expect(item?.children?.find((child) => child.key === 'restaurante:configuracoes')?.show).toBe(false)
   })
 })
 

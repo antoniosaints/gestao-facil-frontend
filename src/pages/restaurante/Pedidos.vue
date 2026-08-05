@@ -20,8 +20,13 @@ import {
 } from '@/repositories/restaurante-repository'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { ChefHat, Clock3, RefreshCw, Search, Settings2, ShoppingBag } from 'lucide-vue-next'
+import { useUiStore } from '@/stores/ui/uiStore'
 
 const toast = useToast()
+const uiStore = useUiStore()
+const canOperate = computed(() => uiStore.hasRestaurantCapability('PEDIDOS_OPERAR'))
+const canConfigure = computed(() => uiStore.hasRestaurantCapability('CONFIGURACOES_GERENCIAR'))
+const canViewKds = computed(() => uiStore.hasRestaurantCapability('KDS_VISUALIZAR'))
 const loading = ref(true)
 const pedidos = ref<RestaurantePedido[]>([])
 const busca = ref('')
@@ -120,7 +125,7 @@ onMounted(() => carregar())
       <div class="flex gap-2">
         <Button variant="outline" :disabled="loading" @click="carregar(true)"
           ><RefreshCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': loading }" />Atualizar</Button
-        ><Button as-child variant="outline"
+        ><Button v-if="canConfigure" as-child variant="outline"
           ><RouterLink to="/restaurante/configuracoes"
             ><Settings2 class="mr-2 h-4 w-4" />Configurar</RouterLink
           ></Button
@@ -189,11 +194,11 @@ onMounted(() => carregar())
             </div>
           </div></CardContent
         >
-        <CardFooter v-if="proximoDisponivel(pedido)" class="border-t px-4 py-3"
+        <CardFooter v-if="canOperate && proximoDisponivel(pedido)" class="border-t px-4 py-3"
           ><Button size="sm" class="w-full" :disabled="atualizando === pedido.id" @click="avancar(pedido)"
             ><ChefHat class="mr-1.5 h-3.5 w-3.5" />{{ nextLabel[pedido.status] }}</Button
           ></CardFooter
-        ><CardFooter v-else-if="pedido.tickets?.length && ['CONFIRMADO', 'EM_PREPARO'].includes(pedido.status)" class="border-t px-4 py-3"
+        ><CardFooter v-else-if="canViewKds && pedido.tickets?.length && ['CONFIRMADO', 'EM_PREPARO'].includes(pedido.status)" class="border-t px-4 py-3"
           ><Button as-child size="sm" variant="outline" class="w-full"><RouterLink to="/restaurante/kds"><ChefHat class="mr-1.5 h-3.5 w-3.5" />Acompanhar no KDS</RouterLink></Button></CardFooter
         >
       </Card>

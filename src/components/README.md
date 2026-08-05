@@ -5,7 +5,7 @@
 
 ## Subgrupos atuais
 - `ui/`: primitives reutilizáveis baseadas no design system atual.
-- `layout/`: header, sidebar, prompts e componentes da casca do app.
+- `layout/`: header, sidebar, prompts e componentes da casca do app; `RestaurantPrintStatusButton.vue` expõe no header o estado persistente do agente QZ do Restaurante e o atalho para sua configuração.
 - `formulario/`: modais, selects, upload e entradas reutilizáveis; `calendarpicker.vue` aceita limites opcionais `minDate` e `maxDate` para impedir datas inválidas no próprio seletor.
 - `tabela/`: blocos genéricos de tabela e células.
 - `graficos/`: wrappers de gráficos.

@@ -5,6 +5,7 @@ import { hasPermission } from '@/hooks/authorize'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { isSupportActive } from '@/utils/supportSession'
+import type { RestauranteCapability } from '@/repositories/restaurante-repository'
 
 export const useControlRouter = async () => {
   try {
@@ -112,6 +113,14 @@ export async function handleRouteGuard(to: typed, from: typed) {
     } catch (error) {
       toast.error('Não foi possível validar o acesso ao app adicional.')
       return { name: 'loja-home' }
+    }
+  }
+
+  if (to.meta?.restauranteCapability) {
+    await storeUi.loadRestaurantAccess()
+    if (!storeUi.hasRestaurantCapability(to.meta.restauranteCapability as RestauranteCapability)) {
+      toast.info('Seu papel no Restaurante não permite acessar esta tela.')
+      return from.name ? { name: from.name as string } : home
     }
   }
 

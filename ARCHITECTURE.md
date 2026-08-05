@@ -23,10 +23,12 @@ Este frontend concentra a interface principal do sistema em Vue 3. A base atual 
   - `layout`;
   - `isPublic`;
   - `permissao`.
+  - `restauranteCapability`, nas telas privadas do app Restaurante.
 - `src/utils/axios.ts` define o cliente HTTP, injeta o token e tenta renovar sessão com refresh token.
 - `src/repositories/loja-repository.ts` usa o cliente autenticado do ERP nas rotas internas e um cliente público com `withCredentials` nas rotas por slug; tokens de cliente da loja nunca entram no store de autenticação do ERP.
 - `src/composables/useRouterControl.ts` encerra o guard imediatamente para rotas `meta.isPublic` e redireciona rotas privadas sem token antes de consultar `getDataUsuario`; a inicialização de vitrines públicas não pode chamar `/usuarios/whoami` nem depender da sessão do ERP.
 - `src/utils/worker.ts` e `src/utils/theme.ts` inicializam comportamento global adicional.
+- `src/layouts/Main.vue` inicia `stores/restaurante/useRestaurantPrintAgent.ts` durante toda a sessão privada. Esse agente mantém o polling/evento da fila térmica independente da rota atual, restaura e processa várias conexões locais em paralelo — cada uma com token, impressora e papel próprios — e compartilha uma única sessão com o QZ Tray. `components/layout/RestaurantPrintStatusButton.vue` mostra o estado agregado no header; sair de `/restaurante/impressao` não interrompe a impressão, mas fechar o navegador ou o QZ Tray interrompe todas as conexões locais.
 
 ## Organização real do código
 - `src/pages` organiza telas por domínio de negócio.
@@ -80,6 +82,8 @@ Na prática:
 - O mesmo domínio costuma combinar página, store e repository próprios.
 - O frontend usa contrato tipado local em `src/types/schemas.ts`, espelhando os domínios principais do backend.
 - O guard de rotas consulta dados do usuário, status da conta e permissão antes de liberar navegação.
+- Para o Restaurante, `uiStore` também carrega `/v1/restaurante/acesso`; sidebar, guard e ações usam as mesmas capacidades específicas validadas pelo backend.
+- Na impressão do Restaurante, **ponto de produção** (Cozinha, Bar, Pizzaria) é o único dono ativo das categorias que produz, enquanto **conector QZ** é a credencial lógica de uma impressora. Balcão e expedição que não produzem entram como saídas simultâneas da regra do ponto, sem criar tickets KDS. Um computador pode hospedar vários conectores no mesmo navegador/QZ Tray, um por impressora; cada regra gera um trabalho persistente por saída. A contingência é outro conector elegível que substitui somente sua saída em caso de falha, não uma cópia adicional. O backend considera um conector “online” quando recebeu heartbeat nos últimos 30 segundos; no frontend esse estado é apresentado como “conectado agora” e permanece distinto do cadastro `ativa` e da flag local `enabled`.
 - O layout muda por `meta.layout` e o conteúdo também pode mudar por `VITE_MODE_SYSTEM`.
 
 ## Áreas especiais

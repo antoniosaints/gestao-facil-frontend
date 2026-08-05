@@ -1,6 +1,7 @@
 import { handleRouteGuard } from '@/composables/useRouterControl'
 import { env } from '@/utils/dotenv'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import type { RestauranteCapability } from '@/repositories/restaurante-repository'
 
 type RouteMeta = {
   meta?: {
@@ -9,6 +10,7 @@ type RouteMeta = {
     permissao?: number
     modulo?: string
     customerMode?: string
+    restauranteCapability?: RestauranteCapability
   }
 }
 
@@ -537,43 +539,43 @@ const routes: RouteInterface[] = [
         path: 'salao',
         name: 'restaurante-salao',
         component: () => import('@/pages/restaurante/Salao.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery' },
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'SALAO_VISUALIZAR' },
       },
       {
         path: 'comandas',
         name: 'restaurante-comandas',
         component: () => import('@/pages/comandas/Home.vue'),
-        meta: { layout: 'main', permissao: 2, modulo: 'restaurante-delivery' },
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'COMANDAS_OPERAR' },
       },
       {
         path: 'kds',
         name: 'restaurante-kds',
         component: () => import('@/pages/restaurante/Kds.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery' },
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'KDS_VISUALIZAR' },
       },
       {
         path: 'impressao',
         name: 'restaurante-impressao',
         component: () => import('@/pages/restaurante/Impressao.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery' },
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'IMPRESSAO_VISUALIZAR' },
       },
       {
         path: 'cardapio',
         name: 'restaurante-cardapio',
         component: () => import('@/pages/restaurante/Cardapio.vue'),
-        meta: { layout: 'main', permissao: 4, modulo: 'restaurante-delivery' },
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'CARDAPIO_CONFIGURAR' },
       },
       {
         path: 'pedidos',
         name: 'restaurante-pedidos',
         component: () => import('@/pages/restaurante/Pedidos.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery' },
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'PEDIDOS_VISUALIZAR' },
       },
       {
         path: 'configuracoes',
         name: 'restaurante-configuracoes',
         component: () => import('@/pages/restaurante/Configuracoes.vue'),
-        meta: { layout: 'main', permissao: 4, modulo: 'restaurante-delivery' },
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'CONFIGURACOES_GERENCIAR' },
       },
     ],
   },

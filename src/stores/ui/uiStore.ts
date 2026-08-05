@@ -6,6 +6,7 @@ import { UsuarioRepository } from '@/repositories/usuario-repository'
 import type { Contas, Usuarios } from '@/types/schemas'
 import { hasPermission } from '@/hooks/authorize'
 import { setThemeCustomization } from '@/utils/theme'
+import { RestauranteRepository, type RestauranteAccess, type RestauranteCapability } from '@/repositories/restaurante-repository'
 interface TipoPermissao {
   editar: boolean
   visualizar: boolean
@@ -58,6 +59,8 @@ export const useUiStore = defineStore('uiStore', () => {
   const osLancamentoAutomatico = computed(() => financeiroFlags.value.osLancamentoAutomatico === true)
   const appModules = ref<Record<string, boolean>>({})
   const appModulesLoaded = ref(false)
+  const restaurantAccess = ref<RestauranteAccess>({ papeis: [], capabilities: [], fallbackLegado: true })
+  const restaurantAccessLoaded = ref(false)
   const visibleMenuKeys = ref<string[] | null>(null)
   // Submenus ocultos (keys no formato "pai:filho"). Separado de visibleMenuKeys porque
   // no payload `menusVisiveis` as keys de topo são whitelist e as de submenu são blacklist.
@@ -244,6 +247,28 @@ export const useUiStore = defineStore('uiStore', () => {
     return Boolean(appModules.value[codigo])
   }
 
+  async function loadRestaurantAccess(force = false) {
+    if (restaurantAccessLoaded.value && !force) return restaurantAccess.value
+    if (!hasActiveModule('restaurante-delivery')) {
+      restaurantAccess.value = { papeis: [], capabilities: [], fallbackLegado: true }
+      restaurantAccessLoaded.value = true
+      return restaurantAccess.value
+    }
+    try {
+      restaurantAccess.value = await RestauranteRepository.acesso()
+      restaurantAccessLoaded.value = true
+    } catch (error) {
+      console.log(error)
+      restaurantAccess.value = { papeis: [], capabilities: [], fallbackLegado: false }
+      restaurantAccessLoaded.value = false
+    }
+    return restaurantAccess.value
+  }
+
+  function hasRestaurantCapability(capability: RestauranteCapability) {
+    return restaurantAccess.value.capabilities.includes(capability)
+  }
+
   async function loadFinanceiroFlags() {
     try {
       const response = await ContaRepository.getParametros()
@@ -292,6 +317,7 @@ export const useUiStore = defineStore('uiStore', () => {
       contaInfo.value = conta
       populatePermissoes()
       await loadAppModules(true)
+      await loadRestaurantAccess(true)
       return data
     } catch (error) {
       console.log(error)
@@ -332,6 +358,8 @@ export const useUiStore = defineStore('uiStore', () => {
     osLancamentoAutomatico,
     appModules,
     appModulesLoaded,
+    restaurantAccess,
+    restaurantAccessLoaded,
     visibleMenuKeys,
     hiddenSubmenuKeys,
     getDataUsuario,
@@ -340,6 +368,8 @@ export const useUiStore = defineStore('uiStore', () => {
     tourConcluido,
     getStatus,
     loadAppModules,
+    loadRestaurantAccess,
+    hasRestaurantCapability,
     hasActiveModule,
     toggleSidebar,
     isMobile,

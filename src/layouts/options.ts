@@ -1,4 +1,5 @@
 import { type Permissoes } from '@/stores/ui/uiStore'
+import type { RestauranteCapability } from '@/repositories/restaurante-repository'
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
   ArrowRightLeft,
@@ -281,6 +282,7 @@ export function filterSidebarMenuByVisibility(
 export const sidebarMenuOptions = (
   permissions: Permissoes,
   appModules: Record<string, boolean> = {},
+  restaurantCapabilities: RestauranteCapability[] = [],
 ): SidebarMenuType[] => {
   const hasAssinaturasApp = Boolean(appModules.assinaturas)
   const hasCoreIaApp = Boolean(appModules['core-ia'])
@@ -290,6 +292,8 @@ export const sidebarMenuOptions = (
   const hasArenaApp = Boolean(appModules.arena)
   const hasReservationsApp = Boolean(appModules.reservas)
   const hasRestauranteApp = Boolean(appModules['restaurante-delivery'])
+  const restaurantAccess = new Set(restaurantCapabilities)
+  const hasRestaurantAccess = restaurantCapabilities.length > 0
   const hasCombosApp = Boolean(appModules.combos)
   const hasVisibleAppsSection =
     (permissions.financeiro.visualizar && hasAssinaturasApp) ||
@@ -298,7 +302,7 @@ export const sidebarMenuOptions = (
     (permissions.configuracoes.visualizar && hasAtendimentoApp) ||
     (permissions.produtos.visualizar && hasLojaApp) ||
     (permissions.reservas.visualizar && hasReservationsApp) ||
-    (permissions.vendas.visualizar && hasRestauranteApp)
+    (hasRestauranteApp && hasRestaurantAccess)
 
   return [
     {
@@ -444,13 +448,14 @@ export const sidebarMenuOptions = (
       key: 'restaurante',
       nome: 'Restaurante',
       icone: UtensilsCrossed,
-      show: permissions.vendas.visualizar && hasRestauranteApp,
+      show: hasRestauranteApp && hasRestaurantAccess,
       color: 'orange',
       children: [
         {
           key: 'restaurante:salao',
           nome: 'Salão',
           link: '/restaurante/salao',
+          show: restaurantAccess.has('SALAO_VISUALIZAR'),
           icone: ConciergeBell,
           color: 'orange',
         },
@@ -458,6 +463,7 @@ export const sidebarMenuOptions = (
           key: 'restaurante:comandas',
           nome: 'Comandas',
           link: '/restaurante/comandas',
+          show: restaurantAccess.has('COMANDAS_OPERAR'),
           icone: ClipboardList,
           color: 'orange',
         },
@@ -465,6 +471,7 @@ export const sidebarMenuOptions = (
           key: 'restaurante:kds',
           nome: 'KDS',
           link: '/restaurante/kds',
+          show: restaurantAccess.has('KDS_VISUALIZAR'),
           icone: CookingPot,
           color: 'orange',
         },
@@ -472,6 +479,7 @@ export const sidebarMenuOptions = (
           key: 'restaurante:impressao',
           nome: 'Impressão QZ',
           link: '/restaurante/impressao',
+          show: restaurantAccess.has('IMPRESSAO_VISUALIZAR'),
           icone: Printer,
           color: 'orange',
         },
@@ -479,7 +487,7 @@ export const sidebarMenuOptions = (
           key: 'restaurante:cardapio',
           nome: 'Cardápio',
           link: '/restaurante/cardapio',
-          show: permissions.configuracoes.editar,
+          show: restaurantAccess.has('CARDAPIO_CONFIGURAR'),
           icone: UtensilsCrossed,
           color: 'orange',
         },
@@ -487,6 +495,7 @@ export const sidebarMenuOptions = (
           key: 'restaurante:pedidos',
           nome: 'Pedidos',
           link: '/restaurante/pedidos',
+          show: restaurantAccess.has('PEDIDOS_VISUALIZAR'),
           icone: ClipboardList,
           color: 'orange',
         },
@@ -494,7 +503,7 @@ export const sidebarMenuOptions = (
           key: 'restaurante:configuracoes',
           nome: 'Configurações',
           link: '/restaurante/configuracoes',
-          show: permissions.configuracoes.editar,
+          show: restaurantAccess.has('CONFIGURACOES_GERENCIAR'),
           icone: Cog,
           color: 'orange',
         },

@@ -19,8 +19,12 @@ import {
 } from '@/repositories/restaurante-repository'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { BrushCleaning, CircleDollarSign, ConciergeBell, Plus, ReceiptText, RefreshCw, Search, Send, Utensils } from 'lucide-vue-next'
+import { useUiStore } from '@/stores/ui/uiStore'
 
 const toast = useToast()
+const uiStore = useUiStore()
+const canOperate = computed(() => uiStore.hasRestaurantCapability('SALAO_OPERAR'))
+const canConfigure = computed(() => uiStore.hasRestaurantCapability('SALAO_CONFIGURAR'))
 const loading = ref(true)
 const saving = ref(false)
 const mesas = ref<RestauranteMesa[]>([])
@@ -203,7 +207,7 @@ onMounted(() => carregar())
   <section class="space-y-4">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div><h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight"><ConciergeBell class="h-6 w-6 text-primary" />Salão</h1><p class="text-sm text-muted-foreground">Abra mesas, lance pedidos e acompanhe a conta em tempo real.</p></div>
-      <div class="flex gap-2"><Button variant="outline" :disabled="loading" @click="carregar(true)"><RefreshCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': loading }" />Atualizar</Button><Button @click="novaMesa()"><Plus class="mr-2 h-4 w-4" />Nova mesa</Button></div>
+      <div class="flex gap-2"><Button variant="outline" :disabled="loading" @click="carregar(true)"><RefreshCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': loading }" />Atualizar</Button><Button v-if="canConfigure" @click="novaMesa()"><Plus class="mr-2 h-4 w-4" />Nova mesa</Button></div>
     </header>
 
     <div class="grid gap-3 sm:grid-cols-[1fr_220px]">
@@ -217,7 +221,7 @@ onMounted(() => carregar())
       <Card v-for="mesa in filtradas" :key="mesa.id" class="flex flex-col rounded-xl border-2" :class="statusClass[mesa.status]">
         <CardHeader class="p-4 pb-2"><div class="flex items-start justify-between gap-2"><div><CardTitle class="text-base">{{ mesa.nome }}</CardTitle><p v-if="tempoAberta(mesa)" class="mt-0.5 text-xs text-muted-foreground">{{ tempoAberta(mesa) }} · {{ mesa.sessoes[0]?.pessoas }} pessoa(s)</p></div><Badge variant="outline" class="text-[11px]">{{ statusLabel[mesa.status] }}</Badge></div></CardHeader>
         <CardContent class="flex-1 space-y-2 px-4 pb-3"><template v-if="mesa.sessoes[0]"><div class="flex items-center justify-between rounded-lg bg-background/70 px-2.5 py-2"><span class="text-xs text-muted-foreground">Conta atual</span><strong class="text-sm">{{ formatCurrencyBR(totalMesa(mesa)) }}</strong></div><div class="flex flex-wrap gap-x-2 text-[11px] text-muted-foreground"><span>{{ mesa.sessoes[0].pedidos.length }} pedido(s)</span><span v-for="comanda in mesa.sessoes[0].comandas" :key="comanda.comandaOperacaoId">#{{ comanda.ComandaOperacao.Uid }}</span></div></template><p v-else class="text-xs text-muted-foreground">Disponível para atendimento.</p></CardContent>
-        <CardFooter class="flex flex-wrap gap-1.5 border-t px-4 py-3"><Button v-if="mesa.status === 'LIVRE'" size="sm" class="flex-1" @click="prepararAbertura(mesa)"><ConciergeBell class="mr-1.5 h-3.5 w-3.5" />Abrir</Button><template v-else-if="mesa.status === 'OCUPADA'"><Button size="sm" class="flex-1" @click="prepararPedido(mesa)"><Send class="mr-1.5 h-3.5 w-3.5" />Pedido</Button><Button size="sm" variant="outline" @click="acaoMesa(mesa, 'conta')"><ReceiptText class="mr-1.5 h-3.5 w-3.5" />Conta</Button></template><template v-else-if="mesa.status === 'AGUARDANDO_CONTA'"><Button as-child size="sm" variant="outline" class="flex-1"><RouterLink to="/restaurante/comandas"><CircleDollarSign class="mr-1.5 h-3.5 w-3.5" />Faturar</RouterLink></Button><Button size="sm" @click="acaoMesa(mesa, 'liberar')">Liberar</Button></template><Button v-else-if="mesa.status === 'LIMPEZA'" size="sm" class="flex-1" @click="acaoMesa(mesa, 'limpeza')"><BrushCleaning class="mr-1.5 h-3.5 w-3.5" />Finalizar</Button><Button variant="ghost" size="sm" @click="novaMesa(mesa)">Editar</Button></CardFooter>
+        <CardFooter v-if="canOperate || canConfigure" class="flex flex-wrap gap-1.5 border-t px-4 py-3"><Button v-if="canOperate && mesa.status === 'LIVRE'" size="sm" class="flex-1" @click="prepararAbertura(mesa)"><ConciergeBell class="mr-1.5 h-3.5 w-3.5" />Abrir</Button><template v-else-if="canOperate && mesa.status === 'OCUPADA'"><Button size="sm" class="flex-1" @click="prepararPedido(mesa)"><Send class="mr-1.5 h-3.5 w-3.5" />Pedido</Button><Button size="sm" variant="outline" @click="acaoMesa(mesa, 'conta')"><ReceiptText class="mr-1.5 h-3.5 w-3.5" />Conta</Button></template><template v-else-if="canOperate && mesa.status === 'AGUARDANDO_CONTA'"><Button as-child size="sm" variant="outline" class="flex-1"><RouterLink to="/restaurante/comandas"><CircleDollarSign class="mr-1.5 h-3.5 w-3.5" />Faturar</RouterLink></Button><Button size="sm" @click="acaoMesa(mesa, 'liberar')">Liberar</Button></template><Button v-else-if="canOperate && mesa.status === 'LIMPEZA'" size="sm" class="flex-1" @click="acaoMesa(mesa, 'limpeza')"><BrushCleaning class="mr-1.5 h-3.5 w-3.5" />Finalizar</Button><Button v-if="canConfigure" variant="ghost" size="sm" @click="novaMesa(mesa)">Editar</Button></CardFooter>
       </Card>
     </div>
 

@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import HelpTooltip from './components/HelpTooltip.vue'
 import {
   RestauranteRepository,
   type RestauranteCatalogoItem,
@@ -22,7 +23,7 @@ import {
   type RestauranteProdutoDisponivel,
 } from '@/repositories/restaurante-repository'
 import { formatCurrencyBR } from '@/utils/formatters'
-import { Layers3, LoaderCircle, Pencil, Plus, Search, Trash2, UtensilsCrossed } from 'lucide-vue-next'
+import { Eye, EyeOff, Layers3, LoaderCircle, PackageSearch, Pencil, Plus, Search, Trash2, UtensilsCrossed } from 'lucide-vue-next'
 
 const toast = useToast()
 const loading = ref(true)
@@ -68,6 +69,7 @@ const filteredItems = computed(() => {
 })
 
 const activeGroups = computed(() => groups.value.filter((group) => group.ativo))
+const availableItems = computed(() => items.value.filter((item) => item.disponivel).length)
 const groupFormValid = computed(() => {
   const activeOptions = groupForm.value.opcoes.filter((option) => option.ativo)
   return (
@@ -208,80 +210,77 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="space-y-4">
+  <section class="mx-auto max-w-7xl space-y-5">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-semibold tracking-tight">Cardápio do restaurante</h1>
-        <p class="text-sm text-muted-foreground">
-          Publique produtos existentes e configure sabores e complementos.
-        </p>
+      <div class="flex items-start gap-3">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><UtensilsCrossed class="h-5 w-5" /></div>
+        <div>
+          <h1 class="text-balance text-2xl font-semibold tracking-tight">Cardápio do restaurante</h1>
+          <p class="text-pretty text-sm text-muted-foreground">Escolha o que aparece para o cliente e organize sabores e complementos.</p>
+        </div>
       </div>
     </header>
 
+    <div class="grid gap-3 sm:grid-cols-3">
+      <div class="flex items-center gap-3 rounded-xl border bg-card p-3"><div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><PackageSearch class="h-5 w-5" /></div><div><p class="text-xs text-muted-foreground">Itens cadastrados</p><p class="text-lg font-semibold tabular-nums">{{ items.length }}</p></div></div>
+      <div class="flex items-center gap-3 rounded-xl border bg-card p-3"><div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600"><Eye class="h-5 w-5" /></div><div><p class="text-xs text-muted-foreground">Visíveis no cardápio</p><p class="text-lg font-semibold tabular-nums">{{ availableItems }}</p></div></div>
+      <div class="flex items-center gap-3 rounded-xl border bg-card p-3"><div class="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground"><Layers3 class="h-5 w-5" /></div><div><p class="text-xs text-muted-foreground">Grupos ativos</p><p class="text-lg font-semibold tabular-nums">{{ activeGroups.length }}</p></div></div>
+    </div>
+
     <Tabs default-value="itens" class="space-y-3">
-      <TabsList>
-        <TabsTrigger value="itens"><UtensilsCrossed class="mr-2 h-4 w-4" />Itens do cardápio</TabsTrigger>
-        <TabsTrigger value="grupos"><Layers3 class="mr-2 h-4 w-4" />Sabores e complementos</TabsTrigger>
+      <TabsList class="grid h-auto w-full rounded-md grid-cols-2 gap-1 p-1 sm:max-w-xl">
+        <TabsTrigger value="itens"><UtensilsCrossed class="mr-2 h-4 w-4 inline-flex" />Itens do cardápio</TabsTrigger>
+        <TabsTrigger value="grupos"><Layers3 class="mr-2 h-4 w-4 inline-flex" />Sabores e complementos</TabsTrigger>
       </TabsList>
 
       <TabsContent value="itens" class="space-y-4">
-        <div class="flex flex-col gap-3 sm:flex-row sm:justify-between">
+        <div class="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
           <div class="relative w-full sm:max-w-md">
             <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input v-model="search" class="pl-9" placeholder="Buscar item do cardápio" />
           </div>
-          <Button @click="newItem"><Plus class="mr-2 h-4 w-4" />Adicionar produto</Button>
+          <div class="flex items-center gap-1"><HelpTooltip text="Os produtos vêm do cadastro de estoque. Aqui você escolhe o nome, a descrição, a imagem e os grupos que aparecem no cardápio público." /><Button @click="newItem"><Plus class="mr-2 h-4 w-4" />Adicionar produto</Button></div>
         </div>
 
-        <div v-if="loading" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <Skeleton v-for="item in 8" :key="item" class="h-52 rounded-xl" />
+        <div v-if="loading" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <Skeleton v-for="item in 6" :key="item" class="h-40 rounded-xl" />
         </div>
         <div v-else-if="!filteredItems.length" class="rounded-xl border border-dashed p-10 text-center">
           <UtensilsCrossed class="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
           <p class="font-medium">Nenhum item no cardápio</p>
           <p class="text-sm text-muted-foreground">Adicione um produto já cadastrado para começar.</p>
         </div>
-        <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <Card v-for="item in filteredItems" :key="item.id" class="flex flex-col overflow-hidden rounded-xl">
-            <img
-              v-if="item.imagem || item.Produto.imagem"
-              :src="item.imagem || item.Produto.imagem || ''"
-              :alt="item.nomePublico || item.Produto.nome"
-              class="h-24 w-full object-cover"
-            />
-            <CardHeader class="p-4 pb-2">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <CardTitle class="text-base">{{ item.nomePublico || productLabel(item.Produto) }}</CardTitle>
-                  <CardDescription>{{ formatCurrencyBR(Number(item.Produto.preco)) }}</CardDescription>
+        <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <Card v-for="item in filteredItems" :key="item.id" class="overflow-hidden rounded-xl">
+            <CardContent class="p-3">
+              <div class="flex gap-3">
+                <img
+                  v-if="item.imagem || item.Produto.imagem"
+                  :src="item.imagem || item.Produto.imagem || ''"
+                  :alt="item.nomePublico || item.Produto.nome"
+                  class="h-16 w-16 shrink-0 rounded-lg object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
+                />
+                <div v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"><UtensilsCrossed class="h-5 w-5" /></div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-2"><div class="min-w-0"><CardTitle class="truncate text-sm">{{ item.nomePublico || productLabel(item.Produto) }}</CardTitle><p class="mt-0.5 text-sm font-medium text-primary">{{ formatCurrencyBR(Number(item.Produto.preco)) }}</p></div><Badge :variant="item.disponivel ? 'secondary' : 'outline'" class="shrink-0"><component :is="item.disponivel ? Eye : EyeOff" class="mr-1 h-3 w-3" />{{ item.disponivel ? 'Visível' : 'Oculto' }}</Badge></div>
+                  <p class="mt-2 line-clamp-1 text-xs text-muted-foreground">{{ item.descricao || 'Sem descrição pública.' }}</p>
                 </div>
-                <Badge :variant="item.disponivel ? 'secondary' : 'outline'">
-                  {{ item.disponivel ? 'Disponível' : 'Oculto' }}
-                </Badge>
               </div>
-            </CardHeader>
-            <CardContent class="flex-1 space-y-2 px-4 pb-3 text-sm">
-              <p class="line-clamp-2 text-muted-foreground">{{ item.descricao || 'Sem descrição pública.' }}</p>
-              <div class="flex flex-wrap gap-1.5">
-                <Badge v-for="link in item.grupos" :key="link.grupoId" variant="outline">
-                  {{ link.Grupo.nome }}
-                </Badge>
+              <div class="mt-3 flex items-center justify-between gap-3 border-t pt-3">
+                <div class="flex min-w-0 flex-wrap gap-1"><Badge v-for="link in item.grupos.slice(0, 2)" :key="link.grupoId" variant="outline" class="max-w-32 truncate">{{ link.Grupo.nome }}</Badge><span v-if="item.grupos.length > 2" class="text-xs text-muted-foreground">+{{ item.grupos.length - 2 }}</span><span v-if="!item.grupos.length" class="text-xs text-muted-foreground">Sem complementos</span></div>
+                <Button size="sm" class="shrink-0" variant="outline" @click="editItem(item)"><Pencil class="mr-1.5 h-3.5 w-3.5" />Editar</Button>
               </div>
             </CardContent>
-            <CardFooter class="border-t px-4 py-3">
-              <Button size="sm" class="w-full" variant="outline" @click="editItem(item)">
-                <Pencil class="mr-1.5 h-3.5 w-3.5" />Editar item
-              </Button>
-            </CardFooter>
           </Card>
         </div>
       </TabsContent>
 
       <TabsContent value="grupos" class="space-y-4">
-        <div class="flex justify-end">
-          <Button @click="newGroup"><Plus class="mr-2 h-4 w-4" />Novo grupo</Button>
+        <div class="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div><p class="font-medium">Sabores e complementos</p><p class="text-pretty text-xs text-muted-foreground">Crie grupos reutilizáveis e depois associe-os aos itens do cardápio.</p></div>
+          <div class="flex items-center gap-1"><HelpTooltip text="Use grupos para escolhas como sabores, tamanhos, bordas e adicionais. O mínimo e o máximo controlam quantas opções o cliente pode selecionar." /><Button @click="newGroup"><Plus class="mr-2 h-4 w-4" />Novo grupo</Button></div>
         </div>
-        <div v-if="loading" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div v-if="loading" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           <Skeleton v-for="item in 4" :key="item" class="h-40 rounded-xl" />
         </div>
         <div v-else-if="!groups.length" class="rounded-xl border border-dashed p-10 text-center">
@@ -289,9 +288,9 @@ onMounted(load)
           <p class="font-medium">Nenhum grupo configurado</p>
           <p class="text-sm text-muted-foreground">Crie sabores, adicionais ou complementos.</p>
         </div>
-        <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           <Card v-for="group in groups" :key="group.id" class="flex flex-col rounded-xl">
-            <CardHeader class="p-4 pb-2">
+            <CardHeader class="p-3 pb-2">
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <CardTitle class="text-base">{{ group.nome }}</CardTitle>
@@ -303,16 +302,17 @@ onMounted(load)
                 <Badge :variant="group.ativo ? 'secondary' : 'outline'">{{ group.ativo ? 'Ativo' : 'Inativo' }}</Badge>
               </div>
             </CardHeader>
-            <CardContent class="flex-1 space-y-1.5 px-4 pb-3 text-sm">
-              <div v-for="option in group.opcoes" :key="option.id || option.nome" class="flex justify-between gap-3">
+            <CardContent class="flex-1 space-y-1.5 px-3 pb-3 text-sm">
+              <div v-for="option in group.opcoes.slice(0, 4)" :key="option.id || option.nome" class="flex justify-between gap-3">
                 <span :class="{ 'text-muted-foreground line-through': !option.ativo }">{{ option.nome }}</span>
                 <span v-if="Number(option.precoAdicional) > 0" class="text-muted-foreground">
                   +{{ formatCurrencyBR(Number(option.precoAdicional)) }}
                 </span>
               </div>
+              <p v-if="group.opcoes.length > 4" class="text-xs text-muted-foreground">+ {{ group.opcoes.length - 4 }} opção(ões)</p>
               <p class="pt-2 text-xs text-muted-foreground">Usado em {{ group._count?.itens || 0 }} item(ns).</p>
             </CardContent>
-            <CardFooter class="border-t px-4 py-3">
+            <CardFooter class="border-t px-3 py-2.5">
               <Button size="sm" class="w-full" variant="outline" @click="editGroup(group)">
                 <Pencil class="mr-1.5 h-3.5 w-3.5" />Editar grupo
               </Button>

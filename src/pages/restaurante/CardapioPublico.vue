@@ -17,6 +17,7 @@ import {
   type RestauranteCheckoutPreview,
 } from '@/repositories/restaurante-repository'
 import { formatCurrencyBR } from '@/utils/formatters'
+import { resolveFileUrl } from '@/utils/fileUrl'
 import { CheckCircle2, Clipboard, LoaderCircle, LocateFixed, Minus, Plus, ShoppingBag, Truck, UtensilsCrossed } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -52,6 +53,7 @@ const form = reactive({
 const selecionados = computed(() =>
   (cardapio.value?.itens || []).filter((item: any) => quantities.value[item.id] > 0),
 )
+const logo = computed(() => resolveFileUrl(cardapio.value?.restaurante.logo))
 const payloadItems = computed(() =>
   selecionados.value.map((item: any) => ({
     catalogoItemId: item.id,
@@ -222,7 +224,7 @@ onMounted(carregar)
   <main class="min-h-screen bg-muted/30">
     <div class="mx-auto max-w-6xl space-y-6 px-4 py-8">
       <header class="flex items-center gap-3">
-        <div class="rounded-xl bg-primary p-3 text-primary-foreground"><UtensilsCrossed class="h-6 w-6" /></div>
+        <img :src="logo" :alt="`Logo de ${cardapio?.restaurante.nome || 'restaurante'}`" class="h-14 w-14 rounded-xl border bg-card object-contain p-1 shadow-sm" />
         <div><h1 class="text-2xl font-semibold">{{ cardapio?.restaurante.nome || 'Cardápio' }}</h1><p class="text-sm text-muted-foreground">Escolha seus itens e finalize com retirada ou delivery.</p></div>
       </header>
 

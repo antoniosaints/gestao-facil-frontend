@@ -19,7 +19,8 @@
 
 ## Casos especiais
 - `useAuthStore` controla login, logout, refresh e persistência da sessão.
-- `uiStore` concentra dados do usuário logado, responsividade, loading e comportamento do shell visual.
+- `uiStore` concentra dados do usuário logado, responsividade, loading e comportamento do shell visual; quando o app Restaurante está ativo, também mantém os papéis/capacidades retornados por `/v1/restaurante/acesso` para menus, guards e ações.
+- `restaurante/useRestaurantPrintAgent.ts` mantém o agente local do QZ Tray no layout autenticado: migra a configuração legada de uma impressora, restaura uma coleção de conexões locais do `localStorage` e processa cada token/impressora de forma independente sobre a mesma sessão QZ. A store recebe eventos Socket.IO, consulta as filas periodicamente, evita reimpressão por UID e confirma o resultado ao backend. Ela não depende de `restaurante/Impressao.vue`; permanece ativa durante a navegação entre rotas privadas e é encerrada apenas quando o layout principal é desmontado.
 - `baseStore.ts` funciona como referência simples de padrão de CRUD, mas não é o centro da arquitetura.
 
 ## Regras

@@ -84,17 +84,19 @@ import CoreIaWidget from '@/components/ia/CoreIaWidget.vue'
 import TourOverlay from '@/components/onboarding/TourOverlay.vue'
 import TourPicker from '@/components/onboarding/TourPicker.vue'
 import { useTour } from '@/composables/useTour'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { entrarNaConta } from '@/pluguins/socket'
 import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
 import { updateMetaTags } from '@/utils/theme'
 import { env } from '@/utils/dotenv'
 import { useSocketEvent } from '@/composables/useSocketEvent'
+import { useRestaurantPrintAgent } from '@/stores/restaurante/useRestaurantPrintAgent'
 const store = useUiStore()
+const printAgent = useRestaurantPrintAgent()
 const loading = ref(false)
 const sidebarMenu = computed(() => {
     return filterSidebarMenuByVisibility(
-        sidebarMenuOptions(store.permissoes, store.appModules),
+        sidebarMenuOptions(store.permissoes, store.appModules, store.restaurantAccess.capabilities),
         store.visibleMenuKeys,
         store.usuarioLogged.permissao === 'root',
         store.hiddenSubmenuKeys,
@@ -160,10 +162,13 @@ useSocketEvent('sessao:updated', async () => {
 
 onMounted(() => {
     initialize()
+    void printAgent.start()
     updateMetaTags()
     // Novos assinantes: dispara o tour de boas-vindas (as regras/gates ficam em maybeAutoStart).
     useTour().maybeAutoStart()
 })
+
+onUnmounted(() => printAgent.stop())
 </script>
 
 <style scoped>
