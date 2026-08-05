@@ -140,7 +140,7 @@ const modulos = computed(() => {
     hiddenSubmenuKeys: uiStore.hiddenSubmenuKeys,
   }
   const chaves: ModuleKey[] = [
-    'vendas', 'caixas', 'comandas', 'financeiro', 'produtos', 'servicos',
+    'vendas', 'caixas', 'financeiro', 'produtos', 'servicos',
     'clientes', 'metas', 'assinaturas', 'atendimento', 'loja-virtual',
   ]
   return Object.fromEntries(chaves.map((k) => [k, isModuleActive(k, ctx)])) as Record<ModuleKey, boolean>
@@ -171,7 +171,6 @@ function aplicarCustom() {
 const NOME_MODULO: Record<ModuleKey, string> = {
   vendas: 'vendas',
   caixas: 'caixas',
-  comandas: 'comandas',
   financeiro: 'financeiro',
   produtos: 'catálogo',
   servicos: 'serviços',

@@ -36,6 +36,10 @@ describe('MAIN_MENU_VISIBILITY_OPTIONS', () => {
     expect(keys).toContain('loja')
     expect(new Set(keys).size).toBe(keys.length)
   })
+  it('configura Comandas como submenu do Restaurante, não como menu principal', () => {
+    expect(MAIN_MENU_VISIBILITY_OPTIONS.map((m) => m.key)).not.toContain('comandas')
+    expect(MENU_SUBMENU_VISIBILITY_OPTIONS.restaurante.map((m) => m.key)).toContain('restaurante:comandas')
+  })
   it('mostra configuracao apenas dos menus de apps ativos na conta', () => {
     const semApps = getMainMenuVisibilityOptions({}).map((m) => m.key)
     expect(semApps).toContain('vendas')
@@ -101,6 +105,39 @@ describe('PDV no submenu de Vendas', () => {
     const [vendas] = filterSidebarMenuByVisibility(menu, ['vendas'], false, ['vendas:painel'])
 
     expect(vendas.children?.map((child) => child.nome)).toContain('PDV')
+  })
+})
+
+describe('Operação no submenu de Restaurante', () => {
+  const restaurante = sidebarMenuOptions(permissoes(1), { 'restaurante-delivery': true })
+    .find((item) => item.key === 'restaurante')
+
+  it('mantém Salão, Comandas, KDS e Impressão dentro de Restaurante, sem depender do app Atendimento', () => {
+    expect(restaurante?.children?.map((child) => child.key)).toContain('restaurante:salao')
+    expect(restaurante?.children?.map((child) => child.key)).toContain('restaurante:comandas')
+    expect(restaurante?.children?.map((child) => child.key)).toContain('restaurante:kds')
+    expect(restaurante?.children?.map((child) => child.key)).toContain('restaurante:impressao')
+
+    const atendimento = sidebarMenuOptions(permissoes(4), {
+      'restaurante-delivery': true,
+      atendimento: true,
+    }).find((item) => item.key === 'atendimento')
+    expect(atendimento?.children?.map((child) => child.key)).not.toContain('restaurante:salao')
+    expect(atendimento?.children?.map((child) => child.key)).not.toContain('restaurante:comandas')
+    expect(atendimento?.children?.map((child) => child.key)).not.toContain('restaurante:kds')
+    expect(atendimento?.children?.map((child) => child.key)).not.toContain('restaurante:impressao')
+  })
+
+  it('oferece os dois itens na configuração de visibilidade', () => {
+    expect(MENU_SUBMENU_VISIBILITY_OPTIONS.restaurante.map((item) => item.key)).toEqual([
+      'restaurante:salao',
+      'restaurante:comandas',
+      'restaurante:kds',
+      'restaurante:impressao',
+      'restaurante:cardapio',
+      'restaurante:pedidos',
+      'restaurante:configuracoes',
+    ])
   })
 })
 

@@ -208,7 +208,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="space-y-4">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 class="text-2xl font-semibold tracking-tight">Cardápio do restaurante</h1>
@@ -218,10 +218,10 @@ onMounted(load)
       </div>
     </header>
 
-    <Tabs default-value="itens" class="space-y-4">
+    <Tabs default-value="itens" class="space-y-3">
       <TabsList>
-        <TabsTrigger value="itens">Itens do cardápio</TabsTrigger>
-        <TabsTrigger value="grupos">Sabores e complementos</TabsTrigger>
+        <TabsTrigger value="itens"><UtensilsCrossed class="mr-2 h-4 w-4" />Itens do cardápio</TabsTrigger>
+        <TabsTrigger value="grupos"><Layers3 class="mr-2 h-4 w-4" />Sabores e complementos</TabsTrigger>
       </TabsList>
 
       <TabsContent value="itens" class="space-y-4">
@@ -233,23 +233,23 @@ onMounted(load)
           <Button @click="newItem"><Plus class="mr-2 h-4 w-4" />Adicionar produto</Button>
         </div>
 
-        <div v-if="loading" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Skeleton v-for="item in 6" :key="item" class="h-64 rounded-xl" />
+        <div v-if="loading" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Skeleton v-for="item in 8" :key="item" class="h-52 rounded-xl" />
         </div>
         <div v-else-if="!filteredItems.length" class="rounded-xl border border-dashed p-10 text-center">
           <UtensilsCrossed class="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
           <p class="font-medium">Nenhum item no cardápio</p>
           <p class="text-sm text-muted-foreground">Adicione um produto já cadastrado para começar.</p>
         </div>
-        <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <Card v-for="item in filteredItems" :key="item.id" class="flex flex-col overflow-hidden rounded-xl">
             <img
               v-if="item.imagem || item.Produto.imagem"
               :src="item.imagem || item.Produto.imagem || ''"
               :alt="item.nomePublico || item.Produto.nome"
-              class="h-36 w-full object-cover"
+              class="h-24 w-full object-cover"
             />
-            <CardHeader class="pb-3">
+            <CardHeader class="p-4 pb-2">
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <CardTitle class="text-base">{{ item.nomePublico || productLabel(item.Produto) }}</CardTitle>
@@ -260,7 +260,7 @@ onMounted(load)
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent class="flex-1 space-y-3 text-sm">
+            <CardContent class="flex-1 space-y-2 px-4 pb-3 text-sm">
               <p class="line-clamp-2 text-muted-foreground">{{ item.descricao || 'Sem descrição pública.' }}</p>
               <div class="flex flex-wrap gap-1.5">
                 <Badge v-for="link in item.grupos" :key="link.grupoId" variant="outline">
@@ -268,9 +268,9 @@ onMounted(load)
                 </Badge>
               </div>
             </CardContent>
-            <CardFooter class="border-t pt-4">
-              <Button class="w-full" variant="outline" @click="editItem(item)">
-                <Pencil class="mr-2 h-4 w-4" />Editar item
+            <CardFooter class="border-t px-4 py-3">
+              <Button size="sm" class="w-full" variant="outline" @click="editItem(item)">
+                <Pencil class="mr-1.5 h-3.5 w-3.5" />Editar item
               </Button>
             </CardFooter>
           </Card>
@@ -281,17 +281,17 @@ onMounted(load)
         <div class="flex justify-end">
           <Button @click="newGroup"><Plus class="mr-2 h-4 w-4" />Novo grupo</Button>
         </div>
-        <div v-if="loading" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Skeleton v-for="item in 3" :key="item" class="h-48 rounded-xl" />
+        <div v-if="loading" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Skeleton v-for="item in 4" :key="item" class="h-40 rounded-xl" />
         </div>
         <div v-else-if="!groups.length" class="rounded-xl border border-dashed p-10 text-center">
           <Layers3 class="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
           <p class="font-medium">Nenhum grupo configurado</p>
           <p class="text-sm text-muted-foreground">Crie sabores, adicionais ou complementos.</p>
         </div>
-        <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <Card v-for="group in groups" :key="group.id" class="flex flex-col rounded-xl">
-            <CardHeader>
+            <CardHeader class="p-4 pb-2">
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <CardTitle class="text-base">{{ group.nome }}</CardTitle>
@@ -303,7 +303,7 @@ onMounted(load)
                 <Badge :variant="group.ativo ? 'secondary' : 'outline'">{{ group.ativo ? 'Ativo' : 'Inativo' }}</Badge>
               </div>
             </CardHeader>
-            <CardContent class="flex-1 space-y-2 text-sm">
+            <CardContent class="flex-1 space-y-1.5 px-4 pb-3 text-sm">
               <div v-for="option in group.opcoes" :key="option.id || option.nome" class="flex justify-between gap-3">
                 <span :class="{ 'text-muted-foreground line-through': !option.ativo }">{{ option.nome }}</span>
                 <span v-if="Number(option.precoAdicional) > 0" class="text-muted-foreground">
@@ -312,9 +312,9 @@ onMounted(load)
               </div>
               <p class="pt-2 text-xs text-muted-foreground">Usado em {{ group._count?.itens || 0 }} item(ns).</p>
             </CardContent>
-            <CardFooter class="border-t pt-4">
-              <Button class="w-full" variant="outline" @click="editGroup(group)">
-                <Pencil class="mr-2 h-4 w-4" />Editar grupo
+            <CardFooter class="border-t px-4 py-3">
+              <Button size="sm" class="w-full" variant="outline" @click="editGroup(group)">
+                <Pencil class="mr-1.5 h-3.5 w-3.5" />Editar grupo
               </Button>
             </CardFooter>
           </Card>

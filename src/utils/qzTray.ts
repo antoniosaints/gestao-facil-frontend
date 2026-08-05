@@ -1,7 +1,14 @@
 import qz from 'qz-tray'
 import { ImpressaoRepository } from '@/repositories/impressao-repository'
 
-type PaperSize = 'A4' | 'A5' | 'Letter' | 'cupom' | '80mm' | '58mm'
+export type PaperSize = 'A4' | 'A5' | 'Letter' | 'cupom' | '80mm' | '58mm'
+
+export interface ExplicitPrintOptions {
+  printer: string
+  paper: PaperSize
+  copies?: number
+  jobName?: string
+}
 
 const sizeMap: Record<PaperSize, { width: number; height: number }> = {
   A4: { width: 8.27, height: 11.69 },
@@ -114,6 +121,18 @@ class QZService {
       units: 'in',
     })
 
+    return qz.print(config, [{ type: 'raw', format: 'plain', data: content }])
+  }
+
+  async printRaw(content: string, options: ExplicitPrintOptions) {
+    await this.ensureConnection()
+    const size = sizeMap[options.paper] ?? sizeMap['80mm']
+    const config = qz.configs.create(options.printer, {
+      size,
+      units: 'in',
+      copies: Math.min(Math.max(options.copies ?? 1, 1), 5),
+      jobName: options.jobName || 'Restaurante - Gestao Facil',
+    })
     return qz.print(config, [{ type: 'raw', format: 'plain', data: content }])
   }
 

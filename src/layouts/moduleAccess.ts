@@ -16,7 +16,6 @@ import type { Permissoes } from '@/stores/ui/uiStore'
 export type ModuleKey =
   | 'vendas'
   | 'caixas'
-  | 'comandas'
   | 'financeiro'
   | 'produtos'
   | 'servicos'
@@ -55,8 +54,6 @@ export function isModuleActive(key: ModuleKey, ctx: ModuleAccessContext): boolea
     // Caixas é submenu de vendas: depende do módulo pai e da blacklist de submenus.
     case 'caixas':
       return p.vendas.visualizar && menuVisivel(ctx, 'vendas') && submenuVisivel(ctx, 'vendas:caixas')
-    case 'comandas':
-      return p.vendas.visualizar && menuVisivel(ctx, 'comandas')
     case 'financeiro':
       return p.financeiro.visualizar && menuVisivel(ctx, 'financeiro')
     case 'produtos':

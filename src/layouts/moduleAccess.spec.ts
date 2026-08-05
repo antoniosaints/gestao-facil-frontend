@@ -91,10 +91,4 @@ describe('isModuleActive', () => {
     expect(isModuleActive('metas', ctx({ permissoes: permissoes({ admin: false }) }))).toBe(false)
   })
 
-  it('usa a permissão de vendas para comandas', () => {
-    expect(isModuleActive('comandas', ctx())).toBe(true)
-    expect(
-      isModuleActive('comandas', ctx({ permissoes: permissoes({ vendas: { ...permissaoVazia } }) })),
-    ).toBe(false)
-  })
 })

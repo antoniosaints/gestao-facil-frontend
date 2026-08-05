@@ -91,6 +91,11 @@ async function avancar(pedido: RestaurantePedido) {
   }
 }
 
+function proximoDisponivel(pedido: RestaurantePedido) {
+  if (pedido.tickets?.length && ['CONFIRMADO', 'EM_PREPARO'].includes(pedido.status)) return undefined
+  return nextStatus[pedido.status]
+}
+
 function dataHora(value: string) {
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
@@ -104,7 +109,7 @@ onMounted(() => carregar())
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="space-y-4">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 class="text-2xl font-semibold tracking-tight">Restaurante</h1>
@@ -142,8 +147,8 @@ onMounted(() => carregar())
       >
     </div>
 
-    <div v-if="loading" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Skeleton v-for="item in 6" :key="item" class="h-64 rounded-xl" />
+    <div v-if="loading" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <Skeleton v-for="item in 8" :key="item" class="h-48 rounded-xl" />
     </div>
     <div v-else-if="!filtrados.length" class="rounded-xl border border-dashed p-10 text-center">
       <ShoppingBag class="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
@@ -152,9 +157,9 @@ onMounted(() => carregar())
         Novos pedidos aparecerão aqui quando forem recebidos.
       </p>
     </div>
-    <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
       <Card v-for="pedido in filtrados" :key="pedido.id" class="flex flex-col rounded-xl">
-        <CardHeader class="pb-3"
+        <CardHeader class="p-4 pb-2"
           ><div class="flex items-start justify-between gap-3">
             <div>
               <CardTitle class="text-base">{{ pedido.codigo }}</CardTitle>
@@ -166,7 +171,7 @@ onMounted(() => carregar())
             <Badge variant="outline">{{ statusLabels[pedido.status] }}</Badge>
           </div></CardHeader
         >
-        <CardContent class="flex-1 space-y-3"
+        <CardContent class="flex-1 space-y-2 px-4 pb-3"
           ><div class="space-y-1 text-sm">
             <div v-for="item in pedido.itens" :key="item.id" class="flex justify-between gap-3">
               <span>{{ Number(item.quantidade) }}× {{ item.nomeSnapshot }}</span
@@ -175,7 +180,7 @@ onMounted(() => carregar())
               }}</span>
             </div>
           </div>
-          <div class="border-t pt-3 text-sm">
+          <div class="border-t pt-2 text-sm">
             <div class="flex justify-between">
               <span class="text-muted-foreground">{{
                 pedido.Mesa?.nome || pedido.clienteNomeSnapshot || 'Cliente visitante'
@@ -184,10 +189,12 @@ onMounted(() => carregar())
             </div>
           </div></CardContent
         >
-        <CardFooter v-if="nextStatus[pedido.status]" class="border-t pt-4"
-          ><Button class="w-full" :disabled="atualizando === pedido.id" @click="avancar(pedido)"
-            ><ChefHat class="mr-2 h-4 w-4" />{{ nextLabel[pedido.status] }}</Button
+        <CardFooter v-if="proximoDisponivel(pedido)" class="border-t px-4 py-3"
+          ><Button size="sm" class="w-full" :disabled="atualizando === pedido.id" @click="avancar(pedido)"
+            ><ChefHat class="mr-1.5 h-3.5 w-3.5" />{{ nextLabel[pedido.status] }}</Button
           ></CardFooter
+        ><CardFooter v-else-if="pedido.tickets?.length && ['CONFIRMADO', 'EM_PREPARO'].includes(pedido.status)" class="border-t px-4 py-3"
+          ><Button as-child size="sm" variant="outline" class="w-full"><RouterLink to="/restaurante/kds"><ChefHat class="mr-1.5 h-3.5 w-3.5" />Acompanhar no KDS</RouterLink></Button></CardFooter
         >
       </Card>
     </div>

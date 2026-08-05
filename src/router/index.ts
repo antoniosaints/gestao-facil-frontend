@@ -284,11 +284,7 @@ const routes: RouteInterface[] = [
   {
     path: '/comandas',
     name: 'comandas',
-    component: () => import('@/pages/comandas/Home.vue'),
-    meta: {
-      layout: 'main',
-      permissao: 2,
-    },
+    redirect: { name: 'restaurante-comandas' },
   },
   {
     path: '/metas',
@@ -537,6 +533,30 @@ const routes: RouteInterface[] = [
     name: 'restaurante',
     redirect: { name: 'restaurante-pedidos' },
     children: [
+      {
+        path: 'salao',
+        name: 'restaurante-salao',
+        component: () => import('@/pages/restaurante/Salao.vue'),
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery' },
+      },
+      {
+        path: 'comandas',
+        name: 'restaurante-comandas',
+        component: () => import('@/pages/comandas/Home.vue'),
+        meta: { layout: 'main', permissao: 2, modulo: 'restaurante-delivery' },
+      },
+      {
+        path: 'kds',
+        name: 'restaurante-kds',
+        component: () => import('@/pages/restaurante/Kds.vue'),
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery' },
+      },
+      {
+        path: 'impressao',
+        name: 'restaurante-impressao',
+        component: () => import('@/pages/restaurante/Impressao.vue'),
+        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery' },
+      },
       {
         path: 'cardapio',
         name: 'restaurante-cardapio',

@@ -11,6 +11,7 @@ import {
   ChartPie,
   CircleDollarSign,
   ClipboardList,
+  ConciergeBell,
   Cog,
   FileBox,
   FileCheck2,
@@ -40,6 +41,8 @@ import {
   UserStar,
   Wrench,
   UtensilsCrossed,
+  CookingPot,
+  Printer,
 } from 'lucide-vue-next'
 
 export const ROOT_ALWAYS_VISIBLE_MENU_KEYS = ['configuracoes'] as const
@@ -58,12 +61,6 @@ export const MAIN_MENU_VISIBILITY_OPTIONS = [
     nome: 'Atendimento',
     descricao: 'Central de atendimento e chat via WhatsApp.',
     icon: Headset,
-  },
-  {
-    key: 'comandas',
-    nome: 'Comandas',
-    descricao: 'Comandas operacionais e faturamento parcial.',
-    icon: TicketCheck,
   },
   {
     key: 'financeiro',
@@ -224,6 +221,10 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'reservas:configuracoes', nome: 'Configurações' },
   ],
   restaurante: [
+    { key: 'restaurante:salao', nome: 'Salão' },
+    { key: 'restaurante:comandas', nome: 'Comandas' },
+    { key: 'restaurante:kds', nome: 'KDS' },
+    { key: 'restaurante:impressao', nome: 'Impressão QZ' },
     { key: 'restaurante:cardapio', nome: 'Cardápio' },
     { key: 'restaurante:pedidos', nome: 'Pedidos' },
     { key: 'restaurante:configuracoes', nome: 'Configurações' },
@@ -447,6 +448,34 @@ export const sidebarMenuOptions = (
       color: 'orange',
       children: [
         {
+          key: 'restaurante:salao',
+          nome: 'Salão',
+          link: '/restaurante/salao',
+          icone: ConciergeBell,
+          color: 'orange',
+        },
+        {
+          key: 'restaurante:comandas',
+          nome: 'Comandas',
+          link: '/restaurante/comandas',
+          icone: ClipboardList,
+          color: 'orange',
+        },
+        {
+          key: 'restaurante:kds',
+          nome: 'KDS',
+          link: '/restaurante/kds',
+          icone: CookingPot,
+          color: 'orange',
+        },
+        {
+          key: 'restaurante:impressao',
+          nome: 'Impressão QZ',
+          link: '/restaurante/impressao',
+          icone: Printer,
+          color: 'orange',
+        },
+        {
           key: 'restaurante:cardapio',
           nome: 'Cardápio',
           link: '/restaurante/cardapio',
@@ -519,14 +548,6 @@ export const sidebarMenuOptions = (
           color: 'green',
         },
       ],
-    },
-    {
-      key: 'comandas',
-      nome: 'Comandas',
-      icone: ClipboardList,
-      color: 'cyan',
-      show: permissions.vendas.visualizar,
-      link: '/comandas',
     },
     {
       key: 'financeiro',

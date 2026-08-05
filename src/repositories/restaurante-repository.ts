@@ -23,12 +23,138 @@ export interface RestaurantePedido {
   version: number
   createdAt: string
   Mesa?: { nome: string } | null
+  tickets?: Array<{ id: number }>
   itens: Array<{
     id: number
     nomeSnapshot: string
     quantidade: string | number
     subtotalSnapshot: string | number
   }>
+}
+
+export type RestauranteMesaStatus = 'LIVRE' | 'OCUPADA' | 'AGUARDANDO_CONTA' | 'LIMPEZA'
+
+export interface RestauranteMesa {
+  id: number
+  nome: string
+  status: RestauranteMesaStatus
+  ativa: boolean
+  version: number
+  sessoes: Array<{
+    id: number
+    status: 'ABERTA' | 'AGUARDANDO_CONTA'
+    pessoas: number
+    abertaAt: string
+    observacao?: string | null
+    comandas: Array<{
+      comandaOperacaoId: number
+      nome?: string | null
+      ComandaOperacao: {
+        id: number
+        Uid: string
+        status: string
+        total: string | number
+        itens: unknown[]
+        pagamentos: unknown[]
+      }
+    }>
+    pedidos: RestaurantePedido[]
+  }>
+}
+
+export interface RestaurantePontoProducao {
+  id: number
+  nome: string
+  cor: string
+  ativo: boolean
+  ordem: number
+  version: number
+  roteamentos: Array<{ categoriaId: number; Categoria: { id: number; nome: string } }>
+}
+
+export type RestauranteTicketStatus = 'PENDENTE' | 'PREPARANDO' | 'PRONTO' | 'ENTREGUE'
+
+export interface RestauranteKdsTicket {
+  id: number
+  pontoId: number
+  tipo: 'INICIAL' | 'ADICAO' | 'CANCELAMENTO'
+  status: RestauranteTicketStatus
+  version: number
+  createdAt: string
+  Ponto: RestaurantePontoProducao
+  Pedido: {
+    id: number
+    codigo: string
+    origem: string
+    observacao?: string | null
+    createdAt: string
+    Mesa?: { nome: string } | null
+  }
+  itens: Array<{
+    quantidade: string | number
+    observacao?: string | null
+    PedidoItem: {
+      id: number
+      nomeSnapshot: string
+      tamanhoSnapshot?: string | null
+      selecoesSnapshotJson?: Array<{ nome: string }> | null
+      observacao?: string | null
+    }
+  }>
+}
+
+export interface RestauranteEstacaoImpressao {
+  id: number
+  nome: string
+  tokenPrefix: string
+  impressoraNome?: string | null
+  papelReportado?: string | null
+  ativa: boolean
+  online: boolean
+  lastSeenAt?: string | null
+  version: number
+  pairingToken?: string
+  _count?: { regrasPrimarias: number; trabalhos: number }
+}
+
+export interface RestauranteRegraImpressao {
+  id: number
+  pontoId: number
+  estacaoId: number
+  fallbackEstacaoId?: number | null
+  papel: '58mm' | '80mm'
+  vias: number
+  imprimirPedidoCompleto: boolean
+  ativa: boolean
+  version: number
+  Ponto?: { id: number; nome: string }
+  Estacao?: { id: number; nome: string }
+  FallbackEstacao?: { id: number; nome: string } | null
+}
+
+export interface RestauranteTrabalhoImpressao {
+  id: number
+  uid: string
+  status: 'PENDENTE' | 'EM_PROCESSAMENTO' | 'CONCLUIDO' | 'FALHOU' | 'CANCELADO'
+  papel: '58mm' | '80mm'
+  vias: number
+  tentativas: number
+  erro?: string | null
+  impressoAt?: string | null
+  createdAt: string
+  Estacao: { id: number; nome: string; impressoraNome?: string | null }
+  Ponto: { id: number; nome: string }
+  Ticket: { Pedido: { codigo: string } }
+}
+
+export interface RestauranteTrabalhoEstacao {
+  uid: string
+  leaseToken: string
+  conteudo: string
+  formato: string
+  papel: '58mm' | '80mm'
+  vias: number
+  tentativas: number
 }
 
 export interface RestauranteConfig {
@@ -249,5 +375,136 @@ export class RestauranteRepository {
       ? await http.patch(`/v1/restaurante/zonas-entrega/${id}`, payload)
       : await http.post('/v1/restaurante/zonas-entrega', payload)
     return response.data.data as RestauranteZonaEntrega
+  }
+
+  static async mesas() {
+    const { data } = await http.get('/v1/restaurante/mesas')
+    return data.data as RestauranteMesa[]
+  }
+
+  static async salvarMesa(payload: { nome: string; ativa: boolean; version?: number }, id?: number) {
+    const response = id
+      ? await http.patch(`/v1/restaurante/mesas/${id}`, payload)
+      : await http.post('/v1/restaurante/mesas', payload)
+    return response.data.data as RestauranteMesa
+  }
+
+  static async abrirMesa(id: number, payload: { pessoas: number; clienteNome?: string | null; observacao?: string | null }) {
+    const { data } = await http.post(`/v1/restaurante/mesas/${id}/abrir`, payload)
+    return data.data
+  }
+
+  static async solicitarContaMesa(id: number) {
+    const { data } = await http.post(`/v1/restaurante/mesas/${id}/aguardar-conta`)
+    return data.data
+  }
+
+  static async liberarMesa(id: number) {
+    const { data } = await http.post(`/v1/restaurante/mesas/${id}/liberar`)
+    return data.data
+  }
+
+  static async finalizarLimpezaMesa(id: number) {
+    const { data } = await http.post(`/v1/restaurante/mesas/${id}/finalizar-limpeza`)
+    return data.data
+  }
+
+  static async criarPedidoMesa(sessaoId: number, payload: unknown) {
+    const { data } = await http.post(`/v1/restaurante/sessoes-mesa/${sessaoId}/pedidos`, payload)
+    return data.data as RestaurantePedido
+  }
+
+  static async categoriasProducao() {
+    const { data } = await http.get('/v1/restaurante/pontos-producao/categorias')
+    return data.data as Array<{ id: number; nome: string }>
+  }
+
+  static async pontosProducao() {
+    const { data } = await http.get('/v1/restaurante/pontos-producao')
+    return data.data as RestaurantePontoProducao[]
+  }
+
+  static async salvarPontoProducao(payload: { nome: string; cor: string; ativo: boolean; ordem: number; categoriaIds: number[]; version?: number }, id?: number) {
+    const response = id
+      ? await http.patch(`/v1/restaurante/pontos-producao/${id}`, payload)
+      : await http.post('/v1/restaurante/pontos-producao', payload)
+    return response.data.data as RestaurantePontoProducao
+  }
+
+  static async ticketsKds(params: { pontoId?: number; status?: string } = {}) {
+    const { data } = await http.get('/v1/restaurante/kds', { params })
+    return data.data as RestauranteKdsTicket[]
+  }
+
+  static async transicionarTicketKds(id: number, status: RestauranteTicketStatus, version: number) {
+    const { data } = await http.post(`/v1/restaurante/kds/${id}/transicao`, { status, version })
+    return data.data as RestauranteKdsTicket
+  }
+
+  static async estacoesImpressao() {
+    const { data } = await http.get('/v1/restaurante/estacoes-impressao')
+    return data.data as RestauranteEstacaoImpressao[]
+  }
+
+  static async salvarEstacaoImpressao(payload: { nome: string; ativa: boolean; version?: number }, id?: number) {
+    const response = id
+      ? await http.patch(`/v1/restaurante/estacoes-impressao/${id}`, payload)
+      : await http.post('/v1/restaurante/estacoes-impressao', payload)
+    return response.data.data as RestauranteEstacaoImpressao
+  }
+
+  static async regenerarTokenEstacao(id: number) {
+    const { data } = await http.post(`/v1/restaurante/estacoes-impressao/${id}/regenerar-token`)
+    return data.data as { pairingToken: string; tokenPrefix: string }
+  }
+
+  static async regrasImpressao() {
+    const { data } = await http.get('/v1/restaurante/regras-impressao')
+    return data.data as RestauranteRegraImpressao[]
+  }
+
+  static async salvarRegraImpressao(payload: {
+    pontoId: number
+    estacaoId: number
+    fallbackEstacaoId?: number | null
+    papel: '58mm' | '80mm'
+    vias: number
+    imprimirPedidoCompleto: boolean
+    ativa: boolean
+    version?: number
+  }) {
+    const { data } = await http.put('/v1/restaurante/regras-impressao', payload)
+    return data.data as RestauranteRegraImpressao
+  }
+
+  static async trabalhosImpressao(status = 'TODOS') {
+    const { data } = await http.get('/v1/restaurante/trabalhos-impressao', { params: { status } })
+    return data.data as RestauranteTrabalhoImpressao[]
+  }
+
+  static async reimprimirTicket(id: number) {
+    const { data } = await http.post(`/v1/restaurante/kds/${id}/reimprimir`)
+    return data.data as RestauranteTrabalhoImpressao
+  }
+
+  static async heartbeatEstacao(token: string, payload: { impressoraNome: string; papel: '58mm' | '80mm' }) {
+    const { data } = await http.post('/v1/restaurante/estacao-impressao/heartbeat', payload, {
+      headers: { 'X-Print-Station-Token': token },
+    })
+    return data.data
+  }
+
+  static async buscarTrabalhosEstacao(token: string) {
+    const { data } = await http.get('/v1/restaurante/estacao-impressao/trabalhos', {
+      headers: { 'X-Print-Station-Token': token },
+    })
+    return data.data as RestauranteTrabalhoEstacao[]
+  }
+
+  static async confirmarTrabalhoEstacao(token: string, payload: { uid: string; leaseToken: string; success: boolean; error?: string | null }) {
+    const { data } = await http.post('/v1/restaurante/estacao-impressao/trabalhos/ack', payload, {
+      headers: { 'X-Print-Station-Token': token },
+    })
+    return data.data as { uid: string; status: string }
   }
 }
