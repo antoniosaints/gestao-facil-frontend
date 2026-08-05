@@ -66,15 +66,15 @@ const sessaoAtual = computed(() => mesaAtual.value?.sessoes[0])
 async function carregar(feedback = false) {
   try {
     loading.value = true
-    ;[mesas.value, catalogo.value] = await Promise.all([
-      RestauranteRepository.mesas(),
-      RestauranteRepository.catalogo({ limit: 100 }).then((response) => response.data
-        .filter((item) => item.disponivel)
-        .map((item) => ({
-          ...item,
-          grupos: item.grupos.filter((link) => link.Grupo.ativo),
-        }))),
-    ])
+      ;[mesas.value, catalogo.value] = await Promise.all([
+        RestauranteRepository.mesas(),
+        RestauranteRepository.catalogo({ limit: 100 }).then((response) => response.data
+          .filter((item) => item.disponivel)
+          .map((item) => ({
+            ...item,
+            grupos: item.grupos.filter((link) => link.Grupo.ativo),
+          }))),
+      ])
     if (feedback) toast.info('Salão atualizado')
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível carregar o salão.')
@@ -206,29 +206,163 @@ onMounted(() => carregar())
 <template>
   <section class="space-y-4">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div><h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight"><ConciergeBell class="h-6 w-6 text-primary" />Salão</h1><p class="text-sm text-muted-foreground">Abra mesas, lance pedidos e acompanhe a conta em tempo real.</p></div>
-      <div class="flex gap-2"><Button variant="outline" :disabled="loading" @click="carregar(true)"><RefreshCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': loading }" />Atualizar</Button><Button v-if="canConfigure" @click="novaMesa()"><Plus class="mr-2 h-4 w-4" />Nova mesa</Button></div>
+      <div>
+        <h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+          <ConciergeBell class="h-6 w-6 text-primary" />Salão
+        </h1>
+        <p class="text-sm text-muted-foreground">Abra mesas, lance pedidos e acompanhe a conta em tempo real.</p>
+      </div>
+      <div class="flex gap-2"><Button variant="outline" :disabled="loading" @click="carregar(true)">
+          <RefreshCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': loading }" />Atualizar
+        </Button><Button v-if="canConfigure" @click="novaMesa()">
+          <Plus class="mr-2 h-4 w-4" />Nova mesa
+        </Button></div>
     </header>
 
     <div class="grid gap-3 sm:grid-cols-[1fr_220px]">
-      <div class="relative"><Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><Input v-model="busca" class="pl-9" placeholder="Buscar mesa" /></div>
-      <Select v-model="filtro"><SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="TODAS">Todos os status</SelectItem><SelectItem v-for="(label, key) in statusLabel" :key="key" :value="key">{{ label }}</SelectItem></SelectContent></Select>
+      <div class="relative">
+        <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><Input v-model="busca" class="pl-9"
+          placeholder="Buscar mesa" />
+      </div>
+      <Select v-model="filtro">
+        <SelectTrigger>
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="TODAS">Todos os status</SelectItem>
+          <SelectItem v-for="(label, key) in statusLabel" :key="key" :value="key">{{ label }}</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
 
-    <div v-if="loading" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4"><Skeleton v-for="item in 8" :key="item" class="h-44 rounded-xl" /></div>
-    <div v-else-if="!filtradas.length" class="rounded-xl border border-dashed p-10 text-center"><Utensils class="mx-auto mb-3 h-9 w-9 text-muted-foreground" /><p class="font-medium">Nenhuma mesa encontrada</p><p class="text-sm text-muted-foreground">Cadastre as mesas do salão para iniciar os atendimentos.</p></div>
+    <div v-if="loading" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <Skeleton v-for="item in 8" :key="item" class="h-44 rounded-xl" />
+    </div>
+    <div v-else-if="!filtradas.length" class="rounded-xl border border-dashed p-10 text-center">
+      <Utensils class="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
+      <p class="font-medium">Nenhuma mesa encontrada</p>
+      <p class="text-sm text-muted-foreground">Cadastre as mesas do salão para iniciar os atendimentos.</p>
+    </div>
     <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <Card v-for="mesa in filtradas" :key="mesa.id" class="flex flex-col rounded-xl border-2" :class="statusClass[mesa.status]">
-        <CardHeader class="p-4 pb-2"><div class="flex items-start justify-between gap-2"><div><CardTitle class="text-base">{{ mesa.nome }}</CardTitle><p v-if="tempoAberta(mesa)" class="mt-0.5 text-xs text-muted-foreground">{{ tempoAberta(mesa) }} · {{ mesa.sessoes[0]?.pessoas }} pessoa(s)</p></div><Badge variant="outline" class="text-[11px]">{{ statusLabel[mesa.status] }}</Badge></div></CardHeader>
-        <CardContent class="flex-1 space-y-2 px-4 pb-3"><template v-if="mesa.sessoes[0]"><div class="flex items-center justify-between rounded-lg bg-background/70 px-2.5 py-2"><span class="text-xs text-muted-foreground">Conta atual</span><strong class="text-sm">{{ formatCurrencyBR(totalMesa(mesa)) }}</strong></div><div class="flex flex-wrap gap-x-2 text-[11px] text-muted-foreground"><span>{{ mesa.sessoes[0].pedidos.length }} pedido(s)</span><span v-for="comanda in mesa.sessoes[0].comandas" :key="comanda.comandaOperacaoId">#{{ comanda.ComandaOperacao.Uid }}</span></div></template><p v-else class="text-xs text-muted-foreground">Disponível para atendimento.</p></CardContent>
-        <CardFooter v-if="canOperate || canConfigure" class="flex flex-wrap gap-1.5 border-t px-4 py-3"><Button v-if="canOperate && mesa.status === 'LIVRE'" size="sm" class="flex-1" @click="prepararAbertura(mesa)"><ConciergeBell class="mr-1.5 h-3.5 w-3.5" />Abrir</Button><template v-else-if="canOperate && mesa.status === 'OCUPADA'"><Button size="sm" class="flex-1" @click="prepararPedido(mesa)"><Send class="mr-1.5 h-3.5 w-3.5" />Pedido</Button><Button size="sm" variant="outline" @click="acaoMesa(mesa, 'conta')"><ReceiptText class="mr-1.5 h-3.5 w-3.5" />Conta</Button></template><template v-else-if="canOperate && mesa.status === 'AGUARDANDO_CONTA'"><Button as-child size="sm" variant="outline" class="flex-1"><RouterLink to="/restaurante/comandas"><CircleDollarSign class="mr-1.5 h-3.5 w-3.5" />Faturar</RouterLink></Button><Button size="sm" @click="acaoMesa(mesa, 'liberar')">Liberar</Button></template><Button v-else-if="canOperate && mesa.status === 'LIMPEZA'" size="sm" class="flex-1" @click="acaoMesa(mesa, 'limpeza')"><BrushCleaning class="mr-1.5 h-3.5 w-3.5" />Finalizar</Button><Button v-if="canConfigure" variant="ghost" size="sm" @click="novaMesa(mesa)">Editar</Button></CardFooter>
+      <Card v-for="mesa in filtradas" :key="mesa.id" class="flex flex-col rounded-xl border-2"
+        :class="statusClass[mesa.status]">
+        <CardHeader class="p-4 pb-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <CardTitle class="text-base">{{ mesa.nome }}</CardTitle>
+              <p v-if="tempoAberta(mesa)" class="mt-0.5 text-xs text-muted-foreground">{{ tempoAberta(mesa) }} · {{
+                mesa.sessoes[0]?.pessoas }} pessoa(s)</p>
+            </div>
+            <Badge variant="outline" class="text-[11px]">{{ statusLabel[mesa.status] }}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent class="flex-1 space-y-2 px-4 pb-3"><template v-if="mesa.sessoes[0]">
+            <div class="flex items-center justify-between rounded-lg bg-background/70 px-2.5 py-2"><span
+                class="text-xs text-muted-foreground">Conta atual</span><strong class="text-sm">{{
+                  formatCurrencyBR(totalMesa(mesa)) }}</strong></div>
+            <div class="flex flex-wrap gap-x-2 text-[11px] text-muted-foreground"><span>{{
+              mesa.sessoes[0].pedidos.length }} pedido(s)</span><span v-for="comanda in mesa.sessoes[0].comandas"
+                :key="comanda.comandaOperacaoId">#{{ comanda.ComandaOperacao.Uid }}</span></div>
+          </template>
+          <p v-else class="text-xs text-muted-foreground">Disponível para atendimento.</p>
+        </CardContent>
+        <CardFooter v-if="canOperate || canConfigure" class="flex flex-wrap gap-1.5 border-t px-4 py-3"><Button
+            v-if="canOperate && mesa.status === 'LIVRE'" size="sm" class="flex-1" @click="prepararAbertura(mesa)">
+            <ConciergeBell class="mr-1.5 h-3.5 w-3.5" />Abrir
+          </Button><template v-else-if="canOperate && mesa.status === 'OCUPADA'"><Button size="sm" class="flex-1"
+              @click="prepararPedido(mesa)">
+              <Send class="mr-1.5 h-3.5 w-3.5" />Pedido
+            </Button><Button size="sm" variant="outline" @click="acaoMesa(mesa, 'conta')">
+              <ReceiptText class="mr-1.5 h-3.5 w-3.5" />Conta
+            </Button></template><template v-else-if="canOperate && mesa.status === 'AGUARDANDO_CONTA'"><Button as-child
+              size="sm" variant="outline" class="flex-1">
+              <RouterLink to="/restaurante/comandas">
+                <CircleDollarSign class="mr-1.5 h-3.5 w-3.5" />Faturar
+              </RouterLink>
+            </Button><Button size="sm" @click="acaoMesa(mesa, 'liberar')">Liberar</Button></template><Button
+            v-else-if="canOperate && mesa.status === 'LIMPEZA'" size="sm" class="flex-1"
+            @click="acaoMesa(mesa, 'limpeza')">
+            <BrushCleaning class="mr-1.5 h-3.5 w-3.5" />Finalizar
+          </Button><Button v-if="canConfigure" variant="ghost" size="sm" @click="novaMesa(mesa)">Editar</Button>
+        </CardFooter>
       </Card>
     </div>
 
-    <Dialog v-model:open="mesaModal"><DialogContent><DialogHeader><DialogTitle>{{ mesaAtual ? 'Editar mesa' : 'Nova mesa' }}</DialogTitle><DialogDescription>Identificação exibida no mapa do salão.</DialogDescription></DialogHeader><div class="space-y-2"><Label>Nome</Label><Input v-model="mesaForm.nome" placeholder="Ex.: Mesa 01" @keyup.enter="salvarMesa" /></div><DialogFooter><Button variant="outline" @click="mesaModal = false">Cancelar</Button><Button :disabled="saving || !mesaForm.nome.trim()" @click="salvarMesa">Salvar</Button></DialogFooter></DialogContent></Dialog>
+    <Dialog v-model:open="mesaModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{{ mesaAtual ? 'Editar mesa' : 'Nova mesa' }}</DialogTitle>
+          <DialogDescription>Identificação exibida no mapa do salão.</DialogDescription>
+        </DialogHeader>
+        <div class="space-y-2"><Label>Nome</Label><Input v-model="mesaForm.nome" placeholder="Ex.: Mesa 01"
+            @keyup.enter="salvarMesa" /></div>
+        <DialogFooter><Button variant="outline" @click="mesaModal = false">Cancelar</Button><Button
+            :disabled="saving || !mesaForm.nome.trim()" @click="salvarMesa">Salvar</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
 
-    <Dialog v-model:open="abrirModal"><DialogContent><DialogHeader><DialogTitle>Abrir {{ mesaAtual?.nome }}</DialogTitle><DialogDescription>Uma comanda principal será criada e vinculada ao atendimento.</DialogDescription></DialogHeader><div class="grid gap-4 sm:grid-cols-2"><div class="space-y-2"><Label>Pessoas</Label><Input v-model.number="abertura.pessoas" type="number" min="1" max="99" /></div><div class="space-y-2"><Label>Cliente (opcional)</Label><Input v-model="abertura.clienteNome" /></div><div class="space-y-2 sm:col-span-2"><Label>Observação</Label><Textarea v-model="abertura.observacao" /></div></div><DialogFooter><Button variant="outline" @click="abrirModal = false">Cancelar</Button><Button :disabled="saving" @click="abrirMesa">Abrir atendimento</Button></DialogFooter></DialogContent></Dialog>
+    <Dialog v-model:open="abrirModal">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Abrir {{ mesaAtual?.nome }}</DialogTitle>
+          <DialogDescription>Uma comanda principal será criada e vinculada ao atendimento.</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="space-y-2"><Label>Pessoas</Label><Input v-model.number="abertura.pessoas" type="number" min="1"
+              max="99" /></div>
+          <div class="space-y-2"><Label>Cliente (opcional)</Label><Input v-model="abertura.clienteNome" /></div>
+          <div class="space-y-2 sm:col-span-2"><Label>Observação</Label><Textarea v-model="abertura.observacao" /></div>
+        </div>
+        <DialogFooter><Button variant="outline" @click="abrirModal = false">Cancelar</Button><Button :disabled="saving"
+            @click="abrirMesa">Abrir atendimento</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
 
-    <Dialog v-model:open="pedidoModal"><DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>Novo pedido · {{ mesaAtual?.nome }}</DialogTitle><DialogDescription>Os itens serão lançados na comanda e enviados aos pontos do KDS.</DialogDescription></DialogHeader><div class="space-y-4"><div class="grid gap-3 sm:grid-cols-[1fr_110px]"><Select v-model="itemSelecionadoId" @update:model-value="selecoes = []"><SelectTrigger><SelectValue placeholder="Selecione um item" /></SelectTrigger><SelectContent><SelectItem v-for="item in catalogo" :key="item.id" :value="String(item.id)">{{ item.nomePublico || item.Produto.nome }} · {{ formatCurrencyBR(Number(item.Produto.preco)) }}</SelectItem></SelectContent></Select><Input v-model.number="quantidade" type="number" min="1" /></div><div v-if="itemSelecionado" class="space-y-3 rounded-xl border p-3"><div v-for="link in itemSelecionado.grupos" :key="link.grupoId"><p class="mb-2 text-sm font-medium">{{ link.Grupo.nome }} <span class="font-normal text-muted-foreground">({{ link.Grupo.minimo }}–{{ link.Grupo.maximo }})</span></p><div class="flex flex-wrap gap-2"><Button v-for="opcao in link.Grupo.opcoes" :key="opcao.id" type="button" size="sm" :variant="opcao.id && selecoes.includes(opcao.id) ? 'default' : 'outline'" @click="opcao.id && alternarSelecao(opcao.id, link.grupoId, link.Grupo.maximo)">{{ opcao.nome }}</Button></div></div><Textarea v-model="itemObservacao" placeholder="Observação deste item" /><Button type="button" variant="secondary" class="w-full" @click="adicionarItem"><Plus class="mr-2 h-4 w-4" />Adicionar ao pedido</Button></div><div v-if="carrinho.length" class="space-y-2"><div v-for="(item, index) in carrinho" :key="index" class="flex items-center justify-between rounded-lg bg-muted p-3 text-sm"><span>{{ item.quantidade }}× {{ nomeItem(item.catalogoItemId) }}</span><Button size="sm" variant="ghost" @click="carrinho.splice(index, 1)">Remover</Button></div><Textarea v-model="pedidoObservacao" placeholder="Observação geral do pedido" /></div></div><DialogFooter><Button variant="outline" @click="pedidoModal = false">Cancelar</Button><Button :disabled="saving || !carrinho.length" @click="enviarPedido"><Send class="mr-2 h-4 w-4" />Enviar à produção</Button></DialogFooter></DialogContent></Dialog>
+    <Dialog v-model:open="pedidoModal">
+      <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Novo pedido · {{ mesaAtual?.nome }}</DialogTitle>
+          <DialogDescription>Os itens serão lançados na comanda e enviados aos pontos do KDS.</DialogDescription>
+        </DialogHeader>
+        <div class="space-y-4">
+          <div class="grid gap-3 sm:grid-cols-[1fr_110px]"><Select v-model="itemSelecionadoId"
+              @update:model-value="selecoes = []">
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um item" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="item in catalogo" :key="item.id" :value="String(item.id)">{{ item.nomePublico ||
+                  item.Produto.nome }} · {{ formatCurrencyBR(Number(item.Produto.preco)) }}</SelectItem>
+              </SelectContent>
+            </Select><Input v-model.number="quantidade" type="number" min="1" /></div>
+          <div v-if="itemSelecionado" class="space-y-3 rounded-xl border p-3">
+            <div v-for="link in itemSelecionado.grupos" :key="link.grupoId">
+              <p class="mb-2 text-sm font-medium">{{ link.Grupo.nome }} <span
+                  class="font-normal text-muted-foreground">({{
+                    link.Grupo.minimo }}–{{ link.Grupo.maximo }})</span></p>
+              <div class="flex flex-wrap gap-2"><Button v-for="opcao in link.Grupo.opcoes" :key="opcao.id" type="button"
+                  size="sm" :variant="opcao.id && selecoes.includes(opcao.id) ? 'default' : 'outline'"
+                  @click="opcao.id && alternarSelecao(opcao.id, link.grupoId, link.Grupo.maximo)">{{ opcao.nome
+                  }}</Button>
+              </div>
+            </div><Textarea v-model="itemObservacao" placeholder="Observação deste item" /><Button type="button"
+              variant="secondary" class="w-full" @click="adicionarItem">
+              <Plus class="mr-2 h-4 w-4" />Adicionar ao pedido
+            </Button>
+          </div>
+          <div v-if="carrinho.length" class="space-y-2">
+            <div v-for="(item, index) in carrinho" :key="index"
+              class="flex items-center justify-between rounded-lg bg-muted p-3 text-sm"><span>{{ item.quantidade }}× {{
+                nomeItem(item.catalogoItemId) }}</span><Button size="sm" variant="ghost"
+                @click="carrinho.splice(index, 1)">Remover</Button></div><Textarea v-model="pedidoObservacao"
+              placeholder="Observação geral do pedido" />
+          </div>
+        </div>
+        <DialogFooter><Button variant="outline" @click="pedidoModal = false">Cancelar</Button><Button
+            :disabled="saving || !carrinho.length" @click="enviarPedido">
+            <Send class="mr-2 h-4 w-4" />Enviar à produção
+          </Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>

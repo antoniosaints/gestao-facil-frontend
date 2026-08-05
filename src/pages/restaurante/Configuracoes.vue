@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import HelpTooltip from './components/HelpTooltip.vue'
+import { buildPublicMenuUrl } from './publicMenuUrl'
 import {
   RestauranteRepository,
   type RestauranteConfig,
@@ -23,7 +24,9 @@ import {
 } from '@/repositories/restaurante-repository'
 import {
   CircleCheck,
+  Copy,
   CreditCard,
+  ExternalLink,
   Globe2,
   LoaderCircle,
   MapPin,
@@ -103,6 +106,30 @@ const slugValido = computed(
   () => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(form.slug.trim()) && form.slug.trim().length >= 3,
 )
 const dadosPublicacaoValidos = computed(() => nomeValido.value && slugValido.value)
+const publicMenuUrl = computed(() => (
+  slugValido.value ? buildPublicMenuUrl(window.location.origin, form.slug) : ''
+))
+
+async function copiarLinkCardapio() {
+  if (!publicMenuUrl.value) return toast.info('Informe um slug válido para gerar o link.')
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(publicMenuUrl.value)
+    } else {
+      const input = document.createElement('textarea')
+      input.value = publicMenuUrl.value
+      input.style.position = 'fixed'
+      input.style.opacity = '0'
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand('copy')
+      input.remove()
+    }
+    toast.success('Link do cardápio copiado')
+  } catch {
+    toast.error('Não foi possível copiar o link.')
+  }
+}
 
 async function carregar() {
   try {
@@ -221,7 +248,7 @@ onMounted(carregar)
         </div>
       </CardHeader>
       <CardContent class="space-y-3">
-        <Alert><AlertDescription>Ao salvar o primeiro papel da conta, usuários sem papel deixam de acessar o Restaurante.</AlertDescription></Alert>
+        <Alert><AlertDescription>Usuários sem papel não acessam o Restaurante. Administradores continuam com acesso de gestor.</AlertDescription></Alert>
         <div class="grid gap-3 lg:grid-cols-2">
           <div v-for="user in users" :key="user.id" class="rounded-xl border p-3">
             <div class="mb-3 flex items-start justify-between gap-3">
@@ -259,6 +286,24 @@ onMounted(carregar)
         <div class="space-y-2">
           <Label for="slug">Slug</Label><Input id="slug" v-model="form.slug" :aria-invalid="!slugValido" placeholder="minha-pizzaria" />
           <p v-if="!slugValido" class="text-xs text-destructive">Use letras minúsculas, números e hífens, sem espaços.</p>
+        </div>
+        <div class="rounded-xl border bg-muted/30 p-4 sm:col-span-2">
+          <div class="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <Label for="public-menu-url">Link público do cardápio</Label>
+              <p class="mt-1 text-xs text-muted-foreground">Copie para enviar aos clientes ou divulgar nas redes sociais.</p>
+            </div>
+            <Badge :variant="form.ativo ? 'secondary' : 'outline'">{{ form.ativo ? 'Publicado' : 'Não publicado' }}</Badge>
+          </div>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <Input id="public-menu-url" :model-value="publicMenuUrl" readonly placeholder="Preencha um slug válido" class="font-mono text-xs" />
+            <Button type="button" variant="outline" :disabled="!publicMenuUrl" @click="copiarLinkCardapio">
+              <Copy class="mr-2 h-4 w-4" />Copiar link
+            </Button>
+            <Button v-if="publicMenuUrl" as-child type="button" variant="outline">
+              <a :href="publicMenuUrl" target="_blank" rel="noopener noreferrer"><ExternalLink class="mr-2 h-4 w-4" />Abrir</a>
+            </Button>
+          </div>
         </div>
         <div class="rounded-lg bg-muted/40 p-3 sm:col-span-2">
           <div class="flex items-center gap-2 text-sm font-medium"><CreditCard class="h-4 w-4 text-primary" />Regras do pedido</div>

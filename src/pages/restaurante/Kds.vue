@@ -102,19 +102,9 @@ function editarPonto(ponto?: RestaurantePontoProducao) {
 }
 
 function toggleCategoria(id: number) {
-  const owner = categoryOwner(id)
-  if (owner) return toast.info(`Esta categoria ja e produzida em ${owner.nome}.`)
   form.value.categoriaIds = form.value.categoriaIds.includes(id)
     ? form.value.categoriaIds.filter((value) => value !== id)
     : [...form.value.categoriaIds, id]
-}
-
-function categoryOwner(categoryId: number) {
-  return pontos.value.find((point) => (
-    point.id !== pontoAtual.value?.id
-    && point.ativo
-    && point.roteamentos.some((route) => route.categoriaId === categoryId)
-  ))
 }
 
 async function salvarPonto() {
@@ -261,8 +251,7 @@ onMounted(() => carregar())
       <DialogContent class="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Pontos de produção</DialogTitle>
-          <DialogDescription>Cada categoria pertence a um único ponto produtor. Cópias para balcão e outros locais são
-            configuradas em Impressão QZ.</DialogDescription>
+          <DialogDescription>Cada categoria pode ser enviada para um ou mais pontos de produção.</DialogDescription>
         </DialogHeader>
         <div class="space-y-2">
           <div v-for="ponto in pontos" :key="ponto.id" class="flex items-center justify-between rounded-xl border p-3">
@@ -289,8 +278,7 @@ onMounted(() => carregar())
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{{ pontoAtual ? 'Editar ponto' : 'Novo ponto' }}</DialogTitle>
-          <DialogDescription>Selecione as categorias produzidas neste ponto. Categorias já usadas em outro ponto ativo
-            ficam bloqueadas.</DialogDescription>
+          <DialogDescription>Selecione as categorias produzidas neste ponto. Uma categoria pode participar de vários pontos ativos.</DialogDescription>
         </DialogHeader>
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="space-y-2"><Label>Nome</Label><Input v-model="form.nome" placeholder="Ex.: Cozinha" /></div>
@@ -305,17 +293,14 @@ onMounted(() => carregar())
           <div class="space-y-2 sm:col-span-2"><Label>Categorias roteadas</Label>
             <div class="flex max-h-52 flex-wrap gap-2 overflow-y-auto rounded-xl border p-3"><Button
                 v-for="categoria in categorias" :key="categoria.id" type="button" size="sm"
-                :disabled="Boolean(categoryOwner(categoria.id))"
                 :variant="form.categoriaIds.includes(categoria.id) ? 'default' : 'outline'"
                 @click="toggleCategoria(categoria.id)">
-                <UtensilsCrossed class="mr-2 h-3.5 w-3.5" />{{ categoria.nome }}<span v-if="categoryOwner(categoria.id)"
-                  class="ml-1 text-[10px]">· {{ categoryOwner(categoria.id)?.nome }}</span>
+                <UtensilsCrossed class="mr-2 h-3.5 w-3.5" />{{ categoria.nome }}
               </Button>
               <p v-if="!categorias.length" class="text-sm text-muted-foreground">Cadastre categorias de produtos antes
                 de configurar o roteamento.</p>
             </div>
-            <p class="text-xs text-muted-foreground">Para imprimir também no balcão, adicione uma saída simultânea em
-              Impressão QZ → Destinos dos pedidos.</p>
+            <p class="text-xs text-muted-foreground">Cada ponto selecionado receberá seu próprio ticket com os itens da categoria.</p>
           </div>
         </div>
         <DialogFooter><Button variant="outline" @click="pontoModal = false">Cancelar</Button><Button
