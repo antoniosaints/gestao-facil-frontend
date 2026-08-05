@@ -19,7 +19,7 @@ import {
   type RestaurantePedidoStatus,
 } from '@/repositories/restaurante-repository'
 import { formatCurrencyBR } from '@/utils/formatters'
-import { ChefHat, Clock3, RefreshCw, Search, Settings2, ShoppingBag } from 'lucide-vue-next'
+import { ChefHat, Clock3, FileTextIcon, RefreshCw, Search, Settings2, ShoppingBag } from 'lucide-vue-next'
 import { useUiStore } from '@/stores/ui/uiStore'
 
 const toast = useToast()
@@ -117,10 +117,10 @@ onMounted(() => carregar())
   <section class="space-y-4">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-2xl font-semibold tracking-tight">Restaurante</h1>
-        <p class="text-sm text-muted-foreground">
-          Acompanhe balcão, salão, retirada e delivery em uma única fila.
-        </p>
+        <h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+          <FileTextIcon class="h-6 w-6 text-primary" />Pedidos
+        </h1>
+        <p class="text-sm text-muted-foreground">Acompanhe balcão, salão, retirada e delivery em uma única fila.</p>
       </div>
       <div class="flex gap-2">
         <Button variant="outline" :disabled="loading" @click="carregar(true)"

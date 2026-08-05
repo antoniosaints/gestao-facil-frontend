@@ -210,14 +210,13 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto max-w-7xl space-y-5">
+  <section class="mx-auto space-y-5">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-start gap-3">
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><UtensilsCrossed class="h-5 w-5" /></div>
-        <div>
-          <h1 class="text-balance text-2xl font-semibold tracking-tight">Cardápio do restaurante</h1>
-          <p class="text-pretty text-sm text-muted-foreground">Escolha o que aparece para o cliente e organize sabores e complementos.</p>
-        </div>
+      <div>
+        <h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+          <UtensilsCrossed class="h-6 w-6 text-primary" />Cardápio
+        </h1>
+        <p class="text-sm text-muted-foreground">Escolha o que aparece para o cliente e organize sabores e complementos.</p>
       </div>
     </header>
 
