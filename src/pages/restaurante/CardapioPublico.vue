@@ -713,7 +713,7 @@ onBeforeUnmount(() => {
             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-emerald-100 text-emerald-700">
               <CheckCircle2 class="h-8 w-8" />
             </div>
-            <DialogHeader class="mt-5 text-center"
+            <DialogHeader class="mt-5 text-center justify-center items-center flex"
               ><DialogTitle class="menu-heading text-3xl">Pedido {{ orderResult.pedido.codigo }} recebido!</DialogTitle><DialogDescription>Agora é só acompanhar o pagamento e o preparo por este navegador.</DialogDescription></DialogHeader
             >
             <div class="mx-auto mt-7 max-w-lg space-y-4">
@@ -802,9 +802,9 @@ onBeforeUnmount(() => {
 
             <aside class="border-t bg-stone-50 p-6 dark:bg-zinc-900 lg:border-l lg:border-t-0 sm:p-7">
               <h3 class="menu-heading text-lg font-semibold">Resumo do pedido</h3>
-              <div class="mt-4 space-y-4">
-                <div v-for="item in selecionados" :key="item.id" class="flex gap-3 text-sm">
-                  <span class="brand-soft flex h-6 min-w-6 items-center justify-center rounded-md text-xs font-bold">{{ quantities[item.id] }}</span>
+              <div class="mt-4 space-y-2">
+                <div v-for="item in selecionados" :key="item.id" class="flex gap-3 text-sm bg-stone-100 p-2 border rounded-md">
+                  <span class="flex h-6 min-w-6 items-center justify-center rounded-md text-xs font-bold" :style="primaryButtonStyle">{{ quantities[item.id] }}</span>
                   <div class="min-w-0 flex-1">
                     <p class="font-medium">{{ itemName(item) }}</p>
                     <p v-if="selectedOptionNames(item).length" class="mt-0.5 text-xs text-stone-500">
@@ -814,17 +814,17 @@ onBeforeUnmount(() => {
                   <span class="price font-medium">{{ formatCurrencyBR(lineTotal(item)) }}</span>
                 </div>
               </div>
-              <Separator class="my-5" />
+              <Separator class="my-3" />
               <div v-if="quote" class="space-y-2 text-sm">
                 <div class="flex justify-between">
                   <span class="text-stone-500">Subtotal</span><span class="price">{{ formatCurrencyBR(Number(quote.subtotal)) }}</span>
                 </div>
-                <div class="flex justify-between">
+                <div v-if="origem === 'DELIVERY'" class="flex justify-between">
                   <span class="text-stone-500"
                     >Frete <small v-if="quote.zone">({{ quote.zone.nome }})</small></span
-                  ><span class="price">{{ formatCurrencyBR(Number(quote.frete)) }}</span>
+                  ><span class="price">{{ Number(quote.frete) === 0 ? 'Grátis' : formatCurrencyBR(Number(quote.frete)) }}</span>
                 </div>
-                <div class="flex justify-between pt-2 text-lg">
+                <div class="flex justify-between text-lg">
                   <strong>Total</strong><strong class="price">{{ formatCurrencyBR(Number(quote.total)) }}</strong>
                 </div>
                 <p v-if="!quote.minimumReached" class="rounded-lg bg-red-50 p-2 text-xs text-red-700">Pedido mínimo: {{ formatCurrencyBR(Number(quote.minimumOrder)) }}</p>
