@@ -141,6 +141,13 @@ const menuThemeStyle = computed<CSSProperties>(() => {
     '--app-font': theme.fonte,
   } as CSSProperties
 })
+const primaryButtonStyle = computed<CSSProperties>(() => {
+  const palette = getThemePalette(cardapio.value?.restaurante.temaPersonalizado, 'light')
+  return {
+    backgroundColor: palette.primary,
+    color: palette.primaryForeground,
+  }
+})
 const addressComplete = computed(() => origem.value === 'RETIRADA' || [form.cep.replace(/\D/g, ''), form.cidade, form.bairro, form.logradouro, form.numero].every((value) => value.trim().length > 0))
 const checkoutValid = computed(() => form.nome.trim().length >= 2 && form.telefone.replace(/\D/g, '').length >= 8 && addressComplete.value && selecionados.value.length > 0)
 const activeSelectionsValid = computed(
@@ -465,7 +472,7 @@ onBeforeUnmount(() => {
           <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div class="relative lg:w-80">
               <Search class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-              <Input v-model="searchTerm" class="h-11 rounded-xl border-0 bg-stone-100 pl-10 shadow-none focus-visible:ring-primary/30" placeholder="Buscar no cardápio" />
+              <Input v-model="searchTerm" class="h-11 rounded-xl border bg-stone-100 pl-10 shadow-none focus-visible:ring-primary/30" placeholder="Buscar no cardápio" />
             </div>
             <div class="no-scrollbar flex gap-2 overflow-x-auto pb-0.5">
               <button v-for="category in categories" :key="category.key" type="button" class="category-chip" :class="{ active: activeCategory === category.key }" @click="activeCategory = category.key">
@@ -593,7 +600,7 @@ onBeforeUnmount(() => {
                     </div>
                     <span class="text-xs text-stone-400">sem frete</span>
                   </div>
-                  <Button class="brand-button tap-button h-12 w-full rounded-xl text-base" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto h-4 w-4" /></Button>
+                  <Button class="brand-button tap-button h-12 w-full rounded-xl text-base" :style="primaryButtonStyle" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto h-4 w-4" /></Button>
                 </div>
               </div>
             </div>
@@ -654,7 +661,7 @@ onBeforeUnmount(() => {
                   <Plus class="h-4 w-4" />
                 </button>
               </div>
-              <Button class="brand-button tap-button h-12 flex-1 rounded-xl text-base" :disabled="!activeSelectionsValid" @click="saveActiveItem">
+              <Button class="tap-button h-12 flex-1 rounded-xl text-base" :style="primaryButtonStyle" :disabled="!activeSelectionsValid" @click="saveActiveItem">
                 {{ quantities[activeItem.id] ? 'Atualizar carrinho' : 'Adicionar ao carrinho' }}
                 <span class="price ml-auto">{{ formatCurrencyBR(activeUnitPrice * draftQuantity) }}</span>
               </Button>
@@ -694,7 +701,7 @@ onBeforeUnmount(() => {
           <div class="mb-1 flex items-end justify-between">
             <span class="text-sm text-stone-500">Subtotal</span><strong class="price text-xl">{{ formatCurrencyBR(estimatedSubtotal) }}</strong>
           </div>
-          <Button class="brand-button tap-button h-12 rounded-xl text-base" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto" /></Button>
+          <Button class="brand-button tap-button h-12 rounded-xl text-base" :style="primaryButtonStyle" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto" /></Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
@@ -760,7 +767,7 @@ onBeforeUnmount(() => {
                 </div>
               </section>
 
-              <section v-if="origem === 'DELIVERY'" class="space-y-4 rounded-2xl bg-stone-50 p-4 dark:bg-zinc-900">
+              <section v-if="origem === 'DELIVERY'" class="space-y-4 rounded-2xl bg-gray-100 p-4 border dark:bg-zinc-900">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 class="flex items-center gap-2 font-semibold"><MapPin class="brand-text h-4 w-4" />Endereço de entrega</h3>
@@ -829,7 +836,7 @@ onBeforeUnmount(() => {
                 </div>
                 <p v-if="origem === 'DELIVERY' && !addressComplete" class="text-xs text-stone-500">Preencha o endereço para calcular automaticamente o frete e o total.</p>
               </div>
-              <Button class="brand-button tap-button mt-5 h-12 w-full rounded-xl text-base" :disabled="sending || previewing || !checkoutValid || !quote?.minimumReached" @click="pedir"><LoaderCircle v-if="sending" class="mr-2 h-4 w-4 animate-spin" />Confirmar pedido</Button>
+              <Button class="tap-button mt-5 h-12 w-full rounded-xl text-base" :style="primaryButtonStyle" :disabled="sending || previewing || !checkoutValid || !quote?.minimumReached" @click="pedir"><LoaderCircle v-if="sending" class="mr-2 h-4 w-4 animate-spin" />Confirmar pedido</Button>
               <p class="mt-3 text-center text-[11px] leading-relaxed text-stone-400">Valores e disponibilidade são confirmados pelo restaurante antes da criação do pedido.</p>
             </aside>
           </div>
@@ -845,7 +852,7 @@ onBeforeUnmount(() => {
             <DialogDescription>Pedidos feitos neste restaurante por este navegador.</DialogDescription>
           </DialogHeader>
         </div>
-        <div class="space-y-3 p-5 sm:p-7">
+        <div class="space-y-3 p-5 sm:pb-6">
           <div v-if="historyLoading" class="flex items-center justify-center gap-2 py-12 text-sm text-stone-500"><LoaderCircle class="h-5 w-5 animate-spin" />Carregando pedidos...</div>
           <div v-else-if="!orderHistory.length" class="py-12 text-center">
             <ShoppingBag class="mx-auto mb-3 h-9 w-9 text-stone-300" />
@@ -993,7 +1000,6 @@ button.hero-action:active {
 .category-chip.active {
   color: var(--menu-accent-foreground);
   background: var(--menu-accent);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--menu-accent) 25%, transparent);
 }
 
 .product-card {
@@ -1143,7 +1149,7 @@ button.hero-action:active {
 .option-row {
   display: flex;
   width: 100%;
-  min-height: 50px;
+  min-height: 55px;
   align-items: center;
   gap: 12px;
   border-radius: 14px;
@@ -1156,12 +1162,10 @@ button.hero-action:active {
 .option-row:hover {
   background: rgba(120, 113, 108, 0.1);
 }
-.option-row:active {
-  scale: 0.99;
-}
+
 .option-row.selected {
-  background: color-mix(in srgb, var(--menu-accent) 9%, white);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--menu-accent) 42%, transparent);
+  background: color-mix(in srgb, #b9bcbc 17%, white);
+  border: 1px dashed rgb(67, 70, 68);
 }
 .option-check {
   display: flex;
@@ -1202,7 +1206,8 @@ button.hero-action:active {
   scale: 0.98;
 }
 .choice-card.selected {
-  background: color-mix(in srgb, var(--menu-accent) 9%, white);
+  background: color-mix(in srgb, #dbe0dc 26%, white);
+  border: 2px dashed rgb(29, 34, 30);
   box-shadow: inset 0 0 0 1.5px var(--menu-accent);
 }
 .choice-card.compact {
@@ -1245,7 +1250,8 @@ button.hero-action:active {
 }
 .history-order {
   border-radius: 18px;
-  padding: 16px;
+  border: 1px solid rgba(43, 37, 32, 0.08);
+  padding: 14px;
   background: color-mix(in srgb, var(--menu-accent) 3%, white);
   box-shadow: inset 0 0 0 1px rgba(43, 37, 32, 0.08);
 }
