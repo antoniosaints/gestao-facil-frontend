@@ -1,4 +1,5 @@
 import http from '@/utils/axios'
+import type { ThemeCustomization } from '@/types/schemas'
 
 export type RestaurantePapel = 'GESTOR' | 'CAIXA' | 'GARCOM' | 'COZINHA' | 'EXPEDICAO'
 export type RestauranteCapability =
@@ -54,6 +55,28 @@ export interface RestaurantePedido {
     nomeSnapshot: string
     quantidade: string | number
     subtotalSnapshot: string | number
+  }>
+}
+
+export interface RestaurantePublicOrderTracking {
+  codigo: string
+  origem: 'RETIRADA' | 'DELIVERY' | 'MESA'
+  status: RestaurantePedidoStatus
+  producaoStatus: string
+  pagamentoStatus: string
+  entregaStatus: string
+  subtotal: string | number
+  frete: string | number
+  total: string | number
+  createdAt: string
+  updatedAt: string
+  concluidoAt?: string | null
+  canceladoAt?: string | null
+  itens: Array<{
+    nomeSnapshot: string
+    quantidade: string | number
+    subtotalSnapshot: string | number
+    selecoesSnapshotJson?: unknown
   }>
 }
 
@@ -330,6 +353,7 @@ export class RestauranteRepository {
         pagamentoOnlineAtivo: boolean
         pagamentoNaEntregaAtivo: boolean
         modoFrete: 'FIXO' | 'ZONAS'
+        temaPersonalizado?: Partial<ThemeCustomization> | null
       }
       itens: any[]
     }
@@ -349,14 +373,7 @@ export class RestauranteRepository {
 
   static async acompanharPedido(token: string) {
     const { data } = await http.get(`/v1/restaurante/publico/pedidos/${token}`)
-    return data.data as {
-      codigo: string
-      status: RestaurantePedidoStatus
-      producaoStatus: string
-      pagamentoStatus: string
-      entregaStatus: string
-      updatedAt: string
-    }
+    return data.data as RestaurantePublicOrderTracking
   }
 
   static async pedidos(params: { page?: number; limit?: number; status?: string } = {}) {
@@ -415,8 +432,6 @@ export class RestauranteRepository {
       : await http.post('/v1/restaurante/grupos-opcoes', payload)
     return response.data.data as RestauranteGrupoOpcao
   }
-
-
   static async zonasEntrega() {
     const { data } = await http.get('/v1/restaurante/zonas-entrega')
     return data.data as RestauranteZonaEntrega[]
