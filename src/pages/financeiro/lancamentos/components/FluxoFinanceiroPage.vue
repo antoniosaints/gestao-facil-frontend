@@ -90,6 +90,7 @@ type LancamentoDia = {
   uid: string
   parcelaId: number
   numero: number
+  totalParcelas: number
   descricao: string
   categoria: string
   cliente: string | null
@@ -830,7 +831,9 @@ onMounted(async () => {
                             v-if="item.cliente"> • {{ item.cliente }}</span>
                         </p>
                         <p class="truncate text-[11px] text-muted-foreground">
-                          Parcela {{ item.numero === 0 ? 'Entrada' : item.numero }} • Venc. {{ format(new
+                          Parcela {{ item.numero === 0 ? 'Entrada' : `${item.numero} de ${item.totalParcelas}` }}
+                           • Venc. 
+                           {{ format(new
                             Date(item.vencimento), 'dd/MM/yyyy', { locale: ptBR }) }}
                           <span v-if="item.dataPagamento"> • Pgto {{ format(new Date(item.dataPagamento), 'dd/MM/yyyy',
                             { locale: ptBR }) }}</span>
@@ -1061,7 +1064,7 @@ onMounted(async () => {
           </div>
           <div class="text-right">
             <p class="text-sm font-medium text-foreground">
-              {{ eventoSelecionado.numero === 0 ? 'Entrada' : `Parcela ${eventoSelecionado.numero}` }}
+              {{ eventoSelecionado.numero === 0 ? 'Entrada' : `Parcela ${eventoSelecionado.numero} de ${eventoSelecionado.totalParcelas}` }}
             </p>
             <p class="text-xs text-muted-foreground">{{ eventoSelecionado.uid }}</p>
           </div>

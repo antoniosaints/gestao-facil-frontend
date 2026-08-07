@@ -11,6 +11,7 @@ import {
   FlagTriangleRight,
   Loader,
   MessageCircle,
+  Repeat,
   Tag,
   TrendingDown,
   TrendingUp,
@@ -146,6 +147,11 @@ export const columnsLancamentos: ColumnDef<
       if (pendentes > 0 && row.original.recorrente) {
         const percentual = Math.round((efetivadas / parcelas.length) * 100)
         label = `${efetivadas}/${parcelas.length} ${percentual}%`
+      }
+
+      if (row.original.recorrencia?.ativo) {
+        icon = Repeat
+        label = `FIXA (${efetivadas}/${parcelas.length})`
       }
 
       if (hasOverdue) {
