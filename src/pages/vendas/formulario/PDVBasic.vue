@@ -1,51 +1,68 @@
 <template>
-    <div :class="['relative', { 'pdv-basic-pro': proMode }]">
-        <div v-if="proMode && !caixaStore.caixaAtivo?.id"
-            class="absolute inset-0 z-30 flex items-center justify-center rounded bg-background/90 p-6 backdrop-blur-sm">
-            <div class="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-2xl">
-                <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
-                    <MonitorDown class="h-7 w-7" />
-                </div>
-                <h2 class="mt-4 text-2xl font-black tracking-tight">Caixa fechado</h2>
-                <p class="mt-2 text-sm text-muted-foreground">
-                    Abra um caixa para liberar a busca de produtos, o carrinho e a finalizacao da venda.
-                </p>
-                <div class="mt-5 grid gap-2 sm:grid-cols-2">
-                    <Button type="button" class="h-11 text-white" @click="abrirModalCaixa">
-                        <MonitorDown class="h-4 w-4" />
-                        Abrir caixa
-                    </Button>
-                    <Button type="button" variant="outline" class="h-11" :disabled="caixaStore.loading"
-                        @click="caixaStore.loadContexto()">
-                        Atualizar
-                    </Button>
-                </div>
-            </div>
+  <div :class="['relative', { 'pdv-basic-pro': proMode }]">
+    <div
+      v-if="proMode && !caixaStore.caixaAtivo?.id"
+      class="absolute inset-0 z-30 flex items-center justify-center rounded bg-background/90 p-6 backdrop-blur-sm"
+    >
+      <div
+        class="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-2xl"
+      >
+        <div
+          class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary"
+        >
+          <MonitorDown class="h-7 w-7" />
         </div>
-        <div class="flex flex-col xl:flex-row gap-4 xl:max-h-[calc(100vh-8rem)] rounded">
-            <!-- Área Principal - Produtos -->
-            <div class="flex-1 flex flex-col">
-                <!-- Header -->
-                <div class="mb-6 flex flex-col">
-                    <div class="flex items-center justify-between">
-                        <h2 v-if="!proMode"
-                            class="text-xl md:text-2xl font-bold text-black dark:text-white flex items-center justify-between gap-2">
-                            <div class="flex items-center">
-                                <MonitorDown class="w-6 h-6 mr-2 inline-flex" :stroke-width="2.5" />
-                                <span class="uppercase">
-                                    PONTO DE VENDA
-                                </span>
-                                <span class="text-xs ml-2 bg-card rounded-xl px-2 flex items-center uppercase">
-                                    {{ caixaStore.caixaAtivo?.codigo || 'Sem caixa' }}
-                                    <Dot class="w-8 h-7 inline-flex"
-                                        :class="[caixaStore.caixaAtivo ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']" />
-                                    <span>
-                                        {{ caixaStore.caixaAtivo?.status || 'FECHADO' }}
-                                    </span>
-                                </span>
-                            </div>
-                        </h2>
-                        <!-- <div class="flex items-center gap-2">
+        <h2 class="mt-4 text-2xl font-black tracking-tight">Caixa fechado</h2>
+        <p class="mt-2 text-sm text-muted-foreground">
+          Abra um caixa para liberar a busca de produtos, o carrinho e a finalizacao da venda.
+        </p>
+        <div class="mt-5 grid gap-2 sm:grid-cols-2">
+          <Button type="button" class="h-11 text-white" @click="abrirModalCaixa">
+            <MonitorDown class="h-4 w-4" />
+            Abrir caixa
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            class="h-11"
+            :disabled="caixaStore.loading"
+            @click="caixaStore.loadContexto()"
+          >
+            Atualizar
+          </Button>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-col xl:flex-row gap-4 xl:max-h-[calc(100vh-8rem)] rounded">
+      <!-- Área Principal - Produtos -->
+      <div class="flex-1 flex flex-col">
+        <!-- Header -->
+        <div class="mb-6 flex flex-col">
+          <div class="flex items-center justify-between">
+            <h2
+              v-if="!proMode"
+              class="text-xl md:text-2xl font-bold text-black dark:text-white flex items-center justify-between gap-2"
+            >
+              <div class="flex items-center">
+                <MonitorDown class="w-6 h-6 mr-2 inline-flex" :stroke-width="2.5" />
+                <span class="uppercase"> PONTO DE VENDA </span>
+                <span class="text-xs ml-2 bg-card rounded-xl px-2 flex items-center uppercase">
+                  {{ caixaStore.caixaAtivo?.codigo || 'Sem caixa' }}
+                  <Dot
+                    class="w-8 h-7 inline-flex"
+                    :class="[
+                      caixaStore.caixaAtivo
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400',
+                    ]"
+                  />
+                  <span>
+                    {{ caixaStore.caixaAtivo?.status || 'FECHADO' }}
+                  </span>
+                </span>
+              </div>
+            </h2>
+            <!-- <div class="flex items-center gap-2">
                             <DropdownMenu>
                                 <DropdownMenuTrigger class="rounded-xl" as-child>
                                     <Button variant="outline" class="h-8 px-4 text-blue-600 dark:text-blue-200">
@@ -78,18 +95,23 @@
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div> -->
-                    </div>
-                    <!-- Barra de Busca -->
-                    <div class="relative">
-                        <input ref="searchInputField" v-model="searchTerm" @keyup.enter="quickAddCard" type="text"
-                            placeholder="Buscar por nome ou código..."
-                            class="w-full px-3 py-2 mt-2 rounded border bg-background focus:outline outline-primary" />
-                    </div>
-                </div>
+          </div>
+          <!-- Barra de Busca -->
+          <div class="relative">
+            <input
+              ref="searchInputField"
+              v-model="searchTerm"
+              @keyup.enter="quickAddCard"
+              type="text"
+              placeholder="Buscar por nome ou código..."
+              class="w-full px-3 py-2 mt-2 rounded border bg-background focus:outline outline-primary"
+            />
+          </div>
+        </div>
 
-                <!-- Grid de Produtos -->
-                <div class="flex-1 overflow-y-auto scrollbar-thin">
-                    <!-- <div v-if="!Number(pdvId)"
+        <!-- Grid de Produtos -->
+        <div class="flex-1 overflow-y-auto scrollbar-thin">
+          <!-- <div v-if="!Number(pdvId)"
                         class="text-center text-gray-500 dark:text-gray-400 h-[calc(100vh-24rem)] py-8 gap-2 flex flex-col justify-center items-center">
                         <MonitorCog class="w-16 h-16 inline-flex" />
                         <h1>Selecione um PDV para listar os produtos</h1>
@@ -102,7 +124,7 @@
                             </span>
                         </RouterLink>
                     </div> -->
-                    <!-- <div v-if="!Number(caixaId)"
+          <!-- <div v-if="!Number(caixaId)"
                         class="text-center text-gray-500 dark:text-gray-400 h-[calc(100vh-24rem)] py-8 gap-2 flex flex-col justify-center items-center">
                         <MonitorCog class="w-16 h-16 inline-flex" />
                         <h1>Selecione um caixa para listar os produtos</h1>
@@ -127,710 +149,1041 @@
                             </span>
                         </RouterLink>
                     </div> -->
-                    <div v-if="products.length"
-                        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                        <div v-for="p in products" :key="`${p.tipoItem || 'PRODUTO'}:${p.id}`"
-                            class="border border-border bg-background shadow-md rounded p-3 card-hover cursor-pointer product-card flex flex-col justify-between"
-                            data-product-id="${product.id}">
-                            <div class="text-center">
-                                <div
-                                    class="w-16 h-16 mx-auto mb-2 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground overflow-hidden">
-                                    <img v-if="p.imagem" :src="resolveFileUrl(p.imagem)" :alt="p.nome"
-                                        class="w-full h-full object-cover" loading="lazy" />
-                                    <Package v-else class="w-8 h-8" />
-                                </div>
-                                <div class="text-center flex flex-col">
-                                    <h3 class="text-gray-800 dark:text-white text-xs">
-                                        {{ `${p.nome}${p.nomeVariante ? ` / ${p.nomeVariante}` : ''}` }}
-                                    </h3>
-                                    <!-- <p class="text-gray-500 dark:text-gray-400 text-xs">Cód: {{ p.code }}</p> -->
-                                    <p v-if="p.controlaEstoque" class="text-xs"
-                                        :class="[p.estoque === 0 ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400']">
-                                        Estoque: {{ p.estoque }} {{ p.unidade }}</p>
-                                    <p v-else class="text-xs text-gray-500 dark:text-gray-400">Estoque livre
-                                    </p>
-                                    <p class="text-md font-bold text-green-600 dark:text-green-400">
-                                        {{ formatCurrencyBR(p.preco) }}
-                                    </p>
-                                </div>
-                            </div>
-                            <button @click="adicionarAoCarrinho(p)"
-                                class="w-full bg-primary hover:bg-blue-700 text-white text-sm py-2 px-3 rounded transition-colors">
-                                <i class="fas fa-plus mr-1"></i>
-                                Adicionar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Carrinho Lateral -->
+          <div
+            v-if="products.length"
+            class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+          >
             <div
-                class="overflow-auto max-w-full md:mt-0 xl:max-w-md min-w-md w-full justify-between border-border bg-background shadow-md rounded p-4 border flex flex-col">
-                <!-- Header do Carrinho -->
-                <div>
-                    <div class="md:p-2 md:border-b border-gray-200 dark:border-gray-700">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-xl font-semibold flex items-center gap-2">
-                                <ShoppingCart class="w-6 h-6 inline-flex" />
-                                Carrinho
-                                <span v-if="proMode"
-                                    class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-                                    {{ quantidadeItens }} item(ns)
-                                </span>
-                            </h2>
-                            <button @click="limparCarrinho" :title="cart.length ? 'Limpar carrinho' : 'Carrinho vazio'"
-                                class="text-red-500 dark:text-red-300 bg-red-100 px-3 py-1 rounded-md bg-red-10 dark:bg-red-900">
-                                <i class="fas fa-trash text-sm"></i>
-                            </button>
-                        </div>
-
-                        <!-- Seleção de Cliente -->
-                        <div class="grid grid-cols-7 gap-2">
-                            <Select2Ajax ref="clienteSelectRef" class="col-span-6" placeholder="Selecione o cliente"
-                                :url="'/clientes/select2'" v-model:model-value="cliente" :allowClear="true" />
-                            <button type="button" @click="abrirCadastroClientePdv"
-                                class="bg-primary px-2 text-white rounded border border-border dark:border-border-dark flex justify-center items-center">
-                                <UserPlus class="w-5 inline-flex" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Lista de Itens do Carrinho -->
-                    <div class="min-h-52 max-h-[calc(100vh-31rem)] overflow-y-auto scrollbar-thin md:p-2">
-                        <div class="mt-1">
-                            <div v-if="!cart.length" class="text-center text-gray-500 dark:text-gray-400 py-8">
-                                <i class="fas fa-shopping-cart text-4xl mb-3 opacity-50"></i>
-                                <p>Carrinho vazio</p>
-                                <p class="text-sm">Adicione produtos para começar</p>
-                            </div>
-                            <div v-for="item in cart" :key="`${item.tipoItem || 'PRODUTO'}:${item.id}`"
-                                class="border bg-card dark:bg-gray-800 shadow-md rounded p-1 mb-3">
-                                <div class="flex justify-between items-start">
-                                    <h4 class="text-xs text-gray-800 dark:text-white p-1 truncate">
-                                        {{ `${item.nome}${item.nomeVariante ? ` / ${item.nomeVariante}` : ''}` }}
-                                    </h4>
-                                    <button type="button" title="Remover item" @click="atualizarQuantidade(item.id!, 0, item.tipoItem || 'PRODUTO')"
-                                        class="text-red-500 hover:text-red-700 text-sm">
-                                        <SquareX />
-                                    </button>
-                                </div>
-                                <div class="flex items-center justify-between px-2">
-                                    <div class="flex items-center space-x-2">
-                                        <button type="button" title="Diminuir quantidade"
-                                            @click="atualizarQuantidade(item.id!, item.quantity - 1, item.tipoItem || 'PRODUTO')"
-                                            class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">-</button>
-                                        <span class="text-sm font-medium">{{ item.quantity }}</span>
-                                        <button type="button" title="Aumentar quantidade"
-                                            @click="atualizarQuantidade(item.id!, item.quantity + 1, item.tipoItem || 'PRODUTO')"
-                                            class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs">+</button>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-xs text-gray-500">
-                                            {{ formatCurrencyBR(item.preco) }}
-                                        </p>
-                                        <p class="font-bold text-sm">
-                                            {{ formatCurrencyBR((Number(item.preco) * item.quantity)) }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+              v-for="p in products"
+              :key="`${p.tipoItem || 'PRODUTO'}:${p.id}`"
+              class="border border-border bg-background shadow-md rounded p-3 card-hover cursor-pointer product-card flex flex-col justify-between"
+              data-product-id="${product.id}"
+            >
+              <div class="text-center">
+                <div
+                  class="w-16 h-16 mx-auto mb-2 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground overflow-hidden"
+                >
+                  <img
+                    v-if="p.imagem"
+                    :src="resolveFileUrl(p.imagem)"
+                    :alt="p.nome"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <Package v-else class="w-8 h-8" />
                 </div>
-
-                <!-- Footer do Carrinho -->
-                <div class="px-4 py-2 border-border dark:border-border-dark bg-background border-t">
-                    <!-- Totais -->
-                    <div v-if="proMode" class="mb-3 rounded-xl border border-border bg-card/70 p-3">
-                        <div class="grid grid-cols-3 gap-2 text-xs">
-                            <div class="rounded-lg bg-background p-2">
-                                <span class="block text-muted-foreground">Itens</span>
-                                <strong class="text-base">{{ quantidadeItens }}</strong>
-                            </div>
-                            <div class="rounded-lg bg-background p-2">
-                                <span class="block text-muted-foreground">Desconto</span>
-                                <strong class="text-base text-red-500">{{ formatCurrencyBR(discount) }}</strong>
-                            </div>
-                            <div class="rounded-lg bg-background p-2">
-                                <span class="block text-muted-foreground">Pagamento</span>
-                                <strong class="text-base">{{ getPaymentMethodLabel(paymentMethod) }}</strong>
-                            </div>
-                        </div>
-                        <div class="mt-3 rounded-xl bg-primary/10 p-3">
-                            <div class="flex items-center justify-between text-xs font-semibold text-primary">
-                                <span>Total da venda</span>
-                                <span>{{ caixaStore.caixaAtivo?.codigo || 'Caixa fechado' }}</span>
-                            </div>
-                            <div class="mt-1 text-3xl font-black tracking-tight text-primary">
-                                {{ formatCurrencyBR(total) }}
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="mb-2">
-                        <div class="flex justify-between text-sm">
-                            <span>Subtotal:</span>
-                            <span id="subtotal">R$ {{ resumoVenda.subtotal.toFixed(2).replace('.', ',') }}</span>
-                        </div>
-                        <div class="flex justify-between text-sm text-muted-foreground">
-                            <span>Desconto:</span>
-                            <span id="discount">R$ {{ resumoVenda.discount.toFixed(2).replace('.', ',') }}</span>
-                        </div>
-                        <div class="flex justify-between text-lg font-semibold">
-                            <span>Total:</span>
-                            <span id="total">R$ {{ total.toFixed(2).replace('.', ',') }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Forma de Pagamento -->
-                    <div class="mb-4 flex flex-col gap-2">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-white">Pagamento</label>
-                        <div v-if="proMode" class="grid grid-cols-2 gap-2">
-                            <button v-for="metodo in metodosPagamentoRapido" :key="metodo.value" type="button"
-                                class="flex min-h-16 items-center gap-2 rounded-xl border p-3 text-left transition hover:border-primary hover:bg-primary/5"
-                                :class="paymentMethod === metodo.value
-                                    ? 'border-primary bg-primary/10 text-primary shadow-sm'
-                                    : 'border-border bg-background text-foreground'"
-                                @click="selecionarPagamento(metodo.value)">
-                                <component :is="metodo.icon" class="h-5 w-5 shrink-0" />
-                                <span class="min-w-0">
-                                    <span class="block text-sm font-bold">{{ metodo.label }}</span>
-                                    <span class="block truncate text-[11px] text-muted-foreground">{{ metodo.hint }}</span>
-                                </span>
-                            </button>
-                        </div>
-                        <div v-else class="grid grid-cols-8 md:grid-cols-8 gap-2">
-                            <div class="col-span-6">
-                                <Select v-model="paymentMethod">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Pagamento" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="DINHEIRO">
-                                            Dinheiro
-                                        </SelectItem>
-                                        <SelectItem value="CARTAO">
-                                            Cartão
-                                        </SelectItem>
-                                        <SelectItem value="CREDIARIO">
-                                            Crediário
-                                        </SelectItem>
-                                        <SelectItem value="PIX">
-                                            PIX
-                                        </SelectItem>
-                                        <SelectItem value="BOLETO">
-                                            Boleto
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <Button type="button" variant="outline"
-                                class="bg-success hover:bg-success text-white hover:text-white"
-                                @click="openModalAcoes = true">
-                                <HandCoins />
-                            </Button>
-                            <Button type="button" class="text-white" @click="openModalDesconto = true">
-                                <CirclePercent />
-                            </Button>
-                        </div>
-
-                        <div class="space-y-2" v-if="paymentMethod === 'DINHEIRO'">
-                            <Input :required="paymentMethod === 'DINHEIRO'" v-model="(receivedAmount as string)"
-                                v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="Valor recebido do cliente" />
-                            <div class="flex justify-between text-sm font-medium">
-                                <span>Troco:</span>
-                                <span>{{ formatCurrencyBR(change) }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Botões de finalização -->
-                    <p v-if="proMode && !podeFinalizarPDV"
-                        class="mb-2 rounded-lg border border-dashed border-border bg-muted/30 p-2 text-xs text-muted-foreground">
-                        {{ !caixaStore.caixaAtivo?.id ? 'Abra o caixa para finalizar vendas.' : 'Adicione itens ao carrinho para finalizar.' }}
-                    </p>
-                    <div class="flex flex-col gap-2 sm:flex-row">
-                        <Button @click="finalizarVendaPDV()"
-                            class="w-full text-white py-3 px-4 rounded-lg transition-colors"
-                            :class="proMode ? 'h-12 text-base font-bold' : 'h-10 text-sm'"
-                            :disabled="!podeFinalizarPDV">
-                            <ShoppingBasket />
-                            Finalizar venda
-                        </Button>
-                        <Button type="button" variant="outline"
-                            class="w-full sm:w-auto flex items-center justify-center rounded-lg gap-2"
-                            :class="proMode ? 'h-12 px-4' : 'h-10'"
-                            :disabled="!podeFinalizarPDV"
-                            @click="finalizarVendaPDV({ print: true })">
-                            <Printer class="w-4 h-4" />
-                            <span class="text-sm">Finalizar e imprimir</span>
-                        </Button>
-                    </div>
+                <div class="text-center flex flex-col">
+                  <h3 class="text-gray-800 dark:text-white text-xs">
+                    {{ `${p.nome}${p.nomeVariante ? ` / ${p.nomeVariante}` : ''}` }}
+                  </h3>
+                  <!-- <p class="text-gray-500 dark:text-gray-400 text-xs">Cód: {{ p.code }}</p> -->
+                  <p
+                    v-if="p.controlaEstoque"
+                    class="text-xs"
+                    :class="[
+                      p.estoque === 0
+                        ? 'text-red-500 dark:text-red-400'
+                        : 'text-blue-500 dark:text-blue-400',
+                    ]"
+                  >
+                    Estoque: {{ p.estoque }} {{ p.unidade }}
+                  </p>
+                  <p v-else class="text-xs text-gray-500 dark:text-gray-400">Estoque livre</p>
+                  <p class="text-md font-bold text-green-600 dark:text-green-400">
+                    {{ formatCurrencyBR(p.preco) }}
+                  </p>
                 </div>
+              </div>
+              <button
+                @click="adicionarAoCarrinho(p)"
+                class="w-full bg-primary hover:bg-blue-700 text-white text-sm py-2 px-3 rounded transition-colors"
+              >
+                <i class="fas fa-plus mr-1"></i>
+                Adicionar
+              </button>
             </div>
+          </div>
         </div>
-        <ModalView v-model:open="openModalCrediario" title="Configurar crediário"
-            description="Defina as condições do financeiro pendente antes de finalizar a venda." size="md">
-            <div class="space-y-4 p-4">
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div class="space-y-1">
-                        <label class="text-sm font-medium">Quantidade de parcelas</label>
-                        <Input v-model.number="crediarioParcelas" type="number" min="1" max="36" />
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-sm font-medium">Data da primeira parcela</label>
-                        <Calendarpicker v-model="crediarioPrimeiroVencimento" :teleport="true" />
-                    </div>
-                </div>
-                <div class="rounded-lg border border-border bg-card p-3 text-sm">
-                    <div class="flex justify-between">
-                        <span>Total da venda</span>
-                        <strong>{{ formatCurrencyBR(total) }}</strong>
-                    </div>
-                    <div class="mt-1 flex justify-between text-muted-foreground">
-                        <span>Valor aproximado por parcela</span>
-                        <span>{{ formatCurrencyBR(valorParcelaCrediario) }}</span>
-                    </div>
-                </div>
-                <div class="flex justify-end gap-2">
-                    <Button type="button" variant="outline" @click="openModalCrediario = false">
-                        Cancelar
-                    </Button>
-                    <Button type="button" class="text-white" @click="confirmarCrediarioEFinalizar">
-                        Finalizar no crediário
-                    </Button>
-                </div>
+      </div>
+
+      <!-- Carrinho Lateral -->
+      <div
+        class="overflow-auto max-w-full md:mt-0 xl:max-w-md min-w-md w-full justify-between border-border bg-background shadow-md rounded p-4 border flex flex-col"
+      >
+        <!-- Header do Carrinho -->
+        <div>
+          <div class="md:p-2 md:border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-semibold flex items-center gap-2">
+                <ShoppingCart class="w-6 h-6 inline-flex" />
+                Carrinho
+                <span
+                  v-if="proMode"
+                  class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary"
+                >
+                  {{ quantidadeItens }} item(ns)
+                </span>
+              </h2>
+              <button
+                @click="limparCarrinho"
+                :title="cart.length ? 'Limpar carrinho' : 'Carrinho vazio'"
+                class="text-red-500 dark:text-red-300 bg-red-100 px-3 py-1 rounded-md bg-red-10 dark:bg-red-900"
+              >
+                <i class="fas fa-trash text-sm"></i>
+              </button>
             </div>
-        </ModalView>
 
-        <ModalView v-model:open="openModalVendaFinalizada" title="Comprovante da venda"
-            description="Ticket da venda pronto para imprimir, baixar ou enviar." size="2xl">
-            <div class="p-4 space-y-4">
-                
-                <div class="mx-auto w-full rounded-3xl border border-dashed border-border bg-card px-6 py-5 shadow-sm">
-                    <div class="flex flex-col items-center text-center space-y-2">
-                        <div
-                            class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
-                            <i class="fas fa-check text-2xl text-green-600 dark:text-green-300"></i>
-                        </div>
-                    </div>
-                    <div class="text-center font-mono text-xs text-muted-foreground">
-                        <p class="text-lg font-semibold tracking-[0.25em] text-foreground">COMPROVANTE</p>
-                        <p class="mt-1">Venda finalizada com sucesso</p>
-                        <p>{{ vendaRecibo?.createdAt ? new Date(vendaRecibo.createdAt).toLocaleString('pt-BR') : '—' }}</p>
-                    </div>
-
-                    <div class="my-4 border-t border-dashed border-border"></div>
-
-                    <div class="space-y-1 font-mono text-sm text-foreground">
-                        <div class="flex items-center justify-between gap-3">
-                            <span>Venda</span>
-                            <span class="font-semibold">{{ vendaRecibo?.uid || `#${vendaRecibo?.id}` }}</span>
-                        </div>
-                        <div class="flex items-center justify-between gap-3">
-                            <span>Pagamento</span>
-                            <span>{{ getPaymentMethodLabel(vendaRecibo?.paymentMethod) }}</span>
-                        </div>
-                        <div class="flex items-center justify-between gap-3">
-                            <span>Itens</span>
-                            <span>{{ vendaRecibo?.itemCount || 0 }}</span>
-                        </div>
-                    </div>
-
-                    <div class="my-4 border-t border-dashed border-border"></div>
-
-                    <div class="space-y-3 font-mono text-sm text-foreground">
-                        <div v-if="vendaRecibo?.items?.length" class="space-y-2">
-                            <div v-for="item in vendaRecibo.items" :key="item.id" class="space-y-1">
-                                <div class="truncate font-medium max-w-[25rem]">{{ item.label }}</div>
-                                <div class="flex items-center justify-between gap-3 text-muted-foreground">
-                                    <span>{{ item.quantity }}x {{ formatCurrencyBR(item.unitPrice) }}</span>
-                                    <span>{{ formatCurrencyBR(item.total) }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div v-else class="text-center text-muted-foreground">
-                            Nenhum item disponível para o comprovante.
-                        </div>
-                    </div>
-
-                    <div class="my-4 border-t border-dashed border-border"></div>
-
-                    <div class="space-y-1 font-mono text-xs text-foreground">
-                        <div class="flex items-center justify-between gap-3">
-                            <span>Subtotal</span>
-                            <span>{{ formatCurrencyBR(vendaRecibo?.subtotal || 0) }}</span>
-                        </div>
-                        <div v-if="(vendaRecibo?.discount || 0) > 0" class="flex items-center justify-between gap-3">
-                            <span>Desconto</span>
-                            <span>- {{ formatCurrencyBR(vendaRecibo?.discount || 0) }}</span>
-                        </div>
-                        <div v-if="vendaRecibo?.paymentMethod === 'DINHEIRO'" class="flex items-center justify-between gap-3">
-                            <span>Recebido</span>
-                            <span>{{ formatCurrencyBR(vendaRecibo?.receivedAmount || 0) }}</span>
-                        </div>
-                        <div v-if="(vendaRecibo?.change || 0) > 0" class="flex items-center justify-between gap-3">
-                            <span>Troco</span>
-                            <span>{{ formatCurrencyBR(vendaRecibo?.change || 0) }}</span>
-                        </div>
-                        <div class="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-border pt-2 text-sm font-semibold">
-                            <span>Total</span>
-                            <span class="text-emerald-600 dark:text-emerald-400">{{ formatCurrencyBR(vendaRecibo?.total || 0) }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <Card class="border-border/70 shadow-sm rounded-2xl">
-                    <CardHeader class="py-2 px-5 -mb-4">
-                        <CardTitle class="text-base">Destino do envio</CardTitle>
-                    </CardHeader>
-                    <CardContent class="space-y-1 px-4 py-3">
-                        <div class="grid grid-cols-12 gap-2">
-                            <Select2Ajax class="col-span-10 md:col-span-11" placeholder="Selecione o cliente" :url="'/clientes/select2'"
-                                v-model:model-value="clienteEnvio" :allowClear="true" />
-                            <Button type="Button" @click="abrirCadastroClienteEnvio"
-                                class="bg-primary px-2 col-span-2 md:col-span-1 text-white w-full border border-border dark:border-border-dark flex justify-center items-center">
-                                <UserPlus :stroke-width="2.5" class="w-5 h-5 inline-flex" />
-                            </Button>
-                        </div>
-                        <p class="text-xs text-muted-foreground pl-1">
-                            Número para envio:
-                            <span class="text-foreground">
-                                {{ numeroPreview || 'Selecione um cliente com telefone/WhatsApp' }}
-                            </span>
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <div class="grid grid-cols-1 gap-2 sm:grid-cols-[1.35fr_1fr_1fr_1fr]">
-                    <Button type="button" class="text-white" @click="novaVendaAposComprovante">
-                        <PlusCircleIcon class="w-4 h-4 mr-2" />
-                        Nova venda
-                    </Button>
-                    <Button type="button" variant="outline" class="h-9" @click="imprimirComprovante"
-                        :disabled="!vendaRecibo?.id || printingCupom">
-                        <Printer class="w-4 h-4 mr-2" />
-                        {{ printingCupom ? 'Imprimindo...' : 'Imprimir' }}
-                    </Button>
-                    <Button type="button" variant="outline" class="h-9" @click="baixarComprovantePdf"
-                        :disabled="!vendaRecibo?.id || downloadingCupom">
-                        <Download class="w-4 h-4 mr-2" />
-                        {{ downloadingCupom ? 'Gerando...' : 'Baixar PDF' }}
-                    </Button>
-                    <Button type="button" class="h-9 text-white" @click="openModalSelecionarEnvio"
-                        :disabled="!vendaRecibo?.id">
-                        <Send class="w-4 h-4 mr-2" />
-                        Enviar
-                    </Button>
-                </div>
+            <!-- Seleção de Cliente -->
+            <div class="grid grid-cols-7 gap-2">
+              <Select2Ajax
+                ref="clienteSelectRef"
+                class="col-span-6"
+                placeholder="Selecione o cliente"
+                :url="'/clientes/select2'"
+                v-model:model-value="cliente"
+                :allowClear="true"
+              />
+              <button
+                type="button"
+                @click="abrirCadastroClientePdv"
+                class="bg-primary px-2 text-white rounded border border-border dark:border-border-dark flex justify-center items-center"
+              >
+                <UserPlus class="w-5 inline-flex" />
+              </button>
             </div>
-        </ModalView>
-        <ModalEnvioComprovante v-model:open="openModalEnvioComprovante" :venda-id="vendaRecibo?.id"
-            :uid="vendaRecibo?.uid" :total="vendaRecibo?.total" :cliente-id="clienteEnvio" />
-        <ModalEnvioComprovante v-model:open="openModalComprovanteCaixa" :venda-id="vendaComprovanteCaixa?.id"
-            :uid="vendaComprovanteCaixa?.uid" :total="vendaComprovanteCaixa?.total"
-            :cliente-id="vendaComprovanteCaixa?.clienteId" />
-        <ModalView v-model:open="openModalDesconto" title="Aplicar desconto"
-            description="Informe o desconto a ser aplicado" size="sm">
-            <!-- Desconto (PDV PRO): otimizado para uso apenas com o teclado -->
-            <div v-if="proMode" class="px-4 gap-4 flex flex-col" @keydown.enter.prevent="aplicarDesconto">
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" @click="definirTipoDesconto('percentage')"
-                        class="flex flex-col items-center gap-1 rounded-lg border py-3 transition"
-                        :class="discountType === 'percentage'
-                            ? 'border-primary bg-primary/10 text-primary font-semibold'
-                            : 'border-border hover:bg-secondary/60'">
-                        <CirclePercent class="w-5 h-5" />
-                        <span class="text-sm">Percentual (%)</span>
-                    </button>
-                    <button type="button" @click="definirTipoDesconto('value')"
-                        class="flex flex-col items-center gap-1 rounded-lg border py-3 transition"
-                        :class="discountType === 'value'
-                            ? 'border-primary bg-primary/10 text-primary font-semibold'
-                            : 'border-border hover:bg-secondary/60'">
-                        <HandCoins class="w-5 h-5" />
-                        <span class="text-sm">Valor (R$)</span>
-                    </button>
-                </div>
+          </div>
 
+          <!-- Lista de Itens do Carrinho -->
+          <div class="min-h-52 max-h-[calc(100vh-31rem)] overflow-y-auto scrollbar-thin md:p-2">
+            <div class="mt-1">
+              <div v-if="!cart.length" class="text-center text-gray-500 dark:text-gray-400 py-8">
+                <i class="fas fa-shopping-cart text-4xl mb-3 opacity-50"></i>
+                <p>Carrinho vazio</p>
+                <p class="text-sm">Adicione produtos para começar</p>
+              </div>
+              <div
+                v-for="item in cart"
+                :key="`${item.tipoItem || 'PRODUTO'}:${item.id}`"
+                class="border bg-card dark:bg-gray-800 shadow-md rounded p-1 mb-3"
+              >
+                <div class="flex justify-between items-start">
+                  <h4 class="text-xs text-gray-800 dark:text-white p-1 truncate">
+                    {{ `${item.nome}${item.nomeVariante ? ` / ${item.nomeVariante}` : ''}` }}
+                  </h4>
+                  <button
+                    type="button"
+                    title="Remover item"
+                    @click="atualizarQuantidade(item.id!, 0, item.tipoItem || 'PRODUTO')"
+                    class="text-red-500 hover:text-red-700 text-sm"
+                  >
+                    <SquareX />
+                  </button>
+                </div>
+                <div class="flex items-center justify-between px-2">
+                  <div class="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      title="Diminuir quantidade"
+                      @click="
+                        atualizarQuantidade(item.id!, item.quantity - 1, item.tipoItem || 'PRODUTO')
+                      "
+                      class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs"
+                    >
+                      -
+                    </button>
+                    <span class="text-sm font-medium">{{ item.quantity }}</span>
+                    <button
+                      type="button"
+                      title="Aumentar quantidade"
+                      @click="
+                        atualizarQuantidade(item.id!, item.quantity + 1, item.tipoItem || 'PRODUTO')
+                      "
+                      class="w-6 h-6 bg-gray-300 dark:bg-gray-900 rounded text-xs"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xs text-gray-500">
+                      {{ formatCurrencyBR(item.preco) }}
+                    </p>
+                    <p class="font-bold text-sm">
+                      {{ formatCurrencyBR(Number(item.preco) * item.quantity) }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer do Carrinho -->
+        <div class="px-4 py-2 border-border dark:border-border-dark bg-background border-t">
+          <!-- Totais -->
+          <div v-if="proMode" class="mb-3 rounded-xl border border-border bg-card/70 p-3">
+            <div class="grid grid-cols-3 gap-2 text-xs">
+              <div class="rounded-lg bg-background p-2">
+                <span class="block text-muted-foreground">Itens</span>
+                <strong class="text-base">{{ quantidadeItens }}</strong>
+              </div>
+              <div class="rounded-lg bg-background p-2">
+                <span class="block text-muted-foreground">Desconto</span>
+                <strong class="text-base text-red-500">{{ formatCurrencyBR(discount) }}</strong>
+              </div>
+              <div class="rounded-lg bg-background p-2">
+                <span class="block text-muted-foreground">Pagamento</span>
+                <strong class="text-base">{{ getPaymentMethodLabel(paymentMethod) }}</strong>
+              </div>
+            </div>
+            <div class="mt-3 rounded-xl bg-primary/10 p-3">
+              <div class="flex items-center justify-between text-xs font-semibold text-primary">
+                <span>Total da venda</span>
+                <span>{{ caixaStore.caixaAtivo?.codigo || 'Caixa fechado' }}</span>
+              </div>
+              <div class="mt-1 text-3xl font-black tracking-tight text-primary">
+                {{ formatCurrencyBR(total) }}
+              </div>
+            </div>
+          </div>
+          <div v-else class="mb-2">
+            <div class="flex justify-between text-sm">
+              <span>Subtotal:</span>
+              <span id="subtotal">R$ {{ resumoVenda.subtotal.toFixed(2).replace('.', ',') }}</span>
+            </div>
+            <div class="flex justify-between text-sm text-muted-foreground">
+              <span>Desconto:</span>
+              <span id="discount">R$ {{ resumoVenda.discount.toFixed(2).replace('.', ',') }}</span>
+            </div>
+            <div class="flex justify-between text-lg font-semibold">
+              <span>Total:</span>
+              <span id="total">R$ {{ total.toFixed(2).replace('.', ',') }}</span>
+            </div>
+          </div>
+
+          <!-- Forma de Pagamento -->
+          <div class="mb-4 flex flex-col gap-2">
+            <label class="block text-sm font-medium text-gray-700 dark:text-white">Pagamento</label>
+            <div v-if="proMode" class="grid grid-cols-2 gap-2">
+              <button
+                v-for="metodo in metodosPagamentoRapido"
+                :key="metodo.value"
+                type="button"
+                class="flex min-h-16 items-center gap-2 rounded-xl border p-3 text-left transition hover:border-primary hover:bg-primary/5"
+                :class="
+                  paymentMethod === metodo.value
+                    ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                    : 'border-border bg-background text-foreground'
+                "
+                @click="selecionarPagamento(metodo.value)"
+              >
+                <component :is="metodo.icon" class="h-5 w-5 shrink-0" />
+                <span class="min-w-0">
+                  <span class="block text-sm font-bold">{{ metodo.label }}</span>
+                  <span class="block truncate text-[11px] text-muted-foreground">{{
+                    metodo.hint
+                  }}</span>
+                </span>
+              </button>
+            </div>
+            <div v-else class="grid grid-cols-8 md:grid-cols-8 gap-2">
+              <div class="col-span-6">
+                <Select v-model="paymentMethod" @update:model-value="selecionarPagamento">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DINHEIRO"> Dinheiro </SelectItem>
+                    <SelectItem value="CARTAO"> Cartão </SelectItem>
+                    <SelectItem value="CREDIARIO"> Crediário </SelectItem>
+                    <SelectItem value="PIX"> PIX </SelectItem>
+                    <SelectItem value="BOLETO"> Boleto </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                class="bg-success hover:bg-success text-white hover:text-white"
+                @click="openModalAcoes = true"
+              >
+                <HandCoins />
+              </Button>
+              <Button type="button" class="text-white" @click="openModalDesconto = true">
+                <CirclePercent />
+              </Button>
+            </div>
+
+            <div class="space-y-2" v-if="paymentMethod === 'DINHEIRO' && !usandoPagamentoDividido">
+              <Input
+                :required="paymentMethod === 'DINHEIRO' && !usandoPagamentoDividido"
+                v-model="receivedAmount as string"
+                v-maska="moneyMaskOptions"
+                type="text"
+                inputmode="decimal"
+                placeholder="Valor recebido do cliente"
+              />
+              <div class="flex justify-between text-sm font-medium">
+                <span>Troco:</span>
+                <span>{{ formatCurrencyBR(change) }}</span>
+              </div>
+            </div>
+            <div class="rounded-lg border border-dashed border-border bg-muted/20 p-3">
+              <div class="flex items-center justify-between gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-white mb-1">
-                        {{ discountType === 'percentage' ? 'Percentual do desconto' : 'Valor do desconto' }}
-                    </label>
-                    <div class="relative">
-                        <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                            {{ discountType === 'percentage' ? '%' : 'R$' }}
-                        </span>
-                        <Input ref="discountInputRef" type="text" inputmode="decimal" v-model="discountValue!"
-                            placeholder="0,00" autocomplete="off"
-                            class="w-full py-6 pl-9 text-2xl font-bold text-center rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
-                    </div>
+                  <p class="text-sm font-medium">Pagamento dividido</p>
+                  <p class="text-xs text-muted-foreground">
+                    Combine PIX, dinheiro, cartão e crediário na mesma venda.
+                  </p>
                 </div>
-
-                <div v-if="discountType === 'percentage'" class="grid grid-cols-4 gap-2">
-                    <button v-for="preset in descontoPresets" :key="preset" type="button"
-                        @click="aplicarPresetDesconto(preset)"
-                        class="rounded-md border border-border py-2 text-sm font-semibold hover:bg-primary/10 hover:border-primary transition">
-                        {{ preset }}%
-                    </button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  @click="alternarPagamentoDividido"
+                >
+                  {{ usandoPagamentoDividido ? 'Usar uma forma' : 'Dividir pagamento' }}
+                </Button>
+              </div>
+              <div v-if="usandoPagamentoDividido" class="mt-3 space-y-2">
+                <div
+                  v-for="(pagamento, index) in pagamentos"
+                  :key="index"
+                  class="grid grid-cols-[1fr_9rem_auto] items-center gap-2"
+                >
+                  <Select v-model="pagamento.metodo">
+                    <SelectTrigger><SelectValue placeholder="Forma" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PIX">PIX</SelectItem>
+                      <SelectItem value="DINHEIRO">Dinheiro</SelectItem>
+                      <SelectItem value="CARTAO">Cartão</SelectItem>
+                      <SelectItem value="CREDIARIO">Crediário</SelectItem>
+                      <SelectItem value="BOLETO">Boleto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    v-model="pagamento.valor"
+                    v-maska="moneyMaskOptions"
+                    type="text"
+                    inputmode="decimal"
+                    placeholder="0,00"
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    :disabled="pagamentos.length === 1"
+                    @click="removerPagamento(index)"
+                  >
+                    <SquareX class="h-4 w-4" />
+                  </Button>
                 </div>
-
-                <div class="rounded-lg border border-dashed border-border bg-card/60 p-3 text-sm space-y-1">
-                    <div class="flex items-center justify-between text-muted-foreground">
-                        <span>Subtotal</span>
-                        <span>{{ formatCurrencyBR(subtotal) }}</span>
-                    </div>
-                    <div class="flex items-center justify-between text-red-500 dark:text-red-400">
-                        <span>Desconto</span>
-                        <span>- {{ formatCurrencyBR(discount) }}</span>
-                    </div>
-                    <div class="flex items-center justify-between text-base font-bold border-t border-border pt-1">
-                        <span>Novo total</span>
-                        <span class="text-green-600 dark:text-green-400">{{ formatCurrencyBR(total) }}</span>
-                    </div>
+                <div class="flex items-center justify-between gap-3 text-xs">
+                  <Button type="button" size="sm" variant="ghost" @click="adicionarPagamento"
+                    >+ Adicionar forma</Button
+                  >
+                  <span
+                    :class="
+                      saldoPagamentoDividido
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    "
+                  >
+                    {{
+                      saldoPagamentoDividido
+                        ? `Falta ${formatCurrencyBR(saldoPagamentoDividido)}`
+                        : 'Total informado'
+                    }}
+                  </span>
                 </div>
-
-                <div class="flex gap-2">
-                    <Button type="button" variant="outline" class="w-1/3" @click="limparDesconto">
-                        Limpar
-                    </Button>
-                    <Button type="button" class="flex-1" @click="aplicarDesconto">
-                        Aplicar desconto <kbd class="ml-2 text-[10px] opacity-80">Enter</kbd>
-                    </Button>
-                </div>
+              </div>
             </div>
+          </div>
 
-            <!-- Desconto (PDV Básico) -->
-            <div v-else class="px-4 gap-4 flex flex-col">
-                <div class="flex items-center gap-2 mb-2">
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-white">Tipo</label>
-                        <Select v-model="discountType">
-                            <SelectTrigger>
-                                <SelectValue placeholder="Tipo de desconto" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="percentage">
-                                    Desconto %
-                                </SelectItem>
-                                <SelectItem value="value">
-                                    Desconto R$
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-white">Valor</label>
-                        <Input type="text" v-model="discountValue!" placeholder="0,00"
-                            class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
-                    </div>
-                </div>
-                <Button type="button" @click="aplicarDesconto" class="w-full">Aplicar desconto</Button>
-            </div>
-        </ModalView>
-        <ModalView v-model:open="openModalAcoes" title="Caixa do PDV"
-            description="Acompanhe o turno e registre movimentacoes do caixa." size="xl">
-            <div class="grid gap-4 px-4">
-                <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-                    <div class="rounded-xl border bg-card p-3">
-                        <span class="text-xs text-muted-foreground">Saldo esperado</span>
-                        <strong class="mt-1 block text-md">{{ formatCurrencyBR(caixaStore.caixaAtivo?.saldoEsperado || 0) }}</strong>
-                    </div>
-                    <div class="rounded-xl border bg-card p-3">
-                        <span class="text-xs text-muted-foreground">Vendas do turno</span>
-                        <strong class="mt-1 block text-md">{{ vendasTurno }}</strong>
-                    </div>
-                    <div class="rounded-xl border bg-card p-3">
-                        <span class="text-xs text-muted-foreground">Total vendido</span>
-                        <strong class="mt-1 block text-md text-emerald-600">{{ formatCurrencyBR(totalVendidoTurno) }}</strong>
-                    </div>
-                    <div class="rounded-xl border bg-card p-3">
-                        <span class="text-xs text-muted-foreground">Aberto por</span>
-                        <strong class="mt-1 block truncate text-sm">{{ caixaStore.caixaAtivo?.abertoPor?.nome || 'Operador' }}</strong>
-                    </div>
-                </div>
-
-                <div class="grid gap-3 md:grid-cols-3">
-                    <button type="button" @click="abrirMovimento('SANGRIA')"
-                        class="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-yellow-700 transition hover:border-yellow-400 hover:bg-yellow-100 dark:border-yellow-900 dark:bg-yellow-950/30 dark:text-yellow-300">
-                        <HandGrab class="h-6 w-6" />
-                        <strong>Sangria</strong>
-                        <span class="text-xs opacity-80">Retirada de valor</span>
-                    </button>
-                    <button type="button" @click="abrirMovimento('REFORCO')"
-                        class="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
-                        <HandCoins class="h-6 w-6" />
-                        <strong>Reforco</strong>
-                        <span class="text-xs opacity-80">Entrada manual</span>
-                    </button>
-                    <button type="button" @click="fecharCaixa"
-                        class="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-700 transition hover:border-blue-400 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-300">
-                        <MonitorDown class="h-6 w-6" />
-                        <strong>Fechar caixa</strong>
-                        <span class="text-xs opacity-80">{{ formatCurrencyBR(caixaStore.caixaAtivo?.saldoEsperado || 0) }}</span>
-                    </button>
-                </div>
-
-                <div class="rounded-xl border bg-card p-4">
-                    <div class="mb-3 flex items-center justify-between">
-                        <h3 class="text-sm font-semibold">Movimentos recentes</h3>
-                        <span v-if="caixaRelatorioLoading" class="text-xs text-muted-foreground">Carregando...</span>
-                    </div>
-                    <div v-if="!movimentacoesCaixaRecentes.length" class="py-4 text-center text-sm text-muted-foreground">
-                        Nenhuma movimentacao registrada neste caixa.
-                    </div>
-                    <div v-else class="grid gap-2">
-                        <div v-for="item in movimentacoesCaixaRecentes" :key="item.key"
-                            class="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-sm">
-                            <div class="min-w-0">
-                                <strong>{{ item.titulo }}</strong>
-                                <p class="truncate text-xs text-muted-foreground">
-                                    {{ item.subtitulo }}
-                                </p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span :class="item.kind === 'SANGRIA' ? 'text-yellow-600' : 'text-emerald-600'"
-                                    class="whitespace-nowrap font-semibold">
-                                    {{ formatCurrencyBR(item.valor || 0) }}
-                                </span>
-                                <Button v-if="item.kind === 'VENDA' && item.venda" type="button" size="sm"
-                                    variant="outline" class="h-8 gap-1 px-2"
-                                    @click="enviarComprovanteVendaCaixa(item.venda)">
-                                    <Send class="h-4 w-4" />
-                                    <span class="hidden sm:inline">Comprovante</span>
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </ModalView>
-
-        <ModalView v-model:open="caixaStore.openModalSelecionarCaixa" title="Abrir caixa"
-            description="Informe o saldo inicial para liberar as vendas neste terminal." size="lg">
-            <div class="grid gap-4 px-4">
-                <div class="rounded-md border bg-card p-4">
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <h3 class="text-sm font-semibold">Novo caixa</h3>
-                            <p class="mt-1 text-xs text-muted-foreground">
-                                O caixa sera aberto para o terminal atual.
-                            </p>
-                        </div>
-                        <div class="rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-                            Terminal principal
-                        </div>
-                    </div>
-                    <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs text-muted-foreground">Saldo inicial</label>
-                            <Input v-model="abrirCaixaForm.valorInicial" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs text-muted-foreground">Observacao</label>
-                            <Input v-model="abrirCaixaForm.observacao" placeholder="Ex.: Abertura do turno" />
-                        </div>
-                    </div>
-                    <div class="mt-3 flex justify-end">
-                        <Button type="button" :disabled="caixaStore.loading" @click="submitAbrirCaixa">
-                            Abrir caixa
-                        </Button>
-                    </div>
-                </div>
-
-                <div class="rounded-md border bg-card p-4">
-                    <h3 class="text-sm font-semibold">Caixas abertos</h3>
-                    <div v-if="!caixaStore.caixasAbertos.length" class="mt-3 text-sm text-muted-foreground">
-                        Nenhum caixa aberto no momento.
-                    </div>
-                    <div v-else class="mt-3 grid gap-2">
-                        <button v-for="caixa in caixaStore.caixasAbertos" :key="caixa.id" type="button"
-                            class="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-left hover:bg-muted/40"
-                            :disabled="caixaStore.loading" @click="caixaStore.entrarCaixa(caixa.id)">
-                            <span>
-                                <span class="block text-sm font-medium">{{ caixa.codigo }}</span>
-                                <span class="text-xs text-muted-foreground">
-                                    Aberto por {{ caixa.abertoPor?.nome || 'usuario' }}
-                                </span>
-                            </span>
-                            <span class="text-sm font-semibold">{{ formatCurrencyBR(caixa.saldoEsperado || 0) }}</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </ModalView>
-
-        <ModalView v-model:open="caixaStore.openModalMovimento" :title="movimentoForm.tipo"
-            description="Registre uma movimentacao manual no caixa." size="sm">
-            <form class="grid gap-3 px-4" @submit.prevent="submitMovimentoCaixa">
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs text-muted-foreground">Valor</label>
-                    <Input v-model="movimentoForm.valor" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs text-muted-foreground">Descricao</label>
-                    <Input v-model="movimentoForm.descricao" placeholder="Motivo da movimentacao" />
-                </div>
-                <div class="flex justify-end gap-2">
-                    <Button type="button" variant="outline" @click="caixaStore.openModalMovimento = false">
-                        Cancelar
-                    </Button>
-                    <Button type="submit" :disabled="caixaStore.loading">
-                        Registrar
-                    </Button>
-                </div>
-            </form>
-        </ModalView>
-
-        <ModalFechamentoCaixa v-model:open="caixaStore.openModalFechamento"
-            :caixa="caixaStore.caixaAtivo"
-            :saldo-esperado="esperadoPorMetodoFechamento.dinheiro"
-            :por-metodo="caixaRelatorioAtual?.resumo.porMetodo || {}"
-            :loading="caixaStore.loading"
-            @confirmar="submitFechamentoCaixa" />
-
-        <ClientesModal />
-        <!-- <ModalFechamento v-model:open="openModalFechamento" /> -->
-        <nav
-            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20">
-
-            <button type="button" @click="uiStore.openSidebar = true"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <i class="fa-solid fa-bars text-lg"></i>
-                <span class="text-xs">Menu</span>
-            </button>
-        </nav>
+          <!-- Botões de finalização -->
+          <p
+            v-if="proMode && !podeFinalizarPDV"
+            class="mb-2 rounded-lg border border-dashed border-border bg-muted/30 p-2 text-xs text-muted-foreground"
+          >
+            {{
+              !caixaStore.caixaAtivo?.id
+                ? 'Abra o caixa para finalizar vendas.'
+                : 'Adicione itens ao carrinho para finalizar.'
+            }}
+          </p>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <Button
+              @click="finalizarVendaPDV()"
+              class="w-full text-white py-3 px-4 rounded-lg transition-colors"
+              :class="proMode ? 'h-12 text-base font-bold' : 'h-10 text-sm'"
+              :disabled="!podeFinalizarPDV"
+            >
+              <ShoppingBasket />
+              Finalizar venda
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              class="w-full sm:w-auto flex items-center justify-center rounded-lg gap-2"
+              :class="proMode ? 'h-12 px-4' : 'h-10'"
+              :disabled="!podeFinalizarPDV"
+              @click="finalizarVendaPDV({ print: true })"
+            >
+              <Printer class="w-4 h-4" />
+              <span class="text-sm">Finalizar e imprimir</span>
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
+    <ModalView
+      v-model:open="openModalCrediario"
+      title="Configurar crediário"
+      description="Defina as condições do financeiro pendente antes de finalizar a venda."
+      size="md"
+    >
+      <div class="space-y-4 p-4">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Quantidade de parcelas</label>
+            <Input v-model.number="crediarioParcelas" type="number" min="1" max="36" />
+          </div>
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Data da primeira parcela</label>
+            <Calendarpicker v-model="crediarioPrimeiroVencimento" :teleport="true" />
+          </div>
+        </div>
+        <div class="rounded-lg border border-border bg-card p-3 text-sm">
+          <div class="flex justify-between">
+            <span>Total da venda</span>
+            <strong>{{ formatCurrencyBR(total) }}</strong>
+          </div>
+          <div class="mt-1 flex justify-between text-muted-foreground">
+            <span>{{ usandoPagamentoDividido ? 'Saldo no crediário' : 'Total da venda' }}</span>
+            <span>{{ formatCurrencyBR(valorCrediario) }}</span>
+          </div>
+          <div class="mt-1 flex justify-between text-muted-foreground">
+            <span>Valor aproximado por parcela</span>
+            <span>{{ formatCurrencyBR(valorParcelaCrediario) }}</span>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <Button type="button" variant="outline" @click="openModalCrediario = false">
+            Cancelar
+          </Button>
+          <Button type="button" class="text-white" @click="confirmarCrediarioEFinalizar">
+            Finalizar no crediário
+          </Button>
+        </div>
+      </div>
+    </ModalView>
+
+    <ModalView
+      v-model:open="openModalVendaFinalizada"
+      title="Comprovante da venda"
+      description="Ticket da venda pronto para imprimir, baixar ou enviar."
+      size="2xl"
+    >
+      <div class="p-4 space-y-4">
+        <div
+          class="mx-auto w-full rounded-3xl border border-dashed border-border bg-card px-6 py-5 shadow-sm"
+        >
+          <div class="flex flex-col items-center text-center space-y-2">
+            <div
+              class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm"
+            >
+              <i class="fas fa-check text-2xl text-green-600 dark:text-green-300"></i>
+            </div>
+          </div>
+          <div class="text-center font-mono text-xs text-muted-foreground">
+            <p class="text-lg font-semibold tracking-[0.25em] text-foreground">COMPROVANTE</p>
+            <p class="mt-1">Venda finalizada com sucesso</p>
+            <p>
+              {{
+                vendaRecibo?.createdAt
+                  ? new Date(vendaRecibo.createdAt).toLocaleString('pt-BR')
+                  : '—'
+              }}
+            </p>
+          </div>
+
+          <div class="my-4 border-t border-dashed border-border"></div>
+
+          <div class="space-y-1 font-mono text-sm text-foreground">
+            <div class="flex items-center justify-between gap-3">
+              <span>Venda</span>
+              <span class="font-semibold">{{ vendaRecibo?.uid || `#${vendaRecibo?.id}` }}</span>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <span>Pagamento</span>
+              <span>{{ getPaymentMethodLabel(vendaRecibo?.paymentMethod) }}</span>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <span>Itens</span>
+              <span>{{ vendaRecibo?.itemCount || 0 }}</span>
+            </div>
+          </div>
+
+          <div class="my-4 border-t border-dashed border-border"></div>
+
+          <div class="space-y-3 font-mono text-sm text-foreground">
+            <div v-if="vendaRecibo?.items?.length" class="space-y-2">
+              <div v-for="item in vendaRecibo.items" :key="item.id" class="space-y-1">
+                <div class="truncate font-medium max-w-[25rem]">{{ item.label }}</div>
+                <div class="flex items-center justify-between gap-3 text-muted-foreground">
+                  <span>{{ item.quantity }}x {{ formatCurrencyBR(item.unitPrice) }}</span>
+                  <span>{{ formatCurrencyBR(item.total) }}</span>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-center text-muted-foreground">
+              Nenhum item disponível para o comprovante.
+            </div>
+          </div>
+
+          <div class="my-4 border-t border-dashed border-border"></div>
+
+          <div class="space-y-1 font-mono text-xs text-foreground">
+            <div class="flex items-center justify-between gap-3">
+              <span>Subtotal</span>
+              <span>{{ formatCurrencyBR(vendaRecibo?.subtotal || 0) }}</span>
+            </div>
+            <div
+              v-if="(vendaRecibo?.discount || 0) > 0"
+              class="flex items-center justify-between gap-3"
+            >
+              <span>Desconto</span>
+              <span>- {{ formatCurrencyBR(vendaRecibo?.discount || 0) }}</span>
+            </div>
+            <div
+              v-if="vendaRecibo?.paymentMethod === 'DINHEIRO'"
+              class="flex items-center justify-between gap-3"
+            >
+              <span>Recebido</span>
+              <span>{{ formatCurrencyBR(vendaRecibo?.receivedAmount || 0) }}</span>
+            </div>
+            <div
+              v-if="(vendaRecibo?.change || 0) > 0"
+              class="flex items-center justify-between gap-3"
+            >
+              <span>Troco</span>
+              <span>{{ formatCurrencyBR(vendaRecibo?.change || 0) }}</span>
+            </div>
+            <div
+              class="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-border pt-2 text-sm font-semibold"
+            >
+              <span>Total</span>
+              <span class="text-emerald-600 dark:text-emerald-400">{{
+                formatCurrencyBR(vendaRecibo?.total || 0)
+              }}</span>
+            </div>
+          </div>
+        </div>
+
+        <Card class="border-border/70 shadow-sm rounded-2xl">
+          <CardHeader class="py-2 px-5 -mb-4">
+            <CardTitle class="text-base">Destino do envio</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-1 px-4 py-3">
+            <div class="grid grid-cols-12 gap-2">
+              <Select2Ajax
+                class="col-span-10 md:col-span-11"
+                placeholder="Selecione o cliente"
+                :url="'/clientes/select2'"
+                v-model:model-value="clienteEnvio"
+                :allowClear="true"
+              />
+              <Button
+                type="Button"
+                @click="abrirCadastroClienteEnvio"
+                class="bg-primary px-2 col-span-2 md:col-span-1 text-white w-full border border-border dark:border-border-dark flex justify-center items-center"
+              >
+                <UserPlus :stroke-width="2.5" class="w-5 h-5 inline-flex" />
+              </Button>
+            </div>
+            <p class="text-xs text-muted-foreground pl-1">
+              Número para envio:
+              <span class="text-foreground">
+                {{ numeroPreview || 'Selecione um cliente com telefone/WhatsApp' }}
+              </span>
+            </p>
+          </CardContent>
+        </Card>
+
+        <div class="grid grid-cols-1 gap-2 sm:grid-cols-[1.35fr_1fr_1fr_1fr]">
+          <Button type="button" class="text-white" @click="novaVendaAposComprovante">
+            <PlusCircleIcon class="w-4 h-4 mr-2" />
+            Nova venda
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            class="h-9"
+            @click="imprimirComprovante"
+            :disabled="!vendaRecibo?.id || printingCupom"
+          >
+            <Printer class="w-4 h-4 mr-2" />
+            {{ printingCupom ? 'Imprimindo...' : 'Imprimir' }}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            class="h-9"
+            @click="baixarComprovantePdf"
+            :disabled="!vendaRecibo?.id || downloadingCupom"
+          >
+            <Download class="w-4 h-4 mr-2" />
+            {{ downloadingCupom ? 'Gerando...' : 'Baixar PDF' }}
+          </Button>
+          <Button
+            type="button"
+            class="h-9 text-white"
+            @click="openModalSelecionarEnvio"
+            :disabled="!vendaRecibo?.id"
+          >
+            <Send class="w-4 h-4 mr-2" />
+            Enviar
+          </Button>
+        </div>
+      </div>
+    </ModalView>
+    <ModalEnvioComprovante
+      v-model:open="openModalEnvioComprovante"
+      :venda-id="vendaRecibo?.id"
+      :uid="vendaRecibo?.uid"
+      :total="vendaRecibo?.total"
+      :cliente-id="clienteEnvio"
+    />
+    <ModalEnvioComprovante
+      v-model:open="openModalComprovanteCaixa"
+      :venda-id="vendaComprovanteCaixa?.id"
+      :uid="vendaComprovanteCaixa?.uid"
+      :total="vendaComprovanteCaixa?.total"
+      :cliente-id="vendaComprovanteCaixa?.clienteId"
+    />
+    <ModalView
+      v-model:open="openModalDesconto"
+      title="Aplicar desconto"
+      description="Informe o desconto a ser aplicado"
+      size="sm"
+    >
+      <!-- Desconto (PDV PRO): otimizado para uso apenas com o teclado -->
+      <div v-if="proMode" class="px-4 gap-4 flex flex-col" @keydown.enter.prevent="aplicarDesconto">
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            @click="definirTipoDesconto('percentage')"
+            class="flex flex-col items-center gap-1 rounded-lg border py-3 transition"
+            :class="
+              discountType === 'percentage'
+                ? 'border-primary bg-primary/10 text-primary font-semibold'
+                : 'border-border hover:bg-secondary/60'
+            "
+          >
+            <CirclePercent class="w-5 h-5" />
+            <span class="text-sm">Percentual (%)</span>
+          </button>
+          <button
+            type="button"
+            @click="definirTipoDesconto('value')"
+            class="flex flex-col items-center gap-1 rounded-lg border py-3 transition"
+            :class="
+              discountType === 'value'
+                ? 'border-primary bg-primary/10 text-primary font-semibold'
+                : 'border-border hover:bg-secondary/60'
+            "
+          >
+            <HandCoins class="w-5 h-5" />
+            <span class="text-sm">Valor (R$)</span>
+          </button>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-white mb-1">
+            {{ discountType === 'percentage' ? 'Percentual do desconto' : 'Valor do desconto' }}
+          </label>
+          <div class="relative">
+            <span
+              class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            >
+              {{ discountType === 'percentage' ? '%' : 'R$' }}
+            </span>
+            <Input
+              ref="discountInputRef"
+              type="text"
+              inputmode="decimal"
+              v-model="discountValue!"
+              placeholder="0,00"
+              autocomplete="off"
+              class="w-full py-6 pl-9 text-2xl font-bold text-center rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
+            />
+          </div>
+        </div>
+
+        <div v-if="discountType === 'percentage'" class="grid grid-cols-4 gap-2">
+          <button
+            v-for="preset in descontoPresets"
+            :key="preset"
+            type="button"
+            @click="aplicarPresetDesconto(preset)"
+            class="rounded-md border border-border py-2 text-sm font-semibold hover:bg-primary/10 hover:border-primary transition"
+          >
+            {{ preset }}%
+          </button>
+        </div>
+
+        <div class="rounded-lg border border-dashed border-border bg-card/60 p-3 text-sm space-y-1">
+          <div class="flex items-center justify-between text-muted-foreground">
+            <span>Subtotal</span>
+            <span>{{ formatCurrencyBR(subtotal) }}</span>
+          </div>
+          <div class="flex items-center justify-between text-red-500 dark:text-red-400">
+            <span>Desconto</span>
+            <span>- {{ formatCurrencyBR(discount) }}</span>
+          </div>
+          <div
+            class="flex items-center justify-between text-base font-bold border-t border-border pt-1"
+          >
+            <span>Novo total</span>
+            <span class="text-green-600 dark:text-green-400">{{ formatCurrencyBR(total) }}</span>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <Button type="button" variant="outline" class="w-1/3" @click="limparDesconto">
+            Limpar
+          </Button>
+          <Button type="button" class="flex-1" @click="aplicarDesconto">
+            Aplicar desconto <kbd class="ml-2 text-[10px] opacity-80">Enter</kbd>
+          </Button>
+        </div>
+      </div>
+
+      <!-- Desconto (PDV Básico) -->
+      <div v-else class="px-4 gap-4 flex flex-col">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 dark:text-white">Tipo</label>
+            <Select v-model="discountType">
+              <SelectTrigger>
+                <SelectValue placeholder="Tipo de desconto" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="percentage"> Desconto % </SelectItem>
+                <SelectItem value="value"> Desconto R$ </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 dark:text-white">Valor</label>
+            <Input
+              type="text"
+              v-model="discountValue!"
+              placeholder="0,00"
+              class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
+            />
+          </div>
+        </div>
+        <Button type="button" @click="aplicarDesconto" class="w-full">Aplicar desconto</Button>
+      </div>
+    </ModalView>
+    <ModalView
+      v-model:open="openModalAcoes"
+      title="Caixa do PDV"
+      description="Acompanhe o turno e registre movimentacoes do caixa."
+      size="xl"
+    >
+      <div class="grid gap-4 px-4">
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div class="rounded-xl border bg-card p-3">
+            <span class="text-xs text-muted-foreground">Saldo esperado</span>
+            <strong class="mt-1 block text-md">{{
+              formatCurrencyBR(caixaStore.caixaAtivo?.saldoEsperado || 0)
+            }}</strong>
+          </div>
+          <div class="rounded-xl border bg-card p-3">
+            <span class="text-xs text-muted-foreground">Vendas do turno</span>
+            <strong class="mt-1 block text-md">{{ vendasTurno }}</strong>
+          </div>
+          <div class="rounded-xl border bg-card p-3">
+            <span class="text-xs text-muted-foreground">Total vendido</span>
+            <strong class="mt-1 block text-md text-emerald-600">{{
+              formatCurrencyBR(totalVendidoTurno)
+            }}</strong>
+          </div>
+          <div class="rounded-xl border bg-card p-3">
+            <span class="text-xs text-muted-foreground">Aberto por</span>
+            <strong class="mt-1 block truncate text-sm">{{
+              caixaStore.caixaAtivo?.abertoPor?.nome || 'Operador'
+            }}</strong>
+          </div>
+        </div>
+
+        <div class="grid gap-3 md:grid-cols-3">
+          <button
+            type="button"
+            @click="abrirMovimento('SANGRIA')"
+            class="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-yellow-700 transition hover:border-yellow-400 hover:bg-yellow-100 dark:border-yellow-900 dark:bg-yellow-950/30 dark:text-yellow-300"
+          >
+            <HandGrab class="h-6 w-6" />
+            <strong>Sangria</strong>
+            <span class="text-xs opacity-80">Retirada de valor</span>
+          </button>
+          <button
+            type="button"
+            @click="abrirMovimento('REFORCO')"
+            class="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300"
+          >
+            <HandCoins class="h-6 w-6" />
+            <strong>Reforco</strong>
+            <span class="text-xs opacity-80">Entrada manual</span>
+          </button>
+          <button
+            type="button"
+            @click="fecharCaixa"
+            class="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-700 transition hover:border-blue-400 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-300"
+          >
+            <MonitorDown class="h-6 w-6" />
+            <strong>Fechar caixa</strong>
+            <span class="text-xs opacity-80">{{
+              formatCurrencyBR(caixaStore.caixaAtivo?.saldoEsperado || 0)
+            }}</span>
+          </button>
+        </div>
+
+        <div class="rounded-xl border bg-card p-4">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-sm font-semibold">Movimentos recentes</h3>
+            <span v-if="caixaRelatorioLoading" class="text-xs text-muted-foreground"
+              >Carregando...</span
+            >
+          </div>
+          <div
+            v-if="!movimentacoesCaixaRecentes.length"
+            class="py-4 text-center text-sm text-muted-foreground"
+          >
+            Nenhuma movimentacao registrada neste caixa.
+          </div>
+          <div v-else class="grid gap-2">
+            <div
+              v-for="item in movimentacoesCaixaRecentes"
+              :key="item.key"
+              class="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-sm"
+            >
+              <div class="min-w-0">
+                <strong>{{ item.titulo }}</strong>
+                <p class="truncate text-xs text-muted-foreground">
+                  {{ item.subtitulo }}
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span
+                  :class="item.kind === 'SANGRIA' ? 'text-yellow-600' : 'text-emerald-600'"
+                  class="whitespace-nowrap font-semibold"
+                >
+                  {{ formatCurrencyBR(item.valor || 0) }}
+                </span>
+                <Button
+                  v-if="item.kind === 'VENDA' && item.venda"
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  class="h-8 gap-1 px-2"
+                  @click="enviarComprovanteVendaCaixa(item.venda)"
+                >
+                  <Send class="h-4 w-4" />
+                  <span class="hidden sm:inline">Comprovante</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ModalView>
+
+    <ModalView
+      v-model:open="caixaStore.openModalSelecionarCaixa"
+      title="Abrir caixa"
+      description="Informe o saldo inicial para liberar as vendas neste terminal."
+      size="lg"
+    >
+      <div class="grid gap-4 px-4">
+        <div class="rounded-md border bg-card p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-semibold">Novo caixa</h3>
+              <p class="mt-1 text-xs text-muted-foreground">
+                O caixa sera aberto para o terminal atual.
+              </p>
+            </div>
+            <div class="rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+              Terminal principal
+            </div>
+          </div>
+          <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-muted-foreground">Saldo inicial</label>
+              <Input
+                v-model="abrirCaixaForm.valorInicial"
+                v-maska="moneyMaskOptions"
+                type="text"
+                inputmode="decimal"
+                placeholder="0,00"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-muted-foreground">Observacao</label>
+              <Input v-model="abrirCaixaForm.observacao" placeholder="Ex.: Abertura do turno" />
+            </div>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <Button type="button" :disabled="caixaStore.loading" @click="submitAbrirCaixa">
+              Abrir caixa
+            </Button>
+          </div>
+        </div>
+
+        <div class="rounded-md border bg-card p-4">
+          <h3 class="text-sm font-semibold">Caixas abertos</h3>
+          <div v-if="!caixaStore.caixasAbertos.length" class="mt-3 text-sm text-muted-foreground">
+            Nenhum caixa aberto no momento.
+          </div>
+          <div v-else class="mt-3 grid gap-2">
+            <button
+              v-for="caixa in caixaStore.caixasAbertos"
+              :key="caixa.id"
+              type="button"
+              class="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-left hover:bg-muted/40"
+              :disabled="caixaStore.loading"
+              @click="caixaStore.entrarCaixa(caixa.id)"
+            >
+              <span>
+                <span class="block text-sm font-medium">{{ caixa.codigo }}</span>
+                <span class="text-xs text-muted-foreground">
+                  Aberto por {{ caixa.abertoPor?.nome || 'usuario' }}
+                </span>
+              </span>
+              <span class="text-sm font-semibold">{{
+                formatCurrencyBR(caixa.saldoEsperado || 0)
+              }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </ModalView>
+
+    <ModalView
+      v-model:open="caixaStore.openModalMovimento"
+      :title="movimentoForm.tipo"
+      description="Registre uma movimentacao manual no caixa."
+      size="sm"
+    >
+      <form class="grid gap-3 px-4" @submit.prevent="submitMovimentoCaixa">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-muted-foreground">Valor</label>
+          <Input
+            v-model="movimentoForm.valor"
+            v-maska="moneyMaskOptions"
+            type="text"
+            inputmode="decimal"
+            placeholder="0,00"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-muted-foreground">Descricao</label>
+          <Input v-model="movimentoForm.descricao" placeholder="Motivo da movimentacao" />
+        </div>
+        <div class="flex justify-end gap-2">
+          <Button type="button" variant="outline" @click="caixaStore.openModalMovimento = false">
+            Cancelar
+          </Button>
+          <Button type="submit" :disabled="caixaStore.loading"> Registrar </Button>
+        </div>
+      </form>
+    </ModalView>
+
+    <ModalFechamentoCaixa
+      v-model:open="caixaStore.openModalFechamento"
+      :caixa="caixaStore.caixaAtivo"
+      :saldo-esperado="esperadoPorMetodoFechamento.dinheiro"
+      :por-metodo="caixaRelatorioAtual?.resumo.porMetodo || {}"
+      :loading="caixaStore.loading"
+      @confirmar="submitFechamentoCaixa"
+    />
+
+    <ClientesModal />
+    <!-- <ModalFechamento v-model:open="openModalFechamento" /> -->
+    <nav
+      class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20"
+    >
+      <button
+        type="button"
+        @click="uiStore.openSidebar = true"
+        class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition"
+      >
+        <i class="fa-solid fa-bars text-lg"></i>
+        <span class="text-xs">Menu</span>
+      </button>
+    </nav>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ref, computed, onMounted, watch, onUnmounted } from "vue"
-import http from "@/utils/axios"
-import { Input } from '@/components/ui/input';
-import Select2Ajax from '@/components/formulario/Select2Ajax.vue';
-import { POSITION, useToast } from 'vue-toastification';
-import { useUiStore } from '@/stores/ui/uiStore';
-import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue';
-import { useClientesStore } from '@/stores/clientes/useClientes';
-import { useCaixaStore } from '@/stores/vendas/useCaixa';
-import { ClienteRepository } from '@/repositories/cliente-repository';
-import { VendaRepository } from '@/repositories/venda-repository';
-import { CaixaRepository, type FecharCaixaPayload } from '@/repositories/caixa-repository';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Banknote, CirclePercent, CreditCard, Dot, Download, HandCoins, HandGrab, MonitorDown, Package, PlusCircleIcon, Printer, Send, ShoppingBasket, ShoppingCart, SquareX, UserPlus } from 'lucide-vue-next';
-import ModalView from '@/components/formulario/ModalView.vue';
-import ModalEnvioComprovante from '../modais/ModalEnvioComprovante.vue';
-import ModalFechamentoCaixa from '@/pages/vendas/caixas/ModalFechamentoCaixa.vue';
-import Calendarpicker from '@/components/formulario/calendarpicker.vue';
-import type { CaixaRelatorioResponse, ClientesFornecedores, ProdutoVariante, Vendas } from '@/types/schemas';
-import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters';
-import { moneyMaskOptions } from '@/lib/imaska';
-import { vMaska } from 'maska/vue';
-import { resolveFileUrl } from '@/utils/fileUrl';
-import router from '@/router';
-import { useConfirm } from '@/composables/useConfirm';
-import { ComboRepository } from '@/repositories/combo-repository';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import http from '@/utils/axios'
+import { Input } from '@/components/ui/input'
+import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import { POSITION, useToast } from 'vue-toastification'
+import { useUiStore } from '@/stores/ui/uiStore'
+import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
+import { useClientesStore } from '@/stores/clientes/useClientes'
+import { useCaixaStore } from '@/stores/vendas/useCaixa'
+import { ClienteRepository } from '@/repositories/cliente-repository'
+import { VendaRepository } from '@/repositories/venda-repository'
+import { CaixaRepository, type FecharCaixaPayload } from '@/repositories/caixa-repository'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Banknote,
+  CirclePercent,
+  CreditCard,
+  Dot,
+  Download,
+  HandCoins,
+  HandGrab,
+  MonitorDown,
+  Package,
+  PlusCircleIcon,
+  Printer,
+  Send,
+  ShoppingBasket,
+  ShoppingCart,
+  SquareX,
+  UserPlus,
+} from 'lucide-vue-next'
+import ModalView from '@/components/formulario/ModalView.vue'
+import ModalEnvioComprovante from '../modais/ModalEnvioComprovante.vue'
+import ModalFechamentoCaixa from '@/pages/vendas/caixas/ModalFechamentoCaixa.vue'
+import Calendarpicker from '@/components/formulario/calendarpicker.vue'
+import type {
+  CaixaRelatorioResponse,
+  ClientesFornecedores,
+  ProdutoVariante,
+  Vendas,
+} from '@/types/schemas'
+import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
+import { resolveFileUrl } from '@/utils/fileUrl'
+import router from '@/router'
+import { useConfirm } from '@/composables/useConfirm'
+import { ComboRepository } from '@/repositories/combo-repository'
 
 const { proMode = false } = defineProps<{ proMode?: boolean }>()
 
@@ -848,108 +1201,111 @@ const openModalCrediario = ref(false)
 const printingCupom = ref(false)
 const downloadingCupom = ref(false)
 const vendaRecibo = ref<{
+  id: number
+  uid?: string | null
+  total: number
+  subtotal: number
+  discount: number
+  clienteId: number | null
+  itemCount: number
+  paymentMethod: string
+  createdAt: string
+  receivedAmount: number | null
+  change: number
+  items: Array<{
     id: number
-    uid?: string | null
+    label: string
+    quantity: number
+    unitPrice: number
     total: number
-    subtotal: number
-    discount: number
-    clienteId: number | null
-    itemCount: number
-    paymentMethod: string
-    createdAt: string
-    receivedAmount: number | null
-    change: number
-    items: Array<{
-        id: number
-        label: string
-        quantity: number
-        unitPrice: number
-        total: number
-    }>
+  }>
 } | null>(null)
 const clienteEnvio = ref<number | null>(null)
 const numeroPreview = ref<string>('')
 const openModalComprovanteCaixa = ref(false)
 const vendaComprovanteCaixa = ref<{
-    id: number
-    uid: string | null
-    total: number
-    clienteId: number | null
+  id: number
+  uid: string | null
+  total: number
+  clienteId: number | null
 } | null>(null)
 const searchInputField = ref<HTMLInputElement | null>(null)
 const clienteSelectRef = ref<{ open: () => void } | null>(null)
 const discountInputRef = ref<{ $el?: HTMLElement } | null>(null)
 const descontoPresets = [5, 10, 15, 20]
 const abrirCaixaForm = ref({
-    valorInicial: '0',
-    observacao: '',
+  valorInicial: '0',
+  observacao: '',
 })
 const movimentoForm = ref({
-    tipo: 'SANGRIA' as 'SANGRIA' | 'REFORCO',
-    valor: '',
-    descricao: '',
+  tipo: 'SANGRIA' as 'SANGRIA' | 'REFORCO',
+  valor: '',
+  descricao: '',
 })
 const caixaRelatorio = ref<CaixaRelatorioResponse | null>(null)
 const caixaRelatorioLoading = ref(false)
 function focusDiscountInput() {
-    setTimeout(() => {
-        const el = discountInputRef.value?.$el as HTMLInputElement | undefined
-        el?.focus()
-        el?.select?.()
-    }, 60)
+  setTimeout(() => {
+    const el = discountInputRef.value?.$el as HTMLInputElement | undefined
+    el?.focus()
+    el?.select?.()
+  }, 60)
 }
 
 function definirTipoDesconto(tipo: 'percentage' | 'value') {
-    discountType.value = tipo
-    focusDiscountInput()
+  discountType.value = tipo
+  focusDiscountInput()
 }
 
 function aplicarPresetDesconto(valor: number) {
-    discountType.value = 'percentage'
-    discountValue.value = valor
-    focusDiscountInput()
+  discountType.value = 'percentage'
+  discountValue.value = valor
+  focusDiscountInput()
 }
 
 function limparDesconto() {
-    discountValue.value = null
-    focusDiscountInput()
+  discountValue.value = null
+  focusDiscountInput()
 }
 
 function aplicarDesconto() {
-    if (discountValue.value === null || String(discountValue.value).trim() === '') {
-        return toast.error('Informe o desconto a ser aplicado')
-    }
-    if (discount.value > subtotal.value) {
-        return toast.error('O desconto não pode ser maior que o subtotal')
-    }
-    openModalDesconto.value = false
-    toast.success('Desconto aplicado com sucesso')
+  if (discountValue.value === null || String(discountValue.value).trim() === '') {
+    return toast.error('Informe o desconto a ser aplicado')
+  }
+  if (discount.value > subtotal.value) {
+    return toast.error('O desconto não pode ser maior que o subtotal')
+  }
+  openModalDesconto.value = false
+  toast.success('Desconto aplicado com sucesso')
 }
 
 // Foca o valor do desconto ao abrir o modal (uso rápido apenas pelo teclado)
-watch(() => openModalDesconto.value, (open) => {
+watch(
+  () => openModalDesconto.value,
+  (open) => {
     if (open) focusDiscountInput()
-})
+  },
+)
 interface SaleableItem extends ProdutoVariante {
-    tipoItem?: 'PRODUTO' | 'COMBO'
+  tipoItem?: 'PRODUTO' | 'COMBO'
 }
 
 interface CartItem extends SaleableItem {
-    quantity: number
+  quantity: number
 }
 
 type PaymentMethod = 'PIX' | 'DINHEIRO' | 'CARTAO' | 'CREDIARIO' | 'BOLETO'
 
 const metodosPagamentoRapido = [
-    { value: 'PIX', label: 'PIX', hint: 'Pagamento instantaneo', icon: Send },
-    { value: 'DINHEIRO', label: 'Dinheiro', hint: 'Calcula troco', icon: Banknote },
-    { value: 'CARTAO', label: 'Cartao', hint: 'Credito ou debito', icon: CreditCard },
-    { value: 'CREDIARIO', label: 'Crediario', hint: 'Parcelado no cliente', icon: HandCoins },
+  { value: 'PIX', label: 'PIX', hint: 'Pagamento instantaneo', icon: Send },
+  { value: 'DINHEIRO', label: 'Dinheiro', hint: 'Calcula troco', icon: Banknote },
+  { value: 'CARTAO', label: 'Cartao', hint: 'Credito ou debito', icon: CreditCard },
+  { value: 'CREDIARIO', label: 'Crediario', hint: 'Parcelado no cliente', icon: HandCoins },
 ] as const satisfies ReadonlyArray<{
-    value: PaymentMethod
-    label: string
-    hint: string
-    icon: unknown
+  value: PaymentMethod
+  label: string
+  hint: string
+  icon: unknown
 }>
 
 const products = ref<SaleableItem[]>([])
@@ -958,12 +1314,13 @@ const PDV_PAGE_SIZE = 16
 const paginaProdutos = ref(1)
 const temProximaPaginaProdutos = ref(false)
 const temPaginaAnteriorProdutos = computed(() => paginaProdutos.value > 1)
-const cart = ref<CartItem[]>(JSON.parse(localStorage.getItem("gestao_facil:cartPDV") || "[]"))
-const searchTerm = ref("")
-const discountType = ref<"percentage" | "value">("percentage")
+const cart = ref<CartItem[]>(JSON.parse(localStorage.getItem('gestao_facil:cartPDV') || '[]'))
+const searchTerm = ref('')
+const discountType = ref<'percentage' | 'value'>('percentage')
 const discountValue = ref<number | null>(null)
-const paymentMethod = ref<PaymentMethod>("PIX")
+const paymentMethod = ref<PaymentMethod>('PIX')
 const receivedAmount = ref<string | null>(null)
+const pagamentos = ref<Array<{ metodo: PaymentMethod; valor: string }>>([])
 const crediarioParcelas = ref(1)
 const crediarioPrimeiroVencimento = ref<Date | string | null>(getDefaultCrediarioFirstDueDate())
 const crediarioFinalizeOptions = ref<{ print?: boolean } | null>(null)
@@ -971,201 +1328,233 @@ const cliente = ref(null)
 
 // Abre o cadastro de cliente e já seleciona o recém-criado no respectivo select.
 function abrirCadastroClientePdv() {
-    storeCliente.openSave((novo: ClientesFornecedores) => {
-        if (novo?.id != null) cliente.value = novo.id as any
-    })
+  storeCliente.openSave((novo: ClientesFornecedores) => {
+    if (novo?.id != null) cliente.value = novo.id as any
+  })
 }
 function abrirCadastroClienteEnvio() {
-    storeCliente.openSave((novo: ClientesFornecedores) => {
-        if (novo?.id != null) clienteEnvio.value = Number(novo.id)
-    })
+  storeCliente.openSave((novo: ClientesFornecedores) => {
+    if (novo?.id != null) clienteEnvio.value = Number(novo.id)
+  })
 }
 
 const subtotal = computed(() =>
-    cart.value.reduce((t, item) => t + Number(item.preco) * item.quantity, 0)
+  cart.value.reduce((t, item) => t + Number(item.preco) * item.quantity, 0),
 )
 
 const valorParcelaCrediario = computed(() => {
-    const parcelas = Math.max(1, Number(crediarioParcelas.value) || 1)
-    return total.value / parcelas
+  const parcelas = Math.max(1, Number(crediarioParcelas.value) || 1)
+  return valorCrediario.value / parcelas
 })
 
+const usandoPagamentoDividido = computed(() => pagamentos.value.length > 0)
+const totalPagamentoDividido = computed(() =>
+  pagamentos.value.reduce((soma, pagamento) => soma + formatToNumberValue(pagamento.valor || 0), 0),
+)
+const saldoPagamentoDividido = computed(() =>
+  Math.max(0, total.value - totalPagamentoDividido.value),
+)
+const valorCrediario = computed(() => {
+  if (!usandoPagamentoDividido.value) return paymentMethod.value === 'CREDIARIO' ? total.value : 0
+  return pagamentos.value
+    .filter((pagamento) => pagamento.metodo === 'CREDIARIO')
+    .reduce((soma, pagamento) => soma + formatToNumberValue(pagamento.valor || 0), 0)
+})
+const possuiCrediario = computed(() => valorCrediario.value > 0.004)
+
 function getDefaultCrediarioFirstDueDate() {
-    const data = new Date()
-    data.setMonth(data.getMonth() + 1)
-    return data
+  const data = new Date()
+  data.setMonth(data.getMonth() + 1)
+  return data
 }
 
 function formatCrediarioDateForApi(value: Date | string | null) {
-    if (!value) return null
-    const parsed = value instanceof Date ? value : new Date(value)
-    if (Number.isNaN(parsed.getTime())) return null
-    return parsed.toISOString()
+  if (!value) return null
+  const parsed = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toISOString()
 }
 
 function syncPodeFinalizarPDV() {
-    podeFinalizarPDV.value = cart.value.length > 0 && Boolean(caixaStore.caixaAtivo?.id)
+  podeFinalizarPDV.value = cart.value.length > 0 && Boolean(caixaStore.caixaAtivo?.id)
 }
 
 async function confirmarSaidaCaixa() {
-    const result = await useConf.confirm({
-        cancelText: 'Cancelar',
-        confirmText: 'Sim, sair do caixa!',
-        colorButton: 'success',
-        message: 'Deseja sair do caixa e voltar para o menu principal?',
-        title: 'Sair do caixa'
-    })
-    return result
+  const result = await useConf.confirm({
+    cancelText: 'Cancelar',
+    confirmText: 'Sim, sair do caixa!',
+    colorButton: 'success',
+    message: 'Deseja sair do caixa e voltar para o menu principal?',
+    title: 'Sair do caixa',
+  })
+  return result
 }
 
 async function sairCaixa() {
-    const confirmed = await confirmarSaidaCaixa()
-    if (!confirmed) return false
-    await router.push('/vendas')
-    return true
+  const confirmed = await confirmarSaidaCaixa()
+  if (!confirmed) return false
+  await router.push('/vendas')
+  return true
 }
 
 async function fecharCaixa() {
-    if (!caixaStore.caixaAtivo?.id) {
-        toast.error('Nenhum caixa aberto')
-        return
-    }
-    const result = await useConf.confirm({
-        cancelText: 'Cancelar',
-        confirmText: 'Sim, fechar caixa!',
-        colorButton: 'primary',
-        message: 'Deseja fechar o caixa?',
-        title: 'Fechar caixa'
-    })
-    if (!result) return
-    await carregarRelatorioCaixaAtivo()
-    caixaStore.openModalFechamento = true
-    openModalAcoes.value = false
+  if (!caixaStore.caixaAtivo?.id) {
+    toast.error('Nenhum caixa aberto')
+    return
+  }
+  const result = await useConf.confirm({
+    cancelText: 'Cancelar',
+    confirmText: 'Sim, fechar caixa!',
+    colorButton: 'primary',
+    message: 'Deseja fechar o caixa?',
+    title: 'Fechar caixa',
+  })
+  if (!result) return
+  await carregarRelatorioCaixaAtivo()
+  caixaStore.openModalFechamento = true
+  openModalAcoes.value = false
 }
 
 function abrirModalCaixa() {
-    caixaStore.openModalSelecionarCaixa = true
-    openModalAcoes.value = false
+  caixaStore.openModalSelecionarCaixa = true
+  openModalAcoes.value = false
 }
 
 async function carregarRelatorioCaixaAtivo() {
-    const caixa = caixaStore.caixaAtivo
-    if (!caixa?.id) return
-    try {
-        caixaRelatorioLoading.value = true
-        caixaRelatorio.value = await CaixaRepository.relatorio({
-            caixaId: caixa.id,
-            inicio: new Date(caixa.abertoEm).toISOString(),
-            fim: new Date().toISOString(),
-        })
-    } catch {
-        caixaRelatorio.value = null
-    } finally {
-        caixaRelatorioLoading.value = false
-    }
+  const caixa = caixaStore.caixaAtivo
+  if (!caixa?.id) return
+  try {
+    caixaRelatorioLoading.value = true
+    caixaRelatorio.value = await CaixaRepository.relatorio({
+      caixaId: caixa.id,
+      inicio: new Date(caixa.abertoEm).toISOString(),
+      fim: new Date().toISOString(),
+    })
+  } catch {
+    caixaRelatorio.value = null
+  } finally {
+    caixaRelatorioLoading.value = false
+  }
 }
 
 function abrirAcoesCaixa() {
-    if (!caixaStore.caixaAtivo?.id) {
-        abrirModalCaixa()
-        return
-    }
-    openModalAcoes.value = true
-    void carregarRelatorioCaixaAtivo()
+  if (!caixaStore.caixaAtivo?.id) {
+    abrirModalCaixa()
+    return
+  }
+  openModalAcoes.value = true
+  void carregarRelatorioCaixaAtivo()
 }
 
 function abrirOuFecharCaixa() {
-    if (!caixaStore.caixaAtivo?.id) {
-        abrirModalCaixa()
-        return
-    }
-    void fecharCaixa()
+  if (!caixaStore.caixaAtivo?.id) {
+    abrirModalCaixa()
+    return
+  }
+  void fecharCaixa()
 }
 
 async function submitAbrirCaixa() {
-    await caixaStore.abrirCaixa({
-        valorInicial: formatToNumberValue(abrirCaixaForm.value.valorInicial),
-        observacao: abrirCaixaForm.value.observacao || undefined,
-    })
-    abrirCaixaForm.value = { valorInicial: '0', observacao: '' }
-    syncPodeFinalizarPDV()
-    searchInputField.value?.focus()
+  await caixaStore.abrirCaixa({
+    valorInicial: formatToNumberValue(abrirCaixaForm.value.valorInicial),
+    observacao: abrirCaixaForm.value.observacao || undefined,
+  })
+  abrirCaixaForm.value = { valorInicial: '0', observacao: '' }
+  syncPodeFinalizarPDV()
+  searchInputField.value?.focus()
 }
 
 function abrirMovimento(tipo: 'SANGRIA' | 'REFORCO') {
-    if (!caixaStore.caixaAtivo?.id) {
-        toast.error('Abra um caixa antes de movimentar')
-        return
-    }
-    movimentoForm.value = {
-        tipo,
-        valor: '',
-        descricao: '',
-    }
-    caixaStore.openModalMovimento = true
-    openModalAcoes.value = false
+  if (!caixaStore.caixaAtivo?.id) {
+    toast.error('Abra um caixa antes de movimentar')
+    return
+  }
+  movimentoForm.value = {
+    tipo,
+    valor: '',
+    descricao: '',
+  }
+  caixaStore.openModalMovimento = true
+  openModalAcoes.value = false
 }
 
 async function submitMovimentoCaixa() {
-    if (!caixaStore.caixaAtivo?.id) return toast.error('Nenhum caixa aberto')
-    await caixaStore.registrarMovimento({
-        caixaId: caixaStore.caixaAtivo.id,
-        tipoMovimento: movimentoForm.value.tipo,
-        categoria: movimentoForm.value.tipo,
-        valor: formatToNumberValue(movimentoForm.value.valor),
-        descricao: movimentoForm.value.descricao || undefined,
-    })
-    movimentoForm.value = { tipo: 'SANGRIA', valor: '', descricao: '' }
-    await carregarRelatorioCaixaAtivo()
+  if (!caixaStore.caixaAtivo?.id) return toast.error('Nenhum caixa aberto')
+  await caixaStore.registrarMovimento({
+    caixaId: caixaStore.caixaAtivo.id,
+    tipoMovimento: movimentoForm.value.tipo,
+    categoria: movimentoForm.value.tipo,
+    valor: formatToNumberValue(movimentoForm.value.valor),
+    descricao: movimentoForm.value.descricao || undefined,
+  })
+  movimentoForm.value = { tipo: 'SANGRIA', valor: '', descricao: '' }
+  await carregarRelatorioCaixaAtivo()
 }
 
 async function submitFechamentoCaixa(payload: Omit<FecharCaixaPayload, 'caixaId'>) {
-    if (!caixaStore.caixaAtivo?.id) return toast.error('Nenhum caixa aberto')
-    await caixaStore.fecharCaixa({
-        caixaId: caixaStore.caixaAtivo.id,
-        ...payload,
-    })
-    syncPodeFinalizarPDV()
+  if (!caixaStore.caixaAtivo?.id) return toast.error('Nenhum caixa aberto')
+  await caixaStore.fecharCaixa({
+    caixaId: caixaStore.caixaAtivo.id,
+    ...payload,
+  })
+  syncPodeFinalizarPDV()
 }
 
-watch(() => searchTerm.value, () => {
+watch(
+  () => searchTerm.value,
+  () => {
     paginaProdutos.value = 1
     agendarBuscaProdutos()
-})
+  },
+)
 
-watch(() => cart.value, () => {
-    searchTerm.value = ""
+watch(
+  () => cart.value,
+  () => {
+    searchTerm.value = ''
     syncPodeFinalizarPDV()
-}, { deep: true })
+  },
+  { deep: true },
+)
 
-watch(() => caixaStore.caixaAtivo?.id, () => {
+watch(
+  () => caixaStore.caixaAtivo?.id,
+  () => {
     syncPodeFinalizarPDV()
-})
+  },
+)
 
-watch(() => clienteEnvio.value, (value) => {
+watch(
+  () => clienteEnvio.value,
+  (value) => {
     atualizarNumeroPreview(value)
-})
+  },
+)
 
 // Normaliza ignorando caixa, acentos e espaços nas pontas. O MySQL casa "cafe" com "Café",
 // o `includes` do JS não — sem isso a grade mostra o produto e o Enter não acha nada.
 function normalizarBusca(valor: unknown) {
-    return String(valor ?? '')
-        .normalize('NFD')
-        .replace(/\p{Diacritic}/gu, '')
-        .trim()
-        .toLowerCase()
+  return String(valor ?? '')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .trim()
+    .toLowerCase()
 }
 
 function escolherProdutoDaBusca(lista: ProdutoVariante[], termo: string) {
-    if (!lista.length) return null
-    const alvo = normalizarBusca(termo)
-    // Código de barras: casamento exato do `codigo` tem prioridade sobre qualquer parcial.
-    const porCodigo = lista.find((item) => item.codigo && normalizarBusca(item.codigo) === alvo)
-    if (porCodigo) return porCodigo
-    if (lista.length === 1) return lista[0]
-    return lista.find((item) =>
-        normalizarBusca([item.nome, item.nomeVariante || '', item.codigo || ''].join(' ')).includes(alvo)
+  if (!lista.length) return null
+  const alvo = normalizarBusca(termo)
+  // Código de barras: casamento exato do `codigo` tem prioridade sobre qualquer parcial.
+  const porCodigo = lista.find((item) => item.codigo && normalizarBusca(item.codigo) === alvo)
+  if (porCodigo) return porCodigo
+  if (lista.length === 1) return lista[0]
+  return (
+    lista.find((item) =>
+      normalizarBusca([item.nome, item.nomeVariante || '', item.codigo || ''].join(' ')).includes(
+        alvo,
+      ),
     ) || null
+  )
 }
 
 // Consulta o termo direto no servidor em vez de olhar `products` (a grade). O leitor envia
@@ -1173,191 +1562,198 @@ function escolherProdutoDaBusca(lista: ProdutoVariante[], termo: string) {
 // está em voo — ler `products` aqui pegava a lista anterior e a função saía em silêncio,
 // sem adicionar nada e sem avisar o operador.
 async function quickAddCard() {
-    const termo = searchTerm.value.trim()
-    if (!termo) return toast.error('Informe o produto a ser adicionado')
+  const termo = searchTerm.value.trim()
+  if (!termo) return toast.error('Informe o produto a ser adicionado')
 
-    let candidatos: ProdutoVariante[] = []
-    try {
-        const { data } = await http.get('/produtos/lista/geral', {
-            params: { search: termo, limit: 5, pdv: true },
-        })
-        candidatos = (data?.data || []) as ProdutoVariante[]
-    } catch {
-        return toast.error('Nao foi possivel buscar o produto. Tente novamente.', {
-            timeout: 3000,
-            position: POSITION.BOTTOM_CENTER,
-        })
-    }
+  let candidatos: ProdutoVariante[] = []
+  try {
+    const { data } = await http.get('/produtos/lista/geral', {
+      params: { search: termo, limit: 5, pdv: true },
+    })
+    candidatos = (data?.data || []) as ProdutoVariante[]
+  } catch {
+    return toast.error('Nao foi possivel buscar o produto. Tente novamente.', {
+      timeout: 3000,
+      position: POSITION.BOTTOM_CENTER,
+    })
+  }
 
-    const itemProduto = escolherProdutoDaBusca(candidatos, termo)
-    if (!itemProduto?.nome) {
-        toast.error(`Produto nao encontrado: ${termo}`, { timeout: 3000, position: POSITION.BOTTOM_CENTER })
-        searchInputField.value?.focus()
-        return
-    }
-    adicionarAoCarrinho(itemProduto)
+  const itemProduto = escolherProdutoDaBusca(candidatos, termo)
+  if (!itemProduto?.nome) {
+    toast.error(`Produto nao encontrado: ${termo}`, {
+      timeout: 3000,
+      position: POSITION.BOTTOM_CENTER,
+    })
     searchInputField.value?.focus()
+    return
+  }
+  adicionarAoCarrinho(itemProduto)
+  searchInputField.value?.focus()
 }
 
 function onKey(e: KeyboardEvent) {
-    if (e.key === 'Control' && e.code === 'ControlLeft') {
-        searchInputField.value?.focus()
-    }
+  if (e.key === 'Control' && e.code === 'ControlLeft') {
+    searchInputField.value?.focus()
+  }
 }
 
 const discount = computed(() => {
-    const value = parseFloat(String(discountValue.value).replace(",", ".")) || 0
-    if (!value) return 0
-    return discountType.value === "percentage"
-        ? subtotal.value * (value / 100)
-        : value
+  const value = parseFloat(String(discountValue.value).replace(',', '.')) || 0
+  if (!value) return 0
+  return discountType.value === 'percentage' ? subtotal.value * (value / 100) : value
 })
-
 
 const total = computed(() => Math.max(0, subtotal.value - discount.value))
 
 const change = computed(() => {
-    if (paymentMethod.value !== "DINHEIRO") return 0
-    return Math.max(0, formatToNumberValue(receivedAmount.value || 0) - total.value)
+  if (paymentMethod.value !== 'DINHEIRO') return 0
+  return Math.max(0, formatToNumberValue(receivedAmount.value || 0) - total.value)
 })
 
 const caixaRelatorioAtual = computed(() => {
-    const caixaId = caixaStore.caixaAtivo?.id
-    if (!caixaId) return null
-    return caixaRelatorio.value?.caixas.find((item) => item.caixa.id === caixaId) || null
+  const caixaId = caixaStore.caixaAtivo?.id
+  if (!caixaId) return null
+  return caixaRelatorio.value?.caixas.find((item) => item.caixa.id === caixaId) || null
 })
 
 const vendasTurno = computed(() => caixaRelatorioAtual.value?.resumo.totalVendas || 0)
 const totalVendidoTurno = computed(() => caixaRelatorioAtual.value?.resumo.totalVendido || 0)
 type MovimentacaoCaixaItem = {
-    key: string
-    kind: 'VENDA' | 'SANGRIA' | 'REFORCO'
-    titulo: string
-    subtitulo: string
-    valor: number
-    timestamp: number
-    venda?: Vendas
+  key: string
+  kind: 'VENDA' | 'SANGRIA' | 'REFORCO'
+  titulo: string
+  subtitulo: string
+  valor: number
+  timestamp: number
+  venda?: Vendas
 }
 
 // Unifica vendas + sangrias/reforcos do turno, sempre com o evento mais recente no topo.
 const movimentacoesCaixaRecentes = computed<MovimentacaoCaixaItem[]>(() => {
-    const relatorio = caixaRelatorioAtual.value
-    if (!relatorio) return []
+  const relatorio = caixaRelatorioAtual.value
+  if (!relatorio) return []
 
-    const vendasItems: MovimentacaoCaixaItem[] = (relatorio.vendas || []).map((venda) => ({
-        key: `venda-${venda.id}`,
-        kind: 'VENDA',
-        titulo: `Venda ${venda.Uid || `#${venda.id}`}`,
-        subtitulo: `${getPaymentMethodLabel(venda.PagamentoVendas?.metodo)} - ${formatDateTimeBR(venda.data)}`,
-        valor: Number(venda.valor || 0),
-        timestamp: new Date(venda.data as any).getTime() || 0,
-        venda,
+  const vendasItems: MovimentacaoCaixaItem[] = (relatorio.vendas || []).map((venda) => ({
+    key: `venda-${venda.id}`,
+    kind: 'VENDA',
+    titulo: `Venda ${venda.Uid || `#${venda.id}`}`,
+    subtitulo: `${getPaymentMethodLabel(venda.PagamentoVendas?.metodo)} - ${formatDateTimeBR(venda.data)}`,
+    valor: Number(venda.valor || 0),
+    timestamp: new Date(venda.data as any).getTime() || 0,
+    venda,
+  }))
+
+  const movimentosItems: MovimentacaoCaixaItem[] = (relatorio.movimentos || [])
+    .filter((movimento) => ['SANGRIA', 'REFORCO'].includes(String(movimento.tipo)))
+    .map((movimento) => ({
+      key: `mov-${movimento.id}`,
+      kind: movimento.tipo === 'SANGRIA' ? 'SANGRIA' : 'REFORCO',
+      titulo: movimento.tipo === 'SANGRIA' ? 'Sangria' : 'Reforco',
+      subtitulo: `${movimento.descricao || 'Sem descricao'} - ${formatDateTimeBR(movimento.createdAt)}`,
+      valor: Number(movimento.valor || 0),
+      timestamp: new Date(movimento.createdAt as any).getTime() || 0,
     }))
 
-    const movimentosItems: MovimentacaoCaixaItem[] = (relatorio.movimentos || [])
-        .filter((movimento) => ['SANGRIA', 'REFORCO'].includes(String(movimento.tipo)))
-        .map((movimento) => ({
-            key: `mov-${movimento.id}`,
-            kind: movimento.tipo === 'SANGRIA' ? 'SANGRIA' : 'REFORCO',
-            titulo: movimento.tipo === 'SANGRIA' ? 'Sangria' : 'Reforco',
-            subtitulo: `${movimento.descricao || 'Sem descricao'} - ${formatDateTimeBR(movimento.createdAt)}`,
-            valor: Number(movimento.valor || 0),
-            timestamp: new Date(movimento.createdAt as any).getTime() || 0,
-        }))
-
-    return [...vendasItems, ...movimentosItems]
-        .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, 8)
+  return [...vendasItems, ...movimentosItems].sort((a, b) => b.timestamp - a.timestamp).slice(0, 8)
 })
 
 function enviarComprovanteVendaCaixa(venda: Vendas) {
-    if (!venda?.id) {
-        toast.error('Venda invalida para envio de comprovante')
-        return
-    }
-    vendaComprovanteCaixa.value = {
-        id: venda.id,
-        uid: venda.Uid ?? null,
-        total: Number(venda.valor ?? 0),
-        clienteId: venda.clienteId ?? null,
-    }
-    openModalComprovanteCaixa.value = true
+  if (!venda?.id) {
+    toast.error('Venda invalida para envio de comprovante')
+    return
+  }
+  vendaComprovanteCaixa.value = {
+    id: venda.id,
+    uid: venda.Uid ?? null,
+    total: Number(venda.valor ?? 0),
+    clienteId: venda.clienteId ?? null,
+  }
+  openModalComprovanteCaixa.value = true
 }
 
 function getPaymentMethodLabel(method?: string | null) {
-    switch (method) {
-        case 'DINHEIRO':
-            return 'Dinheiro'
-        case 'CARTAO':
-            return 'Cartão'
-        case 'CREDITO':
-            return 'Crédito'
-        case 'DEBITO':
-            return 'Débito'
-        case 'CREDIARIO':
-            return 'Crediário'
-        case 'PIX':
-            return 'PIX'
-        case 'BOLETO':
-            return 'Boleto'
-        case 'TRANSFERENCIA':
-            return 'Transferência'
-        case 'CHEQUE':
-            return 'Cheque'
-        case 'GATEWAY':
-            return 'Gateway'
-        case 'OUTRO':
-            return 'Outro'
-        default:
-            return method || 'Pagamento'
-    }
+  switch (method) {
+    case 'DINHEIRO':
+      return 'Dinheiro'
+    case 'CARTAO':
+      return 'Cartão'
+    case 'CREDITO':
+      return 'Crédito'
+    case 'DEBITO':
+      return 'Débito'
+    case 'CREDIARIO':
+      return 'Crediário'
+    case 'PIX':
+      return 'PIX'
+    case 'BOLETO':
+      return 'Boleto'
+    case 'TRANSFERENCIA':
+      return 'Transferência'
+    case 'CHEQUE':
+      return 'Cheque'
+    case 'GATEWAY':
+      return 'Gateway'
+    case 'OUTRO':
+      return 'Outro'
+    default:
+      return method || 'Pagamento'
+  }
 }
 
 // Fechamento: dinheiro é o único conferido em espécie (saldoEsperado já inclui
 // saldo inicial + reforços − sangrias); os demais métodos são diretos e apenas informados.
 const esperadoPorMetodoFechamento = computed(() => {
-    const dinheiro = Number(caixaStore.caixaAtivo?.saldoEsperado || 0)
-    const outros = Object.entries(caixaRelatorioAtual.value?.resumo.porMetodo || {})
-        .filter(([metodo, valor]) => metodo !== 'DINHEIRO' && Number(valor) > 0)
-        .map(([metodo, valor]) => ({ metodo, label: getPaymentMethodLabel(metodo), valor: Number(valor) }))
-    return { dinheiro, outros }
+  const dinheiro = Number(caixaStore.caixaAtivo?.saldoEsperado || 0)
+  const outros = Object.entries(caixaRelatorioAtual.value?.resumo.porMetodo || {})
+    .filter(([metodo, valor]) => metodo !== 'DINHEIRO' && Number(valor) > 0)
+    .map(([metodo, valor]) => ({
+      metodo,
+      label: getPaymentMethodLabel(metodo),
+      valor: Number(valor),
+    }))
+  return { dinheiro, outros }
 })
 
 function formatDateTimeBR(value?: string | Date | null) {
-    if (!value) return ''
-    const date = value instanceof Date ? value : new Date(value)
-    if (Number.isNaN(date.getTime())) return ''
-    return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  if (!value) return ''
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 function getPaymentMethodBadge(method?: string | null) {
-    switch (method) {
-        case 'DINHEIRO':
-            return { color: 'green' as const, label: 'Dinheiro' }
-        case 'CARTAO':
-            return { color: 'blue' as const, label: 'Cartão' }
-        case 'CREDIARIO':
-            return { color: 'orange' as const, label: 'Crediário' }
-        case 'PIX':
-            return { color: 'purple' as const, label: 'PIX' }
-        case 'BOLETO':
-            return { color: 'orange' as const, label: 'Boleto' }
-        default:
-            return { color: 'gray' as const, label: method || 'Pagamento' }
-    }
+  switch (method) {
+    case 'DINHEIRO':
+      return { color: 'green' as const, label: 'Dinheiro' }
+    case 'CARTAO':
+      return { color: 'blue' as const, label: 'Cartão' }
+    case 'CREDIARIO':
+      return { color: 'orange' as const, label: 'Crediário' }
+    case 'PIX':
+      return { color: 'purple' as const, label: 'PIX' }
+    case 'BOLETO':
+      return { color: 'orange' as const, label: 'Boleto' }
+    default:
+      return { color: 'gray' as const, label: method || 'Pagamento' }
+  }
 }
 
 function openModalSelecionarEnvio() {
-    if (!vendaRecibo.value?.id) {
-        toast.error('Nenhum comprovante disponível para envio')
-        return
-    }
-    openModalEnvioComprovante.value = true
+  if (!vendaRecibo.value?.id) {
+    toast.error('Nenhum comprovante disponível para envio')
+    return
+  }
+  openModalEnvioComprovante.value = true
 }
 
 function novaVendaAposComprovante() {
-    openModalVendaFinalizada.value = false
-    setTimeout(() => searchInputField.value?.focus(), 60)
+  openModalVendaFinalizada.value = false
+  setTimeout(() => searchInputField.value?.focus(), 60)
 }
 
 // O leitor de código de barras é um teclado HID: ele "digita" os 13 dígitos em poucos
@@ -1367,156 +1763,200 @@ function novaVendaAposComprovante() {
 let buscaProdutosSeq = 0
 
 async function fetchProducts() {
-    const seq = ++buscaProdutosSeq
-    try {
-        // No PDV PRO pagina de 16 em 16; busca 1 a mais para saber se existe próxima página.
-        const limit = proMode ? PDV_PAGE_SIZE + 1 : 12
-        const skip = proMode ? (paginaProdutos.value - 1) * PDV_PAGE_SIZE : 0
-        const [productsResponse, combos] = await Promise.all([
-            http.get("/produtos/lista/geral", {
-                params: { search: searchTerm.value, limit, pdv: true, ...(skip ? { skip } : {}) },
-            }),
-            uiStore.hasActiveModule('combos') && paginaProdutos.value === 1
-                ? ComboRepository.options('PDV', searchTerm.value || undefined).catch(() => [])
-                : Promise.resolve([]),
-        ])
-        const { data } = productsResponse
-        if (seq !== buscaProdutosSeq) return
-        let lista = data.data as ProdutoVariante[]
-        if (proMode) {
-            temProximaPaginaProdutos.value = lista.length > PDV_PAGE_SIZE
-            lista = lista.slice(0, PDV_PAGE_SIZE)
-        } else {
-            temProximaPaginaProdutos.value = false
-        }
-        products.value = [
-            ...combos.filter((combo) => combo.disponivel).map((combo) => ({
-                id: combo.id,
-                nome: combo.nome,
-                nomeVariante: 'Combo',
-                preco: combo.preco,
-                imagem: combo.imagem,
-                estoque: combo.quantidadeDisponivel ?? 999999999,
-                minimo: 0,
-                status: 'ATIVO',
-                controlaEstoque: combo.quantidadeDisponivel !== null,
-                tipoItem: 'COMBO' as const,
-            } as SaleableItem)),
-            ...lista.map((product) => ({ ...product, tipoItem: 'PRODUTO' as const })),
-        ]
-        syncPodeFinalizarPDV()
-    } catch {
-        if (seq !== buscaProdutosSeq) return
-        toast.error("Erro ao buscar produtos")
+  const seq = ++buscaProdutosSeq
+  try {
+    // No PDV PRO pagina de 16 em 16; busca 1 a mais para saber se existe próxima página.
+    const limit = proMode ? PDV_PAGE_SIZE + 1 : 12
+    const skip = proMode ? (paginaProdutos.value - 1) * PDV_PAGE_SIZE : 0
+    const [productsResponse, combos] = await Promise.all([
+      http.get('/produtos/lista/geral', {
+        params: { search: searchTerm.value, limit, pdv: true, ...(skip ? { skip } : {}) },
+      }),
+      uiStore.hasActiveModule('combos') && paginaProdutos.value === 1
+        ? ComboRepository.options('PDV', searchTerm.value || undefined).catch(() => [])
+        : Promise.resolve([]),
+    ])
+    const { data } = productsResponse
+    if (seq !== buscaProdutosSeq) return
+    let lista = data.data as ProdutoVariante[]
+    if (proMode) {
+      temProximaPaginaProdutos.value = lista.length > PDV_PAGE_SIZE
+      lista = lista.slice(0, PDV_PAGE_SIZE)
+    } else {
+      temProximaPaginaProdutos.value = false
     }
+    products.value = [
+      ...combos
+        .filter((combo) => combo.disponivel)
+        .map(
+          (combo) =>
+            ({
+              id: combo.id,
+              nome: combo.nome,
+              nomeVariante: 'Combo',
+              preco: combo.preco,
+              imagem: combo.imagem,
+              estoque: combo.quantidadeDisponivel ?? 999999999,
+              minimo: 0,
+              status: 'ATIVO',
+              controlaEstoque: combo.quantidadeDisponivel !== null,
+              tipoItem: 'COMBO' as const,
+            }) as SaleableItem,
+        ),
+      ...lista.map((product) => ({ ...product, tipoItem: 'PRODUTO' as const })),
+    ]
+    syncPodeFinalizarPDV()
+  } catch {
+    if (seq !== buscaProdutosSeq) return
+    toast.error('Erro ao buscar produtos')
+  }
 }
 
 // Agrupa as teclas de uma leitura inteira numa única requisição.
 let buscaProdutosTimer: ReturnType<typeof setTimeout> | null = null
 function agendarBuscaProdutos() {
-    if (buscaProdutosTimer) clearTimeout(buscaProdutosTimer)
-    buscaProdutosTimer = setTimeout(() => {
-        buscaProdutosTimer = null
-        fetchProducts()
-    }, 200)
+  if (buscaProdutosTimer) clearTimeout(buscaProdutosTimer)
+  buscaProdutosTimer = setTimeout(() => {
+    buscaProdutosTimer = null
+    fetchProducts()
+  }, 200)
 }
 
 function proximaPaginaProdutos() {
-    if (!temProximaPaginaProdutos.value) return
-    paginaProdutos.value++
-    fetchProducts()
+  if (!temProximaPaginaProdutos.value) return
+  paginaProdutos.value++
+  fetchProducts()
 }
 
 function paginaAnteriorProdutos() {
-    if (paginaProdutos.value <= 1) return
-    paginaProdutos.value--
-    fetchProducts()
+  if (paginaProdutos.value <= 1) return
+  paginaProdutos.value--
+  fetchProducts()
 }
 
 // ---- Carrinho ----
 function saveCart() {
-    localStorage.setItem("gestao_facil:cartPDV", JSON.stringify(cart.value))
-    syncPodeFinalizarPDV()
+  localStorage.setItem('gestao_facil:cartPDV', JSON.stringify(cart.value))
+  syncPodeFinalizarPDV()
 }
 
 function adicionarAoCarrinho(product: SaleableItem) {
-    const existing = cart.value.find((i) => i.id === product.id && (i.tipoItem || 'PRODUTO') === (product.tipoItem || 'PRODUTO'))
-    if (existing) {
-        if (product.controlaEstoque && !product.producaoLocal) {
-            existing.quantity < product.estoque ? existing.quantity++ : toast.error("Estoque insuficiente!")
-        } else {
-            existing.quantity++
-        }
+  const existing = cart.value.find(
+    (i) => i.id === product.id && (i.tipoItem || 'PRODUTO') === (product.tipoItem || 'PRODUTO'),
+  )
+  if (existing) {
+    if (product.controlaEstoque && !product.producaoLocal) {
+      existing.quantity < product.estoque
+        ? existing.quantity++
+        : toast.error('Estoque insuficiente!')
     } else {
-        if (!product.estoque && product.controlaEstoque && !product.producaoLocal) return toast.error("Produto sem estoque!", { timeout: 3000, position: POSITION.BOTTOM_CENTER })
-        if (!product.estoque && product.controlaEstoque && product.producaoLocal) {
-            cart.value.push({ ...product, quantity: 1 })
-            return toast.warning("Produto adicionado sem estoque, recomendado revisar posteriormente!", { timeout: 3000, position: POSITION.BOTTOM_CENTER })
-        }
-        cart.value.push({ ...product, quantity: 1 })
+      existing.quantity++
     }
-    saveCart()
+  } else {
+    if (!product.estoque && product.controlaEstoque && !product.producaoLocal)
+      return toast.error('Produto sem estoque!', {
+        timeout: 3000,
+        position: POSITION.BOTTOM_CENTER,
+      })
+    if (!product.estoque && product.controlaEstoque && product.producaoLocal) {
+      cart.value.push({ ...product, quantity: 1 })
+      return toast.warning('Produto adicionado sem estoque, recomendado revisar posteriormente!', {
+        timeout: 3000,
+        position: POSITION.BOTTOM_CENTER,
+      })
+    }
+    cart.value.push({ ...product, quantity: 1 })
+  }
+  saveCart()
 }
 
 function atualizarQuantidade(id: number, qty: number, tipoItem: 'PRODUTO' | 'COMBO' = 'PRODUTO') {
-    const item = cart.value.find((i) => i.id === id && (i.tipoItem || 'PRODUTO') === tipoItem)
-    if (!item) return
-    if (qty <= 0) {
-        cart.value = cart.value.filter((i) => i.id !== id || (i.tipoItem || 'PRODUTO') !== tipoItem)
-        saveCart()
-        return
-    }
-    if (item.controlaEstoque && !item.producaoLocal) {
-        qty <= item.estoque ? item.quantity = qty : toast.error("Estoque insuficiente!")
-    } else {
-        item.quantity = qty
-    }
+  const item = cart.value.find((i) => i.id === id && (i.tipoItem || 'PRODUTO') === tipoItem)
+  if (!item) return
+  if (qty <= 0) {
+    cart.value = cart.value.filter((i) => i.id !== id || (i.tipoItem || 'PRODUTO') !== tipoItem)
     saveCart()
+    return
+  }
+  if (item.controlaEstoque && !item.producaoLocal) {
+    qty <= item.estoque ? (item.quantity = qty) : toast.error('Estoque insuficiente!')
+  } else {
+    item.quantity = qty
+  }
+  saveCart()
 }
 
 function limparCarrinho() {
-    cart.value = []
-    podeFinalizarPDV.value = false
-    saveCart()
+  cart.value = []
+  podeFinalizarPDV.value = false
+  saveCart()
 }
 
 function removerUltimoItem() {
-    const ultimoItem = cart.value.at(-1)
-    if (!ultimoItem?.id) return toast.info('Nenhum item para cancelar')
-    atualizarQuantidade(ultimoItem.id, 0, ultimoItem.tipoItem || 'PRODUTO')
-    toast.info('Último item removido do cupom')
+  const ultimoItem = cart.value.at(-1)
+  if (!ultimoItem?.id) return toast.info('Nenhum item para cancelar')
+  atualizarQuantidade(ultimoItem.id, 0, ultimoItem.tipoItem || 'PRODUTO')
+  toast.info('Último item removido do cupom')
 }
 
 function selecionarPagamento(method: PaymentMethod) {
-    paymentMethod.value = method
-    if (method !== 'DINHEIRO') receivedAmount.value = null
-    searchInputField.value?.focus()
+  paymentMethod.value = method
+  pagamentos.value = []
+  if (method !== 'DINHEIRO') receivedAmount.value = null
+  searchInputField.value?.focus()
+}
+
+function alternarPagamentoDividido() {
+  if (usandoPagamentoDividido.value) {
+    pagamentos.value = []
+    return
+  }
+  pagamentos.value = [
+    {
+      metodo: paymentMethod.value,
+      valor: total.value.toFixed(2).replace('.', ','),
+    },
+  ]
+}
+
+function adicionarPagamento() {
+  const restante = Math.max(0, total.value - totalPagamentoDividido.value)
+  pagamentos.value.push({
+    metodo: paymentMethod.value === 'CREDIARIO' ? 'PIX' : paymentMethod.value,
+    valor: restante.toFixed(2).replace('.', ','),
+  })
+}
+
+function removerPagamento(index: number) {
+  pagamentos.value.splice(index, 1)
 }
 
 function alternarPagamento() {
-    const metodos = metodosPagamentoRapido.map((metodo) => metodo.value)
-    const indiceAtual = metodos.indexOf(paymentMethod.value as any)
-    selecionarPagamento(metodos[(indiceAtual + 1) % metodos.length])
-    toast.info(`Pagamento: ${getPaymentMethodLabel(paymentMethod.value)}`)
+  const metodos = metodosPagamentoRapido.map((metodo) => metodo.value)
+  const indiceAtual = metodos.indexOf(paymentMethod.value as any)
+  selecionarPagamento(metodos[(indiceAtual + 1) % metodos.length])
+  toast.info(`Pagamento: ${getPaymentMethodLabel(paymentMethod.value)}`)
 }
 
 async function atualizarNumeroPreview(clienteId: number | string | null) {
-    const id = clienteId ? Number(clienteId) : null
-    if (!id) {
-        numeroPreview.value = ''
-        return
-    }
-    try {
-        const response = await ClienteRepository.get(id)
-        const dadosCliente = response.data
-        numeroPreview.value = dadosCliente?.whastapp || dadosCliente?.telefone || ''
-    } catch (error) {
-        console.log(error)
-        numeroPreview.value = ''
-    }
+  const id = clienteId ? Number(clienteId) : null
+  if (!id) {
+    numeroPreview.value = ''
+    return
+  }
+  try {
+    const response = await ClienteRepository.get(id)
+    const dadosCliente = response.data
+    numeroPreview.value = dadosCliente?.whastapp || dadosCliente?.telefone || ''
+  } catch (error) {
+    console.log(error)
+    numeroPreview.value = ''
+  }
 }
 
-function prepararComprovante(venda: any, resumo?: {
+function prepararComprovante(
+  venda: any,
+  resumo?: {
     subtotal: number
     discount: number
     total: number
@@ -1525,222 +1965,259 @@ function prepararComprovante(venda: any, resumo?: {
     receivedAmount: number | null
     change: number
     items: Array<{
-        id: number
-        label: string
-        quantity: number
-        unitPrice: number
-        total: number
+      id: number
+      label: string
+      quantity: number
+      unitPrice: number
+      total: number
     }>
-}) {
-    if (!venda) return
-    const totalNumero = typeof venda.valor === 'number' ? venda.valor : Number(venda.valor || resumo?.total || 0)
-    vendaRecibo.value = {
-        id: venda.id,
-        uid: venda.Uid ?? null,
-        total: totalNumero,
-        subtotal: resumo?.subtotal ?? totalNumero,
-        discount: resumo?.discount ?? 0,
-        clienteId: venda.clienteId ?? null,
-        itemCount: resumo?.itemCount ?? cart.value.length,
-        paymentMethod: resumo?.paymentMethod ?? paymentMethod.value,
-        createdAt: venda.data ?? new Date().toISOString(),
-        receivedAmount: resumo?.receivedAmount ?? null,
-        change: resumo?.change ?? 0,
-        items: resumo?.items ?? [],
-    }
-    clienteEnvio.value = vendaRecibo.value.clienteId ?? (cliente.value as any) ?? null
-    atualizarNumeroPreview(clienteEnvio.value)
-    openModalEnvioComprovante.value = false
-    openModalVendaFinalizada.value = true
+  },
+) {
+  if (!venda) return
+  const totalNumero =
+    typeof venda.valor === 'number' ? venda.valor : Number(venda.valor || resumo?.total || 0)
+  vendaRecibo.value = {
+    id: venda.id,
+    uid: venda.Uid ?? null,
+    total: totalNumero,
+    subtotal: resumo?.subtotal ?? totalNumero,
+    discount: resumo?.discount ?? 0,
+    clienteId: venda.clienteId ?? null,
+    itemCount: resumo?.itemCount ?? cart.value.length,
+    paymentMethod: resumo?.paymentMethod ?? paymentMethod.value,
+    createdAt: venda.data ?? new Date().toISOString(),
+    receivedAmount: resumo?.receivedAmount ?? null,
+    change: resumo?.change ?? 0,
+    items: resumo?.items ?? [],
+  }
+  clienteEnvio.value = vendaRecibo.value.clienteId ?? (cliente.value as any) ?? null
+  atualizarNumeroPreview(clienteEnvio.value)
+  openModalEnvioComprovante.value = false
+  openModalVendaFinalizada.value = true
 }
 
 async function imprimirComprovante() {
-    if (!vendaRecibo.value?.id) {
-        toast.info('Finalize uma venda antes de imprimir o comprovante')
-        return
-    }
-    try {
-        printingCupom.value = true
-        await VendaRepository.printCupom(vendaRecibo.value.id)
-        toast.success('Cupom enviado para a impressora!')
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao enviar cupom para a impressora')
-    } finally {
-        printingCupom.value = false
-    }
+  if (!vendaRecibo.value?.id) {
+    toast.info('Finalize uma venda antes de imprimir o comprovante')
+    return
+  }
+  try {
+    printingCupom.value = true
+    await VendaRepository.printCupom(vendaRecibo.value.id)
+    toast.success('Cupom enviado para a impressora!')
+  } catch (error) {
+    console.log(error)
+    toast.error('Erro ao enviar cupom para a impressora')
+  } finally {
+    printingCupom.value = false
+  }
 }
 
 async function baixarComprovantePdf() {
-    if (!vendaRecibo.value?.id) return
-    try {
-        downloadingCupom.value = true
-        await VendaRepository.getCupomPDF(vendaRecibo.value.id)
-        toast.success('PDF do comprovante gerado com sucesso!')
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao gerar o PDF do comprovante')
-    } finally {
-        downloadingCupom.value = false
-    }
+  if (!vendaRecibo.value?.id) return
+  try {
+    downloadingCupom.value = true
+    await VendaRepository.getCupomPDF(vendaRecibo.value.id)
+    toast.success('PDF do comprovante gerado com sucesso!')
+  } catch (error) {
+    console.log(error)
+    toast.error('Erro ao gerar o PDF do comprovante')
+  } finally {
+    downloadingCupom.value = false
+  }
 }
 
 // ---- Venda ----
-async function finalizarVendaPDV(options?: { print?: boolean, crediarioConfirmado?: boolean }) {
-    if (!cart.value.length) {
-        toast.error("Carrinho vazio!")
-        return
+async function finalizarVendaPDV(options?: { print?: boolean; crediarioConfirmado?: boolean }) {
+  if (!cart.value.length) {
+    toast.error('Carrinho vazio!')
+    return
+  }
+  if (!caixaStore.caixaAtivo?.id) {
+    toast.error('Abra ou selecione um caixa para finalizar a venda')
+    caixaStore.openModalSelecionarCaixa = true
+    return
+  }
+  if (
+    !usandoPagamentoDividido.value &&
+    paymentMethod.value === 'DINHEIRO' &&
+    formatToNumberValue(receivedAmount.value || 0) < total.value
+  ) {
+    toast.error('Valor recebido insuficiente!')
+    return
+  }
+  if (
+    usandoPagamentoDividido.value &&
+    Math.abs(totalPagamentoDividido.value - total.value) > 0.004
+  ) {
+    toast.error('A soma dos pagamentos deve ser igual ao total da venda.')
+    return
+  }
+  if (possuiCrediario.value && !cliente.value) {
+    toast.error('Selecione um cliente para lançar o crediário.')
+    return
+  }
+  if (possuiCrediario.value && !options?.crediarioConfirmado) {
+    crediarioFinalizeOptions.value = { print: options?.print }
+    if (!crediarioPrimeiroVencimento.value) {
+      crediarioPrimeiroVencimento.value = getDefaultCrediarioFirstDueDate()
     }
-    if (!caixaStore.caixaAtivo?.id) {
-        toast.error("Abra ou selecione um caixa para finalizar a venda")
-        caixaStore.openModalSelecionarCaixa = true
-        return
-    }
-    if (paymentMethod.value === "DINHEIRO" && formatToNumberValue(receivedAmount.value || 0) < total.value) {
-        toast.error("Valor recebido insuficiente!")
-        return
-    }
-    if (paymentMethod.value === "CREDIARIO" && !options?.crediarioConfirmado) {
-        crediarioFinalizeOptions.value = { print: options?.print }
-        if (!crediarioPrimeiroVencimento.value) {
-            crediarioPrimeiroVencimento.value = getDefaultCrediarioFirstDueDate()
-        }
-        openModalCrediario.value = true
-        return
-    }
-    if (paymentMethod.value === "CREDIARIO" && (!Number.isInteger(Number(crediarioParcelas.value)) || Number(crediarioParcelas.value) < 1)) {
-        toast.error("Informe em quantas vezes sera o crediario")
-        return
-    }
-    if (paymentMethod.value === "CREDIARIO" && !formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)) {
-        toast.error("Informe uma data valida para a primeira parcela")
-        return
-    }
+    openModalCrediario.value = true
+    return
+  }
+  if (
+    possuiCrediario.value &&
+    (!Number.isInteger(Number(crediarioParcelas.value)) || Number(crediarioParcelas.value) < 1)
+  ) {
+    toast.error('Informe em quantas vezes sera o crediario')
+    return
+  }
+  if (possuiCrediario.value && !formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)) {
+    toast.error('Informe uma data valida para a primeira parcela')
+    return
+  }
 
-    const data = {
-        caixaId: caixaStore.caixaAtivo.id,
-        clienteId: cliente.value,
-        data: new Date().toISOString(),
-        desconto: discount.value,
-        pagamento: paymentMethod.value,
-        valorRecebido: paymentMethod.value === 'DINHEIRO' ? formatToNumberValue(receivedAmount.value || 0) : null,
-        crediarioParcelas: paymentMethod.value === 'CREDIARIO' ? Number(crediarioParcelas.value) : null,
-        crediarioPrimeiroVencimento: paymentMethod.value === 'CREDIARIO' ? formatCrediarioDateForApi(crediarioPrimeiroVencimento.value) : null,
-        itens: cart.value.map((i) => ({
-            id: Number(i.id),
-            nome: `${i.nome}${i.nomeVariante ? ` / ${i.nomeVariante}` : ''}`,
-            quantidade: i.quantity,
-            preco: formatToNumberValue(i.preco),
-            tipo: i.tipoItem || 'PRODUTO',
-        })),
-    }
+  const data = {
+    caixaId: caixaStore.caixaAtivo.id,
+    clienteId: cliente.value,
+    data: new Date().toISOString(),
+    desconto: discount.value,
+    pagamento: usandoPagamentoDividido.value ? 'OUTRO' : paymentMethod.value,
+    pagamentos: usandoPagamentoDividido.value
+      ? pagamentos.value.map((pagamento) => ({
+          metodo: pagamento.metodo,
+          valor: formatToNumberValue(pagamento.valor || 0),
+        }))
+      : undefined,
+    valorRecebido:
+      !usandoPagamentoDividido.value && paymentMethod.value === 'DINHEIRO'
+        ? formatToNumberValue(receivedAmount.value || 0)
+        : null,
+    crediarioParcelas: possuiCrediario.value ? Number(crediarioParcelas.value) : null,
+    crediarioPrimeiroVencimento: possuiCrediario.value
+      ? formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)
+      : null,
+    itens: cart.value.map((i) => ({
+      id: Number(i.id),
+      nome: `${i.nome}${i.nomeVariante ? ` / ${i.nomeVariante}` : ''}`,
+      quantidade: i.quantity,
+      preco: formatToNumberValue(i.preco),
+      tipo: i.tipoItem || 'PRODUTO',
+    })),
+  }
 
-    const resumoRecibo = {
-        subtotal: subtotal.value,
-        discount: discount.value,
-        total: total.value,
-        itemCount: cart.value.reduce((acc, item) => acc + item.quantity, 0),
-        paymentMethod: paymentMethod.value,
-        receivedAmount: paymentMethod.value === 'DINHEIRO'
-            ? (receivedAmount.value ? formatToNumberValue(receivedAmount.value) : null)
-            : null,
-        change: change.value,
-        items: cart.value.map((item) => ({
-            id: Number(item.id),
-            label: `${item.nome}${item.nomeVariante && item.nomeVariante !== 'Padrão' ? ` / ${item.nomeVariante}` : ''}`,
-            quantity: item.quantity,
-            unitPrice: Number(item.preco),
-            total: Number(item.preco) * item.quantity,
-        })),
-    }
-
-    try {
-        const vendaCriada = await VendaRepository.finalizarVendaPdv(data)
-        limparCarrinho()
-        crediarioParcelas.value = 1
-        crediarioPrimeiroVencimento.value = getDefaultCrediarioFirstDueDate()
-        await fetchProducts()
-        await caixaStore.loadContexto()
-        toast.success("Venda realizada com sucesso!")
-        prepararComprovante(vendaCriada, resumoRecibo)
-        if (options?.print && vendaCriada?.id) {
-            await imprimirComprovante()
-        }
-        searchInputField.value?.focus()
-    } catch (err: any) {
-        toast.error(err.response?.data?.message || "Erro inesperado")
-    }
-}
-
-async function confirmarCrediarioEFinalizar() {
-    if (!Number.isInteger(Number(crediarioParcelas.value)) || Number(crediarioParcelas.value) < 1) {
-        toast.error("Informe em quantas vezes sera o crediario")
-        return
-    }
-    if (!formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)) {
-        toast.error("Informe uma data valida para a primeira parcela")
-        return
-    }
-
-    openModalCrediario.value = false
-    await finalizarVendaPDV({
-        ...crediarioFinalizeOptions.value,
-        crediarioConfirmado: true,
-    })
-    crediarioFinalizeOptions.value = null
-}
-
-const resumoVenda = computed(() => ({
+  const resumoRecibo = {
     subtotal: subtotal.value,
     discount: discount.value,
     total: total.value,
+    itemCount: cart.value.reduce((acc, item) => acc + item.quantity, 0),
+    paymentMethod: usandoPagamentoDividido.value ? 'Pagamento dividido' : paymentMethod.value,
+    receivedAmount:
+      paymentMethod.value === 'DINHEIRO'
+        ? receivedAmount.value
+          ? formatToNumberValue(receivedAmount.value)
+          : null
+        : null,
     change: change.value,
+    items: cart.value.map((item) => ({
+      id: Number(item.id),
+      label: `${item.nome}${item.nomeVariante && item.nomeVariante !== 'Padrão' ? ` / ${item.nomeVariante}` : ''}`,
+      quantity: item.quantity,
+      unitPrice: Number(item.preco),
+      total: Number(item.preco) * item.quantity,
+    })),
+  }
+
+  try {
+    const vendaCriada = await VendaRepository.finalizarVendaPdv(data)
+    limparCarrinho()
+    pagamentos.value = []
+    crediarioParcelas.value = 1
+    crediarioPrimeiroVencimento.value = getDefaultCrediarioFirstDueDate()
+    await fetchProducts()
+    await caixaStore.loadContexto()
+    toast.success('Venda realizada com sucesso!')
+    prepararComprovante(vendaCriada, resumoRecibo)
+    if (options?.print && vendaCriada?.id) {
+      await imprimirComprovante()
+    }
+    searchInputField.value?.focus()
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || 'Erro inesperado')
+  }
+}
+
+async function confirmarCrediarioEFinalizar() {
+  if (!Number.isInteger(Number(crediarioParcelas.value)) || Number(crediarioParcelas.value) < 1) {
+    toast.error('Informe em quantas vezes sera o crediario')
+    return
+  }
+  if (!formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)) {
+    toast.error('Informe uma data valida para a primeira parcela')
+    return
+  }
+
+  openModalCrediario.value = false
+  await finalizarVendaPDV({
+    ...crediarioFinalizeOptions.value,
+    crediarioConfirmado: true,
+  })
+  crediarioFinalizeOptions.value = null
+}
+
+const resumoVenda = computed(() => ({
+  subtotal: subtotal.value,
+  discount: discount.value,
+  total: total.value,
+  change: change.value,
 }))
 
 const quantidadeItens = computed(() => cart.value.reduce((acc, item) => acc + item.quantity, 0))
 
 defineExpose({
-    alternarPagamento,
-    caixaAtivo: computed(() => caixaStore.caixaAtivo),
-    fecharCaixa,
-    finalizarVendaPDV,
-    focusSearch: () => searchInputField.value?.focus(),
-    limparCarrinho,
-    abrirAcoesCaixa,
-    abrirModalCaixa,
-    abrirOuFecharCaixa,
-    abrirCadastroCliente: () => storeCliente.openSave(),
-    abrirSelecaoCliente: () => clienteSelectRef.value?.open(),
-    abrirDesconto: () => { openModalDesconto.value = true },
-    imprimirUltimoComprovante: imprimirComprovante,
-    quantidadeItens,
-    quickAddCard,
-    removerUltimoItem,
-    confirmarSaidaCaixa,
-    sairCaixa,
-    subtotal,
-    discount,
-    paymentMethod,
-    total,
-    paginaProdutos,
-    temProximaPaginaProdutos,
-    temPaginaAnteriorProdutos,
-    proximaPaginaProdutos,
-    paginaAnteriorProdutos,
+  alternarPagamento,
+  caixaAtivo: computed(() => caixaStore.caixaAtivo),
+  fecharCaixa,
+  finalizarVendaPDV,
+  focusSearch: () => searchInputField.value?.focus(),
+  limparCarrinho,
+  abrirAcoesCaixa,
+  abrirModalCaixa,
+  abrirOuFecharCaixa,
+  abrirCadastroCliente: () => storeCliente.openSave(),
+  abrirSelecaoCliente: () => clienteSelectRef.value?.open(),
+  abrirDesconto: () => {
+    openModalDesconto.value = true
+  },
+  imprimirUltimoComprovante: imprimirComprovante,
+  quantidadeItens,
+  quickAddCard,
+  removerUltimoItem,
+  confirmarSaidaCaixa,
+  sairCaixa,
+  subtotal,
+  discount,
+  paymentMethod,
+  total,
+  paginaProdutos,
+  temProximaPaginaProdutos,
+  temPaginaAnteriorProdutos,
+  proximaPaginaProdutos,
+  paginaAnteriorProdutos,
 })
 
 onMounted(async () => {
-    await caixaStore.loadContexto().catch(() => null)
-    await fetchProducts()
-    cart.value = [];
-    saveCart();
-    uiStore.openSidebar = false
-    searchInputField.value?.focus()
-    window.addEventListener('keydown', onKey)
+  await caixaStore.loadContexto().catch(() => null)
+  await fetchProducts()
+  cart.value = []
+  saveCart()
+  uiStore.openSidebar = false
+  searchInputField.value?.focus()
+  window.addEventListener('keydown', onKey)
 })
 
 onUnmounted(() => {
-    if (buscaProdutosTimer) clearTimeout(buscaProdutosTimer)
-    window.removeEventListener('keydown', onKey)
+  if (buscaProdutosTimer) clearTimeout(buscaProdutosTimer)
+  window.removeEventListener('keydown', onKey)
 })
 </script>

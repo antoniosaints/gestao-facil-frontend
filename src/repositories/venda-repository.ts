@@ -10,6 +10,10 @@ import {
 
 export interface VendaEfetivar {
   pagamento: MetodoPagamento
+  pagamentos?: Array<{
+    metodo: MetodoPagamento
+    valor: number
+  }>
   dataPagamento: Date | string
   categoria: number | null
   conta: number | null
@@ -23,6 +27,10 @@ export interface FinalizarVendaPdvPayload {
   data: string
   desconto: number
   pagamento: MetodoPagamento | string
+  pagamentos?: Array<{
+    metodo: MetodoPagamento | string
+    valor: number
+  }>
   valorRecebido?: number | string | null
   crediarioParcelas?: number | null
   crediarioPrimeiroVencimento?: string | null

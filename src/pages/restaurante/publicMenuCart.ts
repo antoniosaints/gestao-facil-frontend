@@ -40,3 +40,10 @@ export function updateMenuGroupSelection(
   const kept = availableBeforeNew ? inside.slice(-availableBeforeNew) : []
   return [...outside, ...kept, optionId]
 }
+
+export function hasSameMenuSelections(first: number[], second: number[]) {
+  if (first.length !== second.length) return false
+  const firstSorted = [...first].sort((a, b) => a - b)
+  const secondSorted = [...second].sort((a, b) => a - b)
+  return firstSorted.every((id, index) => id === secondSorted[index])
+}

@@ -48,7 +48,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
-import { LancamentosRepository, type ParcelaIgnoradaLote } from '@/repositories/lancamento-repository'
+import {
+  LancamentosRepository,
+  type ParcelaIgnoradaLote,
+} from '@/repositories/lancamento-repository'
 import { InadimplenciaRepository } from '@/repositories/inadimplencia-repository'
 import { useConfirm } from '@/composables/useConfirm'
 import { useParcelasSelecao } from '@/composables/useParcelasSelecao'
@@ -186,7 +189,9 @@ const parcelasOrdenadas = computed(() => {
   })
 })
 
-const podeNotificarCliente = computed(() => lancamento.value?.tipo === 'RECEITA' && Boolean(lancamento.value?.clienteId))
+const podeNotificarCliente = computed(
+  () => lancamento.value?.tipo === 'RECEITA' && Boolean(lancamento.value?.clienteId),
+)
 
 const valorTotal = computed(() =>
   parcelasOrdenadas.value.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0),
@@ -215,15 +220,17 @@ const parcelasVencidas = computed(() => {
   })
 })
 
-const proximaParcela = computed(() =>
-  parcelasOrdenadas.value.find((parcela) => !parcela.pago) ?? null,
+const proximaParcela = computed(
+  () => parcelasOrdenadas.value.find((parcela) => !parcela.pago) ?? null,
 )
 
 // ---- Recorrência (contas fixas: as ocorrências viram parcelas deste lançamento) ----
 const recorrenciaOpen = ref(false)
 const recorrenciaSalvando = ref(false)
 const recorrencia = computed(() => lancamento.value?.recorrencia ?? null)
-const parcelasEmAberto = computed(() => parcelasOrdenadas.value.filter((parcela) => !parcela.pago).length)
+const parcelasEmAberto = computed(
+  () => parcelasOrdenadas.value.filter((parcela) => !parcela.pago).length,
+)
 
 const descricaoFrequenciaRecorrencia = computed(() => {
   switch (recorrencia.value?.frequencia) {
@@ -330,27 +337,31 @@ const resumoStatus = computed(() => {
   if (status === 'PAGO') {
     return {
       label: 'Quitado',
-      classes: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-200 hover:text-emerald-900',
+      classes:
+        'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-200 hover:text-emerald-900',
     }
   }
 
   if (status === 'ATRASADO') {
     return {
       label: 'Atrasado',
-      classes: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 hover:bg-rose-200 hover:text-rose-900',
+      classes:
+        'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 hover:bg-rose-200 hover:text-rose-900',
     }
   }
 
   if (status === 'PARCIAL') {
     return {
       label: 'Parcial',
-      classes: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 hover:bg-amber-200 hover:text-amber-900',
+      classes:
+        'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 hover:bg-amber-200 hover:text-amber-900',
     }
   }
 
   return {
     label: 'Pendente',
-    classes: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 hover:bg-sky-200 hover:text-sky-900',
+    classes:
+      'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 hover:bg-sky-200 hover:text-sky-900',
   }
 })
 
@@ -408,7 +419,10 @@ async function adicionarParcela() {
     return
   }
 
-  if (!novaParcela.value.vencimento || Number.isNaN(new Date(novaParcela.value.vencimento).getTime())) {
+  if (
+    !novaParcela.value.vencimento ||
+    Number.isNaN(new Date(novaParcela.value.vencimento).getTime())
+  ) {
     toast.error('Informe uma data de vencimento válida')
     return
   }
@@ -437,7 +451,8 @@ async function excluirParcela(parcela: ParcelaDetalhe) {
 
   const confirm = await useConfirm().confirm({
     title: 'Excluir parcela',
-    message: 'Deseja excluir esta parcela pendente? O total do lançamento será recalculado pelas parcelas restantes.',
+    message:
+      'Deseja excluir esta parcela pendente? O total do lançamento será recalculado pelas parcelas restantes.',
     confirmText: 'Sim, excluir',
   })
 
@@ -454,8 +469,9 @@ async function excluirParcela(parcela: ParcelaDetalhe) {
   }
 }
 
-function efetivarParcela(id: number) {
+function efetivarParcela(id: number, valor?: number) {
   store.idMutation = id
+  store.valorParcelaEfetivar = Number(valor || 0)
   store.openModalEfetivar = true
 }
 
@@ -524,7 +540,10 @@ async function toggleNotificacaoVencimento() {
   const ativo = !lancamento.value.notificarVencimento
 
   try {
-    const response = await LancamentosRepository.atualizarNotificacaoVencimento(lancamento.value.id, ativo)
+    const response = await LancamentosRepository.atualizarNotificacaoVencimento(
+      lancamento.value.id,
+      ativo,
+    )
     lancamento.value.notificarVencimento = Boolean(response?.data?.notificarVencimento ?? ativo)
     store.updateTable()
     toast.success(response?.message || (ativo ? 'Notificação ativada.' : 'Notificação desativada.'))
@@ -539,10 +558,18 @@ async function toggleNotificacaoClienteVencimento() {
   const ativo = !lancamento.value.notificarClienteVencimento
 
   try {
-    const response = await LancamentosRepository.atualizarNotificacaoClienteVencimento(lancamento.value.id, ativo)
-    lancamento.value.notificarClienteVencimento = Boolean(response?.data?.notificarClienteVencimento ?? ativo)
+    const response = await LancamentosRepository.atualizarNotificacaoClienteVencimento(
+      lancamento.value.id,
+      ativo,
+    )
+    lancamento.value.notificarClienteVencimento = Boolean(
+      response?.data?.notificarClienteVencimento ?? ativo,
+    )
     store.updateTable()
-    toast.success(response?.message || (ativo ? 'Cobranca ao cliente ativada.' : 'Cobranca ao cliente desativada.'))
+    toast.success(
+      response?.message ||
+        (ativo ? 'Cobranca ao cliente ativada.' : 'Cobranca ao cliente desativada.'),
+    )
   } catch (error: any) {
     toast.error(error?.response?.data?.message || 'Erro ao atualizar cobranca ao cliente.')
   }
@@ -592,7 +619,10 @@ function abrirCobrancaLote() {
   cobrancaLoteOpen.value = true
 }
 
-async function onEfetivarLoteSalvo(resultado: { efetivadas: number; ignoradas: ParcelaIgnoradaLote[] }) {
+async function onEfetivarLoteSalvo(resultado: {
+  efetivadas: number
+  ignoradas: ParcelaIgnoradaLote[]
+}) {
   toast.success(`${resultado.efetivadas} parcela(s) efetivada(s) com sucesso.`)
   reportarIgnoradas(resultado.ignoradas)
   await finalizarLote()
@@ -664,7 +694,8 @@ watch(() => store.filters.update, loadLancamento)
 <template>
   <div class="mx-auto space-y-4 pb-20 md:pb-0">
     <div
-      class="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+      class="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between"
+    >
       <div class="space-y-2">
         <div class="flex flex-wrap items-center gap-2">
           <Badge class="border-0" :class="getTipoClasses(lancamento?.tipo)">
@@ -685,9 +716,11 @@ watch(() => store.filters.update, loadLancamento)
           </div>
           <p class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>#{{ lancamento?.Uid || 'N/A' }}</span>
-            <button type="button"
+            <button
+              type="button"
               class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs hover:bg-muted/50"
-              @click="copiarUid">
+              @click="copiarUid"
+            >
               <Copy class="h-3.5 w-3.5" /> Copiar UID
             </button>
           </p>
@@ -695,14 +728,16 @@ watch(() => store.filters.update, loadLancamento)
       </div>
 
       <div class="hidden flex-wrap items-center gap-2 md:flex">
-        <Button variant="outline" @click="goBack">
-          <ArrowLeft class="h-4 w-4" /> Voltar
-        </Button>
+        <Button variant="outline" @click="goBack"> <ArrowLeft class="h-4 w-4" /> Voltar </Button>
         <Button v-if="lancamento?.vendaId" variant="outline" @click="abrirVendaVinculada">
           <ShoppingCart class="h-4 w-4" /> Detalhes da venda
         </Button>
-        <Button v-if="uiStore.canCreateCharge" class="bg-success text-white hover:bg-success/80"
-          :disabled="!parcelasOrdenadas.some((parcela) => !parcela.pago)" @click="gerarCobrancaFatura">
+        <Button
+          v-if="uiStore.canCreateCharge"
+          class="bg-success text-white hover:bg-success/80"
+          :disabled="!parcelasOrdenadas.some((parcela) => !parcela.pago)"
+          @click="gerarCobrancaFatura"
+        >
           <CircleDollarSign class="h-4 w-4" /> Gerar cobrança
         </Button>
 
@@ -727,15 +762,29 @@ watch(() => store.filters.update, loadLancamento)
             <DropdownMenuItem :disabled="!lancamento?.id" @click="toggleNotificacaoVencimento">
               <BellOff v-if="lancamento?.notificarVencimento" class="mr-2 h-4 w-4" />
               <Bell v-else class="mr-2 h-4 w-4" />
-              {{ lancamento?.notificarVencimento ? 'Não lembrar vencimento' : 'Lembrar vencimento' }}
+              {{
+                lancamento?.notificarVencimento ? 'Não lembrar vencimento' : 'Lembrar vencimento'
+              }}
             </DropdownMenuItem>
-            <DropdownMenuItem v-if="podeNotificarCliente" :disabled="!lancamento?.id" @click="toggleNotificacaoClienteVencimento">
+            <DropdownMenuItem
+              v-if="podeNotificarCliente"
+              :disabled="!lancamento?.id"
+              @click="toggleNotificacaoClienteVencimento"
+            >
               <BellOff v-if="lancamento?.notificarClienteVencimento" class="mr-2 h-4 w-4" />
               <Bell v-else class="mr-2 h-4 w-4" />
-              {{ lancamento?.notificarClienteVencimento ? 'Desativar aviso ao cliente' : 'Notificar cliente' }}
+              {{
+                lancamento?.notificarClienteVencimento
+                  ? 'Desativar aviso ao cliente'
+                  : 'Notificar cliente'
+              }}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem class="text-red-600 focus:text-red-600" :disabled="!lancamento?.id" @click="deletar(lancamento?.id!)">
+            <DropdownMenuItem
+              class="text-red-600 focus:text-red-600"
+              :disabled="!lancamento?.id"
+              @click="deletar(lancamento?.id!)"
+            >
               <Trash2 class="mr-2 h-4 w-4" /> Excluir lançamento
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -750,18 +799,22 @@ watch(() => store.filters.update, loadLancamento)
           <CardTitle class="text-2xl">{{ formatCurrencyBR(valorTotal) }}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p class="text-sm text-muted-foreground">{{ parcelasOrdenadas.length }} parcela(s) vinculada(s)</p>
+          <p class="text-sm text-muted-foreground">
+            {{ parcelasOrdenadas.length }} parcela(s) vinculada(s)
+          </p>
         </CardContent>
       </Card>
 
       <Card class="shadow-sm">
         <CardHeader class="pb-2">
-          <CardDescription>{{ lancamento?.tipo === 'DESPESA' ? 'Total pago' : 'Total recebido' }}</CardDescription>
+          <CardDescription>{{
+            lancamento?.tipo === 'DESPESA' ? 'Total pago' : 'Total recebido'
+          }}</CardDescription>
           <CardTitle class="text-2xl text-emerald-600">{{ formatCurrencyBR(totalPago) }}</CardTitle>
         </CardHeader>
         <CardContent>
           <p class="text-sm text-muted-foreground">
-            {{parcelasOrdenadas.filter((parcela) => parcela.pago).length}} parcela(s) efetivada(s)
+            {{ parcelasOrdenadas.filter((parcela) => parcela.pago).length }} parcela(s) efetivada(s)
           </p>
         </CardContent>
       </Card>
@@ -769,11 +822,13 @@ watch(() => store.filters.update, loadLancamento)
       <Card class="shadow-sm">
         <CardHeader class="pb-2">
           <CardDescription>Em aberto</CardDescription>
-          <CardTitle class="text-2xl text-amber-600">{{ formatCurrencyBR(totalPendente) }}</CardTitle>
+          <CardTitle class="text-2xl text-amber-600">{{
+            formatCurrencyBR(totalPendente)
+          }}</CardTitle>
         </CardHeader>
         <CardContent>
           <p class="text-sm text-muted-foreground">
-            {{parcelasOrdenadas.filter((parcela) => !parcela.pago).length}} parcela(s) pendente(s)
+            {{ parcelasOrdenadas.filter((parcela) => !parcela.pago).length }} parcela(s) pendente(s)
           </p>
         </CardContent>
       </Card>
@@ -782,7 +837,11 @@ watch(() => store.filters.update, loadLancamento)
         <CardHeader class="pb-2">
           <CardDescription>Próximo passo</CardDescription>
           <CardTitle class="text-base md:text-lg">
-            {{ proximaParcela ? `${getNumeroParcelaLabel(proximaParcela)} de ${parcelasOrdenadas.length}` : '✅ Sem pendências' }}
+            {{
+              proximaParcela
+                ? `${getNumeroParcelaLabel(proximaParcela)} de ${parcelasOrdenadas.length}`
+                : '✅ Sem pendências'
+            }}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -807,20 +866,28 @@ watch(() => store.filters.update, loadLancamento)
               <p class="mb-3 text-sm font-medium text-foreground">Classificação</p>
               <div class="space-y-2 text-sm text-muted-foreground">
                 <p class="flex items-center gap-2">
-                  <Tags class="h-4 w-4" /> Categoria: <span class="font-medium text-foreground">{{
-                    lancamento?.categoria?.nome || 'Não informada' }}</span>
+                  <Tags class="h-4 w-4" /> Categoria:
+                  <span class="font-medium text-foreground">{{
+                    lancamento?.categoria?.nome || 'Não informada'
+                  }}</span>
                 </p>
                 <p class="flex items-center gap-2">
-                  <Landmark class="h-4 w-4" /> Conta: <span class="font-medium text-foreground">{{
-                    lancamento?.ContasFinanceiro?.nome || 'Não informada' }}</span>
+                  <Landmark class="h-4 w-4" /> Conta:
+                  <span class="font-medium text-foreground">{{
+                    lancamento?.ContasFinanceiro?.nome || 'Não informada'
+                  }}</span>
                 </p>
                 <p class="flex items-center gap-2">
-                  <UserRound class="h-4 w-4" /> Cliente: <span class="font-medium text-foreground">{{
-                    lancamento?.cliente?.nome || 'Não informado' }}</span>
+                  <UserRound class="h-4 w-4" /> Cliente:
+                  <span class="font-medium text-foreground">{{
+                    lancamento?.cliente?.nome || 'Não informado'
+                  }}</span>
                 </p>
                 <p class="flex items-center gap-2">
-                  <Wallet class="h-4 w-4" /> Forma de pagamento padrão: <span class="font-medium text-foreground">{{
-                    lancamento?.formaPagamento || 'Não informada' }}</span>
+                  <Wallet class="h-4 w-4" /> Forma de pagamento padrão:
+                  <span class="font-medium text-foreground">{{
+                    lancamento?.formaPagamento || 'Não informada'
+                  }}</span>
                 </p>
               </div>
             </div>
@@ -829,24 +896,34 @@ watch(() => store.filters.update, loadLancamento)
               <p class="mb-3 text-sm font-medium text-foreground">Datas e recorrência</p>
               <div class="space-y-2 text-sm text-muted-foreground">
                 <p class="flex items-center gap-2">
-                  <CalendarDays class="h-4 w-4" /> Lançamento: <span class="font-medium text-foreground">{{
-                    lancamento?.dataLancamento ? formatDateToPtBR(lancamento.dataLancamento) : 'N/A' }}</span>
+                  <CalendarDays class="h-4 w-4" /> Lançamento:
+                  <span class="font-medium text-foreground">{{
+                    lancamento?.dataLancamento ? formatDateToPtBR(lancamento.dataLancamento) : 'N/A'
+                  }}</span>
                 </p>
                 <p class="flex items-center gap-2">
-                  <Clock3 class="h-4 w-4" /> Cadastro: <span class="font-medium text-foreground">{{
-                    lancamento?.createdAt ? formatDateToPtBR(lancamento.createdAt, true) : 'N/A' }}</span>
+                  <Clock3 class="h-4 w-4" /> Cadastro:
+                  <span class="font-medium text-foreground">{{
+                    lancamento?.createdAt ? formatDateToPtBR(lancamento.createdAt, true) : 'N/A'
+                  }}</span>
                 </p>
                 <p class="flex items-center gap-2">
-                  <CalendarDays class="h-4 w-4" /> Entrada: <span class="font-medium text-foreground">{{
-                    lancamento?.dataEntrada ? formatDateToPtBR(lancamento.dataEntrada) : 'Sem entrada' }}</span>
+                  <CalendarDays class="h-4 w-4" /> Entrada:
+                  <span class="font-medium text-foreground">{{
+                    lancamento?.dataEntrada
+                      ? formatDateToPtBR(lancamento.dataEntrada)
+                      : 'Sem entrada'
+                  }}</span>
                 </p>
                 <p class="flex items-center gap-2">
-                  <BadgeInfo class="h-4 w-4" /> Modelo: <span class="font-medium text-foreground">{{
+                  <BadgeInfo class="h-4 w-4" /> Modelo:
+                  <span class="font-medium text-foreground">{{
                     recorrencia
                       ? `Recorrente (${descricaoFrequenciaRecorrencia.toLowerCase()})`
                       : lancamento?.recorrente
                         ? 'Parcelado'
-                        : 'Lançamento único' }}</span>
+                        : 'Lançamento único'
+                  }}</span>
                 </p>
               </div>
             </div>
@@ -857,7 +934,9 @@ watch(() => store.filters.update, loadLancamento)
           <div class="grid gap-4 md:grid-cols-3">
             <div>
               <p class="text-sm text-muted-foreground">Desconto aplicado</p>
-              <p class="text-base font-semibold text-foreground">{{ formatCurrencyBR(lancamento?.desconto || 0) }}</p>
+              <p class="text-base font-semibold text-foreground">
+                {{ formatCurrencyBR(lancamento?.desconto || 0) }}
+              </p>
             </div>
             <div>
               <p class="text-sm text-muted-foreground">Parcelas vencidas</p>
@@ -866,7 +945,9 @@ watch(() => store.filters.update, loadLancamento)
             <div>
               <p class="text-sm text-muted-foreground">Próxima parcela</p>
               <p class="text-base font-semibold text-foreground">
-                {{ proximaParcela ? formatDateToPtBR(proximaParcela.vencimento) : 'Sem pendências' }}
+                {{
+                  proximaParcela ? formatDateToPtBR(proximaParcela.vencimento) : 'Sem pendências'
+                }}
               </p>
             </div>
           </div>
@@ -887,35 +968,50 @@ watch(() => store.filters.update, loadLancamento)
         <CardContent class="space-y-3 px-4">
           <div class="rounded-xl border p-4">
             <p class="text-sm text-muted-foreground">Saldo do lançamento</p>
-            <p class="text-xl font-semibold" :class="totalPendente > 0 ? 'text-amber-600' : 'text-emerald-600'">
+            <p
+              class="text-xl font-semibold"
+              :class="totalPendente > 0 ? 'text-amber-600' : 'text-emerald-600'"
+            >
               {{ formatCurrencyBR(totalPago - totalPendente) }}
             </p>
             <p class="mt-1 text-xs text-muted-foreground">
-              Recebido/pago {{ formatCurrencyBR(totalPago) }} • em aberto {{ formatCurrencyBR(totalPendente) }}
+              Recebido/pago {{ formatCurrencyBR(totalPago) }} • em aberto
+              {{ formatCurrencyBR(totalPendente) }}
             </p>
           </div>
 
           <div class="rounded-xl border p-4">
             <p class="text-sm text-muted-foreground">Cobranças geradas</p>
             <p class="text-xl font-semibold text-foreground">
-              {{parcelasOrdenadas.filter((parcela) => parcela.CobrancasFinanceiras?.length).length}}
+              {{
+                parcelasOrdenadas.filter((parcela) => parcela.CobrancasFinanceiras?.length).length
+              }}
             </p>
-            <p class="mt-1 text-xs text-muted-foreground">Parcelas com link de cobrança disponível.</p>
+            <p class="mt-1 text-xs text-muted-foreground">
+              Parcelas com link de cobrança disponível.
+            </p>
           </div>
 
           <div class="rounded-xl border p-4">
             <p class="text-sm text-muted-foreground">Risco atual</p>
-            <p class="text-xl font-semibold" :class="parcelasVencidas.length ? 'text-rose-600' : 'text-emerald-600'">
+            <p
+              class="text-xl font-semibold"
+              :class="parcelasVencidas.length ? 'text-rose-600' : 'text-emerald-600'"
+            >
               {{ parcelasVencidas.length ? `${parcelasVencidas.length} vencida(s)` : 'Sem atraso' }}
             </p>
-            <p class="mt-1 text-xs text-muted-foreground">Acompanhamento por parcela e conta financeira.</p>
+            <p class="mt-1 text-xs text-muted-foreground">
+              Acompanhamento por parcela e conta financeira.
+            </p>
           </div>
         </CardContent>
       </Card>
     </div>
 
     <Card v-if="recorrencia" class="shadow-sm">
-      <CardHeader class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
+      <CardHeader
+        class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between"
+      >
         <CardTitle class="flex flex-wrap items-center gap-2 text-lg">
           <Repeat class="h-5 w-5 text-primary" /> Recorrência
           <Badge class="border-0" :class="situacaoRecorrencia.classes">
@@ -934,14 +1030,21 @@ watch(() => store.filters.update, loadLancamento)
           <Button
             variant="outline"
             size="sm"
-            :disabled="recorrenciaSalvando || (!recorrencia.ativo && !recorrencia.proximoVencimento)"
+            :disabled="
+              recorrenciaSalvando || (!recorrencia.ativo && !recorrencia.proximoVencimento)
+            "
             @click="alternarPausaRecorrencia"
           >
             <Pause v-if="recorrencia.ativo" class="h-4 w-4" />
             <Play v-else class="h-4 w-4" />
             {{ recorrencia.ativo ? 'Pausar' : 'Retomar' }}
           </Button>
-          <Button variant="outline" size="sm" :disabled="recorrenciaSalvando" @click="recorrenciaOpen = true">
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="recorrenciaSalvando"
+            @click="recorrenciaOpen = true"
+          >
             <PenLine class="h-4 w-4" /> Editar
           </Button>
           <Button
@@ -1004,7 +1107,9 @@ watch(() => store.filters.update, loadLancamento)
             <p class="text-sm text-muted-foreground">Período</p>
             <p class="text-base font-semibold text-foreground">
               {{ formatDateToPtBR(recorrencia.dataInicio as string) }} →
-              {{ recorrencia.dataFim ? formatDateToPtBR(recorrencia.dataFim as string) : 'sem fim' }}
+              {{
+                recorrencia.dataFim ? formatDateToPtBR(recorrencia.dataFim as string) : 'sem fim'
+              }}
             </p>
             <p class="mt-1 text-xs text-muted-foreground">
               {{ recorrencia.totalGerado }} ocorrência(s) gerada(s)
@@ -1015,29 +1120,49 @@ watch(() => store.filters.update, loadLancamento)
     </Card>
 
     <Card class="shadow-sm" v-if="parcelasOrdenadas.length">
-      <CardHeader class="flex flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:justify-between">
+      <CardHeader
+        class="flex flex-col gap-2 px-4 py-2 md:flex-row md:items-center md:justify-between"
+      >
         <CardTitle class="text-lg flex items-center gap-2">
           <BadgeInfo class="h-4 w-4" />
           Parcelas e cobranças
         </CardTitle>
         <div class="flex flex-wrap items-center gap-2">
           <label class="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-            <Checkbox :model-value="selecao.todosSelecionados.value" @update:model-value="selecao.toggleTodos()" />
+            <Checkbox
+              :model-value="selecao.todosSelecionados.value"
+              @update:model-value="selecao.toggleTodos()"
+            />
             Selecionar todas
           </label>
-          <button type="button" class="rounded-md border px-2 py-0.5 text-xs hover:bg-muted/50"
-            @click="selecao.selecionarPendentes()">
+          <button
+            type="button"
+            class="rounded-md border px-2 py-0.5 text-xs hover:bg-muted/50"
+            @click="selecao.selecionarPendentes()"
+          >
             Pendentes
           </button>
-          <button type="button" class="rounded-md border px-2 py-0.5 text-xs hover:bg-muted/50"
-            @click="selecao.selecionarPagas()">
+          <button
+            type="button"
+            class="rounded-md border px-2 py-0.5 text-xs hover:bg-muted/50"
+            @click="selecao.selecionarPagas()"
+          >
             Pagas
           </button>
-          <button v-if="selecao.total.value" type="button"
-            class="rounded-md border px-2 py-0.5 text-xs hover:bg-muted/50" @click="selecao.limpar()">
+          <button
+            v-if="selecao.total.value"
+            type="button"
+            class="rounded-md border px-2 py-0.5 text-xs hover:bg-muted/50"
+            @click="selecao.limpar()"
+          >
             Limpar
           </button>
-          <Button variant="outline" size="sm" :disabled="!lancamento?.id" @click="abrirAdicionarParcela">
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="!lancamento?.id"
+            @click="abrirAdicionarParcela"
+          >
             <Plus class="h-4 w-4" /> Adicionar
           </Button>
         </div>
@@ -1057,11 +1182,16 @@ watch(() => store.filters.update, loadLancamento)
           @limpar="selecao.limpar()"
         />
 
-        <div v-for="parcela in parcelasOrdenadas" :key="parcela.id"
+        <div
+          v-for="parcela in parcelasOrdenadas"
+          :key="parcela.id"
           class="relative overflow-hidden rounded-r-xl border bg-card px-3 py-1 shadow-sm"
-          :class="selecao.estaSelecionada(parcela.id) ? 'ring-1 ring-primary/40' : ''">
-          <div class="absolute left-0 top-0 h-full w-1"
-            :class="lancamento?.tipo === 'DESPESA' ? 'bg-rose-500' : 'bg-emerald-500'" />
+          :class="selecao.estaSelecionada(parcela.id) ? 'ring-1 ring-primary/40' : ''"
+        >
+          <div
+            class="absolute left-0 top-0 h-full w-1"
+            :class="lancamento?.tipo === 'DESPESA' ? 'bg-rose-500' : 'bg-emerald-500'"
+          />
 
           <div class="flex items-center justify-between gap-3">
             <Checkbox
@@ -1074,26 +1204,51 @@ watch(() => store.filters.update, loadLancamento)
                 <div class="min-w-0">
                   <p class="text-sm font-semibold text-foreground flex items-center gap-1">
                     {{ formatCurrencyBR(parcela.valor || 0) }}
-                  <span class="flex flex-wrap items-center gap-1.5">
-                    <span class="px-2 py-0 text-[10px] border border-border rounded-md">{{ getNumeroParcelaLabel(parcela) }}</span>
-                    <Badge class="border-0 px-2 py-0 text-[10px]"
-                      :class="parcela.pago ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : parcelasVencidas.some((item) => item.id === parcela.id) ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'">
-                      {{parcela.pago ? 'Pago' : parcelasVencidas.some((item) => item.id === parcela.id) ? 'Atrasado' :
-                      'Pendente' }}
-                    </Badge>
-                    <Badge v-if="parcela.CobrancasFinanceiras?.length" variant="outline" class="px-2 py-0 text-[10px]">
-                      Cobrança</Badge>
-                  </span>
+                    <span class="flex flex-wrap items-center gap-1.5">
+                      <span class="px-2 py-0 text-[10px] border border-border rounded-md">{{
+                        getNumeroParcelaLabel(parcela)
+                      }}</span>
+                      <Badge
+                        class="border-0 px-2 py-0 text-[10px]"
+                        :class="
+                          parcela.pago
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : parcelasVencidas.some((item) => item.id === parcela.id)
+                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                              : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                        "
+                      >
+                        {{
+                          parcela.pago
+                            ? 'Pago'
+                            : parcelasVencidas.some((item) => item.id === parcela.id)
+                              ? 'Atrasado'
+                              : 'Pendente'
+                        }}
+                      </Badge>
+                      <Badge
+                        v-if="parcela.CobrancasFinanceiras?.length"
+                        variant="outline"
+                        class="px-2 py-0 text-[10px]"
+                      >
+                        Cobrança</Badge
+                      >
+                    </span>
                   </p>
                   <div class="flex items-center gap-1">
                     <p class="truncate text-xs text-muted-foreground">
-                      Conta: {{ parcela.ContaFinanceira?.nome || lancamento?.ContasFinanceiro?.nome || 'Não informada' }}
+                      Conta:
+                      {{
+                        parcela.ContaFinanceira?.nome ||
+                        lancamento?.ContasFinanceiro?.nome ||
+                        'Não informada'
+                      }}
                     </p>
                     -
                     <p class="truncate text-[11px] text-muted-foreground flex items-center">
                       Venc. {{ formatDateToPtBR(parcela.vencimento) }}
-                      <span v-if="parcela.dataPagamento"> 
-                        • Pgto {{ formatDateToPtBR(parcela.dataPagamento, true)}}
+                      <span v-if="parcela.dataPagamento">
+                        • Pgto {{ formatDateToPtBR(parcela.dataPagamento, true) }}
                       </span>
                       <span v-if="parcela.formaPagamento"> • {{ parcela.formaPagamento }}</span>
                     </p>
@@ -1104,33 +1259,75 @@ watch(() => store.filters.update, loadLancamento)
 
             <div class="flex items-center gap-1">
               <div class="hidden items-center gap-1 md:flex">
-                <Button v-if="!parcela.pago" variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Editar'" @click="editarParcela(parcela)">
+                <Button
+                  v-if="!parcela.pago"
+                  variant="outline"
+                  size="icon"
+                  class="h-8 w-8"
+                  v-tooltip="'Editar'"
+                  @click="editarParcela(parcela)"
+                >
                   <PenLine class="h-4 w-4" />
                 </Button>
-                <Button v-if="!parcela.pago" variant="outline" size="icon" class="h-8 w-8 text-rose-600 hover:text-rose-700"
-                  v-tooltip="'Excluir'" @click="excluirParcela(parcela)">
+                <Button
+                  v-if="!parcela.pago"
+                  variant="outline"
+                  size="icon"
+                  class="h-8 w-8 text-rose-600 hover:text-rose-700"
+                  v-tooltip="'Excluir'"
+                  @click="excluirParcela(parcela)"
+                >
                   <Trash2 class="h-4 w-4" />
                 </Button>
-                <Button v-if="uiStore.canCreateCharge && !parcela.pago && !parcela.CobrancasFinanceiras?.length" size="icon"
-                  class="h-8 w-8 bg-success text-white hover:bg-success/80" v-tooltip="'Gerar cobrança'"
-                  @click="gerarCobrancaParcela(parcela.id!, Number(parcela.valor || 0))">
+                <Button
+                  v-if="
+                    uiStore.canCreateCharge &&
+                    !parcela.pago &&
+                    !parcela.CobrancasFinanceiras?.length
+                  "
+                  size="icon"
+                  class="h-8 w-8 bg-success text-white hover:bg-success/80"
+                  v-tooltip="'Gerar cobrança'"
+                  @click="gerarCobrancaParcela(parcela.id!, Number(parcela.valor || 0))"
+                >
                   <CircleDollarSign class="h-4 w-4" />
                 </Button>
-                <Button v-if="parcela.CobrancasFinanceiras?.length" variant="outline" size="icon" class="h-8 w-8"
-                  v-tooltip="'Abrir cobrança'" @click="openLinkCobranca(parcela.CobrancasFinanceiras[0].externalLink)">
+                <Button
+                  v-if="parcela.CobrancasFinanceiras?.length"
+                  variant="outline"
+                  size="icon"
+                  class="h-8 w-8"
+                  v-tooltip="'Abrir cobrança'"
+                  @click="openLinkCobranca(parcela.CobrancasFinanceiras[0].externalLink)"
+                >
                   <ExternalLink class="h-4 w-4" />
                 </Button>
-                <Button v-if="lancamento?.tipo === 'RECEITA' && lancamento?.clienteId && !parcela.pago"
-                  variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Enviar cobrança pelo WhatsApp'"
-                  @click="abrirCobrancaRapida(parcela)">
+                <Button
+                  v-if="lancamento?.tipo === 'RECEITA' && lancamento?.clienteId && !parcela.pago"
+                  variant="outline"
+                  size="icon"
+                  class="h-8 w-8"
+                  v-tooltip="'Enviar cobrança pelo WhatsApp'"
+                  @click="abrirCobrancaRapida(parcela)"
+                >
                   <Send class="h-4 w-4" />
                 </Button>
-                <Button v-if="!parcela.pago" size="icon" class="h-8 w-8 dark:text-white"
-                  v-tooltip="lancamento?.tipo === 'DESPESA' ? 'Pagar' : 'Receber'" @click="efetivarParcela(parcela.id!)">
+                <Button
+                  v-if="!parcela.pago"
+                  size="icon"
+                  class="h-8 w-8 dark:text-white"
+                  v-tooltip="lancamento?.tipo === 'DESPESA' ? 'Pagar' : 'Receber'"
+                  @click="efetivarParcela(parcela.id!, Number(parcela.valor || 0))"
+                >
                   <CheckCircle2 class="h-4 w-4" />
                 </Button>
-                <Button v-else size="icon" class="h-8 w-8 bg-warning text-white hover:bg-warning/80"
-                  v-tooltip="'Estornar'" @click="estornarParcela(parcela.id!)">
+                <Button
+                  v-else
+                  size="icon"
+                  class="h-8 w-8 bg-warning text-white hover:bg-warning/80"
+                  v-tooltip="'Estornar'"
+                  @click="estornarParcela(parcela.id!)"
+                >
                   <Undo2 class="h-4 w-4" />
                 </Button>
               </div>
@@ -1145,28 +1342,39 @@ watch(() => store.filters.update, loadLancamento)
                   <DropdownMenuItem v-if="!parcela.pago" @click="editarParcela(parcela)">
                     <PenLine class="mr-2 h-4 w-4" /> Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="!parcela.pago"
-                    @click="excluirParcela(parcela)">
+                  <DropdownMenuItem v-if="!parcela.pago" @click="excluirParcela(parcela)">
                     <Trash2 class="mr-2 h-4 w-4" /> Excluir
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="!parcela.pago"
-                    @click="efetivarParcela(parcela.id!)">
-                    <CheckCircle2 class="mr-2 h-4 w-4" /> {{ lancamento?.tipo === 'DESPESA' ? 'Pagar' : 'Receber' }}
+                  <DropdownMenuItem
+                    v-if="!parcela.pago"
+                    @click="efetivarParcela(parcela.id!, Number(parcela.valor || 0))"
+                  >
+                    <CheckCircle2 class="mr-2 h-4 w-4" />
+                    {{ lancamento?.tipo === 'DESPESA' ? 'Pagar' : 'Receber' }}
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-else
-                    @click="estornarParcela(parcela.id!)">
+                  <DropdownMenuItem v-else @click="estornarParcela(parcela.id!)">
                     <Undo2 class="mr-2 h-4 w-4" /> Estornar
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="uiStore.canCreateCharge && !parcela.pago && !parcela.CobrancasFinanceiras?.length"
-                    @click="gerarCobrancaParcela(parcela.id!, Number(parcela.valor || 0))">
+                  <DropdownMenuItem
+                    v-if="
+                      uiStore.canCreateCharge &&
+                      !parcela.pago &&
+                      !parcela.CobrancasFinanceiras?.length
+                    "
+                    @click="gerarCobrancaParcela(parcela.id!, Number(parcela.valor || 0))"
+                  >
                     <CircleDollarSign class="mr-2 h-4 w-4" /> Gerar cobrança
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="parcela.CobrancasFinanceiras?.length"
-                    @click="openLinkCobranca(parcela.CobrancasFinanceiras[0].externalLink)">
+                  <DropdownMenuItem
+                    v-if="parcela.CobrancasFinanceiras?.length"
+                    @click="openLinkCobranca(parcela.CobrancasFinanceiras[0].externalLink)"
+                  >
                     <ExternalLink class="mr-2 h-4 w-4" /> Abrir cobrança
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="lancamento?.tipo === 'RECEITA' && lancamento?.clienteId && !parcela.pago"
-                    @click="abrirCobrancaRapida(parcela)">
+                  <DropdownMenuItem
+                    v-if="lancamento?.tipo === 'RECEITA' && lancamento?.clienteId && !parcela.pago"
+                    @click="abrirCobrancaRapida(parcela)"
+                  >
                     <Send class="mr-2 h-4 w-4" /> Enviar pelo WhatsApp
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -1240,7 +1448,9 @@ watch(() => store.filters.update, loadLancamento)
       >
         <BellOff v-if="lancamento?.notificarClienteVencimento" class="h-5 w-5" />
         <Bell v-else class="h-5 w-5" />
-        <span class="text-xs">{{ lancamento?.notificarClienteVencimento ? 'Cliente off' : 'Cliente' }}</span>
+        <span class="text-xs">{{
+          lancamento?.notificarClienteVencimento ? 'Cliente off' : 'Cliente'
+        }}</span>
       </button>
       <button
         v-if="uiStore.canCreateCharge"
@@ -1270,7 +1480,11 @@ watch(() => store.filters.update, loadLancamento)
     <CobrancaRapidaModal
       v-model:open="cobrancaRapidaOpen"
       :cliente="lancamento?.cliente?.nome"
-      :descricao="cobrancaRapidaParcela ? `${lancamento?.descricao} • ${getNumeroParcelaLabel(cobrancaRapidaParcela)}` : lancamento?.descricao"
+      :descricao="
+        cobrancaRapidaParcela
+          ? `${lancamento?.descricao} • ${getNumeroParcelaLabel(cobrancaRapidaParcela)}`
+          : lancamento?.descricao
+      "
       :valor="Number(cobrancaRapidaParcela?.valor || 0)"
       :mensagem-inicial="mensagemCobrancaPadrao"
       :sending="cobrancaRapidaSending"
@@ -1303,7 +1517,12 @@ watch(() => store.filters.update, loadLancamento)
           />
         </div>
         <div class="mt-2 flex justify-end gap-2">
-          <Button type="button" variant="secondary" :disabled="salvandoParcela" @click="openAdicionarParcela = false">
+          <Button
+            type="button"
+            variant="secondary"
+            :disabled="salvandoParcela"
+            @click="openAdicionarParcela = false"
+          >
             Cancelar
           </Button>
           <Button type="submit" class="text-white" :disabled="salvandoParcela">

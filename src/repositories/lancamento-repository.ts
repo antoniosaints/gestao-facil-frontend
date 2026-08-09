@@ -165,6 +165,9 @@ export class LancamentosRepository {
       dataPagamento: string
       metodoPagamento: MetodoPagamentoFinanceiro
       contaPagamento?: number | null
+      valorRecebido?: number
+      novoVencimento?: string
+      criarSaldoPendente?: boolean
     },
   ) {
     await http.post(`/lancamentos/parcelas/${idParcela}/pagar`, data)
@@ -178,7 +181,10 @@ export class LancamentosRepository {
     },
   ) {
     const response = await http.post(`/lancamentos/parcelas/pagar-multiplas`, { parcelas, ...data })
-    return response.data as ResultadoLoteParcelas<{ efetivadas: number; parcelasRecorrentesGeradas: number }>
+    return response.data as ResultadoLoteParcelas<{
+      efetivadas: number
+      parcelasRecorrentesGeradas: number
+    }>
   }
   static async estornarMultiplasParcelas(parcelas: number[]) {
     const response = await http.post(`/lancamentos/parcelas/estornar-multiplas`, { parcelas })
@@ -203,12 +209,14 @@ export class LancamentosRepository {
     const data = await http.get(`/lancamentos/relatorios/valor-conta`)
     return data.data
   }
-  static async criarConta(data: Pick<ContasFinanceiro, 'nome'> & {
-    id?: number
-    saldoInicial?: number
-    corDestaque?: string | null
-    removeIcon?: boolean
-  }) {
+  static async criarConta(
+    data: Pick<ContasFinanceiro, 'nome'> & {
+      id?: number
+      saldoInicial?: number
+      corDestaque?: string | null
+      removeIcon?: boolean
+    },
+  ) {
     const response = await http.post(`/lancamentos/contas`, data)
     return response.data
   }
@@ -248,7 +256,9 @@ export class LancamentosRepository {
     })
     return response.data
   }
-  static async getContaFinanceiraSaldoAtual(id: number): Promise<{ data: ContaFinanceiraSaldoAtualResponse }> {
+  static async getContaFinanceiraSaldoAtual(
+    id: number,
+  ): Promise<{ data: ContaFinanceiraSaldoAtualResponse }> {
     const response = await http.get(`/lancamentos/contas/${id}/saldo-atual`)
     return response.data
   }
@@ -296,7 +306,9 @@ export class LancamentosRepository {
   static async deletarConta(id: number) {
     await http.delete(`/lancamentos/contas/${id}`)
   }
-  static async criarCategoria(data: Pick<CategoriaFinanceiro, 'nome'> & { id?: number; categoriaPai?: number | null }) {
+  static async criarCategoria(
+    data: Pick<CategoriaFinanceiro, 'nome'> & { id?: number; categoriaPai?: number | null },
+  ) {
     const response = await http.post(`/lancamentos/categorias`, data)
     return response.data as {
       status: number
@@ -518,7 +530,10 @@ export class LancamentosRepository {
 
   static async atualizarLancamento(
     id: number,
-    data: Pick<FormularioLancamento, 'descricao' | 'formaPagamento' | 'clienteId' | 'categoriaId' | 'contasFinanceiroId'>,
+    data: Pick<
+      FormularioLancamento,
+      'descricao' | 'formaPagamento' | 'clienteId' | 'categoriaId' | 'contasFinanceiroId'
+    >,
   ) {
     const response = await http.post(`/lancamentos/${id}/atualizar-basico`, data)
     return response.data

@@ -572,6 +572,10 @@ export interface PagamentoVendas {
   valor: number
   data?: Date
   status: StatusPagamento
+  detalhes?: Array<{
+    metodo: MetodoPagamento
+    valor: number
+  }> | null
 }
 
 export type CaixaStatus = 'ABERTO' | 'FECHADO' | 'CANCELADO'

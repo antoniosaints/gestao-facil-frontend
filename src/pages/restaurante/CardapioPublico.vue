@@ -18,7 +18,7 @@ import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { getThemePalette, hexToHslValue, normalizeThemeCustomization } from '@/utils/themeCustomization'
-import { calculateMenuItemUnitPrice, updateMenuGroupSelection } from './publicMenuCart'
+import { calculateMenuItemUnitPrice, hasSameMenuSelections, updateMenuGroupSelection } from './publicMenuCart'
 import { parseTrackingTokens, prependTrackingToken } from './publicMenuHistory'
 
 const route = useRoute()
@@ -31,8 +31,13 @@ const checkoutOpen = ref(false)
 const cartDrawerOpen = ref(false)
 const itemDialogOpen = ref(false)
 const cardapio = ref<any>(null)
-const quantities = ref<Record<number, number>>({})
-const selections = ref<Record<number, number[]>>({})
+type CartLine = {
+  id: string
+  item: any
+  quantidade: number
+  selecaoIds: number[]
+}
+const cartLines = ref<CartLine[]>([])
 const quote = ref<RestauranteCheckoutPreview | null>(null)
 const orderResult = ref<any>(null)
 const tracking = ref<any>(null)
@@ -42,6 +47,7 @@ const orderHistory = ref<Array<RestaurantePublicOrderTracking & { trackingToken:
 const searchTerm = ref('')
 const activeCategory = ref('todos')
 const activeItem = ref<any>(null)
+const activeCartLineId = ref<string | null>(null)
 const draftQuantity = ref(1)
 const draftSelections = ref<number[]>([])
 const origem = ref<'RETIRADA' | 'DELIVERY'>('RETIRADA')
@@ -111,17 +117,22 @@ const visibleGroups = computed(() => {
     .filter((group) => group.items.length)
 })
 
-const selecionados = computed(() => (cardapio.value?.itens || []).filter((item: any) => quantities.value[item.id] > 0))
-const cartUnits = computed(() => selecionados.value.reduce((total: number, item: any) => total + quantities.value[item.id], 0))
+const selecionados = computed(() => cartLines.value)
+const cartUnits = computed(() => selecionados.value.reduce((total, line) => total + line.quantidade, 0))
 const logo = computed(() => resolveFileUrl(cardapio.value?.restaurante.logo))
 const payloadItems = computed(() =>
-  selecionados.value.map((item: any) => ({
-    catalogoItemId: item.id,
-    quantidade: quantities.value[item.id],
-    selecaoIds: selections.value[item.id] || [],
+  selecionados.value.map((line) => ({
+    catalogoItemId: line.item.id,
+    quantidade: line.quantidade,
+    selecaoIds: line.selecaoIds,
   })),
 )
-const estimatedSubtotal = computed(() => selecionados.value.reduce((total: number, item: any) => total + calculateMenuItemUnitPrice(item, selections.value[item.id] || []) * quantities.value[item.id], 0))
+const estimatedSubtotal = computed(() =>
+  selecionados.value.reduce(
+    (total, line) => total + calculateMenuItemUnitPrice(line.item, line.selecaoIds) * line.quantidade,
+    0,
+  ),
+)
 const activeUnitPrice = computed(() => (activeItem.value ? calculateMenuItemUnitPrice(activeItem.value, draftSelections.value) : 0))
 const menuThemeStyle = computed<CSSProperties>(() => {
   const theme = normalizeThemeCustomization(cardapio.value?.restaurante.temaPersonalizado)
@@ -201,28 +212,60 @@ async function loadOrderHistory(tokens = storedTrackingTokens()) {
   historyLoading.value = false
 }
 
-function change(id: number, delta: number) {
-  quantities.value[id] = Math.max(0, (quantities.value[id] || 0) + delta)
-  if (!quantities.value[id]) delete quantities.value[id]
+function quantidadeNoCarrinho(catalogoItemId: number) {
+  return cartLines.value
+    .filter((line) => line.item.id === catalogoItemId)
+    .reduce((total, line) => total + line.quantidade, 0)
+}
+
+function change(lineId: string, delta: number) {
+  const line = cartLines.value.find((current) => current.id === lineId)
+  if (!line) return
+  line.quantidade = Math.max(0, line.quantidade + delta)
+  if (!line.quantidade) cartLines.value = cartLines.value.filter((current) => current.id !== lineId)
   invalidateCart()
 }
 
-function removeItem(id: number) {
-  delete quantities.value[id]
-  delete selections.value[id]
+function removeItem(lineId: string) {
+  cartLines.value = cartLines.value.filter((line) => line.id !== lineId)
   invalidateCart()
 }
 
 function openItem(item: any) {
   activeItem.value = item
-  draftQuantity.value = quantities.value[item.id] || 1
-  draftSelections.value = [...(selections.value[item.id] || [])]
+  activeCartLineId.value = null
+  draftQuantity.value = 1
+  draftSelections.value = []
   itemDialogOpen.value = true
+}
+
+function editCartLine(line: CartLine) {
+  activeItem.value = line.item
+  activeCartLineId.value = line.id
+  draftQuantity.value = line.quantidade
+  draftSelections.value = [...line.selecaoIds]
+  itemDialogOpen.value = true
+}
+
+function findMatchingCartLine(item: any, selecaoIds: number[]) {
+  return cartLines.value.find(
+    (line) => line.item.id === item.id && hasSameMenuSelections(line.selecaoIds, selecaoIds),
+  )
 }
 
 function quickAdd(item: any) {
   if (item.grupos.length) return openItem(item)
-  change(item.id, 1)
+  const existing = findMatchingCartLine(item, [])
+  if (existing) change(existing.id, 1)
+  else {
+    cartLines.value.push({
+      id: `${item.id}-${Date.now()}-${Math.random()}`,
+      item,
+      quantidade: 1,
+      selecaoIds: [],
+    })
+    invalidateCart()
+  }
 }
 
 function toggleDraft(group: any, optionId: number) {
@@ -235,23 +278,40 @@ function saveActiveItem() {
   if (!activeSelectionsValid.value) {
     return toast.info('Complete as escolhas obrigatórias antes de adicionar.')
   }
-  quantities.value[activeItem.value.id] = draftQuantity.value
-  selections.value[activeItem.value.id] = [...draftSelections.value]
+  const editing = cartLines.value.find((line) => line.id === activeCartLineId.value)
+  if (editing) {
+    editing.quantidade = draftQuantity.value
+    editing.selecaoIds = [...draftSelections.value]
+  } else {
+    const existing = findMatchingCartLine(activeItem.value, draftSelections.value)
+    if (existing) existing.quantidade += draftQuantity.value
+    else {
+      cartLines.value.push({
+        id: `${activeItem.value.id}-${Date.now()}-${Math.random()}`,
+        item: activeItem.value,
+        quantidade: draftQuantity.value,
+        selecaoIds: [...draftSelections.value],
+      })
+    }
+  }
   invalidateCart()
   itemDialogOpen.value = false
 }
 
-function selectedOptionNames(item: any) {
-  const selectedIds = selections.value[item.id] || []
-  return item.grupos.flatMap((link: any) => link.Grupo.opcoes.filter((option: any) => selectedIds.includes(option.id)).map((option: any) => option.nome))
+function selectedOptionNames(line: CartLine) {
+  return line.item.grupos.flatMap((link: any) =>
+    link.Grupo.opcoes
+      .filter((option: any) => line.selecaoIds.includes(option.id))
+      .map((option: any) => option.nome),
+  )
 }
 
 function selectedCount(group: any) {
   return group.opcoes.filter((option: any) => draftSelections.value.includes(option.id)).length
 }
 
-function lineTotal(item: any) {
-  return calculateMenuItemUnitPrice(item, selections.value[item.id] || []) * quantities.value[item.id]
+function lineTotal(line: CartLine) {
+  return calculateMenuItemUnitPrice(line.item, line.selecaoIds) * line.quantidade
 }
 
 function checkoutPayload() {
@@ -353,8 +413,7 @@ async function pedir() {
     orderResult.value = result
     const tokens = saveTrackingToken(result.trackingToken)
     await loadOrderHistory(tokens)
-    quantities.value = {}
-    selections.value = {}
+    cartLines.value = []
     if (result.paymentAction?.type === 'REDIRECT' && result.paymentAction.url) {
       window.location.assign(result.paymentAction.url)
       return
@@ -518,7 +577,7 @@ onBeforeUnmount(() => {
               <div class="grid gap-3 md:grid-cols-2">
                 <article v-for="item in group.items" :key="item.id" class="product-card group" @click="openItem(item)">
                   <div class="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
-                    <div v-if="quantities[item.id]" class="brand-soft mb-2 w-fit rounded-full px-2.5 py-1 text-xs font-semibold">{{ quantities[item.id] }} no carrinho</div>
+                    <div v-if="quantidadeNoCarrinho(item.id)" class="brand-soft mb-2 w-fit rounded-full px-2.5 py-1 text-xs font-semibold">{{ quantidadeNoCarrinho(item.id) }} no carrinho</div>
                     <h3 class="text-balance text-base font-semibold leading-snug sm:text-lg">
                       {{ itemName(item) }}
                     </h3>
@@ -563,28 +622,28 @@ onBeforeUnmount(() => {
               </div>
               <div v-else>
                 <div class="max-h-[46vh] space-y-1 overflow-y-auto px-3 py-3">
-                  <div v-for="item in selecionados" :key="item.id" class="cart-line">
+                  <div v-for="line in selecionados" :key="line.id" class="cart-line">
                     <div class="min-w-0 flex-1">
-                      <button type="button" class="brand-hover block max-w-full truncate text-left text-sm font-semibold" @click="openItem(item)">
-                        {{ itemName(item) }}
+                      <button type="button" class="brand-hover block max-w-full truncate text-left text-sm font-semibold" @click="editCartLine(line)">
+                        {{ itemName(line.item) }}
                       </button>
-                      <p v-if="selectedOptionNames(item).length" class="mt-0.5 line-clamp-2 text-xs text-stone-500">
-                        {{ selectedOptionNames(item).join(', ') }}
+                      <p v-if="selectedOptionNames(line).length" class="mt-0.5 line-clamp-2 text-xs text-stone-500">
+                        {{ selectedOptionNames(line).join(', ') }}
                       </p>
                       <p class="price mt-1.5 text-sm font-semibold">
-                        {{ formatCurrencyBR(lineTotal(item)) }}
+                        {{ formatCurrencyBR(lineTotal(line)) }}
                       </p>
                     </div>
                     <div class="flex items-center gap-1">
-                      <button type="button" class="quantity-button" :aria-label="`Diminuir ${itemName(item)}`" @click="change(item.id, -1)">
+                      <button type="button" class="quantity-button" :aria-label="`Diminuir ${itemName(line.item)}`" @click="change(line.id, -1)">
                         <Minus class="h-3.5 w-3.5" />
                       </button>
-                      <span class="w-7 text-center text-sm font-semibold tabular-nums">{{ quantities[item.id] }}</span>
-                      <button type="button" class="quantity-button" :aria-label="`Aumentar ${itemName(item)}`" @click="change(item.id, 1)">
+                      <span class="w-7 text-center text-sm font-semibold tabular-nums">{{ line.quantidade }}</span>
+                      <button type="button" class="quantity-button" :aria-label="`Aumentar ${itemName(line.item)}`" @click="change(line.id, 1)">
                         <Plus class="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <button type="button" class="delete-button" :aria-label="`Remover ${itemName(item)}`" @click="removeItem(item.id)">
+                    <button type="button" class="delete-button" :aria-label="`Remover ${itemName(line.item)}`" @click="removeItem(line.id)">
                       <Trash2 class="h-4 w-4" />
                     </button>
                   </div>
@@ -662,7 +721,7 @@ onBeforeUnmount(() => {
                 </button>
               </div>
               <Button class="tap-button h-12 flex-1 rounded-xl text-base" :style="primaryButtonStyle" :disabled="!activeSelectionsValid" @click="saveActiveItem">
-                {{ quantities[activeItem.id] ? 'Atualizar carrinho' : 'Adicionar ao carrinho' }}
+                {{ activeCartLineId ? 'Atualizar carrinho' : 'Adicionar ao carrinho' }}
                 <span class="price ml-auto">{{ formatCurrencyBR(activeUnitPrice * draftQuantity) }}</span>
               </Button>
             </div>
@@ -677,21 +736,21 @@ onBeforeUnmount(() => {
           ><DrawerTitle class="menu-heading text-xl">Seu carrinho</DrawerTitle><DrawerDescription>{{ cartUnits }} {{ cartUnits === 1 ? 'item selecionado' : 'itens selecionados' }}</DrawerDescription></DrawerHeader
         >
         <div class="overflow-y-auto px-4">
-          <div v-for="item in selecionados" :key="item.id" class="cart-line border-b py-4 last:border-0">
+          <div v-for="line in selecionados" :key="line.id" class="cart-line border-b py-4 last:border-0">
             <div class="min-w-0 flex-1">
-              <button type="button" class="truncate text-left text-sm font-semibold" @click="openItem(item)">
-                {{ itemName(item) }}
+              <button type="button" class="truncate text-left text-sm font-semibold" @click="editCartLine(line)">
+                {{ itemName(line.item) }}
               </button>
-              <p v-if="selectedOptionNames(item).length" class="mt-0.5 line-clamp-2 text-xs text-stone-500">
-                {{ selectedOptionNames(item).join(', ') }}
+              <p v-if="selectedOptionNames(line).length" class="mt-0.5 line-clamp-2 text-xs text-stone-500">
+                {{ selectedOptionNames(line).join(', ') }}
               </p>
-              <p class="price mt-1.5 text-sm font-bold">{{ formatCurrencyBR(lineTotal(item)) }}</p>
+              <p class="price mt-1.5 text-sm font-bold">{{ formatCurrencyBR(lineTotal(line)) }}</p>
             </div>
             <div class="flex items-center gap-1">
-              <button type="button" class="quantity-button" @click="change(item.id, -1)">
+              <button type="button" class="quantity-button" @click="change(line.id, -1)">
                 <Minus class="h-3.5 w-3.5" /></button
-              ><span class="w-7 text-center text-sm font-semibold tabular-nums">{{ quantities[item.id] }}</span
-              ><button type="button" class="quantity-button" @click="change(item.id, 1)">
+              ><span class="w-7 text-center text-sm font-semibold tabular-nums">{{ line.quantidade }}</span
+              ><button type="button" class="quantity-button" @click="change(line.id, 1)">
                 <Plus class="h-3.5 w-3.5" />
               </button>
             </div>
@@ -803,15 +862,15 @@ onBeforeUnmount(() => {
             <aside class="border-t bg-stone-50 p-6 dark:bg-zinc-900 lg:border-l lg:border-t-0 sm:p-7">
               <h3 class="menu-heading text-lg font-semibold">Resumo do pedido</h3>
               <div class="mt-4 space-y-2">
-                <div v-for="item in selecionados" :key="item.id" class="flex gap-3 text-sm bg-stone-100 p-2 border rounded-md">
-                  <span class="flex h-6 min-w-6 items-center justify-center rounded-md text-xs font-bold" :style="primaryButtonStyle">{{ quantities[item.id] }}</span>
+                <div v-for="line in selecionados" :key="line.id" class="flex gap-3 text-sm bg-stone-100 p-2 border rounded-md">
+                  <span class="flex h-6 min-w-6 items-center justify-center rounded-md text-xs font-bold" :style="primaryButtonStyle">{{ line.quantidade }}</span>
                   <div class="min-w-0 flex-1">
-                    <p class="font-medium">{{ itemName(item) }}</p>
-                    <p v-if="selectedOptionNames(item).length" class="mt-0.5 text-xs text-stone-500">
-                      {{ selectedOptionNames(item).join(', ') }}
+                    <p class="font-medium">{{ itemName(line.item) }}</p>
+                    <p v-if="selectedOptionNames(line).length" class="mt-0.5 text-xs text-stone-500">
+                      {{ selectedOptionNames(line).join(', ') }}
                     </p>
                   </div>
-                  <span class="price font-medium">{{ formatCurrencyBR(lineTotal(item)) }}</span>
+                  <span class="price font-medium">{{ formatCurrencyBR(lineTotal(line)) }}</span>
                 </div>
               </div>
               <Separator class="my-3" />

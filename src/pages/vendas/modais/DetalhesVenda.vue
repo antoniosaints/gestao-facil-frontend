@@ -47,10 +47,12 @@ import { useConfirm } from '@/composables/useConfirm'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { VendaRepository } from '@/repositories/venda-repository'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
+import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { useVendasStore } from '@/stores/vendas/useVenda'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { formatCurrencyBR, formatPaymentMethodLabel } from '@/utils/formatters'
+import FormularioEfertivar from '@/pages/financeiro/lancamentos/modais/FormularioEfertivar.vue'
 import {
   deletarVenda,
   editarVenda,
@@ -59,17 +61,24 @@ import {
   openModalFaturarVenda,
 } from '../ActionsVendas'
 
-type BadgeColor = 'cyan' | 'yellow' | 'gray' | 'violet' | 'purple' | 'green' | 'emerald' | 'orange' | 'red' | 'blue'
+type BadgeColor =
+  | 'cyan'
+  | 'yellow'
+  | 'gray'
+  | 'violet'
+  | 'purple'
+  | 'green'
+  | 'emerald'
+  | 'orange'
+  | 'red'
+  | 'blue'
 
 /// Faturar, editar, comprovante e cobrança abrem modais que pertencem à tela
 /// hospedeira. A tela declara o que monta para não sobrar botão que não faz nada
 /// — as demais ações (cupom, impressão, estorno, exclusão) são autossuficientes.
 type AcaoHost = 'faturar' | 'editar' | 'comprovante' | 'cobranca'
 
-const props = withDefaults(
-  defineProps<{ acoesHost?: AcaoHost[] }>(),
-  { acoesHost: () => [] },
-)
+const props = withDefaults(defineProps<{ acoesHost?: AcaoHost[] }>(), { acoesHost: () => [] })
 
 function hostSuporta(acao: AcaoHost) {
   return props.acoesHost.includes(acao)
@@ -77,6 +86,7 @@ function hostSuporta(acao: AcaoHost) {
 
 const store = useVendasStore()
 const storeCobranca = useCobrancasFinanceirasStore()
+const storeLancamentos = useLancamentosStore()
 const uiStore = useUiStore()
 const toast = useToast()
 const router = useRouter()
@@ -87,7 +97,10 @@ const cobrancas = computed(() => venda.value?.CobrancasFinanceiras ?? [])
 const lancamentosFinanceiros = computed(() => venda.value?.LancamentoFinanceiro || [])
 
 const subtotal = computed(() =>
-  itens.value.reduce((acc, item) => acc + Number(item.quantidade || 0) * Number(item.valor || 0), 0),
+  itens.value.reduce(
+    (acc, item) => acc + Number(item.quantidade || 0) * Number(item.valor || 0),
+    0,
+  ),
 )
 const desconto = computed(() => Number(venda.value?.desconto || 0))
 const total = computed(() => subtotal.value - desconto.value)
@@ -103,10 +116,20 @@ const isFaturada = computed(() => venda.value?.status === 'FATURADO')
 // Venda faturada é um registro fechado: editar refaria itens e estoque já baixados,
 // e cobrar de novo duplicaria o recebimento. O caminho é estornar antes.
 const podeEditar = computed(() => hostSuporta('editar') && !isFaturada.value)
-const podeCobrar = computed(() => hostSuporta('cobranca') && uiStore.canCreateCharge && !isFaturada.value)
-const metodoPagamento = computed(() =>
-  venda.value?.PagamentoVendas?.metodo ? formatPaymentMethodLabel(venda.value.PagamentoVendas.metodo) : null,
+const podeCobrar = computed(
+  () => hostSuporta('cobranca') && uiStore.canCreateCharge && !isFaturada.value,
 )
+const metodoPagamento = computed(() => {
+  const pagamento = venda.value?.PagamentoVendas
+  if (!pagamento) return null
+
+  const detalhes = Array.isArray(pagamento.detalhes) ? pagamento.detalhes : []
+  if (detalhes.length) {
+    return [...new Set(detalhes.map((item) => formatPaymentMethodLabel(item.metodo)))].join(' + ')
+  }
+
+  return pagamento.metodo ? formatPaymentMethodLabel(pagamento.metodo) : null
+})
 
 // Mesmo mapeamento de cor/ícone da coluna de status da tabela de vendas.
 const statusMeta = computed((): { label: string; color: BadgeColor; icon: typeof FileClock } => {
@@ -130,7 +153,8 @@ const indicadores = computed(() => [
   {
     label: 'Total da venda',
     valor: formatCurrencyBR(total.value),
-    detalhe: desconto.value > 0 ? `${formatCurrencyBR(desconto.value)} de desconto` : 'Sem desconto',
+    detalhe:
+      desconto.value > 0 ? `${formatCurrencyBR(desconto.value)} de desconto` : 'Sem desconto',
     icon: CircleDollarSign,
     classe: 'text-emerald-600 bg-emerald-500/10',
   },
@@ -151,7 +175,10 @@ const indicadores = computed(() => [
   {
     label: 'Desconto',
     valor: formatCurrencyBR(desconto.value),
-    detalhe: desconto.value > 0 ? `${percentualDesconto.value.toFixed(1)}% do subtotal` : 'Nenhum aplicado',
+    detalhe:
+      desconto.value > 0
+        ? `${percentualDesconto.value.toFixed(1)}% do subtotal`
+        : 'Nenhum aplicado',
     icon: Percent,
     classe: 'text-amber-600 bg-amber-500/10',
   },
@@ -182,7 +209,10 @@ function getItemMeta(item: any) {
 }
 
 function getComboComponents(item: any) {
-  return venda.value?.ComboSaidas?.find((combo) => combo.nomeSnapshot === item.itemName)?.componentes || []
+  return (
+    venda.value?.ComboSaidas?.find((combo) => combo.nomeSnapshot === item.itemName)?.componentes ||
+    []
+  )
 }
 
 function getParcelasPendentes(lancamento: any) {
@@ -210,6 +240,13 @@ function abrirLancamentoFinanceiro(id?: number) {
   if (!id) return
   store.openModalDetalhes = false
   router.push({ path: '/financeiro/detalhes', query: { id } })
+}
+
+function efetivarParcelaFinanceira(parcela: any) {
+  if (!parcela?.id) return
+  storeLancamentos.idMutation = Number(parcela.id)
+  storeLancamentos.valorParcelaEfetivar = Number(parcela.valor || 0)
+  storeLancamentos.openModalEfetivar = true
 }
 
 async function excluirLancamentoFinanceiro(id?: number) {
@@ -296,23 +333,37 @@ watch(() => storeCobranca.filters.update, recarregar)
 </script>
 
 <template>
-  <ModalView v-model:open="store.openModalDetalhes" size="4xl" title="Detalhes da venda"
-    description="Resumo, itens, cobranças e financeiro vinculados à venda.">
+  <ModalView
+    v-model:open="store.openModalDetalhes"
+    size="4xl"
+    title="Detalhes da venda"
+    description="Resumo, itens, cobranças e financeiro vinculados à venda."
+  >
     <div v-if="venda" class="grid gap-3 px-3 pb-4 md:gap-4 md:px-4">
       <!-- Identificação da venda -->
       <header class="rounded-xl border bg-card p-4">
         <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div class="flex min-w-0 gap-3">
-            <div class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+            <div
+              class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"
+            >
               <ShoppingBag class="h-6 w-6" />
             </div>
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <h3 class="truncate text-lg font-semibold">#{{ venda.Uid || venda.id }}</h3>
-                <BadgeCell :label="statusMeta.label" :color="statusMeta.color" :icon="statusMeta.icon"
-                  :capitalize="false" size="sm" />
-                <button type="button" class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] hover:bg-muted/50"
-                  @click="copiarUid">
+                <BadgeCell
+                  :label="statusMeta.label"
+                  :color="statusMeta.color"
+                  :icon="statusMeta.icon"
+                  :capitalize="false"
+                  size="sm"
+                />
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] hover:bg-muted/50"
+                  @click="copiarUid"
+                >
                   <Copy class="h-3 w-3" /> Copiar ID
                 </button>
               </div>
@@ -323,16 +374,28 @@ watch(() => storeCobranca.filters.update, recarregar)
           </div>
 
           <div class="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
-            <Button v-if="!isFaturada && hostSuporta('faturar')" type="button" class="w-full text-white sm:w-auto"
-              @click="faturar">
+            <Button
+              v-if="!isFaturada && hostSuporta('faturar')"
+              type="button"
+              class="w-full text-white sm:w-auto"
+              @click="faturar"
+            >
               <ReceiptText class="h-4 w-4" /> Faturar
             </Button>
-            <Button v-else-if="isFaturada" type="button"
-              class="w-full bg-warning text-white hover:bg-warning/80 sm:w-auto" @click="estornar">
+            <Button
+              v-else-if="isFaturada"
+              type="button"
+              class="w-full bg-warning text-white hover:bg-warning/80 sm:w-auto"
+              @click="estornar"
+            >
               <Undo2 class="h-4 w-4" /> Estornar
             </Button>
-            <Button type="button" variant="outline" class="w-full sm:w-auto"
-              @click="gerarCupomVenda(venda.id!)">
+            <Button
+              type="button"
+              variant="outline"
+              class="w-full sm:w-auto"
+              @click="gerarCupomVenda(venda.id!)"
+            >
               <FileText class="h-4 w-4" /> Cupom
             </Button>
 
@@ -359,7 +422,11 @@ watch(() => storeCobranca.filters.update, recarregar)
                 <DropdownMenuItem @click="recarregar">
                   <RefreshCcw class="mr-2 h-4 w-4 text-cyan-500" /> Atualizar dados
                 </DropdownMenuItem>
-                <DropdownMenuItem v-if="!isFaturada" class="text-red-600 focus:text-red-600" @click="excluir">
+                <DropdownMenuItem
+                  v-if="!isFaturada"
+                  class="text-red-600 focus:text-red-600"
+                  @click="excluir"
+                >
                   <Trash2 class="mr-2 h-4 w-4" /> Excluir venda
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -373,7 +440,9 @@ watch(() => storeCobranca.filters.update, recarregar)
             <UserRound class="mt-0.5 h-4 w-4 shrink-0 text-cyan-600" />
             <div class="min-w-0">
               <p class="text-[10px] uppercase tracking-wide text-muted-foreground">Cliente</p>
-              <p class="truncate text-xs font-semibold">{{ venda.cliente?.nome || 'Não informado' }}</p>
+              <p class="truncate text-xs font-semibold">
+                {{ venda.cliente?.nome || 'Não informado' }}
+              </p>
               <p class="mt-0.5 truncate text-[11px] text-muted-foreground">
                 Vendedor: {{ venda.vendedor?.nome || 'Não informado' }}
               </p>
@@ -406,12 +475,21 @@ watch(() => storeCobranca.filters.update, recarregar)
 
       <!-- Indicadores -->
       <section class="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
-        <div v-for="indicador in indicadores" :key="indicador.label" class="rounded-xl border bg-card p-3">
+        <div
+          v-for="indicador in indicadores"
+          :key="indicador.label"
+          class="rounded-xl border bg-card p-3"
+        >
           <div class="flex items-center gap-2">
-            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg" :class="indicador.classe">
+            <span
+              class="grid h-8 w-8 shrink-0 place-items-center rounded-lg"
+              :class="indicador.classe"
+            >
               <component :is="indicador.icon" class="h-4 w-4" />
             </span>
-            <p class="truncate text-[11px] font-medium text-muted-foreground">{{ indicador.label }}</p>
+            <p class="truncate text-[11px] font-medium text-muted-foreground">
+              {{ indicador.label }}
+            </p>
           </div>
           <p class="mt-2 truncate text-lg font-bold tabular-nums">{{ indicador.valor }}</p>
           <p class="truncate text-[11px] text-muted-foreground">{{ indicador.detalhe }}</p>
@@ -426,34 +504,54 @@ watch(() => storeCobranca.filters.update, recarregar)
           <Badge variant="outline" class="ml-auto tabular-nums">{{ itens.length }}</Badge>
         </div>
 
-        <div v-if="!itens.length" class="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground">
+        <div
+          v-if="!itens.length"
+          class="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground"
+        >
           <Inbox class="h-8 w-8 opacity-50" />
           Nenhum item registrado nesta venda.
         </div>
 
         <template v-else>
           <div class="overflow-hidden rounded-lg border">
-            <div v-for="(item, index) in itens" :key="item.id ?? index"
-              class="flex items-center justify-between gap-3 border-b bg-background pl-1 pr-3 py-1 text-sm last:border-b-0">
+            <div
+              v-for="(item, index) in itens"
+              :key="item.id ?? index"
+              class="flex items-center justify-between gap-3 border-b bg-background pl-1 pr-3 py-1 text-sm last:border-b-0"
+            >
               <div class="flex min-w-0 items-center gap-3">
                 <Popover v-if="item.produto?.imagem">
                   <PopoverTrigger as-child>
-                    <button type="button"
+                    <button
+                      type="button"
                       class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40 transition hover:ring-2 hover:ring-primary/40"
-                      v-tooltip="'Ver imagem'">
-                      <img :src="resolveFileUrl(item.produto.imagem)" :alt="item.produto?.nome || 'Produto'"
-                        class="h-full w-full object-cover" loading="lazy" />
+                      v-tooltip="'Ver imagem'"
+                    >
+                      <img
+                        :src="resolveFileUrl(item.produto.imagem)"
+                        :alt="item.produto?.nome || 'Produto'"
+                        class="h-full w-full object-cover"
+                        loading="lazy"
+                      />
                     </button>
                   </PopoverTrigger>
                   <PopoverContent side="right" align="start" class="w-auto p-1.5">
-                    <img :src="resolveFileUrl(item.produto.imagem)" :alt="item.produto?.nome || 'Produto'"
-                      class="h-56 w-56 rounded-md object-contain" />
-                    <p class="mt-1 max-w-56 truncate px-1 pb-0.5 text-center text-xs text-muted-foreground">
+                    <img
+                      :src="resolveFileUrl(item.produto.imagem)"
+                      :alt="item.produto?.nome || 'Produto'"
+                      class="h-56 w-56 rounded-md object-contain"
+                    />
+                    <p
+                      class="mt-1 max-w-56 truncate px-1 pb-0.5 text-center text-xs text-muted-foreground"
+                    >
                       {{ item.produto?.nome }}
                     </p>
                   </PopoverContent>
                 </Popover>
-                <div v-else class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40">
+                <div
+                  v-else
+                  class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40"
+                >
                   <component :is="getItemMeta(item).icon" class="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div class="min-w-0">
@@ -463,7 +561,10 @@ watch(() => storeCobranca.filters.update, recarregar)
                   <p class="text-xs tabular-nums text-muted-foreground">
                     {{ item.quantidade }} x {{ formatCurrencyBR(Number(item.valor || 0)) }}
                   </p>
-                  <div v-if="getComboComponents(item).length" class="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                  <div
+                    v-if="getComboComponents(item).length"
+                    class="mt-1 space-y-0.5 text-[11px] text-muted-foreground"
+                  >
                     <p v-for="component in getComboComponents(item)" :key="component.id">
                       {{ component.quantidadePorCombo }}x {{ component.nomeSnapshot }}
                     </p>
@@ -477,11 +578,15 @@ watch(() => storeCobranca.filters.update, recarregar)
           </div>
 
           <div class="mt-3 overflow-hidden rounded-lg border">
-            <div class="flex items-center justify-between gap-3 border-b bg-background px-3 py-2 text-sm">
+            <div
+              class="flex items-center justify-between gap-3 border-b bg-background px-3 py-2 text-sm"
+            >
               <span class="text-muted-foreground">Subtotal</span>
               <span class="font-medium tabular-nums">{{ formatCurrencyBR(subtotal) }}</span>
             </div>
-            <div class="flex items-center justify-between gap-3 border-b bg-background px-3 py-2 text-sm">
+            <div
+              class="flex items-center justify-between gap-3 border-b bg-background px-3 py-2 text-sm"
+            >
               <span class="text-muted-foreground">Desconto</span>
               <span class="font-medium tabular-nums" :class="desconto > 0 ? 'text-amber-600' : ''">
                 {{ desconto > 0 ? '-' : '' }} {{ formatCurrencyBR(desconto) }}
@@ -495,9 +600,9 @@ watch(() => storeCobranca.filters.update, recarregar)
         </template>
       </section>
 
-      <div class="grid gap-3 md:gap-4 lg:grid-cols-2">
+      <div class="grid min-w-0 gap-3 md:gap-4 lg:grid-cols-2">
         <!-- Cobranças -->
-        <section class="rounded-xl border bg-card p-4">
+        <section class="min-w-0 rounded-xl border bg-card p-4">
           <div class="mb-3 flex items-center gap-2">
             <CircleDollarSign class="h-4 w-4 shrink-0 text-primary" />
             <h3 class="text-sm font-semibold">Cobranças</h3>
@@ -505,8 +610,11 @@ watch(() => storeCobranca.filters.update, recarregar)
           </div>
 
           <div v-if="cobrancas.length" class="grid gap-2">
-            <div v-for="cobranca in cobrancas" :key="cobranca.id"
-              class="flex items-start justify-between gap-3 rounded-lg border bg-background px-3 py-2.5">
+            <div
+              v-for="cobranca in cobrancas"
+              :key="cobranca.id"
+              class="flex items-start justify-between gap-3 rounded-lg border bg-background px-3 py-2.5"
+            >
               <div class="min-w-0">
                 <p class="text-sm font-semibold tabular-nums">
                   {{ formatCurrencyBR(Number(cobranca.valor || 0)) }}
@@ -515,23 +623,39 @@ watch(() => storeCobranca.filters.update, recarregar)
                   {{ cobranca.gateway }} • {{ cobranca.status }}
                 </p>
               </div>
-              <a v-if="cobranca.externalLink" :href="cobranca.externalLink" target="_blank"
-                class="shrink-0 text-xs text-blue-600 hover:underline dark:text-blue-400">
+              <a
+                v-if="cobranca.externalLink"
+                :href="cobranca.externalLink"
+                target="_blank"
+                class="shrink-0 text-xs text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Abrir
               </a>
             </div>
           </div>
 
-          <div v-else class="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground">
+          <div
+            v-else
+            class="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground"
+          >
             <Inbox class="h-8 w-8 opacity-50" />
             Nenhuma cobrança gerada para esta venda.
           </div>
 
-          <Button v-if="podeCobrar" type="button" variant="outline" size="sm" class="mt-3 w-full"
-            @click="abrirCobranca">
+          <Button
+            v-if="podeCobrar"
+            type="button"
+            variant="outline"
+            size="sm"
+            class="mt-3 w-full"
+            @click="abrirCobranca"
+          >
             <CircleDollarSign class="h-4 w-4 text-emerald-500" /> Gerar cobrança
           </Button>
-          <p v-else-if="isFaturada && hostSuporta('cobranca')" class="mt-3 text-center text-[11px] text-muted-foreground">
+          <p
+            v-else-if="isFaturada && hostSuporta('cobranca')"
+            class="mt-3 text-center text-[11px] text-muted-foreground"
+          >
             Venda já faturada — estorne o faturamento para gerar uma nova cobrança.
           </p>
         </section>
@@ -541,12 +665,17 @@ watch(() => storeCobranca.filters.update, recarregar)
           <div class="mb-3 flex items-center gap-2">
             <ReceiptText class="h-4 w-4 shrink-0 text-primary" />
             <h3 class="text-sm font-semibold">Lançamentos financeiros</h3>
-            <Badge variant="outline" class="ml-auto tabular-nums">{{ lancamentosFinanceiros.length }}</Badge>
+            <Badge variant="outline" class="ml-auto tabular-nums">{{
+              lancamentosFinanceiros.length
+            }}</Badge>
           </div>
 
           <div v-if="lancamentosFinanceiros.length" class="grid gap-2">
-            <div v-for="lancamento in lancamentosFinanceiros" :key="lancamento.id"
-              class="rounded-lg border bg-background px-3 py-2.5">
+            <div
+              v-for="lancamento in lancamentosFinanceiros"
+              :key="lancamento.id"
+              class="min-w-0 rounded-lg border bg-background px-3 py-2.5"
+            >
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
                   <p class="truncate text-sm font-medium">
@@ -556,29 +685,67 @@ watch(() => storeCobranca.filters.update, recarregar)
                     {{ formatCurrencyBR(Number(lancamento.valorTotal || 0)) }}
                   </p>
                 </div>
-                <div class="flex shrink-0 items-center gap-1">
-                  <Button type="button" size="icon" variant="outline" class="h-8 w-8"
-                    v-tooltip="'Abrir detalhes do lançamento'" @click="abrirLancamentoFinanceiro(lancamento.id)">
+                <div class="flex shrink-0 items-center gap-1 self-end sm:self-auto">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    class="h-8 gap-1 px-2"
+                    v-tooltip="'Abrir lançamento'"
+                    @click="abrirLancamentoFinanceiro(lancamento.id)"
+                  >
                     <ExternalLink class="h-4 w-4" />
+                    <span class="sr-only">Abrir lançamento</span>
                   </Button>
-                  <Button type="button" size="icon" variant="outline" class="h-8 w-8 text-rose-600 hover:text-rose-700"
-                    v-tooltip="'Excluir lançamento'" @click="excluirLancamentoFinanceiro(lancamento.id)">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    class="h-8 w-8 text-rose-600 hover:text-rose-700"
+                    v-tooltip="'Excluir lançamento'"
+                    @click="excluirLancamentoFinanceiro(lancamento.id)"
+                  >
                     <Trash2 class="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
-              <div v-if="getParcelasPendentes(lancamento).length" class="mt-2 space-y-1 border-t pt-2">
-                <div v-for="parcela in getParcelasPendentes(lancamento)" :key="parcela.id"
-                  class="flex justify-between gap-2 text-[11px] text-muted-foreground">
-                  <span>Parcela {{ parcela.numero }} • vence {{ formatDate(parcela.vencimento) }}</span>
-                  <span class="tabular-nums">{{ formatCurrencyBR(Number(parcela.valor || 0)) }}</span>
+              <div
+                v-if="getParcelasPendentes(lancamento).length"
+                class="mt-2 space-y-1 border-t pt-2"
+              >
+                <div
+                  v-for="parcela in getParcelasPendentes(lancamento)"
+                  :key="parcela.id"
+                  class="flex flex-col gap-1.5 text-[11px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <span class="min-w-0"
+                    >Parcela {{ parcela.numero }} • vence {{ formatDate(parcela.vencimento) }}</span
+                  >
+                  <div class="flex shrink-0 items-center justify-between gap-1.5 sm:justify-end">
+                    <span class="tabular-nums">{{
+                      formatCurrencyBR(Number(parcela.valor || 0))
+                    }}</span>
+                    <Button
+                      v-if="!parcela.pago"
+                      type="button"
+                      size="sm"
+                      class="h-7 gap-1 px-2 text-white"
+                      @click="efetivarParcelaFinanceira(parcela)"
+                    >
+                      <BadgeCheck class="h-3.5 w-3.5" />
+                      {{ lancamento.tipo === 'DESPESA' ? 'Pagar' : 'Receber' }}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div v-else class="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground">
+          <div
+            v-else
+            class="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground"
+          >
             <Inbox class="h-8 w-8 opacity-50" />
             Nenhum lançamento financeiro vinculado.
           </div>
@@ -595,7 +762,10 @@ watch(() => storeCobranca.filters.update, recarregar)
       </section>
     </div>
 
-    <div v-else class="flex flex-col items-center gap-2 px-4 py-10 text-center text-sm text-muted-foreground">
+    <div
+      v-else
+      class="flex flex-col items-center gap-2 px-4 py-10 text-center text-sm text-muted-foreground"
+    >
       <Inbox class="h-8 w-8 opacity-50" />
       Não foi possível carregar os dados desta venda.
     </div>
@@ -605,5 +775,7 @@ watch(() => storeCobranca.filters.update, recarregar)
         Fechar
       </Button>
     </div>
+
+    <FormularioEfertivar @success="recarregar" />
   </ModalView>
 </template>
