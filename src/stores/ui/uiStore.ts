@@ -6,7 +6,11 @@ import { UsuarioRepository } from '@/repositories/usuario-repository'
 import type { Contas, Usuarios } from '@/types/schemas'
 import { hasPermission } from '@/hooks/authorize'
 import { setThemeCustomization } from '@/utils/theme'
-import { RestauranteRepository, type RestauranteAccess, type RestauranteCapability } from '@/repositories/restaurante-repository'
+import {
+  RestauranteRepository,
+  type RestauranteAccess,
+  type RestauranteCapability,
+} from '@/repositories/restaurante-repository'
 interface TipoPermissao {
   editar: boolean
   visualizar: boolean
@@ -37,6 +41,8 @@ export interface FinanceiroFlags {
   osLancamentoAutomatico: boolean
 }
 
+export type UiNavigationStyle = 'PADRAO' | 'CARDS'
+
 export const useUiStore = defineStore('uiStore', () => {
   const openSidebar = ref(true)
   const loading = ref(false)
@@ -55,16 +61,26 @@ export const useUiStore = defineStore('uiStore', () => {
   const canCreateCharge = computed(() => financeiroFlags.value.permitirCriacaoCobranca !== false)
   // Com o lançamento automático ligado, o faturamento sempre gera financeiro: o
   // modal de faturar não deve mais oferecer a escolha.
-  const vendaLancamentoAutomatico = computed(() => financeiroFlags.value.vendaLancamentoAutomatico === true)
-  const osLancamentoAutomatico = computed(() => financeiroFlags.value.osLancamentoAutomatico === true)
+  const vendaLancamentoAutomatico = computed(
+    () => financeiroFlags.value.vendaLancamentoAutomatico === true,
+  )
+  const osLancamentoAutomatico = computed(
+    () => financeiroFlags.value.osLancamentoAutomatico === true,
+  )
   const appModules = ref<Record<string, boolean>>({})
   const appModulesLoaded = ref(false)
-  const restaurantAccess = ref<RestauranteAccess>({ papeis: [], capabilities: [], fallbackLegado: true })
+  const restaurantAccess = ref<RestauranteAccess>({
+    papeis: [],
+    capabilities: [],
+    fallbackLegado: true,
+  })
   const restaurantAccessLoaded = ref(false)
   const visibleMenuKeys = ref<string[] | null>(null)
   // Submenus ocultos (keys no formato "pai:filho"). Separado de visibleMenuKeys porque
   // no payload `menusVisiveis` as keys de topo são whitelist e as de submenu são blacklist.
   const hiddenSubmenuKeys = ref<string[]>([])
+  const estiloUi = ref<UiNavigationStyle>('PADRAO')
+  const usaNavegacaoPorCards = computed(() => estiloUi.value === 'CARDS')
   // Tour de boas-vindas: default true evita flash do tour antes do parametros carregar.
   const tourConcluido = ref<boolean>(true)
   const status = ref(localStorage.getItem('gestao_facil:status') || 'INATIVO')
@@ -275,7 +291,8 @@ export const useUiStore = defineStore('uiStore', () => {
       financeiroFlags.value = {
         permitirLancamentoRetroativo: response.data?.permitirLancamentoRetroativo ?? true,
         permitirEfetivacaoFutura: response.data?.permitirEfetivacaoFutura ?? true,
-        permitirTransferenciaContaFinanceira: response.data?.permitirTransferenciaContaFinanceira ?? true,
+        permitirTransferenciaContaFinanceira:
+          response.data?.permitirTransferenciaContaFinanceira ?? true,
         permitirCriacaoCobranca: response.data?.permitirCriacaoCobranca ?? true,
         vendaLancamentoAutomatico: response.data?.vendaLancamentoAutomatico ?? false,
         osLancamentoAutomatico: response.data?.osLancamentoAutomatico ?? false,
@@ -289,6 +306,7 @@ export const useUiStore = defineStore('uiStore', () => {
         visibleMenuKeys.value = null
         hiddenSubmenuKeys.value = []
       }
+      estiloUi.value = response.data?.estiloUi === 'CARDS' ? 'CARDS' : 'PADRAO'
       setThemeCustomization(response.data?.temaPersonalizado)
       tourConcluido.value = response.data?.tourOnboardingConcluido ?? false
       return financeiroFlags.value
@@ -304,6 +322,7 @@ export const useUiStore = defineStore('uiStore', () => {
       }
       visibleMenuKeys.value = null
       hiddenSubmenuKeys.value = []
+      estiloUi.value = 'PADRAO'
       setThemeCustomization(null)
       return financeiroFlags.value
     }
@@ -362,6 +381,8 @@ export const useUiStore = defineStore('uiStore', () => {
     restaurantAccessLoaded,
     visibleMenuKeys,
     hiddenSubmenuKeys,
+    estiloUi,
+    usaNavegacaoPorCards,
     getDataUsuario,
     loadFinanceiroFlags,
     diasParaVencer,

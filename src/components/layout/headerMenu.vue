@@ -1,10 +1,22 @@
 <template>
   <header
     class="hidden md:flex items-center justify-between bg-background text-foreground px-6 py-3 z-20 transition-[background-color,color] duration-300 ease-in-out"
-    :class="{ 'md:ml-64': uiStore.openSidebar }">
-
+    :class="{ 'md:ml-64': uiStore.openSidebar && !uiStore.usaNavegacaoPorCards }"
+  >
     <div class="text-md font-bold flex items-center gap-4">
-      <PanelLeftOpen v-if="!uiStore.openSidebar" class="h-6 w-6 cursor-pointer p-0.5" @click="uiStore.toggleSidebar" />
+      <RouterLink
+        v-if="uiStore.usaNavegacaoPorCards"
+        to="/"
+        class="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+      >
+        <LayoutGrid class="h-5 w-5" />
+        <span class="sr-only">Abrir módulos</span>
+      </RouterLink>
+      <PanelLeftOpen
+        v-else-if="!uiStore.openSidebar"
+        class="h-6 w-6 cursor-pointer p-0.5"
+        @click="uiStore.toggleSidebar"
+      />
       <PanelRightOpen v-else class="h-6 w-6 cursor-pointer p-0.5" @click="uiStore.toggleSidebar" />
       <Breadcrumb />
     </div>
@@ -25,16 +37,16 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import Breadcrumb from './breadcrumb.vue';
-import { useUiStore } from '@/stores/ui/uiStore';
-import { PanelLeftOpen, PanelRightOpen } from 'lucide-vue-next';
-import ColorToggle from './colorToggle.vue';
-import SupportBadge from './SupportBadge.vue';
-import InformativosStatusButton from './InformativosStatusButton.vue';
-import TourHelpButton from './TourHelpButton.vue';
-import ReportBugButton from './ReportBugButton.vue';
-import RestaurantPrintStatusButton from './RestaurantPrintStatusButton.vue';
-import { isSupportActive } from '@/utils/supportSession';
+import Breadcrumb from './breadcrumb.vue'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { LayoutGrid, PanelLeftOpen, PanelRightOpen } from 'lucide-vue-next'
+import ColorToggle from './colorToggle.vue'
+import SupportBadge from './SupportBadge.vue'
+import InformativosStatusButton from './InformativosStatusButton.vue'
+import TourHelpButton from './TourHelpButton.vue'
+import ReportBugButton from './ReportBugButton.vue'
+import RestaurantPrintStatusButton from './RestaurantPrintStatusButton.vue'
+import { isSupportActive } from '@/utils/supportSession'
 const uiStore = useUiStore()
 const horarioSistemaAtual = ref('')
 

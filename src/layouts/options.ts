@@ -476,14 +476,6 @@ export const sidebarMenuOptions = (
           color: 'orange',
         },
         {
-          key: 'restaurante:impressao',
-          nome: 'Impressão QZ',
-          link: '/restaurante/impressao',
-          show: restaurantAccess.has('IMPRESSAO_VISUALIZAR'),
-          icone: Printer,
-          color: 'orange',
-        },
-        {
           key: 'restaurante:cardapio',
           nome: 'Cardápio',
           link: '/restaurante/cardapio',
@@ -497,6 +489,22 @@ export const sidebarMenuOptions = (
           link: '/restaurante/pedidos',
           show: restaurantAccess.has('PEDIDOS_VISUALIZAR'),
           icone: ClipboardList,
+          color: 'orange',
+        },
+        {
+          key: 'restaurante:acompanhar-entregas',
+          nome: 'Rastrear',
+          link: '/restaurante/acompanhar-entregas',
+          show: restaurantAccess.has('PEDIDOS_VISUALIZAR'),
+          icone: MapPinned,
+          color: 'orange',
+        },
+        {
+          key: 'restaurante:impressao',
+          nome: 'Impressão QZ',
+          link: '/restaurante/impressao',
+          show: restaurantAccess.has('IMPRESSAO_VISUALIZAR'),
+          icone: Printer,
           color: 'orange',
         },
         {

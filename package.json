@@ -25,6 +25,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "hashids": "^2.3.0",
+    "leaflet": "^1.9.4",
     "lucide-vue-next": "^0.540.0",
     "maska": "^3.2.0",
     "pinia": "^3.0.3",
@@ -43,6 +44,7 @@
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",
     "@types/jsdom": "^21.1.7",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^22.16.5",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/test-utils": "^2.4.6",

@@ -34,6 +34,16 @@ export type RestaurantePedidoStatus =
   | 'CONCLUIDO'
   | 'CANCELADO'
 
+export type RestauranteEntregaStatus =
+  | 'NAO_APLICAVEL'
+  | 'AGUARDANDO_DESPACHO'
+  | 'OFERTADA'
+  | 'ATRIBUIDA'
+  | 'RETIRADA'
+  | 'EM_ROTA'
+  | 'ENTREGUE'
+  | 'FALHOU'
+
 export interface RestaurantePedido {
   id: number
   codigo: string
@@ -41,7 +51,7 @@ export interface RestaurantePedido {
   status: RestaurantePedidoStatus
   producaoStatus: string
   pagamentoStatus: string
-  entregaStatus: string
+  entregaStatus: RestauranteEntregaStatus
   clienteNomeSnapshot?: string | null
   clienteTelefone?: string | null
   clienteEmail?: string | null
@@ -54,6 +64,8 @@ export interface RestaurantePedido {
     cidade?: string
     uf?: string
     referencia?: string
+    latitude?: number | null
+    longitude?: number | null
   } | null
   pagamentoMetodoSnapshot?: string | null
   subtotal: string | number
@@ -234,6 +246,30 @@ export interface RestauranteTrabalhoEstacao {
   tentativas: number
 }
 
+export type RestauranteDiaFuncionamento =
+  | 'SEGUNDA'
+  | 'TERCA'
+  | 'QUARTA'
+  | 'QUINTA'
+  | 'SEXTA'
+  | 'SABADO'
+  | 'DOMINGO'
+
+export interface RestauranteHorarioFuncionamento {
+  dia: RestauranteDiaFuncionamento
+  ativo: boolean
+  abertura: string
+  fechamento: string
+}
+
+export interface RestauranteLocalizacao {
+  latitude: number
+  longitude: number
+}
+
+export type RestauranteWhatsAppNotificationEvent = 'PEDIDO_FEITO' | 'EM_PREPARO' | 'SAIU_ENTREGA' | 'PRONTO' | 'ENTREGUE' | 'POS_PEDIDO'
+export type RestauranteWhatsAppNotifications = Record<RestauranteWhatsAppNotificationEvent, { ativo: boolean; mensagem: string }>
+
 export interface RestauranteConfig {
   id?: number
   slug: string
@@ -249,6 +285,9 @@ export interface RestauranteConfig {
   deliveryAtivo: boolean
   pagamentoOnlineAtivo: boolean
   pagamentoNaEntregaAtivo: boolean
+  localizacaoJson?: RestauranteLocalizacao | null
+  horariosJson?: RestauranteHorarioFuncionamento[] | null
+  whatsappNotificacoesJson?: RestauranteWhatsAppNotifications | null
   version?: number
 }
 
@@ -370,6 +409,11 @@ export class RestauranteRepository {
         deliveryAtivo: boolean
         pagamentoOnlineAtivo: boolean
         pagamentoNaEntregaAtivo: boolean
+        atendimento: {
+          aberto: boolean
+          mensagem: string
+          configurado: boolean
+        }
         modoFrete: 'FIXO' | 'ZONAS'
         temaPersonalizado?: Partial<ThemeCustomization> | null
       }
@@ -398,7 +442,7 @@ export class RestauranteRepository {
     const { data } = await http.get('/v1/restaurante/pedidos', { params })
     return data as {
       data: RestaurantePedido[]
-      meta: { page: number; pages: number; total: number }
+      meta: { page: number; pages: number; total: number; localizacaoEmpresa?: RestauranteLocalizacao | null }
     }
   }
 

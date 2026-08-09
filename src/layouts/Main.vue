@@ -1,68 +1,101 @@
 <template>
-    <div class="bg-body min-h-screen overflow-hidden flex flex-col">
-        <HeaderMenu />
-        <!-- Botão de abrir menu (mobile) -->
-        <button type="button" @click="store.toggleSidebar"
-            class="md:hidden fixed flex items-center right-0 w-10 h-14 pl-3 pr-0 bottom-16 transform -translate-y-1/2 z-30 bg-primary/70 text-gray-200 dark:text-gray-300 px-2 py-3 rounded-l-full shadow-lg">
-            <PanelRightClose />
+  <div class="bg-body min-h-screen overflow-hidden flex flex-col">
+    <HeaderMenu />
+    <!-- Botão de abrir menu (mobile) -->
+    <button
+      v-if="!store.usaNavegacaoPorCards"
+      type="button"
+      @click="store.toggleSidebar"
+      class="md:hidden fixed flex items-center right-0 w-10 h-14 pl-3 pr-0 bottom-16 transform -translate-y-1/2 z-30 bg-primary/70 text-gray-200 dark:text-gray-300 px-2 py-3 rounded-l-full shadow-lg"
+    >
+      <PanelRightClose />
+    </button>
+    <RouterLink
+      v-else
+      to="/"
+      class="md:hidden fixed right-4 bottom-4 z-30 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg"
+    >
+      <LayoutGrid class="h-5 w-5" />
+      <span class="sr-only">Abrir módulos</span>
+    </RouterLink>
+    <!-- Sidebar -->
+    <aside
+      v-if="!store.usaNavegacaoPorCards"
+      id="sidebar-content-sistema"
+      class="fixed overflow-auto top-0 flex flex-col justify-between hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-sidebar p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
+      :class="{ '-translate-x-full': !store.openSidebar }"
+    >
+      <!-- <TopMenu /> -->
+      <div>
+        <NavUserSidebar />
+        <SidebarMenu :menu="sidebarMenu" />
+      </div>
+      <div>
+        <InstallAppButton />
+        <InformativosStatusButton v-if="store.isMobile" sidebar class="mb-2" />
+        <div class="grid grid-cols-12 gap-2 items-center justify-center">
+          <LogoutButton class="col-span-10 md:col-span-12" />
+          <ColorToggle class="col-span-2 h-full w-full" v-if="store.isMobile" />
+        </div>
+        <button
+          @click="store.toggleSidebar"
+          class="md:hidden mt-4 flex items-center border border-gray-400 dark:border-gray-500 gap-2 px-4 py-3 rounded-lg transition bg-sidebar text-white w-full justify-center"
+        >
+          <i class="fa-solid fa-circle-xmark mr-1"></i> Fechar
         </button>
-        <!-- Sidebar -->
-        <aside id="sidebar-content-sistema"
-            class="fixed overflow-auto top-0 flex flex-col justify-between hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-sidebar p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
-            :class="{ '-translate-x-full': !store.openSidebar }">
-
-            <!-- <TopMenu /> -->
-            <div>
-                <NavUserSidebar />
-                <SidebarMenu :menu="sidebarMenu" />
-            </div>
-            <div>
-                <InstallAppButton />
-                <InformativosStatusButton v-if="store.isMobile" sidebar class="mb-2" />
-                <div class="grid grid-cols-12 gap-2 items-center justify-center">
-                    <LogoutButton class="col-span-10 md:col-span-12" />
-                    <ColorToggle class="col-span-2 h-full w-full" v-if="store.isMobile" />
-                </div>
-                <button @click="store.toggleSidebar"
-                    class="md:hidden mt-4 flex items-center border border-gray-400 dark:border-gray-500 gap-2 px-4 py-3 rounded-lg transition bg-sidebar text-white w-full justify-center">
-                    <i class="fa-solid fa-circle-xmark mr-1"></i> Fechar
-                </button>
-            </div>
-        </aside>
-        <main id="container-main-app-sistema"
-            class="min-h-0 flex-1 overflow-y-auto p-6 mt-0 text-gray-700 transition-all duration-300 ease-in-out dark:text-gray-300"
-            :class="{ 'md:ml-64': store.openSidebar }">
-            <div class="max-w-[85rem] mx-auto pb-16 md:pb-0" id="content">
-                <!-- O header é hidden md:flex, então no mobile o badge de suporte
+      </div>
+    </aside>
+    <main
+      id="container-main-app-sistema"
+      class="min-h-0 flex-1 overflow-y-auto mt-0 text-gray-700 transition-all duration-300 ease-in-out dark:text-gray-300"
+      :class="{
+        'md:ml-64': store.openSidebar && !store.usaNavegacaoPorCards,
+        'p-0': isFullscreenContent,
+        'p-6': !isFullscreenContent,
+      }"
+    >
+      <div
+        :class="isFullscreenContent ? 'h-full max-w-none' : 'max-w-[85rem] mx-auto pb-16 md:pb-0'"
+        id="content"
+      >
+        <!-- O header é hidden md:flex, então no mobile o badge de suporte
                      não apareceria. Aqui ele cobre esse caso. -->
-                <div v-if="isSupportActive()" class="mb-4 flex justify-end md:hidden">
-                    <SupportBadge />
-                </div>
-                <AlertTopbar />
-                <div v-if="store.loading || progress > 0"
-                    class="absolute hidden md:block top-14 h-2 transition-all duration-100 ease-linear"
-                    :style="{ width: progress + '%' }" :class="{
-                        'bg-primary/50': env.VITE_MODE_SYSTEM === 'erp',
-                        'bg-success/50': env.VITE_MODE_SYSTEM === 'arena',
-                        'left-[16rem]': store.openSidebar,
-                        'left-0': !store.openSidebar
-                    }"></div>
+        <div v-if="isSupportActive()" class="mb-4 flex justify-end md:hidden">
+          <SupportBadge />
+        </div>
+        <AlertTopbar />
+        <div
+          v-if="store.loading || progress > 0"
+          class="absolute hidden md:block top-14 h-2 transition-all duration-100 ease-linear"
+          :style="{ width: progress + '%' }"
+          :class="{
+            'bg-primary/50': env.VITE_MODE_SYSTEM === 'erp',
+            'bg-success/50': env.VITE_MODE_SYSTEM === 'arena',
+            'left-[16rem]': store.openSidebar,
+            'left-0': !store.openSidebar,
+          }"
+        ></div>
 
-                <slot v-if="!loading" />
-                <div v-else
-                    class="flex flex-col gap-4 max-w-[85rem] mx-auto items-center justify-center h-[calc(100vh-12rem)]">
-                    <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark">
-                    </div>
-                    <p class="ml-2 text-primary dark:text-primary-dark">Carregando informações do usuário...</p>
-                </div>
-            </div>
-        </main>
-        <InstallPrompt />
-        <ConfirmModal />
-        <CoreIaWidget />
-        <TourOverlay />
-        <TourPicker />
-    </div>
+        <slot v-if="!loading" />
+        <div
+          v-else
+          class="flex flex-col gap-4 max-w-[85rem] mx-auto items-center justify-center h-[calc(100vh-12rem)]"
+        >
+          <div
+            class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark"
+          ></div>
+          <p class="ml-2 text-primary dark:text-primary-dark">
+            Carregando informações do usuário...
+          </p>
+        </div>
+      </div>
+    </main>
+    <InstallPrompt />
+    <ConfirmModal />
+    <CoreIaWidget />
+    <TourOverlay />
+    <TourPicker />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -78,13 +111,14 @@ import InformativosStatusButton from '@/components/layout/InformativosStatusButt
 import AlertTopbar from '@/components/layout/alertTopbar.vue'
 import SupportBadge from '@/components/layout/SupportBadge.vue'
 import { isSupportActive } from '@/utils/supportSession'
-import { PanelRightClose } from 'lucide-vue-next'
+import { LayoutGrid, PanelRightClose } from 'lucide-vue-next'
 import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
 import CoreIaWidget from '@/components/ia/CoreIaWidget.vue'
 import TourOverlay from '@/components/onboarding/TourOverlay.vue'
 import TourPicker from '@/components/onboarding/TourPicker.vue'
 import { useTour } from '@/composables/useTour'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { entrarNaConta } from '@/pluguins/socket'
 import NavUserSidebar from '@/components/layout/navUserSidebar.vue'
 import { updateMetaTags } from '@/utils/theme'
@@ -92,80 +126,92 @@ import { env } from '@/utils/dotenv'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { useRestaurantPrintAgent } from '@/stores/restaurante/useRestaurantPrintAgent'
 const store = useUiStore()
+const route = useRoute()
 const printAgent = useRestaurantPrintAgent()
 const loading = ref(false)
 const sidebarMenu = computed(() => {
-    return filterSidebarMenuByVisibility(
-        sidebarMenuOptions(store.permissoes, store.appModules, store.restaurantAccess.capabilities),
-        store.visibleMenuKeys,
-        store.usuarioLogged.permissao === 'root',
-        store.hiddenSubmenuKeys,
-    )
+  return filterSidebarMenuByVisibility(
+    sidebarMenuOptions(store.permissoes, store.appModules, store.restaurantAccess.capabilities),
+    store.visibleMenuKeys,
+    store.usuarioLogged.permissao === 'root',
+    store.hiddenSubmenuKeys,
+  )
 })
+const isFullscreenContent = computed(() => route.name === 'restaurante-acompanhar-entregas')
 window.addEventListener('resize', () => {
-    if (window.innerWidth < 768) {
-        store.openSidebar = false
-    } else {
-        store.openSidebar = true
-    }
+  if (store.usaNavegacaoPorCards) return
+  if (window.innerWidth < 768) {
+    store.openSidebar = false
+  } else {
+    store.openSidebar = true
+  }
 })
 
 const progress = ref(0)
 
-watch(() => store.loading, (v) => {
+watch(
+  () => store.loading,
+  (v) => {
     if (v) startProgress()
     else finishProgress()
-})
+  },
+)
 
+watch(
+  () => store.usaNavegacaoPorCards,
+  (cardsMode) => {
+    store.openSidebar = cardsMode ? false : window.innerWidth >= 768
+  },
+  { immediate: true },
+)
 
 let interval: any
 
 function startProgress() {
-    progress.value = 0
+  progress.value = 0
 
-    clearInterval(interval)
+  clearInterval(interval)
 
-    interval = setInterval(() => {
-        if (progress.value < 60) {
-            progress.value += 3     // rápido no começo
-        } else if (progress.value < 90) {
-            progress.value += 1     // lento depois
-        }
-    }, 100)
+  interval = setInterval(() => {
+    if (progress.value < 60) {
+      progress.value += 3 // rápido no começo
+    } else if (progress.value < 90) {
+      progress.value += 1 // lento depois
+    }
+  }, 100)
 }
 
 function finishProgress() {
-    clearInterval(interval)
+  clearInterval(interval)
 
-    const complete = setInterval(() => {
-        progress.value += 5
-        if (progress.value >= 80) {
-            clearInterval(complete)
-            progress.value = 0
-        }
-    }, 30)
+  const complete = setInterval(() => {
+    progress.value += 5
+    if (progress.value >= 80) {
+      clearInterval(complete)
+      progress.value = 0
+    }
+  }, 30)
 }
 
-
 async function initialize() {
-    loading.value = true
-    try {
-        if (store.usuarioLogged.contaId) entrarNaConta(store.usuarioLogged.contaId) // socket IO para conectar no websocket da conta
-    } finally {
-        loading.value = false
-    }
+  loading.value = true
+  try {
+    if (store.usuarioLogged.contaId) entrarNaConta(store.usuarioLogged.contaId) // socket IO para conectar no websocket da conta
+  } finally {
+    loading.value = false
+  }
 }
 
 useSocketEvent('sessao:updated', async () => {
-    await Promise.all([store.getDataUsuario(), store.getStatus()])
+  await Promise.all([store.getDataUsuario(), store.getStatus()])
 })
 
 onMounted(() => {
-    initialize()
-    void printAgent.start()
-    updateMetaTags()
-    // Novos assinantes: dispara o tour de boas-vindas (as regras/gates ficam em maybeAutoStart).
-    useTour().maybeAutoStart()
+  initialize()
+  void printAgent.start()
+  updateMetaTags()
+  // Novos assinantes: dispara o tour de boas-vindas (as regras/gates ficam em maybeAutoStart).
+  useTour().maybeAutoStart()
 })
 
 onUnmounted(() => printAgent.stop())
@@ -173,11 +219,11 @@ onUnmounted(() => printAgent.stop())
 
 <style scoped>
 .hidden_scrollbar {
-    overflow: auto;
-    /* ou scroll, conforme sua necessidade */
-    scrollbar-width: none;
-    /* Firefox */
-    -ms-overflow-style: none;
-    /* IE e Edge antigo */
+  overflow: auto;
+  /* ou scroll, conforme sua necessidade */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE e Edge antigo */
 }
 </style>

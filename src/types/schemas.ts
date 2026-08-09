@@ -491,15 +491,16 @@ export interface FormularioLancamento {
   parcelas: number | undefined
   descricao: string
   periodoParcelamento?: 'MENSAL' | 'SEMANAL' | 'DIARIO' | 'QUINZENAL' | 'PERSONALIZADO'
-    intervaloDiasPersonalizado?: number | string | null
-    modoValorParcelamento?: 'TOTAL' | 'FIXO_PARCELA'
-    notificarVencimento?: boolean
-    notificarClienteVencimento?: boolean
-    /// Só no método RECORRENTE: configuração das ocorrências seguintes.
-    recorrencia?: RecorrenciaConfig
-  }
+  intervaloDiasPersonalizado?: number | string | null
+  modoValorParcelamento?: 'TOTAL' | 'FIXO_PARCELA'
+  notificarVencimento?: boolean
+  notificarClienteVencimento?: boolean
+  /// Só no método RECORRENTE: configuração das ocorrências seguintes.
+  recorrencia?: RecorrenciaConfig
+}
 export interface UpdateParametrosConta {
   modeloPdv?: 'BASICO' | 'PRO' | null
+  estiloUi?: 'PADRAO' | 'CARDS' | null
   temaPersonalizado?: ThemeCustomization | null
   AsaasApiKey?: string | null
   AsaasApiSecret?: string | null
@@ -536,11 +537,11 @@ export interface UpdateParametrosConta {
   whatsappEventoNovaOs?: boolean | null
   whatsappEventoNovoLancamento?: boolean | null
   whatsappEventoNovoCliente?: boolean | null
-    whatsappEventoComandaFaturada?: boolean | null
-    whatsappEventoCaixaAberto?: boolean | null
-    whatsappEventoCaixaFechado?: boolean | null
-    financeiroVencimentosNotificacoesAtivo?: boolean | null
-  }
+  whatsappEventoComandaFaturada?: boolean | null
+  whatsappEventoCaixaAberto?: boolean | null
+  whatsappEventoCaixaFechado?: boolean | null
+  financeiroVencimentosNotificacoesAtivo?: boolean | null
+}
 
 export interface ThemeCustomization {
   primariaLight: string
@@ -810,11 +811,11 @@ export interface LancamentoFinanceiro {
   desconto: number
   tipo: TipoLancamentoFinanceiro
   formaPagamento: MetodoPagamento
-    status: StatusPagamentoFinanceiro
-    recorrente: boolean
-    notificarVencimento?: boolean
-    notificarClienteVencimento?: boolean
-    origemSistema?: 'MANUAL' | 'ASSINATURA_PAGAR'
+  status: StatusPagamentoFinanceiro
+  recorrente: boolean
+  notificarVencimento?: boolean
+  notificarClienteVencimento?: boolean
+  origemSistema?: 'MANUAL' | 'ASSINATURA_PAGAR'
   referenciaRecorrencia?: string | null
   dataLancamento: Date
   dataEntrada?: Date

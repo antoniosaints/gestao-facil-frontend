@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, type CSSProperties } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
+import { io, type Socket } from 'socket.io-client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -19,7 +20,7 @@ import { formatCurrencyBR } from '@/utils/formatters'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { getThemePalette, hexToHslValue, normalizeThemeCustomization } from '@/utils/themeCustomization'
 import { calculateMenuItemUnitPrice, hasSameMenuSelections, updateMenuGroupSelection } from './publicMenuCart'
-import { parseTrackingTokens, prependTrackingToken } from './publicMenuHistory'
+import { isActiveRestaurantOrder, parseTrackingTokens, prependTrackingToken, restaurantOrderStatusBadgeClass, restaurantOrderStatusLabel } from './publicMenuHistory'
 
 const route = useRoute()
 const toast = useToast()
@@ -40,7 +41,6 @@ type CartLine = {
 const cartLines = ref<CartLine[]>([])
 const quote = ref<RestauranteCheckoutPreview | null>(null)
 const orderResult = ref<any>(null)
-const tracking = ref<any>(null)
 const historyOpen = ref(false)
 const historyLoading = ref(false)
 const orderHistory = ref<Array<RestaurantePublicOrderTracking & { trackingToken: string }>>([])
@@ -52,8 +52,10 @@ const draftQuantity = ref(1)
 const draftSelections = ref<number[]>([])
 const origem = ref<'RETIRADA' | 'DELIVERY'>('RETIRADA')
 const pagamento = ref<'NA_ENTREGA' | 'PIX' | 'CHECKOUT_PRO'>('NA_ENTREGA')
+const obtendoLocalizacao = ref(false)
 let previewTimer: ReturnType<typeof setTimeout> | null = null
 let previewSequence = 0
+let trackingSocket: Socket | null = null
 const form = reactive({
   nome: '',
   telefone: '',
@@ -103,6 +105,12 @@ const categoryGroups = computed(() => {
   }
   return [...groups.values()]
 })
+
+const aceitaPedidos = computed(() => cardapio.value?.restaurante.atendimento?.aberto !== false)
+const mensagemAtendimento = computed(() => cardapio.value?.restaurante.atendimento?.mensagem || 'Recebendo pedidos')
+const tracking = computed(() => orderHistory.value.find((order) => isActiveRestaurantOrder(order.status)) || null)
+const trackingStatusLabel = computed(() => (tracking.value ? restaurantOrderStatusLabel(tracking.value.status) : ''))
+const trackingBadgeClass = computed(() => tracking.value ? restaurantOrderStatusBadgeClass(tracking.value.status) : '')
 
 const categories = computed(() => [{ key: 'todos', name: 'Todos' }, ...categoryGroups.value.map(({ key, name }) => ({ key, name }))])
 
@@ -193,7 +201,6 @@ function saveTrackingToken(token: string) {
 async function loadOrderHistory(tokens = storedTrackingTokens()) {
   if (!tokens.length) {
     orderHistory.value = []
-    tracking.value = null
     return
   }
   historyLoading.value = true
@@ -208,8 +215,20 @@ async function loadOrderHistory(tokens = storedTrackingTokens()) {
     .map((result) => result.value)
     .sort((first, second) => Date.parse(second.createdAt) - Date.parse(first.createdAt))
   localStorage.setItem(trackingStorageKey(), JSON.stringify(orderHistory.value.map((order) => order.trackingToken)))
-  tracking.value = orderHistory.value[0] || null
   historyLoading.value = false
+}
+
+function sincronizarAcompanhamentoEmTempoReal(tokens = storedTrackingTokens()) {
+  trackingSocket?.disconnect()
+  trackingSocket = null
+  if (!tokens.length) return
+  trackingSocket = io((import.meta.env.VITE_BACKEND_URL as string) || 'http://localhost:3000', {
+    transports: ['websocket'],
+    auth: { restaurantTrackingTokens: tokens },
+  })
+  trackingSocket.on('restaurante:pedido-publico', () => {
+    void loadOrderHistory(tokens)
+  })
 }
 
 function quantidadeNoCarrinho(catalogoItemId: number) {
@@ -232,6 +251,7 @@ function removeItem(lineId: string) {
 }
 
 function openItem(item: any) {
+  if (!aceitaPedidos.value) return toast.info(mensagemAtendimento.value)
   activeItem.value = item
   activeCartLineId.value = null
   draftQuantity.value = 1
@@ -254,6 +274,7 @@ function findMatchingCartLine(item: any, selecaoIds: number[]) {
 }
 
 function quickAdd(item: any) {
+  if (!aceitaPedidos.value) return toast.info(mensagemAtendimento.value)
   if (item.grupos.length) return openItem(item)
   const existing = findMatchingCartLine(item, [])
   if (existing) change(existing.id, 1)
@@ -274,6 +295,10 @@ function toggleDraft(group: any, optionId: number) {
 }
 
 function saveActiveItem() {
+  if (!aceitaPedidos.value) {
+    itemDialogOpen.value = false
+    return toast.info(mensagemAtendimento.value)
+  }
   if (!activeItem.value) return
   if (!activeSelectionsValid.value) {
     return toast.info('Complete as escolhas obrigatórias antes de adicionar.')
@@ -347,6 +372,7 @@ async function carregar() {
     if (legacyToken) tokens = prependTrackingToken(tokens, legacyToken)
     if (routeToken) tokens = prependTrackingToken(tokens, routeToken)
     await loadOrderHistory(tokens)
+    sincronizarAcompanhamentoEmTempoReal(tokens)
   } catch {
     toast.error('Cardápio indisponível.')
   } finally {
@@ -355,6 +381,10 @@ async function carregar() {
 }
 
 async function previewCheckout(showFeedback = true) {
+  if (!aceitaPedidos.value) {
+    if (showFeedback) toast.info(mensagemAtendimento.value)
+    return null
+  }
   if (!addressComplete.value) {
     if (showFeedback) toast.info('Preencha o endereço para calcular a entrega.')
     return null
@@ -386,12 +416,17 @@ function scheduleCheckoutPreview() {
 }
 
 async function openCheckout() {
+  if (!aceitaPedidos.value) {
+    cartDrawerOpen.value = false
+    return toast.info(mensagemAtendimento.value)
+  }
   cartDrawerOpen.value = false
   checkoutOpen.value = true
   if (addressComplete.value && !quote.value) await previewCheckout(false)
 }
 
 async function pedir() {
+  if (!aceitaPedidos.value) return toast.info(mensagemAtendimento.value)
   if (!checkoutValid.value) return toast.info('Preencha os dados necessários para finalizar.')
   const currentQuote = quote.value || (await previewCheckout())
   if (!currentQuote) return
@@ -413,6 +448,7 @@ async function pedir() {
     orderResult.value = result
     const tokens = saveTrackingToken(result.trackingToken)
     await loadOrderHistory(tokens)
+    sincronizarAcompanhamentoEmTempoReal(tokens)
     cartLines.value = []
     if (result.paymentAction?.type === 'REDIRECT' && result.paymentAction.url) {
       window.location.assign(result.paymentAction.url)
@@ -428,13 +464,18 @@ async function pedir() {
 
 function useLocation() {
   if (!navigator.geolocation) return toast.info('Geolocalização não disponível neste navegador.')
+  obtendoLocalizacao.value = true
   navigator.geolocation.getCurrentPosition(
     ({ coords }) => {
       form.latitude = coords.latitude
       form.longitude = coords.longitude
-      toast.success('Localização adicionada ao endereço')
+      obtendoLocalizacao.value = false
+      toast.success('Localização adicionada ao pedido para facilitar a rota do entregador.')
     },
-    () => toast.error('Não foi possível obter sua localização.'),
+    () => {
+      obtendoLocalizacao.value = false
+      toast.error('Não foi possível obter sua localização.')
+    },
     { enableHighAccuracy: true, timeout: 10000 },
   )
 }
@@ -467,6 +508,7 @@ watch(() => [origem.value, form.cep, form.cidade, form.bairro, form.logradouro, 
 onMounted(carregar)
 onBeforeUnmount(() => {
   if (previewTimer) clearTimeout(previewTimer)
+  trackingSocket?.disconnect()
 })
 </script>
 
@@ -493,7 +535,7 @@ onBeforeUnmount(() => {
     <template v-else>
       <section class="menu-hero">
         <div class="menu-hero-pattern" />
-        <div class="relative mx-auto flex min-h-[260px] max-w-7xl items-end px-4 pb-7 pt-16 sm:px-6 sm:pb-9">
+        <div class="relative mx-auto flex min-h-[100px] max-w-7xl items-end px-4 pb-7 pt-10 sm:px-6 sm:pb-9">
           <div class="flex w-full flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div class="flex min-w-0 items-center gap-4 sm:gap-5">
               <div class="logo-shell shrink-0">
@@ -517,9 +559,12 @@ onBeforeUnmount(() => {
                 <span>Meus pedidos</span>
                 <span v-if="orderHistory.length" class="hero-action-count">{{ orderHistory.length }}</span>
               </button>
-              <div class="hero-action cursor-default">
-                <span class="relative flex h-2.5 w-2.5"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-50" /><span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" /></span>
-                <span>Recebendo pedidos</span>
+              <div class="hero-action cursor-default" :class="!aceitaPedidos && 'bg-amber-500/20 text-amber-50'">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span v-if="aceitaPedidos" class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-50" />
+                  <span class="relative inline-flex h-2.5 w-2.5 rounded-full" :class="aceitaPedidos ? 'bg-emerald-400' : 'bg-amber-300'" />
+                </span>
+                <span>{{ aceitaPedidos ? 'Recebendo pedidos' : 'Fechado agora' }}</span>
               </div>
             </div>
           </div>
@@ -543,16 +588,23 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-        <div v-if="tracking" class="mb-6 flex flex-col gap-3 rounded-2xl bg-emerald-50 p-4 shadow-[0_0_0_1px_rgba(5,150,105,.14)] sm:flex-row sm:items-center sm:justify-between dark:bg-emerald-950/30">
+        <div v-if="!aceitaPedidos" class="mb-6 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950 shadow-[0_0_0_1px_rgba(217,119,6,.08)]">
+          <Clock3 class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+          <div>
+            <p class="font-semibold">Restaurante fechado no momento</p>
+            <p class="mt-1 text-sm text-amber-900/80">{{ mensagemAtendimento }} Você pode consultar o cardápio, mas os pedidos estarão disponíveis no próximo horário de atendimento.</p>
+          </div>
+        </div>
+        <button v-if="tracking" type="button" class="tracking-order mb-6 flex w-full flex-col gap-3 rounded-2xl bg-emerald-50 p-4 text-left shadow-[0_0_0_1px_rgba(5,150,105,.14)] sm:flex-row sm:items-center sm:justify-between dark:bg-emerald-950/30" :aria-label="`Ver detalhes do pedido ${tracking.codigo}`" @click="historyOpen = true">
           <div class="flex items-center gap-3">
-            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white"><CheckCircle2 class="h-5 w-5" /></span>
+            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white"><Clock3 class="h-5 w-5" /></span>
             <div>
               <p class="font-semibold">Pedido {{ tracking.codigo }}</p>
-              <p class="text-sm text-emerald-800/70 dark:text-emerald-200/70">{{ humanize(tracking.status) }} · pagamento {{ humanize(tracking.pagamentoStatus) }}</p>
+              <p class="text-sm text-emerald-800/70 dark:text-emerald-200/70">{{ trackingStatusLabel }} · pagamento {{ humanize(tracking.pagamentoStatus) }}</p>
             </div>
           </div>
-          <Badge class="w-fit bg-emerald-600 text-white hover:bg-emerald-600">Acompanhamento ativo</Badge>
-        </div>
+          <span class="flex items-center gap-2"><Badge class="w-fit" :class="trackingBadgeClass">{{ trackingStatusLabel }}</Badge><ChevronRight class="h-5 w-5 text-emerald-700" /></span>
+        </button>
 
         <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <section class="min-w-0 space-y-9">
@@ -566,8 +618,7 @@ onBeforeUnmount(() => {
             <section v-for="group in visibleGroups" :key="group.key" :id="`categoria-${group.key}`" class="menu-section">
               <div class="mb-4 flex items-end justify-between gap-4">
                 <div>
-                  <p class="brand-text mb-1 text-xs font-semibold uppercase tracking-[0.16em]">Explore</p>
-                  <h2 class="menu-heading text-balance text-2xl font-semibold tracking-[-0.025em] sm:text-3xl">
+                  <h2 class="menu-heading text-balance text-xl md:text-2xl font-semibold tracking-[-0.025em] sm:text-3xl">
                     {{ group.name }}
                   </h2>
                 </div>
@@ -575,23 +626,23 @@ onBeforeUnmount(() => {
               </div>
 
               <div class="grid gap-3 md:grid-cols-2">
-                <article v-for="item in group.items" :key="item.id" class="product-card group" @click="openItem(item)">
+                <article v-for="item in group.items" :key="item.id" class="product-card group" :class="{ 'product-card--closed': !aceitaPedidos }" :aria-disabled="!aceitaPedidos" @click="openItem(item)">
                   <div class="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
                     <div v-if="quantidadeNoCarrinho(item.id)" class="brand-soft mb-2 w-fit rounded-full px-2.5 py-1 text-xs font-semibold">{{ quantidadeNoCarrinho(item.id) }} no carrinho</div>
                     <h3 class="text-balance text-base font-semibold leading-snug sm:text-lg">
                       {{ itemName(item) }}
                     </h3>
-                    <p class="mt-1.5 line-clamp-2 text-pretty text-sm leading-relaxed text-stone-500 dark:text-stone-400">
+                    <p class="line-clamp-2 text-pretty text-xs leading-relaxed text-stone-500 dark:text-stone-400">
                       {{ itemDescription(item) }}
                     </p>
-                    <div class="mt-auto flex items-end justify-between gap-3 pt-4">
+                    <div class="mt-auto flex items-end justify-between gap-3 pt-2">
                       <div>
                         <p v-if="item.grupos.length" class="text-[11px] font-medium uppercase tracking-wide text-stone-400">A partir de</p>
                         <p class="price text-base font-bold text-stone-950 dark:text-white">
                           {{ formatCurrencyBR(Number(item.Produto.preco)) }}
                         </p>
                       </div>
-                      <button type="button" class="add-button" :aria-label="`Adicionar ${itemName(item)}`" @click.stop="quickAdd(item)">
+                      <button type="button" class="add-button" :aria-label="`Adicionar ${itemName(item)}`" :disabled="!aceitaPedidos" @click.stop="quickAdd(item)">
                         <Plus class="h-5 w-5" />
                       </button>
                     </div>
@@ -659,7 +710,7 @@ onBeforeUnmount(() => {
                     </div>
                     <span class="text-xs text-stone-400">sem frete</span>
                   </div>
-                  <Button class="brand-button tap-button h-12 w-full rounded-xl text-base" :style="primaryButtonStyle" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto h-4 w-4" /></Button>
+                  <Button class="brand-button tap-button h-12 w-full rounded-xl text-base" :style="primaryButtonStyle" :disabled="!aceitaPedidos" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto h-4 w-4" /></Button>
                 </div>
               </div>
             </div>
@@ -698,7 +749,7 @@ onBeforeUnmount(() => {
                     <h3 class="font-semibold">{{ link.Grupo.nome }}</h3>
                     <p class="text-xs text-stone-500">Escolha de {{ link.Grupo.minimo }} até {{ link.Grupo.maximo }} · {{ selectedCount(link.Grupo) }} selecionado(s)</p>
                   </div>
-                  <Badge :variant="selectedCount(link.Grupo) >= link.Grupo.minimo ? 'secondary' : 'destructive'">{{ link.Grupo.minimo > 0 ? 'Obrigatório' : 'Opcional' }}</Badge>
+                  <Badge :variant="selectedCount(link.Grupo) >= link.Grupo.minimo ? 'secondary' : 'secondary'">{{ link.Grupo.minimo > 0 ? 'Obrigatório' : 'Opcional' }}</Badge>
                 </div>
                 <div class="space-y-2">
                   <button v-for="option in link.Grupo.opcoes" :key="option.id" type="button" class="option-row" :class="{ selected: draftSelections.includes(option.id) }" @click="toggleDraft(link.Grupo, option.id)">
@@ -760,7 +811,7 @@ onBeforeUnmount(() => {
           <div class="mb-1 flex items-end justify-between">
             <span class="text-sm text-stone-500">Subtotal</span><strong class="price text-xl">{{ formatCurrencyBR(estimatedSubtotal) }}</strong>
           </div>
-          <Button class="brand-button tap-button h-12 rounded-xl text-base" :style="primaryButtonStyle" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto" /></Button>
+          <Button class="tap-button h-12 rounded-xl text-base" :style="primaryButtonStyle" :disabled="!aceitaPedidos" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto" /></Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
@@ -830,18 +881,23 @@ onBeforeUnmount(() => {
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 class="flex items-center gap-2 font-semibold"><MapPin class="brand-text h-4 w-4" />Endereço de entrega</h3>
-                    <p class="text-xs text-stone-500">Preencha para calcular a taxa.</p>
+                    <p class="text-xs text-stone-500">Preencha para calcular a taxa. A localização é opcional e não substitui os dados do endereço.</p>
                   </div>
-                  <Button size="sm" variant="outline" class="tap-button" @click="useLocation"><LocateFixed class="mr-2 h-4 w-4" />Usar localização</Button>
+                  <Button size="sm" variant="outline" class="tap-button" :disabled="obtendoLocalizacao" @click="useLocation"><LoaderCircle v-if="obtendoLocalizacao" class="mr-2 h-4 w-4 animate-spin" /><LocateFixed v-else class="mr-2 h-4 w-4" />Usar localização</Button>
                 </div>
+                <p class="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-relaxed text-emerald-800">
+                  <LocateFixed class="mt-0.5 h-4 w-4 shrink-0" />
+                  Usar sua localização ajuda o entregador a encontrar sua casa no mapa e na rota. Os campos de endereço continuam obrigatórios para calcular a entrega.
+                </p>
+                <p v-if="form.latitude !== null && form.longitude !== null" class="flex items-center gap-1.5 text-xs font-medium text-emerald-700"><CheckCircle2 class="h-3.5 w-3.5" />Localização adicionada ao pedido para a rota do entregador.</p>
                 <div class="grid gap-3 sm:grid-cols-2">
                   <div class="space-y-1"><Label>CEP</Label><Input v-model="form.cep" placeholder="00000-000" /></div>
-                  <div class="space-y-1"><Label>Cidade</Label><Input v-model="form.cidade" /></div>
-                  <div class="space-y-1"><Label>Bairro</Label><Input v-model="form.bairro" /></div>
-                  <div class="space-y-1"><Label>Logradouro</Label><Input v-model="form.logradouro" /></div>
-                  <div class="space-y-1"><Label>Número</Label><Input v-model="form.numero" /></div>
-                  <div class="space-y-1"><Label>Complemento</Label><Input v-model="form.complemento" /></div>
-                  <div class="space-y-1 sm:col-span-2"><Label>Referência</Label><Input v-model="form.referencia" /></div>
+                  <div class="space-y-1"><Label>Cidade</Label><Input v-model="form.cidade" placeholder="Ex.: São Paulo" /></div>
+                  <div class="space-y-1"><Label>Bairro</Label><Input v-model="form.bairro" placeholder="Ex.: Centro" /></div>
+                  <div class="space-y-1"><Label>Rua / Avenida</Label><Input v-model="form.logradouro" placeholder="Ex.: Rua das Flores" /></div>
+                  <div class="space-y-1"><Label>Número</Label><Input v-model="form.numero" placeholder="Ex.: 123" /></div>
+                  <div class="space-y-1"><Label>Complemento</Label><Input v-model="form.complemento" placeholder="Ex.: Casa 2 ou apto. 101" /></div>
+                  <div class="space-y-1 sm:col-span-2"><Label>Referência</Label><Input v-model="form.referencia" placeholder="Ex.: Portão azul ao lado da praça" /></div>
                 </div>
               </section>
 
@@ -895,7 +951,7 @@ onBeforeUnmount(() => {
                 </div>
                 <p v-if="origem === 'DELIVERY' && !addressComplete" class="text-xs text-stone-500">Preencha o endereço para calcular automaticamente o frete e o total.</p>
               </div>
-              <Button class="tap-button mt-5 h-12 w-full rounded-xl text-base" :style="primaryButtonStyle" :disabled="sending || previewing || !checkoutValid || !quote?.minimumReached" @click="pedir"><LoaderCircle v-if="sending" class="mr-2 h-4 w-4 animate-spin" />Confirmar pedido</Button>
+              <Button class="tap-button mt-5 h-12 w-full rounded-xl text-base" :style="primaryButtonStyle" :disabled="!aceitaPedidos || sending || previewing || !checkoutValid || !quote?.minimumReached" @click="pedir"><LoaderCircle v-if="sending" class="mr-2 h-4 w-4 animate-spin" />Confirmar pedido</Button>
               <p class="mt-3 text-center text-[11px] leading-relaxed text-stone-400">Valores e disponibilidade são confirmados pelo restaurante antes da criação do pedido.</p>
             </aside>
           </div>
@@ -928,7 +984,7 @@ onBeforeUnmount(() => {
                     {{ order.origem === 'DELIVERY' ? 'Delivery' : 'Retirada' }}
                   </p>
                 </div>
-                <Badge variant="secondary">{{ humanize(order.status) }}</Badge>
+                <Badge class="border-0" :class="restaurantOrderStatusBadgeClass(order.status)">{{ restaurantOrderStatusLabel(order.status) }}</Badge>
               </div>
               <div class="mt-3 space-y-1.5 text-sm text-stone-600">
                 <p v-for="item in order.itens" :key="`${order.codigo}-${item.nomeSnapshot}`" class="flex justify-between gap-3">
@@ -1084,6 +1140,19 @@ button.hero-action:active {
 }
 .product-card:active {
   transform: translateY(0) scale(0.99);
+}
+.product-card--closed {
+  cursor: not-allowed;
+  opacity: 0.48;
+  filter: grayscale(0.45);
+}
+.product-card--closed:hover,
+.product-card--closed:active {
+  transform: none;
+  box-shadow: 0 0 0 1px rgba(43, 37, 32, 0.06);
+}
+.product-card--closed:hover .product-image {
+  transform: none;
 }
 
 .product-image-wrap,
@@ -1313,6 +1382,20 @@ button.hero-action:active {
   padding: 14px;
   background: color-mix(in srgb, var(--menu-accent) 3%, white);
   box-shadow: inset 0 0 0 1px rgba(43, 37, 32, 0.08);
+}
+.tracking-order {
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+.tracking-order:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(5, 150, 105, 0.12), 0 0 0 1px rgba(5, 150, 105, 0.18);
+}
+.tracking-order:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--menu-accent) 45%, transparent);
+  outline-offset: 3px;
+}
+.tracking-order:active {
+  transform: scale(0.995);
 }
 
 .tap-button {

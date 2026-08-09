@@ -20,12 +20,28 @@ const routes: RouteInterface[] = [
   {
     path: '/',
     name: 'home',
+    component: () => import('@/pages/navegacao/NavigationHome.vue'),
+    meta: {
+      layout: 'main',
+    },
+  },
+  {
+    path: '/dashboard',
+    name: 'dashboard-main',
     component: () => {
       if (env.VITE_MODE_SYSTEM === 'arena') {
         return import('@/pages/arena/comandas/Dashboard.vue')
       }
       return import('@/pages/dashboard/Dashboard.vue')
     },
+    meta: {
+      layout: 'main',
+    },
+  },
+  {
+    path: '/navegacao/:moduleKey',
+    name: 'navegacao-cards-modulo',
+    component: () => import('@/pages/navegacao/CardsNavigationHub.vue'),
     meta: {
       layout: 'main',
     },
@@ -539,43 +555,89 @@ const routes: RouteInterface[] = [
         path: 'salao',
         name: 'restaurante-salao',
         component: () => import('@/pages/restaurante/Salao.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'SALAO_VISUALIZAR' },
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'SALAO_VISUALIZAR',
+        },
       },
       {
         path: 'comandas',
         name: 'restaurante-comandas',
         component: () => import('@/pages/comandas/Home.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'COMANDAS_OPERAR' },
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'COMANDAS_OPERAR',
+        },
       },
       {
         path: 'kds',
         name: 'restaurante-kds',
         component: () => import('@/pages/restaurante/Kds.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'KDS_VISUALIZAR' },
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'KDS_VISUALIZAR',
+        },
       },
       {
         path: 'impressao',
         name: 'restaurante-impressao',
         component: () => import('@/pages/restaurante/Impressao.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'IMPRESSAO_VISUALIZAR' },
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'IMPRESSAO_VISUALIZAR',
+        },
       },
       {
         path: 'cardapio',
         name: 'restaurante-cardapio',
         component: () => import('@/pages/restaurante/Cardapio.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'CARDAPIO_CONFIGURAR' },
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'CARDAPIO_CONFIGURAR',
+        },
       },
       {
         path: 'pedidos',
         name: 'restaurante-pedidos',
         component: () => import('@/pages/restaurante/Pedidos.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'PEDIDOS_VISUALIZAR' },
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'PEDIDOS_VISUALIZAR',
+        },
+      },
+      {
+        path: 'acompanhar-entregas',
+        name: 'restaurante-acompanhar-entregas',
+        component: () => import('@/pages/restaurante/AcompanharEntregas.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'PEDIDOS_VISUALIZAR',
+        },
       },
       {
         path: 'configuracoes',
         name: 'restaurante-configuracoes',
         component: () => import('@/pages/restaurante/Configuracoes.vue'),
-        meta: { layout: 'main', permissao: 1, modulo: 'restaurante-delivery', restauranteCapability: 'CONFIGURACOES_GERENCIAR' },
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'CONFIGURACOES_GERENCIAR',
+        },
       },
     ],
   },
