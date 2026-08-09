@@ -22,6 +22,7 @@ import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
@@ -36,8 +37,10 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useConfirm } from '@/composables/useConfirm'
+import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { MetasRepository, type MetaPayload, type MetaResumo } from '@/repositories/metas-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
+import type { CategoriaFinanceiro } from '@/types/schemas'
 import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils/formatters'
 
 const toast = useToast()
@@ -47,6 +50,8 @@ const loading = ref(false)
 const openModal = ref(false)
 const metas = ref<MetaResumo[]>([])
 const editingId = ref<number | null>(null)
+const categoriasFinanceiras = ref<Array<Required<Pick<CategoriaFinanceiro, 'id' | 'nome'>>>>([])
+const categoriasFinanceirasLoading = ref(false)
 
 const form = reactive({
   nome: '',
@@ -55,6 +60,7 @@ const form = reactive({
   metrica: 'VALOR' as MetaPayload['metrica'],
   periodicidade: 'MENSAL' as MetaPayload['periodicidade'],
   financeiroTipo: 'RECEITA' as NonNullable<MetaPayload['financeiroTipo']>,
+  categoriaIds: [] as number[],
   valorAlvo: '',
   dataInicio: new Date(),
   dataFim: null as Date | null,
@@ -116,6 +122,7 @@ function resetForm() {
   form.metrica = 'VALOR'
   form.periodicidade = 'MENSAL'
   form.financeiroTipo = 'RECEITA'
+  form.categoriaIds = []
   form.valorAlvo = ''
   form.dataInicio = new Date()
   form.dataFim = null
@@ -135,6 +142,7 @@ function openEdit(meta: MetaResumo) {
   form.metrica = meta.metrica
   form.periodicidade = meta.periodicidade
   form.financeiroTipo = meta.financeiroTipo || 'RECEITA'
+  form.categoriaIds = meta.categoriasFinanceiras.map((categoria) => categoria.id)
   form.valorAlvo = String(meta.valorAlvo || '')
   form.dataInicio = new Date(meta.periodoAtual.inicio)
   form.dataFim = meta.periodicidade === 'PERSONALIZADO' ? new Date(meta.periodoAtual.fim) : null
@@ -156,6 +164,28 @@ async function loadMetas(showFeedback = false) {
   }
 }
 
+async function loadCategoriasFinanceiras() {
+  try {
+    categoriasFinanceirasLoading.value = true
+    const response = await LancamentosRepository.listarCategorias()
+    categoriasFinanceiras.value = (response.data || []).filter(
+      (categoria: CategoriaFinanceiro): categoria is Required<Pick<CategoriaFinanceiro, 'id' | 'nome'>> =>
+        typeof categoria.id === 'number' && Boolean(categoria.nome),
+    )
+  } catch {
+    categoriasFinanceiras.value = []
+    toast.error('Não foi possível carregar as categorias financeiras.')
+  } finally {
+    categoriasFinanceirasLoading.value = false
+  }
+}
+
+function toggleCategoriaFinanceira(id: number, selected: boolean) {
+  form.categoriaIds = selected
+    ? [...new Set([...form.categoriaIds, id])]
+    : form.categoriaIds.filter((categoriaId) => categoriaId !== id)
+}
+
 async function salvarMeta() {
   const valorAlvo = formatToNumberValue(form.valorAlvo)
   if (!form.nome.trim()) return toast.error('Informe o nome da meta.')
@@ -174,6 +204,7 @@ async function salvarMeta() {
       dataInicio: form.dataInicio.toISOString(),
       dataFim: form.dataFim ? form.dataFim.toISOString() : null,
       financeiroTipo: form.tipo === 'FINANCEIRO' ? form.financeiroTipo : null,
+      categoriaIds: form.tipo === 'FINANCEIRO' ? form.categoriaIds : [],
       ativo: form.ativo,
     }
 
@@ -219,7 +250,10 @@ function getTipoIcon(tipo: MetaResumo['tipo']) {
   return Trophy
 }
 
-onMounted(() => loadMetas())
+onMounted(() => {
+  void loadMetas()
+  void loadCategoriasFinanceiras()
+})
 </script>
 
 <template>
@@ -363,6 +397,9 @@ onMounted(() => loadMetas())
             </span>
             <span>{{ meta.historico.filter((item) => item.atingida).length }} período(s) batido(s)</span>
           </div>
+          <p v-if="meta.categoriasFinanceiras.length" class="text-xs text-muted-foreground">
+            Categorias: {{ meta.categoriasFinanceiras.map((categoria) => categoria.nome).join(', ') }}
+          </p>
           <div v-if="canManage" class="flex justify-end gap-2">
             <Button variant="outline" size="sm" @click="openEdit(meta)">
               <Edit class="h-4 w-4" />
@@ -419,6 +456,23 @@ onMounted(() => loadMetas())
                 <SelectItem value="DESPESA">Despesas pagas</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div v-if="form.tipo === 'FINANCEIRO'" class="space-y-2 md:col-span-2">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <Label>Categorias financeiras</Label>
+                <p class="text-xs text-muted-foreground">Opcional. Selecione uma ou mais categorias para limitar a meta aos lançamentos delas.</p>
+              </div>
+              <Badge v-if="form.categoriaIds.length" variant="secondary">{{ form.categoriaIds.length }} selecionada(s)</Badge>
+            </div>
+            <div v-if="categoriasFinanceirasLoading" class="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">Carregando categorias...</div>
+            <div v-else-if="!categoriasFinanceiras.length" class="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">Nenhuma categoria financeira cadastrada.</div>
+            <div v-else class="grid max-h-44 gap-2 overflow-y-auto rounded-xl border p-3 sm:grid-cols-2">
+              <label v-for="categoria in categoriasFinanceiras" :key="categoria.id" class="flex cursor-pointer items-center gap-2 text-sm">
+                <Checkbox :model-value="form.categoriaIds.includes(categoria.id)" @update:model-value="(selected) => toggleCategoriaFinanceira(categoria.id, Boolean(selected))" />
+                <span class="truncate">{{ categoria.nome }}</span>
+              </label>
+            </div>
           </div>
           <div>
             <Label>Periodicidade</Label>

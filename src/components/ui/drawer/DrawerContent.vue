@@ -3,7 +3,7 @@ import type { DialogContentEmits, DialogContentProps } from "reka-ui"
 import type { HTMLAttributes, StyleValue } from "vue"
 import { reactiveOmit } from "@vueuse/core"
 import { useForwardPropsEmits } from "reka-ui"
-import { DrawerContent, DrawerPortal } from "vaul-vue"
+import { DrawerContent, DrawerHandle, DrawerPortal } from "vaul-vue"
 import { cn } from "@/lib/utils"
 import DrawerOverlay from "./DrawerOverlay.vue"
 
@@ -30,7 +30,7 @@ const forwardedProps = useForwardPropsEmits(delegatedProps, emits)
         props.class,
       )"
     >
-      <div class="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      <DrawerHandle prevent-cycle class="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
       <slot />
     </DrawerContent>
   </DrawerPortal>

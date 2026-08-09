@@ -1017,6 +1017,12 @@ const routes: RouteInterface[] = [
     },
   },
   {
+    path: '/restaurante/:slug/conta',
+    name: 'restaurante-conta-publica',
+    component: () => import('@/pages/restaurante/CardapioPublico.vue'),
+    meta: { isPublic: true },
+  },
+  {
     path: '/restaurante/:slug',
     name: 'restaurante-cardapio-publico',
     component: () => import('@/pages/restaurante/CardapioPublico.vue'),

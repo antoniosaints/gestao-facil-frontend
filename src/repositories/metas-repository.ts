@@ -13,6 +13,7 @@ export type MetaResumo = {
   metrica: MetricaMeta
   periodicidade: PeriodicidadeMeta
   financeiroTipo?: FinanceiroTipoMeta | null
+  categoriasFinanceiras: Array<{ id: number; nome: string }>
   ativo: boolean
   valorAlvo: number
   valorAtual: number
@@ -45,6 +46,7 @@ export type MetaPayload = {
   dataInicio: string
   dataFim?: string | null
   financeiroTipo?: FinanceiroTipoMeta | null
+  categoriaIds?: number[]
   ativo: boolean
 }
 

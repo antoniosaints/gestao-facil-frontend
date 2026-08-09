@@ -110,6 +110,28 @@ export interface RestaurantePublicOrderTracking {
   }>
 }
 
+export interface RestauranteClienteEndereco {
+  id: number
+  rotulo?: string | null
+  cep: string
+  cidade: string
+  bairro: string
+  logradouro: string
+  numero: string
+  complemento?: string | null
+  referencia?: string | null
+  principal: boolean
+}
+
+export interface RestauranteClienteConta {
+  id: number
+  nome: string
+  telefone: string
+  email?: string | null
+  enderecos: RestauranteClienteEndereco[]
+  pedidos: RestaurantePublicOrderTracking[]
+}
+
 export type RestauranteMesaStatus = 'LIVRE' | 'OCUPADA' | 'AGUARDANDO_CONTA' | 'LIMPEZA'
 
 export interface RestauranteMesa {
@@ -421,9 +443,9 @@ export class RestauranteRepository {
     }
   }
 
-  static async criarPedidoPublico(slug: string, payload: unknown, idempotencyKey: string) {
+  static async criarPedidoPublico(slug: string, payload: unknown, idempotencyKey: string, customerAccessToken?: string | null) {
     const { data } = await http.post(`/v1/restaurante/publico/${slug}/pedidos`, payload, {
-      headers: { 'Idempotency-Key': idempotencyKey },
+      headers: { 'Idempotency-Key': idempotencyKey, ...(customerAccessToken ? { Authorization: `Bearer ${customerAccessToken}` } : {}) },
     })
     return data.data
   }
@@ -436,6 +458,36 @@ export class RestauranteRepository {
   static async acompanharPedido(token: string) {
     const { data } = await http.get(`/v1/restaurante/publico/pedidos/${token}`)
     return data.data as RestaurantePublicOrderTracking
+  }
+
+  static async cadastrarContaCliente(slug: string, payload: { nome: string; telefone: string; email?: string | null; senha: string }) {
+    const { data } = await http.post(`/v1/restaurante/publico/${slug}/conta/cadastro`, payload)
+    return data.data as { customer: { id: number; nome: string; telefone: string }; accessToken: string }
+  }
+
+  static async entrarContaCliente(slug: string, payload: { telefone: string; senha: string }) {
+    const { data } = await http.post(`/v1/restaurante/publico/${slug}/conta/login`, payload)
+    return data.data as { customer: { id: number; nome: string; telefone: string }; accessToken: string }
+  }
+
+  static async contaCliente(slug: string, accessToken: string) {
+    const { data } = await http.get(`/v1/restaurante/publico/${slug}/conta`, { headers: { Authorization: `Bearer ${accessToken}` } })
+    return data.data as RestauranteClienteConta
+  }
+
+  static async atualizarContaCliente(slug: string, accessToken: string, payload: { nome: string; email?: string | null }) {
+    const { data } = await http.patch(`/v1/restaurante/publico/${slug}/conta`, payload, { headers: { Authorization: `Bearer ${accessToken}` } })
+    return data.data
+  }
+
+  static async salvarEnderecoContaCliente(slug: string, accessToken: string, payload: Omit<RestauranteClienteEndereco, 'id'>, id?: number) {
+    const url = `/v1/restaurante/publico/${slug}/conta/enderecos${id ? `/${id}` : ''}`
+    const { data } = await http.request({ url, method: id ? 'put' : 'post', data: payload, headers: { Authorization: `Bearer ${accessToken}` } })
+    return data.data as RestauranteClienteEndereco
+  }
+
+  static async removerEnderecoContaCliente(slug: string, accessToken: string, id: number) {
+    await http.delete(`/v1/restaurante/publico/${slug}/conta/enderecos/${id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
   }
 
   static async pedidos(params: { page?: number; limit?: number; status?: string; inicio?: string; fim?: string } = {}) {

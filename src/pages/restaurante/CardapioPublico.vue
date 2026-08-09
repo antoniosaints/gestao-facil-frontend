@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, type CSSProperties } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { io, type Socket } from 'socket.io-client'
+import { vMaska } from 'maska/vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -13,18 +15,27 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { Bike, Check, CheckCircle2, ChevronRight, Clipboard, Clock3, History, LoaderCircle, LocateFixed, MapPin, Minus, Plus, Search, ShoppingBag, ShoppingCart, Store, Trash2, Truck, UtensilsCrossed } from 'lucide-vue-next'
-import { RestauranteRepository, type RestauranteCheckoutPreview, type RestaurantePublicOrderTracking } from '@/repositories/restaurante-repository'
+import { Bike, Check, CheckCircle2, ChevronRight, Clipboard, Clock3, History, LoaderCircle, LocateFixed, MapPin, Menu, Minus, Plus, Search, ShoppingBag, ShoppingCart, Store, Trash2, Truck, UserRound, UtensilsCrossed } from 'lucide-vue-next'
+import { RestauranteRepository, type RestauranteCheckoutPreview, type RestauranteClienteConta, type RestauranteClienteEndereco, type RestaurantePublicOrderTracking } from '@/repositories/restaurante-repository'
 import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { getThemePalette, hexToHslValue, normalizeThemeCustomization } from '@/utils/themeCustomization'
+import { cepMaskOptions, phoneMaskOptions } from '@/lib/imaska'
 import { calculateMenuItemUnitPrice, hasSameMenuSelections, updateMenuGroupSelection } from './publicMenuCart'
 import { isActiveRestaurantOrder, parseTrackingTokens, prependTrackingToken, restaurantOrderStatusBadgeClass, restaurantOrderStatusLabel } from './publicMenuHistory'
 
 const route = useRoute()
 const toast = useToast()
 useStorefrontLightTheme()
+const useDesktopMenuModal = useMediaQuery('(min-width: 1024px)')
+const menuModalRoot = computed(() => useDesktopMenuModal.value ? Dialog : Drawer)
+const menuModalRootProps = computed(() => useDesktopMenuModal.value ? {} : { handleOnly: true })
+const menuModalContent = computed(() => useDesktopMenuModal.value ? DialogContent : DrawerContent)
+const menuModalHeader = computed(() => useDesktopMenuModal.value ? DialogHeader : DrawerHeader)
+const menuModalTitle = computed(() => useDesktopMenuModal.value ? DialogTitle : DrawerTitle)
+const menuModalDescription = computed(() => useDesktopMenuModal.value ? DialogDescription : DrawerDescription)
+const menuModalFooter = computed(() => useDesktopMenuModal.value ? DialogFooter : DrawerFooter)
 const loading = ref(true)
 const sending = ref(false)
 const previewing = ref(false)
@@ -42,6 +53,13 @@ const cartLines = ref<CartLine[]>([])
 const quote = ref<RestauranteCheckoutPreview | null>(null)
 const orderResult = ref<any>(null)
 const historyOpen = ref(false)
+const accountOpen = ref(false)
+const accountLoading = ref(false)
+const accountSubmitting = ref(false)
+const accountMode = ref<'login' | 'register' | 'profile'>('login')
+const customerAccount = ref<RestauranteClienteConta | null>(null)
+const useAccountData = ref(true)
+const selectedAccountAddressId = ref<number | null>(null)
 const historyLoading = ref(false)
 const orderHistory = ref<Array<RestaurantePublicOrderTracking & { trackingToken: string }>>([])
 const searchTerm = ref('')
@@ -71,6 +89,12 @@ const form = reactive({
   latitude: null as number | null,
   longitude: null as number | null,
 })
+const accountForm = reactive({ nome: '', telefone: '', email: '', senha: '', confirmacaoSenha: '' })
+type AccountFieldName = 'nome' | 'telefone' | 'email' | 'senha' | 'confirmacaoSenha'
+const accountFieldErrors = reactive<Record<AccountFieldName, string[]>>({ nome: [], telefone: [], email: [], senha: [], confirmacaoSenha: [] })
+const accountAddressForm = reactive({ rotulo: '', cep: '', cidade: '', bairro: '', logradouro: '', numero: '', complemento: '', referencia: '', principal: false })
+type AccountAddressFieldName = 'rotulo' | 'cep' | 'cidade' | 'bairro' | 'logradouro' | 'numero' | 'complemento' | 'referencia'
+const accountAddressFieldErrors = reactive<Record<AccountAddressFieldName, string[]>>({ rotulo: [], cep: [], cidade: [], bairro: [], logradouro: [], numero: [], complemento: [], referencia: [] })
 
 function normalize(value: unknown) {
   return String(value || '')
@@ -185,6 +209,202 @@ function invalidateCart() {
 
 function trackingStorageKey() {
   return `restaurante:trackingTokens:${String(route.params.slug)}`
+}
+
+function customerTokenKey() {
+  return `restaurante:cliente:${String(route.params.slug)}:access-token`
+}
+
+function customerToken() {
+  return localStorage.getItem(customerTokenKey())
+}
+
+function applyAccountAddress(address?: RestauranteClienteEndereco) {
+  if (!address) return
+  selectedAccountAddressId.value = address.id
+  Object.assign(form, {
+    cep: address.cep,
+    cidade: address.cidade,
+    bairro: address.bairro,
+    logradouro: address.logradouro,
+    numero: address.numero,
+    complemento: address.complemento || '',
+    referencia: address.referencia || '',
+  })
+}
+
+function applyCustomerAccount(account: RestauranteClienteConta) {
+  Object.assign(form, { nome: account.nome, telefone: account.telefone, email: account.email || '' })
+  const address = account.enderecos.find((item) => item.principal) || account.enderecos[0]
+  if (address && origem.value === 'DELIVERY') applyAccountAddress(address)
+}
+
+async function loadCustomerAccount(silent = false) {
+  const token = customerToken()
+  if (!token) {
+    customerAccount.value = null
+    accountMode.value = 'login'
+    return
+  }
+  accountLoading.value = true
+  try {
+    const account = await RestauranteRepository.contaCliente(String(route.params.slug), token)
+    customerAccount.value = account
+    accountMode.value = 'profile'
+    Object.assign(accountForm, { nome: account.nome, telefone: account.telefone, email: account.email || '', senha: '', confirmacaoSenha: '' })
+    if (useAccountData.value) applyCustomerAccount(account)
+  } catch {
+    localStorage.removeItem(customerTokenKey())
+    customerAccount.value = null
+    accountMode.value = 'login'
+    if (!silent) toast.info('Entre novamente para acessar sua conta.')
+  } finally {
+    accountLoading.value = false
+  }
+}
+
+async function openCustomerAccount() {
+  accountOpen.value = true
+  await loadCustomerAccount()
+}
+
+function clearAccountFieldErrors() {
+  for (const field of Object.keys(accountFieldErrors) as AccountFieldName[]) accountFieldErrors[field] = []
+}
+
+function clearAccountFieldError(field: AccountFieldName) {
+  accountFieldErrors[field] = []
+}
+
+function addAccountFieldError(field: AccountFieldName, message: string) {
+  accountFieldErrors[field].push(message)
+}
+
+function firstAccountFieldError() {
+  return Object.values(accountFieldErrors).flat()[0]
+}
+
+function validateCustomerAccount() {
+  clearAccountFieldErrors()
+  const phoneDigits = accountForm.telefone.replace(/\D/g, '')
+  if (phoneDigits.length < 10) addAccountFieldError('telefone', 'Informe um telefone válido com DDD.')
+  if (accountMode.value !== 'register') {
+    if (!accountForm.senha) addAccountFieldError('senha', 'Informe sua senha.')
+    return !firstAccountFieldError()
+  }
+
+  if (accountForm.nome.trim().length < 2) addAccountFieldError('nome', 'Informe seu nome completo.')
+  if (accountForm.email && !/^\S+@\S+\.\S+$/.test(accountForm.email)) addAccountFieldError('email', 'Informe um e-mail válido.')
+  if (accountForm.senha.length < 8) addAccountFieldError('senha', 'A senha deve ter pelo menos 8 caracteres.')
+  if (!/[A-Za-z]/.test(accountForm.senha)) addAccountFieldError('senha', 'A senha deve conter letra.')
+  if (!/\d/.test(accountForm.senha)) addAccountFieldError('senha', 'A senha deve conter número.')
+  if (accountForm.senha !== accountForm.confirmacaoSenha) addAccountFieldError('confirmacaoSenha', 'As senhas não coincidem.')
+  return !firstAccountFieldError()
+}
+
+function applyAccountApiErrors(fieldErrors: unknown) {
+  if (!fieldErrors || typeof fieldErrors !== 'object') return false
+  clearAccountFieldErrors()
+  for (const [field, messages] of Object.entries(fieldErrors as Record<string, unknown>)) {
+    if (!(field in accountFieldErrors) || !Array.isArray(messages)) continue
+    accountFieldErrors[field as AccountFieldName] = messages.filter((message): message is string => typeof message === 'string')
+  }
+  return Boolean(firstAccountFieldError())
+}
+
+function clearAccountAddressFieldErrors() {
+  for (const field of Object.keys(accountAddressFieldErrors) as AccountAddressFieldName[]) accountAddressFieldErrors[field] = []
+}
+
+function clearAccountAddressFieldError(field: AccountAddressFieldName) {
+  accountAddressFieldErrors[field] = []
+}
+
+function addAccountAddressFieldError(field: AccountAddressFieldName, message: string) {
+  accountAddressFieldErrors[field].push(message)
+}
+
+function firstAccountAddressFieldError() {
+  return Object.values(accountAddressFieldErrors).flat()[0]
+}
+
+function validateCustomerAddress() {
+  clearAccountAddressFieldErrors()
+  if (accountAddressForm.cep.replace(/\D/g, '').length !== 8) addAccountAddressFieldError('cep', 'Informe um CEP com 8 dígitos.')
+  if (accountAddressForm.cidade.trim().length < 2) addAccountAddressFieldError('cidade', 'Informe a cidade.')
+  if (accountAddressForm.bairro.trim().length < 2) addAccountAddressFieldError('bairro', 'Informe o bairro.')
+  if (accountAddressForm.logradouro.trim().length < 2) addAccountAddressFieldError('logradouro', 'Informe a rua ou avenida.')
+  if (!accountAddressForm.numero.trim()) addAccountAddressFieldError('numero', 'Informe o número.')
+  return !firstAccountAddressFieldError()
+}
+
+function applyAccountAddressApiErrors(fieldErrors: unknown) {
+  if (!fieldErrors || typeof fieldErrors !== 'object') return false
+  clearAccountAddressFieldErrors()
+  for (const [field, messages] of Object.entries(fieldErrors as Record<string, unknown>)) {
+    if (!(field in accountAddressFieldErrors) || !Array.isArray(messages)) continue
+    accountAddressFieldErrors[field as AccountAddressFieldName] = messages.filter((message): message is string => typeof message === 'string')
+  }
+  return Boolean(firstAccountAddressFieldError())
+}
+
+async function submitCustomerAccount() {
+  if (!validateCustomerAccount()) return toast.error(firstAccountFieldError() || 'Revise os dados informados.')
+  const registering = accountMode.value === 'register'
+  try {
+    accountSubmitting.value = true
+    const result = accountMode.value === 'register'
+      ? await RestauranteRepository.cadastrarContaCliente(String(route.params.slug), { nome: accountForm.nome, telefone: accountForm.telefone, email: accountForm.email || null, senha: accountForm.senha })
+      : await RestauranteRepository.entrarContaCliente(String(route.params.slug), { telefone: accountForm.telefone, senha: accountForm.senha })
+    localStorage.setItem(customerTokenKey(), result.accessToken)
+    await loadCustomerAccount()
+    toast.success(registering ? 'Conta criada.' : 'Conta acessada.')
+  } catch (error: any) {
+    const apiError = error?.response?.data?.error
+    if (applyAccountApiErrors(apiError?.details?.fieldErrors)) return toast.error(firstAccountFieldError() || apiError?.message)
+    toast.error(apiError?.message || 'Não foi possível acessar sua conta.')
+  } finally {
+    accountSubmitting.value = false
+  }
+}
+
+async function saveCustomerProfile() {
+  const token = customerToken(); if (!token) return
+  try {
+    accountSubmitting.value = true
+    await RestauranteRepository.atualizarContaCliente(String(route.params.slug), token, { nome: accountForm.nome, email: accountForm.email || null })
+    await loadCustomerAccount(true)
+    toast.success('Dados pessoais atualizados.')
+  } catch (error: any) { toast.error(error?.response?.data?.error?.message || 'Não foi possível salvar seus dados.') } finally { accountSubmitting.value = false }
+}
+
+async function saveCustomerAddress() {
+  const token = customerToken(); if (!token) return
+  if (!validateCustomerAddress()) return toast.error(firstAccountAddressFieldError() || 'Revise os dados do endereço.')
+  try {
+    accountSubmitting.value = true
+    await RestauranteRepository.salvarEnderecoContaCliente(String(route.params.slug), token, { ...accountAddressForm })
+    Object.assign(accountAddressForm, { rotulo: '', cep: '', cidade: '', bairro: '', logradouro: '', numero: '', complemento: '', referencia: '', principal: false })
+    clearAccountAddressFieldErrors()
+    await loadCustomerAccount(true)
+    toast.success('Endereço salvo.')
+  } catch (error: any) {
+    const apiError = error?.response?.data?.error
+    if (applyAccountAddressApiErrors(apiError?.details?.fieldErrors)) return toast.error(firstAccountAddressFieldError() || apiError?.message)
+    toast.error(apiError?.message || 'Revise os dados do endereço.')
+  } finally { accountSubmitting.value = false }
+}
+
+async function removeCustomerAddress(id: number) {
+  const token = customerToken(); if (!token) return
+  try { await RestauranteRepository.removerEnderecoContaCliente(String(route.params.slug), token, id); await loadCustomerAccount(true) } catch { toast.error('Não foi possível remover o endereço.') }
+}
+
+function logoutCustomer() {
+  localStorage.removeItem(customerTokenKey())
+  customerAccount.value = null
+  accountMode.value = 'login'
+  toast.info('Você saiu da sua conta.')
 }
 
 function storedTrackingTokens() {
@@ -444,6 +664,7 @@ async function pedir() {
         pagamento: pagamento.value,
       },
       crypto.randomUUID(),
+      customerToken(),
     )
     orderResult.value = result
     const tokens = saveTrackingToken(result.trackingToken)
@@ -500,12 +721,26 @@ function clearSearch() {
   activeCategory.value = 'todos'
 }
 
+function scrollToMenu() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function openMenuFromEmptyCart() {
+  cartDrawerOpen.value = false
+  scrollToMenu()
+}
+
 watch(searchTerm, () => {
   activeCategory.value = 'todos'
 })
 watch(() => [origem.value, form.cep, form.cidade, form.bairro, form.logradouro, form.numero, form.complemento, form.referencia, JSON.stringify(payloadItems.value)], scheduleCheckoutPreview)
+watch(useAccountData, (enabled) => { if (enabled && customerAccount.value) applyCustomerAccount(customerAccount.value) })
 
-onMounted(carregar)
+onMounted(async () => {
+  await carregar()
+  if (customerToken()) await loadCustomerAccount(true)
+  if (route.name === 'restaurante-conta-publica') await openCustomerAccount()
+})
 onBeforeUnmount(() => {
   if (previewTimer) clearTimeout(previewTimer)
   trackingSocket?.disconnect()
@@ -553,7 +788,7 @@ onBeforeUnmount(() => {
                 </div>
               </div>
             </div>
-            <div class="flex shrink-0 flex-wrap items-center gap-2">
+            <div class="hero-actions flex shrink-0 flex-wrap items-center gap-2">
               <button type="button" class="hero-action" @click="historyOpen = true">
                 <History class="h-4 w-4" />
                 <span>Meus pedidos</span>
@@ -718,7 +953,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div v-if="selecionados.length" class="fixed inset-x-0 bottom-0 z-40 p-3 lg:hidden">
+      <div v-if="false" class="fixed inset-x-0 bottom-0 z-40 p-3 lg:hidden">
         <button type="button" class="mobile-cart-bar" @click="cartDrawerOpen = true">
           <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15"><ShoppingCart class="h-5 w-5" /></span>
           <span class="min-w-0 flex-1 text-left"
@@ -728,19 +963,25 @@ onBeforeUnmount(() => {
           <ChevronRight class="h-5 w-5" />
         </button>
       </div>
+      <div class="mobile-bottom-bar lg:hidden">
+        <button type="button" class="bottom-bar-action" @click="scrollToMenu"><Menu class="h-5 w-5" /><span>Cardápio</span></button>
+        <button type="button" class="bottom-bar-action" @click="historyOpen = true"><History class="h-5 w-5" /><span>Pedidos</span><b v-if="orderHistory.length" class="bottom-bar-count">{{ orderHistory.length }}</b></button>
+        <button type="button" class="bottom-bar-action bottom-bar-cart" :class="{ 'has-items': cartUnits }" @click="cartDrawerOpen = true"><span class="relative"><ShoppingCart class="h-5 w-5" /><b v-if="cartUnits" class="bottom-bar-count cart-count">{{ cartUnits }}</b></span><span>{{ cartUnits ? formatCurrencyBR(estimatedSubtotal) : 'Carrinho' }}</span></button>
+        <button type="button" class="bottom-bar-action" @click="openCustomerAccount"><UserRound class="h-5 w-5" /><span>Conta</span></button>
+      </div>
     </template>
 
-    <Dialog v-model:open="itemDialogOpen">
-      <DialogContent class="menu-overlay max-h-[92vh] max-w-2xl overflow-y-auto border-0 p-0 sm:rounded-[24px]" :style="menuThemeStyle">
+    <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="itemDialogOpen">
+      <component :is="menuModalContent" class="menu-overlay max-h-[88vh] overflow-y-auto rounded-t-[24px] border-0 p-0 lg:max-h-[92vh] lg:max-w-2xl lg:rounded-[24px]" :style="menuThemeStyle">
         <template v-if="activeItem">
-          <div v-if="itemImage(activeItem)" class="h-52 overflow-hidden sm:h-64 sm:rounded-t-[24px]">
+          <div v-if="itemImage(activeItem)" class="h-52 overflow-hidden rounded-t-[24px] sm:h-64 lg:rounded-t-[24px]">
             <img :src="itemImage(activeItem)" :alt="itemName(activeItem)" class="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10" />
           </div>
           <div class="p-5 sm:p-7">
-            <DialogHeader class="text-left">
-              <DialogTitle class="menu-heading text-balance text-2xl tracking-[-0.025em]">{{ itemName(activeItem) }}</DialogTitle>
-              <DialogDescription class="text-pretty leading-relaxed">{{ itemDescription(activeItem) }}</DialogDescription>
-            </DialogHeader>
+            <component :is="menuModalHeader" class="text-left">
+              <component :is="menuModalTitle" class="menu-heading text-balance text-2xl tracking-[-0.025em]">{{ itemName(activeItem) }}</component>
+              <component :is="menuModalDescription" class="text-pretty leading-relaxed">{{ itemDescription(activeItem) }}</component>
+            </component>
 
             <div class="mt-6 space-y-6">
               <section v-for="link in activeItem.grupos" :key="link.grupoId">
@@ -778,15 +1019,15 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </template>
-      </DialogContent>
-    </Dialog>
+      </component>
+    </component>
 
-    <Drawer v-model:open="cartDrawerOpen">
-      <DrawerContent class="menu-overlay max-h-[88vh] rounded-t-[24px] border-0" :style="menuThemeStyle">
-        <DrawerHeader class="text-left"
-          ><DrawerTitle class="menu-heading text-xl">Seu carrinho</DrawerTitle><DrawerDescription>{{ cartUnits }} {{ cartUnits === 1 ? 'item selecionado' : 'itens selecionados' }}</DrawerDescription></DrawerHeader
+    <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="cartDrawerOpen">
+      <component :is="menuModalContent" class="menu-overlay max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :style="menuThemeStyle">
+        <component :is="menuModalHeader" class="shrink-0 text-left lg:px-7 lg:pt-6"
+          ><component :is="menuModalTitle" class="menu-heading text-xl">Seu carrinho</component><component :is="menuModalDescription">{{ cartUnits }} {{ cartUnits === 1 ? 'item selecionado' : 'itens selecionados' }}</component></component
         >
-        <div class="overflow-y-auto px-4">
+        <div class="max-h-[calc(88dvh-10rem)] overflow-y-auto overscroll-contain touch-pan-y px-4">
           <div v-for="line in selecionados" :key="line.id" class="cart-line border-b py-4 last:border-0">
             <div class="min-w-0 flex-1">
               <button type="button" class="truncate text-left text-sm font-semibold" @click="editCartLine(line)">
@@ -807,24 +1048,25 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
-        <DrawerFooter class="border-t bg-white dark:bg-zinc-950">
-          <div class="mb-1 flex items-end justify-between">
+        <component :is="menuModalFooter" class="shrink-0 border-t bg-white dark:bg-zinc-950 lg:flex-col lg:items-stretch lg:gap-2 lg:px-7 lg:py-5">
+          <div v-if="selecionados.length" class="mb-1 flex items-end justify-between">
             <span class="text-sm text-stone-500">Subtotal</span><strong class="price text-xl">{{ formatCurrencyBR(estimatedSubtotal) }}</strong>
           </div>
-          <Button class="tap-button h-12 rounded-xl text-base" :style="primaryButtonStyle" :disabled="!aceitaPedidos" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto" /></Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+          <Button v-if="selecionados.length" class="tap-button h-12 rounded-xl text-base" :style="primaryButtonStyle" :disabled="!aceitaPedidos" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto" /></Button>
+          <Button v-else class="tap-button h-12 rounded-xl text-base" :style="primaryButtonStyle" @click="openMenuFromEmptyCart">Abrir cardápio<UtensilsCrossed class="ml-auto" /></Button>
+        </component>
+      </component>
+    </component>
 
-    <Dialog v-model:open="checkoutOpen">
-      <DialogContent class="menu-overlay max-h-[94vh] max-w-4xl overflow-y-auto border-0 p-0 sm:rounded-[24px]" :style="menuThemeStyle">
+    <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="checkoutOpen">
+      <component :is="menuModalContent" class="menu-overlay rounded-t-[24px] border-0 p-0 lg:h-auto lg:max-h-[94vh] lg:max-w-4xl lg:overflow-y-auto lg:rounded-[24px]" :class="orderResult ? 'max-h-[88dvh] overflow-y-auto' : 'h-[88dvh] max-h-[88dvh] overflow-hidden'" :style="menuThemeStyle">
         <template v-if="orderResult">
           <div class="p-6 sm:p-9">
             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-emerald-100 text-emerald-700">
               <CheckCircle2 class="h-8 w-8" />
             </div>
-            <DialogHeader class="mt-5 text-center justify-center items-center flex"
-              ><DialogTitle class="menu-heading text-3xl">Pedido {{ orderResult.pedido.codigo }} recebido!</DialogTitle><DialogDescription>Agora é só acompanhar o pagamento e o preparo por este navegador.</DialogDescription></DialogHeader
+            <component :is="menuModalHeader" class="mt-5 flex items-center justify-center text-center"
+              ><component :is="menuModalTitle" class="menu-heading text-3xl">Pedido {{ orderResult.pedido.codigo }} recebido!</component><component :is="menuModalDescription">Agora é só acompanhar o pagamento e o preparo por este navegador.</component></component
             >
             <div class="mx-auto mt-7 max-w-lg space-y-4">
               <div class="flex justify-between rounded-2xl bg-stone-100 p-4 dark:bg-zinc-800">
@@ -841,15 +1083,16 @@ onBeforeUnmount(() => {
               </div>
               <p v-else class="rounded-2xl bg-stone-100 p-4 text-sm text-stone-600 dark:bg-zinc-800 dark:text-stone-300">O pagamento será realizado na {{ origem === 'DELIVERY' ? 'entrega' : 'retirada' }}.</p>
             </div>
-            <DialogFooter class="mt-7 sm:justify-center"><Button class="tap-button h-11 rounded-xl px-7" @click="checkoutOpen = false">Voltar ao cardápio</Button></DialogFooter>
+            <component :is="menuModalFooter" class="mt-7 sm:justify-center"><Button class="tap-button h-11 rounded-xl px-7" @click="checkoutOpen = false">Voltar ao cardápio</Button></component>
           </div>
         </template>
 
         <template v-else>
-          <div class="border-b px-6 py-5 sm:px-8">
-            <DialogHeader class="text-left"><DialogTitle class="menu-heading text-2xl">Finalizar pedido</DialogTitle><DialogDescription>Confirme como deseja receber e seus dados de contato.</DialogDescription></DialogHeader>
+          <div class="shrink-0 border-b md:px-6 md:py-5 sm:px-8">
+            <component :is="menuModalHeader" class="text-left"><component :is="menuModalTitle" class="menu-heading text-2xl">Finalizar pedido</component><component :is="menuModalDescription">Confirme como deseja receber e seus dados de contato.</component></component>
           </div>
-          <div class="grid lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y">
+            <div class="grid lg:grid-cols-[minmax(0,1fr)_320px]">
             <div class="space-y-6 p-6 sm:p-8">
               <section class="space-y-3">
                 <div>
@@ -870,6 +1113,7 @@ onBeforeUnmount(() => {
                   <h3 class="font-semibold">Seus dados</h3>
                   <p class="text-sm text-stone-500">Usaremos o telefone para atualizações do pedido.</p>
                 </div>
+                <label v-if="customerAccount" class="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm"><input v-model="useAccountData" type="checkbox" /> Usar os dados da minha conta</label>
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div class="space-y-2"><Label for="customer-name">Nome</Label><Input id="customer-name" v-model="form.nome" placeholder="Como podemos chamar você?" /></div>
                   <div class="space-y-2"><Label for="customer-phone">Telefone</Label><Input id="customer-phone" v-model="form.telefone" inputmode="tel" placeholder="(00) 00000-0000" /></div>
@@ -890,6 +1134,7 @@ onBeforeUnmount(() => {
                   Usar sua localização ajuda o entregador a encontrar sua casa no mapa e na rota. Os campos de endereço continuam obrigatórios para calcular a entrega.
                 </p>
                 <p v-if="form.latitude !== null && form.longitude !== null" class="flex items-center gap-1.5 text-xs font-medium text-emerald-700"><CheckCircle2 class="h-3.5 w-3.5" />Localização adicionada ao pedido para a rota do entregador.</p>
+                <div v-if="customerAccount?.enderecos.length" class="space-y-1"><Label>Endereço salvo</Label><select v-model="selectedAccountAddressId" class="h-10 w-full rounded-md border bg-white px-3 text-sm" @change="applyAccountAddress(customerAccount.enderecos.find((item) => item.id === selectedAccountAddressId)!)"><option :value="null">Preencher manualmente</option><option v-for="address in customerAccount.enderecos" :key="address.id" :value="address.id">{{ address.rotulo || address.logradouro }} · {{ address.numero }}</option></select></div>
                 <div class="grid gap-3 sm:grid-cols-2">
                   <div class="space-y-1"><Label>CEP</Label><Input v-model="form.cep" placeholder="00000-000" /></div>
                   <div class="space-y-1"><Label>Cidade</Label><Input v-model="form.cidade" placeholder="Ex.: São Paulo" /></div>
@@ -954,20 +1199,21 @@ onBeforeUnmount(() => {
               <Button class="tap-button mt-5 h-12 w-full rounded-xl text-base" :style="primaryButtonStyle" :disabled="!aceitaPedidos || sending || previewing || !checkoutValid || !quote?.minimumReached" @click="pedir"><LoaderCircle v-if="sending" class="mr-2 h-4 w-4 animate-spin" />Confirmar pedido</Button>
               <p class="mt-3 text-center text-[11px] leading-relaxed text-stone-400">Valores e disponibilidade são confirmados pelo restaurante antes da criação do pedido.</p>
             </aside>
+            </div>
           </div>
         </template>
-      </DialogContent>
-    </Dialog>
+      </component>
+    </component>
 
-    <Dialog v-model:open="historyOpen">
-      <DialogContent class="menu-overlay max-h-[90vh] max-w-2xl overflow-y-auto border-0 p-0 sm:rounded-[24px]" :style="menuThemeStyle">
-        <div class="border-b px-6 py-5 sm:px-8">
-          <DialogHeader class="text-left">
-            <DialogTitle class="menu-heading flex items-center gap-2 text-2xl"><History class="h-5 w-5 brand-text" />Meus pedidos</DialogTitle>
-            <DialogDescription>Pedidos feitos neste restaurante por este navegador.</DialogDescription>
-          </DialogHeader>
+    <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="historyOpen">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:h-auto lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :style="menuThemeStyle">
+        <div class="border-b md:px-6 md:py-5 sm:px-8">
+          <component :is="menuModalHeader" class="text-left">
+            <component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><History class="h-5 w-5 brand-text" />Meus pedidos</component>
+            <component :is="menuModalDescription">Pedidos feitos neste restaurante por este navegador.</component>
+          </component>
         </div>
-        <div class="space-y-3 p-5 sm:pb-6">
+        <div class="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain touch-pan-y p-5 sm:pb-6">
           <div v-if="historyLoading" class="flex items-center justify-center gap-2 py-12 text-sm text-stone-500"><LoaderCircle class="h-5 w-5 animate-spin" />Carregando pedidos...</div>
           <div v-else-if="!orderHistory.length" class="py-12 text-center">
             <ShoppingBag class="mx-auto mb-3 h-9 w-9 text-stone-300" />
@@ -999,8 +1245,49 @@ onBeforeUnmount(() => {
             </article>
           </template>
         </div>
-      </DialogContent>
-    </Dialog>
+      </component>
+    </component>
+
+    <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="accountOpen">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:h-auto lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :style="menuThemeStyle">
+        <component :is="menuModalHeader" class="shrink-0 border-b md:px-5 md:py-5 text-left sm:px-7"><component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><UserRound class="brand-text h-5 w-5" />{{ accountMode === 'profile' ? 'Minha conta' : accountMode === 'register' ? 'Criar conta' : 'Entrar na conta' }}</component><component :is="menuModalDescription">{{ accountMode === 'profile' ? 'Seus dados, endereços e histórico neste restaurante.' : 'Entre com telefone e senha para ter seus pedidos sempre com você.' }}</component></component>
+        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y">
+        <div v-if="accountLoading" class="flex justify-center py-16"><LoaderCircle class="h-6 w-6 animate-spin brand-text" /></div>
+        <div v-else-if="accountMode !== 'profile'" class="space-y-4 p-5 sm:p-7">
+          <div v-if="accountMode === 'register'" class="space-y-1"><Label for="account-name">Nome completo</Label><Input id="account-name" v-model="accountForm.nome" :aria-invalid="Boolean(accountFieldErrors.nome.length)" :class="accountFieldErrors.nome.length && 'border-red-500 focus-visible:ring-red-500'" autocomplete="name" placeholder="Como podemos chamar você?" @input="clearAccountFieldError('nome')" /><p v-for="message in accountFieldErrors.nome" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+          <div class="space-y-1"><Label for="account-phone">Telefone</Label><Input id="account-phone" v-model="accountForm.telefone" v-maska="phoneMaskOptions" :aria-invalid="Boolean(accountFieldErrors.telefone.length)" :class="accountFieldErrors.telefone.length && 'border-red-500 focus-visible:ring-red-500'" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000" @input="clearAccountFieldError('telefone')" /><p v-for="message in accountFieldErrors.telefone" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+          <div v-if="accountMode === 'register'" class="space-y-1"><Label for="account-email">E-mail (opcional)</Label><Input id="account-email" v-model="accountForm.email" :aria-invalid="Boolean(accountFieldErrors.email.length)" :class="accountFieldErrors.email.length && 'border-red-500 focus-visible:ring-red-500'" type="email" autocomplete="email" placeholder="voce@email.com" @input="clearAccountFieldError('email')" /><p v-for="message in accountFieldErrors.email" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+          <div class="space-y-1"><Label for="account-password">Senha</Label><Input id="account-password" v-model="accountForm.senha" :aria-invalid="Boolean(accountFieldErrors.senha.length)" :class="accountFieldErrors.senha.length && 'border-red-500 focus-visible:ring-red-500'" type="password" :autocomplete="accountMode === 'register' ? 'new-password' : 'current-password'" placeholder="Mínimo de 8 caracteres" @input="clearAccountFieldError('senha')" /><p v-if="accountMode === 'register'" class="text-xs text-stone-500">Use ao menos 8 caracteres, com letra e número.</p><p v-for="message in accountFieldErrors.senha" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+          <div v-if="accountMode === 'register'" class="space-y-1"><Label for="account-password-confirmation">Confirmar senha</Label><Input id="account-password-confirmation" v-model="accountForm.confirmacaoSenha" :aria-invalid="Boolean(accountFieldErrors.confirmacaoSenha.length)" :class="accountFieldErrors.confirmacaoSenha.length && 'border-red-500 focus-visible:ring-red-500'" type="password" autocomplete="new-password" @input="clearAccountFieldError('confirmacaoSenha')" /><p v-for="message in accountFieldErrors.confirmacaoSenha" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+          <Button class="h-12 w-full rounded-xl" :style="primaryButtonStyle" :disabled="accountSubmitting" @click="submitCustomerAccount"><LoaderCircle v-if="accountSubmitting" class="mr-2 h-4 w-4 animate-spin" />{{ accountMode === 'register' ? 'Criar minha conta' : 'Entrar' }}</Button>
+          <button type="button" class="mx-auto block text-sm font-semibold brand-text" @click="accountMode = accountMode === 'register' ? 'login' : 'register'; clearAccountFieldErrors()">{{ accountMode === 'register' ? 'Já tenho uma conta' : 'Ainda não tenho conta' }}</button>
+        </div>
+        <div v-else-if="customerAccount" class="space-y-6 p-5 sm:p-7">
+          <section class="rounded-2xl bg-stone-100 p-4 dark:bg-zinc-800">
+            <div class="mb-3 flex items-center justify-between"><h3 class="font-semibold">Dados pessoais</h3><button type="button" class="text-xs font-semibold brand-text" @click="logoutCustomer">Sair</button></div>
+            <div class="grid gap-3 sm:grid-cols-2"><div class="space-y-1"><Label>Nome</Label><Input v-model="accountForm.nome" /></div><div class="space-y-1"><Label>Telefone</Label><Input :model-value="accountForm.telefone" disabled /></div><div class="space-y-1 sm:col-span-2"><Label>E-mail</Label><Input v-model="accountForm.email" type="email" /></div></div>
+            <Button size="sm" class="mt-3" :style="primaryButtonStyle" :disabled="accountSubmitting" @click="saveCustomerProfile">Salvar dados</Button>
+          </section>
+          <section class="space-y-3"><div><h3 class="font-semibold">Meus endereços</h3><p class="text-xs text-stone-500">Escolha um endereço salvo no seu próximo delivery.</p></div>
+            <div v-for="address in customerAccount.enderecos" :key="address.id" class="rounded-xl border p-3 text-sm"><div class="flex justify-between gap-3"><button type="button" class="min-w-0 text-left" @click="applyAccountAddress(address); accountOpen = false"><strong>{{ address.rotulo || 'Endereço' }} <span v-if="address.principal" class="brand-text">· principal</span></strong><span class="mt-1 block text-stone-500">{{ address.logradouro }}, {{ address.numero }} · {{ address.bairro }}, {{ address.cidade }}</span></button><button type="button" class="shrink-0 text-xs text-red-600" @click="removeCustomerAddress(address.id)">Remover</button></div></div>
+            <form class="grid gap-2 rounded-xl border border-dashed p-3 sm:grid-cols-2" novalidate @submit.prevent="saveCustomerAddress">
+              <div class="space-y-1"><Input v-model="accountAddressForm.rotulo" :aria-invalid="Boolean(accountAddressFieldErrors.rotulo.length)" :class="accountAddressFieldErrors.rotulo.length && 'border-red-500 focus-visible:ring-red-500'" placeholder="Rótulo (Casa, Trabalho)" @input="clearAccountAddressFieldError('rotulo')" /><p v-for="message in accountAddressFieldErrors.rotulo" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.cep" v-maska="cepMaskOptions" :aria-invalid="Boolean(accountAddressFieldErrors.cep.length)" :class="accountAddressFieldErrors.cep.length && 'border-red-500 focus-visible:ring-red-500'" inputmode="numeric" autocomplete="postal-code" placeholder="CEP" @input="clearAccountAddressFieldError('cep')" /><p v-for="message in accountAddressFieldErrors.cep" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.cidade" :aria-invalid="Boolean(accountAddressFieldErrors.cidade.length)" :class="accountAddressFieldErrors.cidade.length && 'border-red-500 focus-visible:ring-red-500'" autocomplete="address-level2" placeholder="Cidade" @input="clearAccountAddressFieldError('cidade')" /><p v-for="message in accountAddressFieldErrors.cidade" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.bairro" :aria-invalid="Boolean(accountAddressFieldErrors.bairro.length)" :class="accountAddressFieldErrors.bairro.length && 'border-red-500 focus-visible:ring-red-500'" autocomplete="address-level3" placeholder="Bairro" @input="clearAccountAddressFieldError('bairro')" /><p v-for="message in accountAddressFieldErrors.bairro" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1 sm:col-span-2"><Input v-model="accountAddressForm.logradouro" :aria-invalid="Boolean(accountAddressFieldErrors.logradouro.length)" :class="accountAddressFieldErrors.logradouro.length && 'border-red-500 focus-visible:ring-red-500'" autocomplete="street-address" placeholder="Rua / Avenida" @input="clearAccountAddressFieldError('logradouro')" /><p v-for="message in accountAddressFieldErrors.logradouro" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.numero" :aria-invalid="Boolean(accountAddressFieldErrors.numero.length)" :class="accountAddressFieldErrors.numero.length && 'border-red-500 focus-visible:ring-red-500'" autocomplete="address-line2" placeholder="Número" @input="clearAccountAddressFieldError('numero')" /><p v-for="message in accountAddressFieldErrors.numero" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.complemento" :aria-invalid="Boolean(accountAddressFieldErrors.complemento.length)" :class="accountAddressFieldErrors.complemento.length && 'border-red-500 focus-visible:ring-red-500'" placeholder="Complemento" @input="clearAccountAddressFieldError('complemento')" /><p v-for="message in accountAddressFieldErrors.complemento" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1 sm:col-span-2"><Input v-model="accountAddressForm.referencia" :aria-invalid="Boolean(accountAddressFieldErrors.referencia.length)" :class="accountAddressFieldErrors.referencia.length && 'border-red-500 focus-visible:ring-red-500'" placeholder="Referência" @input="clearAccountAddressFieldError('referencia')" /><p v-for="message in accountAddressFieldErrors.referencia" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <label class="flex items-center gap-2 text-xs sm:col-span-2"><input v-model="accountAddressForm.principal" type="checkbox" /> Usar como endereço principal</label>
+              <Button type="submit" size="sm" class="sm:col-span-2" :style="primaryButtonStyle" :disabled="accountSubmitting">Salvar endereço</Button>
+            </form>
+          </section>
+          <section class="space-y-3"><div><h3 class="font-semibold">Histórico de pedidos</h3><p class="text-xs text-stone-500">Todos os pedidos feitos enquanto você esteve nesta conta.</p></div><div v-if="!customerAccount.pedidos.length" class="rounded-xl border border-dashed p-6 text-center text-sm text-stone-500">Você ainda não fez pedidos nesta conta.</div><article v-for="order in customerAccount.pedidos" :key="`${order.codigo}-${order.createdAt}`" class="history-order"><div class="flex justify-between gap-3"><div><p class="font-semibold">Pedido {{ order.codigo }}</p><p class="text-xs text-stone-500">{{ formatOrderDate(order.createdAt) }} · {{ order.origem === 'DELIVERY' ? 'Delivery' : 'Retirada' }}</p></div><Badge class="border-0" :class="restaurantOrderStatusBadgeClass(order.status)">{{ restaurantOrderStatusLabel(order.status) }}</Badge></div><div class="mt-3 flex justify-between border-t pt-3 text-sm"><span>{{ order.itens.length }} {{ order.itens.length === 1 ? 'item' : 'itens' }}</span><strong class="price">{{ formatCurrencyBR(Number(order.total)) }}</strong></div></article></section>
+        </div>
+        </div>
+      </component>
+    </component>
   </main>
 </template>
 
@@ -1274,6 +1561,55 @@ button.hero-action:active {
   scale: 0.96;
 }
 
+.mobile-bottom-bar {
+  position: fixed;
+  z-index: 45;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  min-height: calc(64px + env(safe-area-inset-bottom));
+  align-items: stretch;
+  justify-content: space-around;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(43, 37, 32, 0.09);
+  background: color-mix(in srgb, var(--menu-surface) 96%, transparent);
+  box-shadow: 0 -8px 22px rgba(43, 37, 32, 0.08);
+  backdrop-filter: blur(18px);
+}
+.bottom-bar-action {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 12px;
+  color: var(--menu-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.bottom-bar-action:active { background: color-mix(in srgb, var(--menu-accent) 12%, transparent); }
+.bottom-bar-cart.has-items { color: var(--menu-accent); }
+.bottom-bar-count {
+  position: absolute;
+  top: -7px;
+  right: -11px;
+  display: grid;
+  min-width: 17px;
+  height: 17px;
+  place-items: center;
+  border: 2px solid var(--menu-surface);
+  border-radius: 999px;
+  color: white;
+  background: var(--menu-accent);
+  font-size: 9px;
+  line-height: 1;
+}
+.bottom-bar-count:not(.cart-count) { top: 3px; right: calc(50% - 23px); }
+
 .option-row {
   display: flex;
   width: 100%;
@@ -1417,19 +1753,35 @@ button.hero-action:active {
 }
 
 @media (max-width: 639px) {
+  .hero-actions { display: none; }
+  .menu-hero .relative { min-height: 84px; padding-top: 18px; padding-bottom: 18px; }
+  .menu-hero .mb-2 { margin-bottom: 4px; }
+  .menu-hero .mt-3 { margin-top: 7px; }
+  .menu-title { font-size: 1.5rem; line-height: 1.1; }
+  .menu-toolbar > div { padding-top: 8px; padding-bottom: 8px; }
+  .menu-toolbar .relative { width: 100%; }
+  .menu-toolbar input { height: 38px; font-size: 0.875rem; }
+  .category-chip { min-height: 34px; padding: 0 12px; font-size: 0.75rem; }
+  .menu-section { margin-top: -10px; }
+  .menu-heading { font-size: 1.15rem; }
   .logo-shell {
-    width: 70px;
-    height: 70px;
-    border-radius: 20px;
+    width: 58px;
+    height: 58px;
+    border-radius: 17px;
   }
   .product-card {
-    min-height: 154px;
+    min-height: 126px;
+    border-radius: 16px;
   }
   .product-image-wrap,
   .product-placeholder {
-    width: 118px;
-    min-height: 154px;
-    flex-basis: 118px;
+    width: 100px;
+    min-height: 126px;
+    flex-basis: 100px;
   }
+  .product-card .p-4 { padding: 11px; }
+  .product-card h3 { font-size: 0.9rem; }
+  .product-card .add-button { width: 34px; height: 34px; border-radius: 10px; }
+  .product-card .add-button svg { width: 17px; height: 17px; }
 }
 </style>

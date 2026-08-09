@@ -6,6 +6,10 @@ O cardápio público abre um socket independente e temporário, autorizado apena
 
 As telas privadas de **Pedidos** e **Acompanhar entregas** escutam `restaurante:pedido`. O evento é emitido quando chega um pedido pelo cardápio online, quando o status do pedido muda e quando o KDS avança a produção, mantendo a lista e o mapa sincronizados para a mesma conta.
 
+### Conta do cliente no cardápio
+
+No mobile, o cardápio público do Restaurante concentra **Cardápio**, **Pedidos**, **Carrinho** e **Conta** em uma bottombar. A rota `/restaurante/:slug/conta` permite entrar por telefone e senha em qualquer dispositivo, consultar o histórico daquele restaurante, salvar dados pessoais e endereços e reutilizá-los no checkout. O cliente pode desmarcar o uso da conta ou selecionar “Preencher manualmente” para informar dados diferentes em um pedido; a conta nunca mistura pedidos ou endereços entre tenants.
+
 ### Navegação por Cards
 
 Em **Configurações > Aparência**, a conta pode escolher entre **Padrão** (sidebar tradicional) e **Cards**. A escolha é compartilhada por todos os usuários do assinante: no modo Cards, a rota inicial mostra os módulos permitidos como cards; ao abrir um módulo, os submenus também aparecem como cards; a tela operacional só abre após essa segunda escolha e permanece sem sidebar. O modo **Padrão** continua sendo o valor inicial.
