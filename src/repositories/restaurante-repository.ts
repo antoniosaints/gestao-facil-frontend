@@ -43,9 +43,24 @@ export interface RestaurantePedido {
   pagamentoStatus: string
   entregaStatus: string
   clienteNomeSnapshot?: string | null
+  clienteTelefone?: string | null
+  clienteEmail?: string | null
+  enderecoSnapshotJson?: {
+    cep?: string
+    logradouro?: string
+    numero?: string
+    complemento?: string
+    bairro?: string
+    cidade?: string
+    uf?: string
+    referencia?: string
+  } | null
+  pagamentoMetodoSnapshot?: string | null
   subtotal: string | number
   frete: string | number
+  desconto?: string | number
   total: string | number
+  observacao?: string | null
   version: number
   createdAt: string
   Mesa?: { nome: string } | null
@@ -55,6 +70,9 @@ export interface RestaurantePedido {
     nomeSnapshot: string
     quantidade: string | number
     subtotalSnapshot: string | number
+    tamanhoSnapshot?: string | null
+    selecoesSnapshotJson?: Array<{ nome?: string }> | null
+    observacao?: string | null
   }>
 }
 
@@ -376,7 +394,7 @@ export class RestauranteRepository {
     return data.data as RestaurantePublicOrderTracking
   }
 
-  static async pedidos(params: { page?: number; limit?: number; status?: string } = {}) {
+  static async pedidos(params: { page?: number; limit?: number; status?: string; inicio?: string; fim?: string } = {}) {
     const { data } = await http.get('/v1/restaurante/pedidos', { params })
     return data as {
       data: RestaurantePedido[]
