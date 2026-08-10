@@ -273,8 +273,24 @@ async function loadCustomerAccount(silent = false) {
 }
 
 async function openCustomerAccount() {
+  releaseTriggerFocus()
   accountOpen.value = true
   await loadCustomerAccount()
+}
+
+function releaseTriggerFocus() {
+  const activeElement = document.activeElement
+  if (activeElement instanceof HTMLElement) activeElement.blur()
+}
+
+function openOrderHistory() {
+  releaseTriggerFocus()
+  historyOpen.value = true
+}
+
+function openCartDrawer() {
+  releaseTriggerFocus()
+  cartDrawerOpen.value = true
 }
 
 function clearAccountFieldErrors() {
@@ -448,6 +464,7 @@ async function loadOrderHistory(tokens = storedTrackingTokens()) {
 }
 
 function openTrackingDetails(order: RestaurantePublicOrderTracking & { trackingToken: string }) {
+  releaseTriggerFocus()
   selectedTrackingToken.value = order.trackingToken
   historyOpen.value = false
   trackingDetailsOpen.value = true
@@ -541,6 +558,7 @@ function removeItem(lineId: string) {
 
 function openItem(item: any) {
   if (!aceitaPedidos.value) return toast.info(mensagemAtendimento.value)
+  releaseTriggerFocus()
   activeItem.value = item
   activeCartLineId.value = null
   draftQuantity.value = 1
@@ -549,6 +567,8 @@ function openItem(item: any) {
 }
 
 function editCartLine(line: CartLine) {
+  releaseTriggerFocus()
+  cartDrawerOpen.value = false
   activeItem.value = line.item
   activeCartLineId.value = line.id
   draftQuantity.value = line.quantidade
@@ -710,6 +730,7 @@ async function openCheckout() {
     cartDrawerOpen.value = false
     return toast.info(mensagemAtendimento.value)
   }
+  releaseTriggerFocus()
   cartDrawerOpen.value = false
   checkoutOpen.value = true
   if (addressComplete.value && !quote.value) await previewCheckout(false)
@@ -866,7 +887,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
             <div class="hero-actions flex shrink-0 flex-wrap items-center gap-2">
-              <button type="button" class="hero-action" @click="historyOpen = true">
+              <button type="button" class="hero-action" @click="openOrderHistory">
                 <History class="h-4 w-4" />
                 <span>Meus pedidos</span>
                 <span v-if="orderHistory.length" class="hero-action-count">{{ orderHistory.length }}</span>
@@ -1035,7 +1056,7 @@ onBeforeUnmount(() => {
       </div>
 
       <div v-if="false" class="fixed inset-x-0 bottom-0 z-40 p-3 lg:hidden">
-        <button type="button" class="mobile-cart-bar" @click="cartDrawerOpen = true">
+        <button type="button" class="mobile-cart-bar" @click="openCartDrawer">
           <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15"><ShoppingCart class="h-5 w-5" /></span>
           <span class="min-w-0 flex-1 text-left"
             ><span class="block text-xs opacity-80">{{ cartUnits }} {{ cartUnits === 1 ? 'item' : 'itens' }}</span
@@ -1046,14 +1067,14 @@ onBeforeUnmount(() => {
       </div>
       <div class="mobile-bottom-bar lg:hidden">
         <button type="button" class="bottom-bar-action" @click="scrollToMenu"><Menu class="h-5 w-5" /><span>Cardápio</span></button>
-        <button type="button" class="bottom-bar-action" @click="historyOpen = true"><History class="h-5 w-5" /><span>Pedidos</span><b v-if="orderHistory.length" class="bottom-bar-count">{{ orderHistory.length }}</b></button>
-        <button type="button" class="bottom-bar-action bottom-bar-cart" :class="{ 'has-items': cartUnits }" @click="cartDrawerOpen = true"><span class="relative"><ShoppingCart class="h-5 w-5" /><b v-if="cartUnits" class="bottom-bar-count cart-count">{{ cartUnits }}</b></span><span>{{ cartUnits ? formatCurrencyBR(estimatedSubtotal) : 'Carrinho' }}</span></button>
+        <button type="button" class="bottom-bar-action" @click="openOrderHistory"><History class="h-5 w-5" /><span>Pedidos</span><b v-if="orderHistory.length" class="bottom-bar-count">{{ orderHistory.length }}</b></button>
+        <button type="button" class="bottom-bar-action bottom-bar-cart" :class="{ 'has-items': cartUnits }" @click="openCartDrawer"><span class="relative"><ShoppingCart class="h-5 w-5" /><b v-if="cartUnits" class="bottom-bar-count cart-count">{{ cartUnits }}</b></span><span>{{ cartUnits ? formatCurrencyBR(estimatedSubtotal) : 'Carrinho' }}</span></button>
         <button type="button" class="bottom-bar-action" @click="openCustomerAccount"><UserRound class="h-5 w-5" /><span>Conta</span></button>
       </div>
     </template>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="itemDialogOpen">
-      <component :is="menuModalContent" class="menu-overlay max-h-[88vh] overflow-y-auto rounded-t-[24px] border-0 p-0 lg:max-h-[92vh] lg:max-w-2xl lg:rounded-[24px]" :style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay max-h-[88vh] overflow-y-auto rounded-t-[24px] border-0 p-0 lg:max-h-[92vh] lg:max-w-2xl lg:rounded-[24px]" :content-style="menuThemeStyle">
         <template v-if="activeItem">
           <div v-if="itemImage(activeItem)" class="h-52 overflow-hidden rounded-t-[24px] sm:h-64 lg:rounded-t-[24px]">
             <img :src="itemImage(activeItem)" :alt="itemName(activeItem)" class="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10" />
@@ -1104,7 +1125,7 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="cartDrawerOpen">
-      <component :is="menuModalContent" class="menu-overlay max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :content-style="menuThemeStyle">
         <component :is="menuModalHeader" class="shrink-0 text-left lg:px-7 lg:pt-6"
           ><component :is="menuModalTitle" class="menu-heading text-xl">Seu carrinho</component><component :is="menuModalDescription">{{ cartUnits }} {{ cartUnits === 1 ? 'item selecionado' : 'itens selecionados' }}</component></component
         >
@@ -1140,7 +1161,7 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="checkoutOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-4xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-4xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :content-style="menuThemeStyle">
         <template v-if="orderResult">
           <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [scrollbar-gutter:stable] p-6 sm:p-9">
             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-emerald-100 text-emerald-700">
@@ -1287,7 +1308,7 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="historyOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :content-style="menuThemeStyle">
         <div class="border-b md:px-6 md:py-5 sm:px-8">
           <component :is="menuModalHeader" class="text-left">
             <component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><History class="h-5 w-5 brand-text" />Meus pedidos</component>
@@ -1330,7 +1351,7 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="trackingDetailsOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :content-style="menuThemeStyle">
         <div class="shrink-0 border-b md:px-6 md:py-5 sm:px-8">
           <component :is="menuModalHeader" class="text-left">
             <component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><PackageCheck class="brand-text h-5 w-5" />Acompanhar pedido</component>
@@ -1371,7 +1392,7 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="accountOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :content-style="menuThemeStyle">
         <component :is="menuModalHeader" class="shrink-0 border-b md:px-5 md:py-5 text-left sm:px-7"><component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><UserRound class="brand-text h-5 w-5" />{{ accountMode === 'profile' ? 'Minha conta' : accountMode === 'register' ? 'Criar conta' : 'Entrar na conta' }}</component><component :is="menuModalDescription">{{ accountMode === 'profile' ? 'Seus dados, endereços e histórico neste restaurante.' : 'Entre com telefone e senha para ter seus pedidos sempre com você.' }}</component></component>
         <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [scrollbar-gutter:stable]">
         <div v-if="accountLoading" class="flex justify-center py-16"><LoaderCircle class="h-6 w-6 animate-spin brand-text" /></div>
