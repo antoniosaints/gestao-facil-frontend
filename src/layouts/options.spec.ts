@@ -29,6 +29,11 @@ describe('MAIN_MENU_VISIBILITY_OPTIONS', () => {
     expect(MAIN_MENU_VISIBILITY_OPTIONS.map((m) => m.key)).toContain('loja-virtual')
   })
 
+  it('permite configurar a visibilidade das Notas Fiscais quando o app está ativo', () => {
+    expect(getMainMenuVisibilityOptions({ 'notas-fiscais': true }).map((m) => m.key)).toContain('notas-fiscais')
+    expect(MENU_SUBMENU_VISIBILITY_OPTIONS['notas-fiscais'].map((m) => m.key)).toContain('notas-fiscais:nfse')
+  })
+
   // 'loja' é a App Store (complementos) e 'loja-virtual' é a vitrine: menus diferentes, que
   // não podem colidir nem ser confundidos.
   it('mantém App Store e Loja Virtual como entradas distintas', () => {

@@ -45,6 +45,7 @@ import {
   UtensilsCrossed,
   CookingPot,
   Printer,
+  FileText,
 } from 'lucide-vue-next'
 
 export const ROOT_ALWAYS_VISIBLE_MENU_KEYS = ['configuracoes'] as const
@@ -109,6 +110,12 @@ export const MAIN_MENU_VISIBILITY_OPTIONS = [
     icon: UtensilsCrossed,
   },
   {
+    key: 'notas-fiscais',
+    nome: 'Notas fiscais',
+    descricao: 'Módulo adicional para emissão e configuração fiscal.',
+    icon: FileCheck2,
+  },
+  {
     key: 'core-ia',
     nome: 'Core IA',
     descricao: 'Módulo adicional de inteligência artificial.',
@@ -151,6 +158,7 @@ export const APP_MENU_MODULE_KEYS: Partial<Record<MainMenuVisibilityKey, string>
   arena: 'arena',
   reservas: 'reservas',
   restaurante: 'restaurante-delivery',
+  'notas-fiscais': 'notas-fiscais',
   'core-ia': 'core-ia',
   whatsapp: 'whatsapp',
 }
@@ -231,6 +239,12 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'restaurante:pedidos', nome: 'Pedidos' },
     { key: 'restaurante:configuracoes', nome: 'Configurações' },
   ],
+  'notas-fiscais': [
+    { key: 'notas-fiscais:nfse', nome: 'NFS-e' },
+    { key: 'notas-fiscais:nfe', nome: 'NF-e' },
+    { key: 'notas-fiscais:nfce', nome: 'NFC-e' },
+    { key: 'notas-fiscais:configuracoes', nome: 'Configurações' },
+  ],
   assinaturas: [
     { key: 'assinaturas:painel', nome: 'Painel' },
     { key: 'assinaturas:lista', nome: 'Contratos' },
@@ -293,6 +307,7 @@ export const sidebarMenuOptions = (
   const hasArenaApp = Boolean(appModules.arena)
   const hasReservationsApp = Boolean(appModules.reservas)
   const hasRestauranteApp = Boolean(appModules['restaurante-delivery'])
+  const hasNotasFiscaisApp = Boolean(appModules['notas-fiscais'])
   const restaurantAccess = new Set(restaurantCapabilities)
   const hasRestaurantAccess = restaurantCapabilities.length > 0
   const hasCombosApp = Boolean(appModules.combos)
@@ -303,7 +318,8 @@ export const sidebarMenuOptions = (
     (permissions.configuracoes.visualizar && hasAtendimentoApp) ||
     (permissions.produtos.visualizar && hasLojaApp) ||
     (permissions.reservas.visualizar && hasReservationsApp) ||
-    (hasRestauranteApp && hasRestaurantAccess)
+    (hasRestauranteApp && hasRestaurantAccess) ||
+    (permissions.configuracoes.visualizar && hasNotasFiscaisApp)
 
   return [
     {
@@ -739,12 +755,17 @@ export const sidebarMenuOptions = (
       ],
     },
     {
+      key: 'notas-fiscais',
       nome: 'Notas Fiscais',
       icone: FileCheck2,
-      show: false,
+      show: permissions.configuracoes.visualizar && hasNotasFiscaisApp,
       color: 'cyan',
-      link: '/notas-fiscais',
-      children: [],
+      children: [
+        { key: 'notas-fiscais:nfse', nome: 'NFS-e', link: '/notas-fiscais/nfs-e', icone: FileCheck2, color: 'cyan' },
+        { key: 'notas-fiscais:nfe', nome: 'NF-e', link: '/notas-fiscais/nf-e', icone: FileText, color: 'cyan' },
+        { key: 'notas-fiscais:nfce', nome: 'NFC-e', link: '/notas-fiscais/nfc-e', icone: ReceiptText, color: 'cyan' },
+        { key: 'notas-fiscais:configuracoes', nome: 'Configurações', link: '/notas-fiscais/configuracoes', icone: Cog, color: 'cyan' },
+      ],
     },
     {
       key: 'clientes',

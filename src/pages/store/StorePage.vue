@@ -43,6 +43,7 @@ import {
   CircleDollarSign,
   CreditCard,
   ExternalLink,
+  FileCheck2,
   Headset,
   LoaderCircle,
   MessageCircle,
@@ -100,6 +101,7 @@ const iconMap = {
   arena: CalendarCheck,
   reservas: CalendarCheck,
   'restaurante-delivery': UtensilsCrossed,
+  'notas-fiscais': FileCheck2,
   'mercado-pago': CreditCard,
   abacatepay: Banknote,
 } as const
@@ -127,6 +129,7 @@ const iconShellClassMap: Record<string, string> = {
   arena: 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/20',
   reservas: 'bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/20',
   'restaurante-delivery': 'bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/20',
+  'notas-fiscais': 'bg-cyan-500/15 text-cyan-300 ring-1 ring-cyan-500/20',
   'mercado-pago': 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/20',
   abacatepay: 'bg-lime-500/15 text-lime-300 ring-1 ring-lime-500/20',
 }
@@ -230,6 +233,10 @@ function isConfigApp(codigo?: string | null): codigo is ConfigAppCode {
   return CONFIG_APP_CODES.includes((codigo || '') as ConfigAppCode)
 }
 
+function isComingSoon(modulo: StoreModule) {
+  return modulo.codigo === 'notas-fiscais' && !modulo.ativo
+}
+
 function isModuleConfigured(modulo: StoreModule) {
   if (modulo.codigo === 'mercado-pago') return mercadoPagoConfigured.value
   if (modulo.codigo === 'abacatepay') return abacatePayConfigured.value
@@ -285,6 +292,10 @@ function getImmediateChargeValue(modulo: StoreModule, mode = billingMode.value) 
 }
 
 function getImpactDescription(modulo: StoreModule) {
+  if (isComingSoon(modulo)) {
+    return 'Este app está em fase final de homologação e ainda não pode ser instalado por assinantes.'
+  }
+
   if (isConfigApp(modulo.codigo)) {
     if (modulo.ativo) {
       if (modulo.codigo === 'mercado-pago' && !mercadoPagoConfigured.value) {
@@ -335,10 +346,12 @@ function getImpactDescription(modulo: StoreModule) {
 }
 
 function getCatalogPriceLabel(modulo: StoreModule) {
+  if (isComingSoon(modulo)) return 'Em breve'
   return modulo.preco > 0 ? `${formatCurrencyBR(modulo.preco)}/mês` : 'Grátis'
 }
 
 function getCatalogStateLabel(modulo: StoreModule) {
+  if (isComingSoon(modulo)) return 'Em breve'
   if (isConfigApp(modulo.codigo) && modulo.ativo && isModuleConfigured(modulo)) return 'Configurado'
   if (modulo.cancelamentoAgendado) return 'Remoção agendada'
   if (modulo.ativo) return 'Instalado'
@@ -348,6 +361,7 @@ function getCatalogStateLabel(modulo: StoreModule) {
 }
 
 function getCatalogStateClass(modulo: StoreModule) {
+  if (isComingSoon(modulo)) return 'text-amber-500'
   if (isConfigApp(modulo.codigo) && modulo.ativo && isModuleConfigured(modulo))
     return 'text-emerald-500'
   if (isConfigApp(modulo.codigo) && modulo.ativo) return 'text-amber-500'
@@ -359,6 +373,10 @@ function getCatalogStateClass(modulo: StoreModule) {
 }
 
 function getCardHint(modulo: StoreModule) {
+  if (isComingSoon(modulo)) {
+    return 'Disponível em breve. O acesso está reservado para homologação interna.'
+  }
+
   if (isConfigApp(modulo.codigo)) {
     if (!modulo.ativo) return 'Instale grátis para liberar a configuração desta integração.'
     if (modulo.codigo === 'mercado-pago') {
@@ -453,6 +471,11 @@ async function carregarModulos() {
 }
 
 async function adicionarAoPlano(modulo: StoreModule) {
+  if (isComingSoon(modulo)) {
+    toast.info('O app de Notas Fiscais estará disponível em breve.')
+    return
+  }
+
   const valorAtual = resumo.value?.mensalidadeAtual || 0
   const proximoValor = getMonthlyValueAfterAction(modulo)
   const immediateCharge = getImmediateChargeValue(modulo)
@@ -822,7 +845,14 @@ onMounted(async () => {
                   </div>
 
                   <Badge
-                    v-if="modulo.cobrancaPendenteAtual"
+                    v-if="isComingSoon(modulo)"
+                    variant="secondary"
+                    class="shrink-0 border-0 bg-amber-500/10 text-[10px] text-amber-600 dark:text-amber-400"
+                  >
+                    Em breve
+                  </Badge>
+                  <Badge
+                    v-else-if="modulo.cobrancaPendenteAtual"
                     variant="secondary"
                     class="shrink-0 border-0 bg-amber-500/10 text-[10px] text-amber-500"
                   >
@@ -1063,6 +1093,14 @@ onMounted(async () => {
         </div>
 
         <div v-else-if="moduloSelecionado" class="space-y-4">
+          <Alert v-if="isComingSoon(moduloSelecionado)" class="border-amber-500/30 bg-amber-500/5">
+            <ShieldAlert class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTitle>Em breve</AlertTitle>
+            <AlertDescription>
+              A emissão fiscal está em homologação. Assinantes ainda não podem instalar este app.
+            </AlertDescription>
+          </Alert>
+
           <Alert v-if="shouldShowImmediateBillingOptions(moduloSelecionado)">
             <CircleDollarSign class="h-4 w-4" />
             <AlertTitle>Liberação imediata disponível</AlertTitle>
@@ -1262,7 +1300,17 @@ onMounted(async () => {
             </Button>
 
             <Button
-              v-if="!moduloSelecionado.ativo && !moduloSelecionado.pendenteAtivacao"
+              v-if="isComingSoon(moduloSelecionado)"
+              disabled
+              variant="outline"
+              class="gap-2 px-8"
+            >
+              <ShieldAlert class="h-4 w-4" />
+              Em breve
+            </Button>
+
+            <Button
+              v-else-if="!moduloSelecionado.ativo && !moduloSelecionado.pendenteAtivacao"
               class="gap-2 px-8 dark:text-white"
               :disabled="actionLoadingId === moduloSelecionado.id"
               @click="adicionarAoPlano(moduloSelecionado)"

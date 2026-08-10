@@ -95,6 +95,16 @@ export async function handleRouteGuard(to: typed, from: typed) {
     }
   }
 
+  // O PWA principal sempre abre a rota inicial. Depois do login, um usuário
+  // exclusivamente entregador deve cair direto na operação de entregas, inclusive
+  // no iOS, que instala apenas o manifesto principal do domínio.
+  const isExclusiveRestaurantDriver =
+    storeUi.restaurantAccess.papeis.length === 1 &&
+    storeUi.restaurantAccess.papeis[0] === 'ENTREGADOR'
+  if (isExclusiveRestaurantDriver) {
+    return { name: 'restaurante-entregador' }
+  }
+
   if (to.meta?.permissao) {
     if (!hasPermission(storeUi.usuarioLogged, Number(to.meta?.permissao))) {
       toast.info('Você não tem permissão para acessar essa rota!')

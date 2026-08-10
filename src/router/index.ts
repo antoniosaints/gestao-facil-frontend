@@ -390,6 +390,18 @@ const routes: RouteInterface[] = [
     },
   },
   {
+    path: '/notas-fiscais',
+    name: 'notas-fiscais',
+    redirect: { name: 'notas-fiscais-nfse' },
+    meta: { modulo: 'notas-fiscais' },
+    children: [
+      { path: 'nfs-e', name: 'notas-fiscais-nfse', component: () => import('@/pages/notas-fiscais/Nfse.vue'), meta: { layout: 'main', permissao: 3 } },
+      { path: 'configuracoes', name: 'notas-fiscais-configuracoes', component: () => import('@/pages/notas-fiscais/Configuracoes.vue'), meta: { layout: 'main', permissao: 4 } },
+      { path: 'nf-e', name: 'notas-fiscais-nfe', component: () => import('@/pages/notas-fiscais/EmBreve.vue'), props: { title: 'NF-e', description: 'A emissão de notas de produtos será adicionada neste mesmo módulo fiscal.' }, meta: { layout: 'main', permissao: 3 } },
+      { path: 'nfc-e', name: 'notas-fiscais-nfce', component: () => import('@/pages/notas-fiscais/EmBreve.vue'), props: { title: 'NFC-e', description: 'A emissão fiscal para o consumidor no PDV será adicionada em breve.' }, meta: { layout: 'main', permissao: 3 } },
+    ],
+  },
+  {
     path: '/atendimento',
     name: 'atendimento',
     component: () => import('@/pages/atendimento/AtendimentoPage.vue'),
