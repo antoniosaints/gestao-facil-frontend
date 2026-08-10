@@ -1,7 +1,7 @@
 import http from '@/utils/axios'
 import type { ThemeCustomization } from '@/types/schemas'
 
-export type RestaurantePapel = 'GESTOR' | 'CAIXA' | 'GARCOM' | 'COZINHA' | 'EXPEDICAO'
+export type RestaurantePapel = 'GESTOR' | 'CAIXA' | 'GARCOM' | 'COZINHA' | 'EXPEDICAO' | 'ENTREGADOR'
 export type RestauranteCapability =
   | 'SALAO_VISUALIZAR' | 'SALAO_OPERAR' | 'SALAO_CONFIGURAR'
   | 'COMANDAS_OPERAR'
@@ -77,6 +77,11 @@ export interface RestaurantePedido {
   createdAt: string
   Mesa?: { nome: string } | null
   tickets?: Array<{ id: number }>
+  Entrega?: {
+    id: number
+    entregadorId?: number | null
+    Entregador?: { ultimaLatitude?: number | null; ultimaLongitude?: number | null; ultimaLocalizacaoAt?: string | null; Usuario?: { nome: string } } | null
+  } | null
   itens: Array<{
     id: number
     nomeSnapshot: string
@@ -86,6 +91,13 @@ export interface RestaurantePedido {
     selecoesSnapshotJson?: Array<{ nome?: string }> | null
     observacao?: string | null
   }>
+}
+
+export interface RestauranteEntregadorContexto {
+  driver: { id: number; disponivel: boolean; ultimaLocalizacaoAt?: string | null }
+  empresa: { nome: string; nomeFantasia?: string | null; profile?: string | null; endereco?: string | null; telefone?: string | null } | null
+  ofertas: RestaurantePedido[]
+  entregaAtiva: RestaurantePedido | null
 }
 
 export interface RestaurantePublicOrderTracking {
@@ -100,8 +112,23 @@ export interface RestaurantePublicOrderTracking {
   total: string | number
   createdAt: string
   updatedAt: string
+  confirmadoAt?: string | null
+  emPreparoAt?: string | null
+  prontoAt?: string | null
   concluidoAt?: string | null
   canceladoAt?: string | null
+  timeline: Array<{
+    key: string
+    titulo: string
+    descricao: string
+    ocorreuEm: string
+  }>
+  tempoMedioEsperaMinutos: number
+  tempoMedioBase: 'historico' | 'estimativa'
+  acompanhamentoEntrega?: {
+    origem?: { latitude?: number; longitude?: number } | null
+    entregador: { latitude: number; longitude: number; updatedAt?: string | null }
+  } | null
   itens: Array<{
     nomeSnapshot: string
     quantidade: string | number
@@ -339,6 +366,27 @@ export interface RestauranteCheckoutPreview {
   zone?: { tipo: string; nome: string; taxa: string | number } | null
 }
 
+export interface RestauranteFidelidadePrograma {
+  id?: number
+  ativo: boolean
+  pedidosMeta: number
+  categoriaIds: number[]
+  catalogoItemIds: number[]
+  premioCatalogoItemId: number | null
+  descontoPercentual: number
+  version?: number
+}
+
+export interface RestauranteFidelidadePublica {
+  ativo: boolean
+  pedidosMeta: number
+  categoriaIds: number[]
+  catalogoItemIds: number[]
+  descontoPercentual: number
+  premio: { catalogoItemId: number; nome: string; imagem?: string | null } | null
+  progresso: { pedidosElegiveis: number; pedidosMeta: number; recompensasDisponiveis: number } | null
+}
+
 export interface RestauranteProdutoDisponivel {
   id: number
   nome: string
@@ -419,8 +467,10 @@ export class RestauranteRepository {
     return data.data as { usuarioId: number; papeis: RestaurantePapel[] }
   }
 
-  static async cardapioPublico(slug: string) {
-    const { data } = await http.get(`/v1/restaurante/publico/${slug}/cardapio`)
+  static async cardapioPublico(slug: string, customerAccessToken?: string | null) {
+    const { data } = await http.get(`/v1/restaurante/publico/${slug}/cardapio`, {
+      headers: customerAccessToken ? { Authorization: `Bearer ${customerAccessToken}` } : undefined,
+    })
     return data.data as {
       restaurante: {
         nome: string
@@ -438,6 +488,7 @@ export class RestauranteRepository {
         }
         modoFrete: 'FIXO' | 'ZONAS'
         temaPersonalizado?: Partial<ThemeCustomization> | null
+        fidelidade?: RestauranteFidelidadePublica | null
       }
       itens: any[]
     }
@@ -498,6 +549,45 @@ export class RestauranteRepository {
     }
   }
 
+  static async entregadorContexto() {
+    const { data } = await http.get('/v1/restaurante/entregador/contexto')
+    return data.data as RestauranteEntregadorContexto
+  }
+
+  static async atualizarDisponibilidadeEntregador(disponivel: boolean) {
+    const { data } = await http.put('/v1/restaurante/entregador/disponibilidade', { disponivel })
+    return data.data as { id: number; disponivel: boolean }
+  }
+
+  static async aceitarEntrega(pedidoId: number) {
+    const { data } = await http.post(`/v1/restaurante/entregador/entregas/${pedidoId}/aceitar`)
+    return data.data as RestaurantePedido
+  }
+
+  static async atualizarStatusEntrega(pedidoId: number, status: Extract<RestauranteEntregaStatus, 'RETIRADA' | 'EM_ROTA' | 'ENTREGUE' | 'FALHOU'>) {
+    const { data } = await http.post(`/v1/restaurante/entregador/entregas/${pedidoId}/status`, { status })
+    return data.data as RestaurantePedido
+  }
+
+  static async enviarLocalizacaoEntrega(pedidoId: number, payload: { latitude: number; longitude: number; precisaoMetros?: number | null }) {
+    await http.post(`/v1/restaurante/entregador/entregas/${pedidoId}/localizacao`, payload)
+  }
+
+  static async despachoEntregas() {
+    const { data } = await http.get('/v1/restaurante/entregas/despacho')
+    return data.data as { pedidos: RestaurantePedido[]; entregadores: Array<{ id: number; disponivel: boolean; Usuario: { nome: string; telefone?: string | null } }> }
+  }
+
+  static async ofertarEntrega(pedidoId: number) {
+    const { data } = await http.post(`/v1/restaurante/entregas/${pedidoId}/ofertar`)
+    return data.data
+  }
+
+  static async direcionarEntrega(pedidoId: number, entregadorId: number) {
+    const { data } = await http.post(`/v1/restaurante/entregas/${pedidoId}/direcionar`, { entregadorId })
+    return data.data
+  }
+
   static async transicionar(id: number, status: RestaurantePedidoStatus, version: number) {
     const { data } = await http.post(`/v1/restaurante/pedidos/${id}/transicao`, { status, version })
     return data.data as RestaurantePedido
@@ -511,6 +601,21 @@ export class RestauranteRepository {
   static async salvarConfiguracao(config: RestauranteConfig) {
     const { data } = await http.put('/v1/restaurante/configuracao', config)
     return data.data as RestauranteConfig
+  }
+
+  static async fidelidade() {
+    const { data } = await http.get('/v1/restaurante/fidelidade')
+    return data.data as RestauranteFidelidadePrograma | null
+  }
+
+  static async opcoesFidelidade() {
+    const { data } = await http.get('/v1/restaurante/fidelidade/opcoes')
+    return data.data as { itens: Array<{ id: number; nome: string; imagem?: string | null }>; categorias: Array<{ id: number; nome: string }> }
+  }
+
+  static async salvarFidelidade(payload: RestauranteFidelidadePrograma) {
+    const { data } = await http.put('/v1/restaurante/fidelidade', payload)
+    return data.data as RestauranteFidelidadePrograma
   }
 
   static async catalogo(params: { page?: number; limit?: number } = {}) {

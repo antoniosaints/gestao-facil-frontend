@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, type CSSProperties } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, type CSSProperties } from 'vue'
+import * as L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { useMediaQuery } from '@vueuse/core'
 import { useRoute } from 'vue-router'
-import { useToast } from 'vue-toastification'
+import { POSITION, useToast } from 'vue-toastification'
 import { io, type Socket } from 'socket.io-client'
 import { vMaska } from 'maska/vue'
 import { Badge } from '@/components/ui/badge'
@@ -15,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { Bike, Check, CheckCircle2, ChevronRight, Clipboard, Clock3, History, LoaderCircle, LocateFixed, MapPin, Menu, Minus, Plus, Search, ShoppingBag, ShoppingCart, Store, Trash2, Truck, UserRound, UtensilsCrossed } from 'lucide-vue-next'
+import { Bike, Check, CheckCircle2, ChevronRight, Clipboard, Clock3, Gift, History, LoaderCircle, LocateFixed, MapPin, Menu, Minus, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Timer, Trash2, Truck, UserRound, UtensilsCrossed } from 'lucide-vue-next'
 import { RestauranteRepository, type RestauranteCheckoutPreview, type RestauranteClienteConta, type RestauranteClienteEndereco, type RestaurantePublicOrderTracking } from '@/repositories/restaurante-repository'
 import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -53,6 +55,9 @@ const cartLines = ref<CartLine[]>([])
 const quote = ref<RestauranteCheckoutPreview | null>(null)
 const orderResult = ref<any>(null)
 const historyOpen = ref(false)
+const trackingDetailsOpen = ref(false)
+const selectedTrackingToken = ref<string | null>(null)
+const trackingMapElement = ref<HTMLElement | null>(null)
 const accountOpen = ref(false)
 const accountLoading = ref(false)
 const accountSubmitting = ref(false)
@@ -74,6 +79,9 @@ const obtendoLocalizacao = ref(false)
 let previewTimer: ReturnType<typeof setTimeout> | null = null
 let previewSequence = 0
 let trackingSocket: Socket | null = null
+let publicMenuSocket: Socket | null = null
+let trackingMap: L.Map | null = null
+let trackingMapLayers: L.LayerGroup | null = null
 const form = reactive({
   nome: '',
   telefone: '',
@@ -135,6 +143,7 @@ const mensagemAtendimento = computed(() => cardapio.value?.restaurante.atendimen
 const tracking = computed(() => orderHistory.value.find((order) => isActiveRestaurantOrder(order.status)) || null)
 const trackingStatusLabel = computed(() => (tracking.value ? restaurantOrderStatusLabel(tracking.value.status) : ''))
 const trackingBadgeClass = computed(() => tracking.value ? restaurantOrderStatusBadgeClass(tracking.value.status) : '')
+const trackingDetails = computed(() => orderHistory.value.find((order) => order.trackingToken === selectedTrackingToken.value) || null)
 
 const categories = computed(() => [{ key: 'todos', name: 'Todos' }, ...categoryGroups.value.map(({ key, name }) => ({ key, name }))])
 
@@ -438,6 +447,51 @@ async function loadOrderHistory(tokens = storedTrackingTokens()) {
   historyLoading.value = false
 }
 
+function openTrackingDetails(order: RestaurantePublicOrderTracking & { trackingToken: string }) {
+  selectedTrackingToken.value = order.trackingToken
+  historyOpen.value = false
+  trackingDetailsOpen.value = true
+}
+
+function trackingTime(value?: string | null) {
+  if (!value) return ''
+  return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+}
+
+function trackingElapsed(order: RestaurantePublicOrderTracking) {
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60_000))
+  return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)}h ${minutes % 60}min`
+}
+
+function clearTrackingMap() {
+  trackingMap?.remove()
+  trackingMap = null
+  trackingMapLayers = null
+}
+
+function renderTrackingMap() {
+  const trackingOrder = trackingDetails.value
+  const delivery = trackingOrder?.acompanhamentoEntrega
+  const origin = delivery?.origem
+  if (!trackingMapElement.value || !delivery || origin?.latitude == null || origin.longitude == null) return
+  clearTrackingMap()
+  trackingMap = L.map(trackingMapElement.value, { zoomControl: true, attributionControl: false }).setView(
+    [delivery.entregador.latitude, delivery.entregador.longitude],
+    14,
+  )
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(trackingMap)
+  trackingMapLayers = L.layerGroup().addTo(trackingMap)
+  const originPoint: L.LatLngTuple = [Number(origin.latitude), Number(origin.longitude)]
+  const driverPoint: L.LatLngTuple = [delivery.entregador.latitude, delivery.entregador.longitude]
+  L.circleMarker(originPoint, { radius: 8, color: '#9a3412', fillColor: '#f97316', fillOpacity: 1, weight: 3 })
+    .bindTooltip('Restaurante', { direction: 'top' })
+    .addTo(trackingMapLayers)
+  L.circleMarker(driverPoint, { radius: 9, color: '#065f46', fillColor: '#10b981', fillOpacity: 1, weight: 3 })
+    .bindTooltip('Seu entregador', { direction: 'top' })
+    .addTo(trackingMapLayers)
+  trackingMap.fitBounds(L.latLngBounds([originPoint, driverPoint]), { padding: [36, 36], maxZoom: 15 })
+}
+
 function sincronizarAcompanhamentoEmTempoReal(tokens = storedTrackingTokens()) {
   trackingSocket?.disconnect()
   trackingSocket = null
@@ -448,6 +502,21 @@ function sincronizarAcompanhamentoEmTempoReal(tokens = storedTrackingTokens()) {
   })
   trackingSocket.on('restaurante:pedido-publico', () => {
     void loadOrderHistory(tokens)
+  })
+  trackingSocket.on('restaurante:entrega-localizacao', () => {
+    void loadOrderHistory(tokens)
+  })
+}
+
+function sincronizarComprasPublicas() {
+  publicMenuSocket?.disconnect()
+  publicMenuSocket = io((import.meta.env.VITE_BACKEND_URL as string) || 'http://localhost:3000', {
+    transports: ['websocket'],
+    auth: { restaurantPublicSlug: String(route.params.slug) },
+  })
+  publicMenuSocket.on('restaurante:compra-publica', (sale: { cliente?: string; produto?: string }) => {
+    if (!sale?.produto) return
+    toast.info(`${sale.cliente || 'Alguém'} acabou de comprar ${sale.produto}.`, { timeout: 4200, position: POSITION.TOP_CENTER })
   })
 }
 
@@ -583,7 +652,7 @@ function checkoutPayload() {
 
 async function carregar() {
   try {
-    cardapio.value = await RestauranteRepository.cardapioPublico(String(route.params.slug))
+    cardapio.value = await RestauranteRepository.cardapioPublico(String(route.params.slug), customerToken())
     origem.value = cardapio.value.restaurante.retiradaAtiva ? 'RETIRADA' : 'DELIVERY'
     pagamento.value = cardapio.value.restaurante.pagamentoNaEntregaAtivo ? 'NA_ENTREGA' : 'PIX'
     const routeToken = String(route.query.pedido || '')
@@ -593,6 +662,7 @@ async function carregar() {
     if (routeToken) tokens = prependTrackingToken(tokens, routeToken)
     await loadOrderHistory(tokens)
     sincronizarAcompanhamentoEmTempoReal(tokens)
+    sincronizarComprasPublicas()
   } catch {
     toast.error('Cardápio indisponível.')
   } finally {
@@ -735,6 +805,11 @@ watch(searchTerm, () => {
 })
 watch(() => [origem.value, form.cep, form.cidade, form.bairro, form.logradouro, form.numero, form.complemento, form.referencia, JSON.stringify(payloadItems.value)], scheduleCheckoutPreview)
 watch(useAccountData, (enabled) => { if (enabled && customerAccount.value) applyCustomerAccount(customerAccount.value) })
+watch([trackingDetailsOpen, trackingDetails], async ([open, order]) => {
+  if (!open || !order?.acompanhamentoEntrega) return clearTrackingMap()
+  await nextTick()
+  renderTrackingMap()
+})
 
 onMounted(async () => {
   await carregar()
@@ -744,6 +819,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (previewTimer) clearTimeout(previewTimer)
   trackingSocket?.disconnect()
+  publicMenuSocket?.disconnect()
+  clearTrackingMap()
 })
 </script>
 
@@ -830,7 +907,11 @@ onBeforeUnmount(() => {
             <p class="mt-1 text-sm text-amber-900/80">{{ mensagemAtendimento }} Você pode consultar o cardápio, mas os pedidos estarão disponíveis no próximo horário de atendimento.</p>
           </div>
         </div>
-        <button v-if="tracking" type="button" class="tracking-order mb-6 flex w-full flex-col gap-3 rounded-2xl bg-emerald-50 p-4 text-left shadow-[0_0_0_1px_rgba(5,150,105,.14)] sm:flex-row sm:items-center sm:justify-between dark:bg-emerald-950/30" :aria-label="`Ver detalhes do pedido ${tracking.codigo}`" @click="historyOpen = true">
+        <div v-if="cardapio.restaurante.fidelidade" class="loyalty-banner mb-6">
+          <span class="loyalty-banner-icon"><Gift class="h-5 w-5" /></span>
+          <div class="min-w-0 flex-1"><p class="font-semibold">{{ cardapio.restaurante.fidelidade.progresso?.recompensasDisponiveis ? 'Você tem uma recompensa disponível!' : `Fidelidade: ganhe ${cardapio.restaurante.fidelidade.descontoPercentual}% em ${cardapio.restaurante.fidelidade.premio?.nome || 'um produto selecionado'}` }}</p><p class="mt-0.5 text-sm opacity-80"><template v-if="cardapio.restaurante.fidelidade.progresso">{{ cardapio.restaurante.fidelidade.progresso.pedidosElegiveis % cardapio.restaurante.fidelidade.pedidosMeta }}/{{ cardapio.restaurante.fidelidade.pedidosMeta }} pedidos elegíveis para a próxima recompensa.</template><template v-else>Entre na sua conta para acompanhar seus pedidos e recompensas.</template></p></div>
+        </div>
+        <button v-if="tracking" type="button" class="tracking-order mb-6 flex w-full flex-col gap-3 rounded-2xl bg-emerald-50 p-4 text-left shadow-[0_0_0_1px_rgba(5,150,105,.14)] sm:flex-row sm:items-center sm:justify-between dark:bg-emerald-950/30" :aria-label="`Ver detalhes do pedido ${tracking.codigo}`" @click="openTrackingDetails(tracking)">
           <div class="flex items-center gap-3">
             <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white"><Clock3 class="h-5 w-5" /></span>
             <div>
@@ -1059,9 +1140,9 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="checkoutOpen">
-      <component :is="menuModalContent" class="menu-overlay rounded-t-[24px] border-0 p-0 lg:h-auto lg:max-h-[94vh] lg:max-w-4xl lg:overflow-y-auto lg:rounded-[24px]" :class="orderResult ? 'max-h-[88dvh] overflow-y-auto' : 'h-[88dvh] max-h-[88dvh] overflow-hidden'" :style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-4xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :style="menuThemeStyle">
         <template v-if="orderResult">
-          <div class="p-6 sm:p-9">
+          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [scrollbar-gutter:stable] p-6 sm:p-9">
             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-emerald-100 text-emerald-700">
               <CheckCircle2 class="h-8 w-8" />
             </div>
@@ -1206,7 +1287,7 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="historyOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:h-auto lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :style="menuThemeStyle">
         <div class="border-b md:px-6 md:py-5 sm:px-8">
           <component :is="menuModalHeader" class="text-left">
             <component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><History class="h-5 w-5 brand-text" />Meus pedidos</component>
@@ -1221,7 +1302,7 @@ onBeforeUnmount(() => {
             <p class="mt-1 text-sm text-stone-500">Quando você finalizar um pedido, ele aparecerá aqui.</p>
           </div>
           <template v-else>
-            <article v-for="order in orderHistory" :key="order.trackingToken" class="history-order">
+            <button v-for="order in orderHistory" :key="order.trackingToken" type="button" class="history-order history-order--action w-full text-left" @click="openTrackingDetails(order)">
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p class="font-semibold">Pedido {{ order.codigo }}</p>
@@ -1242,23 +1323,64 @@ onBeforeUnmount(() => {
                 <span class="text-xs text-stone-500">Pagamento {{ humanize(order.pagamentoStatus) }}</span
                 ><strong class="price">{{ formatCurrencyBR(Number(order.total)) }}</strong>
               </div>
-            </article>
+            </button>
+          </template>
+        </div>
+      </component>
+    </component>
+
+    <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="trackingDetailsOpen">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :style="menuThemeStyle">
+        <div class="shrink-0 border-b md:px-6 md:py-5 sm:px-8">
+          <component :is="menuModalHeader" class="text-left">
+            <component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><PackageCheck class="brand-text h-5 w-5" />Acompanhar pedido</component>
+            <component :is="menuModalDescription">Atualizações em tempo real do seu pedido.</component>
+          </component>
+        </div>
+        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [scrollbar-gutter:stable] p-5 sm:p-7">
+          <template v-if="trackingDetails">
+            <section class="tracking-summary border border-stone-200">
+              <div><span>Pedido {{ trackingDetails.codigo }}</span><h3>{{ restaurantOrderStatusLabel(trackingDetails.status) }}</h3><p>Feito às {{ trackingTime(trackingDetails.createdAt) }} · há {{ trackingElapsed(trackingDetails) }}</p></div>
+              <Badge class="border-0" :class="restaurantOrderStatusBadgeClass(trackingDetails.status)">{{ restaurantOrderStatusLabel(trackingDetails.status) }}</Badge>
+            </section>
+            <section class="tracking-average border border-stone-200">
+              <span><Timer class="h-5 w-5" /></span><div><strong>Tempo médio de espera: {{ trackingDetails.tempoMedioEsperaMinutos }} min</strong><p>{{ trackingDetails.tempoMedioBase === 'historico' ? 'Baseado nos pedidos concluídos recentemente.' : 'Estimativa inicial do restaurante.' }}</p></div>
+            </section>
+
+            <section class="tracking-section">
+              <div class="tracking-section-heading"><Clock3 class="brand-text h-4 w-4" /><h3>Andamento do pedido</h3></div>
+              <ol class="tracking-timeline">
+                <li v-for="event in trackingDetails.timeline" :key="event.key"><span><Check class="h-3.5 w-3.5" /></span><div><div class="flex items-baseline justify-between gap-3"><strong>{{ event.titulo }}</strong><time>{{ trackingTime(event.ocorreuEm) }}</time></div><p>{{ event.descricao }}</p></div></li>
+              </ol>
+            </section>
+
+            <section v-if="trackingDetails.origem === 'DELIVERY'" class="tracking-section">
+              <div class="tracking-section-heading"><MapPin class="brand-text h-4 w-4" /><h3>Mapa da entrega</h3></div>
+              <div v-if="trackingDetails.acompanhamentoEntrega" class="tracking-map-shell"><div ref="trackingMapElement" class="tracking-map" aria-label="Acompanhamento do entregador no mapa" /><p><Navigation class="h-3.5 w-3.5" />Localização atualizada {{ trackingTime(trackingDetails.acompanhamentoEntrega.entregador.updatedAt) }}</p></div>
+              <p v-else class="tracking-map-wait"><Truck class="h-5 w-5" />O mapa aparecerá quando o entregador iniciar a rota.</p>
+            </section>
+
+            <section class="tracking-section">
+              <div class="tracking-section-heading"><ShoppingBag class="brand-text h-4 w-4" /><h3>Itens do pedido</h3></div>
+              <div class="space-y-2"><div v-for="item in trackingDetails.itens" :key="`${trackingDetails.codigo}-${item.nomeSnapshot}`" class="tracking-item"><span>{{ Number(item.quantidade) }}×</span><div><strong>{{ item.nomeSnapshot }}</strong><p v-if="Array.isArray(item.selecoesSnapshotJson) && item.selecoesSnapshotJson.length">{{ item.selecoesSnapshotJson.map((option: any) => option.nome).filter(Boolean).join(', ') }}</p></div><strong class="price">{{ formatCurrencyBR(Number(item.subtotalSnapshot)) }}</strong></div></div>
+              <div class="tracking-total"><span>Pagamento {{ humanize(trackingDetails.pagamentoStatus) }}</span><strong class="price">{{ formatCurrencyBR(Number(trackingDetails.total)) }}</strong></div>
+            </section>
           </template>
         </div>
       </component>
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="accountOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:h-auto lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :style="menuThemeStyle">
         <component :is="menuModalHeader" class="shrink-0 border-b md:px-5 md:py-5 text-left sm:px-7"><component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><UserRound class="brand-text h-5 w-5" />{{ accountMode === 'profile' ? 'Minha conta' : accountMode === 'register' ? 'Criar conta' : 'Entrar na conta' }}</component><component :is="menuModalDescription">{{ accountMode === 'profile' ? 'Seus dados, endereços e histórico neste restaurante.' : 'Entre com telefone e senha para ter seus pedidos sempre com você.' }}</component></component>
-        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y">
+        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [scrollbar-gutter:stable]">
         <div v-if="accountLoading" class="flex justify-center py-16"><LoaderCircle class="h-6 w-6 animate-spin brand-text" /></div>
         <div v-else-if="accountMode !== 'profile'" class="space-y-4 p-5 sm:p-7">
-          <div v-if="accountMode === 'register'" class="space-y-1"><Label for="account-name">Nome completo</Label><Input id="account-name" v-model="accountForm.nome" :aria-invalid="Boolean(accountFieldErrors.nome.length)" :class="accountFieldErrors.nome.length && 'border-red-500 focus-visible:ring-red-500'" autocomplete="name" placeholder="Como podemos chamar você?" @input="clearAccountFieldError('nome')" /><p v-for="message in accountFieldErrors.nome" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-          <div class="space-y-1"><Label for="account-phone">Telefone</Label><Input id="account-phone" v-model="accountForm.telefone" v-maska="phoneMaskOptions" :aria-invalid="Boolean(accountFieldErrors.telefone.length)" :class="accountFieldErrors.telefone.length && 'border-red-500 focus-visible:ring-red-500'" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000" @input="clearAccountFieldError('telefone')" /><p v-for="message in accountFieldErrors.telefone" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-          <div v-if="accountMode === 'register'" class="space-y-1"><Label for="account-email">E-mail (opcional)</Label><Input id="account-email" v-model="accountForm.email" :aria-invalid="Boolean(accountFieldErrors.email.length)" :class="accountFieldErrors.email.length && 'border-red-500 focus-visible:ring-red-500'" type="email" autocomplete="email" placeholder="voce@email.com" @input="clearAccountFieldError('email')" /><p v-for="message in accountFieldErrors.email" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-          <div class="space-y-1"><Label for="account-password">Senha</Label><Input id="account-password" v-model="accountForm.senha" :aria-invalid="Boolean(accountFieldErrors.senha.length)" :class="accountFieldErrors.senha.length && 'border-red-500 focus-visible:ring-red-500'" type="password" :autocomplete="accountMode === 'register' ? 'new-password' : 'current-password'" placeholder="Mínimo de 8 caracteres" @input="clearAccountFieldError('senha')" /><p v-if="accountMode === 'register'" class="text-xs text-stone-500">Use ao menos 8 caracteres, com letra e número.</p><p v-for="message in accountFieldErrors.senha" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-          <div v-if="accountMode === 'register'" class="space-y-1"><Label for="account-password-confirmation">Confirmar senha</Label><Input id="account-password-confirmation" v-model="accountForm.confirmacaoSenha" :aria-invalid="Boolean(accountFieldErrors.confirmacaoSenha.length)" :class="accountFieldErrors.confirmacaoSenha.length && 'border-red-500 focus-visible:ring-red-500'" type="password" autocomplete="new-password" @input="clearAccountFieldError('confirmacaoSenha')" /><p v-for="message in accountFieldErrors.confirmacaoSenha" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+          <div v-if="accountMode === 'register'" class="space-y-1"><Label for="account-name">Nome completo</Label><Input id="account-name" v-model="accountForm.nome" :aria-invalid="Boolean(accountFieldErrors.nome.length)" :class="accountFieldErrors.nome.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" autocomplete="name" placeholder="Como podemos chamar você?" @input="clearAccountFieldError('nome')" /><p v-for="message in accountFieldErrors.nome" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+          <div class="space-y-1"><Label for="account-phone">Telefone</Label><Input id="account-phone" v-model="accountForm.telefone" v-maska="phoneMaskOptions" :aria-invalid="Boolean(accountFieldErrors.telefone.length)" :class="accountFieldErrors.telefone.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000" @input="clearAccountFieldError('telefone')" /><p v-for="message in accountFieldErrors.telefone" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+          <div v-if="accountMode === 'register'" class="space-y-1"><Label for="account-email">E-mail (opcional)</Label><Input id="account-email" v-model="accountForm.email" :aria-invalid="Boolean(accountFieldErrors.email.length)" :class="accountFieldErrors.email.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" type="email" autocomplete="email" placeholder="voce@email.com" @input="clearAccountFieldError('email')" /><p v-for="message in accountFieldErrors.email" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+          <div class="space-y-1"><Label for="account-password">Senha</Label><Input id="account-password" v-model="accountForm.senha" :aria-invalid="Boolean(accountFieldErrors.senha.length)" :class="accountFieldErrors.senha.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" type="password" :autocomplete="accountMode === 'register' ? 'new-password' : 'current-password'" placeholder="Mínimo de 8 caracteres" @input="clearAccountFieldError('senha')" /><p v-if="accountMode === 'register'" class="text-xs text-stone-500">Use ao menos 8 caracteres, com letra e número.</p><p v-for="message in accountFieldErrors.senha" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+          <div v-if="accountMode === 'register'" class="space-y-1"><Label for="account-password-confirmation">Confirmar senha</Label><Input id="account-password-confirmation" v-model="accountForm.confirmacaoSenha" :aria-invalid="Boolean(accountFieldErrors.confirmacaoSenha.length)" :class="accountFieldErrors.confirmacaoSenha.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" type="password" autocomplete="new-password" @input="clearAccountFieldError('confirmacaoSenha')" /><p v-for="message in accountFieldErrors.confirmacaoSenha" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
           <Button class="h-12 w-full rounded-xl" :style="primaryButtonStyle" :disabled="accountSubmitting" @click="submitCustomerAccount"><LoaderCircle v-if="accountSubmitting" class="mr-2 h-4 w-4 animate-spin" />{{ accountMode === 'register' ? 'Criar minha conta' : 'Entrar' }}</Button>
           <button type="button" class="mx-auto block text-sm font-semibold brand-text" @click="accountMode = accountMode === 'register' ? 'login' : 'register'; clearAccountFieldErrors()">{{ accountMode === 'register' ? 'Já tenho uma conta' : 'Ainda não tenho conta' }}</button>
         </div>
@@ -1271,14 +1393,14 @@ onBeforeUnmount(() => {
           <section class="space-y-3"><div><h3 class="font-semibold">Meus endereços</h3><p class="text-xs text-stone-500">Escolha um endereço salvo no seu próximo delivery.</p></div>
             <div v-for="address in customerAccount.enderecos" :key="address.id" class="rounded-xl border p-3 text-sm"><div class="flex justify-between gap-3"><button type="button" class="min-w-0 text-left" @click="applyAccountAddress(address); accountOpen = false"><strong>{{ address.rotulo || 'Endereço' }} <span v-if="address.principal" class="brand-text">· principal</span></strong><span class="mt-1 block text-stone-500">{{ address.logradouro }}, {{ address.numero }} · {{ address.bairro }}, {{ address.cidade }}</span></button><button type="button" class="shrink-0 text-xs text-red-600" @click="removeCustomerAddress(address.id)">Remover</button></div></div>
             <form class="grid gap-2 rounded-xl border border-dashed p-3 sm:grid-cols-2" novalidate @submit.prevent="saveCustomerAddress">
-              <div class="space-y-1"><Input v-model="accountAddressForm.rotulo" :aria-invalid="Boolean(accountAddressFieldErrors.rotulo.length)" :class="accountAddressFieldErrors.rotulo.length && 'border-red-500 focus-visible:ring-red-500'" placeholder="Rótulo (Casa, Trabalho)" @input="clearAccountAddressFieldError('rotulo')" /><p v-for="message in accountAddressFieldErrors.rotulo" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-              <div class="space-y-1"><Input v-model="accountAddressForm.cep" v-maska="cepMaskOptions" :aria-invalid="Boolean(accountAddressFieldErrors.cep.length)" :class="accountAddressFieldErrors.cep.length && 'border-red-500 focus-visible:ring-red-500'" inputmode="numeric" autocomplete="postal-code" placeholder="CEP" @input="clearAccountAddressFieldError('cep')" /><p v-for="message in accountAddressFieldErrors.cep" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-              <div class="space-y-1"><Input v-model="accountAddressForm.cidade" :aria-invalid="Boolean(accountAddressFieldErrors.cidade.length)" :class="accountAddressFieldErrors.cidade.length && 'border-red-500 focus-visible:ring-red-500'" autocomplete="address-level2" placeholder="Cidade" @input="clearAccountAddressFieldError('cidade')" /><p v-for="message in accountAddressFieldErrors.cidade" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-              <div class="space-y-1"><Input v-model="accountAddressForm.bairro" :aria-invalid="Boolean(accountAddressFieldErrors.bairro.length)" :class="accountAddressFieldErrors.bairro.length && 'border-red-500 focus-visible:ring-red-500'" autocomplete="address-level3" placeholder="Bairro" @input="clearAccountAddressFieldError('bairro')" /><p v-for="message in accountAddressFieldErrors.bairro" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-              <div class="space-y-1 sm:col-span-2"><Input v-model="accountAddressForm.logradouro" :aria-invalid="Boolean(accountAddressFieldErrors.logradouro.length)" :class="accountAddressFieldErrors.logradouro.length && 'border-red-500 focus-visible:ring-red-500'" autocomplete="street-address" placeholder="Rua / Avenida" @input="clearAccountAddressFieldError('logradouro')" /><p v-for="message in accountAddressFieldErrors.logradouro" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-              <div class="space-y-1"><Input v-model="accountAddressForm.numero" :aria-invalid="Boolean(accountAddressFieldErrors.numero.length)" :class="accountAddressFieldErrors.numero.length && 'border-red-500 focus-visible:ring-red-500'" autocomplete="address-line2" placeholder="Número" @input="clearAccountAddressFieldError('numero')" /><p v-for="message in accountAddressFieldErrors.numero" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-              <div class="space-y-1"><Input v-model="accountAddressForm.complemento" :aria-invalid="Boolean(accountAddressFieldErrors.complemento.length)" :class="accountAddressFieldErrors.complemento.length && 'border-red-500 focus-visible:ring-red-500'" placeholder="Complemento" @input="clearAccountAddressFieldError('complemento')" /><p v-for="message in accountAddressFieldErrors.complemento" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
-              <div class="space-y-1 sm:col-span-2"><Input v-model="accountAddressForm.referencia" :aria-invalid="Boolean(accountAddressFieldErrors.referencia.length)" :class="accountAddressFieldErrors.referencia.length && 'border-red-500 focus-visible:ring-red-500'" placeholder="Referência" @input="clearAccountAddressFieldError('referencia')" /><p v-for="message in accountAddressFieldErrors.referencia" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.rotulo" :aria-invalid="Boolean(accountAddressFieldErrors.rotulo.length)" :class="accountAddressFieldErrors.rotulo.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" placeholder="Rótulo (Casa, Trabalho)" @input="clearAccountAddressFieldError('rotulo')" /><p v-for="message in accountAddressFieldErrors.rotulo" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.cep" v-maska="cepMaskOptions" :aria-invalid="Boolean(accountAddressFieldErrors.cep.length)" :class="accountAddressFieldErrors.cep.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" inputmode="numeric" autocomplete="postal-code" placeholder="CEP" @input="clearAccountAddressFieldError('cep')" /><p v-for="message in accountAddressFieldErrors.cep" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.cidade" :aria-invalid="Boolean(accountAddressFieldErrors.cidade.length)" :class="accountAddressFieldErrors.cidade.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" autocomplete="address-level2" placeholder="Cidade" @input="clearAccountAddressFieldError('cidade')" /><p v-for="message in accountAddressFieldErrors.cidade" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.bairro" :aria-invalid="Boolean(accountAddressFieldErrors.bairro.length)" :class="accountAddressFieldErrors.bairro.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" autocomplete="address-level3" placeholder="Bairro" @input="clearAccountAddressFieldError('bairro')" /><p v-for="message in accountAddressFieldErrors.bairro" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1 sm:col-span-2"><Input v-model="accountAddressForm.logradouro" :aria-invalid="Boolean(accountAddressFieldErrors.logradouro.length)" :class="accountAddressFieldErrors.logradouro.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" autocomplete="street-address" placeholder="Rua / Avenida" @input="clearAccountAddressFieldError('logradouro')" /><p v-for="message in accountAddressFieldErrors.logradouro" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.numero" :aria-invalid="Boolean(accountAddressFieldErrors.numero.length)" :class="accountAddressFieldErrors.numero.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" autocomplete="address-line2" placeholder="Número" @input="clearAccountAddressFieldError('numero')" /><p v-for="message in accountAddressFieldErrors.numero" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1"><Input v-model="accountAddressForm.complemento" :aria-invalid="Boolean(accountAddressFieldErrors.complemento.length)" :class="accountAddressFieldErrors.complemento.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" placeholder="Complemento" @input="clearAccountAddressFieldError('complemento')" /><p v-for="message in accountAddressFieldErrors.complemento" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
+              <div class="space-y-1 sm:col-span-2"><Input v-model="accountAddressForm.referencia" :aria-invalid="Boolean(accountAddressFieldErrors.referencia.length)" :class="accountAddressFieldErrors.referencia.length ? 'border-red-500 focus-visible:ring-red-500' : undefined" placeholder="Referência" @input="clearAccountAddressFieldError('referencia')" /><p v-for="message in accountAddressFieldErrors.referencia" :key="message" class="text-xs font-medium text-red-600" role="alert">{{ message }}</p></div>
               <label class="flex items-center gap-2 text-xs sm:col-span-2"><input v-model="accountAddressForm.principal" type="checkbox" /> Usar como endereço principal</label>
               <Button type="submit" size="sm" class="sm:col-span-2" :style="primaryButtonStyle" :disabled="accountSubmitting">Salvar endereço</Button>
             </form>
@@ -1377,6 +1499,28 @@ button.hero-action:active {
   border-bottom: 1px solid rgba(43, 37, 32, 0.07);
   background: color-mix(in srgb, var(--menu-surface) 92%, transparent);
   backdrop-filter: blur(16px);
+  box-shadow: 0 7px 20px rgba(43, 37, 32, 0.04);
+}
+.loyalty-banner {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 1px solid color-mix(in srgb, var(--menu-accent) 30%, transparent);
+  border-radius: 18px;
+  padding: 14px 16px;
+  color: color-mix(in srgb, var(--menu-ink) 90%, var(--menu-accent));
+  background: linear-gradient(110deg, color-mix(in srgb, var(--menu-accent) 13%, var(--menu-surface)), var(--menu-surface));
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--menu-accent) 9%, transparent);
+}
+.loyalty-banner-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--menu-accent-foreground);
+  background: var(--menu-accent);
 }
 
 .category-chip {
@@ -1719,6 +1863,36 @@ button.hero-action:active {
   background: color-mix(in srgb, var(--menu-accent) 3%, white);
   box-shadow: inset 0 0 0 1px rgba(43, 37, 32, 0.08);
 }
+.history-order--action {
+  cursor: pointer;
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+.history-order--action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--menu-accent) 12%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--menu-accent) 30%, transparent);
+}
+.tracking-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  color: var(--menu-accent-foreground);
+  background: linear-gradient(135deg, var(--menu-secondary), var(--menu-accent));
+}
+.tracking-summary span { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.78; }
+.tracking-summary h3 { margin: 4px 0; font-family: 'Sora', var(--app-font, sans-serif); font-size: 21px; }
+.tracking-summary p { margin: 0; font-size: 12px; opacity: 0.82; }
+.tracking-summary :deep(.badge) { color: var(--menu-ink); background: color-mix(in srgb, white 90%, transparent); }
+.tracking-average { display: flex; gap: 11px; margin-top: 14px; padding: 14px; border: 1px solid color-mix(in srgb, var(--menu-accent) 20%, transparent); border-radius: 15px; background: color-mix(in srgb, var(--menu-accent) 7%, white); }
+.tracking-average > span { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 11px; color: var(--menu-accent-foreground); background: var(--menu-accent); }
+.tracking-average strong { display:block; font-size:13px; }.tracking-average p { margin:3px 0 0; color:var(--menu-muted); font-size:11px; }
+.tracking-section { margin-top: 25px; }
+.tracking-section-heading { display:flex; align-items:center; gap:7px; margin-bottom:12px; }.tracking-section-heading h3 { margin:0; font-size:15px; font-weight:800; }
+.tracking-timeline { display:grid; gap:0; margin:0; padding:0; list-style:none; }.tracking-timeline li { position:relative; display:grid; grid-template-columns:28px minmax(0,1fr); gap:10px; padding-bottom:18px; }.tracking-timeline li:not(:last-child)::before { position:absolute; top:25px; left:13px; bottom:0; width:2px; background:color-mix(in srgb,var(--menu-accent) 22%,transparent); content:''; }.tracking-timeline li>span { z-index:1; display:grid; width:28px; height:28px; place-items:center; border-radius:50%; color:var(--menu-accent-foreground); background:var(--menu-accent); box-shadow:0 0 0 4px color-mix(in srgb,var(--menu-accent) 13%,transparent); }.tracking-timeline strong { font-size:13px; }.tracking-timeline time { flex:0 0 auto; color:var(--menu-muted); font-size:11px; font-weight:700; }.tracking-timeline p { margin:3px 0 0; color:var(--menu-muted); font-size:12px; line-height:1.4; }
+.tracking-map-shell { overflow:hidden; border:1px solid rgba(43,37,32,.1); border-radius:16px; background:#f4f1eb; }.tracking-map { height:230px; }.tracking-map-shell p { display:flex; align-items:center; gap:5px; margin:0; padding:9px 11px; color:var(--menu-muted); font-size:11px; }.tracking-map-wait { display:flex; align-items:center; gap:9px; margin:0; padding:18px; border:1px dashed rgba(43,37,32,.18); border-radius:16px; color:var(--menu-muted); font-size:12px; }
+.tracking-item { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:start; gap:10px; padding:10px; border-radius:12px; background:rgba(120,113,108,.07); font-size:13px; }.tracking-item>span { display:grid; min-width:25px; height:25px; place-items:center; border-radius:7px; color:var(--menu-accent-foreground); background:var(--menu-accent); font-size:11px; font-weight:800; }.tracking-item p { margin:2px 0 0; color:var(--menu-muted); font-size:11px; }.tracking-total { display:flex; justify-content:space-between; gap:12px; margin-top:12px; padding:13px 2px 0; border-top:1px solid rgba(43,37,32,.12); font-size:12px; }
 .tracking-order {
   transition: transform 150ms ease-out, box-shadow 150ms ease-out;
 }

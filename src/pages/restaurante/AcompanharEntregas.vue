@@ -39,6 +39,9 @@ const selectedOrderId = ref<number | null>(null)
 const driverLocations = ref<Record<number, DriverLocation>>({})
 const currentTime = ref(Date.now())
 const selectedRoadRoute = ref<Pick<RoadRoute, 'distance' | 'duration'> | null>(null)
+const dispatchDrivers = ref<Array<{ id: number; disponivel: boolean; Usuario: { nome: string; telefone?: string | null } }>>([])
+const dispatchTarget = ref('')
+const dispatching = ref(false)
 
 let map: L.Map | null = null
 let mapLayers: L.LayerGroup | null = null
@@ -118,6 +121,7 @@ const visibleOrders = computed(() => {
     )
 })
 const mappedOrders = computed(() => visibleOrders.value.filter(hasCustomerLocation))
+const selectedDispatchOrder = computed(() => visibleOrders.value.find((order) => order.id === selectedOrderId.value) || null)
 const waitingOrders = computed(
   () =>
     visibleOrders.value.filter((order) =>
@@ -341,14 +345,30 @@ async function loadOrders(feedback = false) {
   try {
     if (loading.value) loading.value = true
     else refreshing.value = true
-    const response = await RestauranteRepository.pedidos({
-      page: 1,
-      limit: 100,
-      inicio: startOfDay(new Date()).toISOString(),
-      fim: endOfDay(new Date()).toISOString(),
-    })
+    const [response, dispatch] = await Promise.all([
+      RestauranteRepository.pedidos({
+        page: 1,
+        limit: 100,
+        inicio: startOfDay(new Date()).toISOString(),
+        fim: endOfDay(new Date()).toISOString(),
+      }),
+      RestauranteRepository.despachoEntregas(),
+    ])
     orders.value = response.data
     companyLocation.value = response.meta.localizacaoEmpresa || null
+    dispatchDrivers.value = dispatch.entregadores
+    const restoredLocations: Record<number, DriverLocation> = {}
+    for (const order of response.data) {
+      const driver = order.Entrega?.Entregador
+      if (!driver || !Number.isFinite(driver.ultimaLatitude) || !Number.isFinite(driver.ultimaLongitude)) continue
+      restoredLocations[order.id] = {
+        latitude: Number(driver.ultimaLatitude),
+        longitude: Number(driver.ultimaLongitude),
+        updatedAt: driver.ultimaLocalizacaoAt,
+        entregadorNome: driver.Usuario?.nome,
+      }
+    }
+    driverLocations.value = restoredLocations
     if (!selectedOrderId.value && mappedOrders.value[0])
       selectedOrderId.value = mappedOrders.value[0].id
     await nextTick()
@@ -360,6 +380,31 @@ async function loadOrders(feedback = false) {
     loading.value = false
     refreshing.value = false
   }
+}
+
+async function offerSelectedDelivery() {
+  if (!selectedDispatchOrder.value) return
+  dispatching.value = true
+  try {
+    await RestauranteRepository.ofertarEntrega(selectedDispatchOrder.value.id)
+    toast.success('Entrega ofertada aos entregadores disponíveis.')
+    await loadOrders()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível ofertar esta entrega.')
+  } finally { dispatching.value = false }
+}
+
+async function directSelectedDelivery() {
+  if (!selectedDispatchOrder.value || !dispatchTarget.value) return
+  dispatching.value = true
+  try {
+    await RestauranteRepository.direcionarEntrega(selectedDispatchOrder.value.id, Number(dispatchTarget.value))
+    toast.success('Entrega direcionada ao entregador selecionado.')
+    dispatchTarget.value = ''
+    await loadOrders()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível direcionar esta entrega.')
+  } finally { dispatching.value = false }
 }
 
 function initializeMap() {
@@ -509,6 +554,37 @@ onBeforeUnmount(() => {
             >
               {{ option[1] }}
             </button>
+          </div>
+          <div
+            v-if="selectedDispatchOrder && ['AGUARDANDO_DESPACHO', 'OFERTADA'].includes(selectedDispatchOrder.entregaStatus)"
+            class="delivery-dispatch"
+          >
+            <div class="delivery-dispatch-title">
+              <span>Despacho do pedido</span>
+              <strong>{{ selectedDispatchOrder.codigo }}</strong>
+            </div>
+            <div class="delivery-dispatch-controls">
+              <Button
+                v-if="selectedDispatchOrder.entregaStatus === 'AGUARDANDO_DESPACHO'"
+                size="sm"
+                :disabled="dispatching"
+                @click="offerSelectedDelivery"
+                >Ofertar</Button
+              >
+              <select v-model="dispatchTarget" aria-label="Selecionar entregador">
+                <option value="">Direcionar para...</option>
+                <option v-for="driver in dispatchDrivers" :key="driver.id" :value="driver.id">
+                  {{ driver.Usuario.nome }}{{ driver.disponivel ? ' • online' : '' }}
+                </option>
+              </select>
+              <Button
+                size="sm"
+                variant="outline"
+                :disabled="dispatching || !dispatchTarget"
+                @click="directSelectedDelivery"
+                >Enviar</Button
+              >
+            </div>
           </div>
         </div>
 
@@ -711,6 +787,58 @@ onBeforeUnmount(() => {
   flex-direction: column;
   border-left: 1px solid hsl(var(--border));
   background: hsl(var(--background));
+}
+.delivery-dispatch {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+  font-weight: 700;
+}
+.delivery-dispatch-title {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+}
+.delivery-dispatch-title span {
+  flex: 0 0 auto;
+  color: hsl(var(--muted-foreground));
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.delivery-dispatch-title strong {
+  min-width: 0;
+  overflow: hidden;
+  color: hsl(var(--foreground));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.delivery-dispatch-controls {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.delivery-dispatch-controls select {
+  min-width: 0;
+  height: 32px;
+  flex: 1 1 130px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 7px;
+  padding: 0 8px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font: inherit;
+}
+.delivery-dispatch-controls :deep(button) {
+  flex: 0 0 auto;
 }
 .delivery-list {
   display: grid;

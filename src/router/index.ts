@@ -80,6 +80,12 @@ const routes: RouteInterface[] = [
     },
   },
   {
+    path: '/entregador',
+    name: 'restaurante-entregador',
+    component: () => import('@/pages/restaurante/EntregadorPwa.vue'),
+    meta: { isPublic: true },
+  },
+  {
     path: '/lojas/:slug',
     name: 'loja-publica',
     component: () => import('@/pages/loja/publico/LojaPublica.vue'),
@@ -626,6 +632,17 @@ const routes: RouteInterface[] = [
           permissao: 1,
           modulo: 'restaurante-delivery',
           restauranteCapability: 'PEDIDOS_VISUALIZAR',
+        },
+      },
+      {
+        path: 'fidelidade',
+        name: 'restaurante-fidelidade',
+        component: () => import('@/pages/restaurante/Fidelidade.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'CONFIGURACOES_GERENCIAR',
         },
       },
       {

@@ -57,12 +57,12 @@ export const useAuthStore = defineStore('authStore', () => {
     clearSupport()
   }
 
-  const login = async (email: string, senha: string): Promise<LoginResult> => {
+  const login = async (email: string, senha: string, options: { redirect?: boolean } = {}): Promise<LoginResult> => {
     try {
       const { data } = await http.post<any, ApiResponse<LoginResponse>>('/login', { email, senha })
       saveSession(data.data)
       toast.success('Login efetuado com sucesso!')
-      router.push('/')
+      if (options.redirect !== false) router.push('/')
       return { ok: true }
     } catch (error: any) {
       console.error(error)

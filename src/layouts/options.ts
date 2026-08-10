@@ -3,6 +3,7 @@ import type { RestauranteCapability } from '@/repositories/restaurante-repositor
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
   ArrowRightLeft,
+  Award,
   Bot,
   Box,
   Boxes,
@@ -497,6 +498,14 @@ export const sidebarMenuOptions = (
           link: '/restaurante/acompanhar-entregas',
           show: restaurantAccess.has('PEDIDOS_VISUALIZAR'),
           icone: MapPinned,
+          color: 'orange',
+        },
+        {
+          key: 'restaurante:fidelidade',
+          nome: 'Fidelidade',
+          link: '/restaurante/fidelidade',
+          show: restaurantAccess.has('CONFIGURACOES_GERENCIAR'),
+          icone: Award,
           color: 'orange',
         },
         {

@@ -76,6 +76,7 @@ const roleOptions: Array<{ value: RestaurantePapel; label: string }> = [
   { value: 'GARCOM', label: 'Garçom' },
   { value: 'COZINHA', label: 'Cozinha' },
   { value: 'EXPEDICAO', label: 'Expedição' },
+  { value: 'ENTREGADOR', label: 'Entregador' },
 ]
 const diasFuncionamento: Array<{ dia: RestauranteHorarioFuncionamento['dia']; label: string }> = [
   { dia: 'SEGUNDA', label: 'Segunda-feira' },
@@ -104,6 +105,7 @@ const whatsappNotificationEvents: Array<{
   },
   { key: 'PRONTO', title: 'Pedido pronto', hint: 'Enviada quando todos os itens ficam prontos.' },
   { key: 'ENTREGUE', title: 'Pedido entregue', hint: 'Enviada ao concluir a entrega ou retirada.' },
+  { key: 'FIDELIDADE', title: 'Fidelidade atualizada', hint: 'Enviada quando um pedido concluído atualiza o progresso.' },
   { key: 'POS_PEDIDO', title: 'Pós-pedido', hint: 'Agradecimento enviado após a conclusão.' },
 ]
 const whatsappMessageVariables = [
@@ -120,6 +122,7 @@ const whatsappMessageVariables = [
   { token: '{entrega}', label: 'Entrega' },
   { token: '{frete}', label: 'Frete' },
   { token: '{total}', label: 'Total' },
+  { token: '{fidelidade}', label: 'Progresso da fidelidade' },
 ] as const
 
 function notificacoesWhatsAppPadrao(): RestauranteWhatsAppNotifications {
@@ -141,6 +144,10 @@ function notificacoesWhatsAppPadrao(): RestauranteWhatsAppNotifications {
     ENTREGUE: {
       ativo: false,
       mensagem: 'Olá, {cliente}! Seu pedido {pedido} foi entregue. Bom apetite!',
+    },
+    FIDELIDADE: {
+      ativo: false,
+      mensagem: 'Olá, {cliente}! Sua fidelidade foi atualizada: {fidelidade}',
     },
     POS_PEDIDO: {
       ativo: false,
