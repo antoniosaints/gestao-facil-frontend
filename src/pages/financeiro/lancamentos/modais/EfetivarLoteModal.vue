@@ -76,7 +76,7 @@ async function submit() {
 <template>
   <ModalView
     :open="open"
-    size="sm"
+    size="md"
     title="Efetivar parcelas"
     :description="`Registre o pagamento de ${parcelasIds.length} parcela(s) selecionada(s).`"
     @update:open="emit('update:open', $event)"

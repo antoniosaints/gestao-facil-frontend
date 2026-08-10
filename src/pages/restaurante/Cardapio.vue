@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import HelpTooltip from './components/HelpTooltip.vue'
+import VarianteImagemField from '@/pages/produtos/formulario/VarianteImagemField.vue'
 import {
   RestauranteRepository,
   type RestauranteCatalogoItem,
@@ -36,9 +37,12 @@ const itemDialogOpen = ref(false)
 const groupDialogOpen = ref(false)
 const editingItemId = ref<number | undefined>()
 const editingGroupId = ref<number | undefined>()
+const imagemChange = ref<{ file: File | null; remove: boolean }>({ file: null, remove: false })
 
 const itemForm = reactive<RestauranteCatalogoPayload>({
-  produtoId: 0,
+  modoCadastro: 'VINCULAR',
+  produtoId: null,
+  preco: 0,
   nomePublico: null,
   descricao: null,
   imagem: null,
@@ -62,7 +66,7 @@ const filteredItems = computed(() => {
   const term = search.value.trim().toLocaleLowerCase('pt-BR')
   if (!term) return items.value
   return items.value.filter((item) =>
-    [item.nomePublico, item.Produto.nome, item.Produto.nomeVariante].some((value) =>
+    [item.nomePublico, item.Produto?.nome, item.Produto?.nomeVariante].some((value) =>
       value?.toLocaleLowerCase('pt-BR').includes(term),
     ),
   )
@@ -101,7 +105,9 @@ async function load() {
 function newItem() {
   editingItemId.value = undefined
   Object.assign(itemForm, {
-    produtoId: 0,
+    modoCadastro: 'VINCULAR',
+    produtoId: null,
+    preco: 0,
     nomePublico: null,
     descricao: null,
     imagem: null,
@@ -111,13 +117,16 @@ function newItem() {
     grupoIds: [],
     version: undefined,
   })
+  imagemChange.value = { file: null, remove: false }
   itemDialogOpen.value = true
 }
 
 function editItem(item: RestauranteCatalogoItem) {
   editingItemId.value = item.id
   Object.assign(itemForm, {
-    produtoId: item.produtoId,
+    modoCadastro: item.produtoId ? 'VINCULAR' : 'AVULSO',
+    produtoId: item.produtoId || null,
+    preco: Number(item.preco),
     nomePublico: item.nomePublico,
     descricao: item.descricao,
     imagem: item.imagem,
@@ -127,6 +136,7 @@ function editItem(item: RestauranteCatalogoItem) {
     grupoIds: item.grupos.map((link) => link.grupoId),
     version: item.version,
   })
+  imagemChange.value = { file: null, remove: false }
   itemDialogOpen.value = true
 }
 
@@ -136,10 +146,17 @@ function toggleGroup(groupId: number, checked: boolean | 'indeterminate') {
 }
 
 async function saveItem() {
-  if (!itemForm.produtoId) return toast.info('Selecione um produto para o cardápio.')
+  if (itemForm.modoCadastro === 'VINCULAR' && !itemForm.produtoId) return toast.info('Selecione um produto para vincular.')
+  if (itemForm.modoCadastro !== 'VINCULAR' && !itemForm.nomePublico?.trim()) return toast.info('Informe o nome do item do cardápio.')
   try {
     saving.value = true
-    await RestauranteRepository.salvarItemCardapio(itemForm, editingItemId.value)
+    const saved = await RestauranteRepository.salvarItemCardapio(itemForm, editingItemId.value)
+    try {
+      if (imagemChange.value.file) await RestauranteRepository.enviarImagemItemCardapio(saved.id, imagemChange.value.file)
+      else if (imagemChange.value.remove) await RestauranteRepository.removerImagemItemCardapio(saved.id)
+    } catch {
+      toast.error('Item salvo, mas não foi possível atualizar a imagem.')
+    }
     itemDialogOpen.value = false
     await load()
     toast.success(editingItemId.value ? 'Item atualizado' : 'Item adicionado ao cardápio')
@@ -206,6 +223,20 @@ function productLabel(product: RestauranteProdutoDisponivel) {
     : product.nome
 }
 
+function setCatalogMode(mode: RestauranteCatalogoPayload['modoCadastro']) {
+  itemForm.modoCadastro = mode
+  if (mode !== 'VINCULAR') itemForm.produtoId = null
+}
+
+function selectLinkedProduct(value: unknown) {
+  itemForm.produtoId = value ? Number(value) : null
+  const product = products.value.find((item) => item.id === itemForm.produtoId)
+  if (product) {
+    if (!itemForm.nomePublico) itemForm.nomePublico = productLabel(product)
+    itemForm.preco = Number(product.preco)
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -254,14 +285,14 @@ onMounted(load)
             <CardContent class="p-3">
               <div class="flex gap-3">
                 <img
-                  v-if="item.imagem || item.Produto.imagem"
-                  :src="item.imagem || item.Produto.imagem || ''"
-                  :alt="item.nomePublico || item.Produto.nome"
+                  v-if="item.imagem || item.Produto?.imagem"
+                  :src="item.imagem || item.Produto?.imagem || ''"
+                  :alt="item.nomePublico || item.Produto?.nome || 'Item do cardápio'"
                   class="h-16 w-16 shrink-0 rounded-lg object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
                 />
                 <div v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"><UtensilsCrossed class="h-5 w-5" /></div>
                 <div class="min-w-0 flex-1">
-                  <div class="flex items-start justify-between gap-2"><div class="min-w-0"><CardTitle class="truncate text-sm">{{ item.nomePublico || productLabel(item.Produto) }}</CardTitle><p class="mt-0.5 text-sm font-medium text-primary">{{ formatCurrencyBR(Number(item.Produto.preco)) }}</p></div><Badge :variant="item.disponivel ? 'secondary' : 'outline'" class="shrink-0"><component :is="item.disponivel ? Eye : EyeOff" class="mr-1 h-3 w-3" />{{ item.disponivel ? 'Visível' : 'Oculto' }}</Badge></div>
+                  <div class="flex items-start justify-between gap-2"><div class="min-w-0"><CardTitle class="truncate text-sm">{{ item.nomePublico || (item.Produto ? productLabel(item.Produto) : 'Item do cardápio') }}</CardTitle><p class="mt-0.5 text-sm font-medium text-primary">{{ formatCurrencyBR(Number(item.Produto?.preco || item.preco)) }}</p></div><Badge :variant="item.disponivel ? 'secondary' : 'outline'" class="shrink-0"><component :is="item.disponivel ? Eye : EyeOff" class="mr-1 h-3 w-3" />{{ item.disponivel ? 'Visível' : 'Oculto' }}</Badge></div>
                   <p class="mt-2 line-clamp-1 text-xs text-muted-foreground">{{ item.descricao || 'Sem descrição pública.' }}</p>
                 </div>
               </div>
@@ -325,18 +356,22 @@ onMounted(load)
       <DialogContent class="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{{ editingItemId ? 'Editar item' : 'Adicionar produto ao cardápio' }}</DialogTitle>
-          <DialogDescription>O preço base e o estoque continuam vindo do cadastro de produtos.</DialogDescription>
+          <DialogDescription>Vincule um produto existente, crie um novo automaticamente ou publique um item avulso.</DialogDescription>
         </DialogHeader>
         <div class="grid gap-4 py-2 sm:grid-cols-2">
           <div class="space-y-2 sm:col-span-2">
-            <Label>Produto</Label>
-            <Select :model-value="itemForm.produtoId ? String(itemForm.produtoId) : undefined" @update:model-value="itemForm.produtoId = Number($event)">
+            <Label>Como deseja cadastrar?</Label>
+            <div class="grid gap-2 sm:grid-cols-3">
+              <button type="button" class="rounded-lg border p-3 text-left transition" :class="itemForm.modoCadastro === 'VINCULAR' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'" @click="setCatalogMode('VINCULAR')"><strong class="block text-sm">Vincular produto</strong><span class="mt-1 block text-xs text-muted-foreground">Usa preço e estoque já cadastrados.</span></button>
+              <button type="button" class="rounded-lg border p-3 text-left transition" :class="itemForm.modoCadastro === 'AVULSO' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'" @click="setCatalogMode('AVULSO')"><strong class="block text-sm">Item avulso</strong><span class="mt-1 block text-xs text-muted-foreground">Só existe no cardápio, sem estoque.</span></button>
+              <button type="button" class="rounded-lg border p-3 text-left transition" :class="itemForm.modoCadastro === 'CRIAR_PRODUTO' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'" @click="setCatalogMode('CRIAR_PRODUTO')"><strong class="block text-sm">Criar em Produtos</strong><span class="mt-1 block text-xs text-muted-foreground">Cria o produto automaticamente.</span></button>
+            </div>
+          </div>
+          <div v-if="itemForm.modoCadastro === 'VINCULAR'" class="space-y-2 sm:col-span-2">
+            <Label>Produto existente</Label>
+            <Select :model-value="itemForm.produtoId ? String(itemForm.produtoId) : undefined" @update:model-value="selectLinkedProduct($event)">
               <SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="product in products" :key="product.id" :value="String(product.id)">
-                  {{ productLabel(product) }} · {{ formatCurrencyBR(Number(product.preco)) }}
-                </SelectItem>
-              </SelectContent>
+              <SelectContent><SelectItem v-for="product in products" :key="product.id" :value="String(product.id)">{{ productLabel(product) }} · {{ formatCurrencyBR(Number(product.preco)) }}</SelectItem></SelectContent>
             </Select>
           </div>
           <div class="space-y-2">
@@ -344,7 +379,7 @@ onMounted(load)
             <Input
               id="public-name"
               :model-value="itemForm.nomePublico ?? ''"
-              placeholder="Opcional"
+              :placeholder="itemForm.modoCadastro === 'VINCULAR' ? 'Selecione um produto' : 'Ex.: Salada de frutas'"
               @update:model-value="itemForm.nomePublico = String($event)"
             />
           </div>
@@ -352,23 +387,24 @@ onMounted(load)
             <Label for="order">Ordem</Label>
             <Input id="order" v-model.number="itemForm.ordem" type="number" />
           </div>
+          <div v-if="itemForm.modoCadastro !== 'VINCULAR'" class="space-y-2">
+            <Label for="catalog-price">Preço (R$)</Label>
+            <Input id="catalog-price" v-model.number="itemForm.preco" type="number" min="0" step="0.01" />
+          </div>
           <div class="space-y-2 sm:col-span-2">
             <Label for="description">Descrição</Label>
             <Textarea
               id="description"
               :model-value="itemForm.descricao ?? ''"
+              placeholder="Ex.: Salada de frutas"
               rows="3"
               @update:model-value="itemForm.descricao = String($event)"
             />
           </div>
           <div class="space-y-2 sm:col-span-2">
-            <Label for="image">URL da imagem</Label>
-            <Input
-              id="image"
-              :model-value="itemForm.imagem ?? ''"
-              placeholder="Opcional; usa a imagem do produto por padrão"
-              @update:model-value="itemForm.imagem = String($event)"
-            />
+            <Label>Imagem do cardápio</Label>
+            <VarianteImagemField :key="editingItemId ?? 'novo-cardapio'" :existing="itemForm.imagem" @change="imagemChange = $event" />
+            <p class="text-xs text-muted-foreground">Se não enviar uma imagem, o item vinculado usará automaticamente a imagem do produto.</p>
           </div>
           <div class="space-y-2">
             <Label>Preço para múltiplos sabores</Label>
@@ -398,7 +434,7 @@ onMounted(load)
         </div>
         <DialogFooter>
           <Button variant="outline" @click="itemDialogOpen = false">Cancelar</Button>
-          <Button :disabled="saving || !itemForm.produtoId" @click="saveItem">
+          <Button :disabled="saving || (itemForm.modoCadastro === 'VINCULAR' && !itemForm.produtoId) || (itemForm.modoCadastro !== 'VINCULAR' && !itemForm.nomePublico?.trim())" @click="saveItem">
             <LoaderCircle v-if="saving" class="mr-2 h-4 w-4 animate-spin" />Salvar item
           </Button>
         </DialogFooter>

@@ -469,6 +469,14 @@ export const sidebarMenuOptions = (
       color: 'orange',
       children: [
         {
+          key: 'restaurante:painel',
+          nome: 'Painel',
+          link: '/restaurante/painel',
+          show: restaurantAccess.has('PEDIDOS_VISUALIZAR'),
+          icone: ChartPie,
+          color: 'orange',
+        },
+        {
           key: 'restaurante:salao',
           nome: 'Salão',
           link: '/restaurante/salao',

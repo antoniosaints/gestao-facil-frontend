@@ -567,8 +567,19 @@ const routes: RouteInterface[] = [
   {
     path: '/restaurante',
     name: 'restaurante',
-    redirect: { name: 'restaurante-pedidos' },
+    redirect: { name: 'restaurante-painel' },
     children: [
+      {
+        path: 'painel',
+        name: 'restaurante-painel',
+        component: () => import('@/pages/restaurante/Painel.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'PEDIDOS_VISUALIZAR',
+        },
+      },
       {
         path: 'salao',
         name: 'restaurante-salao',

@@ -200,6 +200,8 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
         render(BadgeCell, {
           label: row.original.temUsuarioOnline
             ? `${row.original.usuariosOnline} online`
+            : row.original.ultimoLoginEm
+            ? `${formatDateToPtBR(row.original.ultimoLoginEm)}`
             : 'Offline',
           color: row.original.temUsuarioOnline ? 'green' : 'gray',
           icon: row.original.temUsuarioOnline ? Wifi : WifiOff,

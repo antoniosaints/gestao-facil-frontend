@@ -1,7 +1,8 @@
 type MenuOption = { id: number; precoAdicional: string | number }
 type MenuGroup = { Grupo: { tipo: 'COMPLEMENTO' | 'SABOR'; opcoes: MenuOption[] } }
 type MenuItemPrice = {
-  Produto: { preco: string | number }
+  Produto?: { preco: string | number } | null
+  preco: string | number
   regraPrecoSabores: 'MAIOR_PRECO' | 'MEDIA_PROPORCIONAL' | 'SOMA'
   grupos: MenuGroup[]
 }
@@ -24,7 +25,7 @@ export function calculateMenuItemUnitPrice(item: MenuItemPrice, selectedIds: num
     : item.regraPrecoSabores === 'MEDIA_PROPORCIONAL' && flavors.length
       ? flavorsTotal / flavors.length
       : flavors.length ? Math.max(...flavors) : 0
-  return Number((Number(item.Produto.preco) + complements + flavorPrice).toFixed(2))
+  return Number((Number(item.Produto?.preco ?? item.preco) + complements + flavorPrice).toFixed(2))
 }
 
 export function updateMenuGroupSelection(

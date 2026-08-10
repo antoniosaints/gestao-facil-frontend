@@ -80,6 +80,12 @@ export interface RestaurantePedido {
   Entrega?: {
     id: number
     entregadorId?: number | null
+    ofertadaAt?: string | null
+    atribuidaAt?: string | null
+    retiradaAt?: string | null
+    emRotaAt?: string | null
+    entregueAt?: string | null
+    falhouAt?: string | null
     Entregador?: { ultimaLatitude?: number | null; ultimaLongitude?: number | null; ultimaLocalizacaoAt?: string | null; Usuario?: { nome: string } } | null
   } | null
   itens: Array<{
@@ -98,6 +104,16 @@ export interface RestauranteEntregadorContexto {
   empresa: { nome: string; nomeFantasia?: string | null; profile?: string | null; endereco?: string | null; telefone?: string | null } | null
   ofertas: RestaurantePedido[]
   entregaAtiva: RestaurantePedido | null
+}
+
+export interface RestaurantePainel {
+  periodo: { inicio: string; fim: string }
+  resumo: { pedidos: number; faturamento: number; ticketMedio: number; cancelamentos: number; taxaCancelamento: number; pedidosEmAberto: number }
+  operacao: { tempoMedioProducaoMinutos: number | null; pedidosComTempoProducao: number; tempoMedioEntregaMinutos: number | null; entregasConcluidas: number; tempoMedioRetiradaMinutos: number | null }
+  produtosMaisVendidos: Array<{ nome: string; quantidade: number; faturamento: number }>
+  formasPagamento: Array<{ metodo: string; pedidos: number; valor: number }>
+  canais: Array<{ origem: string; pedidos: number; valor: number }>
+  vendasPorDia: Array<{ data: string; pedidos: number; valor: number }>
 }
 
 export interface RestaurantePublicOrderTracking {
@@ -418,7 +434,8 @@ export interface RestauranteGrupoOpcao {
 
 export interface RestauranteCatalogoItem {
   id: number
-  produtoId: number
+  produtoId?: number | null
+  preco: string | number
   nomePublico?: string | null
   descricao?: string | null
   imagem?: string | null
@@ -426,12 +443,14 @@ export interface RestauranteCatalogoItem {
   regraPrecoSabores: 'MAIOR_PRECO' | 'MEDIA_PROPORCIONAL' | 'SOMA'
   ordem: number
   version: number
-  Produto: RestauranteProdutoDisponivel
+  Produto?: RestauranteProdutoDisponivel | null
   grupos: Array<{ grupoId: number; Grupo: RestauranteGrupoOpcao }>
 }
 
 export interface RestauranteCatalogoPayload {
-  produtoId: number
+  modoCadastro: 'VINCULAR' | 'AVULSO' | 'CRIAR_PRODUTO'
+  produtoId?: number | null
+  preco: number
   nomePublico?: string | null
   descricao?: string | null
   imagem?: string | null
@@ -549,9 +568,19 @@ export class RestauranteRepository {
     }
   }
 
+  static async painel(params: { inicio?: string; fim?: string } = {}) {
+    const { data } = await http.get('/v1/restaurante/painel', { params })
+    return data.data as RestaurantePainel
+  }
+
   static async entregadorContexto() {
     const { data } = await http.get('/v1/restaurante/entregador/contexto')
     return data.data as RestauranteEntregadorContexto
+  }
+
+  static async historicoEntregador(params: { page?: number; limit?: number } = {}) {
+    const { data } = await http.get('/v1/restaurante/entregador/historico', { params })
+    return data as { data: RestaurantePedido[]; meta: { page: number; pages: number; total: number } }
   }
 
   static async atualizarDisponibilidadeEntregador(disponivel: boolean) {
@@ -638,6 +667,20 @@ export class RestauranteRepository {
       ? await http.patch(`/v1/restaurante/cardapio/${id}`, payload)
       : await http.post('/v1/restaurante/cardapio', payload)
     return response.data.data as RestauranteCatalogoItem
+  }
+
+  static async enviarImagemItemCardapio(id: number, file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    const { data } = await http.post(`/v1/restaurante/cardapio/${id}/imagem`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data.data as RestauranteCatalogoItem
+  }
+
+  static async removerImagemItemCardapio(id: number) {
+    const { data } = await http.delete(`/v1/restaurante/cardapio/${id}/imagem`)
+    return data.data as RestauranteCatalogoItem
   }
 
   static async gruposOpcoes() {

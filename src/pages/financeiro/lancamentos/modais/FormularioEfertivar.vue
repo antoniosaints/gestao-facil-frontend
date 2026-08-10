@@ -100,7 +100,7 @@ function closeModal() {
     v-model:open="store.openModalEfetivar"
     title="Efetivar parcela"
     description="Registre o recebimento integral ou parcial da parcela"
-    size="sm"
+    size="md"
   >
     <form @submit.prevent="submit">
       <div class="grid grid-cols-1 gap-2 px-4">

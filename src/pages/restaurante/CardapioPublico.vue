@@ -112,7 +112,7 @@ function normalize(value: unknown) {
 }
 
 function itemName(item: any) {
-  return item.nomePublico || item.Produto.nome
+  return item.nomePublico || item.Produto?.nome || 'Item do cardápio'
 }
 
 function itemDescription(item: any) {
@@ -120,7 +120,7 @@ function itemDescription(item: any) {
 }
 
 function itemImage(item: any) {
-  return resolveFileUrl(item.imagem || item.Produto.imagem)
+  return resolveFileUrl(item.imagem || item.Produto?.imagem)
 }
 
 function categoryInfo(item: any) {
@@ -955,7 +955,7 @@ onBeforeUnmount(() => {
                       <div>
                         <p v-if="item.grupos.length" class="text-[11px] font-medium uppercase tracking-wide text-stone-400">A partir de</p>
                         <p class="price text-base font-bold text-stone-950 dark:text-white">
-                          {{ formatCurrencyBR(Number(item.Produto.preco)) }}
+                          {{ formatCurrencyBR(Number(item.Produto?.preco ?? item.preco)) }}
                         </p>
                       </div>
                       <button type="button" class="add-button" :aria-label="`Adicionar ${itemName(item)}`" :disabled="!aceitaPedidos" @click.stop="quickAdd(item)">
