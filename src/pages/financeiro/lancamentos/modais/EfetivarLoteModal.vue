@@ -13,6 +13,7 @@ import type { MetodoPagamentoFinanceiro } from '@/types/schemas'
 const props = defineProps<{
   open: boolean
   parcelasIds: number[]
+  contaFinanceiraPadrao?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -40,7 +41,7 @@ watch(
     form.value = {
       dataPagamento: new Date(),
       metodoPagamento: 'PIX',
-      contaPagamento: null,
+      contaPagamento: props.contaFinanceiraPadrao ?? null,
     }
   },
 )
@@ -58,7 +59,6 @@ async function submit() {
       metodoPagamento: form.value.metodoPagamento,
       contaPagamento: form.value.contaPagamento,
     })
-
     emit('saved', {
       efetivadas: response.data?.efetivadas ?? 0,
       ignoradas: response.data?.ignoradas ?? [],

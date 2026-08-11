@@ -95,6 +95,7 @@ type LancamentoDia = {
   categoria: string
   cliente: string | null
   conta: string | null
+  contaFinanceiraId: number | null
   valor: number
   tipo: 'RECEITA' | 'DESPESA'
   status: 'PAGO' | 'PENDENTE' | 'ATRASADO'
@@ -425,9 +426,10 @@ function gerarCobrancaParcela(idParcela: number, valor?: number) {
   })
 }
 
-function efetivarParcela(id: number, valor?: number) {
+function efetivarParcela(id: number, valor?: number, contaFinanceiraId?: number | null) {
   store.idMutation = id
   store.valorParcelaEfetivar = Number(valor || 0)
+  store.contaFinanceiraParcelaEfetivar = contaFinanceiraId ?? null
   store.openModalEfetivar = true
 }
 
@@ -480,7 +482,7 @@ function openEventoCalendario(evento: any) {
 
 function handleEfetivarFromModal(item: LancamentoDia) {
   openModalEvento.value = false
-  efetivarParcela(item.parcelaId, item.valor)
+  efetivarParcela(item.parcelaId, item.valor, item.contaFinanceiraId)
 }
 
 function handleEditarFromModal(item: LancamentoDia) {
@@ -960,7 +962,7 @@ onMounted(async () => {
                         class="h-8 w-8 dark:text-white"
                         v-tooltip="item.tipo === 'DESPESA' ? 'Pagar' : 'Receber'"
                         :data-testid="`efetivar-parcela-${item.parcelaId}`"
-                        @click="efetivarParcela(item.parcelaId, item.valor)"
+                        @click="efetivarParcela(item.parcelaId, item.valor, item.contaFinanceiraId)"
                       >
                         <CheckCircle2 class="h-4 w-4" />
                       </Button>
@@ -1040,7 +1042,7 @@ onMounted(async () => {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           v-if="!item.pago"
-                          @click="efetivarParcela(item.parcelaId, item.valor)"
+                          @click="efetivarParcela(item.parcelaId, item.valor, item.contaFinanceiraId)"
                         >
                           <CheckCircle2 class="mr-2 h-4 w-4" />
                           {{ item.tipo === 'DESPESA' ? 'Pagar' : 'Receber' }}

@@ -469,9 +469,10 @@ async function excluirParcela(parcela: ParcelaDetalhe) {
   }
 }
 
-function efetivarParcela(id: number, valor?: number) {
+function efetivarParcela(id: number, valor?: number, contaFinanceira?: number | null) {
   store.idMutation = id
   store.valorParcelaEfetivar = Number(valor || 0)
+  store.contaFinanceiraParcelaEfetivar = contaFinanceira ?? lancamento.value?.contasFinanceiroId ?? null
   store.openModalEfetivar = true
 }
 
@@ -1317,7 +1318,7 @@ watch(() => store.filters.update, loadLancamento)
                   size="icon"
                   class="h-8 w-8 dark:text-white"
                   v-tooltip="lancamento?.tipo === 'DESPESA' ? 'Pagar' : 'Receber'"
-                  @click="efetivarParcela(parcela.id!, Number(parcela.valor || 0))"
+                  @click="efetivarParcela(parcela.id!, Number(parcela.valor || 0), parcela.contaFinanceira)"
                 >
                   <CheckCircle2 class="h-4 w-4" />
                 </Button>
@@ -1347,7 +1348,7 @@ watch(() => store.filters.update, loadLancamento)
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     v-if="!parcela.pago"
-                    @click="efetivarParcela(parcela.id!, Number(parcela.valor || 0))"
+                    @click="efetivarParcela(parcela.id!, Number(parcela.valor || 0), parcela.contaFinanceira)"
                   >
                     <CheckCircle2 class="mr-2 h-4 w-4" />
                     {{ lancamento?.tipo === 'DESPESA' ? 'Pagar' : 'Receber' }}
@@ -1536,6 +1537,7 @@ watch(() => store.filters.update, loadLancamento)
     <EfetivarLoteModal
       v-model:open="efetivarLoteOpen"
       :parcelas-ids="selecao.pendentesSelecionadas.value.map((parcela) => parcela.id!)"
+      :conta-financeira-padrao="lancamento?.contasFinanceiroId ?? null"
       @saved="onEfetivarLoteSalvo"
     />
 

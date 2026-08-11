@@ -1069,6 +1069,12 @@ const routes: RouteInterface[] = [
     meta: { isPublic: true },
   },
   {
+    path: '/restaurante/:slug/promocoes',
+    name: 'restaurante-promocoes-publica',
+    component: () => import('@/pages/restaurante/CardapioPublico.vue'),
+    meta: { isPublic: true },
+  },
+  {
     path: '/redefinir-senha',
     name: 'redefinir-senha',
     component: () => import('@/pages/auth/ResetPasswordPage.vue'),

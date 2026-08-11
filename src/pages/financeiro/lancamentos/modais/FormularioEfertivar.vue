@@ -53,7 +53,7 @@ watch(
     data.value = {
       dataPagamento: new Date(),
       metodoPagamento: 'PIX',
-      contaPagamento: null,
+      contaPagamento: store.contaFinanceiraParcelaEfetivar,
       valorRecebido: valorOriginal.value.toFixed(2).replace('.', ','),
       novoVencimento: null,
       criarSaldoPendente: false,
@@ -80,6 +80,7 @@ async function submit() {
     store.openModalEfetivar = false
     store.idMutation = null
     store.valorParcelaEfetivar = null
+    store.contaFinanceiraParcelaEfetivar = null
     store.updateTable()
     emit('success', true)
   } catch (error: any) {
@@ -91,6 +92,7 @@ async function submit() {
 function closeModal() {
   store.idMutation = null
   store.valorParcelaEfetivar = null
+  store.contaFinanceiraParcelaEfetivar = null
   store.openModalEfetivar = false
 }
 </script>

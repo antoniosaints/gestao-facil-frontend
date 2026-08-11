@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ProdutoCategoriaRepository } from '@/repositories/produto-repository'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
+import type { ProdutoCategoria } from '@/types/schemas'
 
 const store = useProdutoStore()
 const toast = useToast()
+const emit = defineEmits<{ saved: [categoria: ProdutoCategoria] }>()
 
 const title = computed(() => (store.categoriaForm.id ? 'Editar categoria de produto' : 'Nova categoria de produto'))
 
@@ -30,6 +32,7 @@ async function submit() {
       store.form.categoriaId = categoria.id
     }
     toast.success('Categoria salva com sucesso')
+    emit('saved', categoria)
     store.resetCategoria()
     store.openModalCategoria = false
     store.updateTable()

@@ -222,6 +222,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   const openModalRelatorioGeral = ref(false)
   const openModalVariante = ref(false)
   const openModalCategoria = ref(false)
+  const categoriaObrigatoria = ref(false)
   const idMutation = ref<number | null>(null)
   const baseMutationId = ref<number | null>(null)
   const selectedIds = ref<number[]>([])
@@ -251,6 +252,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   const reset = () => {
     form.value = getDefaultProdutoForm()
     baseMutationId.value = null
+    categoriaObrigatoria.value = false
   }
 
   const resetVariante = (produtoBaseId: number | null = null) => {
@@ -272,8 +274,9 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     openModalCadastroTipo.value = true
   }
 
-  const openSaveProduto = () => {
+  const openSaveProduto = (requireCategory = false) => {
     reset()
+    categoriaObrigatoria.value = requireCategory
     openModalCadastroTipo.value = false
     openModal.value = true
   }

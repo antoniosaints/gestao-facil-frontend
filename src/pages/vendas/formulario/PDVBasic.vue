@@ -1177,7 +1177,7 @@ import type {
   ProdutoVariante,
   Vendas,
 } from '@/types/schemas'
-import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters'
+import { formatCurrencyBR, formatPaymentMethodLabel, formatToNumberValue } from '@/utils/formatters'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 import { resolveFileUrl } from '@/utils/fileUrl'
@@ -1672,32 +1672,7 @@ function enviarComprovanteVendaCaixa(venda: Vendas) {
 }
 
 function getPaymentMethodLabel(method?: string | null) {
-  switch (method) {
-    case 'DINHEIRO':
-      return 'Dinheiro'
-    case 'CARTAO':
-      return 'Cartão'
-    case 'CREDITO':
-      return 'Crédito'
-    case 'DEBITO':
-      return 'Débito'
-    case 'CREDIARIO':
-      return 'Crediário'
-    case 'PIX':
-      return 'PIX'
-    case 'BOLETO':
-      return 'Boleto'
-    case 'TRANSFERENCIA':
-      return 'Transferência'
-    case 'CHEQUE':
-      return 'Cheque'
-    case 'GATEWAY':
-      return 'Gateway'
-    case 'OUTRO':
-      return 'Outro'
-    default:
-      return method || 'Pagamento'
-  }
+  return formatPaymentMethodLabel(method)
 }
 
 // Fechamento: dinheiro é o único conferido em espécie (saldoEsperado já inclui

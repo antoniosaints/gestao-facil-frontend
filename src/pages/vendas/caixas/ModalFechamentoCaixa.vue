@@ -8,7 +8,7 @@ import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 import type { MetodoContado } from '@/repositories/caixa-repository'
 import type { CaixaSessao } from '@/types/schemas'
-import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters'
+import { formatCurrencyBR, formatPaymentMethodLabel, formatToNumberValue } from '@/utils/formatters'
 
 const props = withDefaults(defineProps<{
   caixa: CaixaSessao | null
@@ -54,20 +54,7 @@ watch(open, (isOpen) => {
 })
 
 function getPaymentMethodLabel(method?: string | null) {
-  switch (method) {
-    case 'DINHEIRO': return 'Dinheiro'
-    case 'CARTAO': return 'Cartão'
-    case 'CREDITO': return 'Crédito'
-    case 'DEBITO': return 'Débito'
-    case 'CREDIARIO': return 'Crediário'
-    case 'PIX': return 'PIX'
-    case 'BOLETO': return 'Boleto'
-    case 'TRANSFERENCIA': return 'Transferência'
-    case 'CHEQUE': return 'Cheque'
-    case 'GATEWAY': return 'Gateway'
-    case 'OUTRO': return 'Outro'
-    default: return method || 'Pagamento'
-  }
+  return formatPaymentMethodLabel(method)
 }
 
 function toggleContagemMetodo(metodo: string, esperado: number) {

@@ -111,6 +111,13 @@ export class LancamentosRepository {
   static async remove(id: number) {
     await http.delete(`/lancamentos/${id}`)
   }
+  static async atualizarEmMassa(
+    lancamentoIds: number[],
+    data: { categoriaId?: number; clienteId?: number | null },
+  ) {
+    const response = await http.post(`/lancamentos/alterar-em-massa`, { lancamentoIds, ...data })
+    return response.data as { message: string; data: { atualizados: number } }
+  }
   static async save(data: Omit<FormularioLancamento, 'id'>) {
     await http.post(`/lancamentos`, data)
   }

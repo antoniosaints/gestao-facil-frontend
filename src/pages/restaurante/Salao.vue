@@ -47,6 +47,7 @@ import {
   Search,
   Send,
   Utensils,
+  X,
 } from 'lucide-vue-next'
 import { useComandasStore } from '@/stores/comandas/useComandas'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -204,6 +205,10 @@ function prepararPedido(mesa: RestauranteMesa) {
   pedidoObservacao.value = ''
   limparItem()
   pedidoModal.value = true
+}
+
+function fecharPedidoModal() {
+  pedidoModal.value = false
 }
 
 function limparItem() {
@@ -536,28 +541,27 @@ onMounted(() => carregar())
       </DialogContent>
     </Dialog>
 
-    <Dialog v-model:open="pedidoModal">
-      <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Novo pedido · {{ mesaAtual?.nome }}</DialogTitle>
-          <DialogDescription
-            >Os itens serão lançados na comanda e enviados aos pontos do KDS.</DialogDescription
-          >
-        </DialogHeader>
-        <div class="space-y-4">
-          <div class="grid gap-3 sm:grid-cols-[1fr_110px]">
-            <Select v-model="itemSelecionadoId" @update:model-value="selecoes = []">
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um item" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="item in catalogo" :key="item.id" :value="String(item.id)"
-                  >{{ item.nomePublico || item.Produto.nome }} ·
-                  {{ formatCurrencyBR(Number(item.Produto.preco)) }}</SelectItem
-                >
-              </SelectContent> </Select
-            ><Input v-model.number="quantidade" type="number" min="1" />
+    <Teleport to="body">
+      <div
+        v-if="pedidoModal"
+        class="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4"
+        style="pointer-events: auto"
+        @click.self="fecharPedidoModal"
+      >
+        <section role="dialog" aria-modal="true" aria-labelledby="novo-pedido-title" class="relative grid max-h-[90dvh] w-full max-w-2xl gap-4 overflow-y-auto rounded-lg border bg-background p-6 shadow-lg">
+          <button type="button" class="absolute right-4 top-4 rounded-sm p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="Fechar novo pedido" @click="fecharPedidoModal"><X class="h-4 w-4" /></button>
+          <div class="pr-8">
+            <h2 id="novo-pedido-title" class="text-lg font-semibold">Novo pedido · {{ mesaAtual?.nome }}</h2>
+            <p class="mt-1 text-sm text-muted-foreground">Os itens serão lançados na comanda e enviados aos pontos do KDS.</p>
           </div>
+          <div class="space-y-4">
+            <div class="grid gap-3 sm:grid-cols-[1fr_110px]">
+              <select v-model="itemSelecionadoId" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2" @change="selecoes = []">
+                <option disabled value="">Selecione um item</option>
+                <option v-for="item in catalogo" :key="item.id" :value="String(item.id)">{{ item.nomePublico || item.Produto?.nome || 'Item do cardápio' }} · {{ formatCurrencyBR(Number(item.Produto?.preco || item.preco)) }}</option>
+              </select>
+              <Input v-model.number="quantidade" type="number" min="1" />
+            </div>
           <div v-if="itemSelecionado" class="space-y-3 rounded-xl border p-3">
             <div v-for="link in itemSelecionado.grupos" :key="link.grupoId">
               <p class="mb-2 text-sm font-medium">
@@ -598,15 +602,14 @@ onMounted(() => carregar())
             </div>
             <Textarea v-model="pedidoObservacao" placeholder="Observação geral do pedido" />
           </div>
-        </div>
-        <DialogFooter
-          ><Button variant="outline" @click="pedidoModal = false">Cancelar</Button
-          ><Button :disabled="saving || !carrinho.length" @click="enviarPedido">
-            <Send class="mr-2 h-4 w-4" />Enviar à produção
-          </Button></DialogFooter
-        >
-      </DialogContent>
-    </Dialog>
+          </div>
+          <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" @click="fecharPedidoModal">Cancelar</Button>
+            <Button :disabled="saving || !carrinho.length" @click="enviarPedido"><Send class="mr-2 h-4 w-4" />Enviar à produção</Button>
+          </div>
+        </section>
+      </div>
+    </Teleport>
 
     <ModalView
       v-model:open="comandasStore.openFaturarModal"

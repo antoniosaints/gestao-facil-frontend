@@ -38,9 +38,11 @@ import { vMaska } from 'maska/vue'
 import { formatToNumberValue } from '@/utils/formatters'
 import ModalCategoriaProduto from './ModalCategoriaProduto.vue'
 import CalculadoraPrecificacao from './CalculadoraPrecificacao.vue'
+import type { ProdutoBase, ProdutoCategoria } from '@/types/schemas'
 
 const store = useProdutoStore()
 const toast = useToast()
+const emit = defineEmits<{ saved: [produto: ProdutoBase]; categorySaved: [categoria: ProdutoCategoria] }>()
 const calculadoraOpen = ref(false)
 
 function aplicarPrecificacao(payload: {
@@ -181,6 +183,7 @@ function validateForm() {
   Object.keys(errors).forEach((k) => delete errors[k])
 
   if (!store.form.nome.trim()) errors.nome = 'Informe o nome do produto'
+  if (store.categoriaObrigatoria && !store.form.categoriaId) errors.categoria = 'Selecione a categoria do produto'
   if (!store.form.nomeVariante.trim()) errors.nomeVariante = 'Informe o nome da variante padrão'
   if (!store.form.unidade) errors.unidade = 'Selecione a unidade'
   if (formatToNumberValue(store.form.preco) <= 0) errors.preco = 'Informe um preço de venda válido'
@@ -227,6 +230,7 @@ async function submit() {
 
     toast.success(store.form.id ? 'Produto atualizado com sucesso' : 'Produto salvo com sucesso')
 
+    emit('saved', base)
     store.reset()
     store.updateTable()
     store.openModal = false
@@ -263,7 +267,7 @@ async function submit() {
           </div>
 
           <div class="md:col-span-5">
-            <label class="mb-1.5 block text-sm font-medium text-foreground">Categoria</label>
+            <label class="mb-1.5 block text-sm font-medium text-foreground">Categoria <span v-if="store.categoriaObrigatoria" class="text-red-500">*</span></label>
             <div class="flex items-center gap-2">
               <Select2Ajax
                 v-model:model-value="store.form.categoriaId"
@@ -281,6 +285,7 @@ async function submit() {
                 <BadgePlus class="h-4 w-4" />
               </Button>
             </div>
+            <p v-if="errors.categoria" class="mt-1 text-xs text-danger">{{ errors.categoria }}</p>
           </div>
         </div>
 
@@ -601,6 +606,6 @@ async function submit() {
         @aplicar="aplicarPrecificacao"
       />
     </ModalView>
-    <ModalCategoriaProduto />
+    <ModalCategoriaProduto @saved="emit('categorySaved', $event)" />
   </div>
 </template>

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RestauranteRepository, type RestaurantePainel } from '@/repositories/restaurante-repository'
-import { formatCurrencyBR } from '@/utils/formatters'
+import { formatCurrencyBR, formatPaymentMethodLabel } from '@/utils/formatters'
 import { colorTheme } from '@/utils/theme'
 import { Bike, CalendarRange, ChefHat, CircleDollarSign, Clock3, CreditCard, Filter, Package, ReceiptText, RefreshCw, ShoppingBag, Store, TrendingUp, XCircle } from 'lucide-vue-next'
 
@@ -59,7 +59,7 @@ const serieChart = computed(() => ({
   labels: (painel.value?.vendasPorDia || []).map((item) => format(new Date(`${item.data}T12:00:00`), 'dd/MM')),
   datasets: [{ label: 'Faturamento', data: painel.value?.vendasPorDia.map((item) => item.valor) || [], borderColor: primary.value, backgroundColor: primarySoft.value, fill: true, tension: 0.35, borderWidth: 2, pointRadius: 2, pointHoverRadius: 5 }],
 }))
-const pagamentoChart = computed(() => ({ labels: painel.value?.formasPagamento.map((item) => item.metodo) || [], datasets: [{ data: painel.value?.formasPagamento.map((item) => item.valor) || [], backgroundColor: PALETTE, borderWidth: 0 }] }))
+const pagamentoChart = computed(() => ({ labels: painel.value?.formasPagamento.map((item) => formatPaymentMethodLabel(item.metodo)) || [], datasets: [{ data: painel.value?.formasPagamento.map((item) => item.valor) || [], backgroundColor: PALETTE, borderWidth: 0 }] }))
 const canaisChart = computed(() => ({ labels: painel.value?.canais.map((item) => channelName(item.origem)) || [], datasets: [{ label: 'Faturamento', data: painel.value?.canais.map((item) => item.valor) || [], backgroundColor: primary.value, borderRadius: 6 }] }))
 const lineOptions = computed(() => ({ responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context: any) => ` ${formatCurrencyBR(context.parsed.y ?? 0)}` } } }, scales: { y: { ticks: { color: tickColor.value, callback: (value: number) => `R$ ${Number(value).toLocaleString('pt-BR')}` }, grid: { color: gridColor.value }, beginAtZero: true }, x: { ticks: { color: tickColor.value, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { display: false } } } }))
 const barOptions = computed(() => ({ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context: any) => ` ${formatCurrencyBR(context.parsed.y ?? 0)}` } } }, scales: { y: { ticks: { color: tickColor.value, callback: (value: number) => `R$ ${Number(value).toLocaleString('pt-BR')}` }, grid: { color: gridColor.value }, beginAtZero: true }, x: { ticks: { color: tickColor.value }, grid: { display: false } } } }))

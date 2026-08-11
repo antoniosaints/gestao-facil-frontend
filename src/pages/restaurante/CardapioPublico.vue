@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, t
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useMediaQuery } from '@vueuse/core'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { POSITION, useToast } from 'vue-toastification'
 import { io, type Socket } from 'socket.io-client'
 import { vMaska } from 'maska/vue'
@@ -17,18 +17,22 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { Bike, Check, CheckCircle2, ChevronRight, Clipboard, Clock3, Gift, History, LoaderCircle, LocateFixed, MapPin, Menu, Minus, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Timer, Trash2, Truck, UserRound, UtensilsCrossed } from 'lucide-vue-next'
+import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, Clock3, CreditCard, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Menu, Minus, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Timer, Trash2, Truck, UserRound, UtensilsCrossed, X } from 'lucide-vue-next'
 import { RestauranteRepository, type RestauranteCheckoutPreview, type RestauranteClienteConta, type RestauranteClienteEndereco, type RestaurantePublicOrderTracking } from '@/repositories/restaurante-repository'
 import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
+import { useConfirm } from '@/composables/useConfirm'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { getThemePalette, hexToHslValue, normalizeThemeCustomization } from '@/utils/themeCustomization'
 import { cepMaskOptions, phoneMaskOptions } from '@/lib/imaska'
 import { calculateMenuItemUnitPrice, hasSameMenuSelections, updateMenuGroupSelection } from './publicMenuCart'
 import { isActiveRestaurantOrder, parseTrackingTokens, prependTrackingToken, restaurantOrderStatusBadgeClass, restaurantOrderStatusLabel } from './publicMenuHistory'
+import { restaurantMapIcons } from './restaurantMapIcons'
 
 const route = useRoute()
+const router = useRouter()
 const toast = useToast()
+const confirm = useConfirm()
 useStorefrontLightTheme()
 const useDesktopMenuModal = useMediaQuery('(min-width: 1024px)')
 const menuModalRoot = computed(() => useDesktopMenuModal.value ? Dialog : Drawer)
@@ -56,6 +60,12 @@ const quote = ref<RestauranteCheckoutPreview | null>(null)
 const orderResult = ref<any>(null)
 const historyOpen = ref(false)
 const trackingDetailsOpen = ref(false)
+const cancelandoPedido = ref(false)
+const promotionCarouselIndex = ref(0)
+const menuToolbarSentinel = ref<HTMLElement | null>(null)
+const menuToolbarElement = ref<HTMLElement | null>(null)
+const menuToolbarFixed = ref(false)
+const menuToolbarHeight = ref(0)
 const selectedTrackingToken = ref<string | null>(null)
 const trackingMapElement = ref<HTMLElement | null>(null)
 const accountOpen = ref(false)
@@ -82,6 +92,8 @@ let trackingSocket: Socket | null = null
 let publicMenuSocket: Socket | null = null
 let trackingMap: L.Map | null = null
 let trackingMapLayers: L.LayerGroup | null = null
+let promotionCarouselTimer: ReturnType<typeof setInterval> | null = null
+let menuToolbarResizeObserver: ResizeObserver | null = null
 const form = reactive({
   nome: '',
   telefone: '',
@@ -124,7 +136,7 @@ function itemImage(item: any) {
 }
 
 function categoryInfo(item: any) {
-  const category = item.Produto?.ProdutoBase?.Categoria
+  const category = item.Categoria || item.Produto?.ProdutoBase?.Categoria
   return category ? { key: String(category.id), name: category.nome } : { key: 'destaques', name: 'Destaques' }
 }
 
@@ -137,6 +149,55 @@ const categoryGroups = computed(() => {
   }
   return [...groups.values()]
 })
+
+const fidelity = computed(() => cardapio.value?.restaurante?.fidelidade || null)
+const fidelityEligibleLabels = computed(() => {
+  const program = fidelity.value
+  if (!program) return []
+  const labels: string[] = []
+  const categoryNames = new Map<number, string>()
+
+  for (const item of cardapio.value?.itens || []) {
+    if (program.catalogoItemIds.includes(item.id)) labels.push(`Produto: ${itemName(item)}`)
+    const baseCategory = item.Produto?.ProdutoBase?.Categoria
+    if (baseCategory?.id && program.categoriaIds.includes(baseCategory.id)) categoryNames.set(baseCategory.id, baseCategory.nome)
+  }
+
+  labels.push(...program.categoriaIds.map((id: number) => `Categoria: ${categoryNames.get(id) || 'itens da categoria selecionada'}`))
+  return labels.length ? [...new Set(labels)] : ['Qualquer item do cardápio']
+})
+const fidelityProgress = computed(() => {
+  const program = fidelity.value
+  const meta = Math.max(Number(program?.pedidosMeta || 1), 1)
+  const progress = program?.progresso
+  const remainder = Number(progress?.pedidosElegiveis || 0) % meta
+  const rewardAvailable = Number(progress?.recompensasDisponiveis || 0) > 0
+  const current = rewardAvailable && remainder === 0 ? meta : remainder
+  return { meta, current, percentage: (current / meta) * 100, rewardAvailable }
+})
+const freeShippingThreshold = computed(() => {
+  const value = Number(cardapio.value?.restaurante?.freteGratisAcima)
+  return cardapio.value?.restaurante?.deliveryAtivo && Number.isFinite(value) && value > 0 ? value : null
+})
+const promotionCards = computed(() => {
+  const cards: Array<{ key: 'fidelidade' | 'frete'; title: string; description: string }> = []
+  if (fidelity.value) {
+    cards.push({
+      key: 'fidelidade',
+      title: fidelityProgress.value.rewardAvailable ? 'Recompensa liberada' : `${fidelity.value.descontoPercentual}% de desconto para você`,
+      description: fidelityProgress.value.rewardAvailable ? 'Veja como usar sua recompensa.' : 'Participe do programa de fidelidade.',
+    })
+  }
+  if (freeShippingThreshold.value !== null) {
+    cards.push({
+      key: 'frete',
+      title: `Frete grátis acima de ${formatCurrencyBR(freeShippingThreshold.value)}`,
+      description: 'Válido para pedidos por delivery.',
+    })
+  }
+  return cards
+})
+const isPromotionsPage = computed(() => route.name === 'restaurante-promocoes-publica')
 
 const aceitaPedidos = computed(() => cardapio.value?.restaurante.atendimento?.aberto !== false)
 const mensagemAtendimento = computed(() => cardapio.value?.restaurante.atendimento?.mensagem || 'Recebendo pedidos')
@@ -286,6 +347,28 @@ function releaseTriggerFocus() {
 function openOrderHistory() {
   releaseTriggerFocus()
   historyOpen.value = true
+}
+
+function openPromotions() {
+  void router.push({ name: 'restaurante-promocoes-publica', params: { slug: String(route.params.slug) } })
+}
+
+function backToMenu() {
+  void router.push({ name: 'restaurante-cardapio-publico', params: { slug: String(route.params.slug) } })
+}
+
+function stopPromotionCarousel() {
+  if (!promotionCarouselTimer) return
+  clearInterval(promotionCarouselTimer)
+  promotionCarouselTimer = null
+}
+
+function startPromotionCarousel() {
+  stopPromotionCarousel()
+  if (promotionCards.value.length <= 1) return
+  promotionCarouselTimer = setInterval(() => {
+    promotionCarouselIndex.value = (promotionCarouselIndex.value + 1) % promotionCards.value.length
+  }, 5000)
 }
 
 function openCartDrawer() {
@@ -458,6 +541,7 @@ async function loadOrderHistory(tokens = storedTrackingTokens()) {
   orderHistory.value = results
     .filter((result): result is PromiseFulfilledResult<RestaurantePublicOrderTracking & { trackingToken: string }> => result.status === 'fulfilled')
     .map((result) => result.value)
+    .filter((order) => order.cardapioSlug === String(route.params.slug))
     .sort((first, second) => Date.parse(second.createdAt) - Date.parse(first.createdAt))
   localStorage.setItem(trackingStorageKey(), JSON.stringify(orderHistory.value.map((order) => order.trackingToken)))
   historyLoading.value = false
@@ -468,6 +552,28 @@ function openTrackingDetails(order: RestaurantePublicOrderTracking & { trackingT
   selectedTrackingToken.value = order.trackingToken
   historyOpen.value = false
   trackingDetailsOpen.value = true
+}
+
+async function cancelarPedidoPublico() {
+  const order = trackingDetails.value
+  if (!order?.podeCancelar) return
+  const confirmed = await confirm.confirm({
+    title: 'Cancelar pedido',
+    message: `Deseja cancelar o pedido ${order.codigo}? Esta ação não pode ser desfeita.`,
+    confirmText: 'Cancelar pedido',
+  })
+  if (!confirmed) return
+  try {
+    cancelandoPedido.value = true
+    const updated = await RestauranteRepository.cancelarPedidoPublico(order.trackingToken)
+    orderHistory.value = orderHistory.value.map((item) => item.trackingToken === order.trackingToken ? { ...updated, trackingToken: order.trackingToken } : item)
+    toast.success('Pedido cancelado.')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível cancelar o pedido.')
+    await loadOrderHistory()
+  } finally {
+    cancelandoPedido.value = false
+  }
 }
 
 function trackingTime(value?: string | null) {
@@ -500,10 +606,10 @@ function renderTrackingMap() {
   trackingMapLayers = L.layerGroup().addTo(trackingMap)
   const originPoint: L.LatLngTuple = [Number(origin.latitude), Number(origin.longitude)]
   const driverPoint: L.LatLngTuple = [delivery.entregador.latitude, delivery.entregador.longitude]
-  L.circleMarker(originPoint, { radius: 8, color: '#9a3412', fillColor: '#f97316', fillOpacity: 1, weight: 3 })
+  L.marker(originPoint, { icon: restaurantMapIcons.restaurante })
     .bindTooltip('Restaurante', { direction: 'top' })
     .addTo(trackingMapLayers)
-  L.circleMarker(driverPoint, { radius: 9, color: '#065f46', fillColor: '#10b981', fillOpacity: 1, weight: 3 })
+  L.marker(driverPoint, { icon: restaurantMapIcons.entregador })
     .bindTooltip('Seu entregador', { direction: 'top' })
     .addTo(trackingMapLayers)
   trackingMap.fitBounds(L.latLngBounds([originPoint, driverPoint]), { padding: [36, 36], maxZoom: 15 })
@@ -515,13 +621,22 @@ function sincronizarAcompanhamentoEmTempoReal(tokens = storedTrackingTokens()) {
   if (!tokens.length) return
   trackingSocket = io((import.meta.env.VITE_BACKEND_URL as string) || 'http://localhost:3000', {
     transports: ['websocket'],
-    auth: { restaurantTrackingTokens: tokens },
+    auth: { restaurantTrackingTokens: tokens, restaurantPublicSlug: String(route.params.slug) },
   })
   trackingSocket.on('restaurante:pedido-publico', () => {
     void loadOrderHistory(tokens)
   })
-  trackingSocket.on('restaurante:entrega-localizacao', () => {
-    void loadOrderHistory(tokens)
+  trackingSocket.on('restaurante:entrega-localizacao', (payload: { pedidoId?: number; latitude?: number; longitude?: number; updatedAt?: string }) => {
+    if (!Number.isInteger(payload?.pedidoId) || !Number.isFinite(payload.latitude) || !Number.isFinite(payload.longitude)) return
+    orderHistory.value = orderHistory.value.map((order) => order.id !== payload.pedidoId
+      ? order
+      : {
+          ...order,
+          acompanhamentoEntrega: order.acompanhamentoEntrega
+            ? { ...order.acompanhamentoEntrega, entregador: { latitude: Number(payload.latitude), longitude: Number(payload.longitude), updatedAt: payload.updatedAt || new Date().toISOString() } }
+            : order.acompanhamentoEntrega,
+        })
+    void loadOrderHistory(orderHistory.value.map((order) => order.trackingToken))
   })
 }
 
@@ -681,7 +796,7 @@ async function carregar() {
     if (legacyToken) tokens = prependTrackingToken(tokens, legacyToken)
     if (routeToken) tokens = prependTrackingToken(tokens, routeToken)
     await loadOrderHistory(tokens)
-    sincronizarAcompanhamentoEmTempoReal(tokens)
+    sincronizarAcompanhamentoEmTempoReal(orderHistory.value.map((order) => order.trackingToken))
     sincronizarComprasPublicas()
   } catch {
     toast.error('Cardápio indisponível.')
@@ -760,7 +875,7 @@ async function pedir() {
     orderResult.value = result
     const tokens = saveTrackingToken(result.trackingToken)
     await loadOrderHistory(tokens)
-    sincronizarAcompanhamentoEmTempoReal(tokens)
+    sincronizarAcompanhamentoEmTempoReal(orderHistory.value.map((order) => order.trackingToken))
     cartLines.value = []
     if (result.paymentAction?.type === 'REDIRECT' && result.paymentAction.url) {
       window.location.assign(result.paymentAction.url)
@@ -792,8 +907,8 @@ function useLocation() {
   )
 }
 
-async function copyPix() {
-  const code = orderResult.value?.paymentAction?.pixCopiaCola
+async function copyPix(action = orderResult.value?.paymentAction) {
+  const code = action?.pixCopiaCola
   if (!code) return
   await navigator.clipboard.writeText(code)
   toast.success('Código Pix copiado')
@@ -821,8 +936,48 @@ function openMenuFromEmptyCart() {
   scrollToMenu()
 }
 
+function updateMenuToolbarPosition() {
+  const sentinel = menuToolbarSentinel.value
+  const toolbar = menuToolbarElement.value
+  if (!sentinel || !toolbar) return
+  menuToolbarHeight.value = toolbar.offsetHeight
+  menuToolbarFixed.value = sentinel.getBoundingClientRect().top < 0
+}
+
+function setupMenuToolbar() {
+  menuToolbarResizeObserver?.disconnect()
+  menuToolbarResizeObserver = null
+  menuToolbarFixed.value = false
+
+  const toolbar = menuToolbarElement.value
+  if (!toolbar) return
+
+  menuToolbarResizeObserver = new ResizeObserver(updateMenuToolbarPosition)
+  menuToolbarResizeObserver.observe(toolbar)
+  window.addEventListener('scroll', updateMenuToolbarPosition, { passive: true })
+  window.addEventListener('resize', updateMenuToolbarPosition)
+  updateMenuToolbarPosition()
+}
+
+function teardownMenuToolbar() {
+  menuToolbarResizeObserver?.disconnect()
+  menuToolbarResizeObserver = null
+  window.removeEventListener('scroll', updateMenuToolbarPosition)
+  window.removeEventListener('resize', updateMenuToolbarPosition)
+  menuToolbarFixed.value = false
+}
+
 watch(searchTerm, () => {
   activeCategory.value = 'todos'
+})
+watch(promotionCards, () => {
+  promotionCarouselIndex.value = 0
+  startPromotionCarousel()
+})
+watch(isPromotionsPage, async () => {
+  teardownMenuToolbar()
+  await nextTick()
+  setupMenuToolbar()
 })
 watch(() => [origem.value, form.cep, form.cidade, form.bairro, form.logradouro, form.numero, form.complemento, form.referencia, JSON.stringify(payloadItems.value)], scheduleCheckoutPreview)
 watch(useAccountData, (enabled) => { if (enabled && customerAccount.value) applyCustomerAccount(customerAccount.value) })
@@ -836,11 +991,15 @@ onMounted(async () => {
   await carregar()
   if (customerToken()) await loadCustomerAccount(true)
   if (route.name === 'restaurante-conta-publica') await openCustomerAccount()
+  await nextTick()
+  setupMenuToolbar()
 })
 onBeforeUnmount(() => {
   if (previewTimer) clearTimeout(previewTimer)
   trackingSocket?.disconnect()
   publicMenuSocket?.disconnect()
+  stopPromotionCarousel()
+  teardownMenuToolbar()
   clearTrackingMap()
 })
 </script>
@@ -866,6 +1025,9 @@ onBeforeUnmount(() => {
     </div>
 
     <template v-else>
+      <div ref="menuToolbarSentinel" class="h-px" aria-hidden="true" />
+      <div class="menu-toolbar-anchor" :style="menuToolbarFixed ? { height: `${menuToolbarHeight}px` } : undefined">
+        <div ref="menuToolbarElement" class="menu-public-header" :class="{ 'menu-toolbar--fixed': menuToolbarFixed }">
       <section class="menu-hero">
         <div class="menu-hero-pattern" />
         <div class="relative mx-auto flex min-h-[100px] max-w-7xl items-end px-4 pb-7 pt-10 sm:px-6 sm:pb-9">
@@ -875,11 +1037,11 @@ onBeforeUnmount(() => {
                 <img :src="logo" :alt="`Logo de ${cardapio.restaurante.nome}`" class="h-full w-full rounded-[18px] object-contain" />
               </div>
               <div class="min-w-0 text-white">
-                <div class="mb-2 flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-white/80"><span>Cardápio online</span><span class="h-1 w-1 rounded-full bg-white/70" /><span>Pedido seguro</span></div>
+                <div class="mb-2 flex flex-wrap items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-white/80"><span>Cardápio online</span><span class="h-1 w-1 rounded-full bg-white/70" /><span>Pedido seguro</span></div>
                 <h1 class="menu-title truncate text-balance text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
                   {{ cardapio.restaurante.nome }}
                 </h1>
-                <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-stone-200">
+                <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-stone-200">
                   <span v-if="cardapio.restaurante.deliveryAtivo" class="flex items-center gap-1.5"><Bike class="h-4 w-4 text-white/80" />Delivery</span>
                   <span v-if="cardapio.restaurante.retiradaAtiva" class="flex items-center gap-1.5"><Store class="h-4 w-4 text-white/80" />Retirada</span>
                   <span class="flex items-center gap-1.5"><Clock3 class="h-4 w-4 text-white/80" />Pedido online</span>
@@ -903,23 +1065,88 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </section>
-
-      <div class="menu-toolbar sticky top-0 z-30">
-        <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div class="relative lg:w-80">
-              <Search class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-              <Input v-model="searchTerm" class="h-11 rounded-xl border bg-stone-100 pl-10 shadow-none focus-visible:ring-primary/30" placeholder="Buscar no cardápio" />
-            </div>
-            <div class="no-scrollbar flex gap-2 overflow-x-auto pb-0.5">
-              <button v-for="category in categories" :key="category.key" type="button" class="category-chip" :class="{ active: activeCategory === category.key }" @click="activeCategory = category.key">
-                {{ category.name }}
-              </button>
+          <div v-if="!isPromotionsPage" class="menu-toolbar">
+            <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6">
+              <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div class="relative lg:w-80">
+                  <Search class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                  <Input v-model="searchTerm" class="h-11 rounded-xl border bg-stone-100 pl-10 shadow-none focus-visible:ring-primary/30" placeholder="Buscar no cardápio" />
+                </div>
+                <div class="no-scrollbar flex gap-2 overflow-x-auto pb-0.5">
+                  <button v-for="category in categories" :key="category.key" type="button" class="category-chip" :class="{ active: activeCategory === category.key }" @click="activeCategory = category.key">
+                    {{ category.name }}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      <template v-if="isPromotionsPage">
+        <section class="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10" aria-labelledby="promotions-title">
+          <button type="button" class="promotion-back" @click="backToMenu"><ChevronLeft class="h-4 w-4" />Voltar ao cardápio</button>
+          <div class="mt-6">
+            <p class="loyalty-eyebrow">VANTAGENS DO RESTAURANTE</p>
+            <h2 id="promotions-title" class="menu-heading text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">Promoções</h2>
+            <p class="mt-2 text-sm text-stone-500">Aproveite as condições disponíveis antes de finalizar seu pedido.</p>
+          </div>
+
+          <div v-if="promotionCards.length" class="mt-7 space-y-5">
+            <section v-if="freeShippingThreshold !== null" class="promotion-detail-card promotion-detail-card--shipping" aria-label="Promoção de frete grátis">
+              <span class="promotion-detail-icon"><Truck class="h-6 w-6" /></span>
+              <div>
+                <p class="loyalty-eyebrow">PARA DELIVERY</p>
+                <h3>Frete grátis acima de {{ formatCurrencyBR(freeShippingThreshold) }}</h3>
+                <p>Ao atingir esse valor em produtos, a taxa de entrega fica por conta da casa.</p>
+              </div>
+            </section>
+
+            <section v-if="fidelity" class="loyalty-banner" aria-label="Como funciona a fidelidade">
+              <div class="loyalty-banner-heading">
+                <span class="loyalty-banner-icon"><Gift class="h-5 w-5" /></span>
+                <div>
+                  <p class="loyalty-eyebrow">PROGRAMA DE FIDELIDADE</p>
+                  <h3>{{ fidelityProgress.rewardAvailable ? 'Sua recompensa já está liberada!' : 'Compre, acumule e ganhe' }}</h3>
+                </div>
+              </div>
+
+              <div class="loyalty-reward">
+                <span>VOCÊ GANHA</span>
+                <strong>{{ fidelity.descontoPercentual }}% de desconto</strong>
+                <p>em <b>{{ fidelity.premio?.nome || 'um produto selecionado' }}</b></p>
+              </div>
+
+              <ol class="loyalty-steps">
+                <li>
+                  <span>1</span>
+                  <div><b>Escolha um item participante</b><div class="loyalty-eligible-items"><em v-for="label in fidelityEligibleLabels" :key="label">{{ label }}</em></div></div>
+                </li>
+                <li>
+                  <span>2</span>
+                  <div><b>Finalize {{ fidelityProgress.meta }} pedidos participantes</b><p>Cada pedido concluído soma automaticamente na sua conta.</p></div>
+                </li>
+              </ol>
+
+              <div class="loyalty-progress" :class="{ 'reward-available': fidelityProgress.rewardAvailable }">
+                <div class="loyalty-progress-heading"><span>Seu progresso</span><strong>{{ fidelityProgress.current }} de {{ fidelityProgress.meta }} pedidos</strong></div>
+                <div class="loyalty-progress-track" role="progressbar" aria-label="Progresso da fidelidade" :aria-valuenow="fidelityProgress.current" :aria-valuemin="0" :aria-valuemax="fidelityProgress.meta"><span :style="{ width: `${fidelityProgress.percentage}%` }"></span></div>
+                <p v-if="fidelityProgress.rewardAvailable">Recompensa disponível para usar no próximo pedido.</p>
+                <p v-else-if="customerAccount">Faltam {{ fidelityProgress.meta - fidelityProgress.current }} pedido(s) participante(s) para liberar seu desconto.</p>
+                <button v-else type="button" class="loyalty-login" @click="openCustomerAccount"><UserRound class="h-4 w-4" />Entre na sua conta para acompanhar seus pedidos</button>
+              </div>
+            </section>
+          </div>
+
+          <div v-else class="mt-7 rounded-[22px] border border-dashed border-stone-300 bg-white/70 px-6 py-12 text-center">
+            <Gift class="mx-auto h-8 w-8 text-stone-300" />
+            <h3 class="mt-3 font-semibold">Nenhuma promoção disponível</h3>
+            <p class="mt-1 text-sm text-stone-500">Volte em breve para conferir as novidades.</p>
+          </div>
+        </section>
+      </template>
+
+      <template v-else>
       <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         <div v-if="!aceitaPedidos" class="mb-6 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950 shadow-[0_0_0_1px_rgba(217,119,6,.08)]">
           <Clock3 class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
@@ -928,10 +1155,20 @@ onBeforeUnmount(() => {
             <p class="mt-1 text-sm text-amber-900/80">{{ mensagemAtendimento }} Você pode consultar o cardápio, mas os pedidos estarão disponíveis no próximo horário de atendimento.</p>
           </div>
         </div>
-        <div v-if="cardapio.restaurante.fidelidade" class="loyalty-banner mb-6">
-          <span class="loyalty-banner-icon"><Gift class="h-5 w-5" /></span>
-          <div class="min-w-0 flex-1"><p class="font-semibold">{{ cardapio.restaurante.fidelidade.progresso?.recompensasDisponiveis ? 'Você tem uma recompensa disponível!' : `Fidelidade: ganhe ${cardapio.restaurante.fidelidade.descontoPercentual}% em ${cardapio.restaurante.fidelidade.premio?.nome || 'um produto selecionado'}` }}</p><p class="mt-0.5 text-sm opacity-80"><template v-if="cardapio.restaurante.fidelidade.progresso">{{ cardapio.restaurante.fidelidade.progresso.pedidosElegiveis % cardapio.restaurante.fidelidade.pedidosMeta }}/{{ cardapio.restaurante.fidelidade.pedidosMeta }} pedidos elegíveis para a próxima recompensa.</template><template v-else>Entre na sua conta para acompanhar seus pedidos e recompensas.</template></p></div>
-        </div>
+        <section v-if="promotionCards.length" class="promo-carousel mb-6" aria-label="Promoções disponíveis" @mouseenter="stopPromotionCarousel" @mouseleave="startPromotionCarousel">
+          <div class="promo-carousel-viewport">
+            <div class="promo-carousel-track" :style="{ transform: `translateX(-${promotionCarouselIndex * 100}%)` }">
+              <button v-for="card in promotionCards" :key="card.key" type="button" class="promo-summary-card" :class="`promo-summary-card--${card.key}`" @click="openPromotions">
+                <span class="promo-summary-icon"><Gift v-if="card.key === 'fidelidade'" class="h-5 w-5" /><Truck v-else class="h-5 w-5" /></span>
+                <span class="min-w-0 flex-1 text-left"><small>{{ card.key === 'fidelidade' ? 'FIDELIDADE' : 'DELIVERY' }}</small><strong>{{ card.title }}</strong><em>{{ card.description }}</em></span>
+                <ChevronRight class="h-5 w-5 shrink-0" />
+              </button>
+            </div>
+          </div>
+          <div v-if="promotionCards.length > 1" class="promo-carousel-dots" aria-label="Selecionar promoção">
+            <button v-for="(card, index) in promotionCards" :key="card.key" type="button" :class="{ active: promotionCarouselIndex === index }" :aria-label="`Exibir ${card.title}`" @click="promotionCarouselIndex = index" />
+          </div>
+        </section>
         <button v-if="tracking" type="button" class="tracking-order mb-6 flex w-full flex-col gap-3 rounded-2xl bg-emerald-50 p-4 text-left shadow-[0_0_0_1px_rgba(5,150,105,.14)] sm:flex-row sm:items-center sm:justify-between dark:bg-emerald-950/30" :aria-label="`Ver detalhes do pedido ${tracking.codigo}`" @click="openTrackingDetails(tracking)">
           <div class="flex items-center gap-3">
             <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white"><Clock3 class="h-5 w-5" /></span>
@@ -1066,20 +1303,21 @@ onBeforeUnmount(() => {
         </button>
       </div>
       <div class="mobile-bottom-bar lg:hidden">
-        <button type="button" class="bottom-bar-action" @click="scrollToMenu"><Menu class="h-5 w-5" /><span>Cardápio</span></button>
         <button type="button" class="bottom-bar-action" @click="openOrderHistory"><History class="h-5 w-5" /><span>Pedidos</span><b v-if="orderHistory.length" class="bottom-bar-count">{{ orderHistory.length }}</b></button>
         <button type="button" class="bottom-bar-action bottom-bar-cart" :class="{ 'has-items': cartUnits }" @click="openCartDrawer"><span class="relative"><ShoppingCart class="h-5 w-5" /><b v-if="cartUnits" class="bottom-bar-count cart-count">{{ cartUnits }}</b></span><span>{{ cartUnits ? formatCurrencyBR(estimatedSubtotal) : 'Carrinho' }}</span></button>
         <button type="button" class="bottom-bar-action" @click="openCustomerAccount"><UserRound class="h-5 w-5" /><span>Conta</span></button>
       </div>
+      </template>
     </template>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="itemDialogOpen">
-      <component :is="menuModalContent" class="menu-overlay max-h-[88vh] overflow-y-auto rounded-t-[24px] border-0 p-0 lg:max-h-[92vh] lg:max-w-2xl lg:rounded-[24px]" :content-style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(92vh,760px)] lg:max-h-[92vh] lg:max-w-2xl lg:flex-col lg:rounded-[24px]" :content-style="menuThemeStyle">
         <template v-if="activeItem">
-          <div v-if="itemImage(activeItem)" class="h-52 overflow-hidden rounded-t-[24px] sm:h-64 lg:rounded-t-[24px]">
-            <img :src="itemImage(activeItem)" :alt="itemName(activeItem)" class="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10" />
-          </div>
-          <div class="p-5 sm:p-7">
+          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y">
+            <div v-if="itemImage(activeItem)" class="h-52 overflow-hidden rounded-t-[24px] sm:h-64 lg:rounded-t-[24px]">
+              <img :src="itemImage(activeItem)" :alt="itemName(activeItem)" class="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10" />
+            </div>
+            <div class="p-5 sm:p-7">
             <component :is="menuModalHeader" class="text-left">
               <component :is="menuModalTitle" class="menu-heading text-balance text-2xl tracking-[-0.025em]">{{ itemName(activeItem) }}</component>
               <component :is="menuModalDescription" class="text-pretty leading-relaxed">{{ itemDescription(activeItem) }}</component>
@@ -1103,9 +1341,11 @@ onBeforeUnmount(() => {
                 </div>
               </section>
             </div>
-
-            <div class="mt-7 flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center">
-              <div class="flex h-12 items-center justify-between rounded-xl bg-stone-100 p-1 dark:bg-zinc-800 sm:w-36">
+            </div>
+          </div>
+          <div class="shrink-0 border-t bg-white p-5 dark:bg-zinc-950 sm:px-7">
+            <div class="grid grid-cols-4 gap-3 sm:flex-row sm:items-center">
+              <div class="flex h-12 col-span-2 items-center justify-between rounded-xl bg-stone-100 p-1 dark:bg-zinc-800 sm:w-36">
                 <button type="button" class="quantity-button h-10 w-10 bg-white dark:bg-zinc-900" :disabled="draftQuantity <= 1" @click="draftQuantity--">
                   <Minus class="h-4 w-4" />
                 </button>
@@ -1114,11 +1354,13 @@ onBeforeUnmount(() => {
                   <Plus class="h-4 w-4" />
                 </button>
               </div>
-              <Button class="tap-button h-12 flex-1 rounded-xl text-base" :style="primaryButtonStyle" :disabled="!activeSelectionsValid" @click="saveActiveItem">
-                {{ activeCartLineId ? 'Atualizar carrinho' : 'Adicionar ao carrinho' }}
+              <span class="tap-button col-span-2 h-12 flex items-center px-4 rounded-xl text-base" :style="primaryButtonStyle" :disabled="!activeSelectionsValid" @click="saveActiveItem">
+                <LucideBadgePlus class="mr-2 h-6 w-6" />
+                <span class="hidden sm:inline" >Adicionar</span>
                 <span class="price ml-auto">{{ formatCurrencyBR(activeUnitPrice * draftQuantity) }}</span>
-              </Button>
+              </span>
             </div>
+            <Button type="button" variant="ghost" class="mobile-modal-close lg:hidden mt-2" @click="itemDialogOpen = false"><X class="h-4 w-4" />Fechar</Button>
           </div>
         </template>
       </component>
@@ -1156,6 +1398,7 @@ onBeforeUnmount(() => {
           </div>
           <Button v-if="selecionados.length" class="tap-button h-12 rounded-xl text-base" :style="primaryButtonStyle" :disabled="!aceitaPedidos" @click="openCheckout">Continuar pedido<ChevronRight class="ml-auto" /></Button>
           <Button v-else class="tap-button h-12 rounded-xl text-base" :style="primaryButtonStyle" @click="openMenuFromEmptyCart">Abrir cardápio<UtensilsCrossed class="ml-auto" /></Button>
+          <Button type="button" variant="ghost" class="mobile-modal-close lg:hidden" @click="cartDrawerOpen = false"><X class="h-4 w-4" />Fechar</Button>
         </component>
       </component>
     </component>
@@ -1303,6 +1546,9 @@ onBeforeUnmount(() => {
             </aside>
             </div>
           </div>
+          <component :is="menuModalFooter" class="shrink-0 border-t bg-white dark:bg-zinc-950 lg:hidden">
+            <Button type="button" variant="ghost" class="mobile-modal-close" @click="checkoutOpen = false"><X class="h-4 w-4" />Fechar</Button>
+          </component>
         </template>
       </component>
     </component>
@@ -1347,6 +1593,9 @@ onBeforeUnmount(() => {
             </button>
           </template>
         </div>
+        <component :is="menuModalFooter" class="shrink-0 border-t bg-white dark:bg-zinc-950 lg:hidden">
+          <Button type="button" variant="ghost" class="mobile-modal-close" @click="historyOpen = false"><X class="h-4 w-4" />Fechar</Button>
+        </component>
       </component>
     </component>
 
@@ -1375,6 +1624,27 @@ onBeforeUnmount(() => {
               </ol>
             </section>
 
+            <section v-if="trackingDetails.paymentAction" class="tracking-section">
+              <div class="tracking-section-heading"><CreditCard class="brand-text h-4 w-4" /><h3>Pagamento online</h3></div>
+              <div class="rounded-2xl border p-4">
+                <p class="text-sm font-semibold">Aguardando pagamento</p>
+                <p class="mt-1 text-xs text-stone-500">Use este link para retomar o pagamento do pedido.</p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <Button v-if="trackingDetails.paymentAction.type === 'PIX'" size="sm" variant="outline" @click="copyPix(trackingDetails.paymentAction)"><Clipboard class="mr-1.5 h-4 w-4" />Copiar Pix</Button>
+                  <Button v-if="trackingDetails.paymentAction.url" size="sm" as-child :style="primaryButtonStyle"><a :href="trackingDetails.paymentAction.url" target="_blank" rel="noopener noreferrer">Pagar agora</a></Button>
+                </div>
+              </div>
+            </section>
+
+            <section v-if="trackingDetails.podeCancelar" class="tracking-section">
+              <div class="tracking-section-heading"><X class="h-4 w-4 text-red-600" /><h3>Precisa cancelar?</h3></div>
+              <div class="rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900/60 dark:bg-red-950/20">
+                <p class="text-sm font-semibold text-red-950 dark:text-red-100">O cancelamento está disponível até a cozinha iniciar o preparo.</p>
+                <p class="mt-1 text-xs text-red-800/80 dark:text-red-200/80">Depois do início do preparo, fale diretamente com o restaurante.</p>
+                <Button variant="destructive" size="sm" class="mt-3" :disabled="cancelandoPedido" @click="cancelarPedidoPublico"><LoaderCircle v-if="cancelandoPedido" class="mr-1.5 h-4 w-4 animate-spin" /><X v-else class="mr-1.5 h-4 w-4" />Cancelar pedido</Button>
+              </div>
+            </section>
+
             <section v-if="trackingDetails.origem === 'DELIVERY'" class="tracking-section">
               <div class="tracking-section-heading"><MapPin class="brand-text h-4 w-4" /><h3>Mapa da entrega</h3></div>
               <div v-if="trackingDetails.acompanhamentoEntrega" class="tracking-map-shell"><div ref="trackingMapElement" class="tracking-map" aria-label="Acompanhamento do entregador no mapa" /><p><Navigation class="h-3.5 w-3.5" />Localização atualizada {{ trackingTime(trackingDetails.acompanhamentoEntrega.entregador.updatedAt) }}</p></div>
@@ -1388,6 +1658,9 @@ onBeforeUnmount(() => {
             </section>
           </template>
         </div>
+        <component :is="menuModalFooter" class="shrink-0 border-t bg-white dark:bg-zinc-950 lg:hidden">
+          <Button type="button" variant="ghost" class="mobile-modal-close" @click="trackingDetailsOpen = false"><X class="h-4 w-4" />Fechar</Button>
+        </component>
       </component>
     </component>
 
@@ -1429,6 +1702,9 @@ onBeforeUnmount(() => {
           <section class="space-y-3"><div><h3 class="font-semibold">Histórico de pedidos</h3><p class="text-xs text-stone-500">Todos os pedidos feitos enquanto você esteve nesta conta.</p></div><div v-if="!customerAccount.pedidos.length" class="rounded-xl border border-dashed p-6 text-center text-sm text-stone-500">Você ainda não fez pedidos nesta conta.</div><article v-for="order in customerAccount.pedidos" :key="`${order.codigo}-${order.createdAt}`" class="history-order"><div class="flex justify-between gap-3"><div><p class="font-semibold">Pedido {{ order.codigo }}</p><p class="text-xs text-stone-500">{{ formatOrderDate(order.createdAt) }} · {{ order.origem === 'DELIVERY' ? 'Delivery' : 'Retirada' }}</p></div><Badge class="border-0" :class="restaurantOrderStatusBadgeClass(order.status)">{{ restaurantOrderStatusLabel(order.status) }}</Badge></div><div class="mt-3 flex justify-between border-t pt-3 text-sm"><span>{{ order.itens.length }} {{ order.itens.length === 1 ? 'item' : 'itens' }}</span><strong class="price">{{ formatCurrencyBR(Number(order.total)) }}</strong></div></article></section>
         </div>
         </div>
+        <component :is="menuModalFooter" class="shrink-0 border-t bg-white dark:bg-zinc-950 lg:hidden">
+          <Button type="button" variant="outline" class="mobile-modal-close" @click="accountOpen = false"><X class="h-4 w-4" />Fechar</Button>
+        </component>
       </component>
     </component>
   </main>
@@ -1522,26 +1798,305 @@ button.hero-action:active {
   backdrop-filter: blur(16px);
   box-shadow: 0 7px 20px rgba(43, 37, 32, 0.04);
 }
-.loyalty-banner {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  border: 1px solid color-mix(in srgb, var(--menu-accent) 30%, transparent);
-  border-radius: 18px;
-  padding: 14px 16px;
-  color: color-mix(in srgb, var(--menu-ink) 90%, var(--menu-accent));
-  background: linear-gradient(110deg, color-mix(in srgb, var(--menu-accent) 13%, var(--menu-surface)), var(--menu-surface));
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--menu-accent) 9%, transparent);
+.menu-toolbar--fixed {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
 }
-.loyalty-banner-icon {
+.promotion-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 2px;
+  color: var(--menu-muted);
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+.promotion-back:hover { color: var(--menu-accent); }
+.promo-carousel {
+  overflow: hidden;
+}
+.promo-carousel-viewport {
+  overflow: hidden;
+  border-radius: 18px;
+}
+.promo-carousel-track {
+  display: flex;
+  transition: transform 440ms cubic-bezier(.2,.8,.2,1);
+}
+.promo-summary-card {
+  display: flex;
+  min-width: 100%;
+  min-height: 90px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 15px;
+  border: 1px solid color-mix(in srgb, var(--menu-accent) 24%, transparent);
+  color: var(--menu-ink);
+  text-align: left;
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--menu-accent) 16%, transparent), transparent 50%),
+    linear-gradient(120deg, color-mix(in srgb, var(--menu-accent) 8%, var(--menu-surface)), var(--menu-surface));
+  box-shadow: 0 7px 20px color-mix(in srgb, var(--menu-accent) 7%, transparent);
+}
+.promo-summary-card--frete {
+  border-color: rgba(5, 150, 105, 0.28);
+  background: radial-gradient(circle at 100% 0, rgba(5,150,105,.15), transparent 50%), linear-gradient(120deg, rgba(5,150,105,.07), var(--menu-surface));
+}
+.promo-summary-card:active { scale: .985; }
+.promo-summary-icon,
+.promotion-detail-icon {
   display: grid;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
   place-items: center;
   border-radius: 13px;
   color: var(--menu-accent-foreground);
   background: var(--menu-accent);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--menu-accent) 26%, transparent);
+}
+.promo-summary-card--frete .promo-summary-icon,
+.promotion-detail-card--shipping .promotion-detail-icon {
+  background: #059669;
+  box-shadow: 0 7px 16px rgba(5,150,105,.22);
+}
+.promo-summary-card small,
+.promo-summary-card strong,
+.promo-summary-card em {
+  display: block;
+}
+.promo-summary-card small {
+  color: var(--menu-accent);
+  font-size: .61rem;
+  font-weight: 850;
+  letter-spacing: .12em;
+}
+.promo-summary-card--frete small { color: #047857; }
+.promo-summary-card strong {
+  margin-top: 1px;
+  font-size: .92rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.promo-summary-card em {
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--menu-muted);
+  font-size: .75rem;
+  font-style: normal;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.promo-carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 9px;
+}
+.promo-carousel-dots button {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--menu-muted) 28%, transparent);
+  transition: width 180ms ease, background-color 180ms ease;
+}
+.promo-carousel-dots button.active {
+  width: 22px;
+  background: var(--menu-accent);
+}
+.promotion-detail-card {
+  display: flex;
+  gap: 14px;
+  border: 1px solid rgba(5,150,105,.28);
+  border-radius: 22px;
+  padding: 18px;
+  background: radial-gradient(circle at 100% 0, rgba(5,150,105,.14), transparent 52%), linear-gradient(120deg, rgba(5,150,105,.08), var(--menu-surface));
+  box-shadow: 0 8px 24px rgba(5,150,105,.08);
+}
+.promotion-detail-card h3 {
+  margin: 1px 0 0;
+  color: var(--menu-ink);
+  font-size: 1.1rem;
+  font-weight: 850;
+}
+.promotion-detail-card p:last-child {
+  margin: 5px 0 0;
+  color: var(--menu-muted);
+  font-size: .84rem;
+  line-height: 1.4;
+}
+.loyalty-banner {
+  display: grid;
+  gap: 16px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--menu-accent) 34%, transparent);
+  border-radius: 22px;
+  padding: 17px;
+  color: color-mix(in srgb, var(--menu-ink) 90%, var(--menu-accent));
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--menu-accent) 16%, transparent), transparent 45%),
+    linear-gradient(120deg, color-mix(in srgb, var(--menu-accent) 10%, var(--menu-surface)), var(--menu-surface));
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--menu-accent) 9%, transparent);
+}
+.loyalty-banner-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.loyalty-banner-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--menu-accent-foreground);
+  background: var(--menu-accent);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--menu-accent) 26%, transparent);
+}
+.loyalty-eyebrow {
+  margin: 0 0 1px;
+  color: var(--menu-accent);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.loyalty-banner h2,
+.loyalty-banner h3 {
+  margin: 0;
+  color: var(--menu-ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+.loyalty-reward {
+  border-radius: 15px;
+  padding: 13px 14px;
+  color: var(--menu-accent-foreground);
+  background: var(--menu-accent);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.22);
+}
+.loyalty-reward > span {
+  display: block;
+  font-size: 0.61rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  opacity: 0.78;
+}
+.loyalty-reward strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 1.3rem;
+  line-height: 1.1;
+}
+.loyalty-reward p {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  opacity: 0.9;
+}
+.loyalty-steps {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.loyalty-steps li {
+  display: flex;
+  gap: 9px;
+  color: var(--menu-ink);
+  font-size: 0.82rem;
+}
+.loyalty-steps li > span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--menu-accent-foreground);
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: var(--menu-accent);
+}
+.loyalty-steps b {
+  display: block;
+  font-size: 0.82rem;
+}
+.loyalty-steps p {
+  margin: 2px 0 0;
+  color: var(--menu-muted);
+  line-height: 1.35;
+}
+.loyalty-eligible-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.loyalty-eligible-items em {
+  border: 1px solid color-mix(in srgb, var(--menu-accent) 22%, transparent);
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: color-mix(in srgb, var(--menu-ink) 84%, var(--menu-accent));
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--menu-accent) 8%, var(--menu-surface));
+}
+.loyalty-progress {
+  border-top: 1px solid color-mix(in srgb, var(--menu-accent) 18%, transparent);
+  padding-top: 13px;
+}
+.loyalty-progress-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--menu-muted);
+  font-size: 0.75rem;
+}
+.loyalty-progress-heading strong {
+  color: var(--menu-ink);
+  font-size: 0.78rem;
+}
+.loyalty-progress-track {
+  height: 8px;
+  overflow: hidden;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--menu-accent) 13%, var(--menu-surface));
+}
+.loyalty-progress-track span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: var(--menu-accent);
+  transition: width 300ms ease-out;
+}
+.loyalty-progress.reward-available .loyalty-progress-track span {
+  background: #059669;
+}
+.loyalty-progress > p,
+.loyalty-login {
+  margin: 8px 0 0;
+  color: var(--menu-muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+.loyalty-login {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  color: var(--menu-accent);
+  font-weight: 800;
+  text-align: left;
+}
+.loyalty-login:hover {
+  text-decoration: underline;
 }
 
 .category-chip {
@@ -1858,6 +2413,17 @@ button.hero-action:active {
   color: var(--menu-ink);
   background: var(--menu-surface);
   font-family: var(--app-font, 'Inter'), sans-serif;
+}
+.mobile-modal-close {
+  min-width: 104px;
+  width: 100%;
+  min-height: 44px;
+  margin-inline: auto;
+  border: 1px solid rgba(43, 37, 32, 0.08);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--menu-accent) 3%, white);
+  color: var(--menu-muted);
+  font-size: 0.8125rem;
 }
 .brand-button {
   color: var(--menu-accent-foreground) !important;

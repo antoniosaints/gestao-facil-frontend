@@ -27,10 +27,13 @@ import {
 } from '@/repositories/restaurante-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { useSocketEvent } from '@/composables/useSocketEvent'
+import { useConfirm } from '@/composables/useConfirm'
 import { calculateRestaurantRoadRoute, type RoadRoute } from '@/utils/restaurantRoadRouting'
-import { formatCurrencyBR } from '@/utils/formatters'
+import { formatCurrencyBR, formatPaymentMethodLabel } from '@/utils/formatters'
+import { restaurantMapIcons } from './restaurantMapIcons'
 import {
   ChefHat,
+  CircleX,
   Clock3,
   FileTextIcon,
   Filter,
@@ -46,6 +49,7 @@ import {
 type PeriodPreset = 'today' | 'month' | 'all' | 'custom'
 
 const toast = useToast()
+const confirm = useConfirm()
 const uiStore = useUiStore()
 const canOperate = computed(() => uiStore.hasRestaurantCapability('PEDIDOS_OPERAR'))
 const canConfigure = computed(() => uiStore.hasRestaurantCapability('CONFIGURACOES_GERENCIAR'))
@@ -263,6 +267,10 @@ function selecionarTodosStatus() {
 async function avancar(pedido: RestaurantePedido) {
   const proximo = nextStatus[pedido.status]
   if (!proximo) return
+  if (proximo === 'CONCLUIDO' && pedido.origem === 'DELIVERY' && pedido.entregaStatus !== 'ENTREGUE') {
+    toast.info('Não é possível concluir este pedido: o entregador ainda não confirmou a entrega.')
+    return
+  }
   try {
     atualizando.value = pedido.id
     const atualizado = await RestauranteRepository.transicionar(pedido.id, proximo, pedido.version)
@@ -271,6 +279,33 @@ async function avancar(pedido: RestaurantePedido) {
     toast.success('Status do pedido atualizado')
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível atualizar o pedido.')
+    if (error?.response?.status === 409) await recarregar()
+  } finally {
+    atualizando.value = null
+  }
+}
+
+function podeCancelar(pedido: RestaurantePedido) {
+  return !['CANCELADO', 'CONCLUIDO'].includes(pedido.status)
+}
+
+async function cancelar(pedido: RestaurantePedido) {
+  const confirmed = await confirm.confirm({
+    title: 'Cancelar pedido',
+    message: `Deseja cancelar o pedido ${pedido.codigo}? Esta ação não pode ser desfeita.`,
+    confirmText: 'Cancelar pedido',
+  })
+  if (!confirmed) return
+  try {
+    atualizando.value = pedido.id
+    const atualizado = await RestauranteRepository.transicionar(pedido.id, 'CANCELADO', pedido.version)
+    pedidos.value = pedidos.value.map((item) => (item.id === atualizado.id ? atualizado : item))
+    if (pedidoSelecionado.value?.id === atualizado.id) pedidoSelecionado.value = atualizado
+    toast[atualizado.status === 'CANCELADO' ? 'success' : 'info'](
+      atualizado.status === 'CANCELADO' ? 'Pedido cancelado.' : 'Cancelamento registrado para revisão financeira.',
+    )
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível cancelar o pedido.')
     if (error?.response?.status === 409) await recarregar()
   } finally {
     atualizando.value = null
@@ -302,8 +337,11 @@ function origemLabel(origem: string) {
 }
 
 function pagamentoLabel(metodo?: string | null) {
-  if (!metodo) return 'Não informado'
-  return metodo.replace(/_/g, ' ')
+  return formatPaymentMethodLabel(metodo)
+}
+
+function aguardandoPagamentoOnline(pedido: RestaurantePedido) {
+  return pedido.pagamentoStatus === 'PENDENTE' && ['PIX', 'CHECKOUT_PRO'].includes(pedido.pagamentoMetodoSnapshot || '')
 }
 
 function enderecoFormatado(pedido: RestaurantePedido) {
@@ -327,14 +365,10 @@ function customerCoordinates(pedido: RestaurantePedido): L.LatLngTuple | null {
   return [Number(endereco!.latitude), Number(endereco!.longitude)]
 }
 
-function routeMarker(label: string, className: string) {
-  return L.divIcon({
-    className: 'route-modal-map-icon',
-    html: `<span class="route-modal-map-pin ${className}"><b>${label}</b></span>`,
-    iconSize: [34, 34],
-    iconAnchor: [17, 34],
-    popupAnchor: [0, -30],
-  })
+function routeMarker(_label: string, className: string) {
+  return className.includes('--origin')
+    ? restaurantMapIcons.restaurante
+    : restaurantMapIcons.cliente
 }
 
 function formatRouteSummary(route: Pick<RoadRoute, 'distance' | 'duration'>) {
@@ -561,6 +595,7 @@ onBeforeUnmount(() => handleRouteModalChange(false))
         </CardHeader>
         <CardContent class="flex-1 space-y-2 px-4 pb-3">
           <div class="space-y-1 text-sm">
+            <Badge v-if="aguardandoPagamentoOnline(pedido)" variant="secondary" class="w-fit">Online · aguardando pagamento</Badge>
             <div v-for="item in pedido.itens" :key="item.id" class="flex justify-between gap-3">
               <span class="min-w-0 truncate"
                 >{{ Number(item.quantidade) }}× {{ item.nomeSnapshot }}</span
@@ -579,15 +614,27 @@ onBeforeUnmount(() => handleRouteModalChange(false))
             </div>
           </div>
         </CardContent>
-        <CardFooter v-if="canOperate && proximoDisponivel(pedido)" class="border-t px-4 py-3">
+        <CardFooter v-if="canOperate && (proximoDisponivel(pedido) || podeCancelar(pedido))" class="gap-2 border-t px-4 py-3">
           <Button
+            v-if="proximoDisponivel(pedido)"
             size="sm"
-            class="w-full"
+            class="flex-1"
             :disabled="atualizando === pedido.id"
             @click.stop="avancar(pedido)"
           >
             <ChefHat class="mr-1.5 h-3.5 w-3.5" />{{ nextLabel[pedido.status] }}
           </Button>
+          <Button
+            v-if="canViewKds && pedido.tickets?.length && ['CONFIRMADO', 'EM_PREPARO'].includes(pedido.status)"
+            as-child
+            size="sm"
+            variant="outline"
+            class="flex-1"
+            @click.stop
+          >
+            <RouterLink to="/restaurante/kds" class="flex items-center"><ChefHat class="mr-1.5 h-3.5 w-3.5" />Acompanhar no KDS</RouterLink>
+          </Button>
+          <Button v-if="podeCancelar(pedido)" size="sm" variant="destructive" :disabled="atualizando === pedido.id" aria-label="Cancelar pedido" @click.stop="cancelar(pedido)"><CircleX class="h-4 w-4" /><span class="sr-only">Cancelar pedido</span></Button>
         </CardFooter>
         <CardFooter
           v-else-if="
@@ -681,7 +728,7 @@ onBeforeUnmount(() => handleRouteModalChange(false))
               {{ pagamentoLabel(pedidoSelecionado.pagamentoMetodoSnapshot) }}
             </p>
             <p class="mt-1 text-sm text-muted-foreground">
-              Pagamento: {{ pagamentoLabel(pedidoSelecionado.pagamentoStatus) }}
+              Pagamento: {{ aguardandoPagamentoOnline(pedidoSelecionado) ? 'Aguardando pagamento online' : pagamentoLabel(pedidoSelecionado.pagamentoStatus) }}
             </p>
             <p v-if="pedidoSelecionado.Mesa?.nome" class="mt-1 text-sm text-muted-foreground">
               {{ pedidoSelecionado.Mesa.nome }}
@@ -756,6 +803,10 @@ onBeforeUnmount(() => handleRouteModalChange(false))
           </p>
           <p class="mt-1 whitespace-pre-wrap text-sm">{{ pedidoSelecionado.observacao }}</p>
         </div>
+
+        <div v-if="canOperate && podeCancelar(pedidoSelecionado)" class="flex justify-end border-t pt-4">
+          <Button variant="destructive" :disabled="atualizando === pedidoSelecionado.id" @click="cancelar(pedidoSelecionado)"><CircleX class="mr-1.5 h-4 w-4" />Cancelar pedido</Button>
+        </div>
       </div>
     </ModalView>
 
@@ -817,31 +868,5 @@ onBeforeUnmount(() => handleRouteModalChange(false))
   font-size: 12px;
   font-weight: 600;
   transform: translateX(-50%);
-}
-:deep(.route-modal-map-icon) {
-  border: 0;
-  background: transparent;
-}
-:deep(.route-modal-map-pin) {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  border: 3px solid white;
-  border-radius: 11px 11px 11px 3px;
-  color: white;
-  box-shadow: 0 6px 16px rgb(15 23 42 / 25%);
-  font-size: 14px;
-  font-weight: 800;
-  transform: rotate(-45deg);
-}
-:deep(.route-modal-map-pin b) {
-  transform: rotate(45deg);
-}
-:deep(.route-modal-map-pin--origin) {
-  background: #0f172a;
-}
-:deep(.route-modal-map-pin--destination) {
-  background: #2563eb;
 }
 </style>

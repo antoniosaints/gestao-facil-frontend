@@ -242,10 +242,12 @@ function abrirLancamentoFinanceiro(id?: number) {
   router.push({ path: '/financeiro/detalhes', query: { id } })
 }
 
-function efetivarParcelaFinanceira(parcela: any) {
+function efetivarParcelaFinanceira(parcela: any, lancamento?: any) {
   if (!parcela?.id) return
   storeLancamentos.idMutation = Number(parcela.id)
   storeLancamentos.valorParcelaEfetivar = Number(parcela.valor || 0)
+  storeLancamentos.contaFinanceiraParcelaEfetivar =
+    parcela.contaFinanceira ?? lancamento?.contasFinanceiroId ?? null
   storeLancamentos.openModalEfetivar = true
 }
 
@@ -731,7 +733,7 @@ watch(() => storeCobranca.filters.update, recarregar)
                       type="button"
                       size="sm"
                       class="h-7 gap-1 px-2 text-white"
-                      @click="efetivarParcelaFinanceira(parcela)"
+                      @click="efetivarParcelaFinanceira(parcela, lancamento)"
                     >
                       <BadgeCheck class="h-3.5 w-3.5" />
                       {{ lancamento.tipo === 'DESPESA' ? 'Pagar' : 'Receber' }}

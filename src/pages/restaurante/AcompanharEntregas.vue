@@ -9,14 +9,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSocketEvent } from '@/composables/useSocketEvent'
+import { useUiStore } from '@/stores/ui/uiStore'
 import { calculateRestaurantRoadRoute, type RoadRoute } from '@/utils/restaurantRoadRouting'
+import { restaurantMapIcons } from './restaurantMapIcons'
 import {
   RestauranteRepository,
   type RestauranteEntregaStatus,
   type RestauranteLocalizacao,
   type RestaurantePedido,
 } from '@/repositories/restaurante-repository'
-import { Bike, LocateFixed, MapPin, PackageCheck, RefreshCw, Search, Store } from 'lucide-vue-next'
+import { Bike, CheckCircle2, LoaderCircle, LocateFixed, MapPin, PackageCheck, RefreshCw, Search, Store } from 'lucide-vue-next'
 
 type DeliveryFilter = 'TODOS' | 'AGUARDANDO' | 'EM_ROTA' | 'ATRASADOS'
 type DeliveryLocationEvent = {
@@ -28,6 +30,7 @@ type DeliveryLocationEvent = {
 }
 type DriverLocation = Omit<DeliveryLocationEvent, 'pedidoId'>
 const toast = useToast()
+const uiStore = useUiStore()
 const mapElement = ref<HTMLElement | null>(null)
 const loading = ref(true)
 const refreshing = ref(false)
@@ -42,6 +45,7 @@ const selectedRoadRoute = ref<Pick<RoadRoute, 'distance' | 'duration'> | null>(n
 const dispatchDrivers = ref<Array<{ id: number; disponivel: boolean; Usuario: { nome: string; telefone?: string | null } }>>([])
 const dispatchTarget = ref('')
 const dispatching = ref(false)
+const confirmingOrderId = ref<number | null>(null)
 
 let map: L.Map | null = null
 let mapLayers: L.LayerGroup | null = null
@@ -138,6 +142,7 @@ const averageWait = computed(() => {
       visibleOrders.value.length,
   )
 })
+const canOperateOrders = computed(() => uiStore.hasRestaurantCapability('PEDIDOS_OPERAR'))
 
 function hasCustomerLocation(order: RestaurantePedido) {
   return (
@@ -183,14 +188,10 @@ function endereco(order: RestaurantePedido) {
     .join(' · ')
 }
 
-function markerIcon(content: string, className: string) {
-  return L.divIcon({
-    className: 'delivery-map-icon',
-    html: `<span class="delivery-map-pin ${className}"><b>${content}</b></span>`,
-    iconSize: [38, 38],
-    iconAnchor: [19, 38],
-    popupAnchor: [0, -34],
-  })
+function markerIcon(_content: string, className: string) {
+  if (className.includes('--store')) return restaurantMapIcons.restaurante
+  if (className.includes('--driver')) return restaurantMapIcons.entregador
+  return restaurantMapIcons.cliente
 }
 
 function escapeHtml(value: unknown) {
@@ -364,7 +365,7 @@ async function loadOrders(feedback = false) {
       restoredLocations[order.id] = {
         latitude: Number(driver.ultimaLatitude),
         longitude: Number(driver.ultimaLongitude),
-        updatedAt: driver.ultimaLocalizacaoAt,
+        updatedAt: driver.ultimaLocalizacaoAt as string,
         entregadorNome: driver.Usuario?.nome,
       }
     }
@@ -405,6 +406,25 @@ async function directSelectedDelivery() {
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível direcionar esta entrega.')
   } finally { dispatching.value = false }
+}
+
+function canConfirmOrder(order: RestaurantePedido) {
+  return canOperateOrders.value && order.status === 'RECEBIDO'
+}
+
+async function confirmOrder(order: RestaurantePedido) {
+  if (!canConfirmOrder(order)) return
+  try {
+    confirmingOrderId.value = order.id
+    const updated = await RestauranteRepository.transicionar(order.id, 'CONFIRMADO', order.version)
+    orders.value = orders.value.map((item) => (item.id === updated.id ? updated : item))
+    toast.success(`Pedido ${updated.codigo} confirmado e enviado para preparo.`)
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível confirmar o pedido.')
+    if (error?.response?.status === 409) await loadOrders()
+  } finally {
+    confirmingOrderId.value = null
+  }
 }
 
 function initializeMap() {
@@ -602,14 +622,17 @@ onBeforeUnmount(() => {
               Ajuste o filtro ou aguarde novos pedidos delivery.
             </p>
           </div>
-          <button
+          <article
             v-for="order in visibleOrders"
             v-else
             :key="order.id"
-            type="button"
+            role="button"
+            tabindex="0"
             class="delivery-order"
             :class="{ selected: selectedOrderId === order.id }"
             @click="selectOrder(order)"
+            @keydown.enter="selectOrder(order)"
+            @keydown.space.prevent="selectOrder(order)"
           >
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
@@ -622,9 +645,19 @@ onBeforeUnmount(() => {
                   {{ order.clienteNomeSnapshot || 'Cliente visitante' }}
                 </h3>
               </div>
-              <Badge class="shrink-0 text-[10px]" :class="deliveryInfo(order).className">{{
-                deliveryInfo(order).label
-              }}</Badge>
+              <div class="flex shrink-0 items-center gap-1.5">
+                <Badge class="text-[10px]" :class="deliveryInfo(order).className">{{
+                  deliveryInfo(order).label
+                }}</Badge>
+                <Button
+                  v-if="canConfirmOrder(order)"
+                  size="sm"
+                  class="h-7 px-2 text-[10px] rounded-lg"
+                  :disabled="confirmingOrderId === order.id"
+                  @click.stop="confirmOrder(order)"
+                  ><LoaderCircle v-if="confirmingOrderId === order.id" class="h-3.5 w-3.5 animate-spin" /><CheckCircle2 v-else class="h-3.5 w-3.5" /></Button
+                >
+              </div>
             </div>
             <div class="delivery-route">
               <div class="delivery-route-stop">
@@ -666,7 +699,7 @@ onBeforeUnmount(() => {
                 :style="{ width: `${waitProgress(order)}%` }"
               />
             </div>
-          </button>
+          </article>
         </div>
       </aside>
     </div>
@@ -871,6 +904,7 @@ onBeforeUnmount(() => {
 }
 .delivery-order {
   width: 100%;
+  cursor: pointer;
   border: 1px solid hsl(var(--border));
   border-radius: 12px;
   padding: 10px;
@@ -889,6 +923,10 @@ onBeforeUnmount(() => {
 .delivery-order.selected {
   border-color: hsl(var(--primary) / 0.7);
   box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+.delivery-order:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
 }
 .delivery-route {
   display: grid;
@@ -970,38 +1008,6 @@ onBeforeUnmount(() => {
 .delivery-wait small {
   color: hsl(var(--muted-foreground));
   font-size: 10px;
-}
-:deep(.delivery-map-icon) {
-  border: 0;
-  background: transparent;
-}
-:deep(.delivery-map-pin) {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border: 3px solid white;
-  border-radius: 12px 12px 12px 3px;
-  color: white;
-  box-shadow: 0 8px 18px rgb(15 23 42 / 24%);
-  font-size: 10px;
-  font-weight: 800;
-  transform: rotate(-45deg);
-}
-:deep(.delivery-map-pin b) {
-  transform: rotate(45deg);
-}
-:deep(.delivery-map-pin--store) {
-  background: #0f172a;
-}
-:deep(.delivery-map-pin--customer) {
-  background: #2563eb;
-}
-:deep(.delivery-map-pin--late) {
-  background: #dc2626;
-}
-:deep(.delivery-map-pin--driver) {
-  background: #16a34a;
 }
 :deep(.delivery-map-popup) {
   min-width: 190px;

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { IaRepository, isIaQuotaError } from '@/repositories/ia-repository'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -56,9 +58,11 @@ import {
   Settings2,
   ShieldCheck,
   Truck,
+  Sparkles,
 } from 'lucide-vue-next'
 
 const toast = useToast()
+const storeUi = useUiStore()
 const loading = ref(true)
 const saving = ref(false)
 const savingZone = ref(false)
@@ -67,6 +71,11 @@ const editingZoneId = ref<number | undefined>()
 const zones = ref<RestauranteZonaEntrega[]>([])
 const users = ref<RestauranteUsuarioPapeis[]>([])
 const savingUserId = ref<number | null>(null)
+const gerandoMensagemIa = ref<keyof RestauranteWhatsAppNotifications | null>(null)
+const iaMensagemDialogOpen = ref(false)
+const iaMensagemEvento = ref<keyof RestauranteWhatsAppNotifications | null>(null)
+const iaMensagemTitulo = ref('')
+const iaMensagemDetalhes = ref('')
 const localizandoEmpresa = ref(false)
 const empresaLatitude = ref('')
 const empresaLongitude = ref('')
@@ -123,7 +132,10 @@ const whatsappMessageVariables = [
   { token: '{frete}', label: 'Frete' },
   { token: '{total}', label: 'Total' },
   { token: '{fidelidade}', label: 'Progresso da fidelidade' },
+  { token: '{urlPagamento}', label: 'Link de pagamento' },
 ] as const
+
+const iaMensagensAtiva = computed(() => storeUi.hasActiveModule('core-ia'))
 
 function notificacoesWhatsAppPadrao(): RestauranteWhatsAppNotifications {
   return {
@@ -184,6 +196,45 @@ async function adicionarVariavelMensagem(
   await nextTick()
   textarea?.focus()
   textarea?.setSelectionRange(start + token.length, start + token.length)
+}
+
+function abrirCriadorMensagemIa(event: keyof RestauranteWhatsAppNotifications, title: string) {
+  if (!iaMensagensAtiva.value || gerandoMensagemIa.value) return
+  iaMensagemEvento.value = event
+  iaMensagemTitulo.value = title
+  iaMensagemDetalhes.value = ''
+  iaMensagemDialogOpen.value = true
+}
+
+async function gerarMensagemComIa() {
+  const event = iaMensagemEvento.value
+  const message = event ? form.whatsappNotificacoesJson?.[event] : null
+  const title = iaMensagemTitulo.value
+  if (!event || !message || !iaMensagensAtiva.value || gerandoMensagemIa.value) return
+  try {
+    gerandoMensagemIa.value = event
+    const variables = whatsappMessageVariables
+      .filter((item) => item.token !== '{empresa}')
+      .map((item) => item.token)
+      .join(', ')
+    const detalhes = iaMensagemDetalhes.value.trim()
+    const textoAtual = message.mensagem.replace(/\{empresa\}/g, '').replace(/\s{2,}/g, ' ').trim()
+    const result = await IaRepository.texto({
+      modo: textoAtual ? 'melhorar' : 'gerar',
+      texto: detalhes
+        ? `${textoAtual}\n\nOrienta\u00e7\u00f5es do usu\u00e1rio: ${detalhes}\nN\u00e3o mencione o nome da empresa. Use emojis quando forem apropriados, sem exageros.`
+        : `${textoAtual}\n\nN\u00e3o mencione o nome da empresa. Use emojis quando forem apropriados, sem exageros.`,
+      contexto: `Crie uma mensagem curta de WhatsApp para o evento "${title}" de um restaurante. Use português do Brasil, tom cordial e objetivo. Preserve exatamente as variáveis já presentes no texto e use somente estas variáveis quando fizer sentido: ${variables}. Nunca invente outras variáveis, não use chaves fora dessa lista e responda apenas com a mensagem final.`,
+    })
+    if (result.text?.trim()) {
+      message.mensagem = result.text.trim()
+      iaMensagemDialogOpen.value = false
+    }
+  } catch (error: any) {
+    toast.error(isIaQuotaError(error) ? 'Limite mensal de IA do plano atingido.' : error?.response?.data?.message || 'Não foi possível gerar a mensagem com IA.')
+  } finally {
+    gerandoMensagemIa.value = null
+  }
 }
 
 function horariosPadrao(): RestauranteHorarioFuncionamento[] {
@@ -700,8 +751,19 @@ onMounted(carregar)
                   />
                 </div>
                 <div class="mt-4 space-y-2">
-                  <Label :for="`whatsapp-template-${item.key}`" class="text-xs">Mensagem</Label
-                  ><Textarea
+                  <div class="flex items-center justify-between gap-2">
+                    <Label :for="`whatsapp-template-${item.key}`" class="text-xs">Mensagem</Label>
+                    <Button
+                      v-if="iaMensagensAtiva"
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      class="h-7 px-2 text-xs"
+                      :disabled="!form.whatsappNotificacoesJson![item.key].ativo || gerandoMensagemIa !== null"
+                      @click="abrirCriadorMensagemIa(item.key, item.title)"
+                    ><LoaderCircle v-if="gerandoMensagemIa === item.key" class="mr-1 h-3.5 w-3.5 animate-spin" /><Sparkles v-else class="mr-1 h-3.5 w-3.5" />Criar com IA</Button>
+                  </div>
+                  <Textarea
                     :id="`whatsapp-template-${item.key}`"
                     v-model="form.whatsappNotificacoesJson![item.key].mensagem"
                     class="min-h-28"
@@ -798,7 +860,7 @@ onMounted(carregar)
                   :model-value="publicMenuUrl"
                   readonly
                   placeholder="Preencha um slug válido"
-                  class="font-mono text-xs"
+                  class="text-sm"
                 />
                 <Button
                   type="button"
@@ -860,7 +922,7 @@ onMounted(carregar)
             </div>
 
             <div
-              class="flex min-h-20 items-center justify-between gap-4 rounded-lg border p-4 sm:col-span-2"
+              class="flex min-h-20 items-center justify-between gap-4 rounded-lg border p-4"
             >
               <div>
                 <Label>Cardápio publicado</Label>
@@ -870,7 +932,7 @@ onMounted(carregar)
               </div>
               <Switch v-model="form.ativo" :disabled="!dadosPublicacaoValidos" />
             </div>
-            <div class="flex items-center justify-between rounded-lg border p-4 sm:col-span-2">
+            <div class="flex items-center justify-between rounded-lg border p-4">
               <div>
                 <Label>QR direto para produção</Label>
                 <p class="text-xs text-muted-foreground">
@@ -993,6 +1055,36 @@ onMounted(carregar)
         </Card>
       </TabsContent>
     </Tabs>
+
+    <Dialog v-model:open="iaMensagemDialogOpen">
+      <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle class="flex items-center gap-2"><Sparkles class="h-5 w-5 text-primary" />Criar mensagem com IA</DialogTitle>
+          <DialogDescription>
+            {{ form.whatsappNotificacoesJson?.[iaMensagemEvento!]?.mensagem.trim()
+              ? `A IA vai aprimorar a mensagem de ${iaMensagemTitulo.toLowerCase()} sem perder as variáveis.`
+              : `Descreva como deve ser a mensagem de ${iaMensagemTitulo.toLowerCase()}.` }}
+          </DialogDescription>
+        </DialogHeader>
+        <div class="space-y-2 py-2">
+          <Label for="ia-mensagem-detalhes">Detalhes que deseja na mensagem</Label>
+          <Textarea
+            id="ia-mensagem-detalhes"
+            v-model="iaMensagemDetalhes"
+            class="min-h-32"
+            placeholder="Ex.: avise que o pedido está a caminho, seja acolhedor e inclua prazo estimado."
+          />
+          <p class="text-xs text-muted-foreground">Você pode deixar em branco para a IA criar ou melhorar automaticamente.</p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" :disabled="gerandoMensagemIa !== null" @click="iaMensagemDialogOpen = false">Cancelar</Button>
+          <Button :disabled="gerandoMensagemIa !== null" @click="gerarMensagemComIa">
+            <LoaderCircle v-if="gerandoMensagemIa !== null" class="mr-2 h-4 w-4 animate-spin" />
+            <Sparkles v-else class="mr-2 h-4 w-4" />Gerar mensagem
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <Dialog v-model:open="zoneDialogOpen">
       <DialogContent class="max-h-[90vh] max-w-2xl overflow-y-auto">

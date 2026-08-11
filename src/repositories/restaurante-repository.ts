@@ -117,6 +117,8 @@ export interface RestaurantePainel {
 }
 
 export interface RestaurantePublicOrderTracking {
+  id: number
+  cardapioSlug?: string | null
   codigo: string
   origem: 'RETIRADA' | 'DELIVERY' | 'MESA'
   status: RestaurantePedidoStatus
@@ -141,10 +143,16 @@ export interface RestaurantePublicOrderTracking {
   }>
   tempoMedioEsperaMinutos: number
   tempoMedioBase: 'historico' | 'estimativa'
+  paymentAction?: {
+    type: 'PIX' | 'REDIRECT'
+    url?: string | null
+    pixCopiaCola?: string | null
+  } | null
   acompanhamentoEntrega?: {
     origem?: { latitude?: number; longitude?: number } | null
     entregador: { latitude: number; longitude: number; updatedAt?: string | null }
   } | null
+  podeCancelar?: boolean
   itens: Array<{
     nomeSnapshot: string
     quantidade: string | number
@@ -332,7 +340,7 @@ export interface RestauranteLocalizacao {
   longitude: number
 }
 
-export type RestauranteWhatsAppNotificationEvent = 'PEDIDO_FEITO' | 'EM_PREPARO' | 'SAIU_ENTREGA' | 'PRONTO' | 'ENTREGUE' | 'POS_PEDIDO'
+export type RestauranteWhatsAppNotificationEvent = 'PEDIDO_FEITO' | 'EM_PREPARO' | 'SAIU_ENTREGA' | 'PRONTO' | 'ENTREGUE' | 'FIDELIDADE' | 'POS_PEDIDO'
 export type RestauranteWhatsAppNotifications = Record<RestauranteWhatsAppNotificationEvent, { ativo: boolean; mensagem: string }>
 
 export interface RestauranteConfig {
@@ -410,6 +418,7 @@ export interface RestauranteProdutoDisponivel {
   preco: string | number
   estoque: number
   imagem?: string | null
+  ProdutoBase?: { categoriaId?: number | null; Categoria?: { id: number; nome: string } | null }
 }
 
 export interface RestauranteOpcao {
@@ -435,6 +444,7 @@ export interface RestauranteGrupoOpcao {
 export interface RestauranteCatalogoItem {
   id: number
   produtoId?: number | null
+  categoriaId?: number | null
   preco: string | number
   nomePublico?: string | null
   descricao?: string | null
@@ -444,12 +454,14 @@ export interface RestauranteCatalogoItem {
   ordem: number
   version: number
   Produto?: RestauranteProdutoDisponivel | null
+  Categoria?: { id: number; nome: string } | null
   grupos: Array<{ grupoId: number; Grupo: RestauranteGrupoOpcao }>
 }
 
 export interface RestauranteCatalogoPayload {
   modoCadastro: 'VINCULAR' | 'AVULSO' | 'CRIAR_PRODUTO'
   produtoId?: number | null
+  categoriaId?: number | null
   preco: number
   nomePublico?: string | null
   descricao?: string | null
@@ -506,6 +518,7 @@ export class RestauranteRepository {
           configurado: boolean
         }
         modoFrete: 'FIXO' | 'ZONAS'
+        freteGratisAcima?: string | number | null
         temaPersonalizado?: Partial<ThemeCustomization> | null
         fidelidade?: RestauranteFidelidadePublica | null
       }
@@ -527,6 +540,11 @@ export class RestauranteRepository {
 
   static async acompanharPedido(token: string) {
     const { data } = await http.get(`/v1/restaurante/publico/pedidos/${token}`)
+    return data.data as RestaurantePublicOrderTracking
+  }
+
+  static async cancelarPedidoPublico(token: string) {
+    const { data } = await http.post(`/v1/restaurante/publico/pedidos/${token}/cancelamento`)
     return data.data as RestaurantePublicOrderTracking
   }
 
@@ -669,10 +687,11 @@ export class RestauranteRepository {
     return response.data.data as RestauranteCatalogoItem
   }
 
-  static async enviarImagemItemCardapio(id: number, file: File) {
+  static async enviarImagemItemCardapio(id: number, file: File, atualizarProduto = false) {
     const form = new FormData()
     form.append('file', file)
     const { data } = await http.post(`/v1/restaurante/cardapio/${id}/imagem`, form, {
+      params: atualizarProduto ? { atualizarProduto: true } : undefined,
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     return data.data as RestauranteCatalogoItem

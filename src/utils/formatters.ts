@@ -42,38 +42,32 @@ export function formatCurrencyBR(value: number | string): string {
   }).format(valueFormated)
 }
 
-/**
- * Rótulo legível de um método de pagamento (`MetodoPagamento` do Prisma).
- * Devolve o próprio valor quando o método não é conhecido, para não engolir
- * dados vindos de contas antigas.
- */
+const paymentMethodLabels: Record<string, string> = {
+  DINHEIRO: 'Dinheiro',
+  CARTAO: 'Cartão',
+  CREDITO: 'Crédito',
+  DEBITO: 'Débito',
+  CREDIARIO: 'Crediário',
+  PIX: 'PIX',
+  BOLETO: 'Boleto',
+  TRANSFERENCIA: 'Transferência',
+  CHEQUE: 'Cheque',
+  GATEWAY: 'Gateway',
+  OUTRO: 'Outro',
+  DEPOSITO: 'Depósito',
+  NA_ENTREGA: 'Pagamento na entrega',
+  CHECKOUT_PRO: 'Pagamento online',
+  MESA: 'Pagamento na mesa',
+  NAO_INFORMADO: 'Não informado',
+  'NÃO INFORMADO': 'Não informado',
+}
+
+/** Rótulo legível para formas do financeiro, PDV e restaurante. */
 export function formatPaymentMethodLabel(method?: string | null): string {
-  switch (method) {
-    case 'DINHEIRO':
-      return 'Dinheiro'
-    case 'CARTAO':
-      return 'Cartão'
-    case 'CREDITO':
-      return 'Crédito'
-    case 'DEBITO':
-      return 'Débito'
-    case 'CREDIARIO':
-      return 'Crediário'
-    case 'PIX':
-      return 'PIX'
-    case 'BOLETO':
-      return 'Boleto'
-    case 'TRANSFERENCIA':
-      return 'Transferência'
-    case 'CHEQUE':
-      return 'Cheque'
-    case 'GATEWAY':
-      return 'Gateway'
-    case 'OUTRO':
-      return 'Outro'
-    default:
-      return method || '-'
-  }
+  const normalized = method?.trim().toUpperCase()
+  if (!normalized) return 'Não informado'
+  return paymentMethodLabels[normalized]
+    || normalized.toLocaleLowerCase('pt-BR').replace(/_/g, ' ').replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase('pt-BR'))
 }
 
 export const formatLabel = (

@@ -95,6 +95,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const openModalLote = ref(false)
   const idMutation = ref<number | null>(null)
   const valorParcelaEfetivar = ref<number | null>(null)
+  const contaFinanceiraParcelaEfetivar = ref<number | null>(null)
   const currentMonth = ref(new Date())
   const selectedIds = ref<number[]>([])
 
@@ -230,6 +231,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     openModal,
     idMutation,
     valorParcelaEfetivar,
+    contaFinanceiraParcelaEfetivar,
     openModalPropor,
     openModalFaturar,
     openModalDelete,

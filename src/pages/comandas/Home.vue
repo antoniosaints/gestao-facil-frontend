@@ -515,13 +515,16 @@ onMounted(loadComandas)
         v-for="comanda in comandas"
         v-else
         :key="comanda.id"
-        class="grid grid-cols-1 gap-3 border-b border-border px-4 py-3 last:border-b-0 md:grid-cols-12 md:items-center"
+        class="grid grid-cols-1 gap-3 border-b border-border px-4 py-1 last:border-b-0 md:grid-cols-12 md:items-center"
       >
         <div class="md:col-span-3">
           <button type="button" class="text-left" @click="openDetalhes(comanda)">
             <div class="font-semibold text-foreground">#{{ comanda.Uid }}</div>
-            <div class="text-xs text-muted-foreground">{{ formatDateToPtBR(comanda.abertura, true) }}</div>
-            <div class="truncate text-xs text-muted-foreground">{{ getClienteLabel(comanda) }}</div>
+            <div class="flex gap-1">
+              <div class="text-xs text-muted-foreground">{{ formatDateToPtBR(comanda.abertura, true) }}</div>
+              <div class="text-xs text-muted-foreground">|</div>
+              <div class="truncate text-xs text-muted-foreground">{{ getClienteLabel(comanda) }}</div>
+            </div>
           </button>
         </div>
 
