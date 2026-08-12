@@ -21,6 +21,7 @@ import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, Clock3
 import { RestauranteRepository, type RestauranteCheckoutPreview, type RestauranteClienteConta, type RestauranteClienteEndereco, type RestaurantePublicOrderTracking } from '@/repositories/restaurante-repository'
 import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { useConfirm } from '@/composables/useConfirm'
+import ConfirmModal from '@/components/hooks/ConfirmModal.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { getThemePalette, hexToHslValue, normalizeThemeCustomization } from '@/utils/themeCustomization'
@@ -1771,6 +1772,7 @@ onBeforeUnmount(() => {
         </component>
       </component>
     </component>
+    <ConfirmModal />
   </main>
 </template>
 
