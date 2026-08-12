@@ -155,6 +155,11 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/admin/dashboard/DashboardAdmin.vue'),
       },
       {
+        path: 'navegacao/:moduleKey',
+        name: 'admin-navegacao-cards-modulo',
+        component: () => import('@/pages/navegacao/CardsNavigationHub.vue'),
+      },
+      {
         path: 'assinantes',
         name: 'admin-assinantes',
         component: () => import('@/pages/admin/assinantes/Home.vue'),

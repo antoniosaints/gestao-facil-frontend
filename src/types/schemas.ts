@@ -500,7 +500,7 @@ export interface FormularioLancamento {
 }
 export interface UpdateParametrosConta {
   modeloPdv?: 'BASICO' | 'PRO' | null
-  estiloUi?: 'PADRAO' | 'CARDS' | null
+  estiloUi?: 'PADRAO' | 'CARDS' | 'SITE' | 'SIDEV2' | null
   temaPersonalizado?: ThemeCustomization | null
   AsaasApiKey?: string | null
   AsaasApiSecret?: string | null

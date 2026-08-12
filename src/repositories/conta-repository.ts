@@ -429,8 +429,10 @@ export class ContaRepository {
     const res = await http.get('/contas/integracoes/mercadopago/status')
     return res.data.data
   }
-  static async conectarMercadoPago(): Promise<{ url: string }> {
-    const res = await http.get('/contas/integracoes/mercadopago/conectar')
+  static async conectarMercadoPago(retorno?: '/restaurante/configuracoes'): Promise<{ url: string }> {
+    const res = await http.get('/contas/integracoes/mercadopago/conectar', {
+      params: retorno ? { retorno } : undefined,
+    })
     return res.data.data
   }
   static async desconectarMercadoPago(): Promise<MercadoPagoIntegracaoStatus> {

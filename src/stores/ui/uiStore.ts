@@ -41,7 +41,7 @@ export interface FinanceiroFlags {
   osLancamentoAutomatico: boolean
 }
 
-export type UiNavigationStyle = 'PADRAO' | 'CARDS'
+export type UiNavigationStyle = 'PADRAO' | 'CARDS' | 'SITE' | 'SIDEV2'
 
 export const useUiStore = defineStore('uiStore', () => {
   const openSidebar = ref(true)
@@ -81,6 +81,11 @@ export const useUiStore = defineStore('uiStore', () => {
   const hiddenSubmenuKeys = ref<string[]>([])
   const estiloUi = ref<UiNavigationStyle>('PADRAO')
   const usaNavegacaoPorCards = computed(() => estiloUi.value === 'CARDS')
+  const usaNavegacaoSite = computed(() => estiloUi.value === 'SITE')
+  const usaNavegacaoSideV2 = computed(() => estiloUi.value === 'SIDEV2')
+  const usaNavegacaoSemSidebar = computed(
+    () => usaNavegacaoPorCards.value || usaNavegacaoSite.value,
+  )
   // Tour de boas-vindas: default true evita flash do tour antes do parametros carregar.
   const tourConcluido = ref<boolean>(true)
   const status = ref(localStorage.getItem('gestao_facil:status') || 'INATIVO')
@@ -306,7 +311,10 @@ export const useUiStore = defineStore('uiStore', () => {
         visibleMenuKeys.value = null
         hiddenSubmenuKeys.value = []
       }
-      estiloUi.value = response.data?.estiloUi === 'CARDS' ? 'CARDS' : 'PADRAO'
+      const estiloSalvo = response.data?.estiloUi
+      estiloUi.value = ['CARDS', 'SITE', 'SIDEV2'].includes(estiloSalvo)
+        ? (estiloSalvo as UiNavigationStyle)
+        : 'PADRAO'
       setThemeCustomization(response.data?.temaPersonalizado)
       tourConcluido.value = response.data?.tourOnboardingConcluido ?? false
       return financeiroFlags.value
@@ -383,6 +391,9 @@ export const useUiStore = defineStore('uiStore', () => {
     hiddenSubmenuKeys,
     estiloUi,
     usaNavegacaoPorCards,
+    usaNavegacaoSite,
+    usaNavegacaoSideV2,
+    usaNavegacaoSemSidebar,
     getDataUsuario,
     loadFinanceiroFlags,
     diasParaVencer,

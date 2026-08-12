@@ -32,12 +32,14 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       icone: ChartPie,
       color: 'orange',
       link: '/admin',
+      key: 'dashboard',
     },
     {
       nome: 'Financeiro',
       icone: CircleDollarSign,
       color: 'emerald',
       show: permissions.financeiro.visualizar,
+      key: 'financeiro',
       children: [
         {
           nome: 'Painel',
@@ -45,12 +47,14 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
           show: permissions.financeiro.painel,
           icone: ChartPie,
           color: 'emerald',
+          key: 'financeiro:painel',
         },
         {
           nome: 'Faturas',
           link: '/admin/faturas',
           icone: CircleDollarSign,
           color: 'emerald',
+          key: 'financeiro:faturas',
         },
       ],
     },
@@ -60,6 +64,7 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.clientes.visualizar,
       color: 'violet',
       link: '/admin/assinantes',
+      key: 'assinantes',
     },
     {
       nome: 'WhatsApp',
@@ -67,6 +72,7 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.superadmin,
       color: 'green',
       link: '/admin/whatsapp',
+      key: 'whatsapp',
     },
     {
       nome: 'Acessos de suporte',
@@ -74,6 +80,7 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.superadmin,
       color: 'yellow',
       link: '/admin/suporte',
+      key: 'suporte',
     },
     {
       nome: 'Configurações',
@@ -81,6 +88,7 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.configuracoes.visualizar,
       color: 'indigo',
       link: '/admin/configuracoes',
+      key: 'configuracoes',
     },
     {
       nome: 'Site',
@@ -88,36 +96,42 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       show: permissions.superadmin,
       color: 'cyan',
       link: '/admin/site',
+      key: 'site',
     },
     {
       nome: 'Inteligência',
       icone: BrainCircuit,
       color: 'violet',
       show: permissions.superadmin,
+      key: 'inteligencia',
       children: [
         {
           nome: 'Modelos',
           link: '/admin/inteligencia/modelos',
           icone: Cpu,
           color: 'violet',
+          key: 'inteligencia:modelos',
         },
         {
           nome: 'Chaves API',
           link: '/admin/inteligencia/chaves',
           icone: KeyRound,
           color: 'violet',
+          key: 'inteligencia:chaves',
         },
         {
           nome: 'Core IA',
           link: '/admin/inteligencia/core',
           icone: Bot,
           color: 'violet',
+          key: 'inteligencia:core',
         },
         {
           nome: 'Consumo',
           link: '/admin/inteligencia/consumo',
           icone: Gauge,
           color: 'violet',
+          key: 'inteligencia:consumo',
         },
       ],
     },
@@ -126,6 +140,7 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       icone: ServerCog,
       color: 'orange',
       link: '/admin/insights',
+      key: 'monitoramento',
     },
     {
       nome: 'Informativos',
@@ -133,6 +148,7 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       color: 'cyan',
       show: permissions.superadmin,
       link: '/admin/informativos',
+      key: 'informativos',
     },
     {
       nome: 'Relatos de bug',
@@ -140,6 +156,7 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       color: 'red',
       show: permissions.superadmin,
       link: '/admin/bugs',
+      key: 'bugs',
     },
     {
       nome: 'ERP',
@@ -152,6 +169,7 @@ export const sidebarMenuOptionsAdmin = (permissions: Permissoes): SidebarMenuTyp
       icone: FileSliders,
       show: permissions.superadmin,
       link: '/',
+      key: 'erp',
     },
   ]
 }

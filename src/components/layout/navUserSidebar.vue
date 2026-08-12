@@ -28,6 +28,9 @@ import { useToast } from 'vue-toastification'
 import { getLettersName } from '@/utils/formatters'
 import { resolveFileUrl } from '@/utils/fileUrl'
 
+const props = withDefaults(defineProps<{ variant?: 'sidebar' | 'header' | 'icon' }>(), {
+  variant: 'sidebar',
+})
 const uiStore = useUiStore()
 const store = useAuthStore()
 const toast = useToast()
@@ -42,15 +45,41 @@ function logOut() {
 }
 
 const colorTheme = computed(() => {
-  return 'bg-black/10 text-sidebar-foreground'
+  return props.variant === 'header' || props.variant === 'icon'
+    ? 'border border-border bg-muted/75 text-foreground shadow-sm hover:bg-muted'
+    : 'text-foreground'
 })
+
+const dropdownTheme = computed(() =>
+  props.variant === 'header' || props.variant === 'icon'
+    ? 'border-border bg-popover text-popover-foreground'
+    : 'border-white/10 bg-sidebar text-sidebar-foreground',
+)
+
+const separatorTheme = computed(() =>
+  props.variant === 'sidebar' ? 'bg-white/15' : 'bg-border',
+)
 </script>
 
 <template>
   <div>
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
-        <div size="lg" class="text-white cursor-pointer flex gap-2 items-center px-3 py-3 rounded-lg"
+        <button
+          v-if="props.variant === 'icon'"
+          type="button"
+          class="grid h-10 w-10 cursor-pointer place-items-center rounded-lg"
+          :class="colorTheme"
+          aria-label="Abrir menu da conta"
+        >
+          <Avatar class="h-8 w-8 rounded-lg">
+            <AvatarImage :src="uiStore.logoProfile" :alt="uiStore.contaInfo.nome" />
+            <AvatarFallback class="rounded-lg">
+              {{ getLettersName(uiStore.contaInfo.nome) }}
+            </AvatarFallback>
+          </Avatar>
+        </button>
+        <div v-else size="lg" class="cursor-pointer flex gap-2 items-center px-3 py-3 rounded-lg"
           :class="colorTheme">
           <Avatar class="h-8 w-8 rounded-lg">
             <AvatarImage :src="uiStore.logoProfile" :alt="uiStore.contaInfo.nome" />
@@ -65,7 +94,7 @@ const colorTheme = computed(() => {
           <ChevronsUpDown class="ml-auto size-4" />
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent class="min-w-56 rounded-lg border-white/10 bg-sidebar text-sidebar-foreground"
+      <DropdownMenuContent :class="['min-w-56 rounded-lg', dropdownTheme]"
         :side="uiStore.isMobile ? 'bottom' : 'right'">
         <DropdownMenuLabel class="p-0 font-normal">
           <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
@@ -81,7 +110,7 @@ const colorTheme = computed(() => {
             </div>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator class="bg-white/15" />
+        <DropdownMenuSeparator :class="separatorTheme" />
         <DropdownMenuGroup>
           <RouterLink to="/assinatura/resumo">
             <DropdownMenuItem>
@@ -90,7 +119,7 @@ const colorTheme = computed(() => {
             </DropdownMenuItem>
           </RouterLink>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator class="bg-white/15" />
+        <DropdownMenuSeparator :class="separatorTheme" />
         <DropdownMenuGroup>
           <RouterLink v-if="uiStore.permissoes.superadmin" to="/admin">
             <DropdownMenuItem>
@@ -105,7 +134,7 @@ const colorTheme = computed(() => {
             </DropdownMenuItem>
           </RouterLink>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator class="bg-white/15" />
+        <DropdownMenuSeparator :class="separatorTheme" />
         <DropdownMenuItem @click="logOut">
           <LogOut />
           Sair

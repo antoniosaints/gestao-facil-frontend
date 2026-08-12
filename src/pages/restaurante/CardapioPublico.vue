@@ -48,6 +48,7 @@ const previewing = ref(false)
 const checkoutOpen = ref(false)
 const cartDrawerOpen = ref(false)
 const itemDialogOpen = ref(false)
+const itemAddedOpen = ref(false)
 const cardapio = ref<any>(null)
 type CartLine = {
   id: string
@@ -84,8 +85,10 @@ const activeCartLineId = ref<string | null>(null)
 const draftQuantity = ref(1)
 const draftSelections = ref<number[]>([])
 const origem = ref<'RETIRADA' | 'DELIVERY'>('RETIRADA')
-const pagamento = ref<'NA_ENTREGA' | 'PIX' | 'CHECKOUT_PRO'>('NA_ENTREGA')
+const pagamento = ref<'NA_ENTREGA' | 'PIX'>('NA_ENTREGA')
 const obtendoLocalizacao = ref(false)
+const pixCopied = ref(false)
+const paymentClock = ref(Date.now())
 let previewTimer: ReturnType<typeof setTimeout> | null = null
 let previewSequence = 0
 let trackingSocket: Socket | null = null
@@ -94,6 +97,7 @@ let trackingMap: L.Map | null = null
 let trackingMapLayers: L.LayerGroup | null = null
 let promotionCarouselTimer: ReturnType<typeof setInterval> | null = null
 let menuToolbarResizeObserver: ResizeObserver | null = null
+let paymentClockTimer: ReturnType<typeof setInterval> | null = null
 const form = reactive({
   nome: '',
   telefone: '',
@@ -205,6 +209,16 @@ const tracking = computed(() => orderHistory.value.find((order) => isActiveResta
 const trackingStatusLabel = computed(() => (tracking.value ? restaurantOrderStatusLabel(tracking.value.status) : ''))
 const trackingBadgeClass = computed(() => tracking.value ? restaurantOrderStatusBadgeClass(tracking.value.status) : '')
 const trackingDetails = computed(() => orderHistory.value.find((order) => order.trackingToken === selectedTrackingToken.value) || null)
+const checkoutOrderTracking = computed(() => orderHistory.value.find((order) => order.trackingToken === orderResult.value?.trackingToken) || null)
+const checkoutPaymentAction = computed(() => checkoutOrderTracking.value?.paymentAction || orderResult.value?.paymentAction || null)
+const checkoutPaymentCompleted = computed(() => checkoutOrderTracking.value?.pagamentoStatus === 'PAGO')
+const checkoutPaymentCancelled = computed(() => ['FALHOU', 'ESTORNADO'].includes(String(checkoutOrderTracking.value?.pagamentoStatus || '')))
+const pixTimeRemaining = computed(() => {
+  const expiresAt = checkoutPaymentAction.value?.expiresAt
+  if (!expiresAt) return null
+  return Math.max(0, new Date(expiresAt).getTime() - paymentClock.value)
+})
+const pixExpired = computed(() => pixTimeRemaining.value === 0)
 
 const categories = computed(() => [{ key: 'todos', name: 'Todos' }, ...categoryGroups.value.map(({ key, name }) => ({ key, name }))])
 
@@ -711,6 +725,7 @@ function quickAdd(item: any) {
     })
     invalidateCart()
   }
+  itemAddedOpen.value = true
 }
 
 function toggleDraft(group: any, optionId: number) {
@@ -745,6 +760,16 @@ function saveActiveItem() {
   }
   invalidateCart()
   itemDialogOpen.value = false
+  if (!editing) nextTick(() => { itemAddedOpen.value = true })
+}
+
+function continueShoppingAfterAdd() {
+  itemAddedOpen.value = false
+}
+
+function goToCartAfterAdd() {
+  itemAddedOpen.value = false
+  nextTick(openCartDrawer)
 }
 
 function selectedOptionNames(line: CartLine) {
@@ -877,10 +902,6 @@ async function pedir() {
     await loadOrderHistory(tokens)
     sincronizarAcompanhamentoEmTempoReal(orderHistory.value.map((order) => order.trackingToken))
     cartLines.value = []
-    if (result.paymentAction?.type === 'REDIRECT' && result.paymentAction.url) {
-      window.location.assign(result.paymentAction.url)
-      return
-    }
     toast.success(`Pedido ${result.pedido.codigo} criado!`)
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível enviar o pedido.')
@@ -910,8 +931,27 @@ function useLocation() {
 async function copyPix(action = orderResult.value?.paymentAction) {
   const code = action?.pixCopiaCola
   if (!code) return
-  await navigator.clipboard.writeText(code)
-  toast.success('Código Pix copiado')
+  try {
+    await navigator.clipboard.writeText(code)
+    pixCopied.value = true
+    toast.success('Pix copiado')
+    window.setTimeout(() => { pixCopied.value = false }, 2200)
+  } catch {
+    toast.error('Não foi possível copiar o Pix. Tente novamente.')
+  }
+}
+
+function truncatePixCode(code?: string | null) {
+  if (!code) return ''
+  return code.length <= 32 ? code : `${code.slice(0, 28)}...`
+}
+
+function formatPixTimeRemaining(milliseconds: number | null) {
+  if (milliseconds === null) return ''
+  const totalSeconds = Math.ceil(milliseconds / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
 function humanize(value: string) {
@@ -988,6 +1028,7 @@ watch([trackingDetailsOpen, trackingDetails], async ([open, order]) => {
 })
 
 onMounted(async () => {
+  paymentClockTimer = setInterval(() => { paymentClock.value = Date.now() }, 1000)
   await carregar()
   if (customerToken()) await loadCustomerAccount(true)
   if (route.name === 'restaurante-conta-publica') await openCustomerAccount()
@@ -996,6 +1037,7 @@ onMounted(async () => {
 })
 onBeforeUnmount(() => {
   if (previewTimer) clearTimeout(previewTimer)
+  if (paymentClockTimer) clearInterval(paymentClockTimer)
   trackingSocket?.disconnect()
   publicMenuSocket?.disconnect()
   stopPromotionCarousel()
@@ -1366,6 +1408,19 @@ onBeforeUnmount(() => {
       </component>
     </component>
 
+    <Dialog v-model:open="itemAddedOpen">
+      <DialogContent class="max-w-sm rounded-3xl p-6" :content-style="menuThemeStyle">
+        <DialogHeader class="text-left">
+          <DialogTitle class="menu-heading text-xl">Item adicionado ao carrinho</DialogTitle>
+          <DialogDescription>Deseja conferir o carrinho ou continuar escolhendo?</DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="mt-2 grid grid-cols-2 gap-3 sm:flex sm:justify-end">
+          <Button type="button" variant="outline" class="order-2 sm:order-1" @click="continueShoppingAfterAdd">Continuar no cardápio</Button>
+          <Button type="button" class="order-1 sm:order-2" :style="primaryButtonStyle" @click="goToCartAfterAdd"><ShoppingCart class="mr-2 h-4 w-4" />Ir ao carrinho</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="cartDrawerOpen">
       <component :is="menuModalContent" class="menu-overlay max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :content-style="menuThemeStyle">
         <component :is="menuModalHeader" class="shrink-0 text-left lg:px-7 lg:pt-6"
@@ -1417,14 +1472,19 @@ onBeforeUnmount(() => {
               <div class="flex justify-between rounded-2xl bg-stone-100 p-4 dark:bg-zinc-800">
                 <span>Total do pedido</span><strong class="price text-lg">{{ formatCurrencyBR(Number(orderResult.pedido.total)) }}</strong>
               </div>
-              <div v-if="orderResult.paymentAction?.type === 'PIX'" class="brand-soft space-y-3 rounded-2xl p-5">
-                <p class="font-semibold">Pague com Pix</p>
-                <p class="break-all text-sm text-stone-600 dark:text-stone-300">
-                  {{ orderResult.paymentAction.pixCopiaCola }}
-                </p>
-                <div class="flex flex-wrap gap-2">
-                  <Button class="tap-button" @click="copyPix"><Clipboard class="mr-2 h-4 w-4" />Copiar Pix</Button><Button v-if="orderResult.paymentAction.url" as-child variant="outline"><a :href="orderResult.paymentAction.url" target="_blank" rel="noopener noreferrer">Abrir pagamento</a></Button>
-                </div>
+              <div v-if="checkoutPaymentCompleted" class="space-y-2 rounded-2xl bg-emerald-50 p-5 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100">
+                <div class="flex items-center gap-2 font-semibold"><CheckCircle2 class="h-5 w-5" />Pagamento confirmado</div>
+                <p class="text-sm">Recebemos seu Pix. O restaurante já pode seguir com o preparo do pedido.</p>
+              </div>
+              <div v-else-if="checkoutPaymentCancelled" class="space-y-2 rounded-2xl bg-amber-50 p-5 text-amber-900 dark:bg-amber-950/50 dark:text-amber-100">
+                <p class="font-semibold">Pagamento indisponível</p>
+                <p class="text-sm">Este Pix não está mais disponível. Consulte o restaurante para continuar.</p>
+              </div>
+              <div v-else-if="checkoutPaymentAction?.type === 'PIX'" class="brand-soft space-y-4 rounded-2xl p-5">
+                <div class="flex items-start justify-between gap-3"><div><p class="font-semibold">Pague com Pix</p><p class="mt-1 text-sm text-stone-600 dark:text-stone-300">Escaneie o QR Code ou copie o código.</p></div><span v-if="pixTimeRemaining !== null" class="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold tabular-nums dark:bg-zinc-950/50" :class="{ 'text-red-600': pixExpired }"><Timer class="h-3.5 w-3.5" />{{ pixExpired ? 'Expirado' : formatPixTimeRemaining(pixTimeRemaining) }}</span></div>
+                <div class="flex justify-center rounded-2xl bg-white p-3 dark:bg-zinc-950"><img v-if="checkoutPaymentAction.qrCodeDataUrl" :src="checkoutPaymentAction.qrCodeDataUrl" width="220" height="220" class="h-[220px] w-[220px] rounded-lg" alt="QR Code para pagamento Pix" /></div>
+                <div class="flex min-w-0 items-center gap-2 rounded-xl border bg-white/65 p-2 dark:bg-zinc-950/40"><code class="min-w-0 flex-1 truncate px-2 text-xs text-stone-600 dark:text-stone-300">{{ truncatePixCode(checkoutPaymentAction.pixCopiaCola) }}</code><Button class="tap-button shrink-0" size="sm" :disabled="pixExpired" @click="copyPix(checkoutPaymentAction)"><Check v-if="pixCopied" class="mr-1.5 h-4 w-4" /><Clipboard v-else class="mr-1.5 h-4 w-4" />{{ pixCopied ? 'Copiado' : 'Copiar Pix' }}</Button></div>
+                <p v-if="pixExpired" class="text-sm font-medium text-red-600">Este código expirou. Gere um novo pedido para receber outro Pix.</p>
               </div>
               <p v-else class="rounded-2xl bg-stone-100 p-4 text-sm text-stone-600 dark:bg-zinc-800 dark:text-stone-300">O pagamento será realizado na {{ origem === 'DELIVERY' ? 'entrega' : 'retirada' }}.</p>
             </div>
@@ -1496,10 +1556,9 @@ onBeforeUnmount(() => {
                   <h3 class="font-semibold">Pagamento</h3>
                   <p class="text-sm text-stone-500">Selecione como prefere pagar.</p>
                 </div>
-                <RadioGroup v-model="pagamento" class="grid gap-3 sm:grid-cols-3"
+                <RadioGroup v-model="pagamento" class="grid gap-3 sm:grid-cols-2"
                   ><label v-if="cardapio?.restaurante.pagamentoNaEntregaAtivo" class="choice-card compact" :class="{ selected: pagamento === 'NA_ENTREGA' }"><RadioGroupItem value="NA_ENTREGA" /><span class="text-sm font-medium">Na entrega</span></label
-                  ><label v-if="cardapio?.restaurante.pagamentoOnlineAtivo" class="choice-card compact" :class="{ selected: pagamento === 'PIX' }"><RadioGroupItem value="PIX" /><span class="text-sm font-medium">Pix</span></label
-                  ><label v-if="cardapio?.restaurante.pagamentoOnlineAtivo" class="choice-card compact" :class="{ selected: pagamento === 'CHECKOUT_PRO' }"><RadioGroupItem value="CHECKOUT_PRO" /><span class="text-sm font-medium">Cartão online</span></label></RadioGroup
+                  ><label v-if="cardapio?.restaurante.pagamentoOnlineAtivo" class="choice-card compact" :class="{ selected: pagamento === 'PIX' }"><RadioGroupItem value="PIX" /><span class="text-sm font-medium">Pix</span></label></RadioGroup
                 >
               </section>
               <div class="space-y-2"><Label for="order-note">Observação do pedido</Label><Textarea id="order-note" v-model="form.observacao" rows="3" placeholder="Ex.: tirar cebola, chamar no portão..." /></div>
@@ -1631,7 +1690,6 @@ onBeforeUnmount(() => {
                 <p class="mt-1 text-xs text-stone-500">Use este link para retomar o pagamento do pedido.</p>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <Button v-if="trackingDetails.paymentAction.type === 'PIX'" size="sm" variant="outline" @click="copyPix(trackingDetails.paymentAction)"><Clipboard class="mr-1.5 h-4 w-4" />Copiar Pix</Button>
-                  <Button v-if="trackingDetails.paymentAction.url" size="sm" as-child :style="primaryButtonStyle"><a :href="trackingDetails.paymentAction.url" target="_blank" rel="noopener noreferrer">Pagar agora</a></Button>
                 </div>
               </div>
             </section>

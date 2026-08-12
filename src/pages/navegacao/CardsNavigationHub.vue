@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { filterSidebarMenuByVisibility, sidebarMenuOptions } from '@/layouts/options'
+import { sidebarMenuOptionsAdmin } from '@/layouts/optionsAdmin'
 import { useUiStore } from '@/stores/ui/uiStore'
 import type { SidebarMenuType } from '@/types/sidebar'
 
@@ -15,6 +16,16 @@ type NavigationEntry = SidebarMenuType & { children?: Array<Omit<SidebarMenuType
 const route = useRoute()
 const router = useRouter()
 const uiStore = useUiStore()
+const props = withDefaults(
+  defineProps<{
+    menu?: SidebarMenuType[]
+    homePath?: string
+    moduleRouteName?: string
+  }>(),
+  {
+    menu: undefined,
+  },
+)
 
 const colorClasses: Record<NonNullable<SidebarMenuType['color']>, string> = {
   blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-300',
@@ -32,8 +43,14 @@ const colorClasses: Record<NonNullable<SidebarMenuType['color']>, string> = {
   violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-300',
 }
 
-const menus = computed<NavigationEntry[]>(() =>
-  filterSidebarMenuByVisibility(
+const isAdminNavigation = computed(() => route.path.startsWith('/admin'))
+const homePath = computed(() => props.homePath ?? (isAdminNavigation.value ? '/admin' : '/'))
+const moduleRouteName = computed(() =>
+  props.moduleRouteName ?? (isAdminNavigation.value ? 'admin-navegacao-cards-modulo' : 'navegacao-cards-modulo'),
+)
+
+const menus = computed<NavigationEntry[]>(() => {
+  const erpMenu = filterSidebarMenuByVisibility(
     sidebarMenuOptions(
       uiStore.permissoes,
       uiStore.appModules,
@@ -42,14 +59,17 @@ const menus = computed<NavigationEntry[]>(() =>
     uiStore.visibleMenuKeys,
     uiStore.usuarioLogged.permissao === 'root',
     uiStore.hiddenSubmenuKeys,
-  ).filter(
+  )
+  const source = props.menu ?? (isAdminNavigation.value ? sidebarMenuOptionsAdmin(uiStore.permissoes) : erpMenu)
+
+  return source.filter(
     (item) =>
       !item.divisor &&
       item.show !== false &&
       Boolean(item.key) &&
       (Boolean(item.link) || (item.children?.length ?? 0) > 0),
-  ),
-)
+  ) as NavigationEntry[]
+})
 
 const moduleKey = computed(() => String(route.params.moduleKey || ''))
 const moduloSelecionado = computed(() =>
@@ -76,18 +96,14 @@ function entryIcon(entry?: Pick<SidebarMenuType, 'icone'>): Component {
 
 function openEntry(entry: NavigationEntry | Omit<NavigationEntry, 'children'>) {
   if ('children' in entry && entry.children?.length && entry.key) {
-    void router.push({ name: 'navegacao-cards-modulo', params: { moduleKey: entry.key } })
-    return
-  }
-  if (entry.key === 'dashboard') {
-    void router.push('/dashboard')
+    void router.push({ name: moduleRouteName.value, params: { moduleKey: entry.key } })
     return
   }
   if (entry.link) void router.push(entry.link)
 }
 
 function voltarParaModulos() {
-  void router.push('/')
+  void router.push(homePath.value)
 }
 
 watch(

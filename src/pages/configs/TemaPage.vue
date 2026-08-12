@@ -130,8 +130,8 @@
           <div>
             <h3 class="font-medium">Estilo da UI</h3>
             <p class="text-sm text-muted-foreground">
-              Esta escolha vale para todos os usuários da conta. O modo Cards facilita o acesso por
-              etapas e remove a barra lateral.
+              Esta escolha vale para todos os usuários da conta. Cards e Site removem a barra lateral;
+              SideV2 preserva o menu lateral em uma versão mais compacta.
             </p>
           </div>
           <div class="grid gap-3 lg:grid-cols-2">
@@ -332,12 +332,14 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
   Check,
+  LayoutPanelTop,
   LayoutGrid,
   LoaderCircle,
   Moon,
   Paintbrush,
   Palette,
   PanelLeft,
+  PanelLeftDashed,
   RotateCcw,
   Save,
   Squircle,
@@ -395,6 +397,20 @@ const navigationStyles: Array<{
     description:
       'Mostra primeiro os módulos e depois os submenus em cards grandes e fáceis de identificar.',
     icon: LayoutGrid,
+  },
+  {
+    value: 'SITE',
+    title: 'Site',
+    description:
+      'Organiza os módulos no cabeçalho, com menus por contexto e um painel móvel completo.',
+    icon: LayoutPanelTop,
+  },
+  {
+    value: 'SIDEV2',
+    title: 'SideV2',
+    description:
+      'Mantém a navegação lateral em uma barra compacta que se expande ao passar o mouse.',
+    icon: PanelLeftDashed,
   },
 ]
 
@@ -559,7 +575,10 @@ onMounted(async () => {
     const response = await ContaRepository.getParametros()
     const theme = normalizeThemeCustomization(response.data?.temaPersonalizado)
     savedTheme.value = { ...theme }
-    estiloUi.value = response.data?.estiloUi === 'CARDS' ? 'CARDS' : 'PADRAO'
+    const estiloSalvo = response.data?.estiloUi
+    estiloUi.value = ['CARDS', 'SITE', 'SIDEV2'].includes(estiloSalvo)
+      ? (estiloSalvo as UiNavigationStyle)
+      : 'PADRAO'
     assignTheme(theme)
   } catch (error) {
     console.error(error)

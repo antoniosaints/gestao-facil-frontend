@@ -1,12 +1,15 @@
 <template>
   <header
     class="hidden md:flex items-center justify-between bg-background text-foreground px-6 py-3 z-20 transition-[background-color,color] duration-300 ease-in-out"
-    :class="{ 'md:ml-64': uiStore.openSidebar && !uiStore.usaNavegacaoPorCards }"
+    :class="{
+      'md:ml-64': uiStore.openSidebar && !uiStore.usaNavegacaoSemSidebar && !uiStore.usaNavegacaoSideV2,
+      'md:ml-72': uiStore.openSidebar && uiStore.usaNavegacaoSideV2,
+    }"
   >
     <div class="text-md font-bold flex items-center gap-4">
       <RouterLink
         v-if="uiStore.usaNavegacaoPorCards"
-        to="/"
+        :to="homePath"
         class="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
       >
         <LayoutGrid class="h-5 w-5" />
@@ -47,6 +50,9 @@ import TourHelpButton from './TourHelpButton.vue'
 import ReportBugButton from './ReportBugButton.vue'
 import RestaurantPrintStatusButton from './RestaurantPrintStatusButton.vue'
 import { isSupportActive } from '@/utils/supportSession'
+withDefaults(defineProps<{ homePath?: string }>(), {
+  homePath: '/',
+})
 const uiStore = useUiStore()
 const horarioSistemaAtual = ref('')
 

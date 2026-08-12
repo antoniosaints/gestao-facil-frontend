@@ -147,6 +147,8 @@ export interface RestaurantePublicOrderTracking {
     type: 'PIX' | 'REDIRECT'
     url?: string | null
     pixCopiaCola?: string | null
+    qrCodeDataUrl?: string | null
+    expiresAt?: string | null
   } | null
   acompanhamentoEntrega?: {
     origem?: { latitude?: number; longitude?: number } | null

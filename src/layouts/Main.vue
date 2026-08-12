@@ -1,9 +1,10 @@
 <template>
   <div class="bg-body min-h-screen overflow-hidden flex flex-col">
-    <HeaderMenu />
+    <SiteNavigation v-if="store.usaNavegacaoSite" :menu="sidebarMenu" />
+    <HeaderMenu v-else />
     <!-- Botão de abrir menu (mobile) -->
     <button
-      v-if="!store.usaNavegacaoPorCards"
+      v-if="!store.usaNavegacaoSemSidebar"
       type="button"
       @click="store.toggleSidebar"
       class="md:hidden fixed flex items-center right-0 w-10 h-14 pl-3 pr-0 bottom-16 transform -translate-y-1/2 z-30 bg-primary/70 text-gray-200 dark:text-gray-300 px-2 py-3 rounded-l-full shadow-lg"
@@ -11,7 +12,7 @@
       <PanelRightClose />
     </button>
     <RouterLink
-      v-else
+      v-else-if="store.usaNavegacaoPorCards"
       to="/"
       class="md:hidden fixed right-4 bottom-4 z-30 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg"
     >
@@ -19,8 +20,9 @@
       <span class="sr-only">Abrir módulos</span>
     </RouterLink>
     <!-- Sidebar -->
+    <SidebarV2 v-if="store.usaNavegacaoSideV2" :menu="sidebarMenu" />
     <aside
-      v-if="!store.usaNavegacaoPorCards"
+      v-else-if="!store.usaNavegacaoSemSidebar"
       id="sidebar-content-sistema"
       class="fixed overflow-auto top-0 flex flex-col justify-between hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-sidebar p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
       :class="{ '-translate-x-full': !store.openSidebar }"
@@ -49,7 +51,8 @@
       id="container-main-app-sistema"
       class="min-h-0 flex-1 overflow-y-auto mt-0 text-gray-700 transition-all duration-300 ease-in-out dark:text-gray-300"
       :class="{
-        'md:ml-64': store.openSidebar && !store.usaNavegacaoPorCards,
+        'md:ml-64': store.openSidebar && !store.usaNavegacaoSemSidebar && !store.usaNavegacaoSideV2,
+        'md:ml-72': store.openSidebar && store.usaNavegacaoSideV2,
         'p-0': isFullscreenContent,
         'p-6': !isFullscreenContent,
       }"
@@ -71,7 +74,8 @@
           :class="{
             'bg-primary/50': env.VITE_MODE_SYSTEM === 'erp',
             'bg-success/50': env.VITE_MODE_SYSTEM === 'arena',
-            'left-[16rem]': store.openSidebar,
+            'left-[16rem]': store.openSidebar && !store.usaNavegacaoSideV2,
+            'left-72': store.openSidebar && store.usaNavegacaoSideV2,
             'left-0': !store.openSidebar,
           }"
         ></div>
@@ -101,7 +105,9 @@
 <script setup lang="ts">
 import ColorToggle from '@/components/layout/colorToggle.vue'
 import HeaderMenu from '@/components/layout/headerMenu.vue'
+import SiteNavigation from '@/components/layout/SiteNavigation.vue'
 import SidebarMenu from '@/components/layout/sidebarMenu.vue'
+import SidebarV2 from '@/components/layout/SidebarV2.vue'
 import { filterSidebarMenuByVisibility, sidebarMenuOptions } from './options'
 import LogoutButton from '@/components/layout/logoutButton.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -139,7 +145,7 @@ const sidebarMenu = computed(() => {
 })
 const isFullscreenContent = computed(() => route.name === 'restaurante-acompanhar-entregas')
 window.addEventListener('resize', () => {
-  if (store.usaNavegacaoPorCards) return
+  if (store.usaNavegacaoSemSidebar) return
   if (window.innerWidth < 768) {
     store.openSidebar = false
   } else {
@@ -158,9 +164,9 @@ watch(
 )
 
 watch(
-  () => store.usaNavegacaoPorCards,
-  (cardsMode) => {
-    store.openSidebar = cardsMode ? false : window.innerWidth >= 768
+  () => store.usaNavegacaoSemSidebar,
+  (withoutSidebar) => {
+    store.openSidebar = withoutSidebar ? false : window.innerWidth >= 768
   },
   { immediate: true },
 )
