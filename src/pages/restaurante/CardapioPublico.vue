@@ -219,6 +219,11 @@ const pixTimeRemaining = computed(() => {
   return Math.max(0, new Date(expiresAt).getTime() - paymentClock.value)
 })
 const pixExpired = computed(() => pixTimeRemaining.value === 0)
+const pixUrgencyRemaining = computed(() => {
+  if (pixTimeRemaining.value === null) return null
+  return Math.min(5 * 60 * 1000, Math.max(0, pixTimeRemaining.value - 25 * 60 * 1000))
+})
+const pixUrgencyElapsed = computed(() => !pixExpired.value && pixUrgencyRemaining.value === 0)
 
 const categories = computed(() => [{ key: 'todos', name: 'Todos' }, ...categoryGroups.value.map(({ key, name }) => ({ key, name }))])
 
@@ -1481,9 +1486,10 @@ onBeforeUnmount(() => {
                 <p class="text-sm">Este Pix não está mais disponível. Consulte o restaurante para continuar.</p>
               </div>
               <div v-else-if="checkoutPaymentAction?.type === 'PIX'" class="brand-soft space-y-4 rounded-2xl p-5">
-                <div class="flex items-start justify-between gap-3"><div><p class="font-semibold">Pague com Pix</p><p class="mt-1 text-sm text-stone-600 dark:text-stone-300">Escaneie o QR Code ou copie o código.</p></div><span v-if="pixTimeRemaining !== null" class="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold tabular-nums dark:bg-zinc-950/50" :class="{ 'text-red-600': pixExpired }"><Timer class="h-3.5 w-3.5" />{{ pixExpired ? 'Expirado' : formatPixTimeRemaining(pixTimeRemaining) }}</span></div>
+                <div class="flex items-start justify-between gap-3"><div><p class="font-semibold">Pague com Pix</p><p class="mt-1 text-sm text-stone-600 dark:text-stone-300">Escaneie o QR Code ou copie o código.</p></div><span v-if="pixTimeRemaining !== null" class="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold tabular-nums dark:bg-zinc-950/50" :class="{ 'text-red-600': pixExpired, 'text-amber-700 dark:text-amber-300': pixUrgencyElapsed }"><Timer class="h-3.5 w-3.5" />{{ pixExpired ? 'Expirado' : pixUrgencyElapsed ? 'Pague o quanto antes' : `${formatPixTimeRemaining(pixUrgencyRemaining)} para pagar` }}</span></div>
                 <div class="flex justify-center rounded-2xl bg-white p-3 dark:bg-zinc-950"><img v-if="checkoutPaymentAction.qrCodeDataUrl" :src="checkoutPaymentAction.qrCodeDataUrl" width="220" height="220" class="h-[220px] w-[220px] rounded-lg" alt="QR Code para pagamento Pix" /></div>
                 <div class="flex min-w-0 items-center gap-2 rounded-xl border bg-white/65 p-2 dark:bg-zinc-950/40"><code class="min-w-0 flex-1 truncate px-2 text-xs text-stone-600 dark:text-stone-300">{{ truncatePixCode(checkoutPaymentAction.pixCopiaCola) }}</code><Button class="tap-button shrink-0" size="sm" :disabled="pixExpired" @click="copyPix(checkoutPaymentAction)"><Check v-if="pixCopied" class="mr-1.5 h-4 w-4" /><Clipboard v-else class="mr-1.5 h-4 w-4" />{{ pixCopied ? 'Copiado' : 'Copiar Pix' }}</Button></div>
+                <p v-if="pixUrgencyElapsed" class="text-sm text-amber-700 dark:text-amber-300">O Pix ainda pode ser pago, mas confirme o quanto antes.</p>
                 <p v-if="pixExpired" class="text-sm font-medium text-red-600">Este código expirou. Gere um novo pedido para receber outro Pix.</p>
               </div>
               <p v-else class="rounded-2xl bg-stone-100 p-4 text-sm text-stone-600 dark:bg-zinc-800 dark:text-stone-300">O pagamento será realizado na {{ origem === 'DELIVERY' ? 'entrega' : 'retirada' }}.</p>
