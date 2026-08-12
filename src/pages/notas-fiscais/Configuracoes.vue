@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
-import { Building2, CheckCircle2, Cog, FileKey2, LoaderCircle, MapPin, MapPinCheck, Save, Search } from 'lucide-vue-next'
+import { Building2, CheckCircle2, Cog, FileKey2, Landmark, LoaderCircle, MapPin, MapPinCheck, Save, Search } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -25,10 +25,13 @@ const municipalities = ref<MunicipioIbge[]>([])
 const config = reactive<FiscalConfig>({
   razaoSocial: '', nomeFantasia: '', documento: '', inscricaoEstadual: '', inscricaoMunicipal: '', regimeTributario: 0,
   codigoMunicipioIbge: '', codigoMunicipioPrestador: '', municipioNome: '', uf: '', cep: '', logradouro: '', numero: '', bairro: '', complemento: '',
-  email: '', telefone: '', ambiente: 'HOMOLOGACAO', provedorNfse: 'NACIONAL', serieRps: 1, proximoNumeroRps: 1,
+  email: '', telefone: '', ambiente: 'HOMOLOGACAO', modoEmissaoNfse: 'NACIONAL', provedorNfse: 'NACIONAL', serieRps: 1, proximoNumeroRps: 1,
   codigoServicoPadrao: '', descricaoServicoPadrao: '', codigoAtividadePadrao: '', descricaoAtividadePadrao: '', tipoTributacaoPadrao: null, tipoRecolhimentoPadrao: null, notaIntermediadaPadrao: 2, aliquotaIssPadrao: null,
   certificado: { configurado: false, nome: null, atualizadoEm: null }, integracao: { tipo: 'CERTIFICADO_A1', configurada: false, atualizadoEm: null }, emissaoNfsePronta: false,
 })
+
+const isSaoMateus = computed(() => config.codigoMunicipioIbge === '2111508')
+const usingLegacyD2ti = computed(() => config.modoEmissaoNfse === 'LEGADO_D2TI')
 
 function assignConfig(data: FiscalConfig) { Object.assign(config, data) }
 function errorMessage(error: any, fallback: string) { return error?.response?.data?.error?.message || error?.response?.data?.message || fallback }
@@ -92,6 +95,16 @@ async function saveD2tiToken() {
   finally { uploadingCredential.value = false }
 }
 
+async function consultNationalParameters() {
+  if (!config.codigoMunicipioIbge) return toast.info('Selecione o município antes de consultar as regras nacionais.')
+  try {
+    uploadingCredential.value = true
+    await NotasFiscaisRepository.consultarParametrosMunicipais()
+    toast.success('Parâmetros municipais consultados no Emissor Nacional.')
+  } catch (error: any) { toast.error(errorMessage(error, 'Não foi possível consultar os parâmetros municipais agora.')) }
+  finally { uploadingCredential.value = false }
+}
+
 onMounted(load)
 </script>
 
@@ -129,6 +142,15 @@ onMounted(load)
         </Card>
       </div>
 
+      <Card class="border-primary/20">
+        <CardHeader><CardTitle class="flex items-center gap-2"><Landmark class="size-5 text-primary" />Rota de emissão</CardTitle><CardDescription>Escolha o autorizador usado pela prefeitura. O código IBGE continua sendo a referência das regras municipais.</CardDescription></CardHeader>
+        <CardContent class="grid gap-3 md:grid-cols-2">
+          <button type="button" class="rounded-xl border p-4 text-left transition-colors" :class="config.modoEmissaoNfse === 'NACIONAL' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'hover:bg-accent'" @click="config.modoEmissaoNfse = 'NACIONAL'"><p class="font-semibold">Emissor Público Nacional</p><p class="mt-1 text-sm text-muted-foreground">Monta a DPS pelo padrão SEFIN Nacional a partir dos parâmetros do município.</p></button>
+          <button type="button" :disabled="!isSaoMateus" class="rounded-xl border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50" :class="config.modoEmissaoNfse === 'LEGADO_D2TI' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'hover:bg-accent'" @click="config.modoEmissaoNfse = 'LEGADO_D2TI'"><p class="font-semibold">Legado D2TI</p><p class="mt-1 text-sm text-muted-foreground">Integração municipal disponível para São Mateus do Maranhão - MA.</p></button>
+        </CardContent>
+        <div class="px-6 pb-5 text-sm text-muted-foreground">{{ isSaoMateus ? 'São Mateus pode usar o Emissor Nacional ou continuar no legado D2TI.' : 'O legado D2TI só está disponível para São Mateus do Maranhão - MA.' }}</div>
+      </Card>
+
       <Card>
         <CardHeader><CardTitle class="flex items-center gap-2"><MapPinCheck class="size-5 text-primary" />Endereço e contato</CardTitle><CardDescription>Dados do prestador enviados à prefeitura.</CardDescription></CardHeader>
         <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -149,14 +171,14 @@ onMounted(load)
           </CardContent>
         </Card>
 
-        <Card v-if="config.integracao.tipo === 'TOKEN_D2TI'" class="border-primary/25">
+        <Card v-if="usingLegacyD2ti" class="border-primary/25">
           <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Integração D2TI</CardTitle><CardDescription>São Mateus do Maranhão usa token de emissor RPS. Ele é cifrado antes de ser salvo.</CardDescription></CardHeader>
           <CardContent class="space-y-4"><div v-if="config.integracao.configurada" class="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 class="size-5" /><span>Token D2TI configurado.</span></div><div class="space-y-1.5"><Label for="d2ti-token">Token do portal municipal</Label><Input id="d2ti-token" v-model="d2tiToken" maxlength="32" autocomplete="off" placeholder="32 caracteres da Configuração da Nota" /></div><Button variant="outline" :disabled="uploadingCredential" @click="saveD2tiToken"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.integracao.configurada ? 'Substituir token' : 'Salvar token' }}</Button></CardContent>
         </Card>
 
         <Card v-else class="border-primary/25">
-          <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Certificado digital A1</CardTitle><CardDescription>Arquivos .pfx ou .p12 de até 5 MB. O arquivo e a senha são cifrados antes de serem persistidos.</CardDescription></CardHeader>
-          <CardContent class="space-y-4"><div v-if="config.certificado.configurado" class="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 class="size-5" /><span>Certificado configurado: {{ config.certificado.nome }}</span></div><div class="space-y-1.5"><Label for="certificado">Arquivo do certificado</Label><Input id="certificado" type="file" accept=".pfx,.p12,application/x-pkcs12" @change="certificateFile = ($event.target as HTMLInputElement).files?.[0] ?? null" /></div><div class="space-y-1.5"><Label for="senha-certificado">Senha do certificado</Label><Input id="senha-certificado" v-model="certificatePassword" type="password" autocomplete="new-password" placeholder="Senha cadastrada no certificado A1" /></div><Button variant="outline" :disabled="uploadingCredential" @click="uploadCertificate"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.certificado.configurado ? 'Substituir certificado' : 'Salvar certificado' }}</Button></CardContent>
+          <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Certificado digital A1</CardTitle><CardDescription>O Emissor Nacional usa o certificado e os parâmetros municipais oficiais para preparar a DPS. Arquivos .pfx ou .p12 de até 5 MB são cifrados antes de serem persistidos.</CardDescription></CardHeader>
+          <CardContent class="space-y-4"><div v-if="config.certificado.configurado" class="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 class="size-5" /><span>Certificado configurado: {{ config.certificado.nome }}</span></div><div class="space-y-1.5"><Label for="certificado">Arquivo do certificado</Label><Input id="certificado" type="file" accept=".pfx,.p12,application/x-pkcs12" @change="certificateFile = ($event.target as HTMLInputElement).files?.[0] ?? null" /></div><div class="space-y-1.5"><Label for="senha-certificado">Senha do certificado</Label><Input id="senha-certificado" v-model="certificatePassword" type="password" autocomplete="new-password" placeholder="Senha cadastrada no certificado A1" /></div><div class="flex flex-wrap gap-2"><Button variant="outline" :disabled="uploadingCredential" @click="uploadCertificate"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.certificado.configurado ? 'Substituir certificado' : 'Salvar certificado' }}</Button><Button variant="secondary" :disabled="uploadingCredential" @click="consultNationalParameters"><Search />Consultar regras municipais</Button></div></CardContent>
         </Card>
       </div>
     </template>

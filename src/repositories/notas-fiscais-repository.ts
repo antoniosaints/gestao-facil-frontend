@@ -19,6 +19,7 @@ export type FiscalConfig = {
   email: string
   telefone: string
   ambiente: 'HOMOLOGACAO' | 'PRODUCAO'
+  modoEmissaoNfse: 'NACIONAL' | 'LEGADO_D2TI'
   provedorNfse: string
   serieRps: number
   proximoNumeroRps: number
@@ -67,6 +68,11 @@ export class NotasFiscaisRepository {
     return data.data as MunicipioIbge[]
   }
 
+  static async consultarParametrosMunicipais() {
+    const { data } = await http.get('/v1/notas-fiscais/parametros-municipais')
+    return data.data as unknown
+  }
+
   static async uploadCertificate(file: File, senha: string) {
     const form = new FormData()
     form.append('certificado', file)
@@ -92,7 +98,7 @@ export class NotasFiscaisRepository {
     return data.data as { configurado: boolean; atualizadoEm: string }
   }
 
-  static async emitD2ti(payload: { clienteId: number; valorTotal: number; codigoServico?: string; codigoMunicipioTomador: string; discriminacao: string }, idempotencyKey: string) {
+  static async emitNfse(payload: { clienteId: number; valorTotal: number; codigoServico?: string; codigoMunicipioTomador?: string; discriminacao: string }, idempotencyKey: string) {
     const { data } = await http.post('/v1/notas-fiscais/nfs-e/emitir', payload, { headers: { 'Idempotency-Key': idempotencyKey } })
     return data.data as NfseListItem
   }
