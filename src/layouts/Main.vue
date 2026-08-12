@@ -137,7 +137,7 @@ const printAgent = useRestaurantPrintAgent()
 const loading = ref(false)
 const sidebarMenu = computed(() => {
   return filterSidebarMenuByVisibility(
-    sidebarMenuOptions(store.permissoes, store.appModules, store.restaurantAccess.capabilities),
+    sidebarMenuOptions(store.permissoes, store.appModules, store.restaurantAccess.capabilities, store.ouriveAccess.capabilities),
     store.visibleMenuKeys,
     store.usuarioLogged.permissao === 'root',
     store.hiddenSubmenuKeys,

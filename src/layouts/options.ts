@@ -1,5 +1,6 @@
 import { type Permissoes } from '@/stores/ui/uiStore'
 import type { RestauranteCapability } from '@/repositories/restaurante-repository'
+import type { OuriveCapability } from '@/repositories/ourive-repository'
 import type { SidebarMenuType } from '@/types/sidebar'
 import {
   ArrowRightLeft,
@@ -43,6 +44,7 @@ import {
   UserStar,
   Wrench,
   UtensilsCrossed,
+  Gem,
   CookingPot,
   Printer,
   FileText,
@@ -110,6 +112,12 @@ export const MAIN_MENU_VISIBILITY_OPTIONS = [
     icon: UtensilsCrossed,
   },
   {
+    key: 'ourive',
+    nome: 'Ourive',
+    descricao: 'Ordens de joalheria, peças sob custódia, produção e comissões.',
+    icon: Gem,
+  },
+  {
     key: 'notas-fiscais',
     nome: 'Notas fiscais',
     descricao: 'Módulo adicional para emissão e configuração fiscal.',
@@ -158,6 +166,7 @@ export const APP_MENU_MODULE_KEYS: Partial<Record<MainMenuVisibilityKey, string>
   arena: 'arena',
   reservas: 'reservas',
   restaurante: 'restaurante-delivery',
+  ourive: 'ourives',
   'notas-fiscais': 'notas-fiscais',
   'core-ia': 'core-ia',
   whatsapp: 'whatsapp',
@@ -239,6 +248,16 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'restaurante:pedidos', nome: 'Pedidos' },
     { key: 'restaurante:configuracoes', nome: 'Configurações' },
   ],
+  ourive: [
+    { key: 'ourive:painel', nome: 'Painel' },
+    { key: 'ourive:ordens', nome: 'Ordens' },
+    { key: 'ourive:producao', nome: 'Produção' },
+    { key: 'ourive:pecas', nome: 'Peças' },
+    { key: 'ourive:equipe', nome: 'Equipe e especialidades' },
+    { key: 'ourive:comissoes', nome: 'Comissões' },
+    { key: 'ourive:relatorios', nome: 'Relatórios' },
+    { key: 'ourive:configuracoes', nome: 'Configurações' },
+  ],
   'notas-fiscais': [
     { key: 'notas-fiscais:nfse', nome: 'NFS-e' },
     { key: 'notas-fiscais:nfe', nome: 'NF-e' },
@@ -298,6 +317,7 @@ export const sidebarMenuOptions = (
   permissions: Permissoes,
   appModules: Record<string, boolean> = {},
   restaurantCapabilities: RestauranteCapability[] = [],
+  ouriveCapabilities: OuriveCapability[] = [],
 ): SidebarMenuType[] => {
   const hasAssinaturasApp = Boolean(appModules.assinaturas)
   const hasCoreIaApp = Boolean(appModules['core-ia'])
@@ -308,8 +328,11 @@ export const sidebarMenuOptions = (
   const hasReservationsApp = Boolean(appModules.reservas)
   const hasRestauranteApp = Boolean(appModules['restaurante-delivery'])
   const hasNotasFiscaisApp = Boolean(appModules['notas-fiscais'])
+  const hasOuriveApp = Boolean(appModules.ourives)
   const restaurantAccess = new Set(restaurantCapabilities)
   const hasRestaurantAccess = restaurantCapabilities.length > 0
+  const ouriveAccess = new Set(ouriveCapabilities)
+  const hasOuriveAccess = ouriveCapabilities.length > 0
   const hasCombosApp = Boolean(appModules.combos)
   const hasVisibleAppsSection =
     (permissions.financeiro.visualizar && hasAssinaturasApp) ||
@@ -319,6 +342,7 @@ export const sidebarMenuOptions = (
     (permissions.produtos.visualizar && hasLojaApp) ||
     (permissions.reservas.visualizar && hasReservationsApp) ||
     (hasRestauranteApp && hasRestaurantAccess) ||
+    (hasOuriveApp && hasOuriveAccess) ||
     (permissions.configuracoes.visualizar && hasNotasFiscaisApp)
 
   return [
@@ -548,6 +572,23 @@ export const sidebarMenuOptions = (
           icone: Cog,
           color: 'orange',
         },
+      ],
+    },
+    {
+      key: 'ourive',
+      nome: 'Ourive',
+      icone: Gem,
+      show: hasOuriveApp && hasOuriveAccess,
+      color: 'yellow',
+      children: [
+        { key: 'ourive:painel', nome: 'Painel', link: '/ourive', show: ouriveAccess.has('VISUALIZAR'), icone: ChartPie, color: 'yellow' },
+        { key: 'ourive:ordens', nome: 'Ordens', link: '/ourive/ordens', show: ouriveAccess.has('VISUALIZAR'), icone: ClipboardList, color: 'yellow' },
+        { key: 'ourive:producao', nome: 'Produção', link: '/ourive/producao', show: ouriveAccess.has('PRODUCAO'), icone: Wrench, color: 'yellow' },
+        { key: 'ourive:pecas', nome: 'Peças', link: '/ourive/pecas', show: ouriveAccess.has('RECEBER'), icone: Gem, color: 'yellow' },
+        { key: 'ourive:equipe', nome: 'Equipe e especialidades', link: '/ourive/equipe', show: ouriveAccess.has('EQUIPE'), icone: Users, color: 'yellow' },
+        { key: 'ourive:comissoes', nome: 'Comissões', link: '/ourive/comissoes', show: ouriveAccess.has('VISUALIZAR'), icone: HandCoins, color: 'yellow' },
+        { key: 'ourive:relatorios', nome: 'Relatórios', link: '/ourive/relatorios', show: ouriveAccess.has('RELATORIOS'), icone: ChartPie, color: 'yellow' },
+        { key: 'ourive:configuracoes', nome: 'Configurações', link: '/ourive/configuracoes', show: ouriveAccess.has('CONFIGURAR'), icone: Cog, color: 'yellow' },
       ],
     },
     {

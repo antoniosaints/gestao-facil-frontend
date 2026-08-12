@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, Clock3, CreditCard, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Menu, Minus, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Timer, Trash2, Truck, UserRound, UtensilsCrossed, X } from 'lucide-vue-next'
+import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, Clock3, CreditCard, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Menu, Minus, Moon, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Sun, Timer, Trash2, Truck, UserRound, UtensilsCrossed, X } from 'lucide-vue-next'
 import { RestauranteRepository, type RestauranteCheckoutPreview, type RestauranteClienteConta, type RestauranteClienteEndereco, type RestaurantePublicOrderTracking } from '@/repositories/restaurante-repository'
 import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { useConfirm } from '@/composables/useConfirm'
@@ -51,6 +51,8 @@ const cartDrawerOpen = ref(false)
 const itemDialogOpen = ref(false)
 const itemAddedOpen = ref(false)
 const cardapio = ref<any>(null)
+const menuDarkMode = ref(false)
+const currentYear = new Date().getFullYear()
 type CartLine = {
   id: string
   item: any
@@ -258,8 +260,22 @@ const estimatedSubtotal = computed(() =>
 const activeUnitPrice = computed(() => (activeItem.value ? calculateMenuItemUnitPrice(activeItem.value, draftSelections.value) : 0))
 const menuThemeStyle = computed<CSSProperties>(() => {
   const theme = normalizeThemeCustomization(cardapio.value?.restaurante.temaPersonalizado)
-  const palette = getThemePalette(theme, 'light')
+  const palette = getThemePalette(theme, menuDarkMode.value ? 'dark' : 'light')
   return {
+    '--background': hexToHslValue(palette.background),
+    '--foreground': hexToHslValue(palette.foreground),
+    '--card': hexToHslValue(palette.card),
+    '--card-foreground': hexToHslValue(palette.foreground),
+    '--popover': hexToHslValue(palette.popover),
+    '--popover-foreground': hexToHslValue(palette.foreground),
+    '--secondary': hexToHslValue(palette.secondary),
+    '--secondary-foreground': hexToHslValue(palette.foreground),
+    '--muted': hexToHslValue(palette.muted),
+    '--muted-foreground': hexToHslValue(palette.mutedForeground),
+    '--accent': hexToHslValue(palette.accent),
+    '--accent-foreground': hexToHslValue(palette.foreground),
+    '--border': hexToHslValue(palette.border),
+    '--input': hexToHslValue(palette.input),
     '--menu-bg': palette.body,
     '--menu-surface': palette.card,
     '--menu-ink': palette.foreground,
@@ -275,7 +291,7 @@ const menuThemeStyle = computed<CSSProperties>(() => {
   } as CSSProperties
 })
 const primaryButtonStyle = computed<CSSProperties>(() => {
-  const palette = getThemePalette(cardapio.value?.restaurante.temaPersonalizado, 'light')
+  const palette = getThemePalette(cardapio.value?.restaurante.temaPersonalizado, menuDarkMode.value ? 'dark' : 'light')
   return {
     backgroundColor: palette.primary,
     color: palette.primaryForeground,
@@ -307,6 +323,15 @@ function customerTokenKey() {
 
 function customerToken() {
   return localStorage.getItem(customerTokenKey())
+}
+
+function menuThemeStorageKey() {
+  return `restaurante:tema:${String(route.params.slug)}`
+}
+
+function toggleMenuTheme() {
+  menuDarkMode.value = !menuDarkMode.value
+  localStorage.setItem(menuThemeStorageKey(), menuDarkMode.value ? 'dark' : 'light')
 }
 
 function applyAccountAddress(address?: RestauranteClienteEndereco) {
@@ -1034,6 +1059,7 @@ watch([trackingDetailsOpen, trackingDetails], async ([open, order]) => {
 })
 
 onMounted(async () => {
+  menuDarkMode.value = localStorage.getItem(menuThemeStorageKey()) === 'dark'
   paymentClockTimer = setInterval(() => { paymentClock.value = Date.now() }, 1000)
   await carregar()
   if (customerToken()) await loadCustomerAccount(true)
@@ -1053,7 +1079,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="restaurant-menu min-h-screen pb-28 lg:pb-12" :style="menuThemeStyle">
+  <main class="restaurant-menu min-h-screen pb-28 lg:pb-12" :class="{ dark: menuDarkMode }" :style="menuThemeStyle">
     <div v-if="loading" class="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
       <Skeleton class="h-56 rounded-[28px]" />
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -1097,6 +1123,11 @@ onBeforeUnmount(() => {
               </div>
             </div>
             <div class="hero-actions flex shrink-0 flex-wrap items-center gap-2">
+              <button type="button" class="hero-action hero-theme-toggle" :aria-label="menuDarkMode ? 'Ativar tema claro' : 'Ativar tema escuro'" :title="menuDarkMode ? 'Tema claro' : 'Tema escuro'" @click="toggleMenuTheme">
+                <Sun v-if="menuDarkMode" class="h-4 w-4" />
+                <Moon v-else class="h-4 w-4" />
+                <span>{{ menuDarkMode ? 'Claro' : 'Escuro' }}</span>
+              </button>
               <button type="button" class="hero-action" @click="openOrderHistory">
                 <History class="h-4 w-4" />
                 <span>Meus pedidos</span>
@@ -1111,6 +1142,10 @@ onBeforeUnmount(() => {
               </div>
             </div>
           </div>
+          <button type="button" class="menu-theme-mobile" :aria-label="menuDarkMode ? 'Ativar tema claro' : 'Ativar tema escuro'" @click="toggleMenuTheme">
+            <Sun v-if="menuDarkMode" class="h-4 w-4" />
+            <Moon v-else class="h-4 w-4" />
+          </button>
         </div>
       </section>
           <div v-if="!isPromotionsPage" class="menu-toolbar">
@@ -1359,7 +1394,7 @@ onBeforeUnmount(() => {
     </template>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="itemDialogOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(92vh,760px)] lg:max-h-[92vh] lg:max-w-2xl lg:flex-col lg:rounded-[24px]" :content-style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(92vh,760px)] lg:max-h-[92vh] lg:max-w-2xl lg:flex-col lg:rounded-[24px]" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
         <template v-if="activeItem">
           <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y">
             <div v-if="itemImage(activeItem)" class="h-52 overflow-hidden rounded-t-[24px] sm:h-64 lg:rounded-t-[24px]">
@@ -1397,7 +1432,7 @@ onBeforeUnmount(() => {
                 <button type="button" class="quantity-button h-10 w-10 bg-white dark:bg-zinc-900" :disabled="draftQuantity <= 1" @click="draftQuantity--">
                   <Minus class="h-4 w-4" />
                 </button>
-                <strong class="tabular-nums">{{ draftQuantity }}</strong>
+                <strong class="tabular-nums dark:text-zinc-100">{{ draftQuantity }}</strong>
                 <button type="button" class="quantity-button h-10 w-10 bg-white dark:bg-zinc-900" @click="draftQuantity++">
                   <Plus class="h-4 w-4" />
                 </button>
@@ -1415,7 +1450,7 @@ onBeforeUnmount(() => {
     </component>
 
     <Dialog v-model:open="itemAddedOpen">
-      <DialogContent class="max-w-sm rounded-3xl p-6" :content-style="menuThemeStyle">
+      <DialogContent class="menu-overlay max-w-sm rounded-3xl p-6" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
         <DialogHeader class="text-left">
           <DialogTitle class="menu-heading text-xl">Item adicionado ao carrinho</DialogTitle>
           <DialogDescription>Deseja conferir o carrinho ou continuar escolhendo?</DialogDescription>
@@ -1428,7 +1463,7 @@ onBeforeUnmount(() => {
     </Dialog>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="cartDrawerOpen">
-      <component :is="menuModalContent" class="menu-overlay max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :content-style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
         <component :is="menuModalHeader" class="shrink-0 text-left lg:px-7 lg:pt-6"
           ><component :is="menuModalTitle" class="menu-heading text-xl">Seu carrinho</component><component :is="menuModalDescription">{{ cartUnits }} {{ cartUnits === 1 ? 'item selecionado' : 'itens selecionados' }}</component></component
         >
@@ -1465,7 +1500,7 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="checkoutOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-4xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :content-style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-4xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
         <template v-if="orderResult">
           <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [scrollbar-gutter:stable] p-6 sm:p-9">
             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-emerald-100 text-emerald-700">
@@ -1620,7 +1655,7 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="historyOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :content-style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
         <div class="border-b md:px-6 md:py-5 sm:px-8">
           <component :is="menuModalHeader" class="text-left">
             <component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><History class="h-5 w-5 brand-text" />Meus pedidos</component>
@@ -1666,7 +1701,7 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="trackingDetailsOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :content-style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
         <div class="shrink-0 border-b md:px-6 md:py-5 sm:px-8">
           <component :is="menuModalHeader" class="text-left">
             <component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><PackageCheck class="brand-text h-5 w-5" />Acompanhar pedido</component>
@@ -1730,7 +1765,7 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="accountOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :content-style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
         <component :is="menuModalHeader" class="shrink-0 border-b md:px-5 md:py-5 text-left sm:px-7"><component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><UserRound class="brand-text h-5 w-5" />{{ accountMode === 'profile' ? 'Minha conta' : accountMode === 'register' ? 'Criar conta' : 'Entrar na conta' }}</component><component :is="menuModalDescription">{{ accountMode === 'profile' ? 'Seus dados, endereços e histórico neste restaurante.' : 'Entre com telefone e senha para ter seus pedidos sempre com você.' }}</component></component>
         <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [scrollbar-gutter:stable]">
         <div v-if="accountLoading" class="flex justify-center py-16"><LoaderCircle class="h-6 w-6 animate-spin brand-text" /></div>
@@ -1772,6 +1807,11 @@ onBeforeUnmount(() => {
         </component>
       </component>
     </component>
+    <footer v-if="cardapio" class="menu-system-footer" aria-label="Informações do sistema">
+      <a href="https://www.instagram.com/nexosistemas.br?igsh=ZGE1MmZibDJtb29z" target="_blank" rel="noopener noreferrer">
+        Criado por Nexo Sistemas <span aria-hidden="true">·</span> {{ currentYear }}
+      </a>
+    </footer>
     <ConfirmModal />
   </main>
 </template>
@@ -1791,6 +1831,21 @@ onBeforeUnmount(() => {
   font-family: var(--app-font, 'Inter'), sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+.menu-system-footer {
+  margin: 1.5rem auto 0;
+  padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in srgb, var(--menu-ink) 10%, transparent);
+  color: color-mix(in srgb, var(--menu-muted) 82%, transparent);
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.menu-system-footer span { margin-inline: 0.45rem; opacity: 0.55; }
 
 .menu-title,
 .menu-heading {
@@ -1836,6 +1891,10 @@ button.hero-action:active {
   background: white;
   font-size: 11px;
   font-weight: 700;
+}
+
+.menu-theme-mobile {
+  display: none;
 }
 
 .menu-hero-pattern {
@@ -2480,6 +2539,91 @@ button.hero-action:active {
   background: var(--menu-surface);
   font-family: var(--app-font, 'Inter'), sans-serif;
 }
+.menu-overlay.dark {
+  color: #f8fafc !important;
+  background: #020617;
+}
+.menu-overlay.dark .menu-heading,
+.menu-overlay.dark .history-order,
+.menu-overlay.dark .tracking-summary,
+.menu-overlay.dark .tracking-average,
+.menu-overlay.dark .tracking-item {
+  color: #f8fafc !important;
+}
+.menu-overlay.dark .text-stone-600,
+.menu-overlay.dark .text-stone-500,
+.menu-overlay.dark .text-stone-400 {
+  color: #a1a1aa !important;
+}
+.menu-overlay.dark :deep(.text-stone-950),
+.menu-overlay.dark :deep(.text-red-950),
+.menu-overlay.dark :deep(.text-amber-950) {
+  color: #f8fafc;
+}
+.menu-overlay.dark :deep(.text-stone-600),
+.menu-overlay.dark :deep(.text-stone-500),
+.menu-overlay.dark :deep(.text-stone-400) {
+  color: #a1a1aa;
+}
+.menu-overlay.dark :deep(.bg-white),
+.menu-overlay.dark :deep(.bg-white\/65),
+.menu-overlay.dark :deep(.bg-stone-50),
+.menu-overlay.dark :deep(.bg-stone-100),
+.menu-overlay.dark :deep(.bg-gray-100) {
+  background-color: #111827;
+}
+.menu-overlay.dark :deep(input),
+.menu-overlay.dark :deep(textarea),
+.menu-overlay.dark :deep(select) {
+  color: #f8fafc;
+  border-color: #334155;
+  background-color: #111827;
+}
+.menu-overlay.dark :deep(input::placeholder),
+.menu-overlay.dark :deep(textarea::placeholder) { color: #71717a; }
+.menu-overlay.dark :deep(.border),
+.menu-overlay.dark :deep(.border-t),
+.menu-overlay.dark :deep(.border-b),
+.menu-overlay.dark :deep(.border-l) { border-color: #273449; }
+.menu-overlay.dark .option-row,
+.menu-overlay.dark .choice-card,
+.menu-overlay.dark .tracking-item {
+  color: #f8fafc;
+  background: #111827;
+  box-shadow: inset 0 0 0 1px #273449;
+}
+.menu-overlay.dark .option-row:hover,
+.menu-overlay.dark .choice-card:hover { background: #172033; }
+.menu-overlay.dark .option-row.selected,
+.menu-overlay.dark .choice-card.selected {
+  color: #f8fafc;
+  border-color: color-mix(in srgb, var(--menu-accent) 72%, #f8fafc);
+  background: color-mix(in srgb, var(--menu-accent) 20%, #111827);
+}
+.menu-overlay.dark .option-check,
+.menu-overlay.dark .choice-icon {
+  color: #f8fafc;
+  background: #1f2937;
+  box-shadow: inset 0 0 0 1px #475569;
+}
+.menu-overlay.dark .option-row.selected .option-check { color: var(--menu-accent-foreground); }
+.menu-overlay.dark .quantity-button {
+  color: #f8fafc;
+  background: #1f2937;
+}
+.menu-overlay.dark .mobile-modal-close {
+  color: #e4e4e7;
+  border-color: #334155;
+  background: #111827;
+}
+.menu-overlay.dark .history-order,
+.menu-overlay.dark .tracking-average,
+.menu-overlay.dark .tracking-map-shell {
+  border-color: #334155;
+  background: #111827;
+  box-shadow: none;
+}
+.menu-overlay.dark .tracking-map-wait { border-color: #334155; color: #a1a1aa; }
 .mobile-modal-close {
   min-width: 104px;
   width: 100%;
@@ -2581,6 +2725,20 @@ button.hero-action:active {
 
 @media (max-width: 639px) {
   .hero-actions { display: none; }
+  .menu-theme-mobile {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 11px;
+    color: white;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+  }
   .menu-hero .relative { min-height: 84px; padding-top: 18px; padding-bottom: 18px; }
   .menu-hero .mb-2 { margin-bottom: 4px; }
   .menu-hero .mt-3 { margin-top: 7px; }

@@ -6,6 +6,7 @@ import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { isSupportActive } from '@/utils/supportSession'
 import type { RestauranteCapability } from '@/repositories/restaurante-repository'
+import type { OuriveCapability } from '@/repositories/ourive-repository'
 
 export const useControlRouter = async () => {
   try {
@@ -130,6 +131,14 @@ export async function handleRouteGuard(to: typed, from: typed) {
     await storeUi.loadRestaurantAccess()
     if (!storeUi.hasRestaurantCapability(to.meta.restauranteCapability as RestauranteCapability)) {
       toast.info('Seu papel no Restaurante não permite acessar esta tela.')
+      return from.name ? { name: from.name as string } : home
+    }
+  }
+
+  if (to.meta?.ouriveCapability) {
+    await storeUi.loadOuriveAccess()
+    if (!storeUi.hasOuriveCapability(to.meta.ouriveCapability as OuriveCapability)) {
+      toast.info('Seu papel no módulo Ourive não permite acessar esta tela.')
       return from.name ? { name: from.name as string } : home
     }
   }

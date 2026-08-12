@@ -55,6 +55,7 @@ const menus = computed<NavigationEntry[]>(() => {
       uiStore.permissoes,
       uiStore.appModules,
       uiStore.restaurantAccess.capabilities,
+      uiStore.ouriveAccess.capabilities,
     ),
     uiStore.visibleMenuKeys,
     uiStore.usuarioLogged.permissao === 'root',

@@ -2,6 +2,7 @@ import { handleRouteGuard } from '@/composables/useRouterControl'
 import { env } from '@/utils/dotenv'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import type { RestauranteCapability } from '@/repositories/restaurante-repository'
+import type { OuriveCapability } from '@/repositories/ourive-repository'
 
 type RouteMeta = {
   meta?: {
@@ -11,6 +12,7 @@ type RouteMeta = {
     modulo?: string
     customerMode?: string
     restauranteCapability?: RestauranteCapability
+    ouriveCapability?: OuriveCapability
   }
 }
 
@@ -993,6 +995,28 @@ const routes: RouteInterface[] = [
         },
       },
     ],
+  },
+  {
+    path: '/ourive',
+    name: 'ourive',
+    redirect: { name: 'ourive-painel' },
+    children: [
+      { path: '', name: 'ourive-painel', component: () => import('@/pages/ourive/Home.vue'), meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'VISUALIZAR' } },
+      { path: 'ordens', name: 'ourive-ordens', component: () => import('@/pages/ourive/Ordens.vue'), meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'VISUALIZAR' } },
+      { path: 'ordens/:id', name: 'ourive-ordem', component: () => import('@/pages/ourive/OrdemDetalhe.vue'), meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'VISUALIZAR' } },
+      { path: 'producao', name: 'ourive-producao', component: () => import('@/pages/ourive/Producao.vue'), meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'PRODUCAO' } },
+      { path: 'pecas', name: 'ourive-pecas', component: () => import('@/pages/ourive/Pecas.vue'), meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'RECEBER' } },
+      { path: 'equipe', name: 'ourive-equipe', component: () => import('@/pages/ourive/Home.vue'), meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'EQUIPE' } },
+      { path: 'comissoes', name: 'ourive-comissoes', component: () => import('@/pages/ourive/Comissoes.vue'), meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'VISUALIZAR' } },
+      { path: 'relatorios', name: 'ourive-relatorios', component: () => import('@/pages/ourive/Home.vue'), meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'RELATORIOS' } },
+      { path: 'configuracoes', name: 'ourive-configuracoes', component: () => import('@/pages/ourive/Configuracoes.vue'), meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'CONFIGURAR' } },
+    ],
+  },
+  {
+    path: '/ourive/orcamento/:token',
+    name: 'ourive-orcamento-publico',
+    component: () => import('@/pages/ourive/OrcamentoPublico.vue'),
+    meta: { layout: 'default', isPublic: true },
   },
   {
     path: '/usuario',

@@ -11,6 +11,7 @@ import {
   type RestauranteAccess,
   type RestauranteCapability,
 } from '@/repositories/restaurante-repository'
+import { OuriveRepository, type OuriveAccess, type OuriveCapability } from '@/repositories/ourive-repository'
 interface TipoPermissao {
   editar: boolean
   visualizar: boolean
@@ -75,6 +76,8 @@ export const useUiStore = defineStore('uiStore', () => {
     fallbackLegado: true,
   })
   const restaurantAccessLoaded = ref(false)
+  const ouriveAccess = ref<OuriveAccess>({ papeis: [], capabilities: [], usuarioId: 0 })
+  const ouriveAccessLoaded = ref(false)
   const visibleMenuKeys = ref<string[] | null>(null)
   // Submenus ocultos (keys no formato "pai:filho"). Separado de visibleMenuKeys porque
   // no payload `menusVisiveis` as keys de topo são whitelist e as de submenu são blacklist.
@@ -290,6 +293,28 @@ export const useUiStore = defineStore('uiStore', () => {
     return restaurantAccess.value.capabilities.includes(capability)
   }
 
+  async function loadOuriveAccess(force = false) {
+    if (ouriveAccessLoaded.value && !force) return ouriveAccess.value
+    if (!hasActiveModule('ourives')) {
+      ouriveAccess.value = { papeis: [], capabilities: [], usuarioId: 0 }
+      ouriveAccessLoaded.value = true
+      return ouriveAccess.value
+    }
+    try {
+      ouriveAccess.value = await OuriveRepository.acesso()
+      ouriveAccessLoaded.value = true
+    } catch (error) {
+      console.log(error)
+      ouriveAccess.value = { papeis: [], capabilities: [], usuarioId: 0 }
+      ouriveAccessLoaded.value = false
+    }
+    return ouriveAccess.value
+  }
+
+  function hasOuriveCapability(capability: OuriveCapability) {
+    return ouriveAccess.value.capabilities.includes(capability)
+  }
+
   async function loadFinanceiroFlags() {
     try {
       const response = await ContaRepository.getParametros()
@@ -345,6 +370,7 @@ export const useUiStore = defineStore('uiStore', () => {
       populatePermissoes()
       await loadAppModules(true)
       await loadRestaurantAccess(true)
+      await loadOuriveAccess(true)
       return data
     } catch (error) {
       console.log(error)
@@ -387,6 +413,8 @@ export const useUiStore = defineStore('uiStore', () => {
     appModulesLoaded,
     restaurantAccess,
     restaurantAccessLoaded,
+    ouriveAccess,
+    ouriveAccessLoaded,
     visibleMenuKeys,
     hiddenSubmenuKeys,
     estiloUi,
@@ -402,6 +430,8 @@ export const useUiStore = defineStore('uiStore', () => {
     loadAppModules,
     loadRestaurantAccess,
     hasRestaurantCapability,
+    loadOuriveAccess,
+    hasOuriveCapability,
     hasActiveModule,
     toggleSidebar,
     isMobile,
