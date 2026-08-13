@@ -320,6 +320,7 @@ export interface WhatsAppAgent {
   prompt: string
   modelo: string
   ativo: boolean
+  delaySegundos: number
   horaInicio?: string | null
   horaFim?: string | null
   diasSemana: string
@@ -333,10 +334,19 @@ export interface WhatsAppAgentPayload {
   prompt: string
   modelo?: string
   ativo?: boolean
+  delaySegundos?: number
   horaInicio?: string | null
   horaFim?: string | null
   diasSemana?: string | null
   instanciaIds?: number[]
+}
+
+export interface WhatsAppAgentTestMessage { role: 'user' | 'model'; text: string }
+export interface WhatsAppAgentTestResult {
+  text: string
+  restaurantToolsEnabled: boolean
+  agent: { id: number; nome: string }
+  transferredTo: { id: number; nome: string } | null
 }
 
 export class WhatsAppRepository {
@@ -616,6 +626,11 @@ export class WhatsAppRepository {
   static async updateAgent(id: number, payload: Partial<WhatsAppAgentPayload>) {
     const { data } = await http.put(`/whatsapp/agentes/${id}`, payload)
     return data.data as WhatsAppAgent
+  }
+
+  static async testAgent(id: number, payload: { mensagem: string; historico: WhatsAppAgentTestMessage[] }) {
+    const { data } = await http.post(`/whatsapp/agentes/${id}/teste`, payload)
+    return data.data as WhatsAppAgentTestResult
   }
 
   static async deleteAgent(id: number) {
