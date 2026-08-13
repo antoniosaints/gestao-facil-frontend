@@ -122,6 +122,16 @@ export async function handleRouteGuard(to: typed, from: typed) {
         toast.info('Este app não está ativo na sua mensalidade.')
         return { name: 'loja-home' }
       }
+      // Atendimento também respeita a configuração de menu da conta. Sem isso,
+      // a URL direta ainda carregaria a tela mesmo com o menu oculto.
+      if (
+        requiredModules.includes('atendimento') &&
+        Array.isArray(storeUi.visibleMenuKeys) &&
+        !storeUi.visibleMenuKeys.includes('atendimento')
+      ) {
+        toast.info('O app Atendimento está oculto no menu desta conta.')
+        return { name: 'home' }
+      }
     } catch (error) {
       toast.error('Não foi possível validar o acesso ao app adicional.')
       return { name: 'loja-home' }
