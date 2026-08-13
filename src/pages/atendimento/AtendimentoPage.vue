@@ -389,6 +389,9 @@ onBeforeUnmount(() => {
 function formatTime(value?: string | null) {
   if (!value) return ''
   return new Intl.DateTimeFormat('pt-BR', {
+    // Os timestamps da API são instantes UTC (ISO com Z). O atendimento sempre deve
+    // exibi-los no horário operacional de Brasília, e não no fuso do navegador.
+    timeZone: 'America/Sao_Paulo',
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
