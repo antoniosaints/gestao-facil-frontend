@@ -160,14 +160,14 @@ watch(
         @click="openEntry(entry)"
       >
         <div class="flex items-start justify-between gap-4">
-          <span class="grid h-11 w-11 place-items-center rounded-xl" :class="cardColor(entry)">
-            <component :is="entryIcon(entry)" class="h-5 w-5" />
+          <span class="grid h-14 w-14 place-items-center rounded-xl" :class="cardColor(entry)">
+            <component :is="entryIcon(entry)" class="h-8 w-8" />
           </span>
           <ChevronRight
             class="h-5 w-5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary"
           />
         </div>
-        <h2 class="mt-6 text-lg font-semibold tracking-tight">{{ entry.nome }}</h2>
+        <h2 class="mt-6 text-2xl font-semibold tracking-tight">{{ entry.nome }}</h2>
         <p class="mt-2 text-sm leading-5 text-muted-foreground">
           {{
             moduloSelecionado

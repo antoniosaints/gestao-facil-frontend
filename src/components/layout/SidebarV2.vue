@@ -61,10 +61,10 @@ watch(
     :class="{ '-translate-x-full': !store.openSidebar }"
   >
     <div class="flex h-[60px] items-center gap-3 border-b px-6 text-foreground">
-       <NavUserSidebar variant="sidebar" />
+       <NavUserSidebar variant="sidev2" />
     </div>
 
-    <nav class="hidden_scrollbar flex-1 overflow-y-auto px-2 pb-4 pt-2" aria-label="Menu lateral">
+    <nav class="hidden_scrollbar flex-1 overflow-y-auto px-2 pb-4 pt-2 space-y-1" aria-label="Menu lateral">
       <template v-for="item in menu" :key="item.key || item.nome">
         <p v-if="item.divisor" class="px-3 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           {{ item.nome }}
@@ -115,7 +115,7 @@ watch(
 
     <div class="space-y-3 border-t p-4">
       <InstallAppButton class="w-full justify-start rounded-lg" />
-      <NavUserSidebar variant="header" />
+      <NavUserSidebar variant="header"/>
       <div class="grid grid-cols-2 gap-2">
         <ColorToggle class="h-10 w-full" />
         <LogoutButton variant="header" class="h-10 w-full" />

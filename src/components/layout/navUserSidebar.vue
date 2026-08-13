@@ -28,7 +28,7 @@ import { useToast } from 'vue-toastification'
 import { getLettersName } from '@/utils/formatters'
 import { resolveFileUrl } from '@/utils/fileUrl'
 
-const props = withDefaults(defineProps<{ variant?: 'sidebar' | 'header' | 'icon' }>(), {
+const props = withDefaults(defineProps<{ variant?: 'sidebar' | 'header' | 'icon' | 'sidev2' }>(), {
   variant: 'sidebar',
 })
 const uiStore = useUiStore()
@@ -46,8 +46,10 @@ function logOut() {
 
 const colorTheme = computed(() => {
   return props.variant === 'header' || props.variant === 'icon'
-    ? 'border border-border bg-muted/75 text-foreground shadow-sm hover:bg-muted'
-    : 'text-foreground'
+    ? 'border border-border bg-muted/75 text-foreground dark:text-foreground shadow-sm hover:bg-muted'
+    : props.variant === 'sidev2'
+    ? 'text-foreground dark:text-foreground'
+    : 'text-dark:text-foreground dark:text-foreground'
 })
 
 const dropdownTheme = computed(() =>

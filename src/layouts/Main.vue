@@ -29,7 +29,7 @@
     >
       <!-- <TopMenu /> -->
       <div>
-        <NavUserSidebar />
+        <NavUserSidebar variant="sidebar" />
         <SidebarMenu :menu="sidebarMenu" />
       </div>
       <div>
