@@ -385,6 +385,7 @@ export const sidebarMenuOptions = (
           key: 'atendimento:agentes',
           nome: 'Agentes',
           link: '/atendimento/agentes',
+          show: hasCoreIaApp,
           icone: Bot,
           color: 'green',
         },

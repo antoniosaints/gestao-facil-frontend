@@ -117,7 +117,8 @@ export async function handleRouteGuard(to: typed, from: typed) {
     try {
       await storeUi.loadAppModules()
 
-      if (!storeUi.hasActiveModule(String(to.meta.modulo))) {
+      const requiredModules = Array.isArray(to.meta.modulo) ? to.meta.modulo : [to.meta.modulo]
+      if (requiredModules.some((moduleCode) => !storeUi.hasActiveModule(String(moduleCode)))) {
         toast.info('Este app não está ativo na sua mensalidade.')
         return { name: 'loja-home' }
       }

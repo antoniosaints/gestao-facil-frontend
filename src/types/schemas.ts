@@ -420,6 +420,16 @@ export interface Vendas {
   ComboSaidas?: ComboSaida[]
   ComandaItens?: ComandaItem[]
   PagamentoVendas?: PagamentoVendas | null
+  NotaFiscals?: Array<{
+    id: number
+    tipo: 'NFSE' | 'NFE' | 'NFCE'
+    numero?: number | null
+    chaveAcesso?: string | null
+    status: string
+    xmlPath?: string | null
+    pdfPath?: string | null
+    erroMensagem?: string | null
+  }>
 }
 
 export interface CarrinhoItem {
@@ -454,6 +464,7 @@ export interface FormularioVenda {
   garantia: number | null
   observacoes: string | null
   desconto: number | string | null
+  tipoDocumentoFiscal?: 'NENHUM' | 'NFE' | 'NFCE'
   id: number | null
 }
 export interface FormularioOrdemServico {

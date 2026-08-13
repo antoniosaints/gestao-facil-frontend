@@ -19,15 +19,16 @@ const uploadingCredential = ref(false)
 const certificateFile = ref<File | null>(null)
 const certificatePassword = ref('')
 const d2tiToken = ref('')
+const nfceCscToken = ref('')
 const municipalitySearch = ref('')
 const municipalities = ref<MunicipioIbge[]>([])
 
 const config = reactive<FiscalConfig>({
   razaoSocial: '', nomeFantasia: '', documento: '', inscricaoEstadual: '', inscricaoMunicipal: '', regimeTributario: 0,
   codigoMunicipioIbge: '', codigoMunicipioPrestador: '', municipioNome: '', uf: '', cep: '', logradouro: '', numero: '', bairro: '', complemento: '',
-  email: '', telefone: '', ambiente: 'HOMOLOGACAO', modoEmissaoNfse: 'NACIONAL', provedorNfse: 'NACIONAL', serieRps: 1, proximoNumeroRps: 1,
+  email: '', telefone: '', ambiente: 'HOMOLOGACAO', nfseHabilitado: false, nfeHabilitado: false, nfceHabilitado: false, modoEmissaoNfse: 'NACIONAL', provedorNfse: 'NACIONAL', serieRps: 1, proximoNumeroRps: 1, serieNfe: 1, proximoNumeroNfe: 1, serieNfce: 1, proximoNumeroNfce: 1, nfce: { cscId: '', cscConfigurado: false },
   codigoServicoPadrao: '', descricaoServicoPadrao: '', codigoAtividadePadrao: '', descricaoAtividadePadrao: '', tipoTributacaoPadrao: null, tipoRecolhimentoPadrao: null, notaIntermediadaPadrao: 2, aliquotaIssPadrao: null,
-  certificado: { configurado: false, nome: null, atualizadoEm: null }, integracao: { tipo: 'CERTIFICADO_A1', configurada: false, atualizadoEm: null }, emissaoNfsePronta: false,
+  certificado: { configurado: false, nome: null, atualizadoEm: null }, integracao: { tipo: 'CERTIFICADO_A1', configurada: false, atualizadoEm: null }, emissaoNfsePronta: false, emissaoNfePronta: false, emissaoNfcePronta: false,
 })
 
 const isSaoMateus = computed(() => config.codigoMunicipioIbge === '2111508')
@@ -45,8 +46,9 @@ async function load() {
 async function save() {
   try {
     saving.value = true
-    const { certificado: _certificate, integracao: _integration, emissaoNfsePronta: _ready, proximoNumeroRps: _next, ...payload } = config
-    assignConfig(await NotasFiscaisRepository.saveConfig(payload))
+    const { certificado: _certificate, integracao: _integration, emissaoNfsePronta: _nfseReady, emissaoNfePronta: _nfeReady, emissaoNfcePronta: _nfceReady, proximoNumeroRps: _nextRps, proximoNumeroNfe: _nextNfe, proximoNumeroNfce: _nextNfce, nfce: _nfce, ...payload } = config
+    assignConfig(await NotasFiscaisRepository.saveConfig({ ...payload, nfceCscId: config.nfce.cscId, nfceCscToken: nfceCscToken.value || undefined } as any))
+    nfceCscToken.value = ''
     toast.success('Configuração fiscal salva.')
   } catch (error: any) { toast.error(errorMessage(error, 'Não foi possível salvar a configuração fiscal.')) }
   finally { saving.value = false }
@@ -109,15 +111,23 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="mx-auto max-w-6xl space-y-5 pb-10">
+  <div class="mx-auto max-w-7xl space-y-5 pb-10">
     <header class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-primary">Notas fiscais</p><h1 class="mt-1 text-2xl font-bold tracking-tight">Configuração NFS-e</h1><p class="mt-1 max-w-2xl text-sm text-muted-foreground">Os dados e as credenciais fiscais são isolados por conta.</p></div>
+      <div><h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Cog class="size-6 text-primary" />Configurações fiscais</h1><p class="mt-1 max-w-2xl text-sm text-muted-foreground">Configure o emissor, os documentos autorizados e as credenciais isoladas por conta.</p></div>
       <Button :disabled="saving || loading" @click="save"><LoaderCircle v-if="saving" class="animate-spin" /><Save v-else />Salvar dados</Button>
     </header>
 
     <div v-if="loading" class="flex min-h-64 items-center justify-center text-sm text-muted-foreground"><LoaderCircle class="mr-2 size-5 animate-spin" />Carregando configuração fiscal…</div>
 
     <template v-else>
+      <Card class="border-primary/20">
+        <CardHeader><CardTitle>Documentos habilitados</CardTitle><CardDescription>Ative somente os tipos já credenciados. A emissão fica bloqueada até o checklist estar completo.</CardDescription></CardHeader>
+        <CardContent class="grid gap-3 md:grid-cols-3">
+          <label class="rounded-xl border p-4" :class="config.nfseHabilitado ? 'border-primary bg-primary/5' : ''"><div class="flex items-center justify-between gap-3"><div><p class="font-semibold">NFS-e</p><p class="text-xs text-muted-foreground">Prestação de serviços</p></div><input v-model="config.nfseHabilitado" type="checkbox" class="size-4 accent-primary" /></div><p class="mt-3 text-xs" :class="config.emissaoNfsePronta ? 'text-emerald-600' : 'text-amber-600'">{{ config.emissaoNfsePronta ? 'Configuração pronta' : 'Complete os requisitos abaixo' }}</p></label>
+          <label class="rounded-xl border p-4" :class="config.nfeHabilitado ? 'border-primary bg-primary/5' : ''"><div class="flex items-center justify-between gap-3"><div><p class="font-semibold">NF-e</p><p class="text-xs text-muted-foreground">Produtos e destinatário identificado</p></div><input v-model="config.nfeHabilitado" type="checkbox" class="size-4 accent-primary" /></div><p class="mt-3 text-xs" :class="config.emissaoNfePronta ? 'text-emerald-600' : 'text-amber-600'">{{ config.emissaoNfePronta ? 'Configuração pronta' : 'Exige IE, endereço e certificado' }}</p></label>
+          <label class="rounded-xl border p-4" :class="config.nfceHabilitado ? 'border-primary bg-primary/5' : ''"><div class="flex items-center justify-between gap-3"><div><p class="font-semibold">NFC-e</p><p class="text-xs text-muted-foreground">Venda ao consumidor no PDV</p></div><input v-model="config.nfceHabilitado" type="checkbox" class="size-4 accent-primary" /></div><p class="mt-3 text-xs" :class="config.emissaoNfcePronta ? 'text-emerald-600' : 'text-amber-600'">{{ config.emissaoNfcePronta ? 'Configuração pronta' : 'Exige CSC, IE, endereço e certificado' }}</p></label>
+        </CardContent>
+      </Card>
       <div class="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle class="flex items-center gap-2"><Building2 class="size-5 text-primary" />Emissor</CardTitle><CardDescription>Quem presta o serviço e emite a nota.</CardDescription></CardHeader>
@@ -181,6 +191,15 @@ onMounted(load)
           <CardContent class="space-y-4"><div v-if="config.certificado.configurado" class="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 class="size-5" /><span>Certificado configurado: {{ config.certificado.nome }}</span></div><div class="space-y-1.5"><Label for="certificado">Arquivo do certificado</Label><Input id="certificado" type="file" accept=".pfx,.p12,application/x-pkcs12" @change="certificateFile = ($event.target as HTMLInputElement).files?.[0] ?? null" /></div><div class="space-y-1.5"><Label for="senha-certificado">Senha do certificado</Label><Input id="senha-certificado" v-model="certificatePassword" type="password" autocomplete="new-password" placeholder="Senha cadastrada no certificado A1" /></div><div class="flex flex-wrap gap-2"><Button variant="outline" :disabled="uploadingCredential" @click="uploadCertificate"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.certificado.configurado ? 'Substituir certificado' : 'Salvar certificado' }}</Button><Button variant="secondary" :disabled="uploadingCredential" @click="consultNationalParameters"><Search />Consultar regras municipais</Button></div></CardContent>
         </Card>
       </div>
+      <Card v-if="config.nfeHabilitado || config.nfceHabilitado">
+        <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Parâmetros NF-e e NFC-e</CardTitle><CardDescription>Séries e CSC são dados estaduais. O token é cifrado e nunca volta pela API.</CardDescription></CardHeader>
+        <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="space-y-1.5"><Label for="serie-nfe">Série NF-e</Label><Input id="serie-nfe" v-model.number="config.serieNfe" type="number" min="1" /></div>
+          <div class="space-y-1.5"><Label for="serie-nfce">Série NFC-e</Label><Input id="serie-nfce" v-model.number="config.serieNfce" type="number" min="1" /></div>
+          <div class="space-y-1.5"><Label for="csc-id">CSC ID</Label><Input id="csc-id" v-model="config.nfce.cscId" :disabled="!config.nfceHabilitado" /></div>
+          <div class="space-y-1.5"><Label for="csc-token">CSC token</Label><Input id="csc-token" v-model="nfceCscToken" :disabled="!config.nfceHabilitado" type="password" autocomplete="new-password" :placeholder="config.nfce.cscConfigurado ? 'Configurado — informe para substituir' : 'Token fornecido pela SEFAZ'" /></div>
+        </CardContent>
+      </Card>
     </template>
   </div>
 </template>

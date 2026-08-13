@@ -27,6 +27,18 @@
                         Date(venda.data).toLocaleDateString('pt-BR') }}</div>
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ venda.observacoes || '-' }}</div>
+                <div v-if="fiscalAtivo && venda.NotaFiscals?.[0]" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Nota fiscal: {{ venda.NotaFiscals[0].tipo === 'NFCE' ? 'NFC-e' : venda.NotaFiscals[0].tipo === 'NFE' ? 'NF-e' : 'NFS-e' }}
+                    <span v-if="venda.NotaFiscals[0].numero">#{{ venda.NotaFiscals[0].numero }}</span>
+                    · {{ venda.NotaFiscals[0].status }}
+                </div>
+                <div v-if="podeEmitirNota(venda)" class="mt-3 flex items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                    <span class="text-xs font-medium">Emitir nota fiscal</span>
+                    <div class="flex gap-1.5">
+                        <button v-if="fiscalTypes.nfce" type="button" class="rounded-md border bg-background px-2 py-1 text-xs font-semibold" @click="emitirNota(venda, 'NFCE')">NFC-e</button>
+                        <button v-if="fiscalTypes.nfe" type="button" class="rounded-md border bg-background px-2 py-1 text-xs font-semibold" @click="emitirNota(venda, 'NFE')">NF-e</button>
+                    </div>
+                </div>
                 <div class="mt-2 flex justify-between gap-2">
                     <div class="flex gap-1">
                         <button @click="store.openDetalhes(venda.id!)"
@@ -151,15 +163,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, inject } from "vue";
+import { ref, onMounted, watch, inject, computed } from "vue";
 import http from "@/utils/axios";
 import type { Vendas } from "@/types/schemas";
-import { deletarVenda, enviarComprovanteVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from "../ActionsVendas";
+import { deletarVenda, emitirNotaFiscalVenda, enviarComprovanteVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from "../ActionsVendas";
 import { useVendasStore } from "@/stores/vendas/useVenda";
+import { useUiStore } from "@/stores/ui/uiStore";
+import { hasPermission } from "@/hooks/authorize";
+import { NotasFiscaisRepository } from "@/repositories/notas-fiscais-repository";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
 import { BadgeCheck, BadgePlus, Eye, FileChartLine, PenLine, Send, ShoppingBasket, Trash, Undo2 } from "lucide-vue-next";
 const store = useVendasStore();
+const storeUi = useUiStore();
+const fiscalAtivo = computed(() => storeUi.hasActiveModule('notas-fiscais'));
+const fiscalTypes = ref({ nfe: false, nfce: false });
 const openFilter = inject('openModalFiltroVendas', ref(false));
 const vendas = ref<Vendas[]>([]);
 const currentPage = ref(1);
@@ -168,6 +186,30 @@ const loading = ref(false);
 const searchQuery = ref("");
 const showModalBuscarVendas = ref(false);
 const showDrawerVendas = ref(false);
+
+function podeEmitirNota(venda: Vendas) {
+    return fiscalAtivo.value
+        && hasPermission(storeUi.usuarioLogged, 4)
+        && venda.status === 'FATURADO'
+        && !venda.NotaFiscals?.length
+        && (fiscalTypes.value.nfe || fiscalTypes.value.nfce)
+}
+
+async function carregarTiposFiscais() {
+    fiscalTypes.value = { nfe: false, nfce: false }
+    if (!fiscalAtivo.value || !hasPermission(storeUi.usuarioLogged, 4)) return
+    try {
+        const config = await NotasFiscaisRepository.getConfig()
+        fiscalTypes.value = { nfe: config.nfeHabilitado, nfce: config.nfceHabilitado }
+    } catch {
+        fiscalTypes.value = { nfe: false, nfce: false }
+    }
+}
+
+async function emitirNota(venda: Vendas, tipo: 'NFE' | 'NFCE') {
+    if (!venda.id) return
+    if (await emitirNotaFiscalVenda(venda.id, tipo)) renderListaVendas(currentPage.value)
+}
 
 function openSaveVenda() {
     // showDrawerVendas.value = false;
@@ -216,5 +258,8 @@ watch(() => store.filters.update, () => {
     renderListaVendas();
 })
 
-onMounted(() => renderListaVendas());
+onMounted(() => {
+    renderListaVendas()
+    void carregarTiposFiscais()
+});
 </script>

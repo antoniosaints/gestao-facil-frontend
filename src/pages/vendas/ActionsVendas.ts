@@ -1,5 +1,6 @@
 import { useConfirm } from '@/composables/useConfirm'
 import { VendaRepository } from '@/repositories/venda-repository'
+import { NotasFiscaisRepository } from '@/repositories/notas-fiscais-repository'
 import { useVendasStore } from '@/stores/vendas/useVenda'
 import type { Vendas } from '@/types/schemas'
 import { useToast } from 'vue-toastification'
@@ -45,6 +46,26 @@ export function openModalFaturarVenda(id: number) {
 
 export function enviarComprovanteVenda(venda: Vendas) {
   store.openComprovante(venda)
+}
+
+export async function emitirNotaFiscalVenda(id: number, tipo: 'NFE' | 'NFCE'): Promise<boolean> {
+  const tipoLabel = tipo === 'NFE' ? 'NF-e' : 'NFC-e'
+  const confirm = await useConfirm().confirm({
+    title: `Emitir ${tipoLabel}`,
+    message: `Deseja enfileirar a emissão da ${tipoLabel} desta venda faturada?`,
+    confirmText: 'Emitir nota',
+  })
+  if (!confirm) return false
+
+  try {
+    await NotasFiscaisRepository.createSaleDocument(id, tipo)
+    toast.success(`${tipoLabel} adicionada à fila de emissão.`)
+    store.updateTable()
+    return true
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível preparar a emissão da nota fiscal.')
+    return false
+  }
 }
 
 export async function deletarVenda(id: number) {

@@ -9,7 +9,7 @@ type RouteMeta = {
     isPublic?: boolean
     layout?: 'main' | 'default' | 'admin'
     permissao?: number
-    modulo?: string
+    modulo?: string | string[]
     customerMode?: string
     restauranteCapability?: RestauranteCapability
     ouriveCapability?: OuriveCapability
@@ -404,8 +404,8 @@ const routes: RouteInterface[] = [
     children: [
       { path: 'nfs-e', name: 'notas-fiscais-nfse', component: () => import('@/pages/notas-fiscais/Nfse.vue'), meta: { layout: 'main', permissao: 3 } },
       { path: 'configuracoes', name: 'notas-fiscais-configuracoes', component: () => import('@/pages/notas-fiscais/Configuracoes.vue'), meta: { layout: 'main', permissao: 4 } },
-      { path: 'nf-e', name: 'notas-fiscais-nfe', component: () => import('@/pages/notas-fiscais/EmBreve.vue'), props: { title: 'NF-e', description: 'A emissão de notas de produtos será adicionada neste mesmo módulo fiscal.' }, meta: { layout: 'main', permissao: 3 } },
-      { path: 'nfc-e', name: 'notas-fiscais-nfce', component: () => import('@/pages/notas-fiscais/EmBreve.vue'), props: { title: 'NFC-e', description: 'A emissão fiscal para o consumidor no PDV será adicionada em breve.' }, meta: { layout: 'main', permissao: 3 } },
+      { path: 'nf-e', name: 'notas-fiscais-nfe', component: () => import('@/pages/notas-fiscais/Documentos.vue'), props: { tipo: 'NFE', title: 'NF-e', description: 'Notas de produtos vinculadas às vendas e processadas pelo emissor fiscal.' }, meta: { layout: 'main', permissao: 3 } },
+      { path: 'nfc-e', name: 'notas-fiscais-nfce', component: () => import('@/pages/notas-fiscais/Documentos.vue'), props: { tipo: 'NFCE', title: 'NFC-e', description: 'Emissões ao consumidor iniciadas diretamente no PDV.' }, meta: { layout: 'main', permissao: 3 } },
     ],
   },
   {
@@ -445,7 +445,7 @@ const routes: RouteInterface[] = [
     meta: {
       layout: 'main',
       permissao: 2,
-      modulo: 'atendimento',
+      modulo: ['atendimento', 'core-ia'],
     },
   },
   {

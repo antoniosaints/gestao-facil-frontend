@@ -35,6 +35,22 @@
             <p class="text-sm font-bold">Pronto <kbd>F2</kbd></p>
           </div>
         </div>
+        <div v-if="fiscalTypes.nfe || fiscalTypes.nfce" class="pdv-pro__fiscal">
+          <ReceiptText class="h-5 w-5 text-[var(--pdv-accent)]" />
+          <div class="min-w-0">
+            <p class="text-[10px] uppercase tracking-wider text-muted-foreground">Documento fiscal</p>
+            <Select v-model="tipoDocumentoFiscal">
+              <SelectTrigger class="h-auto min-h-0 w-32 border-0 bg-transparent p-0 text-sm font-bold shadow-none focus:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NENHUM">Não emitir</SelectItem>
+                <SelectItem v-if="fiscalTypes.nfce" value="NFCE">NFC-e</SelectItem>
+                <SelectItem v-if="fiscalTypes.nfe" value="NFE">NF-e</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
       <div class="flex items-center gap-3">
@@ -106,7 +122,12 @@
       </div>
 
       <div class="pdv-pro__core">
-        <PDVBasic ref="pdvRef" pro-mode />
+        <PDVBasic
+          ref="pdvRef"
+          pro-mode
+          v-model:fiscal-document-type="tipoDocumentoFiscal"
+          :fiscal-types="fiscalTypes"
+        />
       </div>
     </main>
 
@@ -186,6 +207,7 @@ import {
 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { ContaRepository } from '@/repositories/conta-repository'
+import { NotasFiscaisRepository } from '@/repositories/notas-fiscais-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { useAuthStore } from '@/stores/login/useAuthStore'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -194,6 +216,7 @@ import PDVBasic from './PDVBasic.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 type AcaoAtalho = 'produtos' | 'leitor' | 'adicionar' | 'cancelar-item' | 'cliente' | 'sair' | 'caixa' | 'imprimir' | 'pagamento' | 'desconto' | 'fechar-caixa' | 'finalizar'
 
@@ -203,6 +226,8 @@ const toast = useToast()
 const pdvRef = ref<any>(null)
 const loading = ref(true)
 const modeloPdv = ref<'BASICO' | 'PRO'>('BASICO')
+const tipoDocumentoFiscal = ref<'NENHUM' | 'NFE' | 'NFCE'>('NENHUM')
+const fiscalTypes = ref({ nfe: false, nfce: false })
 const agora = ref(new Date())
 let relogio: ReturnType<typeof setInterval> | null = null
 let previousBodyOverflow = ''
@@ -422,6 +447,9 @@ onMounted(async () => {
     const response = await ContaRepository.getParametros()
     modeloPdv.value = response.data?.modeloPdv === 'PRO' ? 'PRO' : 'BASICO'
     if (modeloPdv.value === 'PRO') {
+      await NotasFiscaisRepository.getConfig().then((config) => {
+        fiscalTypes.value = { nfe: config.emissaoNfePronta, nfce: config.emissaoNfcePronta }
+      }).catch(() => null)
       activateFullscreenPdv()
     } else {
       // O bloqueio de quiosque só existe no modo PRO. Limpa qualquer flag legada
@@ -470,6 +498,8 @@ onUnmounted(() => {
 .pdv-pro__header small { margin-left: .35rem; border-radius: 999px; background: var(--pdv-accent); padding: .15rem .45rem; color: hsl(var(--primary-foreground)); font-size: .58rem; letter-spacing: .12em; vertical-align: middle; }
 .pdv-pro__operator { display: flex; min-width: 10rem; align-items: center; gap: .65rem; border: 1px solid hsl(var(--border)); border-radius: .85rem; background: hsl(var(--card)); padding: .55rem .75rem; }
 .pdv-pro__operator kbd { color: var(--pdv-accent); font-size: .65rem; }
+.pdv-pro__fiscal { display: flex; min-width: 10.75rem; align-items: center; gap: .65rem; border: 1px solid color-mix(in srgb, var(--pdv-accent) 34%, hsl(var(--border))); border-radius: .85rem; background: color-mix(in srgb, hsl(var(--card)) 92%, var(--pdv-accent) 8%); padding: .55rem .75rem; }
+.pdv-pro__fiscal :deep(button) { color: hsl(var(--foreground)); }
 .pdv-pro__lock { display: inline-flex; align-items: center; gap: .4rem; border: 1px solid hsl(var(--border)); border-radius: .85rem; background: hsl(var(--card)); padding: .55rem .75rem; font-size: .72rem; font-weight: 700; color: hsl(var(--muted-foreground)); transition: border-color .15s ease, color .15s ease, background .15s ease; }
 .pdv-pro__lock:hover { border-color: var(--pdv-accent); color: var(--pdv-accent); }
 .pdv-pro__lock--active { border-color: #ef4444; color: #ef4444; background: color-mix(in srgb, #ef4444 12%, hsl(var(--card))); }

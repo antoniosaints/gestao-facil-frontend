@@ -55,7 +55,7 @@ async function emit() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-6xl space-y-5 pb-10">
+  <div class="mx-auto max-w-7xl space-y-5 pb-10">
     <header class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p class="text-xs font-bold uppercase tracking-[0.18em] text-primary">Notas fiscais</p><h1 class="mt-1 text-2xl font-bold">NFS-e</h1><p class="mt-1 text-sm text-muted-foreground">Emissão, retorno municipal e histórico isolados por conta.</p></div><Button variant="outline" @click="router.push({ name: 'notas-fiscais-configuracoes' })"><Settings2 />Configurar emissor</Button></header>
     <div v-if="loading" class="flex min-h-60 items-center justify-center text-muted-foreground"><LoaderCircle class="mr-2 animate-spin" />Carregando NFS-e…</div>
     <template v-else>

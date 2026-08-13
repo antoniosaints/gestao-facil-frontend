@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { Menu, Printer, Send } from 'lucide-vue-next'
+import { FilePlus2, Menu, Printer, Send } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { Vendas } from '@/types/schemas';
 import type { Table } from '@tanstack/vue-table';
-import { deletarVenda, editarVenda, enviarComprovanteVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from '../ActionsVendas';
+import { deletarVenda, editarVenda, emitirNotaFiscalVenda, enviarComprovanteVenda, estornarVenda, gerarCupomVenda, openModalFaturarVenda } from '../ActionsVendas';
 import { VendaRepository } from '@/repositories/venda-repository';
-const { data } = defineProps<{
+const { data, fiscalTypes } = defineProps<{
     data: Vendas,
     table: Table<Vendas>
+    fiscalTypes?: { nfe: boolean; nfce: boolean }
 }>()
 
 async function printCupom(id: number) {
@@ -49,6 +50,14 @@ async function printCupom(id: number) {
                 <DropdownMenuItem @click="openModalFaturarVenda(data.id!)" v-if="data.status !== 'FATURADO'">
                     <i class="fa-solid fa-dollar-sign mr-1"></i>
                     Faturar
+                </DropdownMenuItem>
+                <DropdownMenuItem v-if="data.status === 'FATURADO' && !data.NotaFiscals?.length && fiscalTypes?.nfce" @click="emitirNotaFiscalVenda(data.id!, 'NFCE')">
+                    <FilePlus2 class="w-4 h-4 mr-1" />
+                    Emitir NFC-e
+                </DropdownMenuItem>
+                <DropdownMenuItem v-if="data.status === 'FATURADO' && !data.NotaFiscals?.length && fiscalTypes?.nfe" @click="emitirNotaFiscalVenda(data.id!, 'NFE')">
+                    <FilePlus2 class="w-4 h-4 mr-1" />
+                    Emitir NF-e
                 </DropdownMenuItem>
                 <DropdownMenuItem @click="estornarVenda(data.id!)" v-if="data.status === 'FATURADO'">
                     <i class="fa-regular fa-square-minus mr-1"></i>

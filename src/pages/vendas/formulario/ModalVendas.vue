@@ -21,6 +21,7 @@ import { useUiStore } from "@/stores/ui/uiStore";
 import { hasPermission } from "@/hooks/authorize";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { ComboRepository } from "@/repositories/combo-repository";
+import { NotasFiscaisRepository } from "@/repositories/notas-fiscais-repository";
 
 const description = ref('Preencha os campos abaixo')
 const toast = useToast()
@@ -52,6 +53,8 @@ function formatCrediarioDateForApi(value: Date | string | null) {
 }
 
 const paymentMethod = ref<string>('DINHEIRO')
+const tipoDocumentoFiscal = ref<'NENHUM' | 'NFE' | 'NFCE'>('NENHUM')
+const fiscalTypes = ref({ nfe: false, nfce: false })
 const crediarioParcelas = ref<number>(1)
 const crediarioPrimeiroVencimento = ref<Date | string | null>(getDefaultCrediarioFirstDueDate())
 
@@ -118,6 +121,7 @@ async function submitFormularioVenda() {
             garantia: store.form.garantia,
             observacoes: store.form.observacoes,
             pagamento: paymentMethod.value,
+            tipoDocumentoFiscal: tipoDocumentoFiscal.value,
             crediarioParcelas: paymentMethod.value === 'CREDIARIO' ? Number(crediarioParcelas.value) : null,
             crediarioPrimeiroVencimento: paymentMethod.value === 'CREDIARIO'
                 ? formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)
@@ -299,6 +303,7 @@ const resumoCarrinho = computed(() => {
 clearCartVendas();
 onMounted(() => {
     store.form.vendedorId = storeUi.usuarioLogged.id || null
+    NotasFiscaisRepository.getConfig().then((config) => { fiscalTypes.value = { nfe: config.nfeHabilitado, nfce: config.nfceHabilitado } }).catch(() => null)
 })
 
 // Ao abrir o modal para uma nova venda, começa com o pagamento no padrão.
@@ -440,6 +445,18 @@ watch(() => store.openModal, (open) => {
                             </div>
                         </div>
                     </template>
+                </div>
+                <div v-if="!store.form.id && (fiscalTypes.nfe || fiscalTypes.nfce)" class="col-span-6 md:col-span-3">
+                    <label class="mb-1 block text-sm font-medium">Documento fiscal</label>
+                    <Select v-model="tipoDocumentoFiscal">
+                        <SelectTrigger class="w-full bg-card dark:bg-card-dark"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="NENHUM">Não emitir agora</SelectItem>
+                            <SelectItem v-if="fiscalTypes.nfce" value="NFCE">NFC-e</SelectItem>
+                            <SelectItem v-if="fiscalTypes.nfe" value="NFE">NF-e</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <p class="mt-1 text-[11px] leading-4 text-muted-foreground">Emissão após salvar a venda.</p>
                 </div>
             </div>
             <!-- Observações -->

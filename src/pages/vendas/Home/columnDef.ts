@@ -11,6 +11,7 @@ import {
   CircleDollarSign,
   CircleX,
   FileClock,
+  FileText,
   FlagTriangleRight,
   Loader,
   Tag,
@@ -22,7 +23,7 @@ import type { Component } from 'vue'
 import { useVendasStore } from '@/stores/vendas/useVenda'
 import { Checkbox } from '@/components/ui/checkbox'
 const store = useVendasStore()
-export const columnsVendas: ColumnDef<Vendas>[] = [
+const allColumnsVendas: ColumnDef<Vendas>[] = [
   {
     id: 'select',
     enableSorting: false,
@@ -182,6 +183,20 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
     },
   },
   {
+    id: 'notaFiscal',
+    enableSorting: false,
+    enableColumnFilter: false,
+    header: () => render(Button, { variant: 'ghost', class: 'text-left' }, () => 'Nota fiscal'),
+    cell: ({ row }) => {
+      const nota = row.original.NotaFiscals?.[0]
+      if (!nota) return render(BadgeCell, { label: 'Sem emissão', color: 'yellow', icon: FileText })
+
+      const label = `${nota.tipo === 'NFCE' ? 'NFC-e' : nota.tipo === 'NFE' ? 'NF-e' : 'NFS-e'}${nota.numero ? ` #${nota.numero}` : ''}`
+      const color = nota.status === 'AUTORIZADA' ? 'green' : nota.status.includes('FALHA') || nota.status === 'REJEITADA' ? 'red' : 'yellow'
+      return render(BadgeCell, { label: `${label} · ${nota.status}`, color, icon: FileText })
+    },
+  },
+  {
     accessorKey: 'acoes',
     enableSorting: false,
     enableColumnFilter: false,
@@ -191,3 +206,26 @@ export const columnsVendas: ColumnDef<Vendas>[] = [
       render('div', { class: 'text-right' }, render(TabelaActions, { data: row.original, table })),
   },
 ]
+
+export function getColumnsVendas(
+  includeFiscalColumn: boolean,
+  fiscalTypes: { nfe: boolean; nfce: boolean } = { nfe: false, nfce: false },
+): ColumnDef<Vendas>[] {
+  const columns = includeFiscalColumn
+    ? allColumnsVendas
+    : allColumnsVendas.filter((column) => column.id !== 'notaFiscal')
+
+  return columns.map((column) =>
+    column.id !== 'acoes' && (!('accessorKey' in column) || column.accessorKey !== 'acoes')
+      ? column
+      : {
+          ...column,
+          cell: ({ row, table }) =>
+            render('div', { class: 'text-right' }, render(TabelaActions, {
+              data: row.original,
+              table,
+              fiscalTypes,
+            })),
+        },
+  )
+}

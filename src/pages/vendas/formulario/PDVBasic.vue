@@ -499,6 +499,13 @@
             </div>
           </div>
 
+          <div v-if="!proMode && (fiscalTypes.nfe || fiscalTypes.nfce)" class="mb-4 flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5">
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium">Documento fiscal</p>
+              <p class="text-xs text-muted-foreground">A autorização ocorre após concluir a venda.</p>
+            </div>
+            <Select v-model="tipoDocumentoFiscal"><SelectTrigger class="w-44 shrink-0 bg-background"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="NENHUM">Não emitir agora</SelectItem><SelectItem v-if="fiscalTypes.nfce" value="NFCE">NFC-e</SelectItem><SelectItem v-if="fiscalTypes.nfe" value="NFE">NF-e</SelectItem></SelectContent></Select>
+          </div>
           <!-- Botões de finalização -->
           <p
             v-if="proMode && !podeFinalizarPDV"
@@ -1184,8 +1191,21 @@ import { resolveFileUrl } from '@/utils/fileUrl'
 import router from '@/router'
 import { useConfirm } from '@/composables/useConfirm'
 import { ComboRepository } from '@/repositories/combo-repository'
+import { NotasFiscaisRepository } from '@/repositories/notas-fiscais-repository'
 
-const { proMode = false } = defineProps<{ proMode?: boolean }>()
+const {
+  proMode = false,
+  fiscalDocumentType: fiscalDocumentTypeProp,
+  fiscalTypes: fiscalTypesProp,
+} = defineProps<{
+  proMode?: boolean
+  fiscalDocumentType?: 'NENHUM' | 'NFE' | 'NFCE'
+  fiscalTypes?: { nfe: boolean; nfce: boolean }
+}>()
+
+const emit = defineEmits<{
+  'update:fiscalDocumentType': [value: 'NENHUM' | 'NFE' | 'NFCE']
+}>()
 
 const toast = useToast()
 const useConf = useConfirm()
@@ -1319,6 +1339,19 @@ const searchTerm = ref('')
 const discountType = ref<'percentage' | 'value'>('percentage')
 const discountValue = ref<number | null>(null)
 const paymentMethod = ref<PaymentMethod>('PIX')
+const tipoDocumentoFiscalLocal = ref<'NENHUM' | 'NFE' | 'NFCE'>('NENHUM')
+const fiscalTypesLocal = ref({ nfe: false, nfce: false })
+const tipoDocumentoFiscal = computed({
+  get: () => fiscalDocumentTypeProp ?? tipoDocumentoFiscalLocal.value,
+  set: (value: 'NENHUM' | 'NFE' | 'NFCE') => {
+    if (fiscalDocumentTypeProp !== undefined) {
+      emit('update:fiscalDocumentType', value)
+      return
+    }
+    tipoDocumentoFiscalLocal.value = value
+  },
+})
+const fiscalTypes = computed(() => fiscalTypesProp ?? fiscalTypesLocal.value)
 const receivedAmount = ref<string | null>(null)
 const pagamentos = ref<Array<{ metodo: PaymentMethod; valor: string }>>([])
 const crediarioParcelas = ref(1)
@@ -2072,6 +2105,7 @@ async function finalizarVendaPDV(options?: { print?: boolean; crediarioConfirmad
     crediarioPrimeiroVencimento: possuiCrediario.value
       ? formatCrediarioDateForApi(crediarioPrimeiroVencimento.value)
       : null,
+    tipoDocumentoFiscal: tipoDocumentoFiscal.value,
     itens: cart.value.map((i) => ({
       id: Number(i.id),
       nome: `${i.nome}${i.nomeVariante ? ` / ${i.nomeVariante}` : ''}`,
@@ -2183,6 +2217,11 @@ defineExpose({
 
 onMounted(async () => {
   await caixaStore.loadContexto().catch(() => null)
+  if (!fiscalTypesProp) {
+    await NotasFiscaisRepository.getConfig().then((config) => {
+      fiscalTypesLocal.value = { nfe: config.emissaoNfePronta, nfce: config.emissaoNfcePronta }
+    }).catch(() => null)
+  }
   await fetchProducts()
   cart.value = []
   saveCart()
