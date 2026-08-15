@@ -63,7 +63,7 @@
                                     ? 'sticky right-0 bg-gray-100 dark:bg-gray-800 z-10'
                                     : ''
                             ]">
-                            <FlexRender class="text-gray-900 dark:text-gray-100" v-if="!header.isPlaceholder"
+                            <FlexRender v-if="!header.isPlaceholder"
                                 :render="header.column.columnDef.header" :props="header.getContext()" />
                         </TableHead>
                     </TableRow>

@@ -147,7 +147,10 @@ export async function handleRouteGuard(to: typed, from: typed) {
   }
 
   if (to.meta?.ouriveCapability) {
-    await storeUi.loadOuriveAccess()
+    // Papéis do Ourive podem ser alterados por outro administrador enquanto o
+    // usuário está logado. Forçar a leitura aqui evita negar a rota com o
+    // estado de permissões mantido em memória antes da alteração.
+    await storeUi.loadOuriveAccess(true)
     if (!storeUi.hasOuriveCapability(to.meta.ouriveCapability as OuriveCapability)) {
       toast.info('Seu papel no módulo Ourive não permite acessar esta tela.')
       return from.name ? { name: from.name as string } : home

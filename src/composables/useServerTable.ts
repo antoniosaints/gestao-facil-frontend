@@ -34,15 +34,22 @@ export function useServerTable<T>(
         },
       })
 
-      data.value = res.data.data
-      totalPages.value = res.data.totalPages || 1
+      // Alguns módulos legados ainda respondem no contrato paginado
+      // `{ data: { items, page, size, total } }`. Aceitamos os dois formatos
+      // para que o DataTable não aparente vazio durante uma atualização de API.
+      const payload = res.data?.data
+      data.value = Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : []
+      const returnedPage = Number(res.data?.page ?? payload?.page ?? pageIdx)
+      const returnedSize = Number(res.data?.pageSize ?? payload?.size ?? pageSize.value)
+      const returnedTotal = Number(res.data?.total ?? payload?.total ?? 0)
+      totalPages.value = Math.max(1, Number(res.data?.totalPages) || Math.ceil(returnedTotal / returnedSize) || 1)
 
       // Ajusta pageIndex se estiver fora do total de páginas
       if (pageIndex.value >= totalPages.value) {
         pageIndex.value = Math.max(totalPages.value - 1, 0)
         // Não chamamos fetchData recursivamente
       } else {
-        pageIndex.value = res.data.page - 1
+        pageIndex.value = Math.max(0, returnedPage - 1)
       }
     } finally {
       loading.value = false
