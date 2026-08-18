@@ -18,6 +18,8 @@
                 <nav class="hidden md:flex items-center gap-8">
                     <RouterLink :to="{ path: '/site', hash: '#features' }"
                         class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Funcionalidades</RouterLink>
+                    <RouterLink :to="{ path: '/site', hash: '#nichos' }"
+                        class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Nichos</RouterLink>
                     <RouterLink :to="{ path: '/site', hash: '#apps' }"
                         class="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Apps</RouterLink>
                     <RouterLink :to="{ path: '/site', hash: '#precos' }"
@@ -220,45 +222,7 @@
             </div>
         </section>
 
-        <!-- Nichos -->
-        <section class="py-20">
-            <div class="container mx-auto px-4">
-                <div class="grid lg:grid-cols-2 gap-12 items-center">
-                    <div class="order-2 lg:order-1">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-4 mt-8">
-                                <div v-for="n in segments.slice(0, 2)" :key="n.title" class="bg-card p-6 rounded-2xl shadow-sm border border-border/60">
-                                    <component :is="n.icon" class="w-8 h-8 mb-3" :class="n.color" />
-                                    <h3 class="font-bold mb-1">{{ n.title }}</h3>
-                                    <p class="text-xs text-muted-foreground">{{ n.desc }}</p>
-                                </div>
-                            </div>
-                            <div class="space-y-4">
-                                <div v-for="n in segments.slice(2, 4)" :key="n.title" class="bg-card p-6 rounded-2xl shadow-sm border border-border/60">
-                                    <component :is="n.icon" class="w-8 h-8 mb-3" :class="n.color" />
-                                    <h3 class="font-bold mb-1">{{ n.title }}</h3>
-                                    <p class="text-xs text-muted-foreground">{{ n.desc }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="order-1 lg:order-2">
-                        <span class="text-sm font-semibold text-primary uppercase tracking-wider">Flexível</span>
-                        <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-6">Adaptável ao seu tipo de negócio</h2>
-                        <p class="text-lg text-muted-foreground mb-6">
-                            Do varejo aos serviços, o Gestão Fácil se molda à sua operação com configurações flexíveis
-                            e módulos que você ativa conforme cresce.
-                        </p>
-                        <ul class="space-y-3">
-                            <li v-for="item in adaptBenefits" :key="item" class="flex items-center gap-3">
-                                <CheckCircle2 class="w-5 h-5 text-primary flex-shrink-0" />
-                                <span>{{ item }}</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
+        <SiteNichesShowcase />
 
         <!-- Preços -->
         <section id="precos" class="py-20 bg-muted/30 border-y border-border/60">
@@ -442,9 +406,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { SiteRepository } from '@/repositories/site-repository'
 import { DEFAULT_SITE_CONFIG, cloneSiteConfig, type SitePublicConfig } from '@/pages/site/siteContent'
 import { resolveFileUrl } from '@/utils/fileUrl'
+import SiteNichesShowcase from './SiteNichesShowcase.vue'
 import {
-    ArrowRight, PlayCircle, TrendingUp, Users, Smartphone, Shirt, Hammer,
-    ShoppingBasket, CheckCircle2, Check, Star, ChevronDown,
+    ArrowRight, PlayCircle, TrendingUp, Users, CheckCircle2, Check, Star, ChevronDown,
     Box, Wallet, FileBarChart, Wrench, ScanLine, UsersRound,
     Bot, MessageCircle, Repeat, CreditCard, Headset, Store
 } from 'lucide-vue-next'
@@ -537,15 +501,6 @@ const apps = computed(() =>
         ...appVisuals[index % appVisuals.length],
     })),
 )
-
-const segments = [
-    { title: 'Eletrônicos', desc: 'Controle de serial e garantia', icon: Smartphone, color: 'text-purple-500' },
-    { title: 'Vestuário', desc: 'Grade de cor e tamanho', icon: Shirt, color: 'text-pink-500' },
-    { title: 'Serviços', desc: 'Ordem de serviço completa', icon: Hammer, color: 'text-orange-500' },
-    { title: 'Varejo', desc: 'PDV rápido e eficiente', icon: ShoppingBasket, color: 'text-green-500' },
-]
-
-const adaptBenefits = computed(() => siteConfig.value.adaptBenefits?.length ? siteConfig.value.adaptBenefits : DEFAULT_SITE_CONFIG.adaptBenefits)
 
 const included = computed(() => siteConfig.value.included?.length ? siteConfig.value.included : DEFAULT_SITE_CONFIG.included)
 

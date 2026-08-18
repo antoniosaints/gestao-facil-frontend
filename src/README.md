@@ -16,6 +16,7 @@
 - `pluguins/`: integrações como socket.
 - `repositories/`: acesso à API, incluindo `assinatura-repository.ts` para o domínio recorrente `/assinaturas` e `whatsapp-repository.ts` para o atendimento WhatsApp.
 - `pages/loja/`: gestão interna de pedidos/personalização e vitrine pública por slug; `composables/useStoreCart.ts` persiste o carrinho isolado por loja e `repositories/loja-repository.ts` concentra os contratos públicos e privados.
+- `pages/site/`: site institucional público; `siteNiches.ts` centraliza os seis segmentos destacados e abastece a vitrine da home e as páginas dinâmicas em `/site/solucoes/:nicho`.
 - `router/`: definição de rotas.
 - `stores/`: estado global e por domínio.
 - `types/`: contratos TypeScript consumidos pelo app.

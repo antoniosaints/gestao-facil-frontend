@@ -1,5 +1,9 @@
 �### Gestão Fácil ERP
 
+### Vitrine pública por nicho
+
+Em `/site`, a seção **Soluções por nicho** apresenta Restaurante & delivery, Ourives, Lojas & varejo, Atendimento & suporte, Loja virtual e Arenas esportivas. A seleção troca o cenário e o acento visual do segmento; cada opção abre sua apresentação pública em `/site/solucoes/:nicho`, com conteúdo e chamada de cadastro próprios. A definição compartilhada dos nichos fica em `src/pages/site/siteNiches.ts` e alimenta tanto a vitrine quanto as páginas detalhadas. Os links de âncora do header e footer usam a rolagem suave do router, com compensação do header fixo.
+
 ### Atualização em tempo real de pedidos
 
 O cardápio público abre um socket independente e temporário, autorizado apenas pelos tokens opacos de acompanhamento que o próprio navegador recebeu no checkout. Alterações de status emitidas por Pedidos, KDS ou webhook atualizam o histórico e o acompanhamento daquele pedido sem expor uma busca pública por clientes.

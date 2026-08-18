@@ -131,6 +131,11 @@ const routes: RouteInterface[] = [
         component: () => import('@/pages/site/HomePage.vue'),
       },
       {
+        path: 'solucoes/:nicho',
+        name: 'site-nicho',
+        component: () => import('@/pages/site/NichePage.vue'),
+      },
+      {
         path: 'cadastro',
         name: 'site-sobre',
         component: () => import('@/pages/site/CadastroSite.vue'),
@@ -1196,6 +1201,19 @@ const routes: RouteInterface[] = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+
+    if (to.hash) {
+      return {
+        el: to.hash,
+        top: 80,
+        behavior: 'smooth',
+      }
+    }
+
+    return { top: 0 }
+  },
 })
 
 router.beforeEach((to, from) => handleRouteGuard(to, from))
