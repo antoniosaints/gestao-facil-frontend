@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css'
 import { useToast } from 'vue-toastification'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
+import PedidoManualDialog from './PedidoManualDialog.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +25,7 @@ import {
   type RestauranteLocalizacao,
   type RestaurantePedido,
   type RestaurantePedidoStatus,
+  type RestauranteEstacaoImpressao,
 } from '@/repositories/restaurante-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { useSocketEvent } from '@/composables/useSocketEvent'
@@ -33,17 +35,22 @@ import { formatCurrencyBR, formatPaymentMethodLabel } from '@/utils/formatters'
 import { restaurantMapIcons } from './restaurantMapIcons'
 import {
   ChefHat,
+  CircleCheckBig,
   CircleX,
+  Columns3,
   Clock3,
   FileTextIcon,
   Filter,
   MapPinned,
   MapPin,
   Phone,
+  Plus,
+  Printer,
   RefreshCw,
   Search,
   Settings2,
   ShoppingBag,
+  TableProperties,
 } from 'lucide-vue-next'
 
 type PeriodPreset = 'today' | 'month' | 'all' | 'custom'
@@ -54,6 +61,7 @@ const uiStore = useUiStore()
 const canOperate = computed(() => uiStore.hasRestaurantCapability('PEDIDOS_OPERAR'))
 const canConfigure = computed(() => uiStore.hasRestaurantCapability('CONFIGURACOES_GERENCIAR'))
 const canViewKds = computed(() => uiStore.hasRestaurantCapability('KDS_VISUALIZAR'))
+const canPrint = computed(() => uiStore.hasRestaurantCapability('IMPRESSAO_VISUALIZAR'))
 const loading = ref(true)
 const loadingMore = ref(false)
 const pedidos = ref<RestaurantePedido[]>([])
@@ -65,12 +73,19 @@ const total = ref(0)
 const openModalFiltros = ref(false)
 const openModalDetalhes = ref(false)
 const openModalRota = ref(false)
+const openModalPedidoManual = ref(false)
+const openModalImpressao = ref(false)
 const pedidoSelecionado = ref<RestaurantePedido | null>(null)
 const localizacaoEmpresa = ref<RestauranteLocalizacao | null>(null)
 const pedidoRota = ref<RestaurantePedido | null>(null)
 const mapElement = ref<HTMLElement | null>(null)
 const routeLoading = ref(false)
 const routeSummary = ref<Pick<RoadRoute, 'distance' | 'duration'> | null>(null)
+const pedidoParaImpressao = ref<RestaurantePedido | null>(null)
+const estacoesImpressao = ref<RestauranteEstacaoImpressao[]>([])
+const estacoesSelecionadas = ref<number[]>([])
+const imprimindo = ref(false)
+const pedidoArrastado = ref<RestaurantePedido | null>(null)
 
 let routeMap: L.Map | null = null
 let routeLayers: L.LayerGroup | null = null
@@ -136,8 +151,58 @@ const statusLabels: Record<RestaurantePedidoStatus, string> = {
   CONCLUIDO: 'Concluído',
   CANCELADO: 'Cancelado',
 }
+
+const statusBadgeClasses: Record<RestaurantePedidoStatus, string> = {
+  RECEBIDO:
+    'border-slate-500/30 bg-slate-500/10 text-slate-700 dark:border-slate-400/30 dark:bg-slate-400/15 dark:text-slate-200',
+  CONFIRMADO:
+    'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:border-blue-400/30 dark:bg-blue-400/15 dark:text-blue-300',
+  EM_PREPARO:
+    'border-amber-500/35 bg-amber-500/10 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-300',
+  PRONTO:
+    'border-emerald-500/35 bg-emerald-500/10 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-300',
+  CONCLUIDO:
+    'border-violet-500/30 bg-violet-500/10 text-violet-700 dark:border-violet-400/30 dark:bg-violet-400/15 dark:text-violet-300',
+  CANCELADO:
+    'border-red-500/30 bg-red-500/10 text-red-700 dark:border-red-400/30 dark:bg-red-400/15 dark:text-red-300',
+}
+
+const statusColumnClasses: Record<RestaurantePedidoStatus, string> = {
+  RECEBIDO: 'border-t-slate-500 bg-slate-500/[0.035] dark:bg-slate-400/[0.06]',
+  CONFIRMADO: 'border-t-blue-500 bg-blue-500/[0.035] dark:bg-blue-400/[0.06]',
+  EM_PREPARO: 'border-t-amber-500 bg-amber-500/[0.04] dark:bg-amber-400/[0.07]',
+  PRONTO: 'border-t-emerald-500 bg-emerald-500/[0.035] dark:bg-emerald-400/[0.06]',
+  CONCLUIDO: 'border-t-violet-500 bg-violet-500/[0.035] dark:bg-violet-400/[0.06]',
+  CANCELADO: 'border-t-red-500 bg-red-500/[0.035] dark:bg-red-400/[0.06]',
+}
+
+function statusBadgeClass(status: RestaurantePedidoStatus) {
+  return statusBadgeClasses[status]
+}
+
+function statusColumnClass(status: RestaurantePedidoStatus) {
+  return statusColumnClasses[status]
+}
 const statusOptions = Object.keys(statusLabels) as RestaurantePedidoStatus[]
 const statusStorageKey = 'gestao_facil:restaurante:pedidos-status'
+const visualizacaoStorageKey = 'gestao_facil:restaurante:pedidos-visualizacao'
+type VisualizacaoPedidos = 'cards' | 'kanban'
+
+function visualizacaoSalva(): VisualizacaoPedidos {
+  try {
+    return localStorage.getItem(visualizacaoStorageKey) === 'kanban' ? 'kanban' : 'cards'
+  } catch {
+    return 'cards'
+  }
+}
+
+const visualizacao = ref<VisualizacaoPedidos>(visualizacaoSalva())
+const kanbanStatuses = statusOptions.filter((status) => status !== 'CANCELADO')
+
+function alterarVisualizacao(value: VisualizacaoPedidos) {
+  visualizacao.value = value
+  localStorage.setItem(visualizacaoStorageKey, value)
+}
 
 function statusesSalvos() {
   try {
@@ -267,7 +332,19 @@ function selecionarTodosStatus() {
 async function avancar(pedido: RestaurantePedido) {
   const proximo = nextStatus[pedido.status]
   if (!proximo) return
-  if (proximo === 'CONCLUIDO' && pedido.origem === 'DELIVERY' && pedido.entregaStatus !== 'ENTREGUE') {
+  await moverParaStatus(pedido, proximo)
+}
+
+async function moverParaStatus(pedido: RestaurantePedido, proximo: RestaurantePedidoStatus) {
+  if (nextStatus[pedido.status] !== proximo) {
+    toast.info('Avance um status por vez para manter o fluxo de produção.')
+    return
+  }
+  if (
+    proximo === 'CONCLUIDO' &&
+    pedido.origem === 'DELIVERY' &&
+    pedido.entregaStatus !== 'ENTREGUE'
+  ) {
     toast.info('Não é possível concluir este pedido: o entregador ainda não confirmou a entrega.')
     return
   }
@@ -285,6 +362,82 @@ async function avancar(pedido: RestaurantePedido) {
   }
 }
 
+function iniciarArraste(pedido: RestaurantePedido) {
+  if (!canOperate.value || !proximoDisponivel(pedido)) return
+  pedidoArrastado.value = pedido
+}
+
+async function soltarNoKanban(status: RestaurantePedidoStatus) {
+  const pedido = pedidoArrastado.value
+  pedidoArrastado.value = null
+  if (!pedido || pedido.status === status) return
+  await moverParaStatus(pedido, status)
+}
+
+async function abrirImpressao(pedido: RestaurantePedido) {
+  if (!pedido.tickets?.length)
+    return toast.info('Este pedido não possui ticket de produção para imprimir.')
+  try {
+    const [stations, rules] = await Promise.all([
+      RestauranteRepository.estacoesImpressao(),
+      RestauranteRepository.regrasImpressao(),
+    ])
+    const ticketPointIds = new Set(pedido.tickets.map((ticket) => ticket.pontoId))
+    const allowedStationIds = new Set(
+      rules
+        .filter((rule) => rule.ativa && ticketPointIds.has(rule.pontoId))
+        .flatMap((rule) => [
+          rule.estacaoId,
+          ...rule.destinos.map((destination) => destination.estacaoId),
+        ]),
+    )
+    estacoesImpressao.value = stations.filter(
+      (station) => station.ativa && allowedStationIds.has(station.id),
+    )
+    if (!estacoesImpressao.value.length)
+      return toast.info('Não há conector de impressão configurado para os pontos deste pedido.')
+    pedidoParaImpressao.value = pedido
+    estacoesSelecionadas.value = estacoesImpressao.value.map((station) => station.id)
+    openModalImpressao.value = true
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.error?.message ||
+        'Não foi possível carregar os conectores de impressão.',
+    )
+  }
+}
+
+function alternarEstacaoImpressao(id: number, checked: unknown) {
+  const selected = new Set(estacoesSelecionadas.value)
+  if (checked === true) selected.add(id)
+  else selected.delete(id)
+  estacoesSelecionadas.value = [...selected]
+}
+
+function alterarEstacaoImpressao(id: number, event: Event) {
+  alternarEstacaoImpressao(id, event.target instanceof HTMLInputElement && event.target.checked)
+}
+
+async function imprimirPedido() {
+  if (!pedidoParaImpressao.value || !estacoesSelecionadas.value.length)
+    return toast.info('Selecione ao menos um conector.')
+  try {
+    imprimindo.value = true
+    const jobs = await RestauranteRepository.imprimirPedido(
+      pedidoParaImpressao.value.id,
+      estacoesSelecionadas.value,
+    )
+    openModalImpressao.value = false
+    toast.success(`${jobs.length} trabalho(s) de impressão enfileirado(s).`)
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.error?.message || 'Não foi possível enviar o pedido para impressão.',
+    )
+  } finally {
+    imprimindo.value = false
+  }
+}
+
 function podeCancelar(pedido: RestaurantePedido) {
   return !['CANCELADO', 'CONCLUIDO'].includes(pedido.status)
 }
@@ -298,11 +451,17 @@ async function cancelar(pedido: RestaurantePedido) {
   if (!confirmed) return
   try {
     atualizando.value = pedido.id
-    const atualizado = await RestauranteRepository.transicionar(pedido.id, 'CANCELADO', pedido.version)
+    const atualizado = await RestauranteRepository.transicionar(
+      pedido.id,
+      'CANCELADO',
+      pedido.version,
+    )
     pedidos.value = pedidos.value.map((item) => (item.id === atualizado.id ? atualizado : item))
     if (pedidoSelecionado.value?.id === atualizado.id) pedidoSelecionado.value = atualizado
     toast[atualizado.status === 'CANCELADO' ? 'success' : 'info'](
-      atualizado.status === 'CANCELADO' ? 'Pedido cancelado.' : 'Cancelamento registrado para revisão financeira.',
+      atualizado.status === 'CANCELADO'
+        ? 'Pedido cancelado.'
+        : 'Cancelamento registrado para revisão financeira.',
     )
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível cancelar o pedido.')
@@ -341,7 +500,10 @@ function pagamentoLabel(metodo?: string | null) {
 }
 
 function aguardandoPagamentoOnline(pedido: RestaurantePedido) {
-  return pedido.pagamentoStatus === 'PENDENTE' && ['PIX', 'CHECKOUT_PRO'].includes(pedido.pagamentoMetodoSnapshot || '')
+  return (
+    pedido.pagamentoStatus === 'PENDENTE' &&
+    ['PIX', 'CHECKOUT_PRO'].includes(pedido.pagamentoMetodoSnapshot || '')
+  )
 }
 
 function enderecoFormatado(pedido: RestaurantePedido) {
@@ -477,7 +639,7 @@ onBeforeUnmount(() => handleRouteModalChange(false))
     <header class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div>
         <h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-          <FileTextIcon class="h-6 w-6 text-primary" />Pedidos
+          <FileTextIcon class="h-6 w-6 text-primary dark:text-primary-foreground" />Pedidos
         </h1>
         <p class="text-sm text-muted-foreground">{{ filtroLabel }} · {{ total }} no período</p>
       </div>
@@ -501,6 +663,29 @@ onBeforeUnmount(() => handleRouteModalChange(false))
         <Button variant="outline" size="sm" @click="openModalFiltros = true">
           <Filter class="mr-1.5 h-4 w-4" />Período
         </Button>
+        <div class="flex rounded-lg border bg-card p-1" aria-label="Visualização dos pedidos">
+          <Button
+            size="icon"
+            variant="ghost"
+            class="h-7 w-7"
+            :class="visualizacao === 'cards' ? 'bg-muted' : ''"
+            aria-label="Visualizar em cards"
+            @click="alterarVisualizacao('cards')"
+            ><TableProperties class="h-4 w-4"
+          /></Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            class="h-7 w-7"
+            :class="visualizacao === 'kanban' ? 'bg-muted' : ''"
+            aria-label="Visualizar em kanban"
+            @click="alterarVisualizacao('kanban')"
+            ><Columns3 class="h-4 w-4"
+          /></Button>
+        </div>
+        <Button v-if="canOperate" size="sm" @click="openModalPedidoManual = true"
+          ><Plus class="mr-1.5 h-4 w-4" />Novo pedido</Button
+        >
         <Button
           variant="outline"
           size="icon"
@@ -550,7 +735,7 @@ onBeforeUnmount(() => handleRouteModalChange(false))
           <DropdownMenuSeparator />
           <button
             type="button"
-            class="flex w-full items-center px-2 py-1.5 text-left text-sm text-primary hover:bg-accent"
+            class="flex w-full items-center px-2 py-1.5 text-left text-sm text-primary hover:bg-accent dark:text-primary-foreground"
             :disabled="statusSelecionados.length === statusOptions.length"
             @click="selecionarTodosStatus"
           >
@@ -570,7 +755,10 @@ onBeforeUnmount(() => handleRouteModalChange(false))
         Ajuste o período ou os filtros para consultar outros pedidos.
       </p>
     </div>
-    <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div
+      v-else-if="visualizacao === 'cards'"
+      class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4"
+    >
       <Card
         v-for="pedido in filtrados"
         :key="pedido.id"
@@ -590,12 +778,16 @@ onBeforeUnmount(() => handleRouteModalChange(false))
                 {{ origemLabel(pedido.origem) }}
               </p>
             </div>
-            <Badge variant="outline">{{ statusLabels[pedido.status] }}</Badge>
+            <Badge variant="outline" :class="statusBadgeClass(pedido.status)">
+              {{ statusLabels[pedido.status] }}
+            </Badge>
           </div>
         </CardHeader>
         <CardContent class="flex-1 space-y-2 px-4 pb-3">
           <div class="space-y-1 text-sm">
-            <Badge v-if="aguardandoPagamentoOnline(pedido)" variant="secondary" class="w-fit">Online · aguardando pagamento</Badge>
+            <Badge v-if="aguardandoPagamentoOnline(pedido)" variant="secondary" class="w-fit"
+              >Online · aguardando pagamento</Badge
+            >
             <div v-for="item in pedido.itens" :key="item.id" class="flex justify-between gap-3">
               <span class="min-w-0 truncate"
                 >{{ Number(item.quantidade) }}× {{ item.nomeSnapshot }}</span
@@ -614,7 +806,10 @@ onBeforeUnmount(() => handleRouteModalChange(false))
             </div>
           </div>
         </CardContent>
-        <CardFooter v-if="canOperate && (proximoDisponivel(pedido) || podeCancelar(pedido))" class="gap-2 border-t px-4 py-3">
+        <CardFooter
+          v-if="canPrint || (canOperate && (proximoDisponivel(pedido) || podeCancelar(pedido)))"
+          class="gap-2 border-t px-4 py-3"
+        >
           <Button
             v-if="proximoDisponivel(pedido)"
             size="sm"
@@ -625,16 +820,50 @@ onBeforeUnmount(() => handleRouteModalChange(false))
             <ChefHat class="mr-1.5 h-3.5 w-3.5" />{{ nextLabel[pedido.status] }}
           </Button>
           <Button
-            v-if="canViewKds && pedido.tickets?.length && ['CONFIRMADO', 'EM_PREPARO'].includes(pedido.status)"
+            v-if="
+              canViewKds &&
+              pedido.tickets?.length &&
+              ['CONFIRMADO', 'EM_PREPARO'].includes(pedido.status)
+            "
             as-child
             size="sm"
             variant="outline"
             class="flex-1"
             @click.stop
           >
-            <RouterLink to="/restaurante/kds" class="flex items-center"><ChefHat class="mr-1.5 h-3.5 w-3.5" />Acompanhar no KDS</RouterLink>
+            <RouterLink to="/restaurante/kds" class="flex items-center"
+              ><ChefHat class="mr-1.5 h-3.5 w-3.5" />Acompanhar no KDS</RouterLink
+            >
           </Button>
-          <Button v-if="podeCancelar(pedido)" size="sm" variant="destructive" :disabled="atualizando === pedido.id" aria-label="Cancelar pedido" @click.stop="cancelar(pedido)"><CircleX class="h-4 w-4" /><span class="sr-only">Cancelar pedido</span></Button>
+          <Button
+            v-if="podeCancelar(pedido)"
+            size="sm"
+            variant="destructive"
+            :disabled="atualizando === pedido.id"
+            aria-label="Cancelar pedido"
+            @click.stop="cancelar(pedido)"
+            ><CircleX class="h-4 w-4" /><span class="sr-only">Cancelar pedido</span></Button
+          >
+          <Button
+            v-if="canPrint && pedido.tickets?.length"
+            size="sm"
+            variant="outline"
+            aria-label="Imprimir pedido"
+            @click.stop="abrirImpressao(pedido)"
+            ><Printer class="h-4 w-4" /><span class="sr-only">Imprimir pedido</span></Button
+          >
+          <Button
+            v-else-if="canPrint"
+            size="sm"
+            variant="ghost"
+            class="cursor-not-allowed text-muted-foreground/60"
+            aria-label="Sem ticket de produção para imprimir"
+            title="Sem ticket de produção para imprimir"
+            disabled
+            ><Printer class="h-4 w-4" /><span class="sr-only"
+              >Sem ticket de produção para imprimir</span
+            ></Button
+          >
         </CardFooter>
         <CardFooter
           v-else-if="
@@ -651,6 +880,113 @@ onBeforeUnmount(() => handleRouteModalChange(false))
           </Button>
         </CardFooter>
       </Card>
+    </div>
+
+    <div v-else class="flex gap-4 overflow-x-auto pb-2">
+      <section
+        v-for="status in kanbanStatuses"
+        :key="status"
+        class="flex min-h-[30rem] w-72 shrink-0 flex-col overflow-hidden rounded-2xl border border-t-4 shadow-sm"
+        :class="statusColumnClass(status)"
+        @dragover.prevent
+        @drop.prevent="soltarNoKanban(status)"
+      >
+        <header
+          class="flex items-center justify-between border-b border-border/70 bg-card/80 px-3.5 py-3 backdrop-blur-sm"
+        >
+          <span class="font-semibold">{{ statusLabels[status] }}</span
+          ><Badge variant="outline" :class="statusBadgeClass(status)">{{
+            filtrados.filter((pedido) => pedido.status === status).length
+          }}</Badge>
+        </header>
+        <div class="min-h-40 flex-1 space-y-2 p-2.5">
+          <Card
+            v-for="pedido in filtrados.filter((item) => item.status === status)"
+            :key="pedido.id"
+            :draggable="Boolean(canOperate && proximoDisponivel(pedido))"
+            class="cursor-pointer rounded-xl border-border/80 bg-card/95 shadow-sm transition hover:border-primary/40 hover:shadow-md"
+            :class="{
+              'cursor-grab active:cursor-grabbing': canOperate && proximoDisponivel(pedido),
+            }"
+            @dragstart="iniciarArraste(pedido)"
+            @click="abrirDetalhes(pedido)"
+          >
+            <CardContent class="space-y-2 p-3"
+              ><div class="flex items-start justify-between gap-2">
+                <div>
+                  <p class="font-semibold">{{ pedido.codigo }}</p>
+                  <p class="text-xs text-muted-foreground">
+                    {{ dataHora(pedido.createdAt) }} · {{ origemLabel(pedido.origem) }}
+                  </p>
+                </div>
+                <div class="flex shrink-0 items-center gap-1">
+                  <Button
+                    v-if="canOperate && pedido.status === 'PRONTO'"
+                    size="icon"
+                    class="h-7 w-7"
+                    :disabled="atualizando === pedido.id"
+                    aria-label="Concluir pedido"
+                    title="Concluir pedido"
+                    @click.stop="avancar(pedido)"
+                  >
+                    <CircleCheckBig class="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    v-else-if="canViewKds && pedido.tickets?.length"
+                    as-child
+                    size="icon"
+                    variant="ghost"
+                    class="h-7 w-7 text-primary hover:text-primary dark:text-primary-foreground dark:hover:text-primary-foreground"
+                    aria-label="Acompanhar no KDS"
+                    @click.stop
+                  >
+                    <RouterLink to="/restaurante/kds"><ChefHat class="h-3.5 w-3.5" /></RouterLink>
+                  </Button>
+                  <Button
+                    v-if="canPrint && pedido.tickets?.length"
+                    size="icon"
+                    variant="ghost"
+                    class="h-7 w-7"
+                    aria-label="Imprimir pedido"
+                    @click.stop="abrirImpressao(pedido)"
+                    ><Printer class="h-3.5 w-3.5"
+                  /></Button>
+                  <Button
+                    v-else-if="canPrint"
+                    size="icon"
+                    variant="ghost"
+                    class="h-7 w-7 cursor-not-allowed text-muted-foreground/60"
+                    aria-label="Sem ticket de produção para imprimir"
+                    title="Sem ticket de produção para imprimir"
+                    disabled
+                    ><Printer class="h-3.5 w-3.5"
+                  /></Button>
+                </div>
+              </div>
+              <div class="space-y-1 text-sm">
+                <p v-for="item in pedido.itens.slice(0, 3)" :key="item.id" class="truncate">
+                  {{ Number(item.quantidade) }}× {{ item.nomeSnapshot }}
+                </p>
+                <p v-if="pedido.itens.length > 3" class="text-xs text-muted-foreground">
+                  + {{ pedido.itens.length - 3 }} item(ns)
+                </p>
+              </div>
+              <div class="flex justify-between border-t pt-2 text-sm">
+                <span class="truncate text-muted-foreground">{{
+                  pedido.Mesa?.nome || pedido.clienteNomeSnapshot || 'Cliente visitante'
+                }}</span
+                ><strong>{{ formatCurrencyBR(Number(pedido.total)) }}</strong>
+              </div></CardContent
+            >
+          </Card>
+          <p
+            v-if="!filtrados.some((pedido) => pedido.status === status)"
+            class="rounded-xl border border-dashed border-border/80 bg-background/40 p-3 text-center text-xs text-muted-foreground"
+          >
+            Solte aqui para {{ statusLabels[status].toLocaleLowerCase('pt-BR') }}.
+          </p>
+        </div>
+      </section>
     </div>
 
     <div v-if="!loading && pedidos.length < total" class="flex justify-center">
@@ -685,6 +1021,46 @@ onBeforeUnmount(() => handleRouteModalChange(false))
           <Button variant="outline" @click="openModalFiltros = false">Cancelar</Button>
           <Button @click="aplicarPeriodoPersonalizado"
             ><Filter class="mr-1.5 h-4 w-4" />Aplicar</Button
+          >
+        </div>
+      </div>
+    </ModalView>
+
+    <PedidoManualDialog v-model:open="openModalPedidoManual" @created="recarregar()" />
+
+    <ModalView
+      v-model:open="openModalImpressao"
+      :title="
+        pedidoParaImpressao ? `Imprimir pedido ${pedidoParaImpressao.codigo}` : 'Imprimir pedido'
+      "
+      description="Escolha os conectores configurados que devem receber a reimpressão."
+      size="lg"
+    >
+      <div class="space-y-3 p-4">
+        <label
+          v-for="station in estacoesImpressao"
+          :key="station.id"
+          class="flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3"
+          ><span
+            ><span class="block font-medium">{{ station.nome }}</span
+            ><span class="text-xs text-muted-foreground"
+              >{{ station.online ? 'Conectado' : 'Sem conexão recente' }} ·
+              {{ station.impressoraNome || 'Impressora não identificada' }}</span
+            ></span
+          ><input
+            type="checkbox"
+            class="h-4 w-4"
+            :checked="estacoesSelecionadas.includes(station.id)"
+            @change="alterarEstacaoImpressao(station.id, $event)"
+        /></label>
+        <p class="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
+          Somente conectores configurados como destinos dos pontos deste pedido receberão trabalhos
+          de impressão.
+        </p>
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" @click="openModalImpressao = false">Cancelar</Button
+          ><Button :disabled="imprimindo || !estacoesSelecionadas.length" @click="imprimirPedido"
+            ><Printer class="mr-2 h-4 w-4" />Imprimir selecionados</Button
           >
         </div>
       </div>
@@ -728,7 +1104,12 @@ onBeforeUnmount(() => handleRouteModalChange(false))
               {{ pagamentoLabel(pedidoSelecionado.pagamentoMetodoSnapshot) }}
             </p>
             <p class="mt-1 text-sm text-muted-foreground">
-              Pagamento: {{ aguardandoPagamentoOnline(pedidoSelecionado) ? 'Aguardando pagamento online' : pagamentoLabel(pedidoSelecionado.pagamentoStatus) }}
+              Pagamento:
+              {{
+                aguardandoPagamentoOnline(pedidoSelecionado)
+                  ? 'Aguardando pagamento online'
+                  : pagamentoLabel(pedidoSelecionado.pagamentoStatus)
+              }}
             </p>
             <p v-if="pedidoSelecionado.Mesa?.nome" class="mt-1 text-sm text-muted-foreground">
               {{ pedidoSelecionado.Mesa.nome }}
@@ -804,8 +1185,23 @@ onBeforeUnmount(() => handleRouteModalChange(false))
           <p class="mt-1 whitespace-pre-wrap text-sm">{{ pedidoSelecionado.observacao }}</p>
         </div>
 
-        <div v-if="canOperate && podeCancelar(pedidoSelecionado)" class="flex justify-end border-t pt-4">
-          <Button variant="destructive" :disabled="atualizando === pedidoSelecionado.id" @click="cancelar(pedidoSelecionado)"><CircleX class="mr-1.5 h-4 w-4" />Cancelar pedido</Button>
+        <div
+          v-if="canOperate || (canPrint && pedidoSelecionado.tickets?.length)"
+          class="flex justify-end gap-2 border-t pt-4"
+        >
+          <Button
+            v-if="canPrint && pedidoSelecionado.tickets?.length"
+            variant="outline"
+            @click="abrirImpressao(pedidoSelecionado)"
+            ><Printer class="mr-1.5 h-4 w-4" />Imprimir</Button
+          >
+          <Button
+            v-if="canOperate && podeCancelar(pedidoSelecionado)"
+            variant="destructive"
+            :disabled="atualizando === pedidoSelecionado.id"
+            @click="cancelar(pedidoSelecionado)"
+            ><CircleX class="mr-1.5 h-4 w-4" />Cancelar pedido</Button
+          >
         </div>
       </div>
     </ModalView>

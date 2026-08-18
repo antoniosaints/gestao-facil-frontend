@@ -1,15 +1,29 @@
 import http from '@/utils/axios'
 import type { ThemeCustomization } from '@/types/schemas'
 
-export type RestaurantePapel = 'GESTOR' | 'CAIXA' | 'GARCOM' | 'COZINHA' | 'EXPEDICAO' | 'ENTREGADOR'
+export type RestaurantePapel =
+  | 'GESTOR'
+  | 'CAIXA'
+  | 'GARCOM'
+  | 'COZINHA'
+  | 'EXPEDICAO'
+  | 'ENTREGADOR'
 export type RestauranteCapability =
-  | 'SALAO_VISUALIZAR' | 'SALAO_OPERAR' | 'SALAO_CONFIGURAR'
+  | 'SALAO_VISUALIZAR'
+  | 'SALAO_OPERAR'
+  | 'SALAO_CONFIGURAR'
   | 'COMANDAS_OPERAR'
-  | 'KDS_VISUALIZAR' | 'KDS_OPERAR' | 'KDS_CONFIGURAR'
-  | 'IMPRESSAO_VISUALIZAR' | 'IMPRESSAO_CONFIGURAR'
-  | 'CARDAPIO_VISUALIZAR' | 'CARDAPIO_CONFIGURAR'
-  | 'PEDIDOS_VISUALIZAR' | 'PEDIDOS_OPERAR'
-  | 'CONFIGURACOES_GERENCIAR' | 'PAPEIS_GERENCIAR'
+  | 'KDS_VISUALIZAR'
+  | 'KDS_OPERAR'
+  | 'KDS_CONFIGURAR'
+  | 'IMPRESSAO_VISUALIZAR'
+  | 'IMPRESSAO_CONFIGURAR'
+  | 'CARDAPIO_VISUALIZAR'
+  | 'CARDAPIO_CONFIGURAR'
+  | 'PEDIDOS_VISUALIZAR'
+  | 'PEDIDOS_OPERAR'
+  | 'CONFIGURACOES_GERENCIAR'
+  | 'PAPEIS_GERENCIAR'
 
 export interface RestauranteAccess {
   papeis: RestaurantePapel[]
@@ -76,7 +90,7 @@ export interface RestaurantePedido {
   version: number
   createdAt: string
   Mesa?: { nome: string } | null
-  tickets?: Array<{ id: number }>
+  tickets?: Array<{ id: number; pontoId: number }>
   Entrega?: {
     id: number
     entregadorId?: number | null
@@ -86,7 +100,12 @@ export interface RestaurantePedido {
     emRotaAt?: string | null
     entregueAt?: string | null
     falhouAt?: string | null
-    Entregador?: { ultimaLatitude?: number | null; ultimaLongitude?: number | null; ultimaLocalizacaoAt?: string | null; Usuario?: { nome: string } } | null
+    Entregador?: {
+      ultimaLatitude?: number | null
+      ultimaLongitude?: number | null
+      ultimaLocalizacaoAt?: string | null
+      Usuario?: { nome: string }
+    } | null
   } | null
   itens: Array<{
     id: number
@@ -101,15 +120,34 @@ export interface RestaurantePedido {
 
 export interface RestauranteEntregadorContexto {
   driver: { id: number; disponivel: boolean; ultimaLocalizacaoAt?: string | null }
-  empresa: { nome: string; nomeFantasia?: string | null; profile?: string | null; endereco?: string | null; telefone?: string | null } | null
+  empresa: {
+    nome: string
+    nomeFantasia?: string | null
+    profile?: string | null
+    endereco?: string | null
+    telefone?: string | null
+  } | null
   ofertas: RestaurantePedido[]
   entregaAtiva: RestaurantePedido | null
 }
 
 export interface RestaurantePainel {
   periodo: { inicio: string; fim: string }
-  resumo: { pedidos: number; faturamento: number; ticketMedio: number; cancelamentos: number; taxaCancelamento: number; pedidosEmAberto: number }
-  operacao: { tempoMedioProducaoMinutos: number | null; pedidosComTempoProducao: number; tempoMedioEntregaMinutos: number | null; entregasConcluidas: number; tempoMedioRetiradaMinutos: number | null }
+  resumo: {
+    pedidos: number
+    faturamento: number
+    ticketMedio: number
+    cancelamentos: number
+    taxaCancelamento: number
+    pedidosEmAberto: number
+  }
+  operacao: {
+    tempoMedioProducaoMinutos: number | null
+    pedidosComTempoProducao: number
+    tempoMedioEntregaMinutos: number | null
+    entregasConcluidas: number
+    tempoMedioRetiradaMinutos: number | null
+  }
   produtosMaisVendidos: Array<{ nome: string; quantidade: number; faturamento: number }>
   formasPagamento: Array<{ metodo: string; pedidos: number; valor: number }>
   canais: Array<{ origem: string; pedidos: number; valor: number }>
@@ -342,8 +380,18 @@ export interface RestauranteLocalizacao {
   longitude: number
 }
 
-export type RestauranteWhatsAppNotificationEvent = 'PEDIDO_FEITO' | 'EM_PREPARO' | 'SAIU_ENTREGA' | 'PRONTO' | 'ENTREGUE' | 'FIDELIDADE' | 'POS_PEDIDO'
-export type RestauranteWhatsAppNotifications = Record<RestauranteWhatsAppNotificationEvent, { ativo: boolean; mensagem: string }>
+export type RestauranteWhatsAppNotificationEvent =
+  | 'PEDIDO_FEITO'
+  | 'EM_PREPARO'
+  | 'SAIU_ENTREGA'
+  | 'PRONTO'
+  | 'ENTREGUE'
+  | 'FIDELIDADE'
+  | 'POS_PEDIDO'
+export type RestauranteWhatsAppNotifications = Record<
+  RestauranteWhatsAppNotificationEvent,
+  { ativo: boolean; mensagem: string }
+>
 
 export interface RestauranteConfig {
   id?: number
@@ -381,7 +429,9 @@ export interface RestauranteZonaEntrega {
   version: number
 }
 
-export type RestauranteZonaPayload = Omit<RestauranteZonaEntrega, 'id' | 'version'> & { version?: number }
+export type RestauranteZonaPayload = Omit<RestauranteZonaEntrega, 'id' | 'version'> & {
+  version?: number
+}
 
 export interface RestauranteCheckoutPreview {
   subtotal: string | number
@@ -410,7 +460,11 @@ export interface RestauranteFidelidadePublica {
   catalogoItemIds: number[]
   descontoPercentual: number
   premio: { catalogoItemId: number; nome: string; imagem?: string | null } | null
-  progresso: { pedidosElegiveis: number; pedidosMeta: number; recompensasDisponiveis: number } | null
+  progresso: {
+    pedidosElegiveis: number
+    pedidosMeta: number
+    recompensasDisponiveis: number
+  } | null
 }
 
 export interface RestauranteProdutoDisponivel {
@@ -528,9 +582,17 @@ export class RestauranteRepository {
     }
   }
 
-  static async criarPedidoPublico(slug: string, payload: unknown, idempotencyKey: string, customerAccessToken?: string | null) {
+  static async criarPedidoPublico(
+    slug: string,
+    payload: unknown,
+    idempotencyKey: string,
+    customerAccessToken?: string | null,
+  ) {
     const { data } = await http.post(`/v1/restaurante/publico/${slug}/pedidos`, payload, {
-      headers: { 'Idempotency-Key': idempotencyKey, ...(customerAccessToken ? { Authorization: `Bearer ${customerAccessToken}` } : {}) },
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+        ...(customerAccessToken ? { Authorization: `Bearer ${customerAccessToken}` } : {}),
+      },
     })
     return data.data
   }
@@ -550,41 +612,77 @@ export class RestauranteRepository {
     return data.data as RestaurantePublicOrderTracking
   }
 
-  static async cadastrarContaCliente(slug: string, payload: { nome: string; telefone: string; email?: string | null; senha: string }) {
+  static async cadastrarContaCliente(
+    slug: string,
+    payload: { nome: string; telefone: string; email?: string | null; senha: string },
+  ) {
     const { data } = await http.post(`/v1/restaurante/publico/${slug}/conta/cadastro`, payload)
-    return data.data as { customer: { id: number; nome: string; telefone: string }; accessToken: string }
+    return data.data as {
+      customer: { id: number; nome: string; telefone: string }
+      accessToken: string
+    }
   }
 
   static async entrarContaCliente(slug: string, payload: { telefone: string; senha: string }) {
     const { data } = await http.post(`/v1/restaurante/publico/${slug}/conta/login`, payload)
-    return data.data as { customer: { id: number; nome: string; telefone: string }; accessToken: string }
+    return data.data as {
+      customer: { id: number; nome: string; telefone: string }
+      accessToken: string
+    }
   }
 
   static async contaCliente(slug: string, accessToken: string) {
-    const { data } = await http.get(`/v1/restaurante/publico/${slug}/conta`, { headers: { Authorization: `Bearer ${accessToken}` } })
+    const { data } = await http.get(`/v1/restaurante/publico/${slug}/conta`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
     return data.data as RestauranteClienteConta
   }
 
-  static async atualizarContaCliente(slug: string, accessToken: string, payload: { nome: string; email?: string | null }) {
-    const { data } = await http.patch(`/v1/restaurante/publico/${slug}/conta`, payload, { headers: { Authorization: `Bearer ${accessToken}` } })
+  static async atualizarContaCliente(
+    slug: string,
+    accessToken: string,
+    payload: { nome: string; email?: string | null },
+  ) {
+    const { data } = await http.patch(`/v1/restaurante/publico/${slug}/conta`, payload, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
     return data.data
   }
 
-  static async salvarEnderecoContaCliente(slug: string, accessToken: string, payload: Omit<RestauranteClienteEndereco, 'id'>, id?: number) {
+  static async salvarEnderecoContaCliente(
+    slug: string,
+    accessToken: string,
+    payload: Omit<RestauranteClienteEndereco, 'id'>,
+    id?: number,
+  ) {
     const url = `/v1/restaurante/publico/${slug}/conta/enderecos${id ? `/${id}` : ''}`
-    const { data } = await http.request({ url, method: id ? 'put' : 'post', data: payload, headers: { Authorization: `Bearer ${accessToken}` } })
+    const { data } = await http.request({
+      url,
+      method: id ? 'put' : 'post',
+      data: payload,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
     return data.data as RestauranteClienteEndereco
   }
 
   static async removerEnderecoContaCliente(slug: string, accessToken: string, id: number) {
-    await http.delete(`/v1/restaurante/publico/${slug}/conta/enderecos/${id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+    await http.delete(`/v1/restaurante/publico/${slug}/conta/enderecos/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
   }
 
-  static async pedidos(params: { page?: number; limit?: number; status?: string; inicio?: string; fim?: string } = {}) {
+  static async pedidos(
+    params: { page?: number; limit?: number; status?: string; inicio?: string; fim?: string } = {},
+  ) {
     const { data } = await http.get('/v1/restaurante/pedidos', { params })
     return data as {
       data: RestaurantePedido[]
-      meta: { page: number; pages: number; total: number; localizacaoEmpresa?: RestauranteLocalizacao | null }
+      meta: {
+        page: number
+        pages: number
+        total: number
+        localizacaoEmpresa?: RestauranteLocalizacao | null
+      }
     }
   }
 
@@ -600,7 +698,10 @@ export class RestauranteRepository {
 
   static async historicoEntregador(params: { page?: number; limit?: number } = {}) {
     const { data } = await http.get('/v1/restaurante/entregador/historico', { params })
-    return data as { data: RestaurantePedido[]; meta: { page: number; pages: number; total: number } }
+    return data as {
+      data: RestaurantePedido[]
+      meta: { page: number; pages: number; total: number }
+    }
   }
 
   static async atualizarDisponibilidadeEntregador(disponivel: boolean) {
@@ -613,18 +714,33 @@ export class RestauranteRepository {
     return data.data as RestaurantePedido
   }
 
-  static async atualizarStatusEntrega(pedidoId: number, status: Extract<RestauranteEntregaStatus, 'RETIRADA' | 'EM_ROTA' | 'ENTREGUE' | 'FALHOU'>) {
-    const { data } = await http.post(`/v1/restaurante/entregador/entregas/${pedidoId}/status`, { status })
+  static async atualizarStatusEntrega(
+    pedidoId: number,
+    status: Extract<RestauranteEntregaStatus, 'RETIRADA' | 'EM_ROTA' | 'ENTREGUE' | 'FALHOU'>,
+  ) {
+    const { data } = await http.post(`/v1/restaurante/entregador/entregas/${pedidoId}/status`, {
+      status,
+    })
     return data.data as RestaurantePedido
   }
 
-  static async enviarLocalizacaoEntrega(pedidoId: number, payload: { latitude: number; longitude: number; precisaoMetros?: number | null }) {
+  static async enviarLocalizacaoEntrega(
+    pedidoId: number,
+    payload: { latitude: number; longitude: number; precisaoMetros?: number | null },
+  ) {
     await http.post(`/v1/restaurante/entregador/entregas/${pedidoId}/localizacao`, payload)
   }
 
   static async despachoEntregas() {
     const { data } = await http.get('/v1/restaurante/entregas/despacho')
-    return data.data as { pedidos: RestaurantePedido[]; entregadores: Array<{ id: number; disponivel: boolean; Usuario: { nome: string; telefone?: string | null } }> }
+    return data.data as {
+      pedidos: RestaurantePedido[]
+      entregadores: Array<{
+        id: number
+        disponivel: boolean
+        Usuario: { nome: string; telefone?: string | null }
+      }>
+    }
   }
 
   static async ofertarEntrega(pedidoId: number) {
@@ -633,13 +749,36 @@ export class RestauranteRepository {
   }
 
   static async direcionarEntrega(pedidoId: number, entregadorId: number) {
-    const { data } = await http.post(`/v1/restaurante/entregas/${pedidoId}/direcionar`, { entregadorId })
+    const { data } = await http.post(`/v1/restaurante/entregas/${pedidoId}/direcionar`, {
+      entregadorId,
+    })
     return data.data
   }
 
   static async transicionar(id: number, status: RestaurantePedidoStatus, version: number) {
     const { data } = await http.post(`/v1/restaurante/pedidos/${id}/transicao`, { status, version })
     return data.data as RestaurantePedido
+  }
+
+  static async criarPedidoManual(payload: {
+    itens: Array<{
+      catalogoItemId: number
+      quantidade: number
+      selecaoIds: number[]
+      observacao?: string
+    }>
+    observacao?: string | null
+    clienteId?: number | null
+    clienteNome?: string | null
+    clienteTelefone?: string | null
+  }) {
+    const { data } = await http.post('/v1/restaurante/pedidos', payload)
+    return data.data as RestaurantePedido
+  }
+
+  static async imprimirPedido(id: number, estacaoIds: number[]) {
+    const { data } = await http.post(`/v1/restaurante/pedidos/${id}/imprimir`, { estacaoIds })
+    return data.data as RestauranteTrabalhoImpressao[]
   }
 
   static async configuracao() {
@@ -659,7 +798,10 @@ export class RestauranteRepository {
 
   static async opcoesFidelidade() {
     const { data } = await http.get('/v1/restaurante/fidelidade/opcoes')
-    return data.data as { itens: Array<{ id: number; nome: string; imagem?: string | null }>; categorias: Array<{ id: number; nome: string }> }
+    return data.data as {
+      itens: Array<{ id: number; nome: string; imagem?: string | null }>
+      categorias: Array<{ id: number; nome: string }>
+    }
   }
 
   static async salvarFidelidade(payload: RestauranteFidelidadePrograma) {
@@ -732,14 +874,20 @@ export class RestauranteRepository {
     return data.data as RestauranteMesa[]
   }
 
-  static async salvarMesa(payload: { nome: string; ativa: boolean; version?: number }, id?: number) {
+  static async salvarMesa(
+    payload: { nome: string; ativa: boolean; version?: number },
+    id?: number,
+  ) {
     const response = id
       ? await http.patch(`/v1/restaurante/mesas/${id}`, payload)
       : await http.post('/v1/restaurante/mesas', payload)
     return response.data.data as RestauranteMesa
   }
 
-  static async abrirMesa(id: number, payload: { pessoas: number; clienteNome?: string | null; observacao?: string | null }) {
+  static async abrirMesa(
+    id: number,
+    payload: { pessoas: number; clienteNome?: string | null; observacao?: string | null },
+  ) {
     const { data } = await http.post(`/v1/restaurante/mesas/${id}/abrir`, payload)
     return data.data
   }
@@ -774,7 +922,17 @@ export class RestauranteRepository {
     return data.data as RestaurantePontoProducao[]
   }
 
-  static async salvarPontoProducao(payload: { nome: string; cor: string; ativo: boolean; ordem: number; categoriaIds: number[]; version?: number }, id?: number) {
+  static async salvarPontoProducao(
+    payload: {
+      nome: string
+      cor: string
+      ativo: boolean
+      ordem: number
+      categoriaIds: number[]
+      version?: number
+    },
+    id?: number,
+  ) {
     const response = id
       ? await http.patch(`/v1/restaurante/pontos-producao/${id}`, payload)
       : await http.post('/v1/restaurante/pontos-producao', payload)
@@ -796,7 +954,10 @@ export class RestauranteRepository {
     return data.data as RestauranteEstacaoImpressao[]
   }
 
-  static async salvarEstacaoImpressao(payload: { nome: string; ativa: boolean; version?: number }, id?: number) {
+  static async salvarEstacaoImpressao(
+    payload: { nome: string; ativa: boolean; version?: number },
+    id?: number,
+  ) {
     const response = id
       ? await http.patch(`/v1/restaurante/estacoes-impressao/${id}`, payload)
       : await http.post('/v1/restaurante/estacoes-impressao', payload)
@@ -844,7 +1005,10 @@ export class RestauranteRepository {
     return data.data as RestauranteTrabalhoImpressao[]
   }
 
-  static async heartbeatEstacao(token: string, payload: { impressoraNome: string; papel: '58mm' | '80mm' }) {
+  static async heartbeatEstacao(
+    token: string,
+    payload: { impressoraNome: string; papel: '58mm' | '80mm' },
+  ) {
     const { data } = await http.post('/v1/restaurante/estacao-impressao/heartbeat', payload, {
       headers: { 'X-Print-Station-Token': token },
     })
@@ -858,7 +1022,10 @@ export class RestauranteRepository {
     return data.data as RestauranteTrabalhoEstacao[]
   }
 
-  static async confirmarTrabalhoEstacao(token: string, payload: { uid: string; leaseToken: string; success: boolean; error?: string | null }) {
+  static async confirmarTrabalhoEstacao(
+    token: string,
+    payload: { uid: string; leaseToken: string; success: boolean; error?: string | null },
+  ) {
     const { data } = await http.post('/v1/restaurante/estacao-impressao/trabalhos/ack', payload, {
       headers: { 'X-Print-Station-Token': token },
     })
