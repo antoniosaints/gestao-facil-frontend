@@ -27,6 +27,7 @@ import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useConfirm } from '@/composables/useConfirm'
 import {
   ContaRepository,
@@ -51,6 +52,7 @@ const loading = ref(false)
 const appsLoading = ref(false)
 const appSavingId = ref<number | null>(null)
 const status = ref<'ATIVO' | 'INATIVO' | 'BLOQUEADO'>('ATIVO')
+const manageTab = ref<'geral' | 'financeiro' | 'conta' | 'ia' | 'apps' | 'seguranca'>('geral')
 const vencimento = ref<Date | null>(new Date())
 const apps = ref<AssinanteAdminAppItem[]>([])
 const iaLimiteTokensMensal = ref<number | undefined>(undefined)
@@ -85,6 +87,7 @@ watch(
     novaSenhaRoot.value = ''
     showSenhaRoot.value = false
     rootResetInfo.value = null
+    manageTab.value = 'geral'
     if (!value) return
     status.value = (value.status as 'ATIVO' | 'INATIVO' | 'BLOQUEADO') || 'ATIVO'
     vencimento.value = value.vencimento ? new Date(value.vencimento) : new Date()
@@ -284,11 +287,22 @@ async function submit() {
     v-model:open="open"
     :title="title"
     description="Ajuste manualmente o status, o vencimento e os apps da conta selecionada."
-    size="4xl"
+    size="5xl"
     :icon="UserCog"
   >
     <form class="grid gap-4 px-4" @submit.prevent="submit">
-      <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
+      <Tabs v-model="manageTab" class="w-full">
+        <TabsList class="flex h-auto w-full max-w-full gap-1 overflow-x-auto p-1">
+          <TabsTrigger value="geral" class="gap-2 px-4"><UserCog class="h-4 w-4" />Geral</TabsTrigger>
+          <TabsTrigger value="financeiro" class="gap-2 px-4"><CreditCard class="h-4 w-4" />Financeiro / Cobranças</TabsTrigger>
+          <TabsTrigger value="conta" class="gap-2 px-4"><CalendarClock class="h-4 w-4" />Conta</TabsTrigger>
+          <TabsTrigger value="ia" class="gap-2 px-4"><Sparkles class="h-4 w-4" />IA</TabsTrigger>
+          <TabsTrigger value="apps" class="gap-2 px-4"><Power class="h-4 w-4" />Apps</TabsTrigger>
+          <TabsTrigger value="seguranca" class="gap-2 px-4"><ShieldCheck class="h-4 w-4" />Segurança</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <Card v-show="manageTab === 'geral'" class="border-border/70 bg-card shadow-sm dark:bg-card">
         <CardContent class="grid gap-3 p-4 md:grid-cols-2">
           <div class="rounded-lg border border-border/70 bg-background/70 p-3">
             <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Conta</div>
@@ -306,8 +320,8 @@ async function submit() {
         </CardContent>
       </Card>
 
-      <div class="grid gap-4 md:grid-cols-[1.2fr_1fr]">
-        <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
+      <div v-show="manageTab === 'geral'" class="w-full">
+        <Card class="w-full border-border/70 bg-card shadow-sm dark:bg-card">
           <CardContent class="space-y-3 p-4">
             <div class="text-sm font-medium text-foreground">Dados do assinante</div>
             <div class="grid gap-3 md:grid-cols-2">
@@ -334,8 +348,9 @@ async function submit() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
+      <Card v-show="manageTab === 'financeiro'" class="w-full border-border/70 bg-card shadow-sm dark:bg-card">
           <CardContent class="space-y-3 p-4">
             <div class="text-sm font-medium text-foreground">Mensalidade</div>
             <div class="space-y-1">
@@ -363,10 +378,27 @@ async function submit() {
               </p>
             </div>
           </CardContent>
-        </Card>
-      </div>
+      </Card>
 
-      <div class="grid gap-4 md:grid-cols-[1.2fr_1fr]">
+      <Card v-show="manageTab === 'financeiro'" class="border-border/70 bg-card shadow-sm dark:bg-card">
+        <CardContent class="space-y-3 p-4">
+          <div>
+            <div class="text-sm font-medium text-foreground">Cobranças vinculadas aos apps</div>
+            <p class="text-xs text-muted-foreground">Acompanhe a cobrança atual de cada app, quando houver.</p>
+          </div>
+          <div v-if="appsLoading" class="flex items-center gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground"><LoaderCircle class="h-4 w-4 animate-spin" />Carregando cobranças...</div>
+          <div v-else-if="!apps.some((app) => app.cobrancaAtual)" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Não há cobranças de apps disponíveis para esta conta.</div>
+          <div v-else class="grid gap-2 md:grid-cols-2">
+            <div v-for="app in apps.filter((item) => item.cobrancaAtual)" :key="app.id" class="rounded-lg border bg-background/70 p-3 text-sm">
+              <div class="flex items-center justify-between gap-3"><span class="font-medium">{{ app.nome }}</span><span class="text-xs text-muted-foreground">{{ app.cobrancaAtual?.status }}</span></div>
+              <p class="mt-1 text-xs text-muted-foreground">{{ app.cobrancaAtual?.gateway }} · {{ formatCurrencyBR(app.preco) }}/mês</p>
+              <a v-if="app.cobrancaAtual?.linkPagamento" :href="app.cobrancaAtual.linkPagamento" target="_blank" rel="noreferrer" class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"><CreditCard class="h-3.5 w-3.5" />Abrir cobrança</a>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div v-show="manageTab === 'conta'" class="grid gap-4 md:grid-cols-[1.2fr_1fr]">
         <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
           <CardContent class="space-y-4 p-4">
             <div class="space-y-2">
@@ -417,7 +449,7 @@ async function submit() {
         </Card>
       </div>
 
-      <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
+      <Card v-show="manageTab === 'ia'" class="border-border/70 bg-card shadow-sm dark:bg-card">
         <CardContent class="space-y-3 p-4">
           <div class="flex items-center gap-2 text-sm font-medium text-foreground">
             <Sparkles class="h-4 w-4 text-primary" /> Limite de IA (tokens/mês)
@@ -452,7 +484,7 @@ async function submit() {
         </CardContent>
       </Card>
 
-      <Card class="border-border/70 bg-card shadow-sm dark:bg-card">
+      <Card v-show="manageTab === 'apps'" class="border-border/70 bg-card shadow-sm dark:bg-card">
         <CardContent class="space-y-4 p-4">
           <div class="flex items-center justify-between gap-3">
             <div>
@@ -553,7 +585,7 @@ async function submit() {
         </CardContent>
       </Card>
 
-      <Card class="border-amber-300/60 bg-amber-50/50 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/10">
+      <Card v-show="manageTab === 'seguranca'" class="border-amber-300/60 bg-amber-50/50 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/10">
         <CardContent class="space-y-3 p-4">
           <div class="flex items-start gap-2">
             <KeyRound class="mt-0.5 h-4 w-4 text-amber-600 dark:text-amber-400" />

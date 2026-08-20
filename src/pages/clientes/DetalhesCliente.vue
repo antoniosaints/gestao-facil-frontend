@@ -9,23 +9,13 @@
     </div>
 
     <div v-else class="space-y-6">
-      <!-- Voltar (desktop): link discreto acima do cabeçalho -->
-      <button
-        type="button"
-        class="hidden items-center gap-1 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
-        @click="$router.push({ name: 'clientes-tabela' })"
-      >
-        <ChevronLeft class="h-4 w-4" />
-        Voltar para a lista
-      </button>
-
-      <Card class="overflow-hidden">
+      <Card class="overflow-hidden rounded-md">
         <!-- Faixa de destaque no topo do cartão -->
-        <div class="h-1.5 bg-gradient-to-r from-primary via-primary/70 to-primary/30"></div>
+        <div class="h-1 bg-gradient-to-r from-primary via-primary to-primary"></div>
         <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div class="flex items-start gap-4">
-            <Avatar class="h-16 w-16 shrink-0 ring-2 ring-primary/20">
-              <AvatarFallback class="bg-primary/10 text-lg font-bold text-primary">{{ initials(stats?.cliente?.nome) }}</AvatarFallback>
+            <Avatar class="h-16 w-16 shrink-0 ring-2 ring-primary/90">
+              <AvatarFallback class="text-lg font-bold text-foreground">{{ initials(stats?.cliente?.nome) }}</AvatarFallback>
             </Avatar>
             <div class="min-w-0">
               <CardTitle class="text-2xl font-bold leading-tight">{{ stats?.cliente?.nome }}</CardTitle>
@@ -47,19 +37,27 @@
             </div>
           </div>
 
-          <!-- Ações: CTA primário + secundárias agrupadas num menu para reduzir a poluição visual -->
-          <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+          <div class="flex w-full flex-wrap items-center gap-1.5 rounded-xl p-1.5 sm:w-auto sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              class="gap-2 bg-background/70"
+              @click="$router.push({ name: 'clientes-tabela' })"
+            >
+              <ChevronLeft class="h-4 w-4" />
+              Voltar
+            </Button>
             <Button
               v-if="podeIniciarAtendimento"
               type="button"
               variant="outline"
-              class="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800 dark:border-green-900 dark:text-green-400"
+              class="gap-2 border-emerald-500/40 bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-800 dark:text-emerald-400"
               @click="iniciarAtendimento"
             >
               <Headset class="h-4 w-4" />
               Atender
             </Button>
-            <Button type="button" class="text-white" @click="openReminderModal()">
+            <Button type="button" class="gap-2 text-white" @click="openReminderModal()">
               <MessageCircleMore class="h-4 w-4" />
               Enviar lembrete
             </Button>
@@ -89,36 +87,46 @@
         </CardHeader>
       </Card>
 
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card v-for="item in summaryCards" :key="item.title" class="transition hover:shadow-md">
-          <CardContent class="flex items-start gap-3 p-4">
-            <div class="shrink-0 rounded-xl p-2.5" :class="item.chipClass">
-              <component :is="item.icon" class="h-5 w-5" />
-            </div>
-            <div class="min-w-0">
-              <p class="text-xs font-medium text-muted-foreground">{{ item.title }}</p>
-              <p class="truncate text-xl font-bold" :class="item.valueClass">{{ item.value }}</p>
-              <p class="mt-0.5 text-xs text-muted-foreground">{{ item.description }}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
+      <Card class="overflow-hidden rounded-md">
         <CardContent class="space-y-4 p-4">
-          <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_180px_auto]">
+          <Tabs v-model="displayTab" class="w-full">
+            <TabsList class="grid h-auto w-full rounded-md grid-cols-2 gap-1 p-1 sm:grid-cols-3 lg:grid-cols-5">
+              <TabsTrigger value="resumo" class="gap-2"><UserRound class="h-4 w-4" />Resumo</TabsTrigger>
+              <TabsTrigger value="cobrancas" class="gap-2"><Receipt class="h-4 w-4" />Cobranças</TabsTrigger>
+              <TabsTrigger value="lancamentos" class="gap-2"><WalletCards class="h-4 w-4" />Lançamentos</TabsTrigger>
+              <TabsTrigger value="vendas" class="gap-2"><ShoppingCartIcon class="h-4 w-4" />Vendas</TabsTrigger>
+              <TabsTrigger value="ordens" class="gap-2"><WrenchIcon class="h-4 w-4" />Ordens</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="resumo" class="mt-5 space-y-4">
+              <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <Card v-for="item in summaryCards" :key="item.title" class="transition hover:shadow-md">
+                  <CardContent class="flex items-start gap-3 p-4">
+                    <div class="shrink-0 rounded-xl p-2.5" :class="item.chipClass"><component :is="item.icon" class="h-5 w-5" /></div>
+                    <div class="min-w-0"><p class="text-xs font-medium text-muted-foreground">{{ item.title }}</p><p class="truncate text-xl font-bold" :class="item.valueClass">{{ item.value }}</p><p class="mt-0.5 text-xs text-muted-foreground">{{ item.description }}</p></div>
+                  </CardContent>
+                </Card>
+              </div>
+              <div class="grid gap-3 rounded-xl border bg-muted/20 p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                <div><p class="text-xs text-muted-foreground">Tipo de cadastro</p><p class="mt-1 font-medium">{{ stats?.cliente?.tipo || '-' }}</p></div>
+                <div><p class="text-xs text-muted-foreground">Telefone / WhatsApp</p><p class="mt-1 font-medium">{{ contatoPrincipal || 'Não informado' }}</p></div>
+                <div><p class="text-xs text-muted-foreground">Situação</p><p class="mt-1 font-medium">{{ clienteStatus }}</p></div>
+              </div>
+            </TabsContent>
+
+            <template v-if="displayTab !== 'resumo'">
+          <div class="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_210px_210px_auto]">
             <div class="relative">
               <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <input
+              <Input
                 v-model="filters.search"
-                type="text"
-                class="h-10 w-full rounded-md border bg-background pl-9 pr-3 text-sm"
+                class="h-10 pl-9"
                 placeholder="Buscar na aba atual"
                 @keyup.enter="applyFilters"
               />
             </div>
-            <input v-model="filters.inicio" type="date" class="h-10 rounded-md border bg-background px-3 text-sm" />
-            <input v-model="filters.fim" type="date" class="h-10 rounded-md border bg-background px-3 text-sm" />
+            <Calendarpicker v-model="filters.inicio" :required="false" placeholder="Data inicial" :teleport="true" />
+            <Calendarpicker v-model="filters.fim" :required="false" placeholder="Data final" :teleport="true" />
             <div class="flex gap-2">
               <Button type="button" variant="outline" class="flex-1" @click="clearFilters">Limpar</Button>
               <Button type="button" class="flex-1 text-white" @click="applyFilters">
@@ -128,124 +136,45 @@
             </div>
           </div>
 
-          <Tabs v-model="activeTab" class="w-full">
-            <TabsList class="grid w-full grid-cols-2 gap-1 md:grid-cols-4">
-              <TabsTrigger value="cobrancas" class="gap-2">
-                <Receipt class="h-4 w-4 inline" />
-                Cobranças
-              </TabsTrigger>
-              <TabsTrigger value="lancamentos" class="gap-2">
-                <WalletCards class="h-4 w-4 inline" />
-                Lançamentos
-              </TabsTrigger>
-              <TabsTrigger value="vendas" class="gap-2">
-                <ShoppingCartIcon class="h-4 w-4 inline" />
-                Vendas
-              </TabsTrigger>
-              <TabsTrigger value="ordens" class="gap-2">
-                <WrenchIcon class="h-4 w-4 inline" />
-                Ordens S.
-              </TabsTrigger>
-            </TabsList>
-
             <TabsContent value="cobrancas" class="mt-4">
               <TabState :loading="operationalLoading" :empty="!operational.cobrancas.length" empty-label="Nenhuma cobrança vinculada.">
-                <div class="grid gap-3">
-                  <div v-for="cobranca in operational.cobrancas" :key="cobranca.id" class="rounded-lg border bg-background p-3 transition hover:border-primary/30 hover:shadow-sm">
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div class="font-medium">{{ cobranca.Uid || cobranca.idCobranca }}</div>
-                        <div class="text-xs text-muted-foreground">Vencimento: {{ formatDate(cobranca.dataVencimento) }}</div>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <Badge variant="outline">{{ cobranca.status }}</Badge>
-                        <span class="font-semibold">{{ formatCurrency(cobranca.valor) }}</span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          title="Enviar lembrete desta cobrança"
-                          @click="openQuickSend({ tipo: 'COBRANCA', cobrancaId: cobranca.id }, `a cobrança ${cobranca.Uid || cobranca.idCobranca} de ${formatCurrency(cobranca.valor)}`)"
-                        >
-                          <Send class="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                <div class="overflow-x-auto rounded-lg border">
+                  <table class="w-full min-w-[680px] text-sm"><thead class="bg-muted/50 text-left text-xs font-medium text-muted-foreground"><tr><th class="px-4 py-3">Cobrança</th><th class="px-4 py-3">Vencimento</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Valor</th><th class="w-14 px-3 py-3"><span class="sr-only">Ações</span></th></tr></thead><tbody class="divide-y">
+                    <tr v-for="cobranca in operational.cobrancas" :key="cobranca.id" class="transition-colors hover:bg-muted/35"><td class="px-4 py-3 font-medium">{{ cobranca.Uid || cobranca.idCobranca }}</td><td class="px-4 py-3 text-muted-foreground">{{ formatDate(cobranca.dataVencimento) }}</td><td class="px-4 py-3"><Badge variant="outline">{{ cobranca.status }}</Badge></td><td class="px-4 py-3 text-right font-semibold tabular-nums">{{ formatCurrency(cobranca.valor) }}</td><td class="px-3 py-2"><Button type="button" variant="ghost" size="icon" title="Enviar lembrete desta cobrança" @click="openQuickSend({ tipo: 'COBRANCA', cobrancaId: cobranca.id }, `a cobrança ${cobranca.Uid || cobranca.idCobranca} de ${formatCurrency(cobranca.valor)}`)"><Send class="h-4 w-4" /></Button></td></tr>
+                  </tbody></table>
                 </div>
               </TabState>
             </TabsContent>
 
             <TabsContent value="lancamentos" class="mt-4">
               <TabState :loading="operationalLoading" :empty="!operational.lancamentos.length" empty-label="Nenhum lançamento vinculado.">
-                <div class="grid gap-3">
-                  <div v-for="lancamento in operational.lancamentos" :key="lancamento.id" class="rounded-lg border bg-background p-3 transition hover:border-primary/30 hover:shadow-sm">
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div class="font-medium">{{ lancamento.descricao }}</div>
-                        <div class="text-xs text-muted-foreground">{{ lancamento.Uid }} · {{ formatDate(lancamento.dataLancamento) }}</div>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <Badge variant="outline">{{ lancamento.status }}</Badge>
-                        <span class="font-semibold">{{ formatCurrency(lancamento.valorTotal) }}</span>
-                        <Button
-                          v-if="lancamento.tipo === 'RECEITA' && lancamento.status !== 'PAGO'"
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          title="Enviar pendência deste lançamento"
-                          @click="openQuickSend({ tipo: 'LANCAMENTO', lancamentoId: lancamento.id }, `a pendência do lançamento ${lancamento.descricao} de ${formatCurrency(lancamento.valorTotal)}`)"
-                        >
-                          <Send class="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                <div class="overflow-x-auto rounded-lg border">
+                  <table class="w-full min-w-[760px] text-sm"><thead class="bg-muted/50 text-left text-xs font-medium text-muted-foreground"><tr><th class="px-4 py-3">Descrição</th><th class="px-4 py-3">Código</th><th class="px-4 py-3">Data</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Valor</th><th class="w-14 px-3 py-3"><span class="sr-only">Ações</span></th></tr></thead><tbody class="divide-y">
+                    <tr v-for="lancamento in operational.lancamentos" :key="lancamento.id" class="transition-colors hover:bg-muted/35"><td class="px-4 py-3 font-medium">{{ lancamento.descricao }}</td><td class="px-4 py-3 text-xs text-muted-foreground">{{ lancamento.Uid }}</td><td class="px-4 py-3 text-muted-foreground">{{ formatDate(lancamento.dataLancamento) }}</td><td class="px-4 py-3"><Badge variant="outline">{{ lancamento.status }}</Badge></td><td class="px-4 py-3 text-right font-semibold tabular-nums">{{ formatCurrency(lancamento.valorTotal) }}</td><td class="px-3 py-2"><div class="flex justify-end gap-1"><Button type="button" variant="outline" size="icon" title="Abrir lançamento" @click="openLancamento(lancamento.id)"><ExternalLink class="h-4 w-4" /></Button><Button v-if="lancamento.tipo === 'RECEITA' && lancamento.status !== 'PAGO'" type="button" variant="outline" size="icon" title="Enviar pendência deste lançamento" @click="openQuickSend({ tipo: 'LANCAMENTO', lancamentoId: lancamento.id }, `a pendência do lançamento ${lancamento.descricao} de ${formatCurrency(lancamento.valorTotal)}`)"><Send class="h-4 w-4" /></Button></div></td></tr>
+                  </tbody></table>
                 </div>
               </TabState>
             </TabsContent>
 
             <TabsContent value="vendas" class="mt-4">
               <TabState :loading="operationalLoading" :empty="!operational.vendas.length" empty-label="Nenhuma venda vinculada.">
-                <div class="grid gap-3">
-                  <div v-for="venda in operational.vendas" :key="venda.id" class="rounded-lg border bg-background p-3 transition hover:border-primary/30 hover:shadow-sm">
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div class="font-medium">{{ venda.Uid }}</div>
-                        <div class="text-xs text-muted-foreground">{{ formatDate(venda.data) }} · {{ venda.ItensVendas?.length || 0 }} itens</div>
-                      </div>
-                      <div class="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline">{{ venda.status }}</Badge>
-                        <span class="font-semibold">{{ formatCurrency(totalVenda(venda)) }}</span>
-                        <Button type="button" variant="outline" size="sm" @click="openReminderModal('ORCAMENTO_VENDA', undefined, venda.id)">
-                          Orçamento
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" @click="openReminderModal('COMPROVANTE_VENDA', undefined, venda.id)">
-                          Comprovante
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                <div class="overflow-x-auto rounded-lg border">
+                  <table class="w-full min-w-[760px] text-sm"><thead class="bg-muted/50 text-left text-xs font-medium text-muted-foreground"><tr><th class="px-4 py-3">Venda</th><th class="px-4 py-3">Data</th><th class="px-4 py-3 text-center">Itens</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Total</th><th class="px-3 py-3 text-right">Documentos</th></tr></thead><tbody class="divide-y">
+                    <tr v-for="venda in operational.vendas" :key="venda.id" class="transition-colors hover:bg-muted/35"><td class="px-4 py-3 font-medium">{{ venda.Uid }}</td><td class="px-4 py-3 text-muted-foreground">{{ formatDate(venda.data) }}</td><td class="px-4 py-3 text-center tabular-nums">{{ venda.ItensVendas?.length || 0 }}</td><td class="px-4 py-3"><Badge variant="outline">{{ venda.status }}</Badge></td><td class="px-4 py-3 text-right font-semibold tabular-nums">{{ formatCurrency(totalVenda(venda)) }}</td><td class="px-3 py-2"><div class="flex justify-end gap-1"><Button type="button" variant="ghost" size="sm" @click="openReminderModal('ORCAMENTO_VENDA', undefined, venda.id)">Orçamento</Button><Button type="button" variant="ghost" size="sm" @click="openReminderModal('COMPROVANTE_VENDA', undefined, venda.id)">Comprovante</Button></div></td></tr>
+                  </tbody></table>
                 </div>
               </TabState>
             </TabsContent>
 
             <TabsContent value="ordens" class="mt-4">
               <TabState :loading="operationalLoading" :empty="!operational.ordens.length" empty-label="Nenhuma OS vinculada.">
-                <div class="grid gap-3">
-                  <div v-for="ordem in operational.ordens" :key="ordem.id" class="rounded-lg border bg-background p-3 transition hover:border-primary/30 hover:shadow-sm">
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div class="font-medium">{{ ordem.Uid }}</div>
-                        <div class="text-xs text-muted-foreground">{{ formatDate(ordem.data) }} · {{ ordem.ItensOrdensServico?.length || 0 }} itens</div>
-                      </div>
-                      <Badge variant="outline">{{ ordem.status }}</Badge>
-                    </div>
-                  </div>
+                <div class="overflow-x-auto rounded-lg border">
+                  <table class="w-full min-w-[620px] text-sm"><thead class="bg-muted/50 text-left text-xs font-medium text-muted-foreground"><tr><th class="px-4 py-3">Ordem de serviço</th><th class="px-4 py-3">Data</th><th class="px-4 py-3 text-center">Itens</th><th class="px-4 py-3">Status</th></tr></thead><tbody class="divide-y">
+                    <tr v-for="ordem in operational.ordens" :key="ordem.id" class="transition-colors hover:bg-muted/35"><td class="px-4 py-3 font-medium">{{ ordem.Uid }}</td><td class="px-4 py-3 text-muted-foreground">{{ formatDate(ordem.data) }}</td><td class="px-4 py-3 text-center tabular-nums">{{ ordem.ItensOrdensServico?.length || 0 }}</td><td class="px-4 py-3"><Badge variant="outline">{{ ordem.status }}</Badge></td></tr>
+                  </tbody></table>
                 </div>
               </TabState>
             </TabsContent>
-          </Tabs>
 
           <div class="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
             <span class="text-xs text-muted-foreground">
@@ -262,6 +191,8 @@
               </Button>
             </div>
           </div>
+            </template>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
@@ -270,35 +201,19 @@
       <form class="space-y-4 px-4" @submit.prevent="sendReminder">
         <div class="grid gap-2">
           <label class="text-sm font-medium">Tipo de envio</label>
-          <select v-model="reminderForm.tipo" class="h-10 rounded-md border bg-background px-3 text-sm">
-            <option value="COBRANCA">Lembrete de cobrança</option>
-            <option value="LANCAMENTO">Pendência de lançamento (receita)</option>
-            <option value="MENSAGEM">Mensagem avulsa</option>
-            <option value="ORCAMENTO_VENDA">Orçamento de venda</option>
-            <option value="COMPROVANTE_VENDA">Comprovante de venda</option>
-          </select>
+          <Select v-model="reminderForm.tipo"><SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger><SelectContent><SelectItem value="COBRANCA">Lembrete de cobrança</SelectItem><SelectItem value="LANCAMENTO">Pendência de lançamento</SelectItem><SelectItem value="MENSAGEM">Mensagem avulsa</SelectItem><SelectItem value="ORCAMENTO_VENDA">Orçamento de venda</SelectItem><SelectItem value="COMPROVANTE_VENDA">Comprovante de venda</SelectItem></SelectContent></Select>
         </div>
 
         <p v-if="reminderOptionsLoading" class="text-xs text-muted-foreground">Carregando registros do cliente...</p>
 
         <div v-if="reminderForm.tipo === 'COBRANCA'" class="grid gap-2">
           <label class="text-sm font-medium">Cobrança</label>
-          <select v-model.number="reminderForm.cobrancaId" class="h-10 rounded-md border bg-background px-3 text-sm">
-            <option :value="null">Selecione uma cobrança</option>
-            <option v-for="cobranca in reminderOptions.cobrancas" :key="cobranca.id" :value="cobranca.id">
-              {{ cobranca.Uid || cobranca.idCobranca }} - {{ formatCurrency(cobranca.valor) }}
-            </option>
-          </select>
+          <Select :model-value="reminderForm.cobrancaId?.toString()" @update:model-value="reminderForm.cobrancaId = $event ? Number($event) : null"><SelectTrigger><SelectValue placeholder="Selecione uma cobrança" /></SelectTrigger><SelectContent><SelectItem v-for="cobranca in reminderOptions.cobrancas" :key="cobranca.id" :value="String(cobranca.id)">{{ cobranca.Uid || cobranca.idCobranca }} - {{ formatCurrency(cobranca.valor) }}</SelectItem></SelectContent></Select>
         </div>
 
         <div v-if="reminderForm.tipo === 'LANCAMENTO'" class="grid gap-2">
           <label class="text-sm font-medium">Lançamento (receitas pendentes)</label>
-          <select v-model.number="reminderForm.lancamentoId" class="h-10 rounded-md border bg-background px-3 text-sm">
-            <option :value="null">Selecione um lançamento</option>
-            <option v-for="lancamento in reminderOptions.lancamentos" :key="lancamento.id" :value="lancamento.id">
-              {{ lancamento.descricao }} - {{ formatCurrency(lancamento.valorTotal) }}
-            </option>
-          </select>
+          <Select :model-value="reminderForm.lancamentoId?.toString()" @update:model-value="reminderForm.lancamentoId = $event ? Number($event) : null"><SelectTrigger><SelectValue placeholder="Selecione um lançamento" /></SelectTrigger><SelectContent><SelectItem v-for="lancamento in reminderOptions.lancamentos" :key="lancamento.id" :value="String(lancamento.id)">{{ lancamento.descricao }} - {{ formatCurrency(lancamento.valorTotal) }}</SelectItem></SelectContent></Select>
           <p v-if="!reminderOptionsLoading && !reminderOptions.lancamentos.length" class="text-xs text-muted-foreground">
             Nenhuma receita pendente encontrada para este cliente.
           </p>
@@ -306,12 +221,7 @@
 
         <div v-if="['ORCAMENTO_VENDA', 'COMPROVANTE_VENDA'].includes(reminderForm.tipo)" class="grid gap-2">
           <label class="text-sm font-medium">Venda</label>
-          <select v-model.number="reminderForm.vendaId" class="h-10 rounded-md border bg-background px-3 text-sm">
-            <option :value="null">Selecione uma venda</option>
-            <option v-for="venda in reminderOptions.vendas" :key="venda.id" :value="venda.id">
-              {{ venda.Uid }} - {{ formatCurrency(totalVenda(venda)) }}
-            </option>
-          </select>
+          <Select :model-value="reminderForm.vendaId?.toString()" @update:model-value="reminderForm.vendaId = $event ? Number($event) : null"><SelectTrigger><SelectValue placeholder="Selecione uma venda" /></SelectTrigger><SelectContent><SelectItem v-for="venda in reminderOptions.vendas" :key="venda.id" :value="String(venda.id)">{{ venda.Uid }} - {{ formatCurrency(totalVenda(venda)) }}</SelectItem></SelectContent></Select>
         </div>
 
         <div v-if="reminderForm.tipo === 'MENSAGEM'" class="grid gap-2">
@@ -393,6 +303,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -407,6 +320,7 @@ import {
   AlertCircle as AlertCircleIcon,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   Filter,
   Headset,
   MessageCircleMore,
@@ -422,6 +336,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Trash2,
   TrendingUp as TrendingUpIcon,
+  UserRound,
   WalletCards,
   Wrench as WrenchIcon,
 } from 'lucide-vue-next'
@@ -460,6 +375,7 @@ const clienteActionLoading = ref(false)
 const error = ref('')
 const stats = ref<any>(null)
 const activeTab = ref<ClienteDetalhesTab>('cobrancas')
+const displayTab = ref<'resumo' | ClienteDetalhesTab>('resumo')
 const reminderOpen = ref(false)
 const operational = ref<Record<ClienteDetalhesTab, any[]>>({
   cobrancas: [],
@@ -475,8 +391,8 @@ const tabMeta = ref<Record<ClienteDetalhesTab, { total: number; page: number; li
 })
 const filters = ref({
   search: '',
-  inicio: '',
-  fim: '',
+  inicio: null as Date | null,
+  fim: null as Date | null,
 })
 const reminderForm = ref<{
   tipo: ReminderType
@@ -572,8 +488,17 @@ function totalVenda(venda: any) {
   return Math.max(0, Number(venda?.valor || 0) - Number(venda?.desconto || 0))
 }
 
-function toDateTime(value: string, endOfDay = false) {
+function openLancamento(lancamentoId: number) {
+  router.push({ name: 'lancamentos-financeiro-detalhes', query: { id: String(lancamentoId) } })
+}
+
+function toDateTime(value: Date | string | null, endOfDay = false) {
   if (!value) return null
+  if (value instanceof Date) {
+    const date = new Date(value)
+    date.setHours(endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0)
+    return date.toISOString()
+  }
   return `${value}T${endOfDay ? '23:59:59' : '00:00:00'}`
 }
 
@@ -659,7 +584,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  filters.value = { search: '', inicio: '', fim: '' }
+  filters.value = { search: '', inicio: null, fim: null }
   loadOperationalDetails(1)
 }
 
@@ -796,6 +721,12 @@ async function sendReminder() {
 
 watch(activeTab, () => {
   loadOperationalDetails(1)
+})
+
+watch(displayTab, (tab) => {
+  if (tab === 'resumo') return
+  if (activeTab.value === tab) return
+  activeTab.value = tab
 })
 
 watch(
