@@ -1079,7 +1079,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="restaurant-menu min-h-screen pb-28 lg:pb-12" :class="{ dark: menuDarkMode }" :style="menuThemeStyle">
+  <main class="restaurant-menu min-h-screen" :class="{ dark: menuDarkMode }" :style="menuThemeStyle">
     <div v-if="loading" class="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
       <Skeleton class="h-56 rounded-[28px]" />
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -1835,6 +1835,8 @@ onBeforeUnmount(() => {
   color: var(--menu-ink);
   font-family: var(--app-font, 'Inter'), sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Área após o footer mantém o fundo do cardápio até a barra fixa. */
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
 }
 
 .menu-system-footer {
