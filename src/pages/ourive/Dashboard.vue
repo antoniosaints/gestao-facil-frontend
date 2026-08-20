@@ -82,13 +82,13 @@ function normalizePanel(data: any): Painel {
     if (row?.status) result[row.status] = Number(row?._count?._all ?? row?.total ?? 0)
     return result
   }, {})
-  const total = Object.values(counts).reduce((sum, value) => sum + value, 0)
+  const total = Object.values(counts).reduce((sum: any, value) => sum + value, 0)
 
   return {
     ...fallback,
     kpis: {
       ...fallback.kpis,
-      ordens: { atual: total, anterior: 0, delta: 0 },
+      ordens: { atual: total as number, anterior: 0, delta: 0 },
       emProducao: Number(counts.PRODUCAO || 0) + Number(counts.REVISAO || 0),
       aguardandoOrcamento: Number(counts.RECEBIDA || 0) + Number(counts.ORCAMENTO || 0),
       comissoes: Number(data?.comissoes || 0),

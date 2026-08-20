@@ -1538,9 +1538,9 @@ onBeforeUnmount(() => {
           <div class="shrink-0 border-b md:px-6 md:py-5 sm:px-8">
             <component :is="menuModalHeader" class="text-left"><component :is="menuModalTitle" class="menu-heading text-2xl">Finalizar pedido</component><component :is="menuModalDescription">Confirme como deseja receber e seus dados de contato.</component></component>
           </div>
-          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y">
-            <div class="grid lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div class="space-y-6 p-6 sm:p-8">
+          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y lg:overflow-hidden">
+            <div class="grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div class="space-y-6 p-6 sm:p-8 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-gutter:stable]">
               <section class="space-y-3">
                 <div>
                   <h3 class="font-semibold">Como deseja receber?</h3>
@@ -1606,9 +1606,12 @@ onBeforeUnmount(() => {
               <div class="space-y-2"><Label for="order-note">Observação do pedido</Label><Textarea id="order-note" v-model="form.observacao" rows="3" placeholder="Ex.: tirar cebola, chamar no portão..." /></div>
             </div>
 
-            <aside class="border-t bg-stone-50 p-6 dark:bg-zinc-900 lg:border-l lg:border-t-0 sm:p-7">
-              <h3 class="menu-heading text-lg font-semibold">Resumo do pedido</h3>
-              <div class="mt-4 space-y-2">
+            <aside class="border-t bg-stone-50 p-6 dark:bg-zinc-900 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:border-l lg:border-t-0 sm:p-7">
+              <h3 class="menu-heading shrink-0 text-lg font-semibold">Resumo do pedido</h3>
+              <div
+                class="mt-4 space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pr-2 lg:[scrollbar-gutter:stable]"
+                aria-label="Itens do carrinho"
+              >
                 <div v-for="line in selecionados" :key="line.id" class="flex gap-3 text-sm bg-stone-100 p-2 border rounded-md">
                   <span class="flex h-6 min-w-6 items-center justify-center rounded-md text-xs font-bold" :style="primaryButtonStyle">{{ line.quantidade }}</span>
                   <div class="min-w-0 flex-1">
@@ -1620,30 +1623,32 @@ onBeforeUnmount(() => {
                   <span class="price font-medium">{{ formatCurrencyBR(lineTotal(line)) }}</span>
                 </div>
               </div>
-              <Separator class="my-3" />
-              <div v-if="quote" class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-stone-500">Subtotal</span><span class="price">{{ formatCurrencyBR(Number(quote.subtotal)) }}</span>
+              <div class="shrink-0">
+                <Separator class="my-3" />
+                <div v-if="quote" class="space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-stone-500">Subtotal</span><span class="price">{{ formatCurrencyBR(Number(quote.subtotal)) }}</span>
+                  </div>
+                  <div v-if="origem === 'DELIVERY'" class="flex justify-between">
+                    <span class="text-stone-500"
+                      >Frete <small v-if="quote.zone">({{ quote.zone.nome }})</small></span
+                    ><span class="price">{{ Number(quote.frete) === 0 ? 'Grátis' : formatCurrencyBR(Number(quote.frete)) }}</span>
+                  </div>
+                  <div class="flex justify-between text-lg">
+                    <strong>Total</strong><strong class="price">{{ formatCurrencyBR(Number(quote.total)) }}</strong>
+                  </div>
+                  <p v-if="!quote.minimumReached" class="rounded-lg bg-red-50 p-2 text-xs text-red-700">Pedido mínimo: {{ formatCurrencyBR(Number(quote.minimumOrder)) }}</p>
                 </div>
-                <div v-if="origem === 'DELIVERY'" class="flex justify-between">
-                  <span class="text-stone-500"
-                    >Frete <small v-if="quote.zone">({{ quote.zone.nome }})</small></span
-                  ><span class="price">{{ Number(quote.frete) === 0 ? 'Grátis' : formatCurrencyBR(Number(quote.frete)) }}</span>
+                <div v-else class="space-y-2">
+                  <div class="flex justify-between text-lg">
+                    <strong>{{ previewing ? 'Calculando total' : 'Subtotal' }}</strong
+                    ><strong class="price flex items-center gap-2"><LoaderCircle v-if="previewing" class="h-4 w-4 animate-spin" />{{ formatCurrencyBR(estimatedSubtotal) }}</strong>
+                  </div>
+                  <p v-if="origem === 'DELIVERY' && !addressComplete" class="text-xs text-stone-500">Preencha o endereço para calcular automaticamente o frete e o total.</p>
                 </div>
-                <div class="flex justify-between text-lg">
-                  <strong>Total</strong><strong class="price">{{ formatCurrencyBR(Number(quote.total)) }}</strong>
-                </div>
-                <p v-if="!quote.minimumReached" class="rounded-lg bg-red-50 p-2 text-xs text-red-700">Pedido mínimo: {{ formatCurrencyBR(Number(quote.minimumOrder)) }}</p>
+                <Button class="tap-button mt-5 h-12 w-full rounded-xl text-base" :style="primaryButtonStyle" :disabled="!aceitaPedidos || sending || previewing || !checkoutValid || !quote?.minimumReached" @click="pedir"><LoaderCircle v-if="sending" class="mr-2 h-4 w-4 animate-spin" />Confirmar pedido</Button>
+                <p class="mt-3 text-center text-[11px] leading-relaxed text-stone-400">Valores e disponibilidade são confirmados pelo restaurante antes da criação do pedido.</p>
               </div>
-              <div v-else class="space-y-2">
-                <div class="flex justify-between text-lg">
-                  <strong>{{ previewing ? 'Calculando total' : 'Subtotal' }}</strong
-                  ><strong class="price flex items-center gap-2"><LoaderCircle v-if="previewing" class="h-4 w-4 animate-spin" />{{ formatCurrencyBR(estimatedSubtotal) }}</strong>
-                </div>
-                <p v-if="origem === 'DELIVERY' && !addressComplete" class="text-xs text-stone-500">Preencha o endereço para calcular automaticamente o frete e o total.</p>
-              </div>
-              <Button class="tap-button mt-5 h-12 w-full rounded-xl text-base" :style="primaryButtonStyle" :disabled="!aceitaPedidos || sending || previewing || !checkoutValid || !quote?.minimumReached" @click="pedir"><LoaderCircle v-if="sending" class="mr-2 h-4 w-4 animate-spin" />Confirmar pedido</Button>
-              <p class="mt-3 text-center text-[11px] leading-relaxed text-stone-400">Valores e disponibilidade são confirmados pelo restaurante antes da criação do pedido.</p>
             </aside>
             </div>
           </div>

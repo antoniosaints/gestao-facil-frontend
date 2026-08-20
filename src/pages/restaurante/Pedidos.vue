@@ -921,6 +921,17 @@ onBeforeUnmount(() => handleRouteModalChange(false))
                 </div>
                 <div class="flex shrink-0 items-center gap-1">
                   <Button
+                    v-if="canOperate && pedido.status === 'RECEBIDO'"
+                    size="icon"
+                    class="h-7 w-7"
+                    :disabled="atualizando === pedido.id"
+                    aria-label="Confirmar pedido"
+                    title="Confirmar pedido"
+                    @click.stop="avancar(pedido)"
+                  >
+                    <CircleCheckBig class="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
                     v-if="canOperate && pedido.status === 'PRONTO'"
                     size="icon"
                     class="h-7 w-7"
@@ -1069,61 +1080,89 @@ onBeforeUnmount(() => handleRouteModalChange(false))
     <ModalView
       v-model:open="openModalDetalhes"
       :title="pedidoSelecionado ? `Pedido ${pedidoSelecionado.codigo}` : 'Detalhes do pedido'"
-      size="2xl"
+      :description="pedidoSelecionado ? `Recebido em ${dataHora(pedidoSelecionado.createdAt)}` : undefined"
+      size="3xl"
     >
-      <div v-if="pedidoSelecionado" class="space-y-4 p-4">
-        <div class="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">{{ statusLabels[pedidoSelecionado.status] }}</Badge>
-          <Badge variant="secondary">{{ origemLabel(pedidoSelecionado.origem) }}</Badge>
-          <span class="text-sm text-muted-foreground"
-            >Recebido em {{ dataHora(pedidoSelecionado.createdAt) }}</span
-          >
-        </div>
+      <div v-if="pedidoSelecionado" class="space-y-5 p-4">
+        <section class="rounded-xl border bg-muted/30 p-4">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Resumo do pedido
+              </p>
+              <p class="mt-1 text-xl font-semibold">#{{ pedidoSelecionado.codigo }}</p>
+            </div>
+            <div class="flex flex-wrap justify-end gap-2">
+              <Badge variant="outline" :class="statusBadgeClass(pedidoSelecionado.status)">
+                {{ statusLabels[pedidoSelecionado.status] }}
+              </Badge>
+              <Badge variant="secondary">{{ origemLabel(pedidoSelecionado.origem) }}</Badge>
+            </div>
+          </div>
+          <div class="mt-4 grid divide-y border-t pt-3 text-sm sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <div class="pb-3 sm:px-3 sm:pb-0 sm:pl-0">
+              <p class="text-xs text-muted-foreground">Recebido em</p>
+              <p class="mt-1 font-medium">{{ dataHora(pedidoSelecionado.createdAt) }}</p>
+            </div>
+            <div class="py-3 sm:px-3 sm:py-0">
+              <p class="text-xs text-muted-foreground">Itens</p>
+              <p class="mt-1 font-medium">{{ pedidoSelecionado.itens.length }} {{ pedidoSelecionado.itens.length === 1 ? 'item' : 'itens' }}</p>
+            </div>
+            <div class="pt-3 sm:px-3 sm:pt-0">
+              <p class="text-xs text-muted-foreground">Total</p>
+              <p class="mt-1 text-base font-semibold">{{ formatCurrencyBR(Number(pedidoSelecionado.total)) }}</p>
+            </div>
+          </div>
+        </section>
 
         <div class="grid gap-3 sm:grid-cols-2">
-          <div class="rounded-lg border p-3">
-            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cliente</p>
-            <p class="mt-1 font-medium">
+          <section class="rounded-xl border p-4">
+            <div class="flex items-center gap-2">
+              <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                <Phone class="h-4 w-4" />
+              </span>
+              <p class="text-sm font-semibold">Cliente</p>
+            </div>
+            <p class="mt-3 font-medium">
               {{ pedidoSelecionado.clienteNomeSnapshot || 'Cliente visitante' }}
             </p>
             <p
               v-if="pedidoSelecionado.clienteTelefone"
-              class="mt-1 flex items-center gap-1 text-sm text-muted-foreground"
+              class="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"
             >
               <Phone class="h-3.5 w-3.5" />{{ pedidoSelecionado.clienteTelefone }}
             </p>
             <p v-if="pedidoSelecionado.clienteEmail" class="mt-1 text-sm text-muted-foreground">
               {{ pedidoSelecionado.clienteEmail }}
             </p>
-          </div>
-          <div class="rounded-lg border p-3">
-            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Pagamento e atendimento
-            </p>
-            <p class="mt-1 font-medium">
-              {{ pagamentoLabel(pedidoSelecionado.pagamentoMetodoSnapshot) }}
-            </p>
-            <p class="mt-1 text-sm text-muted-foreground">
-              Pagamento:
-              {{
-                aguardandoPagamentoOnline(pedidoSelecionado)
-                  ? 'Aguardando pagamento online'
-                  : pagamentoLabel(pedidoSelecionado.pagamentoStatus)
-              }}
-            </p>
-            <p v-if="pedidoSelecionado.Mesa?.nome" class="mt-1 text-sm text-muted-foreground">
-              {{ pedidoSelecionado.Mesa.nome }}
-            </p>
-          </div>
+          </section>
+
+          <section class="rounded-xl border p-4">
+            <p class="text-sm font-semibold">Pagamento e atendimento</p>
+            <div class="mt-3 space-y-2 text-sm">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-muted-foreground">Método</span>
+                <span class="text-right font-medium">{{ pagamentoLabel(pedidoSelecionado.pagamentoMetodoSnapshot) }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-muted-foreground">Situação</span>
+                <span class="text-right font-medium">{{ aguardandoPagamentoOnline(pedidoSelecionado) ? 'Aguardando pagamento online' : pagamentoLabel(pedidoSelecionado.pagamentoStatus) }}</span>
+              </div>
+              <div v-if="pedidoSelecionado.Mesa?.nome" class="flex items-center justify-between gap-3 border-t pt-2">
+                <span class="text-muted-foreground">Mesa</span>
+                <span class="font-medium">{{ pedidoSelecionado.Mesa.nome }}</span>
+              </div>
+            </div>
+          </section>
         </div>
 
-        <div v-if="enderecoFormatado(pedidoSelecionado)" class="rounded-lg border p-3">
+        <section v-if="enderecoFormatado(pedidoSelecionado)" class="rounded-xl border p-4">
           <p
-            class="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+            class="flex items-center gap-2 text-sm font-semibold"
           >
-            <MapPin class="h-3.5 w-3.5" />Endereço de entrega
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground"><MapPin class="h-4 w-4" /></span>Endereço de entrega
           </p>
-          <p class="mt-1 text-sm">{{ enderecoFormatado(pedidoSelecionado) }}</p>
+          <p class="mt-3 text-sm">{{ enderecoFormatado(pedidoSelecionado) }}</p>
           <Button
             v-if="localizacaoEmpresa && customerCoordinates(pedidoSelecionado)"
             class="mt-3"
@@ -1136,54 +1175,43 @@ onBeforeUnmount(() => handleRouteModalChange(false))
           <p v-else class="mt-2 text-xs text-muted-foreground">
             A rota no mapa fica disponível quando a localização do cliente é enviada no checkout.
           </p>
-        </div>
+        </section>
 
-        <div class="rounded-lg border">
-          <div class="border-b px-3 py-2 text-sm font-medium">Itens do pedido</div>
-          <div class="divide-y">
-            <div v-for="item in pedidoSelecionado.itens" :key="item.id" class="flex gap-3 p-3">
-              <div class="min-w-0 flex-1">
-                <p class="font-medium">{{ Number(item.quantidade) }}× {{ item.nomeSnapshot }}</p>
-                <p v-if="item.tamanhoSnapshot" class="text-sm text-muted-foreground">
-                  {{ item.tamanhoSnapshot }}
-                </p>
-                <p v-if="selecoes(item)" class="text-sm text-muted-foreground">
-                  {{ selecoes(item) }}
-                </p>
-                <p v-if="item.observacao" class="text-sm text-muted-foreground">
-                  Obs.: {{ item.observacao }}
-                </p>
+        <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_13rem]">
+          <section class="overflow-hidden rounded-xl border">
+            <div class="flex items-center gap-2 border-b bg-muted/20 px-4 py-3 text-sm font-semibold">
+              <ShoppingBag class="h-4 w-4 text-muted-foreground" />Itens do pedido
+            </div>
+            <div class="divide-y">
+              <div v-for="item in pedidoSelecionado.itens" :key="item.id" class="flex gap-3 px-4 py-3">
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium">{{ Number(item.quantidade) }}× {{ item.nomeSnapshot }}</p>
+                  <p v-if="item.tamanhoSnapshot" class="mt-0.5 text-sm text-muted-foreground">{{ item.tamanhoSnapshot }}</p>
+                  <p v-if="selecoes(item)" class="mt-0.5 text-sm text-muted-foreground">{{ selecoes(item) }}</p>
+                  <p v-if="item.observacao" class="mt-1 text-sm text-muted-foreground">Obs.: {{ item.observacao }}</p>
+                </div>
+                <strong class="shrink-0 text-sm">{{ formatCurrencyBR(Number(item.subtotalSnapshot)) }}</strong>
               </div>
-              <strong class="shrink-0">{{
-                formatCurrencyBR(Number(item.subtotalSnapshot))
-              }}</strong>
             </div>
-          </div>
-          <div class="space-y-1 border-t p-3 text-sm">
-            <div class="flex justify-between">
-              <span class="text-muted-foreground">Subtotal</span
-              ><span>{{ formatCurrencyBR(Number(pedidoSelecionado.subtotal)) }}</span>
+          </section>
+
+          <section class="h-fit rounded-xl border bg-muted/20 p-4 text-sm">
+            <p class="font-semibold">Resumo financeiro</p>
+            <div class="mt-3 space-y-2">
+              <div class="flex justify-between gap-3"><span class="text-muted-foreground">Subtotal</span><span>{{ formatCurrencyBR(Number(pedidoSelecionado.subtotal)) }}</span></div>
+              <div v-if="Number(pedidoSelecionado.frete)" class="flex justify-between gap-3"><span class="text-muted-foreground">Entrega</span><span>{{ formatCurrencyBR(Number(pedidoSelecionado.frete)) }}</span></div>
+              <div v-if="Number(pedidoSelecionado.desconto)" class="flex justify-between gap-3 text-emerald-700 dark:text-emerald-400"><span>Desconto</span><span>- {{ formatCurrencyBR(Number(pedidoSelecionado.desconto)) }}</span></div>
             </div>
-            <div v-if="Number(pedidoSelecionado.frete)" class="flex justify-between">
-              <span class="text-muted-foreground">Entrega</span
-              ><span>{{ formatCurrencyBR(Number(pedidoSelecionado.frete)) }}</span>
-            </div>
-            <div v-if="Number(pedidoSelecionado.desconto)" class="flex justify-between">
-              <span class="text-muted-foreground">Desconto</span
-              ><span>- {{ formatCurrencyBR(Number(pedidoSelecionado.desconto)) }}</span>
-            </div>
-            <div class="flex justify-between border-t pt-2 text-base font-semibold">
+            <div class="mt-3 flex justify-between border-t pt-3 text-base font-semibold">
               <span>Total</span><span>{{ formatCurrencyBR(Number(pedidoSelecionado.total)) }}</span>
             </div>
-          </div>
+          </section>
         </div>
 
-        <div v-if="pedidoSelecionado.observacao" class="rounded-lg border p-3">
-          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Observação do pedido
-          </p>
-          <p class="mt-1 whitespace-pre-wrap text-sm">{{ pedidoSelecionado.observacao }}</p>
-        </div>
+        <section v-if="pedidoSelecionado.observacao" class="rounded-xl border border-dashed p-4">
+          <p class="text-sm font-semibold">Observação do pedido</p>
+          <p class="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{{ pedidoSelecionado.observacao }}</p>
+        </section>
 
         <div
           v-if="canOperate || (canPrint && pedidoSelecionado.tickets?.length)"

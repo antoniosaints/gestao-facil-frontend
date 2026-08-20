@@ -200,9 +200,9 @@ watch(
     @update:open="emit('update:open', $event)"
   >
     <div
-      class="grid max-h-[calc(100vh-10rem)] gap-5 overflow-y-auto p-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(19rem,.85fr)]"
+      class="manual-order-layout grid gap-5 p-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(19rem,.85fr)]"
     >
-      <section class="space-y-4">
+      <section class="manual-order-catalog space-y-4">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p class="flex items-center gap-2 text-sm font-semibold">
@@ -340,7 +340,7 @@ watch(
       </section>
 
       <aside
-        class="flex min-h-[28rem] flex-col overflow-hidden rounded-2xl border bg-card shadow-sm lg:sticky lg:top-0"
+        class="manual-order-cart flex min-h-[28rem] flex-col overflow-hidden rounded-2xl border bg-card shadow-sm lg:sticky lg:top-0"
       >
         <div class="border-b bg-muted/40 px-4 py-3.5">
           <div class="flex items-center justify-between gap-3">
@@ -357,7 +357,7 @@ watch(
             <Badge variant="secondary">{{ totalItens }} item(ns)</Badge>
           </div>
         </div>
-        <div class="min-h-48 flex-1 space-y-2 overflow-y-auto p-3">
+        <div class="manual-order-cart-items min-h-48 flex-1 space-y-2 overflow-y-auto p-3">
           <div
             v-for="(item, index) in carrinho"
             :key="`${item.catalogoItemId}-${index}`"
@@ -469,3 +469,31 @@ watch(
     </div>
   </ModalView>
 </template>
+
+<style scoped>
+@media (min-width: 1024px) {
+  .manual-order-layout {
+    height: calc(90dvh - 9rem);
+    min-height: 0;
+    max-height: calc(90dvh - 9rem);
+    overflow: hidden;
+  }
+  .manual-order-catalog,
+  .manual-order-cart {
+    min-height: 0;
+  }
+  .manual-order-catalog {
+    overflow-y: auto;
+    padding-right: 0.25rem;
+    overscroll-behavior: contain;
+  }
+  .manual-order-cart {
+    height: 100%;
+  }
+  .manual-order-cart-items {
+    min-height: 0;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+</style>

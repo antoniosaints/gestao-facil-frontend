@@ -529,7 +529,7 @@ onBeforeUnmount(() => {
       </div>
 
       <aside class="delivery-panel">
-        <div class="border-b p-4">
+        <div class="shrink-0 border-b p-4">
           <div class="flex items-start justify-between gap-3">
             <div>
               <h2 class="font-semibold">Fila de delivery</h2>
@@ -732,9 +732,9 @@ onBeforeUnmount(() => {
 .delivery-map-topbar {
   position: absolute;
   z-index: 500;
-  top: 16px;
-  left: 16px;
-  right: 16px;
+  top: 10px;
+  left: 10px;
+  right: 10px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -750,7 +750,7 @@ onBeforeUnmount(() => {
   max-width: 300px;
   padding: 12px 14px;
   border: 1px solid rgb(255 255 255 / 80%);
-  border-radius: 14px;
+  border-radius: 5px;
   background: rgb(255 255 255 / 92%);
   box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
   backdrop-filter: blur(10px);
@@ -817,7 +817,9 @@ onBeforeUnmount(() => {
 .delivery-panel {
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex-direction: column;
+  overflow: hidden;
   border-left: 1px solid hsl(var(--border));
   background: hsl(var(--background));
 }
@@ -880,6 +882,8 @@ onBeforeUnmount(() => {
   align-content: start;
   gap: 8px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 10px;
   background: hsl(var(--muted) / 0.32);
 }
