@@ -22,6 +22,7 @@ import {
   Search,
   ShoppingCart,
   Trash2,
+  UtensilsCrossed,
   UserRound,
 } from 'lucide-vue-next'
 
@@ -40,6 +41,7 @@ const loadingCatalog = ref(false)
 const saving = ref(false)
 const catalogo = ref<RestauranteCatalogoItem[]>([])
 const busca = ref('')
+const categoriaAtiva = ref('TODAS')
 const itemSelecionadoId = ref<number | null>(null)
 const quantidade = ref(1)
 const selecoes = ref<number[]>([])
@@ -55,13 +57,24 @@ const itemSelecionado = computed(
 )
 const catalogoFiltrado = computed(() => {
   const term = busca.value.trim().toLocaleLowerCase('pt-BR')
-  return term
-    ? catalogo.value.filter((item) =>
-        `${item.nomePublico || ''} ${item.Produto?.nome || ''}`
-          .toLocaleLowerCase('pt-BR')
-          .includes(term),
-      )
-    : catalogo.value
+  return catalogo.value.filter((item) => {
+    const categoryMatches = categoriaAtiva.value === 'TODAS' || itemCategoria(item) === categoriaAtiva.value
+    const searchMatches = !term ||
+      `${item.nomePublico || ''} ${item.Produto?.nome || ''}`
+        .toLocaleLowerCase('pt-BR')
+        .includes(term)
+    return categoryMatches && searchMatches
+  })
+})
+const categoriasCatalogo = computed(() => {
+  const counts = new Map<string, number>()
+  for (const item of catalogo.value) {
+    const category = itemCategoria(item)
+    counts.set(category, (counts.get(category) || 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([nome, quantidade]) => ({ nome, quantidade }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 })
 const totalItens = computed(() =>
   carrinho.value.reduce((total, item) => total + item.quantidade, 0),
@@ -70,6 +83,14 @@ const linhasNoCarrinho = computed(() => carrinho.value.length)
 
 function itemNome(item: RestauranteCatalogoItem) {
   return item.nomePublico || item.Produto?.nome || 'Item do cardápio'
+}
+
+function itemImagem(item: RestauranteCatalogoItem) {
+  return item.imagem || item.Produto?.imagem || null
+}
+
+function itemCategoria(item: RestauranteCatalogoItem) {
+  return item.Categoria?.nome || item.Produto?.ProdutoBase?.Categoria?.nome || 'Sem categoria'
 }
 
 function limparItem() {
@@ -81,6 +102,7 @@ function limparItem() {
 
 function reset() {
   busca.value = ''
+  categoriaAtiva.value = 'TODAS'
   pedidoObservacao.value = ''
   clienteNome.value = ''
   clienteTelefone.value = ''
@@ -227,6 +249,11 @@ watch(
           <Input v-model="busca" class="h-10 pl-9" placeholder="Buscar item do cardápio" />
         </div>
 
+        <div v-if="categoriasCatalogo.length" class="flex gap-2 overflow-x-auto pb-1" aria-label="Filtrar itens por categoria">
+          <button type="button" class="shrink-0" @click="categoriaAtiva = 'TODAS'"><Badge :variant="categoriaAtiva === 'TODAS' ? 'default' : 'outline'" class="cursor-pointer">Todos <span class="ml-1 opacity-75">{{ catalogo.length }}</span></Badge></button>
+          <button v-for="categoria in categoriasCatalogo" :key="categoria.nome" type="button" class="shrink-0" @click="categoriaAtiva = categoria.nome"><Badge :variant="categoriaAtiva === categoria.nome ? 'default' : 'outline'" class="cursor-pointer">{{ categoria.nome }} <span class="ml-1 opacity-75">{{ categoria.quantidade }}</span></Badge></button>
+        </div>
+
         <div v-if="loadingCatalog" class="grid gap-2 sm:grid-cols-2">
           <div
             v-for="item in 4"
@@ -239,7 +266,7 @@ watch(
             v-for="item in catalogoFiltrado"
             :key="item.id"
             type="button"
-            class="group rounded-xl border bg-card p-3 text-left transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            class="group flex min-h-[5.5rem] items-center gap-3 rounded-xl border bg-card p-3 text-left transition hover:border-primary/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             :class="
               itemSelecionadoId === item.id
                 ? 'border-primary bg-primary/[0.06] ring-1 ring-primary/20'
@@ -248,15 +275,19 @@ watch(
             :aria-pressed="itemSelecionadoId === item.id"
             @click="selecionarItem(item.id)"
           >
-            <div class="flex items-start justify-between gap-3">
-              <p class="min-w-0 truncate text-sm font-semibold">{{ itemNome(item) }}</p>
-              <Plus
-                class="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary dark:group-hover:text-primary-foreground"
-              />
+            <img
+              v-if="itemImagem(item)"
+              :src="itemImagem(item) || ''"
+              :alt="itemNome(item)"
+              class="h-14 w-14 shrink-0 rounded-lg object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
+            />
+            <span v-else class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"><UtensilsCrossed class="h-5 w-5" /></span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-semibold">{{ itemNome(item) }}</p>
+              <p class="mt-0.5 truncate text-xs text-muted-foreground">{{ itemCategoria(item) }}</p>
+              <p class="mt-1 text-xs font-semibold text-primary dark:text-primary-foreground">{{ formatCurrencyBR(Number(item.preco)) }}</p>
             </div>
-            <p class="mt-2 text-xs font-medium text-primary dark:text-primary-foreground">
-              {{ formatCurrencyBR(Number(item.preco)) }}
-            </p>
+            <Plus class="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary dark:group-hover:text-primary-foreground" />
           </button>
           <p
             v-if="!catalogoFiltrado.length"
