@@ -371,7 +371,7 @@ watch(
       </section>
 
       <aside
-        class="manual-order-cart flex min-h-[28rem] flex-col overflow-hidden rounded-2xl border bg-card shadow-sm lg:sticky lg:top-0"
+        class="manual-order-cart flex min-h-[28rem] flex-col overflow-y-auto rounded-2xl border bg-card shadow-sm lg:sticky lg:top-0"
       >
         <div class="border-b bg-muted/40 px-4 py-3.5">
           <div class="flex items-center justify-between gap-3">
@@ -388,11 +388,11 @@ watch(
             <Badge variant="secondary">{{ totalItens }} item(ns)</Badge>
           </div>
         </div>
-        <div class="manual-order-cart-items min-h-48 flex-1 space-y-2 overflow-y-auto p-3">
+        <div class="min-h-auto flex-1 space-y-2 p-3">
           <div
             v-for="(item, index) in carrinho"
             :key="`${item.catalogoItemId}-${index}`"
-            class="flex items-start justify-between gap-3 rounded-xl border bg-background/70 p-3"
+            class="flex items-start justify-between gap-3 rounded-md border bg-background/70 p-3"
           >
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium">{{ nomeCarrinho(item) }}</p>
@@ -520,11 +520,6 @@ watch(
   }
   .manual-order-cart {
     height: 100%;
-  }
-  .manual-order-cart-items {
-    min-height: 0;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
   }
 }
 </style>
