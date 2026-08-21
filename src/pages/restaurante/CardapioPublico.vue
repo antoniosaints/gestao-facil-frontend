@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, Clock3, CreditCard, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Menu, Minus, Moon, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Sun, Timer, Trash2, Truck, UserRound, UtensilsCrossed, X } from 'lucide-vue-next'
+import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, Clock3, CreditCard, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Minus, Moon, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Sun, Timer, Trash2, Truck, UserRound, UtensilsCrossed, X } from 'lucide-vue-next'
 import { RestauranteRepository, type RestauranteCheckoutPreview, type RestauranteClienteConta, type RestauranteClienteEndereco, type RestaurantePublicOrderTracking } from '@/repositories/restaurante-repository'
 import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { useConfirm } from '@/composables/useConfirm'
@@ -140,6 +140,11 @@ function itemDescription(item: any) {
 
 function itemImage(item: any) {
   return resolveFileUrl(item.imagem || item.Produto?.imagem)
+}
+
+function clearCart() {
+  cartLines.value = []
+  invalidateCart()
 }
 
 function categoryInfo(item: any) {
@@ -1394,14 +1399,22 @@ onBeforeUnmount(() => {
     </template>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="itemDialogOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(92vh,760px)] lg:max-h-[92vh] lg:max-w-2xl lg:flex-col lg:rounded-[24px]" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
+      <component :is="menuModalContent" class="menu-overlay h-auto max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-auto lg:max-h-[92vh] lg:max-w-2xl lg:flex-col lg:rounded-[24px]" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
         <template v-if="activeItem">
-          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y">
-            <div v-if="itemImage(activeItem)" class="h-52 overflow-hidden rounded-t-[24px] sm:h-64 lg:rounded-t-[24px]">
-              <img :src="itemImage(activeItem)" :alt="itemName(activeItem)" class="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10" />
+          <div class="min-h-0 flex-1 overflow-y-auto relative overscroll-contain touch-pan-y">
+            <div
+              v-if="itemImage(activeItem)"
+              class="h-64 overflow-hidden rounded-t-[24px] pt-4 md:pt-0 sm:h-80 lg:h-96"
+            >
+              <img
+                :src="itemImage(activeItem)"
+                :alt="itemName(activeItem)"
+                class="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10"
+              />
             </div>
+
             <div class="p-5 sm:p-7">
-            <component :is="menuModalHeader" class="text-left">
+            <component :is="menuModalHeader" class="text-left pb-4 sm:pb-5" :class="{ 'border-b md:border-none': activeItem.grupos.length }">
               <component :is="menuModalTitle" class="menu-heading text-balance text-2xl tracking-[-0.025em]">{{ itemName(activeItem) }}</component>
               <component :is="menuModalDescription" class="text-pretty leading-relaxed">{{ itemDescription(activeItem) }}</component>
             </component>
@@ -1415,7 +1428,7 @@ onBeforeUnmount(() => {
                   </div>
                   <Badge :variant="selectedCount(link.Grupo) >= link.Grupo.minimo ? 'secondary' : 'secondary'">{{ link.Grupo.minimo > 0 ? 'Obrigatório' : 'Opcional' }}</Badge>
                 </div>
-                <div class="space-y-2">
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <button v-for="option in link.Grupo.opcoes" :key="option.id" type="button" class="option-row" :class="{ selected: draftSelections.includes(option.id) }" @click="toggleDraft(link.Grupo, option.id)">
                     <span class="option-check"><Check class="h-3.5 w-3.5" /></span>
                     <span class="min-w-0 flex-1 text-left text-sm font-medium">{{ option.nome }}</span>
@@ -1465,7 +1478,7 @@ onBeforeUnmount(() => {
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="cartDrawerOpen">
       <component :is="menuModalContent" class="menu-overlay max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:max-h-[90vh] lg:max-w-2xl lg:overflow-y-auto lg:rounded-[24px]" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
         <component :is="menuModalHeader" class="shrink-0 text-left lg:px-7 lg:pt-6"
-          ><component :is="menuModalTitle" class="menu-heading text-xl">Seu carrinho</component><component :is="menuModalDescription">{{ cartUnits }} {{ cartUnits === 1 ? 'item selecionado' : 'itens selecionados' }}</component></component
+          ><component :is="menuModalTitle" class="menu-heading text-xl justify-between w-full flex">Seu carrinho <Button @click="clearCart" class="text-red-500 bg-transparent rounded-lg" variant="outline"><Trash2 class="h-4 w-4" /></Button></component><component :is="menuModalDescription">{{ cartUnits }} {{ cartUnits === 1 ? 'item selecionado' : 'itens selecionados' }}</component></component
         >
         <div class="max-h-[calc(88dvh-10rem)] overflow-y-auto overscroll-contain touch-pan-y px-4">
           <div v-for="line in selecionados" :key="line.id" class="cart-line border-b py-4 last:border-0">
