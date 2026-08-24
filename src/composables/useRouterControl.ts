@@ -89,7 +89,11 @@ export async function handleRouteGuard(to: typed, from: typed) {
     }
   }
 
-  if (!allowedRouteNames.includes(to.name as string)) {
+  // A inadimplência suspende o ERP do assinante, mas não pode impedir o
+  // superadmin de alcançar o modo CEO para administrar as contas. A exceção é
+  // restrita às rotas /admin; ao sair para o ERP, o bloqueio continua valendo.
+  const isCeoRoute = isSuperAdmin && to.path.startsWith('/admin')
+  if (!isCeoRoute && !allowedRouteNames.includes(to.name as string)) {
     if (isBefore(new Date(storeUi.contaInfo.vencimento), new Date())) {
       toast.info('Sua conta está inativa, realize o pagamento para ativá-la.')
       return assinatura

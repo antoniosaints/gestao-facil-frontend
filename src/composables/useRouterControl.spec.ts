@@ -40,4 +40,38 @@ describe('handleRouteGuard', () => {
     expect(getDataUsuario).not.toHaveBeenCalled()
     expect(toast.info).toHaveBeenCalledOnce()
   })
+
+  it('permite ao superadmin abrir o modo CEO mesmo com a conta vencida', async () => {
+    localStorage.setItem('gestao_facil:token', 'token-ceo')
+    const store = useUiStore()
+    vi.spyOn(store, 'getDataUsuario').mockImplementation(async () => {
+      store.usuarioLogged = { superAdmin: true, permissao: 'root' } as any
+      store.contaInfo = { vencimento: new Date(Date.now() - 60_000) } as any
+    })
+
+    const result = await handleRouteGuard(
+      { name: 'admin-home', path: '/admin', meta: { permissao: 100 } } as any,
+      { name: 'home', path: '/', meta: {} } as any,
+    )
+
+    expect(result).toBe(true)
+    expect(toast.info).not.toHaveBeenCalled()
+  })
+
+  it('mantém o bloqueio por vencimento fora do modo CEO', async () => {
+    localStorage.setItem('gestao_facil:token', 'token-assinante')
+    const store = useUiStore()
+    vi.spyOn(store, 'getDataUsuario').mockImplementation(async () => {
+      store.usuarioLogged = { superAdmin: false, permissao: 'root' } as any
+      store.contaInfo = { vencimento: new Date(Date.now() - 60_000) } as any
+    })
+
+    const result = await handleRouteGuard(
+      { name: 'home', path: '/', meta: {} } as any,
+      { name: 'login', path: '/login', meta: { isPublic: true } } as any,
+    )
+
+    expect(result).toEqual({ name: 'assinatura-resumo' })
+    expect(toast.info).toHaveBeenCalledWith('Sua conta está inativa, realize o pagamento para ativá-la.')
+  })
 })
