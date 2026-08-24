@@ -47,7 +47,7 @@
               <div>
                 <p class="font-semibold">{{ order.codigoRastreio }}</p>
                 <p class="text-sm text-muted-foreground">
-                  {{ order.ordemServico?.Cliente?.nome || 'Cliente' }} ·
+                  {{ order.ordemServico?.Cliente?.nome || 'Cliente não informado' }} ·
                   {{ order.ordemServico?.descricao }}
                 </p>
               </div>
@@ -178,19 +178,40 @@
       <CardContent class="grid gap-4 sm:grid-cols-2"
         ><label class="grid gap-1 text-sm font-medium"
           >Categoria de receita
-          <Input v-model.number="config.receitaCategoriaId" type="number" min="1" /></label
+          <Input
+            v-model.number="config.receitaCategoriaId"
+            type="number"
+            min="1"
+            placeholder="ID da categoria" /></label
         ><label class="grid gap-1 text-sm font-medium"
           >Conta de receita
-          <Input v-model.number="config.receitaContaFinanceiraId" type="number" min="1" /></label
+          <Input
+            v-model.number="config.receitaContaFinanceiraId"
+            type="number"
+            min="1"
+            placeholder="ID da conta" /></label
         ><label class="grid gap-1 text-sm font-medium"
           >Categoria de comissão
-          <Input v-model.number="config.comissaoCategoriaId" type="number" min="1" /></label
+          <Input
+            v-model.number="config.comissaoCategoriaId"
+            type="number"
+            min="1"
+            placeholder="ID da categoria" /></label
         ><label class="grid gap-1 text-sm font-medium"
           >Conta de comissão
-          <Input v-model.number="config.comissaoContaFinanceiraId" type="number" min="1" /></label
+          <Input
+            v-model.number="config.comissaoContaFinanceiraId"
+            type="number"
+            min="1"
+            placeholder="ID da conta" /></label
         ><label class="grid gap-1 text-sm font-medium"
           >Validade do orçamento (dias)
-          <Input v-model.number="config.prazoAprovacaoDias" type="number" min="1" max="30"
+          <Input
+            v-model.number="config.prazoAprovacaoDias"
+            type="number"
+            min="1"
+            max="30"
+            placeholder="Ex.: 7"
         /></label>
         <div class="flex items-end">
           <Button @click="saveConfig">Salvar configuração</Button>
@@ -209,12 +230,12 @@
         >
         <div class="grid gap-4 py-2">
           <label class="grid gap-1 text-sm font-medium"
-            >Cliente
+            >Cliente <span class="text-muted-foreground">(opcional)</span>
             <select
               v-model.number="draft.clienteId"
               class="h-10 rounded-md border bg-background px-3"
             >
-              <option :value="0">Selecione</option>
+              <option :value="0">Sem cliente informado</option>
               <option v-for="client in clients" :key="client.id" :value="client.id">
                 {{ client.label }}
               </option>
@@ -224,17 +245,27 @@
             <textarea
               v-model="draft.descricao"
               class="min-h-20 rounded-md border bg-background p-3"
+              placeholder="Descreva a solicitação do cliente"
             /></label
           ><label class="grid gap-1 text-sm font-medium"
             >Descrição da peça
-            <textarea v-model="draft.peca" class="min-h-20 rounded-md border bg-background p-3" />
+            <textarea
+              v-model="draft.peca"
+              class="min-h-20 rounded-md border bg-background p-3"
+              placeholder="Descreva a peça recebida"
+            />
           </label>
           <div class="grid gap-4 sm:grid-cols-2">
             <label class="grid gap-1 text-sm font-medium"
               >Metal <Input v-model="draft.metal" placeholder="Ex.: ouro 18k" /></label
             ><label class="grid gap-1 text-sm font-medium"
               >Peso informado (g)
-              <Input v-model.number="draft.peso" type="number" min="0" step="0.001"
+              <Input
+                v-model.number="draft.peso"
+                type="number"
+                min="0"
+                step="0.001"
+                placeholder="Ex.: 10,5"
             /></label>
           </div>
         </div>
@@ -252,7 +283,7 @@
         ><DialogHeader
           ><DialogTitle>{{ selected?.codigoRastreio }}</DialogTitle
           ><DialogDescription
-            >{{ selected?.ordemServico?.Cliente?.nome }} ·
+            >{{ selected?.ordemServico?.Cliente?.nome || 'Cliente não informado' }} ·
             {{ statusLabel(selected?.status) }}</DialogDescription
           ></DialogHeader
         >
@@ -280,11 +311,11 @@
             <p class="font-semibold">Orçamento simplificado</p>
             <div class="mt-3 grid gap-3 sm:grid-cols-[1fr_9rem_auto]">
               <Input v-model="budgetDraft.descricao" placeholder="Serviço" /><Input
-                v-model.number="budgetDraft.valor"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Valor"
+                v-model="budgetDraft.valor"
+                v-maska="moneyMaskOptions"
+                type="text"
+                inputmode="decimal"
+                placeholder="0,00"
               /><Button @click="saveBudget">Salvar orçamento</Button>
             </div>
             <Button
@@ -349,6 +380,9 @@ import {
 import { ClienteRepository } from '@/repositories/cliente-repository'
 import { OuriveRepository, type OuriveCapability } from '@/repositories/ourive-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 
 const route = useRoute()
 const toast = useToast()
@@ -367,7 +401,7 @@ const commissions = ref<any[]>([])
 const reportData = ref<any>()
 const newSpecialty = ref('')
 const budgetLink = ref('')
-const budgetDraft = ref({ descricao: '', valor: 0 })
+const budgetDraft = ref<{ descricao: string; valor: number | string }>({ descricao: '', valor: 0 })
 const roleOptions: Array<'GESTOR' | 'ATENDIMENTO' | 'OURIVE' | 'REVISAO'> = [
   'GESTOR',
   'ATENDIMENTO',
@@ -519,12 +553,12 @@ async function saveConfig() {
   }
 }
 async function createOrder() {
-  if (!draft.value.clienteId || !draft.value.descricao || !draft.value.peca)
-    return toast.info('Informe cliente, solicitação e peça.')
+  if (!draft.value.descricao || !draft.value.peca)
+    return toast.info('Informe a solicitação e a peça.')
   saving.value = true
   try {
     const order = await OuriveRepository.criarOrdem({
-      clienteId: draft.value.clienteId,
+      ...(draft.value.clienteId ? { clienteId: draft.value.clienteId } : {}),
       descricao: draft.value.descricao,
       pecas: [
         {
@@ -560,7 +594,8 @@ async function selectOrder(id: number) {
   }
 }
 async function saveBudget() {
-  if (!selected.value || !budgetDraft.value.descricao || Number(budgetDraft.value.valor) < 0)
+  const valor = formatToNumberValue(budgetDraft.value.valor)
+  if (!selected.value || !budgetDraft.value.descricao || valor < 0)
     return toast.info('Informe serviço e valor.')
   try {
     await OuriveRepository.salvarOrcamento(selected.value.id, {
@@ -568,7 +603,7 @@ async function saveBudget() {
         {
           descricao: budgetDraft.value.descricao,
           quantidade: 1,
-          valor: Number(budgetDraft.value.valor),
+          valor,
         },
       ],
       desconto: 0,

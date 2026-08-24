@@ -116,7 +116,7 @@ async function load() {
       order.pecas.map((piece: any) => ({
         ...piece,
         orderId: order.id,
-        cliente: order.ordemServico?.Cliente?.nome || 'Cliente',
+        cliente: order.ordemServico?.Cliente?.nome || 'Cliente não informado',
         foto: piece.fotos?.[0]?.url,
       })),
     )

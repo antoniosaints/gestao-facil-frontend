@@ -34,12 +34,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { OuriveRepository } from '@/repositories/ourive-repository'
+import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
+import { useClientesStore } from '@/stores/clientes/useClientes'
 import { useConfirm } from '@/composables/useConfirm'
+import type { ClientesFornecedores } from '@/types/schemas'
 
 const router = useRouter()
 const toast = useToast()
 const ui = useUiStore()
+const clientesStore = useClientesStore()
 const open = ref(false)
 const saving = ref(false)
 const ordersLoading = ref(false)
@@ -47,12 +51,16 @@ const ordersSearch = ref('')
 const orders = ref<any[]>([])
 const tableUpdate = ref(0)
 const canReceive = ui.hasOuriveCapability('RECEBER')
-type TipoNovaOrdem = 'ENCOMENDA' | 'SERVICO'
+type TipoNovaOrdem = 'CONSERTO' | 'ENCOMENDA'
 type OuriveOrderStatus =
   | 'RECEBIDA'
   | 'ORCAMENTO'
+  | 'AGUARDANDO_MATERIAL'
+  | 'PRONTA_PRODUCAO'
   | 'PRODUCAO'
+  | 'FINALIZADA'
   | 'REVISAO'
+  | 'PRONTA_ENTREGA'
   | 'ENTREGUE'
   | 'RECUSADA'
   | 'CANCELADA'
@@ -63,8 +71,12 @@ const selectedOrderType = ref<TipoNovaOrdem | null>(null)
 const statusLabels: Record<OuriveOrderStatus, string> = {
   RECEBIDA: 'Recebida',
   ORCAMENTO: 'Orçamento',
-  PRODUCAO: 'Produção',
+  AGUARDANDO_MATERIAL: 'Aguardando material',
+  PRONTA_PRODUCAO: 'Pronta para produção',
+  PRODUCAO: 'Em produção',
+  FINALIZADA: 'Finalizada',
   REVISAO: 'Revisão',
+  PRONTA_ENTREGA: 'Pronta para entrega',
   ENTREGUE: 'Entregue',
   RECUSADA: 'Recusada',
   CANCELADA: 'Cancelada',
@@ -87,6 +99,7 @@ function alterarVisualizacao(value: VisualizacaoOrdens) {
 }
 
 function openNewOrder() {
+  resetDraft()
   selectedOrderType.value = null
   newOrderStep.value = 'tipo'
   open.value = true
@@ -95,6 +108,12 @@ function openNewOrder() {
 function selectOrderType(type: TipoNovaOrdem) {
   selectedOrderType.value = type
   newOrderStep.value = 'formulario'
+}
+
+function openQuickClientCreate() {
+  clientesStore.openSave((client: ClientesFornecedores) => {
+    if (client?.id != null) draft.value.clienteId = Number(client.id)
+  })
 }
 
 function updateNewOrderModal(isOpen: boolean) {
@@ -111,10 +130,18 @@ const statusBadgeClasses: Record<OuriveOrderStatus, string> = {
     'border-slate-500/35 bg-slate-500/10 text-slate-700 dark:border-slate-400/30 dark:bg-slate-400/15 dark:text-slate-300',
   ORCAMENTO:
     'border-blue-500/35 bg-blue-500/10 text-blue-800 dark:border-blue-400/30 dark:bg-blue-400/15 dark:text-blue-300',
+  AGUARDANDO_MATERIAL:
+    'border-orange-500/35 bg-orange-500/10 text-orange-800 dark:border-orange-400/30 dark:bg-orange-400/15 dark:text-orange-300',
+  PRONTA_PRODUCAO:
+    'border-cyan-500/35 bg-cyan-500/10 text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-400/15 dark:text-cyan-300',
   PRODUCAO:
     'border-amber-500/35 bg-amber-500/10 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-300',
+  FINALIZADA:
+    'border-indigo-500/35 bg-indigo-500/10 text-indigo-800 dark:border-indigo-400/30 dark:bg-indigo-400/15 dark:text-indigo-300',
   REVISAO:
     'border-violet-500/35 bg-violet-500/10 text-violet-800 dark:border-violet-400/30 dark:bg-violet-400/15 dark:text-violet-300',
+  PRONTA_ENTREGA:
+    'border-teal-500/35 bg-teal-500/10 text-teal-800 dark:border-teal-400/30 dark:bg-teal-400/15 dark:text-teal-300',
   ENTREGUE:
     'border-emerald-500/35 bg-emerald-500/10 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-300',
   RECUSADA:
@@ -125,14 +152,36 @@ const statusBadgeClasses: Record<OuriveOrderStatus, string> = {
 const statusColumnClasses: Record<OuriveOrderStatus, string> = {
   RECEBIDA: 'border-t-slate-500 bg-slate-500/[0.035] dark:bg-slate-400/[0.06]',
   ORCAMENTO: 'border-t-blue-500 bg-blue-500/[0.035] dark:bg-blue-400/[0.06]',
+  AGUARDANDO_MATERIAL: 'border-t-orange-500 bg-orange-500/[0.04] dark:bg-orange-400/[0.07]',
+  PRONTA_PRODUCAO: 'border-t-cyan-500 bg-cyan-500/[0.04] dark:bg-cyan-400/[0.07]',
   PRODUCAO: 'border-t-amber-500 bg-amber-500/[0.04] dark:bg-amber-400/[0.07]',
+  FINALIZADA: 'border-t-indigo-500 bg-indigo-500/[0.04] dark:bg-indigo-400/[0.07]',
   REVISAO: 'border-t-violet-500 bg-violet-500/[0.035] dark:bg-violet-400/[0.06]',
+  PRONTA_ENTREGA: 'border-t-teal-500 bg-teal-500/[0.04] dark:bg-teal-400/[0.07]',
   ENTREGUE: 'border-t-emerald-500 bg-emerald-500/[0.035] dark:bg-emerald-400/[0.06]',
   RECUSADA: 'border-t-orange-500 bg-orange-500/[0.035] dark:bg-orange-400/[0.06]',
   CANCELADA: 'border-t-red-500 bg-red-500/[0.035] dark:bg-red-400/[0.06]',
 }
 const statusBadgeClass = (status: string) => statusBadgeClasses[status as OuriveOrderStatus] || ''
 const statusColumnClass = (status: OuriveOrderStatus) => statusColumnClasses[status]
+const draggedOrder = ref<any>()
+const canMoveKanban = ui.hasOuriveCapability('KANBAN')
+function startDrag(order: any) {
+  if (canMoveKanban) draggedOrder.value = order
+}
+async function dropOnStatus(status: OuriveOrderStatus) {
+  const order = draggedOrder.value
+  draggedOrder.value = undefined
+  if (!order || order.status === status) return
+  try {
+    await OuriveRepository.atualizarStatus(order.id, { status })
+    order.status = status
+    order.updatedAt = new Date().toISOString()
+    toast.success(`OS movida para ${statusLabels[status]}.`)
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível mover a OS.')
+  }
+}
 const emptyPiece = () => ({
   descricao: '',
   metal: '',
@@ -145,8 +194,20 @@ const draft = ref({
   clienteId: undefined as number | undefined,
   descricao: '',
   garantia: 'Sem garantia informada',
+  observacoes: '',
+  prazoPrevisto: '',
   pecas: [emptyPiece()],
 })
+function resetDraft() {
+  draft.value = {
+    clienteId: undefined,
+    descricao: '',
+    garantia: 'Sem garantia informada',
+    observacoes: '',
+    prazoPrevisto: '',
+    pecas: [emptyPiece()],
+  }
+}
 
 async function removeOrder(order: any) {
   const confirmed = await useConfirm().confirm({
@@ -178,7 +239,11 @@ const columns: ColumnDef<any>[] = [
     header: 'Cliente',
     cell: ({ row }) =>
       h('div', { class: 'min-w-[190px]' }, [
-        h('p', { class: 'font-medium' }, row.original.ordemServico?.Cliente?.nome || 'Cliente'),
+        h(
+          'p',
+          { class: 'font-medium' },
+          row.original.ordemServico?.Cliente?.nome || 'Cliente não informado',
+        ),
         h(
           'p',
           { class: 'max-w-[280px] truncate text-xs text-muted-foreground' },
@@ -257,15 +322,16 @@ function addPiece() {
 }
 async function save() {
   if (
-    !draft.value.clienteId ||
     draft.value.descricao.trim().length < 3 ||
     draft.value.pecas.some((piece) => piece.descricao.trim().length < 2)
   )
-    return toast.info('Informe cliente, solicitação e a descrição de cada peça.')
+    return toast.info('Informe a solicitação e a descrição de cada item.')
   saving.value = true
   try {
     const created = await OuriveRepository.criarOrdem({
       ...draft.value,
+      tipo: selectedOrderType.value || 'CONSERTO',
+      prazoPrevisto: draft.value.prazoPrevisto || undefined,
       pecas: draft.value.pecas.map((piece) => ({
         ...piece,
         checklistRecebimento: piece.checklist
@@ -274,12 +340,12 @@ async function save() {
           .filter(Boolean),
       })),
     })
-    toast.success('Recebimento registrado.')
+    toast.success(
+      selectedOrderType.value === 'ENCOMENDA' ? 'Encomenda registrada.' : 'Recebimento registrado.',
+    )
     await router.push({ name: 'ourive-ordem', params: { id: created.id } })
   } catch (error: any) {
-    toast.error(
-      error?.response?.data?.error?.message || 'Não foi possível registrar o recebimento.',
-    )
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível registrar a ordem.')
   } finally {
     saving.value = false
   }
@@ -364,6 +430,8 @@ onMounted(() => loadOrders())
           :key="status"
           class="flex min-h-[30rem] w-72 shrink-0 flex-col overflow-hidden rounded-2xl border border-t-4 shadow-sm"
           :class="statusColumnClass(status)"
+          @dragover.prevent
+          @drop="dropOnStatus(status)"
         >
           <header
             class="flex items-center justify-between border-b border-border/70 bg-card/80 px-3.5 py-3 backdrop-blur-sm"
@@ -396,9 +464,11 @@ onMounted(() => loadOrders())
               v-for="order in filteredOrders.filter((item) => item.status === status)"
               :key="order.id"
               role="button"
+              :draggable="canMoveKanban"
               tabindex="0"
               class="cursor-pointer rounded-xl border-border/80 bg-card/95 shadow-sm transition hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               @click="router.push({ name: 'ourive-ordem', params: { id: order.id } })"
+              @dragstart="startDrag(order)"
               @keydown.enter="router.push({ name: 'ourive-ordem', params: { id: order.id } })"
               @keydown.space.prevent="
                 router.push({ name: 'ourive-ordem', params: { id: order.id } })
@@ -420,7 +490,7 @@ onMounted(() => loadOrders())
                 </div>
                 <div class="border-t pt-2 text-sm">
                   <p class="truncate font-medium">
-                    {{ order.ordemServico?.Cliente?.nome || 'Cliente' }}
+                    {{ order.ordemServico?.Cliente?.nome || 'Cliente não informado' }}
                   </p>
                   <p class="mt-1 line-clamp-2 text-muted-foreground">
                     {{ order.ordemServico?.descricao || 'Sem solicitação' }}
@@ -460,7 +530,7 @@ onMounted(() => loadOrders())
             <div class="min-w-0">
               <p class="font-semibold">{{ order.codigoRastreio }}</p>
               <p class="mt-1 truncate text-sm text-muted-foreground">
-                {{ order.ordemServico?.Cliente?.nome || 'Cliente' }}
+                {{ order.ordemServico?.Cliente?.nome || 'Cliente não informado' }}
               </p>
             </div>
             <Badge :variant="order.status === 'ENTREGUE' ? 'default' : 'secondary'">{{
@@ -517,7 +587,7 @@ onMounted(() => loadOrders())
             <button
               type="button"
               class="group rounded-2xl border border-sky-500/30 bg-gradient-to-br from-sky-500/10 via-card to-card p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-500/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
-              @click="selectOrderType('SERVICO')"
+              @click="selectOrderType('CONSERTO')"
             >
               <div class="mb-5 flex items-start justify-between">
                 <div class="rounded-xl bg-sky-500/15 p-3 text-sky-600 dark:text-sky-400">
@@ -551,78 +621,166 @@ onMounted(() => loadOrders())
             </Button>
             <DialogHeader>
               <DialogTitle>{{
-                selectedOrderType === 'ENCOMENDA' ? 'Nova encomenda' : 'Receber peças para serviço'
+                selectedOrderType === 'ENCOMENDA' ? 'Nova encomenda' : 'Receber peças para conserto'
               }}</DialogTitle>
-              <DialogDescription
-                >Uma OS pode agrupar várias peças do mesmo cliente.</DialogDescription
-              >
+              <DialogDescription>
+                Uma OS pode agrupar várias peças e o cliente é opcional no cadastro.
+              </DialogDescription>
             </DialogHeader>
           </div>
           <div class="grid gap-4 py-2">
-            <label class="grid gap-1 text-sm font-medium"
-              >Cliente<Select2Ajax
+            <div class="grid gap-1 text-sm font-medium">
+              <div class="flex items-center justify-between gap-2">
+                <span>Cliente <span class="text-muted-foreground">(opcional)</span></span>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  class="h-auto px-0 text-primary"
+                  @click="openQuickClientCreate"
+                >
+                  <Plus class="mr-1 h-3.5 w-3.5" />Novo cliente
+                </Button>
+              </div>
+              <Select2Ajax
                 v-model="draft.clienteId"
                 url="/clientes/select2"
-                placeholder="Busque o cliente"
-            /></label>
-            <label class="grid gap-1 text-sm font-medium"
-              >Solicitação<textarea
-                v-model="draft.descricao"
-                class="min-h-20 rounded-md border bg-background p-3"
-                placeholder="Descreva o serviço solicitado"
-              />
-            </label>
-            <label class="grid gap-1 text-sm font-medium"
-              >Garantia<Input v-model="draft.garantia"
-            /></label>
-            <div
-              v-for="(piece, index) in draft.pecas"
-              :key="index"
-              class="space-y-3 rounded-xl border bg-muted/20 p-4"
-            >
-              <div class="flex items-center justify-between">
-                <p class="font-semibold">Peça {{ index + 1 }}</p>
-                <Button
-                  v-if="draft.pecas.length > 1"
-                  size="sm"
-                  variant="ghost"
-                  @click="draft.pecas.splice(index, 1)"
-                  ><Trash2 class="h-4 w-4"
-                /></Button>
-              </div>
-              <div class="grid gap-3 sm:grid-cols-2">
-                <Input v-model="piece.descricao" placeholder="Descrição da peça" />
-                <Input v-model="piece.metal" placeholder="Metal (ex.: ouro 18k)" />
-                <Input v-model="piece.pedras" placeholder="Pedras" />
-                <Input
-                  v-model.number="piece.pesoInformado"
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  placeholder="Peso informado (g)"
-                />
-              </div>
-              <textarea
-                v-model="piece.estadoConservacao"
-                class="min-h-16 w-full rounded-md border bg-background p-3 text-sm"
-                placeholder="Estado de conservação"
-              />
-              <textarea
-                v-model="piece.checklist"
-                class="min-h-16 w-full rounded-md border bg-background p-3 text-sm"
-                placeholder="Checklist de recebimento (um item por linha)"
+                :allow-clear="true"
+                placeholder="Busque o cliente ou deixe em branco"
               />
             </div>
-            <Button type="button" variant="outline" class="w-fit" @click="addPiece"
-              ><Plus class="mr-2 h-4 w-4" />Adicionar peça</Button
-            >
+            <template v-if="selectedOrderType === 'ENCOMENDA'">
+              <div class="rounded-xl border border-amber-500/25 bg-amber-500/5 p-3 text-sm">
+                <p class="font-medium text-amber-700 dark:text-amber-300">Detalhes da produção</p>
+                <p class="mt-1 text-muted-foreground">
+                  Registre o projeto e os itens a produzir. Materiais e etapas serão definidos na
+                  ordem após o cadastro.
+                </p>
+              </div>
+              <label class="grid gap-1 text-sm font-medium"
+                >Descrição da encomenda<textarea
+                  v-model="draft.descricao"
+                  class="min-h-20 rounded-md border bg-background p-3"
+                  placeholder="Ex.: Aliança personalizada em ouro 18k"
+                />
+              </label>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="grid gap-1 text-sm font-medium"
+                  >Prazo previsto<Input v-model="draft.prazoPrevisto" type="date"
+                /></label>
+                <label class="grid gap-1 text-sm font-medium"
+                  >Garantia<Input v-model="draft.garantia" placeholder="Ex.: 90 dias"
+                /></label>
+              </div>
+              <label class="grid gap-1 text-sm font-medium"
+                >Especificações do projeto<textarea
+                  v-model="draft.observacoes"
+                  class="min-h-24 rounded-md border bg-background p-3"
+                  placeholder="Medidas, acabamento, referências, gravações e demais orientações"
+                />
+              </label>
+              <div
+                v-for="(piece, index) in draft.pecas"
+                :key="index"
+                class="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-4"
+              >
+                <div class="flex items-center justify-between">
+                  <p class="font-semibold">Item da encomenda {{ index + 1 }}</p>
+                  <Button
+                    v-if="draft.pecas.length > 1"
+                    size="sm"
+                    variant="ghost"
+                    @click="draft.pecas.splice(index, 1)"
+                    ><Trash2 class="h-4 w-4"
+                  /></Button>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <Input v-model="piece.descricao" placeholder="Peça a produzir" />
+                  <Input v-model="piece.metal" placeholder="Metal desejado (ex.: ouro 18k)" />
+                  <Input v-model="piece.pedras" placeholder="Pedras e detalhes" />
+                  <Input
+                    v-model.number="piece.pesoInformado"
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    placeholder="Peso estimado (g)"
+                  />
+                </div>
+              </div>
+              <Button type="button" variant="outline" class="w-fit" @click="addPiece"
+                ><Plus class="mr-2 h-4 w-4" />Adicionar item</Button
+              >
+            </template>
+
+            <template v-else>
+              <div class="rounded-xl border border-sky-500/25 bg-sky-500/5 p-3 text-sm">
+                <p class="font-medium text-sky-700 dark:text-sky-300">Recebimento sob custódia</p>
+                <p class="mt-1 text-muted-foreground">
+                  Descreva a peça como foi recebida para manter o registro de custódia completo.
+                </p>
+              </div>
+              <label class="grid gap-1 text-sm font-medium"
+                >Solicitação do cliente<textarea
+                  v-model="draft.descricao"
+                  class="min-h-20 rounded-md border bg-background p-3"
+                  placeholder="Descreva o conserto, ajuste ou restauração solicitada"
+                />
+              </label>
+              <label class="grid gap-1 text-sm font-medium"
+                >Garantia<Input v-model="draft.garantia" placeholder="Ex.: 90 dias"
+              /></label>
+              <div
+                v-for="(piece, index) in draft.pecas"
+                :key="index"
+                class="space-y-3 rounded-xl border bg-muted/20 p-4"
+              >
+                <div class="flex items-center justify-between">
+                  <p class="font-semibold">Peça recebida {{ index + 1 }}</p>
+                  <Button
+                    v-if="draft.pecas.length > 1"
+                    size="sm"
+                    variant="ghost"
+                    @click="draft.pecas.splice(index, 1)"
+                    ><Trash2 class="h-4 w-4"
+                  /></Button>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <Input v-model="piece.descricao" placeholder="Descrição da peça" />
+                  <Input v-model="piece.metal" placeholder="Metal (ex.: ouro 18k)" />
+                  <Input v-model="piece.pedras" placeholder="Pedras" />
+                  <Input
+                    v-model.number="piece.pesoInformado"
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    placeholder="Peso recebido (g)"
+                  />
+                </div>
+                <textarea
+                  v-model="piece.estadoConservacao"
+                  class="min-h-16 w-full rounded-md border bg-background p-3 text-sm"
+                  placeholder="Estado de conservação ao receber"
+                />
+                <textarea
+                  v-model="piece.checklist"
+                  class="min-h-16 w-full rounded-md border bg-background p-3 text-sm"
+                  placeholder="Checklist de recebimento (um item por linha)"
+                />
+              </div>
+              <Button type="button" variant="outline" class="w-fit" @click="addPiece"
+                ><Plus class="mr-2 h-4 w-4" />Adicionar peça</Button
+              >
+            </template>
           </div>
           <DialogFooter>
             <Button variant="outline" @click="updateNewOrderModal(false)">Cancelar</Button>
-            <Button :disabled="saving" @click="save">Registrar recebimento</Button>
+            <Button :disabled="saving" @click="save">
+              {{ selectedOrderType === 'ENCOMENDA' ? 'Criar encomenda' : 'Registrar recebimento' }}
+            </Button>
           </DialogFooter>
         </template>
       </DialogContent>
     </Dialog>
+    <ClientesModal />
   </section>
 </template>

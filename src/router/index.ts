@@ -1061,6 +1061,18 @@ const routes: RouteInterface[] = [
         meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'PRODUCAO' },
       },
       {
+        path: 'pedidos-compra',
+        name: 'ourive-pedidos-compra',
+        component: () => import('@/pages/ourive/PedidosCompra.vue'),
+        meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'PRODUCAO' },
+      },
+      {
+        path: 'financeiro',
+        name: 'ourive-financeiro',
+        component: () => import('@/pages/ourive/Financeiro.vue'),
+        meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'PAGAMENTOS' },
+      },
+      {
         path: 'pecas',
         name: 'ourive-pecas',
         component: () => import('@/pages/ourive/Pecas.vue'),

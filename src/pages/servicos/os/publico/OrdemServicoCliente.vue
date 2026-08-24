@@ -25,7 +25,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                             <div class="bg-white px-4 py-2 rounded-lg shadow-sm">
                                 <p class="text-sm text-gray-500 mb-1">Cliente</p>
-                                <p class="text-gray-800">{{ ordemServico?.Cliente.nome }}</p>
+                                <p class="text-gray-800">{{ ordemServico?.Cliente?.nome || 'Cliente não informado' }}</p>
                             </div>
                             <div class="bg-white px-4 py-2 rounded-lg shadow-sm">
                                 <p class="text-sm text-gray-500 mb-1">Garantia</p>

@@ -37,6 +37,11 @@ type Painel = {
     emProducao: number
     aguardandoOrcamento: number
     comissoes: number
+    aguardandoMaterial: number
+    comprasPendentes: number
+    atrasadas: number
+    prontasEntrega: number
+    valorPendenteOurives: number
   }
   serieReceita: { labels: string[]; data: number[] }
   porStatus: { labels: string[]; data: number[] }
@@ -65,6 +70,11 @@ const emptyPanel = (): Painel => ({
     emProducao: 0,
     aguardandoOrcamento: 0,
     comissoes: 0,
+    aguardandoMaterial: 0,
+    comprasPendentes: 0,
+    atrasadas: 0,
+    prontasEntrega: 0,
+    valorPendenteOurives: 0,
   },
   serieReceita: { labels: [], data: [] },
   porStatus: { labels: [], data: [] },
@@ -108,8 +118,12 @@ const palette = ['#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4
 const statusLabel: Record<string, string> = {
   RECEBIDA: 'Recebida',
   ORCAMENTO: 'Orçamento',
-  PRODUCAO: 'Produção',
+  AGUARDANDO_MATERIAL: 'Aguardando material',
+  PRONTA_PRODUCAO: 'Pronta para produção',
+  PRODUCAO: 'Em produção',
+  FINALIZADA: 'Finalizada',
   REVISAO: 'Revisão',
+  PRONTA_ENTREGA: 'Pronta para entrega',
   ENTREGUE: 'Entregue',
   RECUSADA: 'Recusada',
   CANCELADA: 'Cancelada',
@@ -370,7 +384,7 @@ onMounted(load)
       >
     </section>
 
-    <section v-if="!loading && painel" class="grid gap-4 sm:grid-cols-3">
+    <section v-if="!loading && painel" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
       <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
         <div class="rounded-lg bg-amber-500/10 p-2 text-amber-600"><Clock3 class="h-5 w-5" /></div>
         <div>
@@ -392,9 +406,27 @@ onMounted(load)
           <CircleDollarSign class="h-5 w-5" />
         </div>
         <div>
-          <p class="text-xs text-muted-foreground">Comissões consolidadas</p>
-          <p class="text-lg font-bold">{{ formatCurrencyBR(painel.kpis.comissoes) }}</p>
-          <p class="text-xs text-muted-foreground">a pagar aos profissionais</p>
+          <p class="text-xs text-muted-foreground">Pendente para ourives</p>
+          <p class="text-lg font-bold">{{ formatCurrencyBR(painel.kpis.valorPendenteOurives) }}</p>
+          <p class="text-xs text-muted-foreground">repasses consolidados</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+        <div class="rounded-lg bg-orange-500/10 p-2 text-orange-600">
+          <Clock3 class="h-5 w-5" />
+        </div>
+        <div>
+          <p class="text-xs text-muted-foreground">Aguardando material</p>
+          <p class="text-lg font-bold">{{ painel.kpis.aguardandoMaterial }}</p>
+          <p class="text-xs text-muted-foreground">{{ painel.kpis.comprasPendentes }} compra(s)</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+        <div class="rounded-lg bg-rose-500/10 p-2 text-rose-600"><Clock3 class="h-5 w-5" /></div>
+        <div>
+          <p class="text-xs text-muted-foreground">Atrasadas</p>
+          <p class="text-lg font-bold">{{ painel.kpis.atrasadas }}</p>
+          <p class="text-xs text-muted-foreground">prazo vencido</p>
         </div>
       </div>
     </section>

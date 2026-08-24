@@ -11,6 +11,9 @@ export type OuriveCapability =
   | 'RELATORIOS'
   | 'CONFIGURAR'
   | 'FINANCEIRO'
+  | 'KANBAN'
+  | 'PAGAMENTOS'
+  | 'PROLABORE'
 export type OurivePapel = 'GESTOR' | 'ATENDIMENTO' | 'OURIVE' | 'REVISAO'
 export interface OuriveAccess {
   papeis: OurivePapel[]
@@ -38,6 +41,10 @@ export class OuriveRepository {
     const { data } = await http.get(`/v1/ourive/ordens/${id}`)
     return data.data
   }
+  static async necessidadesCompra(status = 'PENDENTE') {
+    const { data } = await http.get('/v1/ourive/necessidades-compra', { params: { status } })
+    return data.data
+  }
   static async criarOrdem(payload: unknown) {
     const { data } = await http.post('/v1/ourive/ordens', payload)
     return data.data
@@ -48,6 +55,32 @@ export class OuriveRepository {
   }
   static async salvarOrcamento(id: number, payload: unknown) {
     const { data } = await http.put(`/v1/ourive/ordens/${id}/orcamento`, payload)
+    return data.data
+  }
+  static async atualizarStatus(id: number, payload: unknown) {
+    const { data } = await http.patch(`/v1/ourive/ordens/${id}/status`, payload)
+    return data.data
+  }
+  static async financeiroOrdem(id: number) {
+    const { data } = await http.get(`/v1/ourive/ordens/${id}/financeiro`)
+    return data.data
+  }
+  static async atualizarFinanceiroOrdem(id: number, payload: unknown) {
+    const { data } = await http.patch(`/v1/ourive/ordens/${id}/financeiro`, payload)
+    return data.data
+  }
+  static async consolidarFinanceiroOrdem(id: number, responsavelIds?: number[]) {
+    const { data } = await http.post(`/v1/ourive/ordens/${id}/financeiro/consolidar`, {
+      responsavelIds,
+    })
+    return data.data
+  }
+  static async reabrirFinanceiroOrdem(id: number, motivo: string) {
+    const { data } = await http.post(`/v1/ourive/ordens/${id}/financeiro/reabrir`, { motivo })
+    return data.data
+  }
+  static async finalizarProducao(id: number, pesoFinal: number) {
+    const { data } = await http.post(`/v1/ourive/ordens/${id}/producao/finalizar`, { pesoFinal })
     return data.data
   }
   static async enviarOrcamento(id: number) {
@@ -76,6 +109,14 @@ export class OuriveRepository {
   }
   static async devolverMaterial(id: number, quantidade: number) {
     const { data } = await http.post(`/v1/ourive/materiais/${id}/devolver`, { quantidade })
+    return data.data
+  }
+  static async finalizarMaterial(id: number, payload: unknown) {
+    const { data } = await http.post(`/v1/ourive/materiais/${id}/finalizar`, payload)
+    return data.data
+  }
+  static async atenderNecessidadeCompra(id: number, payload: unknown) {
+    const { data } = await http.post(`/v1/ourive/necessidades-compra/${id}/atender`, payload)
     return data.data
   }
   static async adicionarFoto(pecaId: number, payload: { url: string; descricao?: string }) {
@@ -122,8 +163,34 @@ export class OuriveRepository {
     const { data } = await http.get('/v1/ourive/comissoes')
     return data.data
   }
-  static async relatorios(inicio?: string, fim?: string) {
-    const { data } = await http.get('/v1/ourive/relatorios', { params: { inicio, fim } })
+  static async repasses(status?: string) {
+    const { data } = await http.get('/v1/ourive/repasses', { params: { status } })
+    return data.data
+  }
+  static async pagamentos() {
+    const { data } = await http.get('/v1/ourive/pagamentos')
+    return data.data
+  }
+  static async consolidarPagamento(payload: unknown) {
+    const { data } = await http.post('/v1/ourive/pagamentos', payload)
+    return data.data
+  }
+  static async proLabore() {
+    const { data } = await http.get('/v1/ourive/pro-labore')
+    return data.data
+  }
+  static async criarProLabore(payload: unknown) {
+    const { data } = await http.post('/v1/ourive/pro-labore', payload)
+    return data.data
+  }
+  static async pagarProLabore(id: number) {
+    const { data } = await http.post(`/v1/ourive/pro-labore/${id}/pagar`)
+    return data.data
+  }
+  static async relatorios(inicio?: string, fim?: string, filtros: Record<string, unknown> = {}) {
+    const { data } = await http.get('/v1/ourive/relatorios', {
+      params: { inicio, fim, ...filtros },
+    })
     return data.data
   }
 }
