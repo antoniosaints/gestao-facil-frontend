@@ -81,6 +81,7 @@
             <label class="grid gap-1 text-xs font-medium text-muted-foreground">
               Quantidade comprada
               <Input
+                :icon-label="'Qtd'"
                 v-model.number="purchaseFor(need).quantidadeComprada"
                 type="number"
                 min="0.001"
@@ -91,6 +92,8 @@
             <label class="grid gap-1 text-xs font-medium text-muted-foreground">
               Custo por {{ unitLabel(need.unidade) }}
               <Input
+                :icon-label="'R$'"
+                icon-label-position="left"
                 v-model="purchaseFor(need).custoUnitarioReal"
                 v-maska="moneyMaskOptions"
                 type="text"

@@ -103,7 +103,8 @@
                 <p class="mt-1 text-sm text-muted-foreground">{{ flowActionDescription }}</p>
               </div>
 
-              <div v-if="materialActionAvailable" class="w-full space-y-3 lg:max-w-3xl">
+              <div v-if="materialActionAvailable" class="w-full">
+                <div class="grid gap-3 lg:grid-cols-2">
                 <div
                   v-for="need in pendingPurchaseNeeds"
                   :key="`action-need-${need.id}`"
@@ -123,6 +124,8 @@
                       :placeholder="`Quantidade (${unitLabel(need.unidade)})`"
                     />
                     <Input
+                      :icon-label="'R$'"
+                      icon-label-position="left"
                       v-model="purchaseFor(need).custoUnitarioReal"
                       v-maska="moneyMaskOptions"
                       type="text"
@@ -141,7 +144,7 @@
                   class="rounded-lg border bg-muted/20 p-3"
                 >
                   <p class="font-medium">
-                    {{ material.produto?.nome || `Produto #${material.produtoId}` }}
+                    {{ materialName(material) }}
                   </p>
                   <p class="mt-1 text-xs text-muted-foreground">
                     Retirado:
@@ -228,6 +231,7 @@
                     </label>
                     <Button size="sm" @click="addCost">Adicionar</Button>
                   </div>
+                </div>
                 </div>
               </div>
               <div
@@ -365,7 +369,7 @@
                   : 'Fotos, checklist de recebimento e rastreio individual.'
               }}</CardDescription></CardHeader
             ><CardContent class="space-y-5"
-              ><div v-for="piece in order.pecas" :key="piece.id" class="rounded-xl border p-4">
+              ><div v-for="piece in order.pecas" :key="piece.id" class="rounded-md border p-4">
                 <div class="flex flex-col justify-between gap-2 sm:flex-row">
                   <div>
                     <p class="font-semibold">{{ piece.codigoRastreio }}</p>
@@ -376,7 +380,7 @@
                   </div>
                   <label
                     v-if="can('RECEBER')"
-                    class="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-primary"
+                    class="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground"
                     ><Upload class="h-4 w-4" />Adicionar foto<input
                       class="hidden"
                       type="file"
@@ -502,7 +506,7 @@
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                           <p class="truncate text-sm font-semibold">
-                            {{ material.produtoNome || `Material #${material.produtoId}` }}
+                            {{ materialName(material) }}
                           </p>
                           <p class="mt-1 text-xs text-muted-foreground">
                             {{ measure(material.quantidade, material.unidade) }} ·
@@ -739,7 +743,7 @@
                 class="rounded-lg border p-3"
               >
                 <p class="font-medium">
-                  {{ material.produto?.nome || `Produto #${material.produtoId}` }}
+                  {{ materialName(material) }}
                 </p>
                 <p class="text-xs text-muted-foreground">
                   Previsto:
@@ -1156,51 +1160,76 @@
             editingMaterialIndex === null ? 'Adicionar material' : 'Editar material'
           }}</DialogTitle>
           <DialogDescription>
-            Informe a origem, a medida e os valores. O estoque da empresa é validado antes da
-            produção.
+            Informe a origem e a medida. Somente materiais da loja usam estoque e valores do
+            cadastro do produto.
           </DialogDescription>
         </DialogHeader>
         <div class="grid gap-4 py-2 sm:grid-cols-2">
-          <label class="grid gap-1 text-sm font-medium sm:col-span-2"
+          <label class="grid gap-1 text-sm font-medium"
+            >Origem
+            <Select
+              :model-value="materialDraft.fornecidoPeloCliente ? 'CLIENTE' : 'LOJA'"
+              @update:model-value="selectMaterialSource"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a origem" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="LOJA">Estoque da empresa</SelectItem>
+                <SelectItem value="CLIENTE">Fornecido pelo cliente</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          <label class="grid gap-1 text-sm font-medium"
+            >Medição
+            <Select :model-value="materialDraft.unidade" @update:model-value="selectMaterialUnit">
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a medição" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="QUANTIDADE">Quantidade</SelectItem>
+                <SelectItem value="PESO">Peso (g)</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          <label
+            v-if="!materialDraft.fornecidoPeloCliente"
+            class="grid gap-1 text-sm font-medium sm:col-span-2"
             >Material
             <Select2Ajax
               v-model="materialDraft.produtoId"
               url="/produtos/select2"
-              placeholder="Selecione o material"
+              placeholder="Selecione o material da loja"
               @update:model-value="updateMaterialCost(materialDraft, $event)"
             />
           </label>
-          <label class="grid gap-1 text-sm font-medium"
-            >Origem
-            <select
-              v-model="materialDraft.fornecidoPeloCliente"
-              class="h-10 rounded-md border bg-background px-3 text-sm"
-            >
-              <option :value="false">Estoque da empresa</option>
-              <option :value="true">Fornecido pelo cliente</option>
-            </select>
-          </label>
-          <label class="grid gap-1 text-sm font-medium"
-            >Medição
-            <select
-              v-model="materialDraft.unidade"
-              class="h-10 rounded-md border bg-background px-3 text-sm"
-            >
-              <option value="QUANTIDADE">Quantidade</option>
-              <option value="PESO">Peso (g)</option>
-            </select>
-          </label>
+          <p
+            v-else
+            class="rounded-md border border-dashed bg-muted/40 px-3 py-2 text-sm text-muted-foreground sm:col-span-2"
+          >
+            Material do cliente: não movimenta o estoque da empresa e não compõe o custo nem o valor
+            cobrado no orçamento.
+          </p>
           <label class="grid gap-1 text-sm font-medium"
             >Peça vinculada
-            <select
-              v-model.number="materialDraft.pecaId"
-              class="h-10 rounded-md border bg-background px-3 text-sm"
+            <Select
+              :model-value="materialDraft.pecaId ? String(materialDraft.pecaId) : 'TODAS'"
+              @update:model-value="selectMaterialPiece"
             >
-              <option :value="undefined">Todas as peças</option>
-              <option v-for="piece in order?.pecas || []" :key="piece.id" :value="piece.id">
-                {{ piece.codigoRastreio }}
-              </option>
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a peça" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODAS">Todas as peças</SelectItem>
+                <SelectItem
+                  v-for="piece in order?.pecas || []"
+                  :key="piece.id"
+                  :value="String(piece.id)"
+                >
+                  {{ piece.codigoRastreio }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </label>
           <label class="grid gap-1 text-sm font-medium"
             >{{ materialDraft.unidade === 'PESO' ? 'Peso previsto (g)' : 'Quantidade prevista' }}
@@ -1227,6 +1256,7 @@
               type="text"
               inputmode="decimal"
               placeholder="0,00"
+              :disabled="materialDraft.fornecidoPeloCliente"
             />
           </label>
           <label class="grid gap-1 text-sm font-medium"
@@ -1317,6 +1347,13 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -1361,7 +1398,7 @@ const emptyMaterial = () => ({
   produtoNome: '',
   pecaId: undefined as number | undefined,
   fornecidoPeloCliente: false,
-  unidade: 'QUANTIDADE',
+  unidade: 'PESO',
   custoUnitario: 0,
   valorUnitario: 0,
   quantidade: 1,
@@ -1370,7 +1407,7 @@ const emptyMaterial = () => ({
 })
 const materialDraft = reactive<any>(emptyMaterial())
 const emptyBudget = () => ({
-  servicos: [{ descricao: '', quantidade: 1, valor: 0 }],
+  servicos: [{ descricao: 'Mão de obra', quantidade: 1, valor: null }],
   desconto: 0,
   prazoPrevisto: null as Date | null,
   materiais: [] as Array<any>,
@@ -1593,7 +1630,7 @@ const financialDetail = computed<any>(() => {
           : monetaryValue(material.custoSnapshot)
         return {
           id: material.id,
-          nome: material.produto?.nome || `Material #${material.produtoId}`,
+          nome: materialName(material),
           origem: material.fornecidoPeloCliente ? 'CLIENTE' : 'LOJA',
           unidade: material.unidade,
           medidaCusteada,
@@ -1675,6 +1712,12 @@ const label = (status: string) =>
 const checklist = (piece: any) =>
   Array.isArray(piece.checklistRecebimento) ? piece.checklistRecebimento : []
 const unitLabel = (unit: string) => (unit === 'PESO' ? 'g' : 'un.')
+const materialName = (material: any) =>
+  material.produtoNome ||
+  material.produto?.nome ||
+  (material.fornecidoPeloCliente
+    ? 'Material fornecido pelo cliente'
+    : `Material #${material.produtoId}`)
 const measure = (value: unknown, unit: string) =>
   `${Number(value || 0).toLocaleString('pt-BR', {
     minimumFractionDigits: 0,
@@ -1712,20 +1755,50 @@ function openMaterialModal(index?: number) {
   materialModalOpen.value = true
 }
 function saveMaterialDraft() {
-  if (!materialDraft.produtoId || Number(materialDraft.quantidade) <= 0)
-    return toast.info('Selecione o material e informe uma quantidade válida.')
+  if (
+    (!materialDraft.fornecidoPeloCliente && !materialDraft.produtoId) ||
+    Number(materialDraft.quantidade) <= 0
+  )
+    return toast.info(
+      materialDraft.fornecidoPeloCliente
+        ? 'Informe uma quantidade válida.'
+        : 'Selecione o material da loja e informe uma quantidade válida.',
+    )
   const material = {
     ...materialDraft,
-    produtoId: Number(materialDraft.produtoId),
+    produtoId: materialDraft.fornecidoPeloCliente ? undefined : Number(materialDraft.produtoId),
     pecaId: materialDraft.pecaId ? Number(materialDraft.pecaId) : undefined,
     quantidade: Number(materialDraft.quantidade),
-    custoUnitario: monetaryValue(materialDraft.custoUnitario),
-    valorUnitario: monetaryValue(materialDraft.valorUnitario),
+    custoUnitario: materialDraft.fornecidoPeloCliente
+      ? 0
+      : monetaryValue(materialDraft.custoUnitario),
+    valorUnitario: materialDraft.fornecidoPeloCliente
+      ? 0
+      : monetaryValue(materialDraft.valorUnitario),
     fornecidoPeloCliente: Boolean(materialDraft.fornecidoPeloCliente),
   }
   if (editingMaterialIndex.value === null) budget.materiais.push(material)
   else budget.materiais.splice(editingMaterialIndex.value, 1, material)
   materialModalOpen.value = false
+}
+function updateMaterialSource(material: any) {
+  material.fornecidoPeloCliente = Boolean(material.fornecidoPeloCliente)
+  if (!material.fornecidoPeloCliente) return
+  material.produtoId = undefined
+  material.produtoNome = ''
+  material.estoqueDisponivel = undefined
+  material.custoUnitario = 0
+  material.valorUnitario = 0
+}
+function selectMaterialSource(value: unknown) {
+  materialDraft.fornecidoPeloCliente = value === 'CLIENTE'
+  updateMaterialSource(materialDraft)
+}
+function selectMaterialUnit(value: unknown) {
+  materialDraft.unidade = value === 'PESO' ? 'PESO' : 'QUANTIDADE'
+}
+function selectMaterialPiece(value: unknown) {
+  materialDraft.pecaId = value === 'TODAS' ? undefined : Number(value)
 }
 function outcomeFor(material: any) {
   if (!materialOutcomes[material.id]) {
@@ -1955,7 +2028,10 @@ async function saveBudget() {
   if (
     !budget.servicos.length ||
     budget.servicos.some((item: any) => !item.descricao || Number(item.quantidade) < 1) ||
-    budget.materiais.some((item: any) => !item.produtoId || Number(item.quantidade) <= 0)
+    budget.materiais.some(
+      (item: any) =>
+        (!item.fornecidoPeloCliente && !item.produtoId) || Number(item.quantidade) <= 0,
+    )
   )
     return toast.info('Complete os serviços e materiais planejados.')
   try {
@@ -1969,11 +2045,11 @@ async function saveBudget() {
       prazoPrevisto: budget.prazoPrevisto || undefined,
       desconto: monetaryValue(budget.desconto),
       materiais: budget.materiais.map((item: any) => ({
-        produtoId: Number(item.produtoId),
+        produtoId: item.fornecidoPeloCliente ? undefined : Number(item.produtoId),
         pecaId: item.pecaId || undefined,
         fornecidoPeloCliente: Boolean(item.fornecidoPeloCliente),
-        custoUnitario: monetaryValue(item.custoUnitario),
-        valorUnitario: monetaryValue(item.valorUnitario),
+        custoUnitario: item.fornecidoPeloCliente ? 0 : monetaryValue(item.custoUnitario),
+        valorUnitario: item.fornecidoPeloCliente ? 0 : monetaryValue(item.valorUnitario),
         quantidade: Number(item.quantidade),
         unidade: item.unidade || 'QUANTIDADE',
         observacao: item.observacao || undefined,
