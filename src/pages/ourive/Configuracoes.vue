@@ -12,47 +12,125 @@
     </div>
     <Card
       ><CardHeader
-        ><CardTitle>Financeiro automático</CardTitle
-        ><CardDescription
-          >A seleção usa os cadastros financeiros da conta, sem digitação de IDs.</CardDescription
-        ></CardHeader
+        ><div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+          <div>
+            <CardTitle>Financeiro automático</CardTitle
+            ><CardDescription
+              >A seleção usa os cadastros financeiros da conta, sem digitação de
+              IDs.</CardDescription
+            >
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" @click="openQuick('categoria')"
+              ><FolderPlus class="mr-2 h-4 w-4" />Nova categoria</Button
+            ><Button type="button" variant="outline" size="sm" @click="openQuick('conta')"
+              ><WalletCards class="mr-2 h-4 w-4" />Nova conta</Button
+            >
+          </div>
+        </div></CardHeader
       ><CardContent class="grid gap-5 md:grid-cols-2"
         ><label class="grid gap-2 text-sm font-medium"
           >Categoria da receita
-          <Select2Ajax
-            v-model="form.receitaCategoriaId"
-            url="/lancamentos/categorias/select2"
-            placeholder="Selecione a categoria" /></label
+          <div class="flex gap-2">
+            <Select2Ajax
+              v-model="form.receitaCategoriaId"
+              class="flex-1"
+              url="/lancamentos/categorias/select2"
+              placeholder="Selecione a categoria"
+            /><Button
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Criar categoria"
+              aria-label="Criar categoria para receita"
+              @click="openQuick('categoria', 'receitaCategoriaId')"
+              ><Plus class="h-4 w-4"
+            /></Button></div></label
         ><label class="grid gap-2 text-sm font-medium"
           >Conta da receita
-          <Select2Ajax
-            v-model="form.receitaContaFinanceiraId"
-            url="/lancamentos/contas/select2"
-            placeholder="Selecione a conta" /></label
+          <div class="flex gap-2">
+            <Select2Ajax
+              v-model="form.receitaContaFinanceiraId"
+              class="flex-1"
+              url="/lancamentos/contas/select2"
+              placeholder="Selecione a conta"
+            /><Button
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Criar conta"
+              aria-label="Criar conta para receita"
+              @click="openQuick('conta', 'receitaContaFinanceiraId')"
+              ><Plus class="h-4 w-4"
+            /></Button></div></label
         ><label class="grid gap-2 text-sm font-medium"
           >Categoria dos pagamentos aos ourives
-          <Select2Ajax
-            v-model="form.comissaoCategoriaId"
-            url="/lancamentos/categorias/select2"
-            placeholder="Selecione a categoria" /></label
+          <div class="flex gap-2">
+            <Select2Ajax
+              v-model="form.comissaoCategoriaId"
+              class="flex-1"
+              url="/lancamentos/categorias/select2"
+              placeholder="Selecione a categoria"
+            /><Button
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Criar categoria"
+              aria-label="Criar categoria para pagamentos aos ourives"
+              @click="openQuick('categoria', 'comissaoCategoriaId')"
+              ><Plus class="h-4 w-4"
+            /></Button></div></label
         ><label class="grid gap-2 text-sm font-medium"
           >Conta dos pagamentos aos ourives
-          <Select2Ajax
-            v-model="form.comissaoContaFinanceiraId"
-            url="/lancamentos/contas/select2"
-            placeholder="Selecione a conta" /></label
+          <div class="flex gap-2">
+            <Select2Ajax
+              v-model="form.comissaoContaFinanceiraId"
+              class="flex-1"
+              url="/lancamentos/contas/select2"
+              placeholder="Selecione a conta"
+            /><Button
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Criar conta"
+              aria-label="Criar conta para pagamentos aos ourives"
+              @click="openQuick('conta', 'comissaoContaFinanceiraId')"
+              ><Plus class="h-4 w-4"
+            /></Button></div></label
         ><label class="grid gap-2 text-sm font-medium"
           >Categoria do pró-labore
-          <Select2Ajax
-            v-model="form.proLaboreCategoriaId"
-            url="/lancamentos/categorias/select2"
-            placeholder="Selecione a categoria" /></label
+          <div class="flex gap-2">
+            <Select2Ajax
+              v-model="form.proLaboreCategoriaId"
+              class="flex-1"
+              url="/lancamentos/categorias/select2"
+              placeholder="Selecione a categoria"
+            /><Button
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Criar categoria"
+              aria-label="Criar categoria para pró-labore"
+              @click="openQuick('categoria', 'proLaboreCategoriaId')"
+              ><Plus class="h-4 w-4"
+            /></Button></div></label
         ><label class="grid gap-2 text-sm font-medium"
           >Conta do pró-labore
-          <Select2Ajax
-            v-model="form.proLaboreContaFinanceiraId"
-            url="/lancamentos/contas/select2"
-            placeholder="Selecione a conta" /></label
+          <div class="flex gap-2">
+            <Select2Ajax
+              v-model="form.proLaboreContaFinanceiraId"
+              class="flex-1"
+              url="/lancamentos/contas/select2"
+              placeholder="Selecione a conta"
+            /><Button
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Criar conta"
+              aria-label="Criar conta para pró-labore"
+              @click="openQuick('conta', 'proLaboreContaFinanceiraId')"
+              ><Plus class="h-4 w-4"
+            /></Button></div></label
         ><label class="grid gap-2 text-sm font-medium"
           >Validade do orçamento (dias)<Input
             v-model.number="form.prazoAprovacaoDias"
@@ -79,6 +157,8 @@
           >Percentual da loja
           <Input
             v-model.number="form.percentualLoja"
+            :iconLabel="Percent"
+            icon-label-title="Porcentagem"
             type="number"
             min="0"
             max="100"
@@ -90,6 +170,8 @@
           >Percentual do ourives
           <Input
             v-model.number="form.percentualOurives"
+            :iconLabel="Percent"
+            icon-label-title="Porcentagem"
             type="number"
             min="0"
             max="100"
@@ -101,6 +183,8 @@
           >Perda padrão estimada
           <Input
             v-model.number="form.percentualPerdaPadrao"
+            :iconLabel="Percent"
+            icon-label-title="Porcentagem"
             type="number"
             min="0"
             max="100"
@@ -122,19 +206,96 @@
         </div>
       </CardContent>
     </Card>
+    <Dialog v-model:open="quickModalOpen">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{{
+            quickKind === 'categoria' ? 'Nova categoria financeira' : 'Nova conta financeira'
+          }}</DialogTitle>
+          <DialogDescription>
+            {{
+              quickKind === 'categoria'
+                ? 'Crie uma categoria sem sair das configurações do ourive.'
+                : 'Crie uma conta financeira sem sair das configurações do ourive.'
+            }}
+          </DialogDescription>
+        </DialogHeader>
+        <div v-if="quickKind === 'categoria'" class="grid gap-4 py-2">
+          <label class="grid gap-1 text-sm font-medium"
+            >Nome da categoria
+            <Input v-model="quickCategory.nome" placeholder="Ex.: Receita de ourivesaria" />
+          </label>
+          <label class="grid gap-1 text-sm font-medium"
+            >Categoria pai <span class="font-normal text-muted-foreground">(opcional)</span>
+            <Select2Ajax
+              v-model="quickCategory.categoriaPai"
+              url="/lancamentos/categorias/select2"
+              allow-clear
+              placeholder="Sem categoria pai"
+            />
+          </label>
+        </div>
+        <div v-else class="grid gap-4 py-2">
+          <label class="grid gap-1 text-sm font-medium"
+            >Nome da conta
+            <Input v-model="quickAccount.nome" placeholder="Ex.: Conta Ourive" />
+          </label>
+          <label class="grid gap-1 text-sm font-medium"
+            >Saldo inicial <span class="font-normal text-muted-foreground">(opcional)</span>
+            <Input
+              v-model="quickAccount.saldoInicial"
+              v-maska="moneyMaskOptions"
+              type="text"
+              inputmode="decimal"
+              placeholder="0,00"
+            />
+          </label>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" @click="quickModalOpen = false">Cancelar</Button>
+          <Button type="button" :disabled="quickSaving" @click="saveQuick">
+            {{
+              quickSaving
+                ? 'Salvando…'
+                : quickKind === 'categoria'
+                  ? 'Salvar categoria'
+                  : 'Salvar conta'
+            }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { Cog } from 'lucide-vue-next'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { Cog, FolderPlus, Percent, Plus, WalletCards } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { OuriveRepository } from '@/repositories/ourive-repository'
+import { LancamentosRepository } from '@/repositories/lancamento-repository'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { formatToNumberValue } from '@/utils/formatters'
+import { vMaska } from 'maska/vue'
 const toast = useToast()
 const saving = ref(false)
+const quickModalOpen = ref(false)
+const quickSaving = ref(false)
+const quickKind = ref<'categoria' | 'conta'>('categoria')
+const quickTarget = ref<string | null>(null)
+const quickCategory = reactive({ nome: '', categoriaPai: null as number | string | null })
+const quickAccount = reactive({ nome: '', saldoInicial: '' })
 const form = ref<any>({
   prazoAprovacaoDias: 7,
   receitaCategoriaId: null,
@@ -167,6 +328,47 @@ async function save() {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível salvar.')
   } finally {
     saving.value = false
+  }
+}
+function openQuick(kind: 'categoria' | 'conta', target?: string) {
+  quickKind.value = kind
+  quickTarget.value = target || null
+  quickCategory.nome = ''
+  quickCategory.categoriaPai = null
+  quickAccount.nome = ''
+  quickAccount.saldoInicial = ''
+  quickModalOpen.value = true
+}
+async function saveQuick() {
+  const nome =
+    quickKind.value === 'categoria' ? quickCategory.nome.trim() : quickAccount.nome.trim()
+  if (!nome)
+    return toast.info(
+      `Informe o nome da ${quickKind.value === 'categoria' ? 'categoria' : 'conta'}.`,
+    )
+  quickSaving.value = true
+  try {
+    const response =
+      quickKind.value === 'categoria'
+        ? await LancamentosRepository.criarCategoria({
+            nome,
+            categoriaPai: quickCategory.categoriaPai ? Number(quickCategory.categoriaPai) : null,
+          })
+        : await LancamentosRepository.criarConta({
+            nome,
+            saldoInicial: formatToNumberValue(quickAccount.saldoInicial || 0),
+          })
+    const createdId = Number(response?.data?.id)
+    if (!createdId) throw new Error('created_item_missing')
+    if (quickTarget.value) form.value[quickTarget.value] = createdId
+    quickModalOpen.value = false
+    toast.success(
+      `${quickKind.value === 'categoria' ? 'Categoria' : 'Conta'} criada${quickTarget.value ? ' e selecionada' : ''}.`,
+    )
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || `Não foi possível criar a ${quickKind.value}.`)
+  } finally {
+    quickSaving.value = false
   }
 }
 onMounted(load)

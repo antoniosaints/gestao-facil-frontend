@@ -26,7 +26,7 @@
 
       <div v-else class="grid gap-3 md:grid-cols-2">
         <div v-for="m in modelos" :key="m.id"
-          class="border rounded-xl p-4 flex items-start justify-between gap-3 bg-card">
+          class="border rounded-md p-4 flex items-start justify-between gap-3 bg-card">
           <div class="min-w-0">
             <p class="font-medium truncate">{{ m.nome || 'Sem nome' }}</p>
             <p class="text-xs text-muted-foreground mt-1">{{ resumoModelo(m) }}</p>

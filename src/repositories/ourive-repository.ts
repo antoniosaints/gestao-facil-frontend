@@ -45,6 +45,17 @@ export class OuriveRepository {
     const { data } = await http.get('/v1/ourive/necessidades-compra', { params: { status } })
     return data.data
   }
+  static async sobras() {
+    const { data } = await http.get('/v1/ourive/sobras')
+    return data.data
+  }
+  static async consolidarSobra(
+    id: number,
+    payload: { produtoDestinoId: number; medidaReal: number; observacao?: string },
+  ) {
+    const { data } = await http.post(`/v1/ourive/sobras/${id}/consolidar`, payload)
+    return data.data
+  }
   static async criarOrdem(payload: unknown) {
     const { data } = await http.post('/v1/ourive/ordens', payload)
     return data.data
@@ -79,12 +90,22 @@ export class OuriveRepository {
     const { data } = await http.post(`/v1/ourive/ordens/${id}/financeiro/reabrir`, { motivo })
     return data.data
   }
-  static async finalizarProducao(id: number, pesoFinal: number) {
-    const { data } = await http.post(`/v1/ourive/ordens/${id}/producao/finalizar`, { pesoFinal })
+  static async finalizarProducao(id: number, pesoFinal?: number) {
+    const hasValidWeight = typeof pesoFinal === 'number' && Number.isFinite(pesoFinal)
+    const { data } = await http.post(`/v1/ourive/ordens/${id}/producao/finalizar`, {
+      ...(hasValidWeight ? { pesoFinal } : {}),
+    })
     return data.data
   }
   static async enviarOrcamento(id: number) {
     const { data } = await http.post(`/v1/ourive/ordens/${id}/orcamento/enviar`)
+    return data.data
+  }
+  static async decidirOrcamentoInterno(
+    id: number,
+    payload: { aprovar: boolean; observacao?: string },
+  ) {
+    const { data } = await http.post(`/v1/ourive/ordens/${id}/orcamento/decisao`, payload)
     return data.data
   }
   static async iniciarProducao(id: number) {

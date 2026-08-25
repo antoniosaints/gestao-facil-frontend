@@ -11,6 +11,7 @@ export const DEFAULT_THEME_CUSTOMIZATION: ThemeCustomization = {
   fundoDark: '#020617',
   radius: '0.5rem',
   fonte: 'Inter',
+  tamanhoFonte: '100%',
 }
 
 // Fontes instaladas no sistema (declaradas via @font-face em main.css).
@@ -32,9 +33,19 @@ export const RADIUS_OPTIONS = [
   { value: '1.5rem', label: 'Bem arredondado' },
 ] as const
 
+// A escala é aplicada na raiz da aplicação; como a interface usa rem, textos,
+// controles e espaçamentos acompanham a escolha sem precisar de zoom do navegador.
+export const FONT_SIZE_OPTIONS = [
+  { value: '100%', label: 'Padrão', description: 'Tamanho atual do sistema.' },
+  { value: '112.5%', label: 'Grande', description: 'Aumenta a leitura em 12,5%.' },
+  { value: '125%', label: 'Muito grande', description: 'Aumenta a leitura em 25%.' },
+  { value: '137.5%', label: 'Extra grande', description: 'Aumenta a leitura em 37,5%.' },
+] as const
+
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/
 const FONT_VALUES = FONT_OPTIONS.map((option) => option.value) as readonly string[]
 const RADIUS_VALUES = RADIUS_OPTIONS.map((option) => option.value) as readonly string[]
+const FONT_SIZE_VALUES = FONT_SIZE_OPTIONS.map((option) => option.value) as readonly string[]
 
 function normalizeHex(value: unknown, fallback: string) {
   return typeof value === 'string' && HEX_COLOR.test(value) ? value.toUpperCase() : fallback
@@ -44,7 +55,9 @@ function normalizeFromList(value: unknown, allowed: readonly string[], fallback:
   return typeof value === 'string' && allowed.includes(value) ? value : fallback
 }
 
-export function normalizeThemeCustomization(value?: Partial<ThemeCustomization> | null): ThemeCustomization {
+export function normalizeThemeCustomization(
+  value?: Partial<ThemeCustomization> | null,
+): ThemeCustomization {
   return {
     primariaLight: normalizeHex(value?.primariaLight, DEFAULT_THEME_CUSTOMIZATION.primariaLight),
     primariaDark: normalizeHex(value?.primariaDark, DEFAULT_THEME_CUSTOMIZATION.primariaDark),
@@ -54,6 +67,11 @@ export function normalizeThemeCustomization(value?: Partial<ThemeCustomization> 
     fundoDark: normalizeHex(value?.fundoDark, DEFAULT_THEME_CUSTOMIZATION.fundoDark),
     radius: normalizeFromList(value?.radius, RADIUS_VALUES, DEFAULT_THEME_CUSTOMIZATION.radius),
     fonte: normalizeFromList(value?.fonte, FONT_VALUES, DEFAULT_THEME_CUSTOMIZATION.fonte),
+    tamanhoFonte: normalizeFromList(
+      value?.tamanhoFonte,
+      FONT_SIZE_VALUES,
+      DEFAULT_THEME_CUSTOMIZATION.tamanhoFonte,
+    ),
   }
 }
 
@@ -67,7 +85,10 @@ function hexToRgb(hex: string) {
 }
 
 function rgbToHex({ r, g, b }: { r: number; g: number; b: number }) {
-  const channel = (value: number) => Math.round(Math.min(255, Math.max(0, value))).toString(16).padStart(2, '0')
+  const channel = (value: number) =>
+    Math.round(Math.min(255, Math.max(0, value)))
+      .toString(16)
+      .padStart(2, '0')
   return `#${channel(r)}${channel(g)}${channel(b)}`.toUpperCase()
 }
 
@@ -127,7 +148,10 @@ export function hexToHslValue(hex: string) {
   return `${hue.toFixed(1)} ${(saturation * 100).toFixed(1)}% ${(lightness * 100).toFixed(1)}%`
 }
 
-export function getThemePalette(themeValue: Partial<ThemeCustomization> | null | undefined, mode: ThemeMode) {
+export function getThemePalette(
+  themeValue: Partial<ThemeCustomization> | null | undefined,
+  mode: ThemeMode,
+) {
   const theme = normalizeThemeCustomization(themeValue)
   const primary = mode === 'dark' ? theme.primariaDark : theme.primariaLight
   const sidebar = mode === 'dark' ? theme.sidebarDark : theme.sidebarLight
@@ -155,7 +179,10 @@ export function getThemePalette(themeValue: Partial<ThemeCustomization> | null |
   }
 }
 
-export function applyThemeVariables(theme: Partial<ThemeCustomization> | null | undefined, mode: ThemeMode) {
+export function applyThemeVariables(
+  theme: Partial<ThemeCustomization> | null | undefined,
+  mode: ThemeMode,
+) {
   if (typeof document === 'undefined') return getThemePalette(theme, mode)
   const palette = getThemePalette(theme, mode)
   const root = document.documentElement
@@ -189,6 +216,7 @@ export function applyThemeVariables(theme: Partial<ThemeCustomization> | null | 
   const normalized = normalizeThemeCustomization(theme)
   root.style.setProperty('--radius', normalized.radius)
   root.style.setProperty('--app-font', normalized.fonte)
+  root.style.setProperty('font-size', normalized.tamanhoFonte)
 
   return palette
 }

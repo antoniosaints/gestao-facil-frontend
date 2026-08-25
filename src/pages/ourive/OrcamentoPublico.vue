@@ -70,25 +70,55 @@
             </div>
           </div>
         </div>
-        <p class="mt-4 text-sm text-muted-foreground">
+        <div
+          v-if="hasDecision"
+          class="mt-5 rounded-2xl border p-4"
+          :class="
+            budget.orcamento.aprovadoEm
+              ? 'border-emerald-500/35 bg-emerald-500/10'
+              : 'border-destructive/35 bg-destructive/10'
+          "
+        >
+          <p
+            class="font-semibold"
+            :class="
+              budget.orcamento.aprovadoEm
+                ? 'text-emerald-700 dark:text-emerald-300'
+                : 'text-destructive'
+            "
+          >
+            {{ budget.orcamento.aprovadoEm ? 'Orçamento aprovado' : 'Orçamento recusado' }}
+          </p>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Decisão registrada em
+            {{ formatDecisionDate(budget.orcamento.aprovadoEm || budget.orcamento.recusadoEm) }}.
+          </p>
+          <p v-if="budget.orcamento.aprovacaoOrigem" class="mt-1 text-xs text-muted-foreground">
+            Origem:
+            {{
+              budget.orcamento.aprovacaoOrigem === 'LINK_PUBLICO'
+                ? 'Link de aceite'
+                : 'Registro interno'
+            }}.
+          </p>
+          <p v-if="budget.orcamento.aprovacaoObservacao" class="mt-3 border-t pt-3 text-sm">
+            <strong>Observação:</strong> {{ budget.orcamento.aprovacaoObservacao }}
+          </p>
+        </div>
+        <p v-else class="mt-4 text-sm text-muted-foreground">
           Este link expira em {{ new Date(budget.orcamento.expiraEm).toLocaleString('pt-BR') }}.
         </p>
         <textarea
+          v-if="!hasDecision"
           v-model="observation"
           class="mt-6 min-h-24 w-full rounded-xl border bg-background p-3"
           placeholder="Observação para o ateliê (opcional)"
         />
-        <div v-if="!finished" class="mt-4 grid gap-3 sm:grid-cols-2">
+        <div v-if="!hasDecision" class="mt-4 grid gap-3 sm:grid-cols-2">
           <Button variant="outline" :disabled="sending" @click="decide('RECUSAR')"
             >Recusar orçamento</Button
           ><Button :disabled="sending" @click="decide('APROVAR')">Aprovar orçamento</Button>
         </div>
-        <p
-          v-else
-          class="mt-5 rounded-xl bg-emerald-500/10 p-4 text-emerald-700 dark:text-emerald-300"
-        >
-          Sua decisão foi registrada. Obrigado.
-        </p>
       </div>
       <div v-else class="py-20 text-center">
         <h1 class="text-2xl font-bold">Orçamento indisponível</h1>
@@ -110,7 +140,6 @@ const loading = ref(true)
 const budget = ref<any>()
 const observation = ref('')
 const sending = ref(false)
-const finished = ref(false)
 const money = (value: unknown) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0))
 const measure = (material: any) =>
@@ -146,6 +175,11 @@ const materiaisCliente = computed(() =>
     (material: any) => material.fornecidoPeloCliente,
   ),
 )
+const hasDecision = computed(() =>
+  Boolean(budget.value?.orcamento?.aprovadoEm || budget.value?.orcamento?.recusadoEm),
+)
+const formatDecisionDate = (value?: string | Date) =>
+  value ? new Date(value).toLocaleString('pt-BR') : 'não informada'
 async function load() {
   try {
     const { data } = await http.get(`/v1/ourive/publico/orcamentos/${route.params.token}`)
@@ -163,7 +197,8 @@ async function decide(decisao: 'APROVAR' | 'RECUSAR') {
       decisao,
       observacao: observation.value || undefined,
     })
-    finished.value = true
+    await load()
+    toast.success('Sua decisão foi registrada.')
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível registrar a decisão.')
   } finally {

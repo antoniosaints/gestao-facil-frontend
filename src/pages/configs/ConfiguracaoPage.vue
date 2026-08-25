@@ -10,9 +10,11 @@
             </div>
         </div>
 
-        <Tabs v-model="tab" class="w-auto">
-            <div class="overflow-auto max-w-full">
-                <TabsList class="grid w-max border" :class="isRootUser ? 'grid-cols-7' : 'grid-cols-6'">
+        <Tabs v-model="tab" class="w-full">
+            <div class="max-w-full overflow-x-auto overflow-y-hidden pb-1">
+                <TabsList
+                    class="flex h-auto w-max min-w-max max-w-none flex-row gap-1 overflow-visible rounded-md border p-1"
+                >
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
                     <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i>
@@ -201,7 +203,7 @@
                         <CardContent>
                             <div class="grid gap-4 lg:grid-cols-2">
                                 <button v-for="modelo in modelosPdv" :key="modelo.value" type="button"
-                                    class="group relative overflow-hidden rounded-2xl border p-5 text-left transition-all"
+                                    class="group relative overflow-hidden rounded-md border p-5 text-left transition-all"
                                     :class="formularioVendas.modeloPdv === modelo.value
                                         ? 'border-primary bg-primary/5 shadow-md ring-1 ring-primary'
                                         : 'bg-body/60 hover:border-primary/50 hover:bg-body'"

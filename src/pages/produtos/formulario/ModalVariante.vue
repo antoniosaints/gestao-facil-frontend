@@ -61,6 +61,7 @@ const description = computed(() =>
     : 'Selecione o produto base e preencha somente o que muda nesta nova variante.',
 )
 const controlaEstoqueAtivo = computed(() => store.varianteForm.controlaEstoque)
+const unidadeSelecionada = computed(() => (store.varianteForm.unidade || 'un').toUpperCase())
 
 // Geração da descrição da variante com IA (usada pelo IaTextAssistant).
 async function gerarDescricaoVarianteIa(modo: 'gerar' | 'melhorar' | 'resumir') {
@@ -308,9 +309,6 @@ async function submit() {
               <Sparkles class="h-4 w-4" />
             </Button>
           </div>
-          <p class="mt-1 text-xs text-muted-foreground">
-            Alterações não atualizam etiquetas já impressas.
-          </p>
         </div>
 
         <div class="md:col-span-3">
@@ -351,7 +349,7 @@ async function submit() {
               type="button"
               variant="ghost"
               size="sm"
-              class="h-auto px-2 py-1 text-xs text-primary"
+              class="h-auto px-2 py-0.5 text-xs text-foreground"
               @click="calculadoraOpen = true"
             >
               <Calculator class="mr-1.5 h-3.5 w-3.5" /> Calcular preço
@@ -360,6 +358,9 @@ async function submit() {
           <Input
             v-model="store.varianteForm.preco"
             v-maska="moneyMaskOptions"
+            icon-label="R$"
+            icon-label-position="left"
+            icon-label-title="Reais"
             type="text"
             placeholder="0,00"
             :class="['bg-background dark:bg-background/70', errors.preco && 'border-danger']"
@@ -374,6 +375,8 @@ async function submit() {
           </label>
           <Input
             v-model="store.varianteForm.estoque"
+            :iconLabel="unidadeSelecionada"
+            :iconLabelTitle="`Unidade: ${unidadeSelecionada}`"
             type="number"
             min="0"
             :disabled="!controlaEstoqueAtivo"
@@ -392,6 +395,8 @@ async function submit() {
           </label>
           <Input
             v-model="store.varianteForm.minimo"
+            :iconLabel="unidadeSelecionada"
+            :iconLabelTitle="`Unidade: ${unidadeSelecionada}`"
             type="number"
             min="0"
             :disabled="!controlaEstoqueAtivo"
@@ -413,6 +418,9 @@ async function submit() {
             <Input
               v-model="store.varianteForm.precoCompra"
               v-maska="moneyMaskOptions"
+              icon-label="R$"
+              icon-label-position="left"
+              icon-label-title="Reais"
               type="text"
               placeholder="0,00"
               class="bg-background dark:bg-background/70"
@@ -426,6 +434,9 @@ async function submit() {
             <Input
               v-model="store.varianteForm.precoPromocional"
               v-maska="moneyMaskOptions"
+              icon-label="R$"
+              icon-label-position="left"
+              icon-label-title="Reais"
               type="text"
               placeholder="0,00"
               :class="[
@@ -445,6 +456,9 @@ async function submit() {
             <Input
               v-model="store.varianteForm.custoMedioProducao"
               v-maska="moneyMaskOptions"
+              icon-label="R$"
+              icon-label-position="left"
+              icon-label-title="Reais"
               type="text"
               inputmode="decimal"
               placeholder="0,00"

@@ -584,6 +584,9 @@ watch(
                 id="valorTotalLancamento"
                 v-model="store.form.valorTotal"
                 v-maska="moneyMaskOptions"
+                icon-label="R$"
+                icon-label-position="left"
+                icon-label-title="Reais"
                 type="text"
                 name="valorTotal"
                 required
@@ -604,6 +607,9 @@ watch(
                 :disabled="descontoDesabilitado"
                 type="text"
                 v-maska="moneyMaskOptions"
+                icon-label="R$"
+                icon-label-position="left"
+                icon-label-title="Reais"
                 name="desconto"
                 placeholder="0,00"
               />
@@ -634,6 +640,8 @@ watch(
             <div v-if="params.metodo === 'PARCELADO'" class="col-span-6 md:col-span-3">
               <label for="parcelas" class="mb-1 block text-sm font-medium">Parcelas *</label>
               <Input
+                :icon-label-title="'Parcelas'"
+                :icon-label="'Qtd'"
                 id="parcelas"
                 v-model="store.form.parcelas"
                 type="number"
@@ -654,7 +662,7 @@ watch(
               <div class="mt-1 items-center gap-2">
                 <label
                   for="lancamentoEfetivadoTotal"
-                  class="flex h-[36px] cursor-pointer rounded-lg border border-border bg-card px-3 dark:bg-card-dark"
+                  class="flex h-[40px] cursor-pointer rounded-md border border-border bg-card px-3 dark:bg-card-dark"
                 >
                   <div class="flex items-center">
                     <label class="relative inline-flex cursor-pointer items-center">
@@ -695,9 +703,10 @@ watch(
                     <SelectValue placeholder="Como aplicar o valor" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="TOTAL">Dividir o valor total entre as parcelas</SelectItem>
+                    <SelectItem value="TOTAL">Divide valor nas parcelas</SelectItem>
                     <SelectItem value="FIXO_PARCELA"
-                      >Usar o valor informado em todas as parcelas</SelectItem
+                      >Valor fixo nas parcelas
+                      </SelectItem
                     >
                   </SelectContent>
                 </Select>
@@ -830,7 +839,7 @@ watch(
                     <span class="mb-1 block text-sm font-medium">Geração automática</span>
                     <label
                       for="geracaoAutomaticaRecorrencia"
-                      class="flex h-[36px] cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 dark:bg-card-dark"
+                      class="flex h-[38px] cursor-pointer items-center justify-between gap-3 rounded-md border border-border bg-card px-3 dark:bg-card-dark"
                     >
                       <span class="truncate text-sm font-medium text-gray-900 dark:text-gray-300">
                         Gerar antes do vencimento
@@ -859,6 +868,9 @@ watch(
                   :required="params.hasEntrada"
                   type="text"
                   v-maska="moneyMaskOptions"
+                  icon-label="R$"
+                  icon-label-position="left"
+                  icon-label-title="Reais"
                   name="valorEntrada"
                   placeholder="0,00"
                 />

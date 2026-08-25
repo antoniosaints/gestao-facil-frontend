@@ -255,6 +255,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'ourive:ordens', nome: 'Ordens' },
     { key: 'ourive:producao', nome: 'Produção' },
     { key: 'ourive:pedidos-compra', nome: 'Pedidos de compra' },
+    { key: 'ourive:sobras', nome: 'Sobras e quebras' },
     { key: 'ourive:financeiro', nome: 'Financeiro' },
     { key: 'ourive:relatorios', nome: 'Relatórios' },
     { key: 'ourive:configuracoes', nome: 'Configurações' },
@@ -613,6 +614,14 @@ export const sidebarMenuOptions = (
           link: '/ourive/pedidos-compra',
           show: ouriveAccess.has('PRODUCAO'),
           icone: ShoppingCart,
+          color: 'yellow',
+        },
+        {
+          key: 'ourive:sobras',
+          nome: 'Sobras e quebras',
+          link: '/ourive/sobras',
+          show: ouriveAccess.has('PRODUCAO'),
+          icone: Scale,
           color: 'yellow',
         },
         {

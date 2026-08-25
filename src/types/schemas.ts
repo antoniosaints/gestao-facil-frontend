@@ -563,6 +563,7 @@ export interface ThemeCustomization {
   fundoDark: string
   radius: string
   fonte: string
+  tamanhoFonte: string
 }
 
 export interface ItensVendas {

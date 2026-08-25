@@ -1067,6 +1067,12 @@ const routes: RouteInterface[] = [
         meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'PRODUCAO' },
       },
       {
+        path: 'sobras',
+        name: 'ourive-sobras',
+        component: () => import('@/pages/ourive/Sobras.vue'),
+        meta: { layout: 'main', modulo: 'ourives', ouriveCapability: 'PRODUCAO' },
+      },
+      {
         path: 'financeiro',
         name: 'ourive-financeiro',
         component: () => import('@/pages/ourive/Financeiro.vue'),

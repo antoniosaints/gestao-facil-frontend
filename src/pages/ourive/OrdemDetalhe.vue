@@ -27,21 +27,11 @@
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{{ label(order.status) }}</Badge
-          ><Button
-            v-if="
-              can('PRODUCAO') &&
-              ['ORCAMENTO', 'PRONTA_PRODUCAO'].includes(order.status) &&
-              currentBudgetApproved
-            "
-            :disabled="pendingPurchaseNeeds.length > 0"
-            @click="start"
-            >Iniciar produção</Button
-          ><Button
-            v-if="can('ENTREGAR') && order.status === 'PRONTA_ENTREGA' && currentBudgetApproved"
-            @click="deliver"
-            >Entregar e faturar</Button
-          ><Button v-if="can('ORCAMENTO') && !closed" variant="destructive" @click="cancel"
+          <Badge variant="secondary">{{ label(order.status) }}</Badge>
+          <Button variant="outline" size="sm" @click="historyModalOpen = true">
+            <History class="mr-2 h-4 w-4" />Histórico da OS
+          </Button>
+          <Button v-if="can('ORCAMENTO') && !closed" variant="destructive" @click="cancel"
             >Cancelar</Button
           >
           <Button
@@ -53,6 +43,288 @@
           >
         </div>
       </div>
+
+      <Card class="overflow-hidden border-primary/20 shadow-sm">
+        <CardHeader
+          class="border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pb-4"
+        >
+          <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+            <div>
+              <CardTitle class="flex items-center gap-2 text-lg">
+                <ListChecks class="h-5 w-5 text-primary" />Fluxo de finalização da OS
+              </CardTitle>
+              <CardDescription class="mt-1">
+                Conclua uma etapa por vez. O andamento é atualizado automaticamente a cada ação.
+              </CardDescription>
+            </div>
+            <Badge variant="outline" class="w-fit">Etapa atual: {{ flowCurrentLabel }}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent class="p-4 sm:p-5">
+          <ol class="grid gap-2 sm:grid-cols-5 sm:gap-3" aria-label="Etapas da ordem de serviço">
+            <li v-for="(step, index) in flowSteps" :key="step.key" class="min-w-0">
+              <div
+                class="flex h-full gap-3 rounded-xl border p-3 transition-colors sm:block sm:text-center"
+                :class="flowStepClass(index)"
+              >
+                <div
+                  class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border sm:mx-auto sm:mb-2"
+                  :class="flowStepIconClass(index)"
+                >
+                  <Check v-if="flowStepState(index) === 'done'" class="h-4 w-4" />
+                  <component v-else :is="step.icon" class="h-4 w-4" />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold">{{ step.label }}</p>
+                  <p class="mt-0.5 text-xs leading-5 text-muted-foreground">
+                    {{ step.description }}
+                  </p>
+                </div>
+              </div>
+            </li>
+          </ol>
+
+          <div
+            class="mt-4 rounded-xl border p-4"
+            :class="flowIsInterrupted ? 'border-destructive/30 bg-destructive/5' : 'bg-muted/30'"
+          >
+            <div
+              :class="
+                materialActionAvailable
+                  ? 'flex flex-col gap-4'
+                  : 'flex flex-col justify-between gap-4 lg:flex-row lg:items-center'
+              "
+            >
+              <div class="min-w-0">
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Próxima ação
+                </p>
+                <p class="mt-1 font-semibold">{{ flowActionTitle }}</p>
+                <p class="mt-1 text-sm text-muted-foreground">{{ flowActionDescription }}</p>
+              </div>
+
+              <div v-if="materialActionAvailable" class="w-full space-y-3 lg:max-w-3xl">
+                <div
+                  v-for="need in pendingPurchaseNeeds"
+                  :key="`action-need-${need.id}`"
+                  class="rounded-lg border border-amber-500/35 bg-amber-500/10 p-3"
+                >
+                  <p class="font-medium text-amber-900 dark:text-amber-200">Compra necessária</p>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    {{ measure(need.quantidadeNecessaria, need.unidade) }} para
+                    {{ need.produto?.nome || `o material #${need.produtoId}` }}.
+                  </p>
+                  <div class="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                    <Input
+                      v-model.number="purchaseFor(need).quantidadeComprada"
+                      type="number"
+                      min="0.001"
+                      step="1"
+                      :placeholder="`Quantidade (${unitLabel(need.unidade)})`"
+                    />
+                    <Input
+                      v-model="purchaseFor(need).custoUnitarioReal"
+                      v-maska="moneyMaskOptions"
+                      type="text"
+                      inputmode="decimal"
+                      :placeholder="`Custo / ${unitLabel(need.unidade)}`"
+                    />
+                    <Button size="sm" @click="fulfillPurchase(need)">Registrar compra</Button>
+                  </div>
+                </div>
+
+                <div
+                  v-for="material in ['PRODUCAO', 'REVISAO'].includes(order.status)
+                    ? materialsPendingReconciliation
+                    : []"
+                  :key="`action-material-${material.id}`"
+                  class="rounded-lg border bg-muted/20 p-3"
+                >
+                  <p class="font-medium">
+                    {{ material.produto?.nome || `Produto #${material.produtoId}` }}
+                  </p>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    Retirado:
+                    {{
+                      measure(
+                        material.medidaConsumida || material.quantidadeConsumida,
+                        material.unidade,
+                      )
+                    }}. Informe o destino de todo o material retirado.
+                  </p>
+                  <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                      Material utilizado ({{ unitLabel(material.unidade) }})
+                      <Input
+                        v-model.number="outcomeFor(material).medidaUtilizada"
+                        type="number"
+                        min="0"
+                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
+                        :placeholder="`Informe o utilizado em ${unitLabel(material.unidade)}`"
+                      />
+                    </label>
+                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                      Sobra devolvida ({{ unitLabel(material.unidade) }})
+                      <Input
+                        v-model.number="outcomeFor(material).medidaSobra"
+                        type="number"
+                        min="0"
+                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
+                        :placeholder="`Informe a sobra em ${unitLabel(material.unidade)}`"
+                      />
+                    </label>
+                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                      Quebra recuperável ({{ unitLabel(material.unidade) }})
+                      <Input
+                        v-model.number="outcomeFor(material).medidaQuebra"
+                        type="number"
+                        min="0"
+                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
+                        :placeholder="`Informe a quebra em ${unitLabel(material.unidade)}`"
+                      />
+                    </label>
+                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                      Perda real ({{ unitLabel(material.unidade) }})
+                      <Input
+                        v-model.number="outcomeFor(material).medidaPerdaReal"
+                        type="number"
+                        min="0"
+                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
+                        :placeholder="`Informe a perda em ${unitLabel(material.unidade)}`"
+                      />
+                    </label>
+                  </div>
+                  <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <Input
+                      v-model="outcomeFor(material).observacao"
+                      placeholder="Observação do fechamento"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      class="shrink-0"
+                      @click="finalizeMaterial(material)"
+                      >Salvar resultado real</Button
+                    >
+                  </div>
+                </div>
+
+                <div v-if="order.status === 'PRODUCAO' && !closed" class="rounded-lg border p-3">
+                  <p class="mb-2 text-sm font-semibold">Registrar custo extra</p>
+                  <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-end">
+                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                      Descrição do custo
+                      <Input v-model="extra.descricao" placeholder="Ex.: gravação terceirizada" />
+                    </label>
+                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                      Valor (R$)
+                      <Input
+                        v-model="extra.valor"
+                        v-maska="moneyMaskOptions"
+                        type="text"
+                        inputmode="decimal"
+                        placeholder="0,00"
+                      />
+                    </label>
+                    <Button size="sm" @click="addCost">Adicionar</Button>
+                  </div>
+                </div>
+              </div>
+              <div
+                v-else-if="order.status === 'PRODUCAO' && can('PRODUCAO')"
+                class="w-full space-y-2 lg:w-[26rem]"
+              >
+                <label class="grid gap-1 text-sm font-medium">
+                  Peso final <span class="font-normal text-muted-foreground">(opcional, em g)</span>
+                  <Input
+                    v-model.number="productionWeight"
+                    type="number"
+                    min="0.001"
+                    step="0.001"
+                    placeholder="Ex.: 10,500 — deixe em branco se não se aplicar"
+                  />
+                </label>
+                <Button class="w-full" @click="finishProduction">
+                  <CheckCircle2 class="mr-2 h-4 w-4" />Concluir produção
+                </Button>
+                <details class="rounded-lg border bg-muted/20 p-3 text-sm">
+                  <summary class="cursor-pointer font-medium">Registrar custo extra</summary>
+                  <div class="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-end">
+                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                      Descrição do custo
+                      <Input v-model="extra.descricao" placeholder="Ex.: gravação terceirizada" />
+                    </label>
+                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                      Valor (R$)
+                      <Input
+                        v-model="extra.valor"
+                        v-maska="moneyMaskOptions"
+                        type="text"
+                        inputmode="decimal"
+                        placeholder="0,00"
+                      />
+                    </label>
+                    <Button size="sm" @click="addCost">Adicionar</Button>
+                  </div>
+                </details>
+              </div>
+              <div
+                v-else-if="
+                  financialActionAvailable ||
+                  (can('ENTREGAR') && order.status === 'PRONTA_ENTREGA' && currentBudgetApproved)
+                "
+                class="flex flex-wrap gap-2"
+              >
+                <Button
+                  v-if="financialActionAvailable"
+                  variant="outline"
+                  @click="financialModalOpen = true"
+                >
+                  <FileText class="mr-2 h-4 w-4" />Revisar e consolidar financeiro
+                </Button>
+                <Button
+                  v-if="
+                    can('ENTREGAR') && order.status === 'PRONTA_ENTREGA' && currentBudgetApproved
+                  "
+                  @click="deliver"
+                >
+                  <Handshake class="mr-2 h-4 w-4" />Entregar e faturar
+                </Button>
+              </div>
+              <Button
+                v-else-if="
+                  can('ORCAMENTO') &&
+                  order.status === 'ORCAMENTO' &&
+                  currentBudget &&
+                  !currentBudget.enviadoEm &&
+                  !currentBudget.aprovadoEm &&
+                  !currentBudget.recusadoEm
+                "
+                @click="approveBudgetInternally"
+              >
+                <CheckCircle2 class="mr-2 h-4 w-4" />Aprovar internamente e continuar
+              </Button>
+              <Button
+                v-else-if="
+                  can('PRODUCAO') &&
+                  ['ORCAMENTO', 'PRONTA_PRODUCAO'].includes(order.status) &&
+                  currentBudgetApproved
+                "
+                :disabled="pendingPurchaseNeeds.length > 0"
+                @click="start"
+              >
+                <Play class="mr-2 h-4 w-4" />Iniciar produção
+              </Button>
+              <Button
+                v-else-if="can('ENTREGAR') && ['FINALIZADA', 'REVISAO'].includes(order.status)"
+                @click="markReadyForDelivery"
+              >
+                <ClipboardCheck class="mr-2 h-4 w-4" />Concluir revisão e liberar entrega
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-xl border bg-card p-4 shadow-sm">
@@ -299,24 +571,29 @@
                   Versão {{ currentBudget.versao }} · {{ money(currentBudget.valorFinal) }}
                 </p>
                 <div
-                  v-if="
-                    can('ORCAMENTO') &&
-                    currentBudget.enviadoEm &&
-                    !currentBudget.aprovadoEm &&
-                    !currentBudget.recusadoEm
-                  "
+                  v-if="can('ORCAMENTO') && currentBudget.enviadoEm"
                   class="mt-3 flex flex-wrap items-center gap-2"
                 >
-                  <Button size="sm" variant="outline" @click="sendBudget"
-                    >Gerar novo link de aprovação</Button
-                  >
-                  <Button v-if="budgetLink" type="button" size="sm" @click="copyBudgetLink"
-                    ><Copy class="mr-2 h-4 w-4" />Copiar link</Button
-                  >
+                  <Button v-if="!budgetLink" size="sm" variant="outline" @click="sendBudget">
+                    {{
+                      currentBudget.aprovadoEm || currentBudget.recusadoEm
+                        ? 'Gerar link do comprovante'
+                        : 'Gerar novo link de aprovação'
+                    }}
+                  </Button>
+                  <template v-else>
+                    <Button type="button" size="sm" @click="copyBudgetLink"
+                      ><Copy class="mr-2 h-4 w-4" />Copiar link</Button
+                    >
+                    <Button type="button" size="sm" variant="outline" @click="openBudgetLink"
+                      >Abrir link</Button
+                    >
+                  </template>
                 </div>
-                <p v-if="budgetLink" class="mt-3 break-all rounded-lg bg-muted p-3 text-xs">
-                  {{ budgetLink }}
-                </p>
+                <div v-if="budgetLink" class="mt-3 rounded-lg bg-muted p-3">
+                  <p class="text-xs font-medium">Link de aceite / comprovante</p>
+                  <p class="mt-1 break-all text-xs text-muted-foreground">{{ budgetLink }}</p>
+                </div>
                 <p class="mt-1 text-sm text-muted-foreground">
                   {{
                     currentBudget.aprovadoEm
@@ -355,28 +632,11 @@
                     {{
                       order.pesoFinal
                         ? `${Number(order.pesoFinal).toLocaleString('pt-BR')} g`
-                        : 'Pendente'
+                        : 'Não informado'
                     }}
                   </p>
                 </div>
               </div>
-              <div v-if="can('PRODUCAO') && order.status === 'PRODUCAO'" class="flex gap-2">
-                <Input
-                  v-model.number="productionWeight"
-                  type="number"
-                  min="0.001"
-                  step="0.001"
-                  placeholder="Peso final (g)"
-                />
-                <Button @click="finishProduction">Finalizar produção</Button>
-              </div>
-              <Button
-                v-if="can('ENTREGAR') && ['FINALIZADA', 'REVISAO'].includes(order.status)"
-                variant="outline"
-                class="w-full"
-                @click="markReadyForDelivery"
-                >Marcar pronta para entrega</Button
-              >
               <p class="text-xs text-muted-foreground">
                 Início: {{ formatDateTime(order.producaoIniciadaEm) }} · Finalização:
                 {{ formatDateTime(order.producaoFinalizadaEm) }}
@@ -424,18 +684,16 @@
                   >
                 </div>
               </div>
-              <div class="flex flex-wrap gap-2">
-                <Button
-                  :variant="financial.consolidadoEm ? 'outline' : 'default'"
-                  @click="financialModalOpen = true"
-                  >{{
-                    financial.consolidadoEm
-                      ? 'Ver demonstrativo financeiro'
-                      : 'Revisar e consolidar'
-                  }}</Button
+              <p v-if="!financial.consolidadoEm" class="text-sm text-muted-foreground">
+                A revisão e a consolidação são apresentadas em <strong>Próxima ação</strong> após a
+                entrega.
+              </p>
+              <div v-else class="flex flex-wrap gap-2">
+                <Button variant="outline" @click="financialModalOpen = true"
+                  >Ver demonstrativo financeiro</Button
                 >
                 <Button
-                  v-if="financial.consolidadoEm && financial.status !== 'PAGO'"
+                  v-if="financial.status !== 'PAGO'"
                   variant="outline"
                   @click="reopenFinancial"
                   >Reabrir financeiro</Button
@@ -465,23 +723,9 @@
                   {{ need.produto?.nome || `o material #${need.produtoId}` }}. Registre a compra
                   para liberar o início da produção.
                 </p>
-                <div v-if="can('PRODUCAO')" class="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                  <Input
-                    v-model.number="purchaseFor(need).quantidadeComprada"
-                    type="number"
-                    min="0.001"
-                    step="1"
-                    :placeholder="`Quantidade (${unitLabel(need.unidade)})`"
-                  />
-                  <Input
-                    v-model="purchaseFor(need).custoUnitarioReal"
-                    v-maska="moneyMaskOptions"
-                    type="text"
-                    inputmode="decimal"
-                    :placeholder="`Custo / ${unitLabel(need.unidade)}`"
-                  />
-                  <Button size="sm" @click="fulfillPurchase(need)">Registrar compra</Button>
-                </div>
+                <p v-if="can('PRODUCAO')" class="mt-3 text-xs text-muted-foreground">
+                  Registre esta compra em <strong>Próxima ação</strong>, no fluxo da OS.
+                </p>
               </div>
               <div
                 v-for="material in order.materiais"
@@ -522,132 +766,33 @@
                   {{ measure(material.medidaQuebra, material.unidade) }} · Perda real:
                   {{ measure(material.medidaPerdaReal, material.unidade) }}
                 </p>
-                <div
-                  v-if="
-                    can('PRODUCAO') &&
-                    ['PRODUCAO', 'REVISAO'].includes(order.status) &&
-                    !material.finalizadoEm
-                  "
-                  class="mt-3 space-y-2 rounded-md border bg-muted/20 p-3"
+                <p
+                  v-if="material.finalizadoEm && (Number(material.medidaSobra) || Number(material.medidaQuebra))"
+                  class="mt-1 text-xs text-amber-700 dark:text-amber-300"
                 >
-                  <p class="text-xs font-medium">
-                    Fechamento real do material (deve conciliar o retirado)
-                  </p>
-                  <div class="grid gap-2 sm:grid-cols-2">
-                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                      Material utilizado ({{ unitLabel(material.unidade) }})
-                      <Input
-                        v-model.number="outcomeFor(material).medidaUtilizada"
-                        type="number"
-                        min="0"
-                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
-                        :placeholder="`Informe o utilizado em ${unitLabel(material.unidade)}`"
-                      />
-                    </label>
-                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                      Sobra devolvida ({{ unitLabel(material.unidade) }})
-                      <Input
-                        v-model.number="outcomeFor(material).medidaSobra"
-                        type="number"
-                        min="0"
-                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
-                        :placeholder="`Informe a sobra em ${unitLabel(material.unidade)}`"
-                      />
-                    </label>
-                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                      Quebra recuperável ({{ unitLabel(material.unidade) }})
-                      <Input
-                        v-model.number="outcomeFor(material).medidaQuebra"
-                        type="number"
-                        min="0"
-                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
-                        :placeholder="`Informe a quebra em ${unitLabel(material.unidade)}`"
-                      />
-                    </label>
-                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                      Perda real ({{ unitLabel(material.unidade) }})
-                      <Input
-                        v-model.number="outcomeFor(material).medidaPerdaReal"
-                        type="number"
-                        min="0"
-                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
-                        :placeholder="`Informe a perda em ${unitLabel(material.unidade)}`"
-                      />
-                    </label>
-                  </div>
-                  <Input
-                    v-model="outcomeFor(material).observacao"
-                    placeholder="Observação do fechamento"
-                  />
-                  <Button size="sm" variant="outline" @click="finalizeMaterial(material)">
-                    Salvar resultado real
-                  </Button>
-                </div>
+                  Sobra/quebra pendente de pesagem e consolidação em <strong>Sobras e quebras</strong>.
+                </p>
+                <p
+                  v-else-if="can('PRODUCAO') && ['PRODUCAO', 'REVISAO'].includes(order.status)"
+                  class="mt-2 text-xs text-muted-foreground"
+                >
+                  A conciliação deste material está disponível em <strong>Próxima ação</strong>.
+                </p>
               </div>
               <p v-if="!order.materiais?.length" class="text-sm text-muted-foreground">
                 Sem materiais planejados.
               </p>
               <div class="border-t pt-4">
                 <p class="mb-2 text-sm font-semibold">Custo extra</p>
-                <div
-                  v-if="can('PRODUCAO') && !closed"
-                  class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-end"
+                <p
+                  v-if="can('PRODUCAO') && order.status === 'PRODUCAO'"
+                  class="text-xs text-muted-foreground"
                 >
-                  <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                    Descrição do custo
-                    <Input v-model="extra.descricao" placeholder="Ex.: gravação terceirizada" />
-                  </label>
-                  <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                    Valor (R$)
-                    <Input
-                      v-model="extra.valor"
-                      v-maska="moneyMaskOptions"
-                      type="text"
-                      inputmode="decimal"
-                      placeholder="0,00"
-                    />
-                  </label>
-                  <Button size="sm" @click="addCost">Adicionar</Button>
-                </div>
+                  Registre custos extras em <strong>Próxima ação</strong> enquanto a produção
+                  estiver em andamento.
+                </p>
                 <p class="mt-2 text-sm">
                   Acumulado: <strong>{{ money(order.custoExtra) }}</strong>
-                </p>
-              </div></CardContent
-            ></Card
-          >
-          <Card
-            ><CardHeader><CardTitle>Movimentações de estoque</CardTitle></CardHeader
-            ><CardContent class="space-y-2"
-              ><div
-                v-for="movement in order.movimentacoes || []"
-                :key="movement.id"
-                class="rounded-lg border p-3 text-sm"
-              >
-                <p class="font-medium">
-                  {{ movement.tipo }} ·
-                  {{ movement.Produto?.nome || `Produto #${movement.produtoId}` }}
-                </p>
-                <p class="text-muted-foreground">
-                  {{ movement.quantidade }} un. ·
-                  {{ new Date(movement.data).toLocaleString('pt-BR') }}
-                </p>
-              </div>
-              <p v-if="!(order.movimentacoes || []).length" class="text-sm text-muted-foreground">
-                Ainda não houve movimentação.
-              </p></CardContent
-            ></Card
-          >
-          <Card
-            ><CardHeader><CardTitle>Rastreabilidade</CardTitle></CardHeader
-            ><CardContent class="max-h-80 space-y-3 overflow-y-auto pr-2"
-              ><div
-                v-for="event in order.eventos"
-                :key="event.id"
-                class="border-l-2 border-primary/60 pl-3"
-              >
-                <p class="text-sm">{{ event.descricao }}</p>
-                <p class="text-xs text-muted-foreground">
-                  {{ new Date(event.createdAt).toLocaleString('pt-BR') }}
                 </p>
               </div></CardContent
             ></Card
@@ -656,6 +801,67 @@
       </div>
     </section>
     <div v-else class="p-10 text-center text-sm text-muted-foreground">Carregando ordem…</div>
+    <Dialog v-model:open="historyModalOpen">
+      <DialogContent class="max-h-[90vh] max-w-4xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Histórico da OS</DialogTitle>
+          <DialogDescription>
+            {{ order?.codigoRastreio }} · movimentações de estoque e rastreabilidade do processo.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-5 py-2 lg:grid-cols-2">
+          <section class="rounded-xl border p-4">
+            <h3 class="font-semibold">Movimentações de estoque</h3>
+            <div class="mt-4 space-y-2">
+              <div
+                v-for="movement in order?.movimentacoes || []"
+                :key="movement.id"
+                class="rounded-lg border p-3 text-sm"
+              >
+                <p class="font-medium">
+                  {{ movement.tipo }} ·
+                  {{ movement.Produto?.nome || `Produto #${movement.produtoId}` }}
+                </p>
+                <p class="mt-1 text-muted-foreground">
+                  {{ movement.quantidade }} un. ·
+                  {{ new Date(movement.data).toLocaleString('pt-BR') }}
+                </p>
+              </div>
+              <p
+                v-if="!(order?.movimentacoes || []).length"
+                class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground"
+              >
+                Ainda não houve movimentação.
+              </p>
+            </div>
+          </section>
+          <section class="rounded-xl border p-4">
+            <h3 class="font-semibold">Rastreabilidade</h3>
+            <div class="mt-4 space-y-3">
+              <div
+                v-for="event in order?.eventos || []"
+                :key="event.id"
+                class="border-l-2 border-primary/60 pl-3"
+              >
+                <p class="text-sm">{{ event.descricao }}</p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                  {{ new Date(event.createdAt).toLocaleString('pt-BR') }}
+                </p>
+              </div>
+              <p
+                v-if="!(order?.eventos || []).length"
+                class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground"
+              >
+                Nenhum evento registrado.
+              </p>
+            </div>
+          </section>
+        </div>
+        <DialogFooter
+          ><Button variant="outline" @click="historyModalOpen = false">Fechar</Button></DialogFooter
+        >
+      </DialogContent>
+    </Dialog>
     <Dialog v-model:open="financialModalOpen">
       <DialogContent class="max-h-[92vh] max-w-5xl overflow-y-auto">
         <DialogHeader>
@@ -1077,7 +1283,24 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { ArrowLeft, ClipboardList, Copy, Plus, Trash2, Upload, X } from 'lucide-vue-next'
+import {
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  ClipboardCheck,
+  ClipboardList,
+  Copy,
+  FileText,
+  Handshake,
+  History,
+  ListChecks,
+  Play,
+  Plus,
+  Trash2,
+  Upload,
+  Wrench,
+  X,
+} from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -1112,7 +1335,8 @@ const financialTeam = ref<any[]>([])
 const financialOuriveIds = ref<number[]>([])
 const consolidatingFinancial = ref(false)
 const financialModalOpen = ref(false)
-const productionWeight = ref<number | undefined>()
+const historyModalOpen = ref(false)
+const productionWeight = ref<number | '' | undefined>()
 const budgetLink = ref('')
 const photoPreview = ref('')
 const removingPhotoId = ref<number | null>(null)
@@ -1167,6 +1391,145 @@ const currentBudgetApproved = computed(() => Boolean(currentBudget.value?.aprova
 const pendingPurchaseNeeds = computed(() =>
   (order.value?.necessidadesCompra || []).filter((need: any) => need.status === 'PENDENTE'),
 )
+const materialsPendingReconciliation = computed(() =>
+  (order.value?.materiais || []).filter((material: any) => !material.finalizadoEm),
+)
+const materialActionAvailable = computed(() => {
+  if (!can('PRODUCAO')) return false
+  if (order.value?.status === 'AGUARDANDO_MATERIAL') return pendingPurchaseNeeds.value.length > 0
+  return (
+    ['PRODUCAO', 'REVISAO'].includes(order.value?.status) &&
+    (pendingPurchaseNeeds.value.length > 0 || materialsPendingReconciliation.value.length > 0)
+  )
+})
+const financialActionAvailable = computed(
+  () =>
+    can('FINANCEIRO') &&
+    ['PRONTA_ENTREGA', 'ENTREGUE'].includes(order.value?.status) &&
+    Boolean(financial.value) &&
+    !financial.value?.consolidadoEm,
+)
+const flowSteps = [
+  { key: 'RECEBIMENTO', label: 'Recebimento', description: 'OS registrada', icon: ClipboardList },
+  { key: 'ORCAMENTO', label: 'Orçamento', description: 'Planejar e aprovar', icon: FileText },
+  { key: 'PRODUCAO', label: 'Produção', description: 'Executar a peça', icon: Wrench },
+  { key: 'REVISAO', label: 'Revisão', description: 'Conferir e liberar', icon: ClipboardCheck },
+  { key: 'ENTREGA', label: 'Entrega', description: 'Faturar e concluir', icon: Handshake },
+]
+const flowIsInterrupted = computed(() => ['RECUSADA', 'CANCELADA'].includes(order.value?.status))
+const flowStepIndex = computed(() => {
+  switch (order.value?.status) {
+    case 'ORCAMENTO':
+    case 'AGUARDANDO_MATERIAL':
+    case 'PRONTA_PRODUCAO':
+      return 1
+    case 'PRODUCAO':
+      return 2
+    case 'FINALIZADA':
+    case 'REVISAO':
+      return 3
+    case 'PRONTA_ENTREGA':
+    case 'ENTREGUE':
+      return 4
+    default:
+      return 0
+  }
+})
+const flowCurrentLabel = computed(() =>
+  flowIsInterrupted.value
+    ? label(order.value?.status || '')
+    : flowSteps[flowStepIndex.value]?.label || 'Recebimento',
+)
+const flowStepState = (index: number) => {
+  if (flowIsInterrupted.value) return 'pending'
+  if (order.value?.status === 'ENTREGUE') return 'done'
+  if (index < flowStepIndex.value) return 'done'
+  return index === flowStepIndex.value ? 'active' : 'pending'
+}
+const flowStepClass = (index: number) => {
+  const state = flowStepState(index)
+  if (state === 'done') return 'border-emerald-500/35 bg-emerald-500/5'
+  if (state === 'active') return 'border-primary/55 bg-primary/10 shadow-sm'
+  return 'border-border bg-card opacity-70'
+}
+const flowStepIconClass = (index: number) => {
+  const state = flowStepState(index)
+  if (state === 'done') return 'border-emerald-500/40 bg-emerald-500 text-white'
+  if (state === 'active') return 'border-primary bg-primary text-primary-foreground'
+  return 'border-border bg-muted text-muted-foreground'
+}
+const flowActionTitle = computed(() => {
+  if (flowIsInterrupted.value) return 'Esta ordem foi encerrada.'
+  if (materialActionAvailable.value)
+    return order.value?.status === 'AGUARDANDO_MATERIAL'
+      ? 'Registre as compras necessárias para liberar a produção.'
+      : 'Concilie os materiais antes de concluir a produção.'
+  if (financialActionAvailable.value)
+    return order.value?.status === 'PRONTA_ENTREGA'
+      ? 'Conclua a entrega e revise o financeiro da OS.'
+      : 'Revise e consolide o financeiro da OS.'
+  switch (order.value?.status) {
+    case 'RECEBIDA':
+      return 'Monte a primeira versão do orçamento.'
+    case 'ORCAMENTO':
+      return currentBudget.value?.enviadoEm && !currentBudgetApproved.value
+        ? 'Aguarde a aprovação do orçamento.'
+        : currentBudget.value
+          ? 'Escolha como aprovar o orçamento para continuar.'
+          : 'Finalize e envie o orçamento para aprovação.'
+    case 'AGUARDANDO_MATERIAL':
+      return 'Aguarde a compra dos materiais necessários.'
+    case 'PRONTA_PRODUCAO':
+      return 'A produção pode ser iniciada.'
+    case 'PRODUCAO':
+      return 'Finalize materiais e etapas para concluir a produção.'
+    case 'FINALIZADA':
+    case 'REVISAO':
+      return 'Revise o resultado e libere a OS para entrega.'
+    case 'PRONTA_ENTREGA':
+      return 'Confirme a entrega e gere o faturamento.'
+    case 'ENTREGUE':
+      return 'Processo concluído e faturamento registrado.'
+    default:
+      return 'Acompanhe o andamento da ordem.'
+  }
+})
+const flowActionDescription = computed(() => {
+  if (flowIsInterrupted.value) return 'Nenhuma nova ação é necessária para esta OS.'
+  if (materialActionAvailable.value)
+    return order.value?.status === 'AGUARDANDO_MATERIAL'
+      ? 'Informe a compra de cada item pendente. O estoque será atualizado e a OS seguirá automaticamente.'
+      : 'Registre utilização, sobra, quebra ou perda de cada material retirado.'
+  if (financialActionAvailable.value)
+    return order.value?.status === 'PRONTA_ENTREGA'
+      ? 'Você pode conferir os valores agora e confirmar a entrega quando o item for liberado ao cliente.'
+      : 'Confira receitas, custos e repasses no demonstrativo antes de confirmar a consolidação.'
+  switch (order.value?.status) {
+    case 'RECEBIDA':
+      return 'Preencha os serviços, materiais e prazo na seção de orçamento abaixo.'
+    case 'ORCAMENTO':
+      return currentBudget.value?.enviadoEm && !currentBudgetApproved.value
+        ? 'Assim que o orçamento for aprovado, a OS seguirá para produção ou compra de material.'
+        : currentBudget.value
+          ? 'Para serviços rápidos, aprove internamente. Caso precise do aceite do cliente, gere o link de aprovação abaixo.'
+          : 'Salve a versão e gere o link de aprovação quando estiver pronta.'
+    case 'AGUARDANDO_MATERIAL':
+      return `${pendingPurchaseNeeds.value.length} compra(s) pendente(s) precisam ser registradas antes da produção.`
+    case 'PRONTA_PRODUCAO':
+      return 'Os materiais estão disponíveis e o orçamento já foi aprovado.'
+    case 'PRODUCAO':
+      return 'O peso final é opcional. Você pode concluir a OS sem informá-lo.'
+    case 'FINALIZADA':
+    case 'REVISAO':
+      return 'A liberação confirma que a produção e a conferência estão concluídas.'
+    case 'PRONTA_ENTREGA':
+      return 'Esta ação cria a receita da OS e deixa o valor pendente de recebimento.'
+    case 'ENTREGUE':
+      return 'Consulte o financeiro e a rastreabilidade da OS abaixo.'
+    default:
+      return ''
+  }
+})
 const subtotalBudget = computed(() =>
   budget.servicos.reduce(
     (total: number, item: any) => total + Number(item.quantidade || 0) * monetaryValue(item.valor),
@@ -1398,6 +1761,9 @@ function hydrateBudget() {
       }
     : emptyBudget()
   Object.assign(budget, next)
+  budgetLink.value = current?.tokenPublico
+    ? `${window.location.origin}/ourive/orcamento/${current.tokenPublico}`
+    : ''
 }
 async function updateMaterialCost(material: any, produtoId: number | string | null) {
   const id = Number(produtoId)
@@ -1455,11 +1821,23 @@ async function loadFinancial() {
   }
 }
 async function finishProduction() {
-  if (!productionWeight.value) return toast.info('Informe o peso final da peça.')
+  const parsedWeight = Number(productionWeight.value)
+  const finalWeight =
+    productionWeight.value === '' ||
+    productionWeight.value == null ||
+    !Number.isFinite(parsedWeight)
+      ? undefined
+      : parsedWeight
+  if (finalWeight !== undefined && (!Number.isFinite(finalWeight) || finalWeight <= 0))
+    return toast.info('Informe um peso final válido ou deixe o campo em branco.')
   try {
-    await OuriveRepository.finalizarProducao(order.value.id, Number(productionWeight.value))
+    await OuriveRepository.finalizarProducao(order.value.id, finalWeight)
     await load()
-    toast.success('Produção finalizada com rastreabilidade de peso.')
+    toast.success(
+      finalWeight === undefined
+        ? 'Produção finalizada sem peso final informado.'
+        : 'Produção finalizada com peso final registrado.',
+    )
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível finalizar a produção.')
   }
@@ -1596,12 +1974,31 @@ async function saveBudget() {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível salvar o orçamento.')
   }
 }
+async function approveBudgetInternally() {
+  const confirmed = await useConfirm().confirm({
+    title: 'Aprovar orçamento internamente?',
+    message:
+      'Use esta opção somente quando o aceite do cliente não for necessário. A OS seguirá para a próxima etapa e o registro ficará como aprovação interna.',
+    confirmText: 'Aprovar e continuar',
+  })
+  if (!confirmed) return
+  try {
+    await OuriveRepository.decidirOrcamentoInterno(order.value.id, {
+      aprovar: true,
+      observacao: 'Aprovação interna para serviço rápido.',
+    })
+    await load()
+    toast.success('Orçamento aprovado internamente. A OS pode seguir para a próxima etapa.')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível aprovar o orçamento.')
+  }
+}
 async function sendBudget() {
   try {
     const result = await OuriveRepository.enviarOrcamento(order.value.id)
     budgetLink.value = `${window.location.origin}${result.url}`
     await load()
-    toast.success('Link seguro gerado.')
+    toast.success(result.comprovante ? 'Link do comprovante gerado.' : 'Link seguro gerado.')
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível gerar o link.')
   }
@@ -1614,6 +2011,9 @@ async function copyBudgetLink() {
   } catch {
     toast.error('Não foi possível copiar o link. Selecione e copie manualmente.')
   }
+}
+function openBudgetLink() {
+  if (budgetLink.value) window.open(budgetLink.value, '_blank', 'noopener,noreferrer')
 }
 async function start() {
   try {
@@ -1644,7 +2044,9 @@ async function finalizeMaterial(material: any) {
       medidaPerdaReal: Number(outcome.medidaPerdaReal || 0),
     })
     await load()
-    toast.success('Resultado real do material registrado.')
+    if (Number(outcome.medidaSobra || 0) || Number(outcome.medidaQuebra || 0))
+      toast.success('Resultado registrado. A sobra/quebra aguarda pesagem em Sobras e quebras.')
+    else toast.success('Resultado real do material registrado.')
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível fechar o material.')
   }

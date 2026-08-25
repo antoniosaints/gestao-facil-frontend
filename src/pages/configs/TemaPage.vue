@@ -130,8 +130,8 @@
           <div>
             <h3 class="font-medium">Estilo da UI</h3>
             <p class="text-sm text-muted-foreground">
-              Esta escolha vale para todos os usuários da conta. Cards e Site removem a barra lateral;
-              SideV2 preserva o menu lateral em uma versão mais compacta.
+              Esta escolha vale para todos os usuários da conta. Cards e Site removem a barra
+              lateral; SideV2 preserva o menu lateral em uma versão mais compacta.
             </p>
           </div>
           <div class="grid gap-3 lg:grid-cols-2">
@@ -169,13 +169,13 @@
 
         <section class="space-y-4">
           <div>
-            <h3 class="font-medium">Fonte e cantos</h3>
+            <h3 class="font-medium">Fonte, tamanho e cantos</h3>
             <p class="text-sm text-muted-foreground">
-              Escolha a fonte do sistema e o arredondamento dos cartões. A mudança é aplicada em
-              toda a interface.
+              Escolha a fonte, o tamanho de leitura e o arredondamento dos cartões. A mudança é
+              aplicada em toda a interface.
             </p>
           </div>
-          <div class="grid gap-6 lg:grid-cols-2">
+          <div class="grid gap-6 lg:grid-cols-3">
             <div class="space-y-2 rounded-2xl bg-card p-4 shadow-[var(--shadow-theme-card)]">
               <div class="flex items-center gap-2">
                 <Type class="h-4 w-4 text-primary" />
@@ -228,6 +228,41 @@
                 </button>
               </div>
             </div>
+
+            <div class="space-y-2 rounded-2xl bg-card p-4 shadow-[var(--shadow-theme-card)]">
+              <div class="flex items-center gap-2">
+                <Type class="h-4 w-4 text-primary" />
+                <span class="text-sm font-semibold">Tamanho da fonte</span>
+              </div>
+              <p class="text-xs leading-5 text-muted-foreground">
+                Recurso de acessibilidade aplicado em toda a interface.
+              </p>
+              <div class="grid gap-2">
+                <button
+                  v-for="tamanho in FONT_SIZE_OPTIONS"
+                  :key="tamanho.value"
+                  type="button"
+                  class="flex items-center justify-between rounded-lg border bg-background p-3 text-left transition active:scale-[0.98]"
+                  :class="
+                    form.tamanhoFonte === tamanho.value
+                      ? 'border-primary ring-2 ring-primary/30'
+                      : 'hover:bg-muted/40'
+                  "
+                  @click="selecionarTamanhoFonte(tamanho.value)"
+                >
+                  <span>
+                    <span class="block font-semibold" :style="{ fontSize: tamanho.value }">Aa</span>
+                    <span class="mt-1 block text-xs text-muted-foreground"
+                      >{{ tamanho.label }} · {{ tamanho.description }}</span
+                    >
+                  </span>
+                  <Check
+                    v-if="form.tamanhoFonte === tamanho.value"
+                    class="h-4 w-4 shrink-0 text-primary"
+                  />
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -244,7 +279,7 @@
             <article
               v-for="mode in previewModes"
               :key="mode"
-              class="overflow-hidden rounded-2xl shadow-[var(--shadow-theme-preview)]"
+              class="overflow-hidden rounded-md shadow-[var(--shadow-theme-preview)]"
               :style="previewContainerStyle(mode)"
             >
               <div class="flex min-h-64">
@@ -363,6 +398,7 @@ import type { ThemeCustomization } from '@/types/schemas'
 import { setThemeCustomization } from '@/utils/theme'
 import {
   DEFAULT_THEME_CUSTOMIZATION,
+  FONT_SIZE_OPTIONS,
   FONT_OPTIONS,
   RADIUS_OPTIONS,
   getThemePalette,
@@ -542,6 +578,11 @@ function selecionarFonte(fonte: string) {
 
 function selecionarRadius(radius: string) {
   form.radius = radius
+  aplicarPreview()
+}
+
+function selecionarTamanhoFonte(tamanhoFonte: string) {
+  form.tamanhoFonte = tamanhoFonte
   aplicarPreview()
 }
 
