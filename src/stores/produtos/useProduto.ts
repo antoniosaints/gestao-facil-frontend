@@ -512,6 +512,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     idMutation,
     baseMutationId,
     selectedIds,
+    categoriaObrigatoria,
     addSelectedId,
     resetSelectedIds,
     removeSelectedId,
