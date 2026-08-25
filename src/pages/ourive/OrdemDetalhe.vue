@@ -440,12 +440,16 @@
                   :key="index"
                   class="grid gap-2 sm:grid-cols-[1fr_6rem_9rem_auto]"
                 >
-                  <Input v-model="service.descricao" placeholder="Serviço" /><Input
+                  <Input v-model="service.descricao" placeholder="Serviço" />
+                  <Input
                     v-model.number="service.quantidade"
+                    :icon-label="'Un'"
                     type="number"
                     min="1"
                     placeholder="Qtd."
                   /><Input
+                    :icon-label="'R$'"
+                    icon-label-position="left"
                     v-model="service.valor"
                     v-maska="moneyMaskOptions"
                     type="text"
@@ -466,6 +470,8 @@
                   <label class="grid gap-1 text-sm font-medium"
                     >Desconto
                     <Input
+                      :icon-label="'R$'"
+                      icon-label-position="left"
                       v-model="budget.desconto"
                       v-maska="moneyMaskOptions"
                       type="text"
@@ -505,7 +511,7 @@
                           </p>
                         </div>
                         <div class="flex shrink-0 gap-1">
-                          <Button size="sm" variant="ghost" @click="openMaterialModal(index)"
+                          <Button size="sm" variant="ghost" @click="openMaterialModal(index as number)"
                             >Editar</Button
                           >
                           <Button
@@ -1199,6 +1205,7 @@
           <label class="grid gap-1 text-sm font-medium"
             >{{ materialDraft.unidade === 'PESO' ? 'Peso previsto (g)' : 'Quantidade prevista' }}
             <Input
+              :icon-label="materialDraft.unidade === 'PESO' ? 'g' : 'un.'"
               v-model.number="materialDraft.quantidade"
               type="number"
               min="0.001"
@@ -1213,6 +1220,8 @@
           <label class="grid gap-1 text-sm font-medium"
             >Custo interno / {{ materialDraft.unidade === 'PESO' ? 'g' : 'un.' }}
             <Input
+              :icon-label="'R$'"
+              icon-label-position="left"
               v-model="materialDraft.custoUnitario"
               v-maska="moneyMaskOptions"
               type="text"
@@ -1223,6 +1232,8 @@
           <label class="grid gap-1 text-sm font-medium"
             >Valor cobrado / {{ materialDraft.unidade === 'PESO' ? 'g' : 'un.' }}
             <Input
+              :icon-label="'R$'"
+              icon-label-position="left"
               v-model="materialDraft.valorUnitario"
               v-maska="moneyMaskOptions"
               type="text"
