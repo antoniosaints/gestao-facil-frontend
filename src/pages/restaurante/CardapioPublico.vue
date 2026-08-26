@@ -64,6 +64,7 @@ type CartLine = {
 }
 const cartLines = ref<CartLine[]>([])
 const quote = ref<RestauranteCheckoutPreview | null>(null)
+const selectedFidelityProgramIds = ref<number[]>([])
 const orderResult = ref<any>(null)
 const historyOpen = ref(false)
 const trackingDetailsOpen = ref(false)
@@ -190,11 +191,61 @@ function fidelityEligibleLabels(program: any) {
 function fidelityProgress(program: any) {
   const meta = Math.max(Number(program?.pedidosMeta || 1), 1)
   const progress = program?.progresso
-  const remainder = Number(progress?.pedidosElegiveis || 0) % meta
+  const remainder = Number(progress?.itensElegiveis || 0) % meta
   const rewardAvailable = Number(progress?.recompensasDisponiveis || 0) > 0
   const current = rewardAvailable && remainder === 0 ? meta : remainder
   return { meta, current, percentage: (current / meta) * 100, rewardAvailable }
 }
+const checkoutFidelities = computed(() => quote.value?.fidelidades || fidelities.value)
+const availableCheckoutRewards = computed(() => checkoutFidelities.value.filter((program: any) => fidelityProgress(program).rewardAvailable))
+function rewardItem(program: any) {
+  return (cardapio.value?.itens || []).find((item: any) => item.id === program.premio?.catalogoItemId) || null
+}
+function rewardIsInCart(program: any) {
+  return cartLines.value.some((line) => line.item.id === program.premio?.catalogoItemId)
+}
+function rewardIsSelected(program: any) {
+  return selectedFidelityProgramIds.value.includes(program.id)
+}
+function toggleReward(program: any) {
+  if (!rewardIsInCart(program)) return
+  selectedFidelityProgramIds.value = rewardIsSelected(program)
+    ? selectedFidelityProgramIds.value.filter((id) => id !== program.id)
+    : [...new Set([...selectedFidelityProgramIds.value, program.id])]
+  scheduleCheckoutPreview()
+}
+function addRewardToCart(program: any) {
+  const item = rewardItem(program)
+  if (!item) return toast.info('O item desta recompensa não está disponível no cardápio agora.')
+  if (item.grupos?.length) {
+    checkoutOpen.value = false
+    nextTick(() => openItem(item))
+    return toast.info('Escolha as opções do item premiado para usar sua recompensa.')
+  }
+  const existing = findMatchingCartLine(item, [])
+  if (existing) change(existing.id, 1)
+  else cartLines.value.push({ id: `${item.id}-${Date.now()}-${Math.random()}`, item, quantidade: 1, selecaoIds: [] })
+  if (!rewardIsSelected(program)) selectedFidelityProgramIds.value = [...new Set([...selectedFidelityProgramIds.value, program.id])]
+  invalidateCart()
+  scheduleCheckoutPreview()
+  toast.success(`${itemName(item)} adicionado com a recompensa selecionada.`)
+}
+const selectedRewardDiscount = computed(() => {
+  const rewardedItemIds = new Set<number>()
+  return selectedFidelityProgramIds.value.reduce((total, programId) => {
+    const program = checkoutFidelities.value.find((entry: any) => entry.id === programId)
+    if (!program?.premio?.catalogoItemId || rewardedItemIds.has(program.premio.catalogoItemId)) return total
+    const line = cartLines.value.find((entry) => entry.item.id === program.premio.catalogoItemId && entry.quantidade > 0)
+    if (!line) return total
+    rewardedItemIds.add(program.premio.catalogoItemId)
+    return total + ((lineTotal(line) / line.quantidade) * Number(program.descontoPercentual || 0) / 100)
+  }, 0)
+})
+const displayedRewardDiscount = computed(() => Math.max(Number(quote.value?.desconto || 0), selectedRewardDiscount.value))
+const displayedQuoteTotal = computed(() => {
+  if (!quote.value) return null
+  return Number(quote.value.total) - Math.max(0, selectedRewardDiscount.value - Number(quote.value.desconto || 0))
+})
 const freeShippingThreshold = computed(() => {
   const value = Number(cardapio.value?.restaurante?.freteGratisAcima)
   return cardapio.value?.restaurante?.deliveryAtivo && Number.isFinite(value) && value > 0 ? value : null
@@ -890,6 +941,8 @@ function checkoutPayload() {
   return {
     origem: origem.value,
     itens: payloadItems.value,
+    ...(form.telefone.replace(/\D/g, '').length >= 8 ? { clienteTelefone: form.telefone } : {}),
+    fidelidadeProgramaIds: selectedFidelityProgramIds.value,
     ...(origem.value === 'DELIVERY'
       ? {
           endereco: {
@@ -977,7 +1030,9 @@ async function openCheckout() {
 async function pedir() {
   if (!aceitaPedidos.value) return toast.info(mensagemAtendimento.value)
   if (!checkoutValid.value) return toast.info('Preencha os dados necessários para finalizar.')
-  const currentQuote = quote.value || (await previewCheckout())
+  // Recalcula no momento da confirmação para nunca enviar um orçamento anterior
+  // à aplicação ou remoção de uma recompensa.
+  const currentQuote = await previewCheckout()
   if (!currentQuote) return
   if (!currentQuote.minimumReached) {
     return toast.info(`O pedido mínimo é ${formatCurrencyBR(Number(currentQuote.minimumOrder))}.`)
@@ -991,6 +1046,7 @@ async function pedir() {
         cliente: { nome: form.nome, telefone: form.telefone, email: form.email || null },
         observacao: form.observacao || undefined,
         pagamento: pagamento.value,
+        fidelidadeProgramaIds: selectedFidelityProgramIds.value,
       },
       crypto.randomUUID(),
       customerToken(),
@@ -1000,6 +1056,7 @@ async function pedir() {
     await loadOrderHistory(tokens)
     sincronizarAcompanhamentoEmTempoReal(orderHistory.value.map((order) => order.trackingToken))
     cartLines.value = []
+    selectedFidelityProgramIds.value = []
     toast.success(`Pedido ${result.pedido.codigo} criado!`)
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível enviar o pedido.')
@@ -1117,7 +1174,7 @@ watch(isPromotionsPage, async () => {
   await nextTick()
   setupMenuToolbar()
 })
-watch(() => [origem.value, form.cep, form.cidade, form.bairro, form.logradouro, form.numero, form.complemento, form.referencia, JSON.stringify(payloadItems.value)], scheduleCheckoutPreview)
+watch(() => [origem.value, form.telefone, form.cep, form.cidade, form.bairro, form.logradouro, form.numero, form.complemento, form.referencia, JSON.stringify(payloadItems.value), JSON.stringify(selectedFidelityProgramIds.value)], scheduleCheckoutPreview)
 watch(useAccountData, (enabled) => { if (enabled && customerAccount.value) applyCustomerAccount(customerAccount.value) })
 watch([trackingDetailsOpen, trackingDetails], async ([open, order]) => {
   if (!open || !order?.acompanhamentoEntrega) return clearTrackingMap()
@@ -1274,15 +1331,15 @@ onBeforeUnmount(() => {
                 </li>
                 <li>
                   <span>2</span>
-                  <div><b>Finalize {{ fidelityProgress(fidelity).meta }} pedidos participantes</b><p>Cada pedido concluído soma automaticamente na sua conta.</p></div>
+                  <div><b>Acumule {{ fidelityProgress(fidelity).meta }} itens participantes</b><p>Cada unidade elegível de pedidos concluídos soma automaticamente na sua conta.</p></div>
                 </li>
               </ol>
 
               <div class="loyalty-progress" :class="{ 'reward-available': fidelityProgress(fidelity).rewardAvailable }">
-                <div class="loyalty-progress-heading"><span>Seu progresso</span><strong>{{ fidelityProgress(fidelity).current }} de {{ fidelityProgress(fidelity).meta }} pedidos</strong></div>
+                <div class="loyalty-progress-heading"><span>Seu progresso</span><strong>{{ fidelityProgress(fidelity).current }} de {{ fidelityProgress(fidelity).meta }} itens</strong></div>
                 <div class="loyalty-progress-track" role="progressbar" aria-label="Progresso da fidelidade" :aria-valuenow="fidelityProgress(fidelity).current" :aria-valuemin="0" :aria-valuemax="fidelityProgress(fidelity).meta"><span :style="{ width: `${fidelityProgress(fidelity).percentage}%` }"></span></div>
                 <p v-if="fidelityProgress(fidelity).rewardAvailable">Recompensa disponível para usar no próximo pedido.</p>
-                <p v-else-if="customerAccount">Faltam {{ fidelityProgress(fidelity).meta - fidelityProgress(fidelity).current }} pedido(s) participante(s) para liberar seu desconto.</p>
+                <p v-else-if="customerAccount">Faltam {{ fidelityProgress(fidelity).meta - fidelityProgress(fidelity).current }} item(ns) participante(s) para liberar seu desconto.</p>
                 <button v-else type="button" class="loyalty-login" @click="openCustomerAccount"><UserRound class="h-4 w-4" />Entre na sua conta para acompanhar seus pedidos</button>
               </div>
             </section>
@@ -1728,6 +1785,10 @@ onBeforeUnmount(() => {
                   ><label v-if="cardapio?.restaurante.pagamentoOnlineAtivo" class="choice-card compact" :class="{ selected: pagamento === 'PIX' }"><RadioGroupItem value="PIX" /><span class="text-sm font-medium">Pix</span></label></RadioGroup
                 >
               </section>
+              <section v-if="availableCheckoutRewards.length" class="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/70 dark:bg-amber-950/20">
+                <div><h3 class="flex items-center gap-2 font-semibold text-amber-950 dark:text-amber-100"><Gift class="h-4 w-4" />Recompensas disponíveis</h3><p class="mt-1 text-xs text-amber-900/75 dark:text-amber-100/75">Adicione o item premiado e aplique seu desconto antes de confirmar o pedido.</p></div>
+                <div v-for="program in availableCheckoutRewards" :key="program.id" class="flex flex-col gap-3 rounded-xl border border-amber-200 bg-white/80 p-3 dark:border-amber-900 dark:bg-zinc-950/50 sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><p class="font-medium text-sm">{{ program.descontoPercentual }}% de desconto em {{ program.premio?.nome }}</p><p v-if="rewardIsSelected(program)" class="mt-0.5 flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300"><Check class="h-3.5 w-3.5" />Recompensa aplicada a este pedido</p><p v-else class="mt-0.5 text-xs text-muted-foreground">{{ rewardIsInCart(program) ? 'O item já está no carrinho. Aplique o desconto.' : 'Adicione o item premiado ao carrinho para usar.' }}</p></div><Button size="sm" class="tap-button shrink-0" :variant="rewardIsSelected(program) ? 'outline' : 'default'" @click="rewardIsInCart(program) ? toggleReward(program) : addRewardToCart(program)"><Check v-if="rewardIsSelected(program)" class="mr-1.5 h-4 w-4" />{{ rewardIsSelected(program) ? 'Remover' : rewardIsInCart(program) ? 'Aplicar desconto' : 'Adicionar e aplicar' }}</Button></div>
+              </section>
               <div class="space-y-2"><Label for="order-note">Observação do pedido</Label><Textarea id="order-note" v-model="form.observacao" rows="3" placeholder="Ex.: tirar cebola, chamar no portão..." /></div>
             </div>
 
@@ -1759,8 +1820,9 @@ onBeforeUnmount(() => {
                       >Frete <small v-if="quote.zone">({{ quote.zone.nome }})</small></span
                     ><span class="price">{{ Number(quote.frete) === 0 ? 'Grátis' : formatCurrencyBR(Number(quote.frete)) }}</span>
                   </div>
+                  <div v-if="displayedRewardDiscount > 0" class="flex justify-between text-emerald-700 dark:text-emerald-300"><span>Recompensa</span><span class="price">- {{ formatCurrencyBR(displayedRewardDiscount) }}</span></div>
                   <div class="flex justify-between text-lg">
-                    <strong>Total</strong><strong class="price">{{ formatCurrencyBR(Number(quote.total)) }}</strong>
+                    <strong>Total</strong><strong class="price">{{ formatCurrencyBR(displayedQuoteTotal ?? Number(quote.total)) }}</strong>
                   </div>
                   <p v-if="!quote.minimumReached" class="rounded-lg bg-red-50 p-2 text-xs text-red-700">Pedido mínimo: {{ formatCurrencyBR(Number(quote.minimumOrder)) }}</p>
                 </div>

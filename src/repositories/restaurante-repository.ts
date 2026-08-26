@@ -439,9 +439,11 @@ export interface RestauranteCheckoutPreview {
   subtotal: string | number
   frete: string | number
   total: string | number
+  desconto?: string | number
   minimumOrder: string | number
   minimumReached: boolean
   zone?: { tipo: string; nome: string; taxa: string | number } | null
+  fidelidades?: RestauranteFidelidadePublica[]
 }
 
 export interface RestauranteFidelidadePrograma {
@@ -456,6 +458,7 @@ export interface RestauranteFidelidadePrograma {
 }
 
 export interface RestauranteFidelidadePublica {
+  id: number
   ativo: boolean
   pedidosMeta: number
   categoriaIds: number[]
@@ -464,7 +467,7 @@ export interface RestauranteFidelidadePublica {
   descontoPercentual: number
   premio: { catalogoItemId: number; nome: string; imagem?: string | null } | null
   progresso: {
-    pedidosElegiveis: number
+    itensElegiveis: number
     pedidosMeta: number
     recompensasDisponiveis: number
   } | null
