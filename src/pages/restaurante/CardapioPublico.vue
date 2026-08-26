@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, Clock3, CreditCard, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Minus, Moon, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Sun, Timer, Trash2, Truck, UserRound, UtensilsCrossed, X } from 'lucide-vue-next'
+import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, Clock3, CreditCard, Flame, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Minus, Moon, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Sun, Timer, Trash2, Truck, UserRound, UtensilsCrossed, X } from 'lucide-vue-next'
 import { RestauranteRepository, type RestauranteCheckoutPreview, type RestauranteClienteConta, type RestauranteClienteEndereco, type RestaurantePublicOrderTracking } from '@/repositories/restaurante-repository'
 import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { useConfirm } from '@/composables/useConfirm'
@@ -50,6 +50,9 @@ const checkoutOpen = ref(false)
 const cartDrawerOpen = ref(false)
 const itemDialogOpen = ref(false)
 const itemAddedOpen = ref(false)
+const suggestionsOpen = ref(false)
+const suggestionSource = ref<any>(null)
+const suggestionAddedItemId = ref<number | null>(null)
 const cardapio = ref<any>(null)
 const menuDarkMode = ref(false)
 const currentYear = new Date().getFullYear()
@@ -160,6 +163,14 @@ const categoryGroups = computed(() => {
     groups.get(category.key)!.items.push(item)
   }
   return [...groups.values()]
+})
+const mostOrderedItems = computed(() => (cardapio.value?.itens || []).filter((item: any) => item.maisPedido))
+const suggestedItems = computed(() => {
+  const categoryId = suggestionSource.value?.categoriaSugestaoId
+  if (!categoryId) return []
+  return (cardapio.value?.itens || []).filter((item: any) =>
+    item.id !== suggestionSource.value?.id && Number(categoryInfo(item).key) === Number(categoryId),
+  )
 })
 
 const fidelity = computed(() => cardapio.value?.restaurante?.fidelidade || null)
@@ -761,7 +772,58 @@ function quickAdd(item: any) {
     })
     invalidateCart()
   }
+  showPostAddFlow(item)
+}
+
+function showPostAddFlow(item: any) {
+  suggestionSource.value = item
+  suggestionAddedItemId.value = null
+  if (suggestedItems.value.length) {
+    suggestionsOpen.value = true
+    return
+  }
   itemAddedOpen.value = true
+}
+
+function addSuggestedItem(item: any) {
+  if (item.grupos.length) {
+    closeSuggestions()
+    openItem(item)
+    return
+  }
+  const existing = findMatchingCartLine(item, [])
+  if (existing) change(existing.id, 1)
+  else {
+    cartLines.value.push({
+      id: `${item.id}-${Date.now()}-${Math.random()}`,
+      item,
+      quantidade: 1,
+      selecaoIds: [],
+    })
+    invalidateCart()
+  }
+  suggestionAddedItemId.value = item.id
+  toast.success(`${itemName(item)} adicionado ao carrinho.`)
+}
+
+function closeSuggestions() {
+  suggestionsOpen.value = false
+  suggestionSource.value = null
+  suggestionAddedItemId.value = null
+}
+
+function onSuggestionsOpenChange(open: boolean) {
+  if (!open) return closeSuggestions()
+  suggestionsOpen.value = true
+}
+
+function continueShoppingAfterSuggestions() {
+  closeSuggestions()
+}
+
+function goToCartAfterSuggestions() {
+  closeSuggestions()
+  nextTick(openCartDrawer)
 }
 
 function toggleDraft(group: any, optionId: number) {
@@ -796,7 +858,7 @@ function saveActiveItem() {
   }
   invalidateCart()
   itemDialogOpen.value = false
-  if (!editing) nextTick(() => { itemAddedOpen.value = true })
+  if (!editing) nextTick(() => { showPostAddFlow(activeItem.value) })
 }
 
 function continueShoppingAfterAdd() {
@@ -1240,7 +1302,7 @@ onBeforeUnmount(() => {
           <Clock3 class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
           <div>
             <p class="font-semibold">Restaurante fechado no momento</p>
-            <p class="mt-1 text-sm text-amber-900/80">{{ mensagemAtendimento }} Você pode consultar o cardápio, mas os pedidos estarão disponíveis no próximo horário de atendimento.</p>
+            <p class="mt-1 text-sm text-amber-900/80">{{ mensagemAtendimento }} Você pode consultar o cardápio, mas novos pedidos estão indisponíveis.</p>
           </div>
         </div>
         <section v-if="promotionCards.length" class="promo-carousel mb-6" aria-label="Promoções disponíveis" @mouseenter="stopPromotionCarousel" @mouseleave="startPromotionCarousel">
@@ -1270,6 +1332,30 @@ onBeforeUnmount(() => {
 
         <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <section class="min-w-0 space-y-9">
+            <section v-if="mostOrderedItems.length" class="rounded-[24px] border border-amber-200 bg-amber-50/70 p-4 shadow-[0_0_0_1px_rgba(217,119,6,.08)] dark:border-amber-900/50 dark:bg-amber-950/15 sm:p-5">
+              <div class="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white"><Flame class="h-3.5 w-3.5" />Mais pedidos</span>
+                  <h2 class="menu-heading mt-2 text-xl font-semibold tracking-[-0.025em] sm:text-2xl">Favoritos de quem pede aqui</h2>
+                </div>
+                <span class="text-sm text-amber-800/70 dark:text-amber-200/70">{{ mostOrderedItems.length }} {{ mostOrderedItems.length === 1 ? 'opção' : 'opções' }}</span>
+              </div>
+              <div class="grid gap-3 md:grid-cols-2">
+                <article v-for="item in mostOrderedItems" :key="`mais-pedido-${item.id}`" class="product-card group border-amber-200 bg-white dark:border-amber-900/50 dark:bg-zinc-900" :class="{ 'product-card--closed': !aceitaPedidos }" :aria-disabled="!aceitaPedidos" @click="openItem(item)">
+                  <div class="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
+                    <Badge class="mb-2 w-fit border-0 bg-amber-500 text-amber-950 hover:bg-amber-500"><Flame class="mr-1 h-3 w-3" />Mais pedidos</Badge>
+                    <h3 class="text-balance text-base font-semibold leading-snug sm:text-lg">{{ itemName(item) }}</h3>
+                    <p class="line-clamp-2 text-pretty text-xs leading-relaxed text-stone-500 dark:text-stone-400">{{ itemDescription(item) }}</p>
+                    <div class="mt-auto flex items-end justify-between gap-3 pt-2">
+                      <div><p v-if="item.grupos.length" class="text-[11px] font-medium uppercase tracking-wide text-stone-400">A partir de</p><p class="price text-base font-bold text-stone-950 dark:text-white">{{ formatCurrencyBR(Number(item.Produto?.preco ?? item.preco)) }}</p></div>
+                      <button type="button" class="add-button" :aria-label="`Adicionar ${itemName(item)}`" :disabled="!aceitaPedidos" @click.stop="quickAdd(item)"><Plus class="h-5 w-5" /></button>
+                    </div>
+                  </div>
+                  <div v-if="itemImage(item)" class="product-image-wrap"><img :src="itemImage(item)" :alt="itemName(item)" class="product-image" /></div>
+                  <div v-else class="product-placeholder"><UtensilsCrossed class="h-8 w-8" /><span>Feito na casa</span></div>
+                </article>
+              </div>
+            </section>
             <div v-if="!visibleGroups.length" class="rounded-[24px] bg-white px-6 py-16 text-center shadow-[0_0_0_1px_rgba(43,37,32,.06)] dark:bg-zinc-900">
               <Search class="mx-auto mb-3 h-8 w-8 text-stone-300" />
               <h2 class="font-semibold">Nenhum item encontrado</h2>
@@ -1291,6 +1377,7 @@ onBeforeUnmount(() => {
                 <article v-for="item in group.items" :key="item.id" class="product-card group" :class="{ 'product-card--closed': !aceitaPedidos }" :aria-disabled="!aceitaPedidos" @click="openItem(item)">
                   <div class="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
                     <div v-if="quantidadeNoCarrinho(item.id)" class="brand-soft mb-2 w-fit rounded-full px-2.5 py-1 text-xs font-semibold">{{ quantidadeNoCarrinho(item.id) }} no carrinho</div>
+                    <Badge v-if="item.maisPedido" class="mb-2 w-fit border-0 bg-amber-500 text-amber-950 hover:bg-amber-500"><Flame class="mr-1 h-3 w-3" />Mais pedidos</Badge>
                     <h3 class="text-balance text-base font-semibold leading-snug sm:text-lg">
                       {{ itemName(item) }}
                     </h3>
@@ -1471,6 +1558,31 @@ onBeforeUnmount(() => {
         <DialogFooter class="mt-2 grid grid-cols-2 gap-3 sm:flex sm:justify-end">
           <Button type="button" variant="outline" class="order-2 sm:order-1" @click="continueShoppingAfterAdd">Continuar no cardápio</Button>
           <Button type="button" class="order-1 sm:order-2" :style="primaryButtonStyle" @click="goToCartAfterAdd"><ShoppingCart class="mr-2 h-4 w-4" />Ir ao carrinho</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog v-if="suggestionsOpen" :default-open="true" @update:open="onSuggestionsOpenChange">
+      <DialogContent class="menu-overlay max-h-[90dvh] max-w-lg overflow-y-auto rounded-3xl p-6" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
+        <DialogHeader class="text-left">
+          <DialogTitle class="menu-heading text-xl">Que tal complementar seu pedido?</DialogTitle>
+          <DialogDescription>Você adicionou {{ itemName(suggestionSource) }}. Escolha uma opção para incluir agora, se quiser.</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <article v-for="item in suggestedItems" :key="item.id" class="flex min-w-0 items-center gap-3 rounded-2xl border bg-white/70 p-3 dark:bg-zinc-900/70">
+            <img v-if="itemImage(item)" :src="itemImage(item)" :alt="itemName(item)" class="h-14 w-14 shrink-0 rounded-xl object-cover" />
+            <div v-else class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-400 dark:bg-zinc-800"><UtensilsCrossed class="h-5 w-5" /></div>
+            <div class="min-w-0 flex-1">
+              <p class="line-clamp-2 text-sm font-semibold">{{ itemName(item) }}</p>
+              <p class="price mt-1 text-sm font-bold">{{ formatCurrencyBR(Number(item.Produto?.preco ?? item.preco)) }}</p>
+              <p v-if="suggestionAddedItemId === item.id" class="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400"><Check class="h-3.5 w-3.5" />Adicionado ao carrinho</p>
+            </div>
+            <Button type="button" size="icon" class="shrink-0 rounded-xl" :class="{ 'bg-emerald-600 text-white hover:bg-emerald-700': suggestionAddedItemId === item.id }" :style="suggestionAddedItemId === item.id ? undefined : primaryButtonStyle" :aria-label="`Adicionar ${itemName(item)}`" @click="addSuggestedItem(item)"><Check v-if="suggestionAddedItemId === item.id" class="h-4 w-4" /><Plus v-else class="h-4 w-4" /></Button>
+          </article>
+        </div>
+        <DialogFooter class="mt-2 grid grid-cols-2 gap-3 sm:flex sm:justify-end">
+          <Button type="button" variant="outline" class="order-2 sm:order-1" @click="continueShoppingAfterSuggestions">Continuar no cardápio</Button>
+          <Button type="button" class="order-1 sm:order-2" :style="primaryButtonStyle" @click="goToCartAfterSuggestions"><ShoppingCart class="mr-2 h-4 w-4" />Ir ao carrinho</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

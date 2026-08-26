@@ -278,6 +278,7 @@ const form = reactive<RestauranteConfig & { horariosJson: RestauranteHorarioFunc
   slug: '',
   nomePublico: '',
   ativo: false,
+  aceitarPedidosOnline: true,
   pedidosQrDireto: false,
   modoFrete: 'FIXO',
   taxaFixa: 0,

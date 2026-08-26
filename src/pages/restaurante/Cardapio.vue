@@ -44,16 +44,19 @@ const editingItemId = ref<number | undefined>()
 const editingGroupId = ref<number | undefined>()
 const imagemChange = ref<{ file: File | null; remove: boolean }>({ file: null, remove: false })
 const updatingAvailabilityItemId = ref<number | null>(null)
+const updatingHighlightItemId = ref<number | null>(null)
 
 const itemForm = reactive<RestauranteCatalogoPayload>({
   modoCadastro: 'VINCULAR',
   produtoId: null,
   categoriaId: null,
+  categoriaSugestaoId: null,
   preco: 0,
   nomePublico: null,
   descricao: null,
   imagem: null,
   disponivel: true,
+  maisPedido: false,
   regraPrecoSabores: 'MAIOR_PRECO',
   ordem: 0,
   grupoIds: [],
@@ -119,11 +122,13 @@ function newItem() {
     modoCadastro: 'VINCULAR',
     produtoId: null,
     categoriaId: null,
+    categoriaSugestaoId: null,
     preco: 0,
     nomePublico: null,
     descricao: null,
     imagem: null,
     disponivel: true,
+    maisPedido: false,
     regraPrecoSabores: 'MAIOR_PRECO',
     ordem: items.value.length,
     grupoIds: [],
@@ -139,11 +144,13 @@ function editItem(item: RestauranteCatalogoItem) {
     modoCadastro: item.produtoId ? 'VINCULAR' : 'AVULSO',
     produtoId: item.produtoId || null,
     categoriaId: item.categoriaId || item.Categoria?.id || item.Produto?.ProdutoBase?.categoriaId || null,
+    categoriaSugestaoId: item.categoriaSugestaoId || null,
     preco: Number(item.preco),
     nomePublico: item.nomePublico,
     descricao: item.descricao,
     imagem: item.imagem,
     disponivel: item.disponivel,
+    maisPedido: item.maisPedido,
     regraPrecoSabores: item.regraPrecoSabores,
     ordem: item.ordem,
     grupoIds: item.grupos.map((link) => link.grupoId),
@@ -241,16 +248,18 @@ function itemCategoryLabel(item: RestauranteCatalogoItem) {
   return item.Categoria?.nome || item.Produto?.ProdutoBase?.Categoria?.nome || 'Sem categoria'
 }
 
-function itemPayload(item: RestauranteCatalogoItem, disponivel: boolean): RestauranteCatalogoPayload {
+function itemPayload(item: RestauranteCatalogoItem, changes: Partial<Pick<RestauranteCatalogoPayload, 'disponivel' | 'maisPedido'>> = {}): RestauranteCatalogoPayload {
   return {
     modoCadastro: item.produtoId ? 'VINCULAR' : 'AVULSO',
     produtoId: item.produtoId || null,
     categoriaId: item.categoriaId || item.Categoria?.id || item.Produto?.ProdutoBase?.categoriaId || null,
+    categoriaSugestaoId: item.categoriaSugestaoId || null,
     preco: Number(item.preco),
     nomePublico: item.nomePublico || null,
     descricao: item.descricao || null,
     imagem: item.imagem || null,
-    disponivel,
+    disponivel: changes.disponivel ?? item.disponivel,
+    maisPedido: changes.maisPedido ?? item.maisPedido,
     regraPrecoSabores: item.regraPrecoSabores,
     ordem: item.ordem,
     grupoIds: item.grupos.map((link) => link.grupoId),
@@ -263,7 +272,7 @@ async function toggleItemAvailability(item: RestauranteCatalogoItem) {
   const disponivel = !item.disponivel
   try {
     updatingAvailabilityItemId.value = item.id
-    const saved = await RestauranteRepository.salvarItemCardapio(itemPayload(item, disponivel), item.id)
+    const saved = await RestauranteRepository.salvarItemCardapio(itemPayload(item, { disponivel }), item.id)
     item.disponivel = saved.disponivel
     item.version = saved.version
     toast.success(disponivel ? 'Produto visível no cardápio' : 'Produto ocultado do cardápio')
@@ -272,6 +281,23 @@ async function toggleItemAvailability(item: RestauranteCatalogoItem) {
     await load()
   } finally {
     updatingAvailabilityItemId.value = null
+  }
+}
+
+async function toggleItemHighlight(item: RestauranteCatalogoItem, checked: boolean | 'indeterminate') {
+  if (updatingHighlightItemId.value !== null || checked === 'indeterminate') return
+  const maisPedido = checked === true
+  try {
+    updatingHighlightItemId.value = item.id
+    const saved = await RestauranteRepository.salvarItemCardapio(itemPayload(item, { maisPedido }), item.id)
+    item.maisPedido = saved.maisPedido
+    item.version = saved.version
+    toast.success(maisPedido ? 'Produto destacado em Mais pedidos' : 'Destaque de Mais pedidos removido')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível alterar o destaque do produto.')
+    await load()
+  } finally {
+    updatingHighlightItemId.value = null
   }
 }
 
@@ -366,7 +392,7 @@ onMounted(load)
                 />
                 <div v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"><UtensilsCrossed class="h-5 w-5" /></div>
                 <div class="min-w-0 flex-1">
-                  <div class="flex items-start justify-between gap-2"><div class="min-w-0"><CardTitle class="truncate text-sm">{{ item.nomePublico || (item.Produto ? productLabel(item.Produto) : 'Item do cardápio') }}</CardTitle><p class="mt-0.5 text-lg font-medium text-muted-foreground">{{ formatCurrencyBR(Number(item.Produto?.preco || item.preco)) }}</p></div><Button type="button" size="icon" variant="outline" class="h-7 w-7 shrink-0" :disabled="updatingAvailabilityItemId === item.id" :title="item.disponivel ? 'Ocultar do cardápio' : 'Mostrar no cardápio'" :aria-label="item.disponivel ? 'Ocultar do cardápio' : 'Mostrar no cardápio'" @click="toggleItemAvailability(item)"><LoaderCircle v-if="updatingAvailabilityItemId === item.id" class="h-4 w-4 animate-spin" /><component :is="item.disponivel ? Eye : EyeOff" v-else class="h-4 w-4" :class="item.disponivel ? 'text-emerald-600' : 'text-muted-foreground'" /></Button></div>
+                  <div class="flex items-start justify-between gap-2"><div class="min-w-0"><CardTitle class="truncate text-sm">{{ item.nomePublico || (item.Produto ? productLabel(item.Produto) : 'Item do cardápio') }}</CardTitle><p class="mt-0.5 text-lg font-medium text-muted-foreground">{{ formatCurrencyBR(Number(item.Produto?.preco || item.preco)) }}</p></div><label class="mt-1 flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground" title="Destacar em Mais pedidos no cardápio online"><Checkbox :model-value="item.maisPedido" :disabled="updatingHighlightItemId === item.id" @update:model-value="toggleItemHighlight(item, $event)" /><LoaderCircle v-if="updatingHighlightItemId === item.id" class="h-3.5 w-3.5 animate-spin" /><span class="hidden 2xl:inline">Mais pedidos</span></label><Button type="button" size="icon" variant="outline" class="h-7 w-7 shrink-0" :disabled="updatingAvailabilityItemId === item.id" :title="item.disponivel ? 'Ocultar do cardápio' : 'Mostrar no cardápio'" :aria-label="item.disponivel ? 'Ocultar do cardápio' : 'Mostrar no cardápio'" @click="toggleItemAvailability(item)"><LoaderCircle v-if="updatingAvailabilityItemId === item.id" class="h-4 w-4 animate-spin" /><component :is="item.disponivel ? Eye : EyeOff" v-else class="h-4 w-4" :class="item.disponivel ? 'text-emerald-600' : 'text-muted-foreground'" /></Button></div>
                   <Badge variant="outline" class="mt-1.5 max-w-full gap-1 truncate text-xs"><PackageSearch class="h-3 w-3 shrink-0" />{{ itemCategoryLabel(item) }}</Badge>
                   <p class="mt-2 line-clamp-1 text-xs text-muted-foreground">{{ item.descricao || 'Sem descrição pública.' }}</p>
                 </div>
@@ -516,6 +542,11 @@ onMounted(load)
               <Checkbox :model-value="itemForm.grupoIds.includes(group.id)" @update:model-value="toggleGroup(group.id, $event)" />
               <span class="flex-1 text-sm"><strong>{{ group.nome }}</strong><span class="ml-2 text-muted-foreground">{{ group.tipo === 'SABOR' ? 'Sabores' : 'Complementos' }}</span></span>
             </label>
+          </div>
+          <div class="space-y-2 sm:col-span-2">
+            <Label>Sugestões</Label>
+            <p class="text-xs text-muted-foreground">Opcional. Depois de adicionar este item, o cliente verá os produtos dessa categoria para incluir rapidamente no pedido.</p>
+            <Select2Ajax v-model:model-value="itemForm.categoriaSugestaoId" url="/produtos/categorias/select2" placeholder="Sem sugestão" :allow-clear="true" />
           </div>
         </div>
         <DialogFooter>

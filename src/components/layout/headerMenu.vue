@@ -28,6 +28,7 @@
       <ReportBugButton />
       <TourHelpButton />
       <InformativosStatusButton />
+      <RestaurantOnlineOrdersSwitch />
       <RestaurantPrintStatusButton />
       <ColorToggle class="mr-2" v-if="!uiStore.isMobile" />
       <div class="flex justify-between flex-col text-sm truncate text-left max-w-34">
@@ -49,6 +50,7 @@ import InformativosStatusButton from './InformativosStatusButton.vue'
 import TourHelpButton from './TourHelpButton.vue'
 import ReportBugButton from './ReportBugButton.vue'
 import RestaurantPrintStatusButton from './RestaurantPrintStatusButton.vue'
+import RestaurantOnlineOrdersSwitch from './RestaurantOnlineOrdersSwitch.vue'
 import { isSupportActive } from '@/utils/supportSession'
 withDefaults(defineProps<{ homePath?: string }>(), {
   homePath: '/',

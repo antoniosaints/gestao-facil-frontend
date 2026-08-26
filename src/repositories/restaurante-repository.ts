@@ -398,6 +398,7 @@ export interface RestauranteConfig {
   slug: string
   nomePublico: string
   ativo: boolean
+  aceitarPedidosOnline: boolean
   pedidosQrDireto: boolean
   modoFrete: 'FIXO' | 'ZONAS'
   taxaFixa: string | number
@@ -502,11 +503,13 @@ export interface RestauranteCatalogoItem {
   id: number
   produtoId?: number | null
   categoriaId?: number | null
+  categoriaSugestaoId?: number | null
   preco: string | number
   nomePublico?: string | null
   descricao?: string | null
   imagem?: string | null
   disponivel: boolean
+  maisPedido: boolean
   regraPrecoSabores: 'MAIOR_PRECO' | 'MEDIA_PROPORCIONAL' | 'SOMA'
   ordem: number
   version: number
@@ -519,11 +522,13 @@ export interface RestauranteCatalogoPayload {
   modoCadastro: 'VINCULAR' | 'AVULSO' | 'CRIAR_PRODUTO'
   produtoId?: number | null
   categoriaId?: number | null
+  categoriaSugestaoId?: number | null
   preco: number
   nomePublico?: string | null
   descricao?: string | null
   imagem?: string | null
   disponivel: boolean
+  maisPedido: boolean
   regraPrecoSabores: RestauranteCatalogoItem['regraPrecoSabores']
   ordem: number
   grupoIds: number[]
@@ -790,6 +795,16 @@ export class RestauranteRepository {
   static async salvarConfiguracao(config: RestauranteConfig) {
     const { data } = await http.put('/v1/restaurante/configuracao', config)
     return data.data as RestauranteConfig
+  }
+
+  static async statusPedidosOnline() {
+    const { data } = await http.get('/v1/restaurante/pedidos-online')
+    return data.data as { aceitarPedidosOnline: boolean }
+  }
+
+  static async salvarStatusPedidosOnline(aceitarPedidosOnline: boolean) {
+    const { data } = await http.put('/v1/restaurante/pedidos-online', { aceitarPedidosOnline })
+    return data.data as { aceitarPedidosOnline: boolean }
   }
 
   static async fidelidade() {
