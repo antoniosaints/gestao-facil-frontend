@@ -535,6 +535,8 @@ export interface RestauranteCatalogoPayload {
   version?: number
 }
 
+export type RestauranteCatalogoBulkAction = 'EXIBIR' | 'OCULTAR' | 'DESTACAR' | 'REMOVER_DESTAQUE' | 'EXCLUIR'
+
 export interface RestauranteGrupoPayload {
   nome: string
   tipo: RestauranteGrupoOpcao['tipo']
@@ -582,7 +584,7 @@ export class RestauranteRepository {
         modoFrete: 'FIXO' | 'ZONAS'
         freteGratisAcima?: string | number | null
         temaPersonalizado?: Partial<ThemeCustomization> | null
-        fidelidade?: RestauranteFidelidadePublica | null
+        fidelidades?: RestauranteFidelidadePublica[]
       }
       itens: any[]
     }
@@ -807,9 +809,9 @@ export class RestauranteRepository {
     return data.data as { aceitarPedidosOnline: boolean }
   }
 
-  static async fidelidade() {
+  static async fidelidades() {
     const { data } = await http.get('/v1/restaurante/fidelidade')
-    return data.data as RestauranteFidelidadePrograma | null
+    return data.data as RestauranteFidelidadePrograma[]
   }
 
   static async opcoesFidelidade() {
@@ -821,8 +823,15 @@ export class RestauranteRepository {
   }
 
   static async salvarFidelidade(payload: RestauranteFidelidadePrograma) {
-    const { data } = await http.put('/v1/restaurante/fidelidade', payload)
+    const { id, ...body } = payload
+    const { data } = id
+      ? await http.put(`/v1/restaurante/fidelidade/${id}`, body)
+      : await http.post('/v1/restaurante/fidelidade', body)
     return data.data as RestauranteFidelidadePrograma
+  }
+
+  static async excluirFidelidade(id: number) {
+    await http.delete(`/v1/restaurante/fidelidade/${id}`)
   }
 
   static async catalogo(params: { page?: number; limit?: number } = {}) {
@@ -845,6 +854,11 @@ export class RestauranteRepository {
       ? await http.patch(`/v1/restaurante/cardapio/${id}`, payload)
       : await http.post('/v1/restaurante/cardapio', payload)
     return response.data.data as RestauranteCatalogoItem
+  }
+
+  static async aplicarAcoesEmMassaCardapio(ids: number[], acao: RestauranteCatalogoBulkAction) {
+    const { data } = await http.post('/v1/restaurante/cardapio/acoes-em-massa', { ids, acao })
+    return data.data as { affected: number; acao: RestauranteCatalogoBulkAction }
   }
 
   static async enviarImagemItemCardapio(id: number, file: File, atualizarProduto = false) {

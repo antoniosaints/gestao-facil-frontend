@@ -218,6 +218,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
   produtos: [
     { key: 'produtos:painel', nome: 'Painel' },
     { key: 'produtos:lista', nome: 'Produtos' },
+    { key: 'produtos:categorias', nome: 'Categorias' },
     { key: 'produtos:combos', nome: 'Combos' },
     { key: 'produtos:reposicao', nome: 'Reposição' },
     { key: 'produtos:movimentacoes', nome: 'Movimentações' },
@@ -553,7 +554,7 @@ export const sidebarMenuOptions = (
         },
         {
           key: 'restaurante:fidelidade',
-          nome: 'Fidelidade',
+          nome: 'Promoções',
           link: '/restaurante/fidelidade',
           show: restaurantAccess.has('CONFIGURACOES_GERENCIAR'),
           icone: Award,
@@ -800,6 +801,13 @@ export const sidebarMenuOptions = (
           nome: 'Produtos',
           link: '/produtos',
           icone: Boxes,
+          color: 'blue',
+        },
+        {
+          key: 'produtos:categorias',
+          nome: 'Categorias',
+          link: '/produtos/categorias',
+          icone: Tags,
           color: 'blue',
         },
         {

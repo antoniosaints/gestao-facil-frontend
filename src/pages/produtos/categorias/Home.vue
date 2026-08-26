@@ -89,7 +89,10 @@ watch(
   },
 )
 
-onMounted(loadCategorias)
+onMounted(() => {
+  store.resetSelectedCategoriaIds()
+  loadCategorias()
+})
 </script>
 
 <template>

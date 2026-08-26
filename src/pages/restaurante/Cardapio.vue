@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
+import { useConfirm } from '@/composables/useConfirm'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,6 +23,7 @@ import type { ProdutoBase, ProdutoCategoria } from '@/types/schemas'
 import {
   RestauranteRepository,
   type RestauranteCatalogoItem,
+  type RestauranteCatalogoBulkAction,
   type RestauranteCatalogoPayload,
   type RestauranteGrupoOpcao,
   type RestauranteGrupoPayload,
@@ -31,6 +33,7 @@ import { formatCurrencyBR } from '@/utils/formatters'
 import { BadgePlusIcon, Eye, EyeOff, Layers3, LoaderCircle, PackagePlus, PackageSearch, Pencil, Plus, Search, Trash2, UtensilsCrossed } from 'lucide-vue-next'
 
 const toast = useToast()
+const confirm = useConfirm()
 const produtoStore = useProdutoStore()
 const loading = ref(true)
 const saving = ref(false)
@@ -45,9 +48,14 @@ const editingGroupId = ref<number | undefined>()
 const imagemChange = ref<{ file: File | null; remove: boolean }>({ file: null, remove: false })
 const updatingAvailabilityItemId = ref<number | null>(null)
 const updatingHighlightItemId = ref<number | null>(null)
+const bulkSaving = ref(false)
+type CatalogVisibilityFilter = 'TODOS' | 'ATIVOS' | 'INATIVOS'
+const visibilityFilterStorageKey = 'gestao_facil:restaurante:cardapio:visibilidade'
+const catalogVisibilityFilter = ref<CatalogVisibilityFilter>(readCatalogVisibilityFilter())
+const selectedItemIds = ref<number[]>([])
 
 const itemForm = reactive<RestauranteCatalogoPayload>({
-  modoCadastro: 'VINCULAR',
+  modoCadastro: 'AVULSO',
   produtoId: null,
   categoriaId: null,
   categoriaSugestaoId: null,
@@ -74,13 +82,27 @@ const groupForm = ref<RestauranteGrupoPayload>(emptyGroup())
 
 const filteredItems = computed(() => {
   const term = search.value.trim().toLocaleLowerCase('pt-BR')
-  if (!term) return items.value
-  return items.value.filter((item) =>
+  return items.value.filter((item) => {
+    if (catalogVisibilityFilter.value === 'ATIVOS' && !item.disponivel) return false
+    if (catalogVisibilityFilter.value === 'INATIVOS' && item.disponivel) return false
+    if (!term) return true
+    return (
     [item.nomePublico, item.Produto?.nome, item.Produto?.nomeVariante].some((value) =>
       value?.toLocaleLowerCase('pt-BR').includes(term),
-    ),
-  )
+    ))
+  })
 })
+
+const selectedFilteredItemIds = computed(() => filteredItems.value
+  .map((item) => item.id)
+  .filter((id) => selectedItemIds.value.includes(id)))
+const allFilteredItemsSelected = computed(() => filteredItems.value.length > 0 && selectedFilteredItemIds.value.length === filteredItems.value.length)
+const filteredSelectionState = computed<boolean | 'indeterminate'>(() => allFilteredItemsSelected.value
+  ? true
+  : selectedFilteredItemIds.value.length
+    ? 'indeterminate'
+    : false)
+const selectedItemsCount = computed(() => selectedItemIds.value.length)
 
 const activeGroups = computed(() => groups.value.filter((group) => group.ativo))
 const availableItems = computed(() => items.value.filter((item) => item.disponivel).length)
@@ -107,6 +129,7 @@ async function load() {
       RestauranteRepository.produtosCardapio(),
     ])
     items.value = catalog.data
+    selectedItemIds.value = selectedItemIds.value.filter((id) => items.value.some((item) => item.id === id))
     groups.value = optionGroups
     products.value = availableProducts
   } catch (error: any) {
@@ -116,10 +139,102 @@ async function load() {
   }
 }
 
+function readCatalogVisibilityFilter(): CatalogVisibilityFilter {
+  try {
+    const value = localStorage.getItem(visibilityFilterStorageKey)
+    return value === 'ATIVOS' || value === 'INATIVOS' ? value : 'TODOS'
+  } catch {
+    return 'TODOS'
+  }
+}
+
+function changeCatalogVisibilityFilter(value: string) {
+  const filter: CatalogVisibilityFilter = value === 'ATIVOS' || value === 'INATIVOS' ? value : 'TODOS'
+  catalogVisibilityFilter.value = filter
+  selectedItemIds.value = []
+  try {
+    localStorage.setItem(visibilityFilterStorageKey, filter)
+  } catch {
+    // A filtragem continua funcionando mesmo quando o armazenamento não está disponível.
+  }
+}
+
+function toggleItemSelection(id: number, checked: boolean | 'indeterminate') {
+  if (checked === true && !selectedItemIds.value.includes(id)) selectedItemIds.value.push(id)
+  if (checked !== true) selectedItemIds.value = selectedItemIds.value.filter((itemId) => itemId !== id)
+}
+
+function toggleAllFilteredItems(checked: boolean | 'indeterminate') {
+  const visibleIds = filteredItems.value.map((item) => item.id)
+  if (checked === true) {
+    selectedItemIds.value = [...new Set([...selectedItemIds.value, ...visibleIds])]
+    return
+  }
+  selectedItemIds.value = selectedItemIds.value.filter((id) => !visibleIds.includes(id))
+}
+
+function bulkActionLabel(action: RestauranteCatalogoBulkAction) {
+  return {
+    EXIBIR: 'exibidos',
+    OCULTAR: 'ocultados',
+    DESTACAR: 'destacados',
+    REMOVER_DESTAQUE: 'sem destaque',
+    EXCLUIR: 'excluídos',
+  }[action]
+}
+
+async function applyBulkAction(action: RestauranteCatalogoBulkAction) {
+  if (!selectedItemIds.value.length || bulkSaving.value) return
+  if (action === 'EXCLUIR') {
+    const confirmed = await confirm.confirm({
+      title: 'Excluir itens do cardápio',
+      message: `Deseja excluir ${selectedItemsCount.value} item(ns) selecionado(s)? Os produtos-base e pedidos já realizados não serão removidos.`,
+      confirmText: 'Excluir itens',
+      cancelText: 'Cancelar',
+      colorButton: 'danger',
+    })
+    if (!confirmed) return
+  }
+  try {
+    bulkSaving.value = true
+    const result = await RestauranteRepository.aplicarAcoesEmMassaCardapio(selectedItemIds.value, action)
+    selectedItemIds.value = []
+    await load()
+    toast.success(`${result.affected} item(ns) ${bulkActionLabel(action)} com sucesso.`)
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível aplicar a ação aos itens selecionados.')
+  } finally {
+    bulkSaving.value = false
+  }
+}
+
+async function deleteCatalogItem(item: RestauranteCatalogoItem) {
+  if (bulkSaving.value) return
+  const confirmed = await confirm.confirm({
+    title: 'Excluir item do cardápio',
+    message: `Deseja excluir “${item.nomePublico || item.Produto?.nome || 'este item'}”? Os produtos-base e pedidos já realizados não serão removidos.`,
+    confirmText: 'Excluir item',
+    cancelText: 'Cancelar',
+    colorButton: 'danger',
+  })
+  if (!confirmed) return
+  try {
+    bulkSaving.value = true
+    await RestauranteRepository.aplicarAcoesEmMassaCardapio([item.id], 'EXCLUIR')
+    selectedItemIds.value = selectedItemIds.value.filter((id) => id !== item.id)
+    await load()
+    toast.success('Item excluído do cardápio.')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível excluir o item do cardápio.')
+  } finally {
+    bulkSaving.value = false
+  }
+}
+
 function newItem() {
   editingItemId.value = undefined
   Object.assign(itemForm, {
-    modoCadastro: 'VINCULAR',
+    modoCadastro: 'AVULSO',
     produtoId: null,
     categoriaId: null,
     categoriaSugestaoId: null,
@@ -341,7 +456,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto space-y-5">
+  <section class="mx-auto space-y-3">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight">
@@ -351,25 +466,39 @@ onMounted(load)
       </div>
     </header>
 
-    <div class="grid gap-3 sm:grid-cols-3">
-      <div class="flex items-center gap-3 rounded-xl border bg-card p-3"><div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><PackageSearch class="h-5 w-5" /></div><div><p class="text-xs text-muted-foreground">Itens cadastrados</p><p class="text-lg font-semibold tabular-nums">{{ items.length }}</p></div></div>
-      <div class="flex items-center gap-3 rounded-xl border bg-card p-3"><div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600"><Eye class="h-5 w-5" /></div><div><p class="text-xs text-muted-foreground">Visíveis no cardápio</p><p class="text-lg font-semibold tabular-nums">{{ availableItems }}</p></div></div>
-      <div class="flex items-center gap-3 rounded-xl border bg-card p-3"><div class="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground"><Layers3 class="h-5 w-5" /></div><div><p class="text-xs text-muted-foreground">Grupos ativos</p><p class="text-lg font-semibold tabular-nums">{{ activeGroups.length }}</p></div></div>
-    </div>
-
-    <Tabs default-value="itens" class="space-y-3">
+    <Tabs default-value="itens" class="space-y-2">
       <TabsList class="grid h-auto w-full rounded-md grid-cols-2 gap-1 p-1 sm:max-w-xl">
         <TabsTrigger value="itens"><UtensilsCrossed class="mr-2 h-4 w-4 inline-flex" />Itens do cardápio</TabsTrigger>
         <TabsTrigger value="grupos"><Layers3 class="mr-2 h-4 w-4 inline-flex" />Sabores e complementos</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="itens" class="space-y-4">
-        <div class="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
-          <div class="relative w-full sm:max-w-md">
-            <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input v-model="search" class="pl-9" placeholder="Buscar item do cardápio" />
+      <TabsContent value="itens" class="space-y-2">
+        <div class="flex flex-col gap-3 rounded-xl border bg-card px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex w-full flex-col gap-2 sm:max-w-2xl sm:flex-row sm:items-center">
+            <Input v-model="search" :icon-label="Search" :icon-label-position="'left'" placeholder="Buscar item do cardápio" />
+            <Select :model-value="catalogVisibilityFilter" @update:model-value="changeCatalogVisibilityFilter(String($event))">
+              <SelectTrigger class="w-full sm:w-36"><SelectValue placeholder="Visibilidade" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODOS">Todos</SelectItem>
+                <SelectItem value="ATIVOS">Ativos</SelectItem>
+                <SelectItem value="INATIVOS">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+            <label v-if="filteredItems.length" class="flex h-9 shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-md border px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted"><Checkbox :model-value="filteredSelectionState" @update:model-value="toggleAllFilteredItems($event)" />Selecionar visíveis</label>
           </div>
           <div class="flex items-center gap-1"><HelpTooltip text="Os produtos vêm do cadastro de estoque. Aqui você escolhe o nome, a descrição, a imagem e os grupos que aparecem no cardápio público." /><Button @click="newItem"><Plus class="mr-2 h-4 w-4" />Adicionar produto</Button></div>
+        </div>
+
+        <div v-if="selectedItemsCount" class="flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3 py-1 sm:flex-row sm:items-center sm:justify-between">
+          <label class="flex cursor-pointer items-center gap-2 text-sm font-medium"><Checkbox :model-value="allFilteredItemsSelected" @update:model-value="toggleAllFilteredItems($event)" />{{ selectedItemsCount }} selecionado(s)</label>
+          <div class="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" :disabled="bulkSaving" @click="applyBulkAction('EXIBIR')"><Eye class="mr-1.5 h-4 w-4" />Exibir</Button>
+            <Button size="sm" variant="outline" :disabled="bulkSaving" @click="applyBulkAction('OCULTAR')"><EyeOff class="mr-1.5 h-4 w-4" />Ocultar</Button>
+            <Button size="sm" variant="outline" :disabled="bulkSaving" @click="applyBulkAction('DESTACAR')"><BadgePlusIcon class="mr-1.5 h-4 w-4" />Destacar</Button>
+            <Button size="sm" variant="outline" :disabled="bulkSaving" @click="applyBulkAction('REMOVER_DESTAQUE')">Remover destaque</Button>
+            <Button size="sm" variant="destructive" :disabled="bulkSaving" @click="applyBulkAction('EXCLUIR')"><LoaderCircle v-if="bulkSaving" class="mr-1.5 h-4 w-4 animate-spin" /><Trash2 v-else class="mr-1.5 h-4 w-4" />Excluir</Button>
+            <Button size="sm" variant="ghost" :disabled="bulkSaving" @click="selectedItemIds = []">Limpar</Button>
+          </div>
         </div>
 
         <div v-if="loading" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -381,7 +510,8 @@ onMounted(load)
           <p class="text-sm text-muted-foreground">Adicione um produto já cadastrado para começar.</p>
         </div>
         <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <Card v-for="item in filteredItems" :key="item.id" class="overflow-hidden rounded-xl">
+          <Card v-for="item in filteredItems" :key="item.id" class="relative overflow-hidden rounded-xl">
+            <Checkbox class="absolute left-3 top-3 z-10 rounded bg-background/90 p-0.5 shadow-sm" :model-value="selectedItemIds.includes(item.id)" :aria-label="`Selecionar ${item.nomePublico || item.Produto?.nome || 'item do cardápio'}`" @update:model-value="toggleItemSelection(item.id, $event)" />
             <CardContent class="p-3">
               <div class="flex gap-3">
                 <img
@@ -392,14 +522,14 @@ onMounted(load)
                 />
                 <div v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"><UtensilsCrossed class="h-5 w-5" /></div>
                 <div class="min-w-0 flex-1">
-                  <div class="flex items-start justify-between gap-2"><div class="min-w-0"><CardTitle class="truncate text-sm">{{ item.nomePublico || (item.Produto ? productLabel(item.Produto) : 'Item do cardápio') }}</CardTitle><p class="mt-0.5 text-lg font-medium text-muted-foreground">{{ formatCurrencyBR(Number(item.Produto?.preco || item.preco)) }}</p></div><label class="mt-1 flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground" title="Destacar em Mais pedidos no cardápio online"><Checkbox :model-value="item.maisPedido" :disabled="updatingHighlightItemId === item.id" @update:model-value="toggleItemHighlight(item, $event)" /><LoaderCircle v-if="updatingHighlightItemId === item.id" class="h-3.5 w-3.5 animate-spin" /><span class="hidden 2xl:inline">Mais pedidos</span></label><Button type="button" size="icon" variant="outline" class="h-7 w-7 shrink-0" :disabled="updatingAvailabilityItemId === item.id" :title="item.disponivel ? 'Ocultar do cardápio' : 'Mostrar no cardápio'" :aria-label="item.disponivel ? 'Ocultar do cardápio' : 'Mostrar no cardápio'" @click="toggleItemAvailability(item)"><LoaderCircle v-if="updatingAvailabilityItemId === item.id" class="h-4 w-4 animate-spin" /><component :is="item.disponivel ? Eye : EyeOff" v-else class="h-4 w-4" :class="item.disponivel ? 'text-emerald-600' : 'text-muted-foreground'" /></Button></div>
+                  <div class="flex items-start justify-between gap-2"><div class="min-w-0"><CardTitle class="truncate text-sm">{{ item.nomePublico || (item.Produto ? productLabel(item.Produto) : 'Item do cardápio') }}</CardTitle><p class="mt-0.5 text-lg font-medium text-green-600 dark:text-green-500">{{ formatCurrencyBR(Number(item.Produto?.preco || item.preco)) }}</p></div><div class="flex shrink-0 items-center gap-1"><label class="flex h-7 cursor-pointer items-center gap-2 rounded-md border bg-background px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted" :class="{ 'cursor-not-allowed opacity-60': updatingHighlightItemId === item.id }" title="Destacar em Mais pedidos no cardápio online" @click.prevent="toggleItemHighlight(item, !item.maisPedido)"><span>Destacar</span><Switch :model-value="item.maisPedido" :disabled="updatingHighlightItemId === item.id" aria-label="Destacar em Mais pedidos" @click.stop @update:model-value="toggleItemHighlight(item, $event)" /><LoaderCircle v-if="updatingHighlightItemId === item.id" class="h-3.5 w-3.5 animate-spin" /></label><Button type="button" size="icon" variant="outline" class="h-7 w-7 shrink-0" :disabled="updatingAvailabilityItemId === item.id" :title="item.disponivel ? 'Ocultar do cardápio' : 'Mostrar no cardápio'" :aria-label="item.disponivel ? 'Ocultar do cardápio' : 'Mostrar no cardápio'" @click="toggleItemAvailability(item)"><LoaderCircle v-if="updatingAvailabilityItemId === item.id" class="h-4 w-4 animate-spin" /><component :is="item.disponivel ? Eye : EyeOff" v-else class="h-4 w-4" :class="item.disponivel ? 'text-emerald-600' : 'text-muted-foreground'" /></Button></div></div>
                   <Badge variant="outline" class="mt-1.5 max-w-full gap-1 truncate text-xs"><PackageSearch class="h-3 w-3 shrink-0" />{{ itemCategoryLabel(item) }}</Badge>
                   <p class="mt-2 line-clamp-1 text-xs text-muted-foreground">{{ item.descricao || 'Sem descrição pública.' }}</p>
                 </div>
               </div>
               <div class="mt-2 flex items-center justify-between gap-3 border-t pt-2">
                 <div class="flex min-w-0 flex-wrap gap-1"><Badge v-for="link in item.grupos.slice(0, 2)" :key="link.grupoId" variant="outline" class="max-w-32 truncate">{{ link.Grupo.nome }}</Badge><span v-if="item.grupos.length > 2" class="text-xs text-muted-foreground">+{{ item.grupos.length - 2 }}</span><span v-if="!item.grupos.length" class="text-xs text-muted-foreground">Sem complementos</span></div>
-                <Button size="sm" class="shrink-0" variant="outline" @click="editItem(item)"><Pencil class="mr-1.5 h-3.5 w-3.5" />Editar</Button>
+                <div class="flex shrink-0 items-center gap-1"><Button size="sm" variant="outline" @click="editItem(item)"><Pencil class="mr-1.5 h-3.5 w-3.5" />Editar</Button><Button size="icon" variant="destructive" class="h-8 w-8" title="Excluir item" :disabled="bulkSaving" @click="deleteCatalogItem(item)"><Trash2 class="h-3.5 w-3.5" /></Button></div>
               </div>
             </CardContent>
           </Card>
@@ -407,7 +537,7 @@ onMounted(load)
       </TabsContent>
 
       <TabsContent value="grupos" class="space-y-4">
-        <div class="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-3 rounded-xl border bg-card px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
           <div><p class="font-medium">Sabores e complementos</p><p class="text-pretty text-xs text-muted-foreground">Crie grupos reutilizáveis e depois associe-os aos itens do cardápio.</p></div>
           <div class="flex items-center gap-1"><HelpTooltip text="Use grupos para escolhas como sabores, tamanhos, bordas e adicionais. O mínimo e o máximo controlam quantas opções o cliente pode selecionar." /><Button @click="newGroup"><Plus class="mr-2 h-4 w-4" />Novo grupo</Button></div>
         </div>

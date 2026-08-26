@@ -226,6 +226,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   const idMutation = ref<number | null>(null)
   const baseMutationId = ref<number | null>(null)
   const selectedIds = ref<number[]>([])
+  const selectedCategoriaIds = ref<number[]>([])
 
   const form = ref<ProdutoForm>(getDefaultProdutoForm())
   const varianteForm = ref<ProdutoVarianteForm>(getDefaultVarianteForm())
@@ -247,6 +248,19 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     if (index !== -1) {
       selectedIds.value.splice(index, 1)
     }
+  }
+
+  function resetSelectedCategoriaIds() {
+    selectedCategoriaIds.value = []
+  }
+
+  function addSelectedCategoriaId(id: number) {
+    if (!selectedCategoriaIds.value.includes(id)) selectedCategoriaIds.value.push(id)
+  }
+
+  function removeSelectedCategoriaId(id: number) {
+    const index = selectedCategoriaIds.value.indexOf(id)
+    if (index !== -1) selectedCategoriaIds.value.splice(index, 1)
   }
 
   const reset = () => {
@@ -335,6 +349,7 @@ export const useProdutoStore = defineStore('produtoStore', () => {
   const updateTable = () => {
     filters.value.update = !filters.value.update
     resetSelectedIds()
+    resetSelectedCategoriaIds()
   }
 
   const openUpdate = async (id: number) => {
@@ -512,9 +527,13 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     idMutation,
     baseMutationId,
     selectedIds,
+    selectedCategoriaIds,
     categoriaObrigatoria,
     addSelectedId,
     resetSelectedIds,
     removeSelectedId,
+    addSelectedCategoriaId,
+    resetSelectedCategoriaIds,
+    removeSelectedCategoriaId,
   }
 })

@@ -173,10 +173,8 @@ const suggestedItems = computed(() => {
   )
 })
 
-const fidelity = computed(() => cardapio.value?.restaurante?.fidelidade || null)
-const fidelityEligibleLabels = computed(() => {
-  const program = fidelity.value
-  if (!program) return []
+const fidelities = computed(() => cardapio.value?.restaurante?.fidelidades || [])
+function fidelityEligibleLabels(program: any) {
   const labels: string[] = []
   const categoryNames = new Map<number, string>()
 
@@ -188,32 +186,34 @@ const fidelityEligibleLabels = computed(() => {
 
   labels.push(...program.categoriaIds.map((id: number) => `Categoria: ${categoryNames.get(id) || 'itens da categoria selecionada'}`))
   return labels.length ? [...new Set(labels)] : ['Qualquer item do cardápio']
-})
-const fidelityProgress = computed(() => {
-  const program = fidelity.value
+}
+function fidelityProgress(program: any) {
   const meta = Math.max(Number(program?.pedidosMeta || 1), 1)
   const progress = program?.progresso
   const remainder = Number(progress?.pedidosElegiveis || 0) % meta
   const rewardAvailable = Number(progress?.recompensasDisponiveis || 0) > 0
   const current = rewardAvailable && remainder === 0 ? meta : remainder
   return { meta, current, percentage: (current / meta) * 100, rewardAvailable }
-})
+}
 const freeShippingThreshold = computed(() => {
   const value = Number(cardapio.value?.restaurante?.freteGratisAcima)
   return cardapio.value?.restaurante?.deliveryAtivo && Number.isFinite(value) && value > 0 ? value : null
 })
 const promotionCards = computed(() => {
-  const cards: Array<{ key: 'fidelidade' | 'frete'; title: string; description: string }> = []
-  if (fidelity.value) {
+  const cards: Array<{ key: string; type: 'fidelidade' | 'frete'; title: string; description: string }> = []
+  for (const fidelity of fidelities.value) {
+    const progress = fidelityProgress(fidelity)
     cards.push({
-      key: 'fidelidade',
-      title: fidelityProgress.value.rewardAvailable ? 'Recompensa liberada' : `${fidelity.value.descontoPercentual}% de desconto para você`,
-      description: fidelityProgress.value.rewardAvailable ? 'Veja como usar sua recompensa.' : 'Participe do programa de fidelidade.',
+      key: `fidelidade-${fidelity.premio?.catalogoItemId || fidelity.pedidosMeta}`,
+      type: 'fidelidade',
+      title: progress.rewardAvailable ? 'Recompensa liberada' : `${fidelity.descontoPercentual}% de desconto para você`,
+      description: progress.rewardAvailable ? 'Veja como usar sua recompensa.' : `Ganhe desconto em ${fidelity.premio?.nome || 'um produto'}.`,
     })
   }
   if (freeShippingThreshold.value !== null) {
     cards.push({
       key: 'frete',
+      type: 'frete',
       title: `Frete grátis acima de ${formatCurrencyBR(freeShippingThreshold.value)}`,
       description: 'Válido para pedidos por delivery.',
     })
@@ -1252,12 +1252,12 @@ onBeforeUnmount(() => {
               </div>
             </section>
 
-            <section v-if="fidelity" class="loyalty-banner" aria-label="Como funciona a fidelidade">
+            <section v-for="fidelity in fidelities" :key="`fidelidade-${fidelity.premio?.catalogoItemId || fidelity.pedidosMeta}`" class="loyalty-banner" aria-label="Como funciona a fidelidade">
               <div class="loyalty-banner-heading">
                 <span class="loyalty-banner-icon"><Gift class="h-5 w-5" /></span>
                 <div>
                   <p class="loyalty-eyebrow">PROGRAMA DE FIDELIDADE</p>
-                  <h3>{{ fidelityProgress.rewardAvailable ? 'Sua recompensa já está liberada!' : 'Compre, acumule e ganhe' }}</h3>
+                  <h3>{{ fidelityProgress(fidelity).rewardAvailable ? 'Sua recompensa já está liberada!' : 'Compre, acumule e ganhe' }}</h3>
                 </div>
               </div>
 
@@ -1270,19 +1270,19 @@ onBeforeUnmount(() => {
               <ol class="loyalty-steps">
                 <li>
                   <span>1</span>
-                  <div><b>Escolha um item participante</b><div class="loyalty-eligible-items"><em v-for="label in fidelityEligibleLabels" :key="label">{{ label }}</em></div></div>
+                  <div><b>Escolha um item participante</b><div class="loyalty-eligible-items"><em v-for="label in fidelityEligibleLabels(fidelity)" :key="label">{{ label }}</em></div></div>
                 </li>
                 <li>
                   <span>2</span>
-                  <div><b>Finalize {{ fidelityProgress.meta }} pedidos participantes</b><p>Cada pedido concluído soma automaticamente na sua conta.</p></div>
+                  <div><b>Finalize {{ fidelityProgress(fidelity).meta }} pedidos participantes</b><p>Cada pedido concluído soma automaticamente na sua conta.</p></div>
                 </li>
               </ol>
 
-              <div class="loyalty-progress" :class="{ 'reward-available': fidelityProgress.rewardAvailable }">
-                <div class="loyalty-progress-heading"><span>Seu progresso</span><strong>{{ fidelityProgress.current }} de {{ fidelityProgress.meta }} pedidos</strong></div>
-                <div class="loyalty-progress-track" role="progressbar" aria-label="Progresso da fidelidade" :aria-valuenow="fidelityProgress.current" :aria-valuemin="0" :aria-valuemax="fidelityProgress.meta"><span :style="{ width: `${fidelityProgress.percentage}%` }"></span></div>
-                <p v-if="fidelityProgress.rewardAvailable">Recompensa disponível para usar no próximo pedido.</p>
-                <p v-else-if="customerAccount">Faltam {{ fidelityProgress.meta - fidelityProgress.current }} pedido(s) participante(s) para liberar seu desconto.</p>
+              <div class="loyalty-progress" :class="{ 'reward-available': fidelityProgress(fidelity).rewardAvailable }">
+                <div class="loyalty-progress-heading"><span>Seu progresso</span><strong>{{ fidelityProgress(fidelity).current }} de {{ fidelityProgress(fidelity).meta }} pedidos</strong></div>
+                <div class="loyalty-progress-track" role="progressbar" aria-label="Progresso da fidelidade" :aria-valuenow="fidelityProgress(fidelity).current" :aria-valuemin="0" :aria-valuemax="fidelityProgress(fidelity).meta"><span :style="{ width: `${fidelityProgress(fidelity).percentage}%` }"></span></div>
+                <p v-if="fidelityProgress(fidelity).rewardAvailable">Recompensa disponível para usar no próximo pedido.</p>
+                <p v-else-if="customerAccount">Faltam {{ fidelityProgress(fidelity).meta - fidelityProgress(fidelity).current }} pedido(s) participante(s) para liberar seu desconto.</p>
                 <button v-else type="button" class="loyalty-login" @click="openCustomerAccount"><UserRound class="h-4 w-4" />Entre na sua conta para acompanhar seus pedidos</button>
               </div>
             </section>
@@ -1308,9 +1308,9 @@ onBeforeUnmount(() => {
         <section v-if="promotionCards.length" class="promo-carousel mb-6" aria-label="Promoções disponíveis" @mouseenter="stopPromotionCarousel" @mouseleave="startPromotionCarousel">
           <div class="promo-carousel-viewport">
             <div class="promo-carousel-track" :style="{ transform: `translateX(-${promotionCarouselIndex * 100}%)` }">
-              <button v-for="card in promotionCards" :key="card.key" type="button" class="promo-summary-card" :class="`promo-summary-card--${card.key}`" @click="openPromotions">
-                <span class="promo-summary-icon"><Gift v-if="card.key === 'fidelidade'" class="h-5 w-5" /><Truck v-else class="h-5 w-5" /></span>
-                <span class="min-w-0 flex-1 text-left"><small>{{ card.key === 'fidelidade' ? 'FIDELIDADE' : 'DELIVERY' }}</small><strong>{{ card.title }}</strong><em>{{ card.description }}</em></span>
+              <button v-for="card in promotionCards" :key="card.key" type="button" class="promo-summary-card" :class="`promo-summary-card--${card.type}`" @click="openPromotions">
+                <span class="promo-summary-icon"><Gift v-if="card.type === 'fidelidade'" class="h-5 w-5" /><Truck v-else class="h-5 w-5" /></span>
+                <span class="min-w-0 flex-1 text-left"><small>{{ card.type === 'fidelidade' ? 'FIDELIDADE' : 'DELIVERY' }}</small><strong>{{ card.title }}</strong><em>{{ card.description }}</em></span>
                 <ChevronRight class="h-5 w-5 shrink-0" />
               </button>
             </div>
