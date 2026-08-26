@@ -4,7 +4,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { IaRepository, isIaQuotaError } from '@/repositories/ia-repository'
-import { ContaRepository, type MercadoPagoIntegracaoStatus } from '@/repositories/conta-repository'
+import {
+  ContaRepository,
+  type MercadoPagoIntegracaoStatus,
+  type WhatsAppNotificationInstanceOption,
+} from '@/repositories/conta-repository'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -61,6 +65,7 @@ import {
   ShieldCheck,
   Truck,
   Sparkles,
+  Link2,
 } from 'lucide-vue-next'
 
 const toast = useToast()
@@ -84,6 +89,7 @@ const localizandoEmpresa = ref(false)
 const mercadoPagoStatus = ref<MercadoPagoIntegracaoStatus | null>(null)
 const mercadoPagoDialogOpen = ref(false)
 const conectandoMercadoPago = ref(false)
+const whatsappInstances = ref<WhatsAppNotificationInstanceOption[]>([])
 const empresaLatitude = ref('')
 const empresaLongitude = ref('')
 const roleOptions: Array<{ value: RestaurantePapel; label: string }> = [
@@ -284,6 +290,7 @@ const form = reactive<RestauranteConfig & { horariosJson: RestauranteHorarioFunc
   pagamentoNaEntregaAtivo: true,
   localizacaoJson: null,
   horariosJson: horariosPadrao(),
+  whatsappNotificacoesInstanciaId: null,
   whatsappNotificacoesJson: notificacoesWhatsAppPadrao(),
 })
 
@@ -353,11 +360,12 @@ async function copiarLinkCardapio() {
 
 async function carregar() {
   try {
-    const [data, deliveryZones, restaurantUsers, mercadoPago] = await Promise.all([
+    const [data, deliveryZones, restaurantUsers, mercadoPago, instances] = await Promise.all([
       RestauranteRepository.configuracao(),
       RestauranteRepository.zonasEntrega(),
       RestauranteRepository.usuariosPapeis(),
       ContaRepository.statusMercadoPago(),
+      ContaRepository.listarInstanciasWhatsappNotificacao().catch(() => []),
     ])
     if (data) {
       Object.assign(form, data, {
@@ -370,6 +378,7 @@ async function carregar() {
     zones.value = deliveryZones
     users.value = restaurantUsers
     mercadoPagoStatus.value = mercadoPago
+    whatsappInstances.value = instances
   } catch (error: any) {
     toast.error(
       error?.response?.data?.error?.message || 'Não foi possível carregar a configuração.',
@@ -687,11 +696,11 @@ onMounted(async () => {
               </div>
               <div class="mt-4 grid gap-3 sm:grid-cols-2">
                 <div class="space-y-2">
-                  <Label for="empresa-latitude">Latitude</Label><Input id="empresa-latitude" v-model="empresaLatitude"
+                  <Label for="empresa-latitude">Latitude</Label><Input :icon-label="MapPin" id="empresa-latitude" v-model="empresaLatitude"
                     inputmode="decimal" placeholder="Ex.: -23.550520" />
                 </div>
                 <div class="space-y-2">
-                  <Label for="empresa-longitude">Longitude</Label><Input id="empresa-longitude"
+                  <Label for="empresa-longitude">Longitude</Label><Input :icon-label="MapPin" id="empresa-longitude"
                     v-model="empresaLongitude" inputmode="decimal" placeholder="Ex.: -46.633308" />
                 </div>
               </div>
@@ -748,10 +757,26 @@ onMounted(async () => {
             <CardTitle class="flex items-center gap-2">
               <MessageCircle class="h-5 w-5 text-primary" />Mensagens de acompanhamento
             </CardTitle>
-            <CardDescription>As mensagens usam a instância principal conectada no app WhatsApp. Só são enviadas
-              quando o módulo estiver ativo e o pedido tiver telefone.</CardDescription>
+            <CardDescription>Escolha abaixo a instância responsável pelos avisos do restaurante. As mensagens só são
+              enviadas quando o módulo WhatsApp estiver ativo e o pedido tiver telefone.</CardDescription>
           </CardHeader>
           <CardContent class="space-y-4">
+            <div class="rounded-xl border p-4">
+              <Label for="restaurant-whatsapp-instance">Instância responsável pelo envio</Label>
+              <p class="mt-1 text-xs text-muted-foreground">Esta escolha vale apenas para as mensagens de acompanhamento do Restaurante.</p>
+              <Select :model-value="form.whatsappNotificacoesInstanciaId ? String(form.whatsappNotificacoesInstanciaId) : ''"
+                @update:model-value="form.whatsappNotificacoesInstanciaId = $event ? Number($event) : null">
+                <SelectTrigger id="restaurant-whatsapp-instance" class="mt-2 max-w-xl">
+                  <SelectValue placeholder="Selecione uma instância WhatsApp" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem v-for="instance in whatsappInstances" :key="instance.id" :value="String(instance.id)">
+                    {{ instance.nome }}{{ instance.numeroConectado ? ` · ${instance.numeroConectado}` : '' }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p v-if="!whatsappInstances.length" class="mt-2 text-xs text-muted-foreground">Nenhuma instância WhatsApp ativa está disponível nesta conta.</p>
+            </div>
             <Alert>
               <AlertDescription>Clique em uma variável para inseri-la no ponto atual do texto. {itens} organiza
                 itens, tamanhos, sabores e complementos em linhas. Ative somente as etapas que
@@ -851,7 +876,7 @@ onMounted(async () => {
                   }}</Badge>
               </div>
               <div class="flex flex-col gap-2 sm:flex-row">
-                <Input id="public-menu-url" :model-value="publicMenuUrl" readonly placeholder="Preencha um slug válido"
+                <Input :icon-label="Link2" :icon-label-position="'left'" id="public-menu-url" :model-value="publicMenuUrl" readonly placeholder="Preencha um slug válido"
                   class="text-sm" />
                 <Button type="button" variant="outline" :disabled="!publicMenuUrl" @click="copiarLinkCardapio">
                   <Copy class="mr-2 h-4 w-4" />Copiar link
@@ -872,7 +897,7 @@ onMounted(async () => {
               </p>
             </div>
             <div class="space-y-2">
-              <Label for="minimo">Pedido mínimo (R$)</Label><Input id="minimo" v-model.number="form.pedidoMinimo"
+              <Label for="minimo">Pedido mínimo (R$)</Label><Input :icon-label="'R$'" :icon-label-position="'left'" id="minimo" v-model.number="form.pedidoMinimo"
                 type="number" min="0" step="0.01" />
             </div>
             <div class="space-y-2">
@@ -888,15 +913,15 @@ onMounted(async () => {
               </Select>
             </div>
             <div v-if="form.modoFrete === 'FIXO'" class="space-y-2">
-              <Label for="taxa">Taxa fixa de delivery (R$)</Label><Input id="taxa" v-model.number="form.taxaFixa"
+              <Label for="taxa">Taxa fixa de delivery (R$)</Label><Input :icon-label="CreditCard" :icon-label-position="'left'" id="taxa" v-model.number="form.taxaFixa"
                 type="number" min="0" step="0.01" />
             </div>
             <div v-if="form.modoFrete === 'FIXO'" class="space-y-2">
-              <Label for="gratis">Frete grátis acima de (R$)</Label><Input id="gratis" v-model="freteGratis"
+              <Label for="gratis">Frete grátis acima de (R$)</Label><Input :icon-label="Truck" :icon-label-position="'left'" id="gratis" v-model="freteGratis"
                 type="number" min="0" step="0.01" />
             </div>
             <div v-else class="space-y-2 sm:col-span-2">
-              <Label for="contingencia">Taxa de contingência (R$)</Label><Input id="contingencia" v-model="contingencia"
+              <Label for="contingencia">Taxa de contingência (R$)</Label><Input :icon-label="'R$'" :icon-label-position="'left'" id="contingencia" v-model="contingencia"
                 type="number" min="0" step="0.01" />
               <p class="text-xs text-muted-foreground">
                 Deixe vazio para recusar endereços fora das zonas.

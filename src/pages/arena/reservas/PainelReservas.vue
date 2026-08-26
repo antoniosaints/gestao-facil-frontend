@@ -270,7 +270,7 @@ onMounted(carregar)
         </div>
         <button
           type="button"
-          class="flex items-center gap-2 rounded-lg border border-border/70 bg-background/60 px-3 py-2 text-sm text-primary transition-colors hover:bg-background"
+          class="flex items-center gap-2 rounded-lg border border-border/70 bg-background/60 px-3 py-2 text-sm text-foreground transition-colors hover:bg-background"
           @click="copiarLinkReserva"
         >
           <Copy class="h-4 w-4 shrink-0" />

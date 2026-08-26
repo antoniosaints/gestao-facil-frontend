@@ -14,7 +14,7 @@ import {
     DrawerHeader,
     DrawerTitle,
 } from "@/components/ui/drawer"
-import { computed, inject, provide, ref, watch } from "vue";
+import { computed, inject, provide, ref, watch, type CSSProperties } from "vue";
 import { type LucideIcon } from "lucide-vue-next";
 import { allocateModalLayer, modalLayerKey } from "./modal-layer";
 
@@ -22,11 +22,12 @@ import { allocateModalLayer, modalLayerKey } from "./modal-layer";
 const isOpen = defineModel<boolean>("open", { default: false })
 
 // Propriedades fixas do componente
-const { size } = defineProps<{
+const { size, themeStyle } = defineProps<{
     icon?: LucideIcon
     title: string
     description?: string,
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
+    themeStyle?: CSSProperties
 }>()
 
 const sizeClasses: Record<string, string> = {
@@ -63,6 +64,7 @@ const overlayStyle = computed(() => ({
 }))
 
 const contentStyle = computed(() => ({
+    ...themeStyle,
     zIndex: layer.value + 1,
 }))
 </script>

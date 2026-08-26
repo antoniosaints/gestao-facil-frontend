@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue"
+import { ref, computed, onMounted, watch, type CSSProperties } from "vue"
 import { useRoute } from "vue-router"
 import { ArrowBigLeft, ArrowBigRight, Calendar, Check, CheckCheck, CircleDollarSign, Clock, FilePlus, LoaderIcon, MapPin, MessageCircle, ShoppingCart, Trash } from "lucide-vue-next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,6 +21,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { phoneMaskOptions } from "@/lib/imaska"
 import { vMaska } from "maska/vue"
 import { Switch } from "@/components/ui/switch"
+import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
+import { getThemePalette, hexToHslValue, normalizeThemeCustomization } from '@/utils/themeCustomization'
 
 interface CartItem {
   quadraId: number
@@ -39,6 +41,8 @@ interface HorariosReservar {
 
 const toast = useToast()
 const route = useRoute()
+// Mantém a página pública clara, como o cardápio, sem alterar a preferência do ERP.
+useStorefrontLightTheme()
 const contaId = ref(HashGenerator.decode(String(route.params.conta))[0])
 const conta = ref<Contas | null>(null)
 const quadras = ref<ArenaQuadras[]>()
@@ -309,10 +313,41 @@ const canBookingPayment = computed(() => {
   return quadra && quadra.aprovarSemPagamento
 })
 
-const cor = ref({
-  primary: "#0f766e",
-  secondary: "#134e4a",
+const reservationPalette = computed(() => getThemePalette(conta.value?.temaPersonalizado, 'light'))
+const reservationThemeStyle = computed<CSSProperties>(() => {
+  const theme = normalizeThemeCustomization(conta.value?.temaPersonalizado)
+  const palette = reservationPalette.value
+  return {
+    '--background': hexToHslValue(palette.background),
+    '--foreground': hexToHslValue(palette.foreground),
+    '--card': hexToHslValue(palette.card),
+    '--card-foreground': hexToHslValue(palette.foreground),
+    '--popover': hexToHslValue(palette.popover),
+    '--popover-foreground': hexToHslValue(palette.foreground),
+    '--secondary': hexToHslValue(palette.secondary),
+    '--secondary-foreground': hexToHslValue(palette.foreground),
+    '--muted': hexToHslValue(palette.muted),
+    '--muted-foreground': hexToHslValue(palette.mutedForeground),
+    '--accent': hexToHslValue(palette.accent),
+    '--accent-foreground': hexToHslValue(palette.foreground),
+    '--border': hexToHslValue(palette.border),
+    '--input': hexToHslValue(palette.input),
+    '--primary': hexToHslValue(palette.primary),
+    '--primary-foreground': hexToHslValue(palette.primaryForeground),
+    '--ring': hexToHslValue(palette.primary),
+    '--arena-secondary': palette.sidebar,
+    '--arena-secondary-foreground': palette.sidebarForeground,
+    '--app-font': theme.fonte,
+  } as CSSProperties
 })
+
+const reservationPageStyle = computed<CSSProperties>(() => ({
+  ...reservationThemeStyle.value,
+  backgroundImage: `linear-gradient(135deg, ${reservationPalette.value.primary} 0%, ${reservationPalette.value.sidebar} 100%)`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundAttachment: 'fixed',
+}))
 
 watch(() => selectedDate.value, () => {
   if (selectedQuadra.value) {
@@ -354,12 +389,7 @@ const novaReserva = () => {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 relative select-none" :style="{
-    backgroundImage: `linear-gradient(135deg, ${cor.primary} 0%, ${cor.secondary} 100%)`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundAttachment: 'fixed',
-  }">
+  <div class="min-h-screen p-4 relative select-none" :style="reservationPageStyle">
     <div class="max-w-md mx-auto flex flex-col gap-4" v-if="linkPagamento">
       <!-- Header -->
       <div class="text-center py-6">
@@ -392,7 +422,7 @@ const novaReserva = () => {
               <CircleDollarSign class="h-5 w-5 mr-2 inline-flex" />
               Realizar pagamento
             </Button>
-            <Button @click="novaReserva" class="w-full h-12 text-lg flex bg-success hover:bg-success/80 items-center">
+            <Button @click="novaReserva" class="w-full h-12 text-lg flex bg-[--arena-secondary] text-[--arena-secondary-foreground] hover:opacity-90 items-center">
               <FilePlus class="h-5 w-5 mr-2 inline-flex" />
               Nova reserva
             </Button>
@@ -418,7 +448,7 @@ const novaReserva = () => {
       <!-- Carrinho flutuante -->
       <div v-if="cartItems.length > 0" class="fixed bottom-4 right-4 z-50">
         <Button @click="showCart = true"
-          class="bg-primary border hover:bg-primary/90 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg relative">
+          class="bg-primary border hover:bg-primary/90 text-primary-foreground rounded-full w-16 h-16 flex items-center justify-center shadow-lg relative">
           <ShoppingCart class="h-6 w-6" />
           <span
             class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
@@ -435,7 +465,7 @@ const novaReserva = () => {
               <MapPin class="h-5 w-5" />
               <span>Escolha a Quadra</span>
             </div>
-            <Button v-if="selectedQuadra" @click="selectedQuadra = null" class="text-xs text-white rounded-lg"
+            <Button v-if="selectedQuadra" @click="selectedQuadra = null" class="text-xs text-primary-foreground rounded-lg"
               size="xs">Trocar
               quadra</Button>
           </CardTitle>
@@ -486,7 +516,7 @@ const novaReserva = () => {
           <div class="grid grid-cols-7 gap-2">
             <div v-for="row in diasSemana" :key="row.toISOString()" @click="selectedDate = row"
               class="border rounded-xl p-2 text-xs text-center cursor-pointer shadow-md hover:shadow-none"
-              :class="isSameDay(selectedDate, row) ? 'bg-primary text-white shadow-none' : ''">
+              :class="isSameDay(selectedDate, row) ? 'bg-primary text-primary-foreground shadow-none' : ''">
               <div>{{ formatToUpperCase(format(row, "EEEEEE dd/MM", { locale: ptBR })) }}</div>
             </div>
           </div>
@@ -509,9 +539,9 @@ const novaReserva = () => {
               <Clock class="h-10 w-10 inline-flex text-gray-500 dark:text-gray-300" :stroke-width="2.5" />
               <p class="text-sm text-muted-foreground dark:text-gray-200">Nenhum horário disponível</p>
             </div>
-            <Button class="text-white disabled:bg-secondary" v-for="(hora, index) in filteredHorarios" :key="index"
+            <Button class="text-primary-foreground disabled:bg-secondary" v-for="(hora, index) in filteredHorarios" :key="index"
               @click="addToCart(selectedQuadra, selectedDate, hora.start, hora.end)" :disabled="hora.reservada"
-              :class="[isTimeSlotInCart(selectedQuadra.id!, selectedDate, hora.start) ? 'bg-warning hover:bg-warning/80' : 'bg-primary hover:bg-primary/80']">
+              :class="[isTimeSlotInCart(selectedQuadra.id!, selectedDate, hora.start) ? 'bg-[--arena-secondary] text-[--arena-secondary-foreground] hover:opacity-90' : 'bg-primary hover:bg-primary/80']">
               <Check class="h-4 w-4" v-if="isTimeSlotInCart(selectedQuadra.id!, selectedDate, hora.start)" />
               <CheckCheck class="h-4 w-4" v-if="hora.reservada" />
               {{ format(new Date(hora.start), "HH:mm", {
@@ -575,7 +605,7 @@ const novaReserva = () => {
               <Label for="canBookingWithoutPayment"
                 class="text-xs cursor-pointer border flex items-center justify-between my-2 p-2 rounded-md" :class="{
                   'bg-muted/40 text-muted-foreground': !userAcceptTerms,
-                  'bg-success/20 text-dark': userAcceptTerms
+                  'bg-primary/10 text-primary': userAcceptTerms
                 }">
                 Confirmo que li e aceito os termos acima
                 <Switch v-model="userAcceptTerms" id="canBookingWithoutPayment" class="float-right" />
@@ -591,7 +621,7 @@ const novaReserva = () => {
               </Button>
             </div>
             <Button variant="outline" @click="generateWhatsAppLink"
-              class="flex-1 col-span-2 w-full mt-2 text-white h-10 text-md bg-success hover:bg-success/80 hover:text-white">
+              class="flex-1 col-span-2 w-full mt-2 h-10 text-md bg-[--arena-secondary] text-[--arena-secondary-foreground] hover:opacity-90">
               <MessageCircle />
               Reservar no WhatsApp
             </Button>
@@ -602,7 +632,7 @@ const novaReserva = () => {
       </div>
     </div>
 
-    <ModalView v-model:open="showModalConfirm" title="Reservar horário"
+    <ModalView v-model:open="showModalConfirm" :theme-style="reservationThemeStyle" title="Reservar horário"
       description="Informe seus dados para confirmar a reserva" size="md">
       <form class="flex flex-col px-4 gap-2">
         <div>
@@ -622,7 +652,7 @@ const novaReserva = () => {
           <div class="flex flex-col gap-2">
             <RadioGroup default-value="PIX" class="grid grid-cols-3">
               <Label for="option-one"
-                class="flex items-center text-sm col-span-3 p-3 px-4 gap-2 bg-success/20 border rounded-lg cursor-pointer">
+                class="flex items-center text-sm col-span-3 p-3 px-4 gap-2 bg-primary/10 border rounded-lg cursor-pointer">
                 <RadioGroupItem id="option-one" value="PIX" class="bg-white" />
                 <i class="fa-brands fa-pix"></i>
                 PIX
@@ -642,7 +672,7 @@ const novaReserva = () => {
             </RadioGroup>
           </div>
         </div>
-        <Button class="mt-4 h-12 text-md text-white" type="button" :disabled="loading" @click="reservar"
+        <Button class="mt-4 h-12 text-md text-primary-foreground" type="button" :disabled="loading" @click="reservar"
           variant="default">
           <CircleDollarSign v-if="!loading" />
           <LoaderIcon v-else class="animate-spin" />

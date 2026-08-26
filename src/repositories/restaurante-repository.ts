@@ -410,6 +410,7 @@ export interface RestauranteConfig {
   pagamentoNaEntregaAtivo: boolean
   localizacaoJson?: RestauranteLocalizacao | null
   horariosJson?: RestauranteHorarioFuncionamento[] | null
+  whatsappNotificacoesInstanciaId?: number | null
   whatsappNotificacoesJson?: RestauranteWhatsAppNotifications | null
   version?: number
 }

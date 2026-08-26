@@ -1158,7 +1158,7 @@ onBeforeUnmount(() => {
               <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
                 <div class="relative lg:w-80">
                   <Search class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                  <Input v-model="searchTerm" class="h-11 rounded-xl border bg-stone-100 pl-10 shadow-none focus-visible:ring-primary/30" placeholder="Buscar no cardápio" />
+                  <Input v-model="searchTerm" class="h-11 rounded-xl border bg-stone-100 dark:bg-gray-900 pl-10 shadow-none focus-visible:ring-primary/30" placeholder="Buscar no cardápio" />
                 </div>
                 <div class="no-scrollbar flex gap-2 overflow-x-auto pb-0.5">
                   <button v-for="category in categories" :key="category.key" type="button" class="category-chip" :class="{ active: activeCategory === category.key }" @click="activeCategory = category.key">
@@ -1589,7 +1589,7 @@ onBeforeUnmount(() => {
                   </div>
                   <Button size="sm" variant="outline" class="tap-button" :disabled="obtendoLocalizacao" @click="useLocation"><LoaderCircle v-if="obtendoLocalizacao" class="mr-2 h-4 w-4 animate-spin" /><LocateFixed v-else class="mr-2 h-4 w-4" />Usar localização</Button>
                 </div>
-                <p class="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-relaxed text-emerald-800">
+                <p class="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-900 px-3 py-2 text-xs leading-relaxed text-emerald-800 dark:text-emerald-100">
                   <LocateFixed class="mt-0.5 h-4 w-4 shrink-0" />
                   Usar sua localização ajuda o entregador a encontrar sua casa no mapa e na rota. Os campos de endereço continuam obrigatórios para calcular a entrega.
                 </p>
@@ -1622,10 +1622,10 @@ onBeforeUnmount(() => {
             <aside class="border-t bg-stone-50 p-6 dark:bg-zinc-900 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:border-l lg:border-t-0 sm:p-7">
               <h3 class="menu-heading shrink-0 text-lg font-semibold">Resumo do pedido</h3>
               <div
-                class="mt-4 space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pr-2 lg:[scrollbar-gutter:stable]"
+                class="mt-4 space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pr-0 lg:[scrollbar-gutter:stable]"
                 aria-label="Itens do carrinho"
               >
-                <div v-for="line in selecionados" :key="line.id" class="flex gap-3 text-sm bg-stone-100 p-2 border rounded-md">
+                <div v-for="line in selecionados" :key="line.id" class="flex gap-3 text-sm bg-stone-100 dark:bg-slate-900 p-2 border rounded-md">
                   <span class="flex h-6 min-w-6 items-center justify-center rounded-md text-xs font-bold" :style="primaryButtonStyle">{{ line.quantidade }}</span>
                   <div class="min-w-0 flex-1">
                     <p class="font-medium">{{ itemName(line.item) }}</p>

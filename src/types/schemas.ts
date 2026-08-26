@@ -166,6 +166,7 @@ export interface Contas {
   asaasCustomerId: string
   asaasSubscriptionId?: string
   dicasNovidades?: boolean
+  temaPersonalizado?: ThemeCustomization | null
   createdAt?: string | Date
 }
 
