@@ -176,15 +176,15 @@ const suggestedItems = computed(() => {
 const fidelities = computed(() => cardapio.value?.restaurante?.fidelidades || [])
 function fidelityEligibleLabels(program: any) {
   const labels: string[] = []
-  const categoryNames = new Map<number, string>()
+  const categoryNames = new Map<number, string>((program.categorias || []).map((category: any) => [category.id, category.nome]))
 
   for (const item of cardapio.value?.itens || []) {
     if (program.catalogoItemIds.includes(item.id)) labels.push(`Produto: ${itemName(item)}`)
-    const baseCategory = item.Produto?.ProdutoBase?.Categoria
-    if (baseCategory?.id && program.categoriaIds.includes(baseCategory.id)) categoryNames.set(baseCategory.id, baseCategory.nome)
+    const category = categoryInfo(item)
+    if (Number(category.key) && program.categoriaIds.includes(Number(category.key))) categoryNames.set(Number(category.key), category.name)
   }
 
-  labels.push(...program.categoriaIds.map((id: number) => `Categoria: ${categoryNames.get(id) || 'itens da categoria selecionada'}`))
+  labels.push(...program.categoriaIds.map((id: number) => `Categoria: ${categoryNames.get(id) || 'Categoria selecionada'}`))
   return labels.length ? [...new Set(labels)] : ['Qualquer item do cardápio']
 }
 function fidelityProgress(program: any) {

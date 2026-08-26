@@ -460,6 +460,7 @@ export interface RestauranteFidelidadePublica {
   pedidosMeta: number
   categoriaIds: number[]
   catalogoItemIds: number[]
+  categorias?: Array<{ id: number; nome: string }>
   descontoPercentual: number
   premio: { catalogoItemId: number; nome: string; imagem?: string | null } | null
   progresso: {
