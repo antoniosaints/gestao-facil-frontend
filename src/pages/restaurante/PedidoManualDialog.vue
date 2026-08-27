@@ -51,6 +51,7 @@ const catalogo = ref<RestauranteCatalogoItem[]>([])
 const busca = ref('')
 const categoriaAtiva = ref('TODAS')
 const itemSelecionadoId = ref<number | null>(null)
+const openItemConfig = ref(false)
 const quantidade = ref(1)
 const selecoes = ref<number[]>([])
 const itemObservacao = ref('')
@@ -104,6 +105,7 @@ function itemCategoria(item: RestauranteCatalogoItem) {
 
 function limparItem() {
   itemSelecionadoId.value = null
+  openItemConfig.value = false
   quantidade.value = 1
   selecoes.value = []
   itemObservacao.value = ''
@@ -169,6 +171,12 @@ function selecionarItem(id: number) {
   quantidade.value = 1
   selecoes.value = []
   itemObservacao.value = ''
+  openItemConfig.value = true
+}
+
+function fecharConfiguracaoItem(open: boolean) {
+  openItemConfig.value = open
+  if (!open) limparItem()
 }
 
 function alternarSelecao(id: number, grupoId: number, maximo: number, checked: unknown) {
@@ -356,77 +364,6 @@ watch(
           </p>
         </div>
 
-        <div
-          v-if="itemSelecionado"
-          class="overflow-hidden rounded-2xl border border-primary/20 bg-muted/30 shadow-sm"
-        >
-          <div
-            class="flex flex-wrap items-center justify-between gap-3 border-b border-primary/15 bg-primary/[0.06] px-4 py-3"
-          >
-            <div>
-              <p class="text-sm font-semibold">{{ itemNome(itemSelecionado) }}</p>
-              <p class="text-xs text-muted-foreground">
-                Configure este item antes de adicioná-lo ao pedido.
-              </p>
-            </div>
-            <Badge class="bg-primary text-primary-foreground">{{
-              formatCurrencyBR(Number(itemSelecionado.preco))
-            }}</Badge>
-          </div>
-          <div class="space-y-3 p-4">
-            <div
-              v-for="link in itemSelecionado.grupos"
-              :key="link.grupoId"
-              class="rounded-xl border bg-background/75 p-3"
-            >
-              <div class="mb-2 flex items-center justify-between gap-3">
-                <p class="text-sm font-medium">{{ link.Grupo.nome }}</p>
-                <Badge variant="outline" class="text-[11px] font-normal"
-                  >{{ link.Grupo.minimo }}–{{ link.Grupo.maximo }} escolhas</Badge
-                >
-              </div>
-              <div class="grid gap-2 sm:grid-cols-2">
-                <label
-                  v-for="option in link.Grupo.opcoes"
-                  :key="option.id"
-                  class="flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-2.5 text-sm transition hover:border-primary/40"
-                  :class="
-                    selecoes.includes(option.id || 0)
-                      ? 'border-primary/50 bg-primary/[0.06]'
-                      : 'border-border/80'
-                  "
-                >
-                  <span class="flex min-w-0 items-center gap-2"
-                    ><Checkbox
-                      :model-value="selecoes.includes(option.id || 0)"
-                      @update:model-value="
-                        alternarSelecao(option.id || 0, link.grupoId, link.Grupo.maximo, $event)
-                      "
-                    />
-                    <span class="truncate">{{ option.nome }}</span></span
-                  >
-                  <span
-                    v-if="Number(option.precoAdicional)"
-                    class="shrink-0 text-xs text-muted-foreground"
-                    >+ {{ formatCurrencyBR(Number(option.precoAdicional)) }}</span
-                  >
-                </label>
-              </div>
-            </div>
-            <div class="grid gap-3 sm:grid-cols-[7.5rem_1fr]">
-              <label class="space-y-1.5 text-xs font-medium text-muted-foreground"
-                ><span>Quantidade</span><Input v-model.number="quantidade" type="number" min="1"
-              /></label>
-              <label class="space-y-1.5 text-xs font-medium text-muted-foreground"
-                ><span>Observação do item</span
-                ><Input v-model="itemObservacao" placeholder="Ex.: sem cebola"
-              /></label>
-            </div>
-            <Button class="w-full sm:w-auto" @click="adicionarItem"
-              ><Plus class="mr-2 h-4 w-4" />Adicionar ao pedido</Button
-            >
-          </div>
-        </div>
       </section>
 
       <aside
@@ -568,6 +505,77 @@ watch(
         </div>
       </aside>
     </div>
+
+    <ModalView
+      :open="openItemConfig"
+      :title="itemSelecionado ? `Configurar ${itemNome(itemSelecionado)}` : 'Configurar item'"
+      description="Escolha os complementos, informe a quantidade e confirme para adicionar ao pedido."
+      size="2xl"
+      @update:open="fecharConfiguracaoItem"
+    >
+      <div v-if="itemSelecionado" class="space-y-4 p-4">
+        <div class="flex items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3">
+          <div class="min-w-0">
+            <p class="truncate text-sm font-semibold">{{ itemNome(itemSelecionado) }}</p>
+            <p class="mt-0.5 text-xs text-muted-foreground">Configure antes de adicionar ao carrinho.</p>
+          </div>
+          <Badge class="shrink-0 bg-primary text-primary-foreground">
+            {{ formatCurrencyBR(Number(itemSelecionado.preco)) }}
+          </Badge>
+        </div>
+
+        <div
+          v-for="link in itemSelecionado.grupos"
+          :key="link.grupoId"
+          class="rounded-xl border bg-background/75 p-3"
+        >
+          <div class="mb-2 flex items-center justify-between gap-3">
+            <p class="text-sm font-medium">{{ link.Grupo.nome }}</p>
+            <Badge variant="outline" class="text-[11px] font-normal">
+              {{ link.Grupo.minimo }}–{{ link.Grupo.maximo }} escolhas
+            </Badge>
+          </div>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <label
+              v-for="option in link.Grupo.opcoes"
+              :key="option.id"
+              class="flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-2.5 text-sm transition hover:border-primary/40"
+              :class="
+                selecoes.includes(option.id || 0)
+                  ? 'border-primary/50 bg-primary/[0.06]'
+                  : 'border-border/80'
+              "
+            >
+              <span class="flex min-w-0 items-center gap-2">
+                <Checkbox
+                  :model-value="selecoes.includes(option.id || 0)"
+                  @update:model-value="
+                    alternarSelecao(option.id || 0, link.grupoId, link.Grupo.maximo, $event)
+                  "
+                />
+                <span class="truncate">{{ option.nome }}</span>
+              </span>
+              <span v-if="Number(option.precoAdicional)" class="shrink-0 text-xs text-muted-foreground">
+                + {{ formatCurrencyBR(Number(option.precoAdicional)) }}
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid gap-3 border-t pt-4 sm:grid-cols-[7.5rem_1fr]">
+          <label class="space-y-1.5 text-xs font-medium text-muted-foreground">
+            <span>Quantidade</span><Input v-model.number="quantidade" type="number" min="1" />
+          </label>
+          <label class="space-y-1.5 text-xs font-medium text-muted-foreground">
+            <span>Observação do item</span><Input v-model="itemObservacao" placeholder="Ex.: sem cebola" />
+          </label>
+        </div>
+        <div class="flex justify-end gap-2 border-t pt-4">
+          <Button variant="outline" @click="fecharConfiguracaoItem(false)">Cancelar</Button>
+          <Button @click="adicionarItem"><Plus class="mr-2 h-4 w-4" />Adicionar ao pedido</Button>
+        </div>
+      </div>
+    </ModalView>
   </ModalView>
 </template>
 
@@ -584,9 +592,8 @@ watch(
     min-height: 0;
   }
   .manual-order-catalog {
-    overflow-y: auto;
+    overflow: hidden;
     padding-right: 0.25rem;
-    overscroll-behavior: contain;
   }
   .manual-order-cart {
     height: 100%;
