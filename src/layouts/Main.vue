@@ -146,6 +146,46 @@ const sidebarMenu = computed(() => {
 const isFullscreenContent = computed(
   () => route.name === 'restaurante-acompanhar-entregas' || store.kdsImersivo,
 )
+const isRestaurantRoute = computed(() => route.matched.some((record) => record.path === '/restaurante'))
+
+type RestaurantOrderSocketEvent = {
+  pedidoId?: number
+  reason?: string
+}
+
+const newOrderReasons = new Set(['created', 'manual-created', 'table-created'])
+const alertedOrderIds = new Map<number, number>()
+let orderAlertAudio: HTMLAudioElement | null = null
+let lastOrderAlertAt = 0
+
+function playNewRestaurantOrderAlert(payload: RestaurantOrderSocketEvent) {
+  if (!isRestaurantRoute.value || !newOrderReasons.has(payload?.reason || '')) return
+
+  const pedidoId = Number(payload?.pedidoId)
+  if (!Number.isInteger(pedidoId) || pedidoId <= 0) return
+
+  const now = Date.now()
+  const alreadyAlertedAt = alertedOrderIds.get(pedidoId)
+  if (alreadyAlertedAt && now - alreadyAlertedAt < 30_000) return
+  alertedOrderIds.set(pedidoId, now)
+  for (const [id, alertedAt] of alertedOrderIds) {
+    if (now - alertedAt > 30_000) alertedOrderIds.delete(id)
+  }
+
+  // Eventos simultâneos podem chegar muito próximos; um único toque já comunica
+  // a chegada e evita reiniciar o áudio em sequência.
+  if (now - lastOrderAlertAt < 400) return
+  lastOrderAlertAt = now
+
+  try {
+    orderAlertAudio ??= new Audio('/audios/cash.mp3')
+    orderAlertAudio.preload = 'auto'
+    orderAlertAudio.currentTime = 0
+    void orderAlertAudio.play().catch(() => undefined)
+  } catch {
+    // O navegador pode bloquear áudio antes da primeira interação do usuário.
+  }
+}
 window.addEventListener('resize', () => {
   if (store.usaNavegacaoSemSidebar) return
   if (window.innerWidth < 768) {
@@ -213,6 +253,8 @@ async function initialize() {
 useSocketEvent('sessao:updated', async () => {
   await Promise.all([store.getDataUsuario(), store.getStatus()])
 })
+
+useSocketEvent<RestaurantOrderSocketEvent>('restaurante:pedido', playNewRestaurantOrderAlert)
 
 onMounted(() => {
   initialize()
