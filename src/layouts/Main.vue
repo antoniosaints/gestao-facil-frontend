@@ -1,10 +1,10 @@
 <template>
   <div class="bg-body min-h-screen overflow-hidden flex flex-col">
-    <SiteNavigation v-if="store.usaNavegacaoSite" :menu="sidebarMenu" />
-    <HeaderMenu v-else />
+    <SiteNavigation v-if="!store.kdsImersivo && store.usaNavegacaoSite" :menu="sidebarMenu" />
+    <HeaderMenu v-else-if="!store.kdsImersivo" />
     <!-- Botão de abrir menu (mobile) -->
     <button
-      v-if="!store.usaNavegacaoSemSidebar"
+      v-if="!store.kdsImersivo && !store.usaNavegacaoSemSidebar"
       type="button"
       @click="store.toggleSidebar"
       class="md:hidden fixed flex items-center right-0 w-10 h-14 pl-3 pr-0 bottom-16 transform -translate-y-1/2 z-30 bg-primary/70 text-gray-200 dark:text-gray-300 px-2 py-3 rounded-l-full shadow-lg"
@@ -12,7 +12,7 @@
       <PanelRightClose />
     </button>
     <RouterLink
-      v-else-if="store.usaNavegacaoPorCards"
+      v-else-if="!store.kdsImersivo && store.usaNavegacaoPorCards"
       to="/"
       class="md:hidden fixed right-4 bottom-4 z-30 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg"
     >
@@ -20,9 +20,9 @@
       <span class="sr-only">Abrir módulos</span>
     </RouterLink>
     <!-- Sidebar -->
-    <SidebarV2 v-if="store.usaNavegacaoSideV2" :menu="sidebarMenu" />
+    <SidebarV2 v-if="!store.kdsImersivo && store.usaNavegacaoSideV2" :menu="sidebarMenu" />
     <aside
-      v-else-if="!store.usaNavegacaoSemSidebar"
+      v-else-if="!store.kdsImersivo && !store.usaNavegacaoSemSidebar"
       id="sidebar-content-sistema"
       class="fixed overflow-auto top-0 flex flex-col justify-between hidden_scrollbar left-0 h-full w-full border-r md:w-64 bg-sidebar p-4 space-y-4 transform transition-transform duration-300 ease-in-out z-40"
       :class="{ '-translate-x-full': !store.openSidebar }"
@@ -51,8 +51,8 @@
       id="container-main-app-sistema"
       class="min-h-0 flex-1 overflow-y-auto mt-0 text-gray-700 transition-all duration-300 ease-in-out dark:text-gray-300"
       :class="{
-        'md:ml-64': store.openSidebar && !store.usaNavegacaoSemSidebar && !store.usaNavegacaoSideV2,
-        'md:ml-72': store.openSidebar && store.usaNavegacaoSideV2,
+        'md:ml-64': !store.kdsImersivo && store.openSidebar && !store.usaNavegacaoSemSidebar && !store.usaNavegacaoSideV2,
+        'md:ml-72': !store.kdsImersivo && store.openSidebar && store.usaNavegacaoSideV2,
         'p-0': isFullscreenContent,
         'p-6': !isFullscreenContent,
       }"
@@ -63,12 +63,12 @@
       >
         <!-- O header é hidden md:flex, então no mobile o badge de suporte
                      não apareceria. Aqui ele cobre esse caso. -->
-        <div v-if="isSupportActive()" class="mb-4 flex justify-end md:hidden">
+        <div v-if="!store.kdsImersivo && isSupportActive()" class="mb-4 flex justify-end md:hidden">
           <SupportBadge />
         </div>
-        <AlertTopbar />
+        <AlertTopbar v-if="!store.kdsImersivo" />
         <div
-          v-if="store.loading || progress > 0"
+          v-if="!store.kdsImersivo && (store.loading || progress > 0)"
           class="absolute hidden md:block top-14 h-2 transition-all duration-100 ease-linear"
           :style="{ width: progress + '%' }"
           :class="{
@@ -94,11 +94,11 @@
         </div>
       </div>
     </main>
-    <InstallPrompt />
+    <InstallPrompt v-if="!store.kdsImersivo" />
     <ConfirmModal />
-    <CoreIaWidget />
-    <TourOverlay />
-    <TourPicker />
+    <CoreIaWidget v-if="!store.kdsImersivo" />
+    <TourOverlay v-if="!store.kdsImersivo" />
+    <TourPicker v-if="!store.kdsImersivo" />
   </div>
 </template>
 
@@ -143,7 +143,9 @@ const sidebarMenu = computed(() => {
     store.hiddenSubmenuKeys,
   )
 })
-const isFullscreenContent = computed(() => route.name === 'restaurante-acompanhar-entregas')
+const isFullscreenContent = computed(
+  () => route.name === 'restaurante-acompanhar-entregas' || store.kdsImersivo,
+)
 window.addEventListener('resize', () => {
   if (store.usaNavegacaoSemSidebar) return
   if (window.innerWidth < 768) {

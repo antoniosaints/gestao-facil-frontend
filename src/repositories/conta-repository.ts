@@ -25,6 +25,7 @@ export interface ContaAssinanteAdmin {
   usuariosOnline: number
   temUsuarioOnline: boolean
   ultimoLoginEm?: Date | string | null
+  protegidaPorSuperAdmin?: boolean
   diasParaVencer: number
   statusAssinatura: 'EM_DIA' | 'VENCE_HOJE' | 'VENCIDA'
   linkPagamentoPendente?: string | null
@@ -223,6 +224,7 @@ export interface DashboardAdminRankItem {
   diasInativo?: number
   status?: string
   email?: string
+  ultimoLoginEm?: Date | string | null
 }
 
 export interface DashboardAdminCharts {

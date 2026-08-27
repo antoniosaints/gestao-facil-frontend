@@ -277,8 +277,8 @@ onMounted(loadDashboard)
       <Card class="border-border shadow-sm">
         <CardHeader class="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Clientes inativos ha mais tempo</CardTitle>
-            <CardDescription>Contas com maior tempo sem regularizacao</CardDescription>
+            <CardTitle>Contas sem atividade há mais tempo</CardTitle>
+            <CardDescription>Baseado no último login de qualquer usuário da conta</CardDescription>
           </div>
           <RouterLink to="/admin/assinantes" class="text-sm text-primary">Assinantes</RouterLink>
         </CardHeader>
@@ -296,7 +296,13 @@ onMounted(loadDashboard)
               </div>
               <div class="text-right">
                 <div class="text-sm font-medium text-foreground">{{ item.diasInativo || 0 }}d</div>
-                <div class="text-xs text-muted-foreground">{{ item.status }}</div>
+                <div class="text-xs text-muted-foreground">
+                  {{
+                    item.ultimoLoginEm
+                      ? `Último login: ${formatDateToPtBR(item.ultimoLoginEm)}`
+                      : 'Sem login registrado'
+                  }}
+                </div>
               </div>
             </div>
           </div>

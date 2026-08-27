@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { vMaska } from 'maska/vue'
 import { endOfDay, endOfMonth, format, startOfDay, startOfMonth } from 'date-fns'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useToast } from 'vue-toastification'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
+import PedidoDetalhesDialog from './PedidoDetalhesDialog.vue'
 import PedidoManualDialog from './PedidoManualDialog.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -27,11 +30,13 @@ import {
   type RestaurantePedidoStatus,
   type RestauranteEstacaoImpressao,
 } from '@/repositories/restaurante-repository'
+import { WhatsAppRepository } from '@/repositories/whatsapp-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { useConfirm } from '@/composables/useConfirm'
 import { calculateRestaurantRoadRoute, type RoadRoute } from '@/utils/restaurantRoadRouting'
-import { formatCurrencyBR, formatPaymentMethodLabel } from '@/utils/formatters'
+import { formatCurrencyBR } from '@/utils/formatters'
+import { phoneMaskOptions } from '@/lib/imaska'
 import { restaurantMapIcons } from './restaurantMapIcons'
 import {
   ChefHat,
@@ -41,9 +46,6 @@ import {
   Clock3,
   FileTextIcon,
   Filter,
-  MapPinned,
-  MapPin,
-  Phone,
   Plus,
   Printer,
   RefreshCw,
@@ -58,6 +60,7 @@ type PeriodPreset = 'today' | 'month' | 'all' | 'custom'
 const toast = useToast()
 const confirm = useConfirm()
 const uiStore = useUiStore()
+const router = useRouter()
 const canOperate = computed(() => uiStore.hasRestaurantCapability('PEDIDOS_OPERAR'))
 const canConfigure = computed(() => uiStore.hasRestaurantCapability('CONFIGURACOES_GERENCIAR'))
 const canViewKds = computed(() => uiStore.hasRestaurantCapability('KDS_VISUALIZAR'))
@@ -74,7 +77,11 @@ const openModalFiltros = ref(false)
 const openModalDetalhes = ref(false)
 const openModalRota = ref(false)
 const openModalPedidoManual = ref(false)
+const openModalEditarCliente = ref(false)
+const openModalEditarItens = ref(false)
 const openModalImpressao = ref(false)
+const abrindoChat = ref(false)
+const salvandoCliente = ref(false)
 const pedidoSelecionado = ref<RestaurantePedido | null>(null)
 const localizacaoEmpresa = ref<RestauranteLocalizacao | null>(null)
 const pedidoRota = ref<RestaurantePedido | null>(null)
@@ -86,6 +93,21 @@ const estacoesImpressao = ref<RestauranteEstacaoImpressao[]>([])
 const estacoesSelecionadas = ref<number[]>([])
 const imprimindo = ref(false)
 const pedidoArrastado = ref<RestaurantePedido | null>(null)
+const atendimentoDisponivel = computed(() => uiStore.hasActiveModule('atendimento'))
+const podeEditarClienteSelecionado = computed(
+  () => canOperate.value && !['CONCLUIDO', 'CANCELADO'].includes(pedidoSelecionado.value?.status || ''),
+)
+const podeEditarItensSelecionado = computed(() => {
+  const pedido = pedidoSelecionado.value
+  return Boolean(
+    canOperate.value &&
+      pedido &&
+      ['RECEBIDO', 'CONFIRMADO'].includes(pedido.status) &&
+      pedido.origem !== 'MESA' &&
+      pedido.pagamentoStatus !== 'PAGO',
+  )
+})
+const clienteEdicao = ref({ nome: '', telefone: '', email: '' })
 
 let routeMap: L.Map | null = null
 let routeLayers: L.LayerGroup | null = null
@@ -482,6 +504,66 @@ function abrirDetalhes(pedido: RestaurantePedido) {
   openModalDetalhes.value = true
 }
 
+function atualizarPedidoLocal(atualizado: RestaurantePedido) {
+  pedidos.value = pedidos.value.map((item) => (item.id === atualizado.id ? atualizado : item))
+  pedidoSelecionado.value = atualizado
+}
+
+function abrirEdicaoCliente(pedido: RestaurantePedido) {
+  clienteEdicao.value = {
+    nome: pedido.clienteNomeSnapshot || '',
+    telefone: pedido.clienteTelefone || '',
+    email: pedido.clienteEmail || '',
+  }
+  openModalEditarCliente.value = true
+}
+
+function abrirEdicaoItens() {
+  openModalEditarItens.value = true
+}
+
+async function salvarClientePedido() {
+  const pedido = pedidoSelecionado.value
+  if (!pedido) return
+  try {
+    salvandoCliente.value = true
+    const atualizado = await RestauranteRepository.atualizarClientePedido(pedido.id, {
+      clienteNome: clienteEdicao.value.nome.trim() || null,
+      clienteTelefone: clienteEdicao.value.telefone.trim() || null,
+      clienteEmail: clienteEdicao.value.email.trim() || null,
+      version: pedido.version,
+    })
+    atualizarPedidoLocal(atualizado)
+    openModalEditarCliente.value = false
+    toast.success('Dados do cliente atualizados')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível atualizar o cliente.')
+    if (error?.response?.status === 409) await recarregar()
+  } finally {
+    salvandoCliente.value = false
+  }
+}
+
+async function abrirChatPedido(pedido: RestaurantePedido) {
+  const telefone = pedido.clienteTelefone?.trim()
+  if (!telefone) {
+    toast.info('Este pedido não possui telefone para iniciar o atendimento.')
+    return
+  }
+  try {
+    abrindoChat.value = true
+    const conversa = await WhatsAppRepository.startConversation({
+      phone: telefone,
+      nome: pedido.clienteNomeSnapshot || undefined,
+    })
+    await router.push({ name: 'atendimento', query: { conversa: String(conversa.id) } })
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível abrir o chat deste cliente.')
+  } finally {
+    abrindoChat.value = false
+  }
+}
+
 function dataHora(value: string) {
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
@@ -493,17 +575,6 @@ function dataHora(value: string) {
 
 function origemLabel(origem: string) {
   return origem.replace(/_/g, ' ')
-}
-
-function pagamentoLabel(metodo?: string | null) {
-  return formatPaymentMethodLabel(metodo)
-}
-
-function aguardandoPagamentoOnline(pedido: RestaurantePedido) {
-  return (
-    pedido.pagamentoStatus === 'PENDENTE' &&
-    ['PIX', 'CHECKOUT_PRO'].includes(pedido.pagamentoMetodoSnapshot || '')
-  )
 }
 
 function enderecoFormatado(pedido: RestaurantePedido) {
@@ -615,14 +686,6 @@ function handleRouteModalChange(open: boolean) {
   routeMap = null
   routeLayers = null
   routeSummary.value = null
-}
-
-function selecoes(item: RestaurantePedido['itens'][number]) {
-  if (!Array.isArray(item.selecoesSnapshotJson)) return ''
-  return item.selecoesSnapshotJson
-    .map((selecao) => selecao.nome)
-    .filter(Boolean)
-    .join(', ')
 }
 
 useSocketEvent('restaurante:pedido', () => {
@@ -1039,6 +1102,46 @@ onBeforeUnmount(() => handleRouteModalChange(false))
 
     <PedidoManualDialog v-model:open="openModalPedidoManual" @created="recarregar()" />
 
+    <PedidoManualDialog
+      v-model:open="openModalEditarItens"
+      :pedido-para-editar="pedidoSelecionado"
+      @updated="atualizarPedidoLocal"
+    />
+
+    <ModalView
+      v-model:open="openModalEditarCliente"
+      :title="pedidoSelecionado ? `Editar cliente — pedido ${pedidoSelecionado.codigo}` : 'Editar cliente'"
+      description="Altere apenas os dados registrados neste pedido. O cadastro original do cliente não será modificado."
+      size="lg"
+    >
+      <div class="space-y-4 p-4">
+        <label class="block space-y-1.5 text-sm font-medium"
+          >Nome
+          <Input v-model="clienteEdicao.nome" placeholder="Nome do cliente" />
+        </label>
+        <label class="block space-y-1.5 text-sm font-medium"
+          >Telefone
+          <Input
+            v-model="clienteEdicao.telefone"
+            v-maska="phoneMaskOptions"
+            inputmode="tel"
+            autocomplete="tel"
+            placeholder="(00) 00000-0000"
+          />
+        </label>
+        <label class="block space-y-1.5 text-sm font-medium"
+          >E-mail
+          <Input v-model="clienteEdicao.email" type="email" placeholder="cliente@exemplo.com" />
+        </label>
+        <div class="flex justify-end gap-2 border-t pt-4">
+          <Button variant="outline" @click="openModalEditarCliente = false">Cancelar</Button>
+          <Button :disabled="salvandoCliente" @click="salvarClientePedido">
+            {{ salvandoCliente ? 'Salvando...' : 'Salvar cliente' }}
+          </Button>
+        </div>
+      </div>
+    </ModalView>
+
     <ModalView
       v-model:open="openModalImpressao"
       :title="
@@ -1077,162 +1180,40 @@ onBeforeUnmount(() => handleRouteModalChange(false))
       </div>
     </ModalView>
 
-    <ModalView
+    <PedidoDetalhesDialog
       v-model:open="openModalDetalhes"
-      :title="pedidoSelecionado ? `Pedido ${pedidoSelecionado.codigo}` : 'Detalhes do pedido'"
-      :description="pedidoSelecionado ? `Recebido em ${dataHora(pedidoSelecionado.createdAt)}` : undefined"
-      size="3xl"
+      :pedido="pedidoSelecionado"
+      :localizacao-empresa="localizacaoEmpresa"
+      :pode-abrir-chat="atendimentoDisponivel"
+      :abrindo-chat="abrindoChat"
+      :pode-editar-cliente="podeEditarClienteSelecionado"
+      :pode-editar-itens="podeEditarItensSelecionado"
+      @abrir-rota="abrirRota"
+      @abrir-chat="abrirChatPedido"
+      @editar-cliente="abrirEdicaoCliente"
+      @editar-itens="abrirEdicaoItens"
     >
-      <div v-if="pedidoSelecionado" class="space-y-5 p-4">
-        <section class="rounded-xl border bg-muted/30 p-4">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Resumo do pedido
-              </p>
-              <p class="mt-1 text-xl font-semibold">#{{ pedidoSelecionado.codigo }}</p>
-            </div>
-            <div class="flex flex-wrap justify-end gap-2">
-              <Badge variant="outline" :class="statusBadgeClass(pedidoSelecionado.status)">
-                {{ statusLabels[pedidoSelecionado.status] }}
-              </Badge>
-              <Badge variant="secondary">{{ origemLabel(pedidoSelecionado.origem) }}</Badge>
-            </div>
-          </div>
-          <div class="mt-4 grid divide-y border-t pt-3 text-sm sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            <div class="pb-3 sm:px-3 sm:pb-0 sm:pl-0">
-              <p class="text-xs text-muted-foreground">Recebido em</p>
-              <p class="mt-1 font-medium">{{ dataHora(pedidoSelecionado.createdAt) }}</p>
-            </div>
-            <div class="py-3 sm:px-3 sm:py-0">
-              <p class="text-xs text-muted-foreground">Itens</p>
-              <p class="mt-1 font-medium">{{ pedidoSelecionado.itens.length }} {{ pedidoSelecionado.itens.length === 1 ? 'item' : 'itens' }}</p>
-            </div>
-            <div class="pt-3 sm:px-3 sm:pt-0">
-              <p class="text-xs text-muted-foreground">Total</p>
-              <p class="mt-1 text-base font-semibold">{{ formatCurrencyBR(Number(pedidoSelecionado.total)) }}</p>
-            </div>
-          </div>
-        </section>
-
-        <div class="grid gap-3 sm:grid-cols-2">
-          <section class="rounded-xl border p-4">
-            <div class="flex items-center gap-2">
-              <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <Phone class="h-4 w-4" />
-              </span>
-              <p class="text-sm font-semibold">Cliente</p>
-            </div>
-            <p class="mt-3 font-medium">
-              {{ pedidoSelecionado.clienteNomeSnapshot || 'Cliente visitante' }}
-            </p>
-            <p
-              v-if="pedidoSelecionado.clienteTelefone"
-              class="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"
-            >
-              <Phone class="h-3.5 w-3.5" />{{ pedidoSelecionado.clienteTelefone }}
-            </p>
-            <p v-if="pedidoSelecionado.clienteEmail" class="mt-1 text-sm text-muted-foreground">
-              {{ pedidoSelecionado.clienteEmail }}
-            </p>
-          </section>
-
-          <section class="rounded-xl border p-4">
-            <p class="text-sm font-semibold">Pagamento e atendimento</p>
-            <div class="mt-3 space-y-2 text-sm">
-              <div class="flex items-center justify-between gap-3">
-                <span class="text-muted-foreground">Método</span>
-                <span class="text-right font-medium">{{ pagamentoLabel(pedidoSelecionado.pagamentoMetodoSnapshot) }}</span>
-              </div>
-              <div class="flex items-center justify-between gap-3">
-                <span class="text-muted-foreground">Situação</span>
-                <span class="text-right font-medium">{{ aguardandoPagamentoOnline(pedidoSelecionado) ? 'Aguardando pagamento online' : pagamentoLabel(pedidoSelecionado.pagamentoStatus) }}</span>
-              </div>
-              <div v-if="pedidoSelecionado.Mesa?.nome" class="flex items-center justify-between gap-3 border-t pt-2">
-                <span class="text-muted-foreground">Mesa</span>
-                <span class="font-medium">{{ pedidoSelecionado.Mesa.nome }}</span>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <section v-if="enderecoFormatado(pedidoSelecionado)" class="rounded-xl border p-4">
-          <p
-            class="flex items-center gap-2 text-sm font-semibold"
-          >
-            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground"><MapPin class="h-4 w-4" /></span>Endereço de entrega
-          </p>
-          <p class="mt-3 text-sm">{{ enderecoFormatado(pedidoSelecionado) }}</p>
-          <Button
-            v-if="localizacaoEmpresa && customerCoordinates(pedidoSelecionado)"
-            class="mt-3"
-            size="sm"
-            variant="outline"
-            @click="abrirRota(pedidoSelecionado)"
-          >
-            <MapPinned class="mr-1.5 h-4 w-4" />Traçar rota até o cliente
-          </Button>
-          <p v-else class="mt-2 text-xs text-muted-foreground">
-            A rota no mapa fica disponível quando a localização do cliente é enviada no checkout.
-          </p>
-        </section>
-
-        <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_13rem]">
-          <section class="overflow-hidden rounded-xl border">
-            <div class="flex items-center gap-2 border-b bg-muted/20 px-4 py-3 text-sm font-semibold">
-              <ShoppingBag class="h-4 w-4 text-muted-foreground" />Itens do pedido
-            </div>
-            <div class="divide-y">
-              <div v-for="item in pedidoSelecionado.itens" :key="item.id" class="flex gap-3 px-4 py-3">
-                <div class="min-w-0 flex-1">
-                  <p class="font-medium">{{ Number(item.quantidade) }}× {{ item.nomeSnapshot }}</p>
-                  <p v-if="item.tamanhoSnapshot" class="mt-0.5 text-sm text-muted-foreground">{{ item.tamanhoSnapshot }}</p>
-                  <p v-if="selecoes(item)" class="mt-0.5 text-sm text-muted-foreground">{{ selecoes(item) }}</p>
-                  <p v-if="item.observacao" class="mt-1 text-sm text-muted-foreground">Obs.: {{ item.observacao }}</p>
-                </div>
-                <strong class="shrink-0 text-sm">{{ formatCurrencyBR(Number(item.subtotalSnapshot)) }}</strong>
-              </div>
-            </div>
-          </section>
-
-          <section class="h-fit rounded-xl border bg-muted/20 p-4 text-sm">
-            <p class="font-semibold">Resumo financeiro</p>
-            <div class="mt-3 space-y-2">
-              <div class="flex justify-between gap-3"><span class="text-muted-foreground">Subtotal</span><span>{{ formatCurrencyBR(Number(pedidoSelecionado.subtotal)) }}</span></div>
-              <div v-if="Number(pedidoSelecionado.frete)" class="flex justify-between gap-3"><span class="text-muted-foreground">Entrega</span><span>{{ formatCurrencyBR(Number(pedidoSelecionado.frete)) }}</span></div>
-              <div v-if="Number(pedidoSelecionado.desconto)" class="flex justify-between gap-3 text-emerald-700 dark:text-emerald-400"><span>Desconto</span><span>- {{ formatCurrencyBR(Number(pedidoSelecionado.desconto)) }}</span></div>
-            </div>
-            <div class="mt-3 flex justify-between border-t pt-3 text-base font-semibold">
-              <span>Total</span><span>{{ formatCurrencyBR(Number(pedidoSelecionado.total)) }}</span>
-            </div>
-          </section>
-        </div>
-
-        <section v-if="pedidoSelecionado.observacao" class="rounded-xl border border-dashed p-4">
-          <p class="text-sm font-semibold">Observação do pedido</p>
-          <p class="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{{ pedidoSelecionado.observacao }}</p>
-        </section>
-
+      <template #actions="{ pedido }">
         <div
-          v-if="canOperate || (canPrint && pedidoSelecionado.tickets?.length)"
+          v-if="canOperate || (canPrint && pedido.tickets?.length)"
           class="flex justify-end gap-2 border-t pt-4"
         >
           <Button
-            v-if="canPrint && pedidoSelecionado.tickets?.length"
+            v-if="canPrint && pedido.tickets?.length"
             variant="outline"
-            @click="abrirImpressao(pedidoSelecionado)"
+            @click="abrirImpressao(pedido)"
             ><Printer class="mr-1.5 h-4 w-4" />Imprimir</Button
           >
           <Button
-            v-if="canOperate && podeCancelar(pedidoSelecionado)"
+            v-if="canOperate && podeCancelar(pedido)"
             variant="destructive"
-            :disabled="atualizando === pedidoSelecionado.id"
-            @click="cancelar(pedidoSelecionado)"
+            :disabled="atualizando === pedido.id"
+            @click="cancelar(pedido)"
             ><CircleX class="mr-1.5 h-4 w-4" />Cancelar pedido</Button
           >
         </div>
-      </div>
-    </ModalView>
+      </template>
+    </PedidoDetalhesDialog>
 
     <ModalView
       v-model:open="openModalRota"

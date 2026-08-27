@@ -612,6 +612,22 @@ async function startFromClienteQuery() {
   }
 }
 
+// Permite que outros módulos abram diretamente uma conversa já existente ou recém-criada.
+async function openFromConversationQuery() {
+  const raw = route.query.conversa
+  const conversaId = Number(Array.isArray(raw) ? raw[0] : raw)
+  if (!conversaId) return
+
+  await router.replace({ query: { ...route.query, conversa: undefined } })
+  let conversa = conversations.value.find((item) => item.id === conversaId)
+  if (!conversa) {
+    await loadConversations()
+    conversa = conversations.value.find((item) => item.id === conversaId)
+  }
+  if (conversa) await openConversation(conversa)
+  else toast.info('A conversa foi aberta, mas não está disponível na caixa atual.')
+}
+
 // Foca o campo de digitação (como no WhatsApp) ao abrir uma conversa em atendimento. Só em telas
 // maiores, para não abrir o teclado automaticamente no mobile.
 const messageInput = ref<InstanceType<typeof Textarea> | null>(null)
@@ -1329,6 +1345,7 @@ onMounted(async () => {
   await loadConversations()
   await loadInstances()
   await startFromClienteQuery()
+  await openFromConversationQuery()
 })
 </script>
 

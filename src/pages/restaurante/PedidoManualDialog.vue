@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { vMaska } from 'maska/vue'
 import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
@@ -11,8 +12,11 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   RestauranteRepository,
   type RestauranteCatalogoItem,
+  type RestaurantePedido,
 } from '@/repositories/restaurante-repository'
 import { formatCurrencyBR } from '@/utils/formatters'
+import { phoneMaskOptions } from '@/lib/imaska'
+import { selectedMenuItemSummary } from './manualOrderSummary'
 import {
   ClipboardList,
   MessageSquare,
@@ -26,8 +30,12 @@ import {
   UserRound,
 } from 'lucide-vue-next'
 
-const props = defineProps<{ open: boolean }>()
-const emit = defineEmits<{ 'update:open': [open: boolean]; created: [] }>()
+const props = defineProps<{ open: boolean; pedidoParaEditar?: RestaurantePedido | null }>()
+const emit = defineEmits<{
+  'update:open': [open: boolean]
+  created: []
+  updated: [pedido: RestaurantePedido]
+}>()
 
 type CartItem = {
   catalogoItemId: number
@@ -51,6 +59,7 @@ const clienteNome = ref('')
 const clienteTelefone = ref('')
 const clienteId = ref<number | string | null>(null)
 const carrinho = ref<CartItem[]>([])
+const editandoItens = computed(() => Boolean(props.pedidoParaEditar))
 
 const itemSelecionado = computed(
   () => catalogo.value.find((item) => item.id === itemSelecionadoId.value) || null,
@@ -111,12 +120,41 @@ function reset() {
   limparItem()
 }
 
+function selecaoIdsDoPedido(item: RestaurantePedido['itens'][number]) {
+  const catalogoItem = catalogo.value.find((candidate) => candidate.id === item.catalogoItemId)
+  if (!catalogoItem || !Array.isArray(item.selecoesSnapshotJson)) return []
+  return item.selecoesSnapshotJson.flatMap((selecao) => {
+    const grupo =
+      catalogoItem.grupos.find((link) => link.Grupo.id === selecao.grupoId)?.Grupo ||
+      catalogoItem.grupos.find((link) =>
+        link.Grupo.opcoes.some((candidate) => candidate.nome === selecao.nome),
+      )?.Grupo
+    const opcao = grupo?.opcoes.find((candidate) => candidate.nome === selecao.nome)
+    return opcao?.id ? [opcao.id] : []
+  })
+}
+
+function preencherPedidoParaEdicao() {
+  const pedido = props.pedidoParaEditar
+  if (!pedido) return
+  pedidoObservacao.value = pedido.observacao || ''
+  carrinho.value = pedido.itens.flatMap((item) => {
+    if (!item.catalogoItemId || !catalogo.value.some((candidate) => candidate.id === item.catalogoItemId)) return []
+    return [{
+      catalogoItemId: item.catalogoItemId,
+      quantidade: Math.max(1, Number(item.quantidade)),
+      selecaoIds: selecaoIdsDoPedido(item),
+      ...(item.observacao ? { observacao: item.observacao } : {}),
+    }]
+  })
+}
+
 async function carregarCatalogo() {
   if (catalogo.value.length || loadingCatalog.value) return
   try {
     loadingCatalog.value = true
-    const response = await RestauranteRepository.catalogo({ limit: 100 })
-    catalogo.value = response.data
+    const items = await RestauranteRepository.catalogoCompleto()
+    catalogo.value = items
       .filter((item) => item.disponivel)
       .map((item) => ({ ...item, grupos: item.grupos.filter((link) => link.Grupo.ativo) }))
   } catch (error: any) {
@@ -177,6 +215,11 @@ function nomeCarrinho(item: CartItem) {
   return catalogItem ? itemNome(catalogItem) : 'Item'
 }
 
+function selecoesCarrinho(item: CartItem) {
+  const catalogItem = catalogo.value.find((candidate) => candidate.id === item.catalogoItemId)
+  return catalogItem ? selectedMenuItemSummary(catalogItem, item.selecaoIds) : ''
+}
+
 function alterarQuantidadeCarrinho(index: number, delta: number) {
   const item = carrinho.value[index]
   if (!item) return
@@ -187,16 +230,28 @@ async function salvar() {
   if (!carrinho.value.length) return toast.info('Adicione ao menos um item ao pedido.')
   try {
     saving.value = true
-    await RestauranteRepository.criarPedidoManual({
+    const payload = {
       itens: carrinho.value,
       observacao: pedidoObservacao.value.trim() || null,
-      clienteId: clienteId.value ? Number(clienteId.value) : null,
-      clienteNome: clienteNome.value.trim() || null,
-      clienteTelefone: clienteTelefone.value.trim() || null,
-    })
-    toast.success('Pedido manual enviado para produção')
+    }
+    if (props.pedidoParaEditar) {
+      const pedido = await RestauranteRepository.atualizarItensPedido(props.pedidoParaEditar.id, {
+        ...payload,
+        version: props.pedidoParaEditar.version,
+      })
+      toast.success('Itens do pedido atualizados')
+      emit('updated', pedido)
+    } else {
+      await RestauranteRepository.criarPedidoManual({
+        ...payload,
+        clienteId: clienteId.value ? Number(clienteId.value) : null,
+        clienteNome: clienteNome.value.trim() || null,
+        clienteTelefone: clienteTelefone.value.trim() || null,
+      })
+      toast.success('Pedido manual enviado para produção')
+      emit('created')
+    }
     emit('update:open', false)
-    emit('created')
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível criar o pedido.')
   } finally {
@@ -206,8 +261,12 @@ async function salvar() {
 
 watch(
   () => props.open,
-  (open) => {
-    if (open) void carregarCatalogo()
+  async (open) => {
+    if (open) {
+      reset()
+      await carregarCatalogo()
+      if (props.pedidoParaEditar) preencherPedidoParaEdicao()
+    }
     else reset()
   },
 )
@@ -216,8 +275,8 @@ watch(
 <template>
   <ModalView
     :open="open"
-    title="Novo pedido manual"
-    description="Monte o pedido, informe o cliente se necessário e envie a produção aos pontos configurados."
+    :title="editandoItens ? `Editar itens — pedido ${props.pedidoParaEditar?.codigo || ''}` : 'Novo pedido manual'"
+    :description="editandoItens ? 'A alteração recalcula valores, estoque e envia os itens atualizados para a produção.' : 'Monte o pedido, informe o cliente se necessário e envie a produção aos pontos configurados.'"
     size="5xl"
     @update:open="emit('update:open', $event)"
   >
@@ -231,7 +290,7 @@ watch(
               <span
                 class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground"
                 >1</span
-              >Adicionar itens
+              >{{ editandoItens ? 'Editar itens' : 'Adicionar itens' }}
             </p>
             <p class="mt-1 text-xs text-muted-foreground">
               Escolha um item para configurar quantidade, adicionais e observações.
@@ -396,6 +455,9 @@ watch(
           >
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium">{{ nomeCarrinho(item) }}</p>
+              <p v-if="selecoesCarrinho(item)" class="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                {{ selecoesCarrinho(item) }}
+              </p>
               <p v-if="item.observacao" class="mt-1 truncate text-xs text-muted-foreground">
                 Obs.: {{ item.observacao }}
               </p>
@@ -443,11 +505,11 @@ watch(
           </div>
         </div>
         <div class="space-y-3 border-t bg-muted/[0.16] p-4">
-          <div class="flex items-center justify-between">
+          <div v-if="!editandoItens" class="flex items-center justify-between">
             <p class="text-sm font-semibold">Dados do pedido</p>
             <span class="text-xs text-muted-foreground">Opcional</span>
           </div>
-          <div class="space-y-2">
+          <div v-if="!editandoItens" class="space-y-2">
             <label class="space-y-1.5 text-xs font-medium text-muted-foreground">
               <span>Cliente cadastrado</span>
               <Select2Ajax
@@ -465,7 +527,14 @@ watch(
             <div class="relative">
               <Phone
                 class="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground"
-              /><Input v-model="clienteTelefone" class="pl-9" placeholder="Telefone" />
+              /><Input
+                v-model="clienteTelefone"
+                v-maska="phoneMaskOptions"
+                class="pl-9"
+                inputmode="tel"
+                autocomplete="tel"
+                placeholder="(00) 00000-0000"
+              />
             </div>
             <div class="relative">
               <MessageSquare
@@ -478,6 +547,7 @@ watch(
             </div>
           </div>
           <p
+            v-if="!editandoItens"
             class="rounded-lg bg-primary/[0.07] px-3 py-2 text-xs text-primary dark:bg-primary/15 dark:text-primary-foreground"
           >
             {{
@@ -491,7 +561,7 @@ watch(
               >Cancelar</Button
             ><Button class="flex-1" :disabled="saving || !carrinho.length" @click="salvar"
               ><ShoppingCart class="mr-2 h-4 w-4" />{{
-                saving ? 'Criando...' : 'Criar pedido'
+                saving ? (editandoItens ? 'Salvando...' : 'Criando...') : (editandoItens ? 'Salvar itens' : 'Criar pedido')
               }}</Button
             >
           </div>

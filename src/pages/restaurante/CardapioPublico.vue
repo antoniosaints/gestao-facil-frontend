@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, Clock3, CreditCard, Flame, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Minus, Moon, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Sun, Timer, Trash2, Truck, UserRound, UtensilsCrossed, X } from 'lucide-vue-next'
+import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDollarSign, Clipboard, Clock3, CreditCard, Flame, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Minus, Moon, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Sun, Timer, Trash2, Truck, UserRound, UtensilsCrossed, X } from 'lucide-vue-next'
 import { RestauranteRepository, type RestauranteCheckoutPreview, type RestauranteClienteConta, type RestauranteClienteEndereco, type RestaurantePublicOrderTracking } from '@/repositories/restaurante-repository'
 import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { useConfirm } from '@/composables/useConfirm'
@@ -28,6 +28,7 @@ import { getThemePalette, hexToHslValue, normalizeThemeCustomization } from '@/u
 import { cepMaskOptions, phoneMaskOptions } from '@/lib/imaska'
 import { calculateMenuItemUnitPrice, hasSameMenuSelections, updateMenuGroupSelection } from './publicMenuCart'
 import { isActiveRestaurantOrder, parseTrackingTokens, prependTrackingToken, restaurantOrderStatusBadgeClass, restaurantOrderStatusLabel } from './publicMenuHistory'
+import { menuCategoryItems, uniquePublicMenuItems } from './publicMenuDisplay'
 import { restaurantMapIcons } from './restaurantMapIcons'
 
 const route = useRoute()
@@ -158,18 +159,20 @@ function categoryInfo(item: any) {
 
 const categoryGroups = computed(() => {
   const groups = new Map<string, { key: string; name: string; items: any[] }>()
-  for (const item of cardapio.value?.itens || []) {
+  for (const item of publicMenuItems.value) {
     const category = categoryInfo(item)
     if (!groups.has(category.key)) groups.set(category.key, { ...category, items: [] })
     groups.get(category.key)!.items.push(item)
   }
   return [...groups.values()]
 })
-const mostOrderedItems = computed(() => (cardapio.value?.itens || []).filter((item: any) => item.maisPedido))
+const publicMenuItems = computed(() => uniquePublicMenuItems(cardapio.value?.itens || []))
+const mostOrderedItems = computed(() => publicMenuItems.value.filter((item: any) => item.maisPedido))
+const showingHighlights = computed(() => activeCategory.value === 'todos' && !searchTerm.value.trim())
 const suggestedItems = computed(() => {
   const categoryId = suggestionSource.value?.categoriaSugestaoId
   if (!categoryId) return []
-  return (cardapio.value?.itens || []).filter((item: any) =>
+  return publicMenuItems.value.filter((item: any) =>
     item.id !== suggestionSource.value?.id && Number(categoryInfo(item).key) === Number(categoryId),
   )
 })
@@ -179,7 +182,7 @@ function fidelityEligibleLabels(program: any) {
   const labels: string[] = []
   const categoryNames = new Map<number, string>((program.categorias || []).map((category: any) => [category.id, category.nome]))
 
-  for (const item of cardapio.value?.itens || []) {
+  for (const item of publicMenuItems.value) {
     if (program.catalogoItemIds.includes(item.id)) labels.push(`Produto: ${itemName(item)}`)
     const category = categoryInfo(item)
     if (Number(category.key) && program.categoriaIds.includes(Number(category.key))) categoryNames.set(Number(category.key), category.name)
@@ -199,7 +202,7 @@ function fidelityProgress(program: any) {
 const checkoutFidelities = computed(() => quote.value?.fidelidades || fidelities.value)
 const availableCheckoutRewards = computed(() => checkoutFidelities.value.filter((program: any) => fidelityProgress(program).rewardAvailable))
 function rewardItem(program: any) {
-  return (cardapio.value?.itens || []).find((item: any) => item.id === program.premio?.catalogoItemId) || null
+  return publicMenuItems.value.find((item: any) => item.id === program.premio?.catalogoItemId) || null
 }
 function rewardIsInCart(program: any) {
   return cartLines.value.some((line) => line.item.id === program.premio?.catalogoItemId)
@@ -250,8 +253,20 @@ const freeShippingThreshold = computed(() => {
   const value = Number(cardapio.value?.restaurante?.freteGratisAcima)
   return cardapio.value?.restaurante?.deliveryAtivo && Number.isFinite(value) && value > 0 ? value : null
 })
+const minimumOrder = computed(() => {
+  const value = Number(cardapio.value?.restaurante?.pedidoMinimo)
+  return Number.isFinite(value) && value > 0 ? value : null
+})
 const promotionCards = computed(() => {
-  const cards: Array<{ key: string; type: 'fidelidade' | 'frete'; title: string; description: string }> = []
+  const cards: Array<{ key: string; type: 'pedido-minimo' | 'fidelidade' | 'frete'; title: string; description: string }> = []
+  if (minimumOrder.value !== null) {
+    cards.push({
+      key: 'pedido-minimo',
+      type: 'pedido-minimo',
+      title: `Pedido mínimo de ${formatCurrencyBR(minimumOrder.value)}`,
+      description: 'Valor mínimo para finalizar o pedido online.',
+    })
+  }
   for (const fidelity of fidelities.value) {
     const progress = fidelityProgress(fidelity)
     cards.push({
@@ -271,6 +286,7 @@ const promotionCards = computed(() => {
   }
   return cards
 })
+const promotionDetailCards = computed(() => promotionCards.value.filter((card) => card.type !== 'pedido-minimo'))
 const isPromotionsPage = computed(() => route.name === 'restaurante-promocoes-publica')
 
 const aceitaPedidos = computed(() => cardapio.value?.restaurante.atendimento?.aberto !== false)
@@ -303,7 +319,10 @@ const visibleGroups = computed(() => {
     .filter((group) => activeCategory.value === 'todos' || group.key === activeCategory.value)
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => !term || normalize(`${itemName(item)} ${itemDescription(item)} ${group.name}`).includes(term)),
+      items: menuCategoryItems(
+        group.items.filter((item) => !term || normalize(`${itemName(item)} ${itemDescription(item)} ${group.name}`).includes(term)),
+        showingHighlights.value,
+      ),
     }))
     .filter((group) => group.items.length)
 })
@@ -1239,10 +1258,13 @@ onBeforeUnmount(() => {
                 <h1 class="menu-title truncate text-balance text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
                   {{ cardapio.restaurante.nome }}
                 </h1>
-                <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-stone-200">
+                <div class="no-scrollbar mt-1 flex flex-nowrap items-center gap-x-4 overflow-x-auto text-[11px] text-stone-200 sm:flex-wrap sm:overflow-visible">
                   <span v-if="cardapio.restaurante.deliveryAtivo" class="flex items-center gap-1.5"><Bike class="h-4 w-4 text-white/80" />Delivery</span>
                   <span v-if="cardapio.restaurante.retiradaAtiva" class="flex items-center gap-1.5"><Store class="h-4 w-4 text-white/80" />Retirada</span>
-                  <span class="flex items-center gap-1.5"><Clock3 class="h-4 w-4 text-white/80" />Pedido online</span>
+                  <span class="flex items-center gap-1.5 sm:hidden" :class="aceitaPedidos ? 'text-emerald-100' : 'text-amber-100'">
+                    <span class="relative flex h-2.5 w-2.5"><span v-if="aceitaPedidos" class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-50" /><span class="relative inline-flex h-2.5 w-2.5 rounded-full" :class="aceitaPedidos ? 'bg-emerald-400' : 'bg-amber-300'" /></span>
+                    {{ aceitaPedidos ? 'Recebendo pedidos' : 'Fechado agora' }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1299,7 +1321,7 @@ onBeforeUnmount(() => {
             <p class="mt-2 text-sm text-stone-500">Aproveite as condições disponíveis antes de finalizar seu pedido.</p>
           </div>
 
-          <div v-if="promotionCards.length" class="mt-7 space-y-5">
+          <div v-if="promotionDetailCards.length" class="mt-7 space-y-5">
             <section v-if="freeShippingThreshold !== null" class="promotion-detail-card promotion-detail-card--shipping" aria-label="Promoção de frete grátis">
               <span class="promotion-detail-icon"><Truck class="h-6 w-6" /></span>
               <div>
@@ -1362,14 +1384,14 @@ onBeforeUnmount(() => {
             <p class="mt-1 text-sm text-amber-900/80">{{ mensagemAtendimento }} Você pode consultar o cardápio, mas novos pedidos estão indisponíveis.</p>
           </div>
         </div>
-        <section v-if="promotionCards.length" class="promo-carousel mb-6" aria-label="Promoções disponíveis" @mouseenter="stopPromotionCarousel" @mouseleave="startPromotionCarousel">
+        <section v-if="promotionCards.length" class="promo-carousel mb-6" aria-label="Avisos e promoções disponíveis" @mouseenter="stopPromotionCarousel" @mouseleave="startPromotionCarousel">
           <div class="promo-carousel-viewport">
             <div class="promo-carousel-track" :style="{ transform: `translateX(-${promotionCarouselIndex * 100}%)` }">
-              <button v-for="card in promotionCards" :key="card.key" type="button" class="promo-summary-card" :class="`promo-summary-card--${card.type}`" @click="openPromotions">
-                <span class="promo-summary-icon"><Gift v-if="card.type === 'fidelidade'" class="h-5 w-5" /><Truck v-else class="h-5 w-5" /></span>
-                <span class="min-w-0 flex-1 text-left"><small>{{ card.type === 'fidelidade' ? 'FIDELIDADE' : 'DELIVERY' }}</small><strong>{{ card.title }}</strong><em>{{ card.description }}</em></span>
-                <ChevronRight class="h-5 w-5 shrink-0" />
-              </button>
+              <component :is="card.type === 'pedido-minimo' ? 'div' : 'button'" v-for="card in promotionCards" :key="card.key" :type="card.type === 'pedido-minimo' ? undefined : 'button'" class="promo-summary-card" :class="`promo-summary-card--${card.type}`" @click="card.type !== 'pedido-minimo' && openPromotions()">
+                <span class="promo-summary-icon"><CircleDollarSign v-if="card.type === 'pedido-minimo'" class="h-5 w-5" /><Gift v-else-if="card.type === 'fidelidade'" class="h-5 w-5" /><Truck v-else class="h-5 w-5" /></span>
+                <span class="min-w-0 flex-1 text-left"><small>{{ card.type === 'pedido-minimo' ? 'PEDIDO ONLINE' : card.type === 'fidelidade' ? 'FIDELIDADE' : 'DELIVERY' }}</small><strong>{{ card.title }}</strong><em>{{ card.description }}</em></span>
+                <ChevronRight v-if="card.type !== 'pedido-minimo'" class="h-5 w-5 shrink-0" />
+              </component>
             </div>
           </div>
           <div v-if="promotionCards.length > 1" class="promo-carousel-dots" aria-label="Selecionar promoção">
@@ -1389,7 +1411,7 @@ onBeforeUnmount(() => {
 
         <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <section class="min-w-0 space-y-9">
-            <section v-if="mostOrderedItems.length" class="rounded-[24px] border border-amber-200 bg-amber-50/70 p-4 shadow-[0_0_0_1px_rgba(217,119,6,.08)] dark:border-amber-900/50 dark:bg-amber-950/15 sm:p-5">
+            <section v-if="showingHighlights && mostOrderedItems.length" class="rounded-[24px] border border-amber-200 bg-amber-50/70 p-4 shadow-[0_0_0_1px_rgba(217,119,6,.08)] dark:border-amber-900/50 dark:bg-amber-950/15 sm:p-5">
               <div class="mb-4 flex items-end justify-between gap-4">
                 <div>
                   <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white"><Flame class="h-3.5 w-3.5" />Mais pedidos</span>
@@ -1480,11 +1502,15 @@ onBeforeUnmount(() => {
               <div v-else>
                 <div class="max-h-[46vh] space-y-1 overflow-y-auto px-3 py-3">
                   <div v-for="line in selecionados" :key="line.id" class="cart-line">
-                    <div class="min-w-0 flex-1">
-                      <button type="button" class="brand-hover block max-w-full truncate text-left text-sm font-semibold" @click="editCartLine(line)">
+                    <button type="button" class="cart-line-thumb" :aria-label="`Editar ${itemName(line.item)}`" @click="editCartLine(line)">
+                      <img v-if="itemImage(line.item)" :src="itemImage(line.item) || ''" :alt="itemName(line.item)" />
+                      <UtensilsCrossed v-else class="h-5 w-5" />
+                    </button>
+                    <div class="cart-line-copy">
+                      <button type="button" class="brand-hover block w-full truncate text-left text-sm font-semibold" @click="editCartLine(line)">
                         {{ itemName(line.item) }}
                       </button>
-                      <p v-if="selectedOptionNames(line).length" class="mt-0.5 line-clamp-2 text-xs text-stone-500">
+                      <p v-if="selectedOptionNames(line).length" class="mt-0.5 truncate text-xs text-stone-500">
                         {{ selectedOptionNames(line).join(', ') }}
                       </p>
                       <p class="price mt-1.5 text-sm font-semibold">
@@ -1651,11 +1677,15 @@ onBeforeUnmount(() => {
         >
         <div class="max-h-[calc(88dvh-10rem)] overflow-y-auto overscroll-contain touch-pan-y px-4">
           <div v-for="line in selecionados" :key="line.id" class="cart-line border-b py-4 last:border-0">
-            <div class="min-w-0 flex-1">
-              <button type="button" class="truncate text-left text-sm font-semibold" @click="editCartLine(line)">
+            <button type="button" class="cart-line-thumb" :aria-label="`Editar ${itemName(line.item)}`" @click="editCartLine(line)">
+              <img v-if="itemImage(line.item)" :src="itemImage(line.item) || ''" :alt="itemName(line.item)" />
+              <UtensilsCrossed v-else class="h-5 w-5" />
+            </button>
+            <div class="cart-line-copy">
+              <button type="button" class="brand-hover block w-full truncate text-left text-sm font-semibold" @click="editCartLine(line)">
                 {{ itemName(line.item) }}
               </button>
-              <p v-if="selectedOptionNames(line).length" class="mt-0.5 line-clamp-2 text-xs text-stone-500">
+              <p v-if="selectedOptionNames(line).length" class="mt-0.5 truncate text-xs text-stone-500">
                 {{ selectedOptionNames(line).join(', ') }}
               </p>
               <p class="price mt-1.5 text-sm font-bold">{{ formatCurrencyBR(lineTotal(line)) }}</p>
@@ -1745,7 +1775,7 @@ onBeforeUnmount(() => {
                 <label v-if="customerAccount" class="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm"><input v-model="useAccountData" type="checkbox" /> Usar os dados da minha conta</label>
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div class="space-y-2"><Label for="customer-name">Nome</Label><Input id="customer-name" v-model="form.nome" placeholder="Como podemos chamar você?" /></div>
-                  <div class="space-y-2"><Label for="customer-phone">Telefone</Label><Input id="customer-phone" v-model="form.telefone" inputmode="tel" placeholder="(00) 00000-0000" /></div>
+                  <div class="space-y-2"><Label for="customer-phone">Telefone</Label><Input id="customer-phone" v-model="form.telefone" v-maska="phoneMaskOptions" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000" /></div>
                   <div class="space-y-2 sm:col-span-2"><Label for="customer-email">E-mail</Label><Input id="customer-email" v-model="form.email" type="email" placeholder="Necessário para pagamentos online" /></div>
                 </div>
               </section>
@@ -2163,6 +2193,10 @@ button.hero-action:active {
   border-color: rgba(5, 150, 105, 0.28);
   background: radial-gradient(circle at 100% 0, rgba(5,150,105,.15), transparent 50%), linear-gradient(120deg, rgba(5,150,105,.07), var(--menu-surface));
 }
+.promo-summary-card--pedido-minimo {
+  border-color: rgba(180, 83, 9, 0.3);
+  background: radial-gradient(circle at 100% 0, rgba(245, 158, 11, .18), transparent 50%), linear-gradient(120deg, rgba(245, 158, 11, .09), var(--menu-surface));
+}
 .promo-summary-card:active { scale: .985; }
 .promo-summary-icon,
 .promotion-detail-icon {
@@ -2181,6 +2215,11 @@ button.hero-action:active {
   background: #059669;
   box-shadow: 0 7px 16px rgba(5,150,105,.22);
 }
+.promo-summary-card--pedido-minimo .promo-summary-icon {
+  color: #fffbeb;
+  background: #b45309;
+  box-shadow: 0 7px 16px rgba(180, 83, 9, .24);
+}
 .promo-summary-card small,
 .promo-summary-card strong,
 .promo-summary-card em {
@@ -2193,6 +2232,7 @@ button.hero-action:active {
   letter-spacing: .12em;
 }
 .promo-summary-card--frete small { color: #047857; }
+.promo-summary-card--pedido-minimo small { color: #92400e; }
 .promo-summary-card strong {
   margin-top: 1px;
   font-size: .92rem;
@@ -2549,6 +2589,27 @@ button.hero-action:active {
 }
 .cart-line:hover {
   background: rgba(120, 113, 108, 0.055);
+}
+.cart-line-thumb {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--menu-muted);
+  background: rgba(120, 113, 108, 0.09);
+}
+.cart-line-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cart-line-copy {
+  min-width: 0;
+  flex: 1 1 0%;
+  overflow: hidden;
 }
 
 .quantity-button,
@@ -2933,7 +2994,7 @@ button.hero-action:active {
     background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(10px);
   }
-  .menu-hero .relative { min-height: 84px; padding-top: 18px; padding-bottom: 18px; }
+  .menu-hero > .relative { min-height: 84px; padding-top: 18px; padding-bottom: 18px; }
   .menu-hero .mb-2 { margin-bottom: 4px; }
   .menu-hero .mt-3 { margin-top: 7px; }
   .menu-title { font-size: 1.5rem; line-height: 1.1; }

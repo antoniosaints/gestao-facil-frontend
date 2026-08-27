@@ -469,6 +469,7 @@ async function saveUserRoles(user: RestauranteUsuarioPapeis) {
 }
 
 async function salvar() {
+  if (saving.value) return
   if (!dadosPublicacaoValidos.value)
     return toast.info('Revise o nome público e o endereço do cardápio antes de salvar.')
   const localizacao = localizacaoEmpresa()
@@ -489,6 +490,11 @@ async function salvar() {
     empresaLongitude.value = saved.localizacaoJson?.longitude?.toString() || ''
     toast.success('Configuração salva')
   } catch (error: any) {
+    if (error?.response?.data?.error?.code === 'version_conflict') {
+      await carregar()
+      toast.info('A configuração foi atualizada e recarregada. Revise os dados antes de salvar novamente.')
+      return
+    }
     toast.error(error?.response?.data?.error?.message || 'Não foi possível salvar a configuração.')
   } finally {
     saving.value = false

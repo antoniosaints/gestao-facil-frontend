@@ -109,11 +109,12 @@ export interface RestaurantePedido {
   } | null
   itens: Array<{
     id: number
+    catalogoItemId?: number | null
     nomeSnapshot: string
     quantidade: string | number
     subtotalSnapshot: string | number
     tamanhoSnapshot?: string | null
-    selecoesSnapshotJson?: Array<{ nome?: string }> | null
+    selecoesSnapshotJson?: Array<{ grupoId?: number; nome?: string }> | null
     observacao?: string | null
   }>
 }
@@ -273,14 +274,7 @@ export interface RestauranteKdsTicket {
   version: number
   createdAt: string
   Ponto: RestaurantePontoProducao
-  Pedido: {
-    id: number
-    codigo: string
-    origem: string
-    observacao?: string | null
-    createdAt: string
-    Mesa?: { nome: string } | null
-  }
+  Pedido: RestaurantePedido
   itens: Array<{
     quantidade: string | number
     observacao?: string | null
@@ -288,7 +282,12 @@ export interface RestauranteKdsTicket {
       id: number
       nomeSnapshot: string
       tamanhoSnapshot?: string | null
-      selecoesSnapshotJson?: Array<{ nome: string }> | null
+      selecoesSnapshotJson?: Array<{
+        nome: string
+        tipo?: 'SABOR' | 'COMPLEMENTO'
+        grupoId?: number
+        grupoNome?: string
+      }> | null
       observacao?: string | null
     }
   }>
@@ -539,7 +538,20 @@ export interface RestauranteCatalogoPayload {
   version?: number
 }
 
-export type RestauranteCatalogoBulkAction = 'EXIBIR' | 'OCULTAR' | 'DESTACAR' | 'REMOVER_DESTAQUE' | 'EXCLUIR'
+export type RestauranteCatalogoBulkAction =
+  | 'EXIBIR'
+  | 'OCULTAR'
+  | 'DESTACAR'
+  | 'REMOVER_DESTAQUE'
+  | 'EXCLUIR'
+  | 'ALTERAR_CATEGORIA'
+  | 'DEFINIR_CATEGORIA_SUGESTAO'
+  | 'ADICIONAR_GRUPOS'
+
+export type RestauranteCatalogoBulkOptions = {
+  categoriaId?: number
+  grupoIds?: number[]
+}
 
 export interface RestauranteGrupoPayload {
   nome: string
@@ -788,6 +800,36 @@ export class RestauranteRepository {
     return data.data as RestaurantePedido
   }
 
+  static async atualizarClientePedido(
+    id: number,
+    payload: {
+      clienteNome?: string | null
+      clienteTelefone?: string | null
+      clienteEmail?: string | null
+      version: number
+    },
+  ) {
+    const { data } = await http.patch(`/v1/restaurante/pedidos/${id}/cliente`, payload)
+    return data.data as RestaurantePedido
+  }
+
+  static async atualizarItensPedido(
+    id: number,
+    payload: {
+      itens: Array<{
+        catalogoItemId: number
+        quantidade: number
+        selecaoIds: number[]
+        observacao?: string
+      }>
+      observacao?: string | null
+      version: number
+    },
+  ) {
+    const { data } = await http.patch(`/v1/restaurante/pedidos/${id}/itens`, payload)
+    return data.data as RestaurantePedido
+  }
+
   static async imprimirPedido(id: number, estacaoIds: number[]) {
     const { data } = await http.post(`/v1/restaurante/pedidos/${id}/imprimir`, { estacaoIds })
     return data.data as RestauranteTrabalhoImpressao[]
@@ -799,7 +841,10 @@ export class RestauranteRepository {
   }
 
   static async salvarConfiguracao(config: RestauranteConfig) {
-    const { data } = await http.put('/v1/restaurante/configuracao', config)
+    // O status de pedidos online é salvo exclusivamente pelo controle rápido
+    // do cabeçalho, evitando que este formulário reverta uma alteração recente.
+    const { aceitarPedidosOnline: _aceitarPedidosOnline, ...payload } = config
+    const { data } = await http.put('/v1/restaurante/configuracao', payload)
     return data.data as RestauranteConfig
   }
 
@@ -846,6 +891,17 @@ export class RestauranteRepository {
     }
   }
 
+  static async catalogoCompleto() {
+    const firstPage = await this.catalogo({ page: 1, limit: 100 })
+    const remainingPages = await Promise.all(
+      Array.from({ length: Math.max(firstPage.meta.pages - 1, 0) }, (_, index) =>
+        this.catalogo({ page: index + 2, limit: 100 }),
+      ),
+    )
+    const items = [firstPage.data, ...remainingPages.map((page) => page.data)].flat()
+    return [...new Map(items.map((item) => [item.id, item])).values()]
+  }
+
   static async produtosCardapio(search = '') {
     const { data } = await http.get('/v1/restaurante/cardapio/produtos', {
       params: { search },
@@ -860,8 +916,16 @@ export class RestauranteRepository {
     return response.data.data as RestauranteCatalogoItem
   }
 
-  static async aplicarAcoesEmMassaCardapio(ids: number[], acao: RestauranteCatalogoBulkAction) {
-    const { data } = await http.post('/v1/restaurante/cardapio/acoes-em-massa', { ids, acao })
+  static async aplicarAcoesEmMassaCardapio(
+    ids: number[],
+    acao: RestauranteCatalogoBulkAction,
+    options: RestauranteCatalogoBulkOptions = {},
+  ) {
+    const { data } = await http.post('/v1/restaurante/cardapio/acoes-em-massa', {
+      ids,
+      acao,
+      ...options,
+    })
     return data.data as { affected: number; acao: RestauranteCatalogoBulkAction }
   }
 

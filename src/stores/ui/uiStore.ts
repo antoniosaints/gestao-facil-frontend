@@ -46,6 +46,9 @@ export type UiNavigationStyle = 'PADRAO' | 'CARDS' | 'SITE' | 'SIDEV2'
 
 export const useUiStore = defineStore('uiStore', () => {
   const openSidebar = ref(true)
+  // Modo operacional do KDS: o layout principal usa este estado para remover
+  // navegação e ocupar toda a área disponível, sem alterar a rota atual.
+  const kdsImersivo = ref(false)
   const loading = ref(false)
   const logoProfile = ref('/imgs/logo.png')
   const isMobile = ref(window.innerWidth < 768)
@@ -401,6 +404,7 @@ export const useUiStore = defineStore('uiStore', () => {
   return {
     loading,
     openSidebar,
+    kdsImersivo,
     status,
     permissoes,
     usuarioLogged,

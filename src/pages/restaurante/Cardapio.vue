@@ -24,6 +24,7 @@ import {
   RestauranteRepository,
   type RestauranteCatalogoItem,
   type RestauranteCatalogoBulkAction,
+  type RestauranteCatalogoBulkOptions,
   type RestauranteCatalogoPayload,
   type RestauranteGrupoOpcao,
   type RestauranteGrupoPayload,
@@ -43,6 +44,9 @@ const groups = ref<RestauranteGrupoOpcao[]>([])
 const products = ref<RestauranteProdutoDisponivel[]>([])
 const itemDialogOpen = ref(false)
 const groupDialogOpen = ref(false)
+const bulkCategoryDialogOpen = ref(false)
+const bulkSuggestionCategoryDialogOpen = ref(false)
+const bulkGroupsDialogOpen = ref(false)
 const editingItemId = ref<number | undefined>()
 const editingGroupId = ref<number | undefined>()
 const imagemChange = ref<{ file: File | null; remove: boolean }>({ file: null, remove: false })
@@ -52,7 +56,11 @@ const bulkSaving = ref(false)
 type CatalogVisibilityFilter = 'TODOS' | 'ATIVOS' | 'INATIVOS'
 const visibilityFilterStorageKey = 'gestao_facil:restaurante:cardapio:visibilidade'
 const catalogVisibilityFilter = ref<CatalogVisibilityFilter>(readCatalogVisibilityFilter())
+const catalogCategoryFilter = ref('TODAS')
 const selectedItemIds = ref<number[]>([])
+const bulkCategoryId = ref<number | null>(null)
+const bulkSuggestionCategoryId = ref<number | null>(null)
+const bulkGroupIds = ref<number[]>([])
 
 const itemForm = reactive<RestauranteCatalogoPayload>({
   modoCadastro: 'AVULSO',
@@ -85,12 +93,23 @@ const filteredItems = computed(() => {
   return items.value.filter((item) => {
     if (catalogVisibilityFilter.value === 'ATIVOS' && !item.disponivel) return false
     if (catalogVisibilityFilter.value === 'INATIVOS' && item.disponivel) return false
+    if (catalogCategoryFilter.value !== 'TODAS' && String(item.categoriaId || item.Categoria?.id) !== catalogCategoryFilter.value) return false
     if (!term) return true
     return (
     [item.nomePublico, item.Produto?.nome, item.Produto?.nomeVariante].some((value) =>
       value?.toLocaleLowerCase('pt-BR').includes(term),
     ))
   })
+})
+const catalogCategories = computed(() => {
+  const categories = new Map<number, string>()
+  for (const item of items.value) {
+    const category = item.Categoria || item.Produto?.ProdutoBase?.Categoria
+    if (category) categories.set(category.id, category.nome)
+  }
+  return [...categories.entries()]
+    .map(([id, nome]) => ({ id, nome }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 })
 
 const selectedFilteredItemIds = computed(() => filteredItems.value
@@ -123,12 +142,12 @@ const groupFormValid = computed(() => {
 async function load() {
   try {
     loading.value = true
-    const [catalog, optionGroups, availableProducts] = await Promise.all([
-      RestauranteRepository.catalogo({ limit: 100 }),
+    const [catalogItems, optionGroups, availableProducts] = await Promise.all([
+      RestauranteRepository.catalogoCompleto(),
       RestauranteRepository.gruposOpcoes(),
       RestauranteRepository.produtosCardapio(),
     ])
-    items.value = catalog.data
+    items.value = catalogItems
     selectedItemIds.value = selectedItemIds.value.filter((id) => items.value.some((item) => item.id === id))
     groups.value = optionGroups
     products.value = availableProducts
@@ -159,6 +178,11 @@ function changeCatalogVisibilityFilter(value: string) {
   }
 }
 
+function changeCatalogCategoryFilter(value: string) {
+  catalogCategoryFilter.value = value
+  selectedItemIds.value = []
+}
+
 function toggleItemSelection(id: number, checked: boolean | 'indeterminate') {
   if (checked === true && !selectedItemIds.value.includes(id)) selectedItemIds.value.push(id)
   if (checked !== true) selectedItemIds.value = selectedItemIds.value.filter((itemId) => itemId !== id)
@@ -180,11 +204,14 @@ function bulkActionLabel(action: RestauranteCatalogoBulkAction) {
     DESTACAR: 'destacados',
     REMOVER_DESTAQUE: 'sem destaque',
     EXCLUIR: 'excluídos',
+    ALTERAR_CATEGORIA: 'com categoria atualizada',
+    DEFINIR_CATEGORIA_SUGESTAO: 'com categoria de sugestão atualizada',
+    ADICIONAR_GRUPOS: 'com grupos adicionados',
   }[action]
 }
 
-async function applyBulkAction(action: RestauranteCatalogoBulkAction) {
-  if (!selectedItemIds.value.length || bulkSaving.value) return
+async function applyBulkAction(action: RestauranteCatalogoBulkAction, options: RestauranteCatalogoBulkOptions = {}) {
+  if (!selectedItemIds.value.length || bulkSaving.value) return false
   if (action === 'EXCLUIR') {
     const confirmed = await confirm.confirm({
       title: 'Excluir itens do cardápio',
@@ -193,19 +220,56 @@ async function applyBulkAction(action: RestauranteCatalogoBulkAction) {
       cancelText: 'Cancelar',
       colorButton: 'danger',
     })
-    if (!confirmed) return
+    if (!confirmed) return false
   }
   try {
     bulkSaving.value = true
-    const result = await RestauranteRepository.aplicarAcoesEmMassaCardapio(selectedItemIds.value, action)
+    const result = await RestauranteRepository.aplicarAcoesEmMassaCardapio(selectedItemIds.value, action, options)
     selectedItemIds.value = []
     await load()
     toast.success(`${result.affected} item(ns) ${bulkActionLabel(action)} com sucesso.`)
+    return true
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível aplicar a ação aos itens selecionados.')
+    return false
   } finally {
     bulkSaving.value = false
   }
+}
+
+function openBulkCategoryDialog() {
+  bulkCategoryId.value = null
+  bulkCategoryDialogOpen.value = true
+}
+
+function openBulkSuggestionCategoryDialog() {
+  bulkSuggestionCategoryId.value = null
+  bulkSuggestionCategoryDialogOpen.value = true
+}
+
+function openBulkGroupsDialog() {
+  bulkGroupIds.value = []
+  bulkGroupsDialogOpen.value = true
+}
+
+function toggleBulkGroup(groupId: number, checked: boolean | 'indeterminate') {
+  if (checked === true && !bulkGroupIds.value.includes(groupId)) bulkGroupIds.value.push(groupId)
+  if (checked !== true) bulkGroupIds.value = bulkGroupIds.value.filter((id) => id !== groupId)
+}
+
+async function applyBulkCategory() {
+  if (!bulkCategoryId.value) return toast.info('Selecione a categoria que deseja aplicar.')
+  if (await applyBulkAction('ALTERAR_CATEGORIA', { categoriaId: bulkCategoryId.value })) bulkCategoryDialogOpen.value = false
+}
+
+async function applyBulkSuggestionCategory() {
+  if (!bulkSuggestionCategoryId.value) return toast.info('Selecione a categoria de sugestão que deseja aplicar.')
+  if (await applyBulkAction('DEFINIR_CATEGORIA_SUGESTAO', { categoriaId: bulkSuggestionCategoryId.value })) bulkSuggestionCategoryDialogOpen.value = false
+}
+
+async function applyBulkGroups() {
+  if (!bulkGroupIds.value.length) return toast.info('Selecione ao menos um grupo para adicionar.')
+  if (await applyBulkAction('ADICIONAR_GRUPOS', { grupoIds: bulkGroupIds.value })) bulkGroupsDialogOpen.value = false
 }
 
 async function deleteCatalogItem(item: RestauranteCatalogoItem) {
@@ -484,6 +548,13 @@ onMounted(load)
                 <SelectItem value="INATIVOS">Inativos</SelectItem>
               </SelectContent>
             </Select>
+            <Select :model-value="catalogCategoryFilter" @update:model-value="changeCatalogCategoryFilter(String($event))">
+              <SelectTrigger class="w-full sm:w-44"><SelectValue placeholder="Categoria" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODAS">Todas as categorias</SelectItem>
+                <SelectItem v-for="category in catalogCategories" :key="category.id" :value="String(category.id)">{{ category.nome }}</SelectItem>
+              </SelectContent>
+            </Select>
             <label v-if="filteredItems.length" class="flex h-9 shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-md border px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted"><Checkbox :model-value="filteredSelectionState" @update:model-value="toggleAllFilteredItems($event)" />Selecionar visíveis</label>
           </div>
           <div class="flex items-center gap-1"><HelpTooltip text="Os produtos vêm do cadastro de estoque. Aqui você escolhe o nome, a descrição, a imagem e os grupos que aparecem no cardápio público." /><Button @click="newItem"><Plus class="mr-2 h-4 w-4" />Adicionar produto</Button></div>
@@ -496,6 +567,9 @@ onMounted(load)
             <Button size="sm" variant="outline" :disabled="bulkSaving" @click="applyBulkAction('OCULTAR')"><EyeOff class="mr-1.5 h-4 w-4" />Ocultar</Button>
             <Button size="sm" variant="outline" :disabled="bulkSaving" @click="applyBulkAction('DESTACAR')"><BadgePlusIcon class="mr-1.5 h-4 w-4" />Destacar</Button>
             <Button size="sm" variant="outline" :disabled="bulkSaving" @click="applyBulkAction('REMOVER_DESTAQUE')">Remover destaque</Button>
+            <Button size="sm" variant="outline" :disabled="bulkSaving" @click="openBulkCategoryDialog"><PackageSearch class="mr-1.5 h-4 w-4" />Mudar categoria</Button>
+            <Button size="sm" variant="outline" :disabled="bulkSaving" @click="openBulkSuggestionCategoryDialog">Categoria de sugestão</Button>
+            <Button size="sm" variant="outline" :disabled="bulkSaving" @click="openBulkGroupsDialog"><Layers3 class="mr-1.5 h-4 w-4" />Adicionar grupos</Button>
             <Button size="sm" variant="destructive" :disabled="bulkSaving" @click="applyBulkAction('EXCLUIR')"><LoaderCircle v-if="bulkSaving" class="mr-1.5 h-4 w-4 animate-spin" /><Trash2 v-else class="mr-1.5 h-4 w-4" />Excluir</Button>
             <Button size="sm" variant="ghost" :disabled="bulkSaving" @click="selectedItemIds = []">Limpar</Button>
           </div>
@@ -582,6 +656,33 @@ onMounted(load)
         </div>
       </TabsContent>
     </Tabs>
+
+    <Dialog v-model:open="bulkCategoryDialogOpen">
+      <DialogContent class="max-w-md">
+        <DialogHeader><DialogTitle>Mudar categoria</DialogTitle><DialogDescription>A categoria escolhida substituirá a categoria atual dos {{ selectedItemsCount }} itens selecionados.</DialogDescription></DialogHeader>
+        <div class="space-y-2 py-2"><Label>Nova categoria</Label><Select2Ajax v-model:model-value="bulkCategoryId" url="/produtos/categorias/select2" placeholder="Selecione a categoria" /></div>
+        <DialogFooter><Button variant="outline" :disabled="bulkSaving" @click="bulkCategoryDialogOpen = false">Cancelar</Button><Button :disabled="bulkSaving || !bulkCategoryId" @click="applyBulkCategory"><LoaderCircle v-if="bulkSaving" class="mr-2 h-4 w-4 animate-spin" />Aplicar categoria</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog v-model:open="bulkSuggestionCategoryDialogOpen">
+      <DialogContent class="max-w-md">
+        <DialogHeader><DialogTitle>Definir categoria de sugestão</DialogTitle><DialogDescription>Os {{ selectedItemsCount }} itens selecionados sugerirão produtos dessa categoria ao cliente.</DialogDescription></DialogHeader>
+        <div class="space-y-2 py-2"><Label>Categoria de sugestão</Label><Select2Ajax v-model:model-value="bulkSuggestionCategoryId" url="/produtos/categorias/select2" placeholder="Selecione a categoria" /></div>
+        <DialogFooter><Button variant="outline" :disabled="bulkSaving" @click="bulkSuggestionCategoryDialogOpen = false">Cancelar</Button><Button :disabled="bulkSaving || !bulkSuggestionCategoryId" @click="applyBulkSuggestionCategory"><LoaderCircle v-if="bulkSaving" class="mr-2 h-4 w-4 animate-spin" />Aplicar sugestão</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog v-model:open="bulkGroupsDialogOpen">
+      <DialogContent class="max-h-[80vh] max-w-md overflow-y-auto">
+        <DialogHeader><DialogTitle>Adicionar grupos</DialogTitle><DialogDescription>Os grupos selecionados serão adicionados aos {{ selectedItemsCount }} itens, sem remover os grupos já vinculados.</DialogDescription></DialogHeader>
+        <div class="space-y-2 py-2">
+          <p v-if="!activeGroups.length" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Não há grupos ativos para adicionar.</p>
+          <label v-for="group in activeGroups" :key="group.id" class="flex cursor-pointer items-center gap-3 rounded-lg border p-3"><Checkbox :model-value="bulkGroupIds.includes(group.id)" @update:model-value="toggleBulkGroup(group.id, $event)" /><span class="flex-1 text-sm"><strong>{{ group.nome }}</strong><span class="ml-2 text-muted-foreground">{{ group.tipo === 'SABOR' ? 'Sabores' : 'Complementos' }}</span></span></label>
+        </div>
+        <DialogFooter><Button variant="outline" :disabled="bulkSaving" @click="bulkGroupsDialogOpen = false">Cancelar</Button><Button :disabled="bulkSaving || !bulkGroupIds.length" @click="applyBulkGroups"><LoaderCircle v-if="bulkSaving" class="mr-2 h-4 w-4 animate-spin" />Adicionar grupos</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <Dialog v-model:open="itemDialogOpen">
       <DialogContent class="max-h-[90vh] max-w-2xl overflow-y-auto">

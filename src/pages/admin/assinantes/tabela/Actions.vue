@@ -74,6 +74,11 @@ function inativar() {
 }
 
 async function apagarAssinante() {
+  if (props.data.protegidaPorSuperAdmin) {
+    toast.info('A conta vinculada a um superadmin não pode ser apagada.')
+    return
+  }
+
   const first = await confirm.confirm({
     title: 'Apagar assinante',
     message: `Deseja apagar a conta "${props.data.nome}"? TODOS os dados dela (usuários, vendas, financeiro, produtos, etc.) serão removidos.`,
@@ -136,9 +141,17 @@ async function apagarAssinante() {
         Inativar
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem class="text-red-600 focus:text-red-600" @click="apagarAssinante">
+      <DropdownMenuItem
+        v-if="!data.protegidaPorSuperAdmin"
+        class="text-red-600 focus:text-red-600"
+        @click="apagarAssinante"
+      >
         <Trash2 class="h-4 w-4" />
         Apagar assinante
+      </DropdownMenuItem>
+      <DropdownMenuItem v-else disabled>
+        <ShieldCheck class="h-4 w-4" />
+        Conta superadmin protegida
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
