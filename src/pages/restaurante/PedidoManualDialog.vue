@@ -283,7 +283,7 @@ watch(
     <div
       class="manual-order-layout grid gap-5 p-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(19rem,.85fr)]"
     >
-      <section class="manual-order-catalog space-y-4">
+      <section class="manual-order-catalog flex min-h-0 flex-col gap-4">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p class="flex items-center gap-2 text-sm font-semibold">
@@ -320,7 +320,7 @@ watch(
             class="h-20 animate-pulse rounded-xl border bg-muted/50"
           />
         </div>
-        <div v-else class="grid max-h-56 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+        <div v-else class="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
           <button
             v-for="item in catalogoFiltrado"
             :key="item.id"
