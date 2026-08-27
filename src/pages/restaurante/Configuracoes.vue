@@ -66,6 +66,8 @@ import {
   Truck,
   Sparkles,
   Link2,
+  Clock12Icon,
+  Clock6,
 } from 'lucide-vue-next'
 
 const toast = useToast()
@@ -724,20 +726,25 @@ onMounted(async () => {
               </div>
               <div class="space-y-3">
                 <div v-for="horario in form.horariosJson" :key="horario.dia"
-                  class="grid items-center gap-3 rounded-lg border p-3 sm:grid-cols-[minmax(150px,1fr)_auto_130px_130px]">
-                  <label class="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                  class="grid items-center gap-3 rounded-lg border px-3 py-3 md:py-1 sm:grid-cols-4">
+                  <label class="flex cursor-pointer items-center gap-2 text-sm font-medium col-span-1 md:col-span-2">
                     <Checkbox :model-value="horario.ativo" @update:model-value="horario.ativo = Boolean($event)" />{{
                       diasFuncionamento.find((dia) => dia.dia === horario.dia)?.label }}
+                      <span class="ml-2 rounded-md px-2 py-0.5 text-xs font-medium" 
+                      :class="{
+                        'bg-green-200 border-green-300 text-green-900 dark:bg-green-900 dark:border-green-600 dark:text-green-100': horario.ativo,
+                        'bg-red-200 border-red-300 text-red-900 dark:bg-red-900 dark:border-red-600 dark:text-red-100': !horario.ativo
+                      }">
+                        {{ horario.ativo ? 'Aberto' : 'Fechado' }}
+                      </span>
                   </label>
-                  <span class="text-xs text-muted-foreground">{{
-                    horario.ativo ? 'Aberto' : 'Fechado'
-                    }}</span>
-                  <div class="space-y-1">
-                    <Label class="text-xs">Abre</Label><Input v-model="horario.abertura" type="time"
+                  
+                  <div class="space-y-1 flex items-center gap-2">
+                    <Label class="text-xs">Abre</Label><Input :icon-label="Clock12Icon" v-model="horario.abertura" type="time"
                       :disabled="!horario.ativo" />
                   </div>
-                  <div class="space-y-1">
-                    <Label class="text-xs">Fecha</Label><Input v-model="horario.fechamento" type="time"
+                  <div class="space-y-1 flex items-center gap-2">
+                    <Label class="text-xs">Fecha</Label><Input :icon-label="Clock6" v-model="horario.fechamento" type="time"
                       :disabled="!horario.ativo" />
                   </div>
                 </div>

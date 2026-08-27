@@ -949,7 +949,7 @@ onBeforeUnmount(() => handleRouteModalChange(false))
       <section
         v-for="status in kanbanStatuses"
         :key="status"
-        class="flex min-h-[30rem] w-72 shrink-0 flex-col overflow-hidden rounded-2xl border border-t-4 shadow-sm"
+        class="flex min-h-[30rem] w-72 shrink-0 flex-col overflow-hidden rounded-md border border-t-4 shadow-sm"
         :class="statusColumnClass(status)"
         @dragover.prevent
         @drop.prevent="soltarNoKanban(status)"
@@ -967,7 +967,7 @@ onBeforeUnmount(() => handleRouteModalChange(false))
             v-for="pedido in filtrados.filter((item) => item.status === status)"
             :key="pedido.id"
             :draggable="Boolean(canOperate && proximoDisponivel(pedido))"
-            class="cursor-pointer rounded-xl border-border/80 bg-card/95 shadow-sm transition hover:border-primary/40 hover:shadow-md"
+            class="cursor-pointer rounded-md border-border/80 bg-card/95 shadow-sm transition hover:border-primary/40 hover:shadow-md"
             :class="{
               'cursor-grab active:cursor-grabbing': canOperate && proximoDisponivel(pedido),
             }"
