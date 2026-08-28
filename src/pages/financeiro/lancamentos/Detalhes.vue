@@ -1201,7 +1201,7 @@ watch(() => store.filters.update, loadLancamento)
               @update:model-value="selecao.toggle(parcela.id!)"
             />
             <div class="min-w-0 flex-1 space-y-1.5 pl-1">
-              <div class="flex items-start justify-between gap-3">
+              <div class="flex items-start justify-between gap-3 cursor-pointer" @click="selecao.toggle(parcela.id!)">
                 <div class="min-w-0">
                   <p class="text-sm font-semibold text-foreground flex items-center gap-1">
                     {{ formatCurrencyBR(parcela.valor || 0) }}
