@@ -397,27 +397,33 @@ async function soltarNoKanban(status: RestaurantePedidoStatus) {
 }
 
 async function abrirImpressao(pedido: RestaurantePedido) {
-  if (!pedido.tickets?.length)
-    return toast.info('Este pedido não possui ticket de produção para imprimir.')
+  if (!podeImprimirPedido(pedido))
+    return toast.info('O pedido só pode ser impresso depois de confirmado.')
   try {
     const [stations, rules] = await Promise.all([
       RestauranteRepository.estacoesImpressao(),
       RestauranteRepository.regrasImpressao(),
     ])
-    const ticketPointIds = new Set(pedido.tickets.map((ticket) => ticket.pontoId))
-    const allowedStationIds = new Set(
-      rules
-        .filter((rule) => rule.ativa && ticketPointIds.has(rule.pontoId))
-        .flatMap((rule) => [
-          rule.estacaoId,
-          ...rule.destinos.map((destination) => destination.estacaoId),
-        ]),
-    )
+    const ticketPointIds = new Set((pedido.tickets || []).map((ticket) => ticket.pontoId))
+    const allowedStationIds = pedido.tickets?.length
+      ? new Set(
+          rules
+            .filter((rule) => rule.ativa && ticketPointIds.has(rule.pontoId))
+            .flatMap((rule) => [
+              rule.estacaoId,
+              ...rule.destinos.map((destination) => destination.estacaoId),
+            ]),
+        )
+      : null
     estacoesImpressao.value = stations.filter(
-      (station) => station.ativa && allowedStationIds.has(station.id),
+      (station) => station.ativa && (!allowedStationIds || allowedStationIds.has(station.id)),
     )
     if (!estacoesImpressao.value.length)
-      return toast.info('Não há conector de impressão configurado para os pontos deste pedido.')
+      return toast.info(
+        pedido.tickets?.length
+          ? 'Não há conector de impressão configurado para os pontos deste pedido.'
+          : 'Não há conector de impressão ativo neste restaurante.',
+      )
     pedidoParaImpressao.value = pedido
     estacoesSelecionadas.value = estacoesImpressao.value.map((station) => station.id)
     openModalImpressao.value = true
@@ -462,6 +468,18 @@ async function imprimirPedido() {
 
 function podeCancelar(pedido: RestaurantePedido) {
   return !['CANCELADO', 'CONCLUIDO'].includes(pedido.status)
+}
+
+function podeImprimirPedido(pedido: RestaurantePedido) {
+  return ['CONFIRMADO', 'EM_PREPARO', 'PRONTO', 'CONCLUIDO'].includes(pedido.status)
+}
+
+function aguardandoPagamentoOnline(pedido: RestaurantePedido) {
+  return (
+    pedido.status === 'RECEBIDO' &&
+    pedido.pagamentoStatus === 'PENDENTE' &&
+    ['PIX', 'CHECKOUT_PRO'].includes(pedido.pagamentoMetodoSnapshot || '')
+  )
 }
 
 async function cancelar(pedido: RestaurantePedido) {
@@ -871,7 +889,7 @@ onBeforeUnmount(() => handleRouteModalChange(false))
         </CardContent>
         <CardFooter
           v-if="canPrint || (canOperate && (proximoDisponivel(pedido) || podeCancelar(pedido)))"
-          class="gap-2 border-t px-4 py-3"
+          class="min-w-0 gap-2 overflow-hidden border-t px-4 py-3"
         >
           <Button
             v-if="proximoDisponivel(pedido)"
@@ -891,26 +909,30 @@ onBeforeUnmount(() => handleRouteModalChange(false))
             as-child
             size="sm"
             variant="outline"
-            class="flex-1"
+            class="min-w-0 flex-1 px-3"
             @click.stop
           >
-            <RouterLink to="/restaurante/kds" class="flex items-center"
-              ><ChefHat class="mr-1.5 h-3.5 w-3.5" />Acompanhar no KDS</RouterLink
+            <RouterLink to="/restaurante/kds" class="flex min-w-0 items-center"
+              ><ChefHat class="mr-1.5 h-3.5 w-3.5 shrink-0" /><span class="truncate"
+                >Acompanhar no KDS</span
+              ></RouterLink
             >
           </Button>
           <Button
             v-if="podeCancelar(pedido)"
             size="sm"
             variant="destructive"
+            class="shrink-0"
             :disabled="atualizando === pedido.id"
             aria-label="Cancelar pedido"
             @click.stop="cancelar(pedido)"
             ><CircleX class="h-4 w-4" /><span class="sr-only">Cancelar pedido</span></Button
           >
           <Button
-            v-if="canPrint && pedido.tickets?.length"
+            v-if="canPrint && podeImprimirPedido(pedido)"
             size="sm"
             variant="outline"
+            class="shrink-0"
             aria-label="Imprimir pedido"
             @click.stop="abrirImpressao(pedido)"
             ><Printer class="h-4 w-4" /><span class="sr-only">Imprimir pedido</span></Button
@@ -919,12 +941,12 @@ onBeforeUnmount(() => handleRouteModalChange(false))
             v-else-if="canPrint"
             size="sm"
             variant="ghost"
-            class="cursor-not-allowed text-muted-foreground/60"
-            aria-label="Sem ticket de produção para imprimir"
-            title="Sem ticket de produção para imprimir"
+            class="shrink-0 cursor-not-allowed text-muted-foreground/60"
+            aria-label="Pedido ainda não disponível para impressão"
+            title="O pedido poderá ser impresso depois de confirmado"
             disabled
             ><Printer class="h-4 w-4" /><span class="sr-only"
-              >Sem ticket de produção para imprimir</span
+              >Pedido ainda não disponível para impressão</span
             ></Button
           >
         </CardFooter>
@@ -936,9 +958,11 @@ onBeforeUnmount(() => handleRouteModalChange(false))
           "
           class="border-t px-4 py-3"
         >
-          <Button as-child size="sm" variant="outline" class="w-full" @click.stop>
-            <RouterLink to="/restaurante/kds"
-              ><ChefHat class="mr-1.5 h-3.5 w-3.5" />Acompanhar no KDS</RouterLink
+          <Button as-child size="sm" variant="outline" class="w-full min-w-0" @click.stop>
+            <RouterLink to="/restaurante/kds" class="flex min-w-0 items-center"
+              ><ChefHat class="mr-1.5 h-3.5 w-3.5 shrink-0" /><span class="truncate"
+                >Acompanhar no KDS</span
+              ></RouterLink
             >
           </Button>
         </CardFooter>
@@ -1017,7 +1041,7 @@ onBeforeUnmount(() => handleRouteModalChange(false))
                     <RouterLink to="/restaurante/kds"><ChefHat class="h-3.5 w-3.5" /></RouterLink>
                   </Button>
                   <Button
-                    v-if="canPrint && pedido.tickets?.length"
+                    v-if="canPrint && podeImprimirPedido(pedido)"
                     size="icon"
                     variant="ghost"
                     class="h-7 w-7"
@@ -1030,8 +1054,8 @@ onBeforeUnmount(() => handleRouteModalChange(false))
                     size="icon"
                     variant="ghost"
                     class="h-7 w-7 cursor-not-allowed text-muted-foreground/60"
-                    aria-label="Sem ticket de produção para imprimir"
-                    title="Sem ticket de produção para imprimir"
+                    aria-label="Pedido ainda não disponível para impressão"
+                    title="O pedido poderá ser impresso depois de confirmado"
                     disabled
                     ><Printer class="h-3.5 w-3.5"
                   /></Button>
@@ -1147,7 +1171,7 @@ onBeforeUnmount(() => handleRouteModalChange(false))
       :title="
         pedidoParaImpressao ? `Imprimir pedido ${pedidoParaImpressao.codigo}` : 'Imprimir pedido'
       "
-      description="Escolha os conectores configurados que devem receber a reimpressão."
+      description="Escolha os conectores que devem receber o comprovante."
       size="lg"
     >
       <div class="space-y-3 p-4">
@@ -1168,8 +1192,11 @@ onBeforeUnmount(() => handleRouteModalChange(false))
             @change="alterarEstacaoImpressao(station.id, $event)"
         /></label>
         <p class="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
-          Somente conectores configurados como destinos dos pontos deste pedido receberão trabalhos
-          de impressão.
+          {{
+            pedidoParaImpressao?.tickets?.length
+              ? 'Somente conectores configurados como destinos dos pontos deste pedido receberão trabalhos de impressão.'
+              : 'Como este pedido não utiliza pontos KDS, o comprovante completo será enviado diretamente aos conectores selecionados.'
+          }}
         </p>
         <div class="flex justify-end gap-2">
           <Button variant="outline" @click="openModalImpressao = false">Cancelar</Button
@@ -1195,11 +1222,11 @@ onBeforeUnmount(() => handleRouteModalChange(false))
     >
       <template #actions="{ pedido }">
         <div
-          v-if="canOperate || (canPrint && pedido.tickets?.length)"
+          v-if="canOperate || (canPrint && podeImprimirPedido(pedido))"
           class="flex justify-end gap-2 border-t pt-4"
         >
           <Button
-            v-if="canPrint && pedido.tickets?.length"
+            v-if="canPrint && podeImprimirPedido(pedido)"
             variant="outline"
             @click="abrirImpressao(pedido)"
             ><Printer class="mr-1.5 h-4 w-4" />Imprimir</Button

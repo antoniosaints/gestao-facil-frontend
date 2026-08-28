@@ -28,6 +28,7 @@ import {
   Trash2,
   UtensilsCrossed,
   UserRound,
+  X,
 } from 'lucide-vue-next'
 
 const props = defineProps<{ open: boolean; pedidoParaEditar?: RestaurantePedido | null }>()
@@ -60,6 +61,7 @@ const clienteNome = ref('')
 const clienteTelefone = ref('')
 const clienteId = ref<number | string | null>(null)
 const carrinho = ref<CartItem[]>([])
+const carrinhoMobileAberto = ref(false)
 const editandoItens = computed(() => Boolean(props.pedidoParaEditar))
 
 const itemSelecionado = computed(
@@ -119,6 +121,7 @@ function reset() {
   clienteTelefone.value = ''
   clienteId.value = null
   carrinho.value = []
+  carrinhoMobileAberto.value = false
   limparItem()
 }
 
@@ -366,8 +369,29 @@ watch(
 
       </section>
 
+      <Button
+        v-show="!carrinhoMobileAberto"
+        type="button"
+        class="manual-order-cart-trigger lg:hidden"
+        @click="carrinhoMobileAberto = true"
+      >
+        <ShoppingCart class="h-4 w-4" />
+        <span>Ver pedido</span>
+        <Badge variant="secondary" class="bg-primary-foreground/15 text-primary-foreground">
+          {{ totalItens }}
+        </Badge>
+      </Button>
+      <button
+        v-if="carrinhoMobileAberto"
+        type="button"
+        class="manual-order-cart-backdrop lg:hidden"
+        aria-label="Fechar resumo do pedido"
+        @click="carrinhoMobileAberto = false"
+      ></button>
+
       <aside
         class="manual-order-cart flex min-h-[28rem] flex-col overflow-y-auto rounded-2xl border bg-card shadow-sm lg:sticky lg:top-0"
+        :class="{ 'manual-order-cart--mobile-open': carrinhoMobileAberto }"
       >
         <div class="border-b bg-muted/40 px-4 py-3.5">
           <div class="flex items-center justify-between gap-3">
@@ -381,7 +405,19 @@ watch(
                 <p class="text-xs text-muted-foreground">Revise antes de enviar ao KDS.</p>
               </div>
             </div>
-            <Badge variant="secondary">{{ totalItens }} item(ns)</Badge>
+            <div class="flex shrink-0 items-center gap-2">
+              <Badge variant="secondary">{{ totalItens }} item(ns)</Badge>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                class="h-8 w-8 lg:hidden"
+                aria-label="Fechar resumo do pedido"
+                @click="carrinhoMobileAberto = false"
+              >
+                <X class="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
         <div class="min-h-auto flex-1 space-y-2 p-3">
@@ -580,6 +616,63 @@ watch(
 </template>
 
 <style scoped>
+@media (max-width: 1023px) {
+  .manual-order-layout {
+    display: block;
+    min-width: 0;
+    padding: 1rem 1rem 5.5rem;
+  }
+
+  .manual-order-catalog,
+  .manual-order-catalog > * {
+    min-width: 0;
+  }
+
+  .manual-order-cart-trigger {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    z-index: 60;
+    display: flex;
+    height: 3.25rem;
+    justify-content: center;
+    gap: 0.625rem;
+    border-radius: 1rem;
+    box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
+  }
+
+  .manual-order-cart-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    cursor: default;
+    background: rgb(0 0 0 / 0.45);
+  }
+
+  .manual-order-cart {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 61;
+    min-height: 0;
+    height: min(46rem, calc(100dvh - 0.75rem));
+    max-height: calc(100dvh - 0.75rem);
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    transform: translateY(105%);
+    visibility: hidden;
+    transition: transform 180ms ease, visibility 180ms step-end;
+  }
+
+  .manual-order-cart--mobile-open {
+    transform: translateY(0);
+    visibility: visible;
+    transition: transform 180ms ease;
+  }
+}
+
 @media (min-width: 1024px) {
   .manual-order-layout {
     height: calc(90dvh - 9rem);

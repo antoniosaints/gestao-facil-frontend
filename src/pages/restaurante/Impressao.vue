@@ -781,8 +781,8 @@ onMounted(() => loadData())
             class="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
-                <p class="font-medium">Pedido {{ job.Ticket.Pedido.codigo }}</p>
-                <Badge variant="secondary">{{ job.Ponto.nome }}</Badge>
+                <p class="font-medium">Pedido {{ job.Pedido?.codigo || job.Ticket?.Pedido.codigo }}</p>
+                <Badge variant="secondary">{{ job.Ponto?.nome || 'Sem KDS' }}</Badge>
               </div>
               <p class="mt-1 text-xs text-muted-foreground">{{ job.Estacao.nome }} · papel {{ job.papel }} · {{ job.vias
               }} via(s) · {{ formatDate(job.createdAt) }}</p>

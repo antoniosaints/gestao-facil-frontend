@@ -344,8 +344,9 @@ export interface RestauranteTrabalhoImpressao {
   impressoAt?: string | null
   createdAt: string
   Estacao: { id: number; nome: string; impressoraNome?: string | null }
-  Ponto: { id: number; nome: string }
-  Ticket: { Pedido: { codigo: string } }
+  Ponto?: { id: number; nome: string } | null
+  Ticket?: { Pedido: { codigo: string } } | null
+  Pedido?: { codigo: string } | null
 }
 
 export interface RestauranteTrabalhoEstacao {
