@@ -272,6 +272,14 @@
                   </div>
                 </details>
               </div>
+              <Button
+                v-else-if="
+                  can('RECEBER') && order.tipo === 'CONSERTO' && order.status === 'RECEBIDA'
+                "
+                @click="saveAndContinueToBudget"
+              >
+                <CheckCircle2 class="mr-2 h-4 w-4" />Salvar e continuar
+              </Button>
               <div
                 v-else-if="
                   financialActionAvailable ||
@@ -329,33 +337,6 @@
           </div>
         </CardContent>
       </Card>
-
-      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-xl border bg-card p-4 shadow-sm">
-          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Fluxo</p>
-          <p class="mt-1 font-semibold">{{ label(order.status) }}</p>
-        </div>
-        <div class="rounded-xl border bg-card p-4 shadow-sm">
-          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Peças / itens
-          </p>
-          <p class="mt-1 text-2xl font-bold">{{ order.pecas?.length || 0 }}</p>
-        </div>
-        <div class="rounded-xl border bg-card p-4 shadow-sm">
-          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Materiais</p>
-          <p class="mt-1 text-2xl font-bold">{{ order.materiais?.length || 0 }}</p>
-        </div>
-        <div
-          class="rounded-xl border p-4 shadow-sm"
-          :class="pendingPurchaseNeeds.length ? 'border-amber-500/40 bg-amber-500/5' : 'bg-card'"
-        >
-          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Compras pendentes
-          </p>
-          <p class="mt-1 text-2xl font-bold">{{ pendingPurchaseNeeds.length }}</p>
-        </div>
-      </div>
-
       <div class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div class="space-y-6">
           <Card
@@ -376,6 +357,12 @@
                     <p class="text-sm text-muted-foreground">
                       {{ piece.descricao }}<span v-if="piece.metal"> · {{ piece.metal }}</span
                       ><span v-if="piece.pedras"> · {{ piece.pedras }}</span>
+                    </p>
+                    <p
+                      v-if="order.tipo === 'ENCOMENDA' && piece.pesoInformado != null"
+                      class="mt-1 text-sm font-medium text-foreground"
+                    >
+                      Peso estimado solicitado: {{ measure(piece.pesoInformado, 'PESO') }}
                     </p>
                   </div>
                   <label
@@ -1406,8 +1393,8 @@ const emptyMaterial = () => ({
   estoqueDisponivel: undefined as number | undefined,
 })
 const materialDraft = reactive<any>(emptyMaterial())
-const emptyBudget = () => ({
-  servicos: [{ descricao: 'Mão de obra', quantidade: 1, valor: null }],
+const emptyBudget = (valorMaoObra = 0) => ({
+  servicos: [{ descricao: 'Mão de obra', quantidade: 1, valor: valorMaoObra || null }],
   desconto: 0,
   prazoPrevisto: null as Date | null,
   materiais: [] as Array<any>,
@@ -1843,7 +1830,7 @@ function hydrateBudget() {
               observacao: material.observacao || '',
             })) || [],
       }
-    : emptyBudget()
+    : emptyBudget(Number(order.value?.valorMaoObra || 0))
   Object.assign(budget, next)
   budgetLink.value = current?.tokenPublico
     ? `${window.location.origin}/ourive/orcamento/${current.tokenPublico}`
@@ -1903,6 +1890,9 @@ async function loadFinancial() {
   } catch {
     financial.value = undefined
   }
+}
+async function saveAndContinueToBudget() {
+  await persistBudgetVersion('Recebimento salvo e primeira versão do orçamento criada.')
 }
 async function finishProduction() {
   const parsedWeight = Number(productionWeight.value)
@@ -2024,8 +2014,8 @@ async function removePhoto(photo: any) {
     removingPhotoId.value = null
   }
 }
-async function saveBudget() {
-  if (
+function budgetIsValid() {
+  return !(
     !budget.servicos.length ||
     budget.servicos.some((item: any) => !item.descricao || Number(item.quantidade) < 1) ||
     budget.materiais.some(
@@ -2033,33 +2023,46 @@ async function saveBudget() {
         (!item.fornecidoPeloCliente && !item.produtoId) || Number(item.quantidade) <= 0,
     )
   )
-    return toast.info('Complete os serviços e materiais planejados.')
+}
+function budgetPayload() {
+  return {
+    ...budget,
+    servicos: budget.servicos.map((item: any) => ({
+      ...item,
+      quantidade: Number(item.quantidade),
+      valor: monetaryValue(item.valor),
+    })),
+    prazoPrevisto: budget.prazoPrevisto || undefined,
+    desconto: monetaryValue(budget.desconto),
+    materiais: budget.materiais.map((item: any) => ({
+      produtoId: item.fornecidoPeloCliente ? undefined : Number(item.produtoId),
+      pecaId: item.pecaId || undefined,
+      fornecidoPeloCliente: Boolean(item.fornecidoPeloCliente),
+      custoUnitario: item.fornecidoPeloCliente ? 0 : monetaryValue(item.custoUnitario),
+      valorUnitario: item.fornecidoPeloCliente ? 0 : monetaryValue(item.valorUnitario),
+      quantidade: Number(item.quantidade),
+      unidade: item.unidade || 'QUANTIDADE',
+      observacao: item.observacao || undefined,
+    })),
+  }
+}
+async function persistBudgetVersion(successMessage: string) {
+  if (!budgetIsValid()) {
+    toast.info('Complete os serviços e materiais planejados.')
+    return false
+  }
   try {
-    await OuriveRepository.salvarOrcamento(order.value.id, {
-      ...budget,
-      servicos: budget.servicos.map((item: any) => ({
-        ...item,
-        quantidade: Number(item.quantidade),
-        valor: monetaryValue(item.valor),
-      })),
-      prazoPrevisto: budget.prazoPrevisto || undefined,
-      desconto: monetaryValue(budget.desconto),
-      materiais: budget.materiais.map((item: any) => ({
-        produtoId: item.fornecidoPeloCliente ? undefined : Number(item.produtoId),
-        pecaId: item.pecaId || undefined,
-        fornecidoPeloCliente: Boolean(item.fornecidoPeloCliente),
-        custoUnitario: item.fornecidoPeloCliente ? 0 : monetaryValue(item.custoUnitario),
-        valorUnitario: item.fornecidoPeloCliente ? 0 : monetaryValue(item.valorUnitario),
-        quantidade: Number(item.quantidade),
-        unidade: item.unidade || 'QUANTIDADE',
-        observacao: item.observacao || undefined,
-      })),
-    })
+    await OuriveRepository.salvarOrcamento(order.value.id, budgetPayload())
     await load()
-    toast.success('Nova versão do orçamento salva.')
+    toast.success(successMessage)
+    return true
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível salvar o orçamento.')
+    return false
   }
+}
+async function saveBudget() {
+  await persistBudgetVersion('Nova versão do orçamento salva.')
 }
 async function approveBudgetInternally() {
   const confirmed = await useConfirm().confirm({

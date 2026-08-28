@@ -20,6 +20,7 @@ import {
 } from 'lucide-vue-next'
 import DataTable from '@/components/tabela/DataTable.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -49,6 +50,10 @@ const saving = ref(false)
 const ordersLoading = ref(false)
 const ordersSearch = ref('')
 const orders = ref<any[]>([])
+const predefinicoes = ref<{
+  pecas: Array<{ id: number; nome: string }>
+  metais: Array<{ id: number; nome: string }>
+}>({ pecas: [], metais: [] })
 const tableUpdate = ref(0)
 const canReceive = ui.hasOuriveCapability('RECEBER')
 type TipoNovaOrdem = 'CONSERTO' | 'ENCOMENDA'
@@ -195,7 +200,8 @@ const draft = ref({
   descricao: '',
   garantia: 'Sem garantia informada',
   observacoes: '',
-  prazoPrevisto: '',
+  prazoPrevisto: null as Date | null,
+  valorMaoObra: undefined as number | undefined,
   pecas: [emptyPiece()],
 })
 function resetDraft() {
@@ -204,8 +210,28 @@ function resetDraft() {
     descricao: '',
     garantia: 'Sem garantia informada',
     observacoes: '',
-    prazoPrevisto: '',
+    prazoPrevisto: null,
+    valorMaoObra: undefined,
     pecas: [emptyPiece()],
+  }
+}
+async function loadPredefinicoes() {
+  try {
+    const data = await OuriveRepository.predefinicoes()
+    predefinicoes.value = { pecas: data.pecas, metais: data.metais }
+  } catch {
+    // O preenchimento manual segue disponível se o catálogo estiver indisponível.
+  }
+}
+async function savePreset(tipo: 'PECA' | 'METAL', nome: string) {
+  const value = nome.trim()
+  if (value.length < 2) return toast.info('Digite um nome antes de salvar a predefinição.')
+  try {
+    await OuriveRepository.salvarPredefinicao(tipo, value)
+    await loadPredefinicoes()
+    toast.success('Predefinição salva.')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível salvar a predefinição.')
   }
 }
 
@@ -350,7 +376,10 @@ async function save() {
     saving.value = false
   }
 }
-onMounted(() => loadOrders())
+onMounted(() => {
+  void loadOrders()
+  void loadPredefinicoes()
+})
 </script>
 
 <template>
@@ -666,8 +695,8 @@ onMounted(() => loadOrders())
               </label>
               <div class="grid gap-4 sm:grid-cols-2">
                 <label class="grid gap-1 text-sm font-medium"
-                  >Prazo previsto<Input v-model="draft.prazoPrevisto" type="date"
-                /></label>
+                  >Prazo previsto<Calendarpicker v-model="draft.prazoPrevisto" :teleport="true" />
+                </label>
                 <label class="grid gap-1 text-sm font-medium"
                   >Garantia<Input v-model="draft.garantia" placeholder="Ex.: 90 dias"
                 /></label>
@@ -695,8 +724,14 @@ onMounted(() => loadOrders())
                   /></Button>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2">
-                  <Input v-model="piece.descricao" placeholder="Peça a produzir" />
-                  <Input v-model="piece.metal" placeholder="Metal desejado (ex.: ouro 18k)" />
+                  <div class="flex gap-2">
+                    <Input v-model="piece.descricao" list="ourive-piece-presets" placeholder="Peça a produzir" />
+                    <Button type="button" size="icon" variant="outline" title="Salvar tipo de peça" @click="savePreset('PECA', piece.descricao)"><Plus class="h-4 w-4" /></Button>
+                  </div>
+                  <div class="flex gap-2">
+                    <Input v-model="piece.metal" list="ourive-metal-presets" placeholder="Metal desejado (ex.: ouro 18k)" />
+                    <Button type="button" size="icon" variant="outline" title="Salvar metal" @click="savePreset('METAL', piece.metal)"><Plus class="h-4 w-4" /></Button>
+                  </div>
                   <Input v-model="piece.pedras" placeholder="Pedras e detalhes" />
                   <Input
                     v-model.number="piece.pesoInformado"
@@ -729,6 +764,19 @@ onMounted(() => loadOrders())
               <label class="grid gap-1 text-sm font-medium"
                 >Garantia<Input v-model="draft.garantia" placeholder="Ex.: 90 dias"
               /></label>
+              <label class="grid gap-1 text-sm font-medium"
+                >Valor da mão de obra
+                <Input
+                  v-model.number="draft.valorMaoObra"
+                  :icon-label="'R$'"
+                  icon-label-position="left"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0,00"
+                />
+                <span class="text-xs font-normal text-muted-foreground">O valor ficará preenchido no orçamento e no financeiro da OS.</span>
+              </label>
               <div
                 v-for="(piece, index) in draft.pecas"
                 :key="index"
@@ -745,8 +793,14 @@ onMounted(() => loadOrders())
                   /></Button>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2">
-                  <Input v-model="piece.descricao" placeholder="Descrição da peça" />
-                  <Input v-model="piece.metal" placeholder="Metal (ex.: ouro 18k)" />
+                  <div class="flex gap-2">
+                    <Input v-model="piece.descricao" list="ourive-piece-presets" placeholder="Descrição da peça" />
+                    <Button type="button" size="icon" variant="outline" title="Salvar tipo de peça" @click="savePreset('PECA', piece.descricao)"><Plus class="h-4 w-4" /></Button>
+                  </div>
+                  <div class="flex gap-2">
+                    <Input v-model="piece.metal" list="ourive-metal-presets" placeholder="Metal (ex.: ouro 18k)" />
+                    <Button type="button" size="icon" variant="outline" title="Salvar metal" @click="savePreset('METAL', piece.metal)"><Plus class="h-4 w-4" /></Button>
+                  </div>
                   <Input v-model="piece.pedras" placeholder="Pedras" />
                   <Input
                     v-model.number="piece.pesoInformado"
@@ -782,5 +836,7 @@ onMounted(() => loadOrders())
       </DialogContent>
     </Dialog>
     <ClientesModal />
+    <datalist id="ourive-piece-presets"><option v-for="piece in predefinicoes.pecas" :key="piece.id" :value="piece.nome" /></datalist>
+    <datalist id="ourive-metal-presets"><option v-for="metal in predefinicoes.metais" :key="metal.id" :value="metal.nome" /></datalist>
   </section>
 </template>

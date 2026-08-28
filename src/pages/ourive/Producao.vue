@@ -40,6 +40,7 @@ const orders = ref<any[]>([])
 const selected = ref<any>()
 const team = ref<any[]>([])
 const specialties = ref<any[]>([])
+const stagePresets = ref<Array<{ id: number; nome: string }>>([])
 const search = ref('')
 const showNewStage = ref(false)
 const form = reactive<any>({
@@ -176,16 +177,18 @@ function openNewStageModal() {
 }
 async function load() {
   try {
-    const [orderData, specialtyData] = await Promise.all([
+    const [orderData, specialtyData, presetData] = await Promise.all([
       OuriveRepository.ordens().then((data) =>
         data.items.filter(
           (item: any) => !['ENTREGUE', 'RECUSADA', 'CANCELADA'].includes(item.status),
         ),
       ),
       OuriveRepository.especialidades(),
+      OuriveRepository.predefinicoes(),
     ])
     orders.value = orderData
     specialties.value = specialtyData
+    stagePresets.value = presetData.etapas
     // A equipe é auxiliar para nomes e criação de etapas. Uma permissão antiga
     // no backend não deve impedir o ourive de acessar suas OS atribuídas.
     try {
@@ -214,6 +217,18 @@ async function openOrder(id: number) {
     resetForm()
   } catch {
     toast.error('Não foi possível abrir a ordem.')
+  }
+}
+async function saveStagePreset() {
+  const nome = form.nome.trim()
+  if (nome.length < 2) return toast.info('Informe o nome da etapa antes de salvar.')
+  try {
+    await OuriveRepository.salvarPredefinicao('ETAPA', nome)
+    const data = await OuriveRepository.predefinicoes()
+    stagePresets.value = data.etapas
+    toast.success('Etapa predefinida salva.')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível salvar a etapa predefinida.')
   }
 }
 function addSplit() {
@@ -610,7 +625,10 @@ onMounted(load)
         </DialogHeader>
         <div class="space-y-5 py-2">
           <div class="grid gap-3 md:grid-cols-2">
-            <Input v-model="form.nome" placeholder="Ex.: Ajuste de aro" />
+            <div class="flex gap-2">
+              <Input v-model="form.nome" list="ourive-stage-presets" placeholder="Ex.: Ajuste de aro" />
+              <Button type="button" size="icon" variant="outline" title="Salvar etapa como predefinição" @click="saveStagePreset"><Plus class="h-4 w-4" /></Button>
+            </div>
             <select
               v-model.number="form.especialidadeId"
               class="h-10 rounded-md border bg-background px-3"
@@ -695,5 +713,6 @@ onMounted(load)
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <datalist id="ourive-stage-presets"><option v-for="preset in stagePresets" :key="preset.id" :value="preset.nome" /></datalist>
   </section>
 </template>

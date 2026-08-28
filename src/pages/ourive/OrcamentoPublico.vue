@@ -10,10 +10,26 @@
         <p class="mt-1 text-muted-foreground">
           Olá, {{ budget.ordem.cliente || 'cliente' }}. Revise a proposta para suas peças.
         </p>
-        <div class="mt-6 space-y-3 rounded-2xl bg-muted/60 p-5">
-          <p v-for="piece in budget.ordem.pecas" :key="piece.codigoRastreio">
-            <strong>{{ piece.codigoRastreio }}</strong> — {{ piece.descricao }}
-          </p>
+        <div class="mt-6 space-y-4 rounded-2xl bg-muted/60 p-5">
+          <div v-for="piece in budget.ordem.pecas" :key="piece.codigoRastreio">
+            <p><strong>{{ piece.codigoRastreio }}</strong> — {{ piece.descricao }}</p>
+            <div v-if="piece.fotos?.length" class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <a
+                v-for="photo in piece.fotos"
+                :key="photo.id"
+                :href="photo.url"
+                target="_blank"
+                rel="noopener"
+                class="overflow-hidden rounded-xl border bg-background"
+              >
+                <img
+                  :src="photo.url"
+                  :alt="photo.descricao || `Foto da peça ${piece.codigoRastreio}`"
+                  class="aspect-square h-full w-full object-cover"
+                />
+              </a>
+            </div>
+          </div>
         </div>
         <div class="mt-6 rounded-2xl border p-5">
           <p class="text-sm text-muted-foreground">

@@ -32,7 +32,7 @@ type Painel = {
   kpis: {
     receita: Metrica
     ordens: Metrica
-    ticketMedio: Metrica
+    liquidoLoja: Metrica
     entregas: { atual: number; prazoMedioDias: number }
     emProducao: number
     aguardandoOrcamento: number
@@ -65,7 +65,7 @@ const emptyPanel = (): Painel => ({
   kpis: {
     receita: { atual: 0, anterior: 0, delta: 0 },
     ordens: { atual: 0, anterior: 0, delta: 0 },
-    ticketMedio: { atual: 0, anterior: 0, delta: 0 },
+    liquidoLoja: { atual: 0, anterior: 0, delta: 0 },
     entregas: { atual: 0, prazoMedioDias: 0 },
     emProducao: 0,
     aguardandoOrcamento: 0,
@@ -223,10 +223,10 @@ const cards = computed(() => {
       color: 'text-blue-600 bg-blue-500/10',
     },
     {
-      title: 'Ticket médio',
-      value: formatCurrencyBR(kpis.ticketMedio.atual),
-      detail: 'por orçamento aprovado',
-      delta: kpis.ticketMedio.delta,
+      title: 'Líquido da loja',
+      value: formatCurrencyBR(kpis.liquidoLoja.atual),
+      detail: 'após custos e repasses',
+      delta: kpis.liquidoLoja.delta,
       icon: Gem,
       color: 'text-violet-600 bg-violet-500/10',
     },

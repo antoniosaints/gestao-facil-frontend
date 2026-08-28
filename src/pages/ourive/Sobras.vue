@@ -54,11 +54,24 @@
                 {{ leftover.tipo === 'QUEBRA' ? 'Quebra recuperável' : 'Sobra reaproveitável' }}
               </p>
               <h3 class="mt-1 truncate text-lg font-bold">
-                {{ leftover.produtoOrigem?.nome || 'Material de origem não disponível' }}
+                {{
+                  leftover.produtoOrigem?.nome ||
+                  (leftover.materialFornecidoPeloCliente
+                    ? 'Material fornecido pelo cliente'
+                    : 'Material de origem não disponível')
+                }}
               </h3>
               <p class="mt-1 text-sm text-muted-foreground">
                 Informado no fechamento: {{ measure(leftover.medidaInformada, leftover.unidade) }}
               </p>
+              <div v-if="leftover.pecas?.some((piece: any) => piece.pesoInformado != null)" class="mt-2 text-sm text-muted-foreground">
+                <p class="font-medium text-foreground">Peso estimado das peças</p>
+                <template v-for="(piece, index) in leftover.pecas" :key="`${leftover.id}-${index}`">
+                  <p v-if="piece.pesoInformado != null" class="truncate">
+                    {{ piece.descricao }}: {{ measure(piece.pesoInformado, 'PESO') }}
+                  </p>
+                </template>
+              </div>
             </div>
             <Badge variant="outline" class="border-amber-500/50 text-amber-700 dark:text-amber-300">
               Pendente
@@ -87,12 +100,31 @@
               </span>
             </label>
             <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-              Produto ou variante de destino
+              <span class="flex items-center justify-between gap-2">
+                Produto ou variante de destino
+                <Button
+                  v-if="leftover.produtoOrigemId"
+                  type="button"
+                  size="sm"
+                  variant="link"
+                  class="h-auto px-0 text-xs"
+                  @click="useOrigin(leftover)"
+                >
+                  Usar material de origem
+                </Button>
+              </span>
               <Select2Ajax
                 v-model="formFor(leftover).produtoDestinoId"
                 url="/produtos/select2"
                 placeholder="Selecione onde esta sobra entrará"
               />
+              <span class="font-normal">
+                {{
+                  leftover.produtoOrigemId
+                    ? 'A origem já vem selecionada; pesquise e escolha outra variante quando necessário.'
+                    : 'Selecione a variante de destino para registrar este material no estoque.'
+                }}
+              </span>
             </label>
             <label class="grid gap-1 text-xs font-medium text-muted-foreground">
               Observação (opcional)
@@ -156,11 +188,14 @@ function formFor(leftover: any) {
   if (!forms[leftover.id]) {
     forms[leftover.id] = {
       medidaReal: Number(leftover.medidaInformada || 0),
-      produtoDestinoId: null,
+      produtoDestinoId: leftover.produtoDestinoId ? Number(leftover.produtoDestinoId) : null,
       observacao: leftover.observacao || '',
     }
   }
   return forms[leftover.id]
+}
+function useOrigin(leftover: any) {
+  formFor(leftover).produtoDestinoId = Number(leftover.produtoOrigemId) || null
 }
 
 async function load() {

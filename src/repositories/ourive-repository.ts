@@ -60,6 +60,14 @@ export class OuriveRepository {
     const { data } = await http.post('/v1/ourive/ordens', payload)
     return data.data
   }
+  static async predefinicoes() {
+    const { data } = await http.get('/v1/ourive/predefinicoes')
+    return data.data as { pecas: Array<{ id: number; nome: string }>; metais: Array<{ id: number; nome: string }>; etapas: Array<{ id: number; nome: string }> }
+  }
+  static async salvarPredefinicao(tipo: 'PECA' | 'METAL' | 'ETAPA', nome: string) {
+    const { data } = await http.post('/v1/ourive/predefinicoes', { tipo, nome })
+    return data.data as { id: number; nome: string }
+  }
   static async excluirOrdem(id: number) {
     const { data } = await http.delete(`/v1/ourive/ordens/${id}`)
     return data.data
