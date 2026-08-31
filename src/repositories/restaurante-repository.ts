@@ -82,6 +82,7 @@ export interface RestaurantePedido {
     longitude?: number | null
   } | null
   pagamentoMetodoSnapshot?: string | null
+  trocoParaSnapshot?: string | number | null
   subtotal: string | number
   frete: string | number
   desconto?: string | number
@@ -163,6 +164,8 @@ export interface RestaurantePublicOrderTracking {
   status: RestaurantePedidoStatus
   producaoStatus: string
   pagamentoStatus: string
+  pagamentoMetodoSnapshot?: string | null
+  trocoParaSnapshot?: string | number | null
   entregaStatus: string
   subtotal: string | number
   frete: string | number

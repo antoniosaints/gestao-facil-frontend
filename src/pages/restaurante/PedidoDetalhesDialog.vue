@@ -231,6 +231,12 @@ function editarItens() {
               }}</span>
             </div>
             <div
+              v-if="props.pedido.pagamentoMetodoSnapshot === 'DINHEIRO' && props.pedido.trocoParaSnapshot"
+              class="flex items-center justify-between gap-3"
+            >
+              <span class="text-muted-foreground">Troco para</span><span class="text-right font-medium">{{ formatCurrencyBR(Number(props.pedido.trocoParaSnapshot)) }}</span>
+            </div>
+            <div
               v-if="props.pedido.Mesa?.nome"
               class="flex items-center justify-between gap-3 border-t pt-2"
             >

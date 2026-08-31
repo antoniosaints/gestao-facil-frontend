@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { Bike, CheckCircle2, ChevronRight, Clock3, Compass, History, LogOut, MapPin, Navigation, PackageCheck, Phone, RefreshCw, ShieldCheck, XCircle } from 'lucide-vue-next'
 import { RestauranteRepository, type RestauranteEntregadorContexto, type RestaurantePedido } from '@/repositories/restaurante-repository'
+import { formatPaymentMethodLabel } from '@/utils/formatters'
 import { useAuthStore } from '@/stores/login/useAuthStore'
 
 const toast = useToast()
@@ -44,6 +45,11 @@ function address(order: RestaurantePedido) {
 
 function money(value: string | number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0))
+}
+
+function changeAmount(order: RestaurantePedido) {
+  const changeFor = Number(order.trocoParaSnapshot)
+  return Number.isFinite(changeFor) ? Math.max(0, changeFor - Number(order.total)) : null
 }
 
 function nextAction(order: RestaurantePedido) {
@@ -332,6 +338,13 @@ onBeforeUnmount(() => {
               <div class="summary"><span>{{ activeDelivery.itens.length }} item(ns)</span><strong>{{
                 money(activeDelivery.total) }}</strong>
               </div>
+              <div v-if="activeDelivery.pagamentoStatus === 'NA_ENTREGA'" class="summary">
+                <span>Receber em {{ formatPaymentMethodLabel(activeDelivery.pagamentoMetodoSnapshot) }}</span>
+                <strong v-if="changeAmount(activeDelivery) !== null">Troco: {{ money(changeAmount(activeDelivery)!) }}</strong>
+              </div>
+              <p v-if="activeDelivery.pagamentoMetodoSnapshot === 'DINHEIRO' && activeDelivery.trocoParaSnapshot" class="pickup-wait">
+                Levar troco para {{ money(activeDelivery.trocoParaSnapshot) }}.
+              </p>
               <button class="map-button" @click="navigate(activeDelivery)">
                 <Navigation :size="19" />Abrir navegação
               </button>

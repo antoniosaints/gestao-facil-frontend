@@ -94,6 +94,9 @@ const draftQuantity = ref(1)
 const draftSelections = ref<number[]>([])
 const origem = ref<'RETIRADA' | 'DELIVERY'>('RETIRADA')
 const pagamento = ref<'NA_ENTREGA' | 'PIX'>('NA_ENTREGA')
+const pagamentoNaEntrega = ref<'DINHEIRO' | 'CREDITO' | 'DEBITO'>('DINHEIRO')
+const precisaTroco = ref(false)
+const trocoPara = ref('')
 const obtendoLocalizacao = ref(false)
 const pixCopied = ref(false)
 const paymentClock = ref(Date.now())
@@ -379,7 +382,12 @@ const primaryButtonStyle = computed<CSSProperties>(() => {
   }
 })
 const addressComplete = computed(() => origem.value === 'RETIRADA' || [form.cep.replace(/\D/g, ''), form.cidade, form.bairro, form.logradouro, form.numero].every((value) => value.trim().length > 0))
-const checkoutValid = computed(() => form.nome.trim().length >= 2 && form.telefone.replace(/\D/g, '').length >= 8 && addressComplete.value && selecionados.value.length > 0)
+const trocoValido = computed(() => {
+  if (pagamento.value !== 'NA_ENTREGA' || pagamentoNaEntrega.value !== 'DINHEIRO' || !precisaTroco.value) return true
+  const valor = Number(trocoPara.value.replace(',', '.'))
+  return Number.isFinite(valor) && valor > 0 && (!quote.value || valor >= Number(quote.value.total))
+})
+const checkoutValid = computed(() => form.nome.trim().length >= 2 && form.telefone.replace(/\D/g, '').length >= 8 && addressComplete.value && selecionados.value.length > 0 && trocoValido.value)
 const activeSelectionsValid = computed(
   () =>
     !activeItem.value ||
@@ -975,6 +983,14 @@ function checkoutPayload() {
   }
 }
 
+function checkoutPaymentPayload() {
+  const isCashWithChange = pagamento.value === 'NA_ENTREGA' && pagamentoNaEntrega.value === 'DINHEIRO' && precisaTroco.value
+  return {
+    pagamento: pagamento.value === 'NA_ENTREGA' ? pagamentoNaEntrega.value : pagamento.value,
+    ...(isCashWithChange ? { trocoPara: Number(trocoPara.value.replace(',', '.')) } : {}),
+  }
+}
+
 async function carregar() {
   try {
     cardapio.value = await RestauranteRepository.cardapioPublico(String(route.params.slug), customerToken())
@@ -1059,7 +1075,7 @@ async function pedir() {
         ...checkoutPayload(),
         cliente: { nome: form.nome, telefone: form.telefone, email: form.email || null },
         observacao: form.observacao || undefined,
-        pagamento: pagamento.value,
+        ...checkoutPaymentPayload(),
         fidelidadeProgramaIds: selectedFidelityProgramIds.value,
       },
       crypto.randomUUID(),
@@ -1126,6 +1142,17 @@ function formatPixTimeRemaining(milliseconds: number | null) {
 function humanize(value: string) {
   return value.split('_').join(' ').toLocaleLowerCase('pt-BR')
 }
+
+watch(pagamentoNaEntrega, (method) => {
+  if (method !== 'DINHEIRO') {
+    precisaTroco.value = false
+    trocoPara.value = ''
+  }
+})
+
+watch(precisaTroco, (needed) => {
+  if (!needed) trocoPara.value = ''
+})
 
 function formatOrderDate(value: string) {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
@@ -1808,6 +1835,25 @@ onBeforeUnmount(() => {
                   ><label v-if="cardapio?.restaurante.pagamentoNaEntregaAtivo" class="choice-card compact" :class="{ selected: pagamento === 'NA_ENTREGA' }"><RadioGroupItem value="NA_ENTREGA" /><span class="text-sm font-medium">Na entrega</span></label
                   ><label v-if="cardapio?.restaurante.pagamentoOnlineAtivo" class="choice-card compact" :class="{ selected: pagamento === 'PIX' }"><RadioGroupItem value="PIX" /><span class="text-sm font-medium">Pix</span></label></RadioGroup
                 >
+                <div v-if="pagamento === 'NA_ENTREGA'" class="space-y-3 rounded-xl border bg-stone-50 p-3 dark:bg-zinc-900">
+                  <div>
+                    <p class="text-sm font-medium">Como vai pagar na {{ origem === 'DELIVERY' ? 'entrega' : 'retirada' }}?</p>
+                    <p class="mt-0.5 text-xs text-stone-500">Informe para a equipe preparar a cobrança.</p>
+                  </div>
+                  <RadioGroup v-model="pagamentoNaEntrega" class="grid gap-2 sm:grid-cols-3">
+                    <label class="choice-card compact" :class="{ selected: pagamentoNaEntrega === 'DINHEIRO' }"><RadioGroupItem value="DINHEIRO" /><span class="text-sm font-medium">Dinheiro</span></label>
+                    <label class="choice-card compact" :class="{ selected: pagamentoNaEntrega === 'CREDITO' }"><RadioGroupItem value="CREDITO" /><span class="text-sm font-medium">Cartão de crédito</span></label>
+                    <label class="choice-card compact" :class="{ selected: pagamentoNaEntrega === 'DEBITO' }"><RadioGroupItem value="DEBITO" /><span class="text-sm font-medium">Cartão de débito</span></label>
+                  </RadioGroup>
+                  <template v-if="pagamentoNaEntrega === 'DINHEIRO'">
+                    <label class="flex items-center gap-2 text-sm font-medium"><input v-model="precisaTroco" type="checkbox" class="h-4 w-4 rounded border-input" />Preciso de troco</label>
+                    <div v-if="precisaTroco" class="space-y-1">
+                      <Label for="change-for">Levar troco para</Label>
+                      <Input id="change-for" v-model="trocoPara" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="Ex.: 100,00" />
+                      <p v-if="quote && trocoPara && !trocoValido" class="text-xs text-destructive">Informe um valor igual ou maior que o total de {{ formatCurrencyBR(Number(quote.total)) }}.</p>
+                    </div>
+                  </template>
+                </div>
               </section>
               <section v-if="availableCheckoutRewards.length" class="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/70 dark:bg-amber-950/20">
                 <div><h3 class="flex items-center gap-2 font-semibold text-amber-950 dark:text-amber-100"><Gift class="h-4 w-4" />Recompensas disponíveis</h3><p class="mt-1 text-xs text-amber-900/75 dark:text-amber-100/75">Adicione o item premiado e aplique seu desconto antes de confirmar o pedido.</p></div>
