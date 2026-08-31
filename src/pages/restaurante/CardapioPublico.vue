@@ -15,9 +15,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDollarSign, Clipboard, Clock3, CreditCard, Flame, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Minus, Moon, Navigation, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Store, Sun, Timer, Trash2, Truck, UserRound, UtensilsCrossed, X } from 'lucide-vue-next'
+import { Banknote, Bike, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDollarSign, Clipboard, Clock3, CreditCard, Flame, Gift, History, LoaderCircle, LocateFixed, LucideBadgePlus, MapPin, Minus, Moon, Navigation, PackageCheck, Plus, QrCode, Search, ShoppingBag, ShoppingCart, Store, Sun, Timer, Trash2, Truck, UserRound, UtensilsCrossed, WalletCards, X } from 'lucide-vue-next'
 import { RestauranteRepository, type RestauranteCheckoutPreview, type RestauranteClienteConta, type RestauranteClienteEndereco, type RestaurantePublicOrderTracking } from '@/repositories/restaurante-repository'
 import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { useConfirm } from '@/composables/useConfirm'
@@ -435,6 +436,15 @@ function applyAccountAddress(address?: RestauranteClienteEndereco) {
     complemento: address.complemento || '',
     referencia: address.referencia || '',
   })
+}
+
+function selectAccountAddress(value: string) {
+  if (value === 'MANUAL') {
+    selectedAccountAddressId.value = null
+    return
+  }
+  const address = customerAccount.value?.enderecos.find((item) => item.id === Number(value))
+  if (address) applyAccountAddress(address)
 }
 
 function applyCustomerAccount(account: RestauranteClienteConta) {
@@ -1814,7 +1824,7 @@ onBeforeUnmount(() => {
                   Usar sua localização ajuda o entregador a encontrar sua casa no mapa e na rota. Os campos de endereço continuam obrigatórios para calcular a entrega.
                 </p>
                 <p v-if="form.latitude !== null && form.longitude !== null" class="flex items-center gap-1.5 text-xs font-medium text-emerald-700"><CheckCircle2 class="h-3.5 w-3.5" />Localização adicionada ao pedido para a rota do entregador.</p>
-                <div v-if="customerAccount?.enderecos.length" class="space-y-1"><Label>Endereço salvo</Label><select v-model="selectedAccountAddressId" class="h-10 w-full rounded-md border bg-white px-3 text-sm" @change="applyAccountAddress(customerAccount.enderecos.find((item) => item.id === selectedAccountAddressId)!)"><option :value="null">Preencher manualmente</option><option v-for="address in customerAccount.enderecos" :key="address.id" :value="address.id">{{ address.rotulo || address.logradouro }} · {{ address.numero }}</option></select></div>
+                <div v-if="customerAccount?.enderecos.length" class="space-y-1"><Label>Endereço salvo</Label><Select :model-value="selectedAccountAddressId ? String(selectedAccountAddressId) : 'MANUAL'" @update:model-value="selectAccountAddress(String($event))"><SelectTrigger class="w-full bg-white dark:bg-zinc-950"><SelectValue placeholder="Preencher manualmente" /></SelectTrigger><SelectContent><SelectItem value="MANUAL">Preencher manualmente</SelectItem><SelectItem v-for="address in customerAccount.enderecos" :key="address.id" :value="String(address.id)">{{ address.rotulo || address.logradouro }} · {{ address.numero }}</SelectItem></SelectContent></Select></div>
                 <div class="grid gap-3 sm:grid-cols-2">
                   <div class="space-y-1"><Label>CEP</Label><Input v-model="form.cep" placeholder="00000-000" /></div>
                   <div class="space-y-1"><Label>Cidade</Label><Input v-model="form.cidade" placeholder="Ex.: São Paulo" /></div>
@@ -1832,8 +1842,8 @@ onBeforeUnmount(() => {
                   <p class="text-sm text-stone-500">Selecione como prefere pagar.</p>
                 </div>
                 <RadioGroup v-model="pagamento" class="grid gap-3 sm:grid-cols-2"
-                  ><label v-if="cardapio?.restaurante.pagamentoNaEntregaAtivo" class="choice-card compact" :class="{ selected: pagamento === 'NA_ENTREGA' }"><RadioGroupItem value="NA_ENTREGA" /><span class="text-sm font-medium">Na entrega</span></label
-                  ><label v-if="cardapio?.restaurante.pagamentoOnlineAtivo" class="choice-card compact" :class="{ selected: pagamento === 'PIX' }"><RadioGroupItem value="PIX" /><span class="text-sm font-medium">Pix</span></label></RadioGroup
+                  ><label v-if="cardapio?.restaurante.pagamentoNaEntregaAtivo" class="choice-card compact" :class="{ selected: pagamento === 'NA_ENTREGA' }"><RadioGroupItem value="NA_ENTREGA" /><Banknote class="h-4 w-4 shrink-0" /><span class="text-sm font-medium">Na entrega</span></label
+                  ><label v-if="cardapio?.restaurante.pagamentoOnlineAtivo" class="choice-card compact" :class="{ selected: pagamento === 'PIX' }"><RadioGroupItem value="PIX" /><QrCode class="h-4 w-4 shrink-0" /><span class="text-sm font-medium">Pix</span></label></RadioGroup
                 >
                 <div v-if="pagamento === 'NA_ENTREGA'" class="space-y-3 rounded-xl border bg-stone-50 p-3 dark:bg-zinc-900">
                   <div>
@@ -1841,9 +1851,9 @@ onBeforeUnmount(() => {
                     <p class="mt-0.5 text-xs text-stone-500">Informe para a equipe preparar a cobrança.</p>
                   </div>
                   <RadioGroup v-model="pagamentoNaEntrega" class="grid gap-2 sm:grid-cols-3">
-                    <label class="choice-card compact" :class="{ selected: pagamentoNaEntrega === 'DINHEIRO' }"><RadioGroupItem value="DINHEIRO" /><span class="text-sm font-medium">Dinheiro</span></label>
-                    <label class="choice-card compact" :class="{ selected: pagamentoNaEntrega === 'CREDITO' }"><RadioGroupItem value="CREDITO" /><span class="text-sm font-medium">Cartão de crédito</span></label>
-                    <label class="choice-card compact" :class="{ selected: pagamentoNaEntrega === 'DEBITO' }"><RadioGroupItem value="DEBITO" /><span class="text-sm font-medium">Cartão de débito</span></label>
+                    <label class="choice-card compact" :class="{ selected: pagamentoNaEntrega === 'DINHEIRO' }"><RadioGroupItem value="DINHEIRO" /><Banknote class="h-4 w-4 shrink-0" /><span class="text-sm font-medium">Dinheiro</span></label>
+                    <label class="choice-card compact" :class="{ selected: pagamentoNaEntrega === 'CREDITO' }"><RadioGroupItem value="CREDITO" /><CreditCard class="h-4 w-4 shrink-0" /><span class="text-sm font-medium">Cartão de crédito</span></label>
+                    <label class="choice-card compact" :class="{ selected: pagamentoNaEntrega === 'DEBITO' }"><RadioGroupItem value="DEBITO" /><WalletCards class="h-4 w-4 shrink-0" /><span class="text-sm font-medium">Cartão de débito</span></label>
                   </RadioGroup>
                   <template v-if="pagamentoNaEntrega === 'DINHEIRO'">
                     <label class="flex items-center gap-2 text-sm font-medium"><input v-model="precisaTroco" type="checkbox" class="h-4 w-4 rounded border-input" />Preciso de troco</label>
