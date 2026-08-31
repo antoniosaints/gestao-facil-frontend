@@ -5,11 +5,13 @@ import {
   AlertTriangle,
   CalendarDays,
   CalendarRange,
+  CircleCheckBig,
   Filter,
   HandCoins,
   Landmark,
   RefreshCw,
   RotateCw,
+  ReceiptText,
   Search,
   TrendingDown,
   TrendingUp,
@@ -34,9 +36,11 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 
 import { optionsChartBarDefault, optionsChartLine } from '@/composables/useChartOptions'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
+import { AssinaturaPagarRepository, type AssinaturaPagarListItem } from '@/repositories/assinatura-pagar-repository'
 import type { CategoriaFinanceiro, ContasFinanceiro } from '@/types/schemas'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -45,9 +49,11 @@ import { goBack, goTo } from '@/hooks/links'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { useContasFinanceirasStore } from '@/stores/lancamentos/useContasFinanceiras'
+import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import ModalConta from '@/pages/financeiro/contas/ModalConta.vue'
 import ModalDetalhesConta from '@/pages/financeiro/contas/ModalDetalhesConta.vue'
 import ContaActions from '@/pages/financeiro/contas/tabela/Actions.vue'
+import FormularioEfertivar from './modais/FormularioEfertivar.vue'
 
 type DashboardFinanceiroResponse = {
   data: {
@@ -88,6 +94,7 @@ type DashboardFinanceiroResponse = {
         valor: number
         proximoVencimento: string
         status: string
+        gerarFinanceiro: boolean
         icone?: string | null
         corDestaque?: string | null
         atrasada: boolean
@@ -99,6 +106,7 @@ type DashboardFinanceiroResponse = {
         valor: number
         proximoVencimento: string
         status: string
+        gerarFinanceiro: boolean
         icone?: string | null
         corDestaque?: string | null
         atrasada: boolean
@@ -112,6 +120,7 @@ type FiltroTipo = 'TODOS' | 'RECEITA' | 'DESPESA'
 const toast = useToast()
 const uiStore = useUiStore()
 const contasFinanceirasStore = useContasFinanceirasStore()
+const lancamentosStore = useLancamentosStore()
 
 const loading = ref(true)
 const openModalFiltros = ref(false)
@@ -119,6 +128,12 @@ const filtroPeriodo = ref<[Date, Date]>([startOfMonth(new Date()), endOfMonth(ne
 const presetAtivo = ref<string>('month')
 const contas = ref<ContasFinanceiro[]>([])
 const categorias = ref<CategoriaFinanceiro[]>([])
+type AssinaturaDashboardItem = DashboardFinanceiroResponse['data']['assinaturasPagar']['proximas'][number]
+const assinaturaSelecionada = ref<AssinaturaDashboardItem | null>(null)
+const detalhesAssinaturaSelecionada = ref<AssinaturaPagarListItem | null>(null)
+const assinaturaActionOpen = ref(false)
+const processandoAssinatura = ref(false)
+const carregandoSituacaoAssinatura = ref(false)
 
 const presets = [
   { key: 'today', label: 'Hoje' },
@@ -408,6 +423,93 @@ const assinaturasPagarLista = computed(() => [
   ...assinaturasPagarResumo.value.proximas,
 ].slice(0, 6))
 
+const acaoAssinaturaTitulo = computed(() => assinaturaSelecionada.value?.gerarFinanceiro ? 'Pagar assinatura' : 'Marcar como paga')
+const acaoAssinaturaDescricao = computed(() => {
+  const assinatura = assinaturaSelecionada.value
+  if (!assinatura) return ''
+  return assinatura.gerarFinanceiro
+    ? `Será aberto o pagamento da parcela financeira de “${assinatura.nomeServico}”.`
+    : `Marcar o ciclo atual de “${assinatura.nomeServico}” como pago? O próximo vencimento será atualizado sem gerar lançamento financeiro.`
+})
+
+const referenciaPagamentoPendente = computed(() => {
+  const lancamento = detalhesAssinaturaSelecionada.value?.lancamentoAtual
+  if (!lancamento || !['PENDENTE', 'PARCIAL', 'ATRASADO'].includes(lancamento.status)) return null
+  return lancamento.referenciaRecorrencia || null
+})
+
+const proximoVencimentoAssinatura = computed(() => detalhesAssinaturaSelecionada.value?.proximoVencimento
+  || assinaturaSelecionada.value?.proximoVencimento
+  || null)
+
+function formatarReferenciaPagamento(referencia: string) {
+  if (/^\d{4}-\d{2}$/.test(referencia)) {
+    const [ano, mes] = referencia.split('-')
+    return `${mes}/${ano}`
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(referencia)) {
+    return new Date(`${referencia}T12:00:00`).toLocaleDateString('pt-BR')
+  }
+
+  return referencia
+}
+
+async function abrirAcaoAssinatura(assinatura: AssinaturaDashboardItem) {
+  if (!uiStore.permissoes.financeiro.editar) return
+  assinaturaSelecionada.value = assinatura
+  detalhesAssinaturaSelecionada.value = null
+  assinaturaActionOpen.value = true
+
+  try {
+    carregandoSituacaoAssinatura.value = true
+    const response = await AssinaturaPagarRepository.detalhes(assinatura.id)
+    detalhesAssinaturaSelecionada.value = response.data
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível consultar a situação da assinatura.')
+  } finally {
+    carregandoSituacaoAssinatura.value = false
+  }
+}
+
+async function executarAcaoAssinatura() {
+  const assinatura = assinaturaSelecionada.value
+  if (!assinatura) return
+  try {
+    processandoAssinatura.value = true
+    if (!assinatura.gerarFinanceiro) {
+      const response = await AssinaturaPagarRepository.efetivarManual(assinatura.id)
+      toast.success(response?.message || 'Assinatura marcada como paga.')
+      assinaturaActionOpen.value = false
+      await carregarDashboard()
+      return
+    }
+
+    const response = await AssinaturaPagarRepository.gerarFinanceiro(assinatura.id)
+    const lancamentoId = Number(response?.data?.lancamentoId)
+    if (!Number.isInteger(lancamentoId) || lancamentoId <= 0) {
+      throw new Error('Não foi possível preparar o lançamento financeiro para pagamento.')
+    }
+    const lancamentoResponse = await LancamentosRepository.get(lancamentoId) as { data: any }
+    const parcela = lancamentoResponse.data?.parcelas?.find((item: any) => !item.pago)
+    if (!parcela?.id) {
+      toast.info('O ciclo financeiro atual desta assinatura já está pago.')
+      assinaturaActionOpen.value = false
+      await carregarDashboard()
+      return
+    }
+    lancamentosStore.idMutation = parcela.id
+    lancamentosStore.valorParcelaEfetivar = Number(parcela.valor || 0)
+    lancamentosStore.contaFinanceiraParcelaEfetivar = parcela.contaFinanceira ?? lancamentoResponse.data?.contasFinanceiroId ?? null
+    assinaturaActionOpen.value = false
+    lancamentosStore.openModalEfetivar = true
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || error?.message || 'Erro ao preparar o pagamento da assinatura.')
+  } finally {
+    processandoAssinatura.value = false
+  }
+}
+
 function handleContaSaved() {
   carregarFiltros()
   carregarDashboard()
@@ -555,8 +657,11 @@ onMounted(async () => {
             Nenhuma assinatura a pagar encontrada para os filtros aplicados.
           </div>
 
-          <div v-for="assinatura in assinaturasPagarLista" :key="assinatura.id"
-            class="flex items-center gap-3 rounded-xl border bg-muted/20 px-4 py-3">
+          <button v-for="assinatura in assinaturasPagarLista" :key="assinatura.id" type="button"
+            class="flex w-full items-center gap-3 rounded-xl border bg-muted/20 px-4 py-3 text-left transition hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:hover:bg-muted/20"
+            :disabled="!uiStore.permissoes.financeiro.editar"
+            :title="uiStore.permissoes.financeiro.editar ? (assinatura.gerarFinanceiro ? 'Pagar assinatura' : 'Marcar como paga') : undefined"
+            @click="abrirAcaoAssinatura(assinatura)">
             <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border"
               :style="{ backgroundColor: `${assinatura.corDestaque || '#7C3AED'}14`, borderColor: assinatura.corDestaque || undefined }">
               <img v-if="assinatura.icone" :src="resolveFileUrl(assinatura.icone, { fallback: '/imgs/logo.png' })"
@@ -584,7 +689,7 @@ onMounted(async () => {
             <div class="text-right">
               <p class="font-semibold text-foreground">{{ formatCurrencyBR(assinatura.valor) }}</p>
             </div>
-          </div>
+          </button>
         </CardContent>
       </Card>
     </div>
@@ -766,5 +871,38 @@ onMounted(async () => {
       @saved="handleContaSaved" />
     <ModalDetalhesConta v-model:open="contasFinanceirasStore.openDetailsModal"
       :conta="contasFinanceirasStore.selectedContaDetalhes" />
+
+    <AlertDialog :open="assinaturaActionOpen" @update:open="assinaturaActionOpen = $event">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{{ acaoAssinaturaTitulo }}</AlertDialogTitle>
+          <AlertDialogDescription>
+            <span>{{ acaoAssinaturaDescricao }}</span>
+            <span v-if="carregandoSituacaoAssinatura" class="mt-3 block text-xs">
+              Consultando a referência de pagamento...
+            </span>
+            <span v-else-if="referenciaPagamentoPendente" class="mt-3 block font-medium text-foreground">
+              Referência para pagamento: {{ formatarReferenciaPagamento(referenciaPagamentoPendente) }}
+            </span>
+            <span v-else-if="proximoVencimentoAssinatura" class="mt-3 block">
+              Nenhum pagamento pendente. Próximo vencimento:
+              <span class="font-medium text-foreground">
+                {{ new Date(proximoVencimentoAssinatura).toLocaleDateString('pt-BR') }}
+              </span>
+            </span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel :disabled="processandoAssinatura">Cancelar</AlertDialogCancel>
+          <AlertDialogAction :disabled="processandoAssinatura || carregandoSituacaoAssinatura" @click="executarAcaoAssinatura">
+            <ReceiptText v-if="assinaturaSelecionada?.gerarFinanceiro" class="mr-2 h-4 w-4" />
+            <CircleCheckBig v-else class="mr-2 h-4 w-4" />
+            {{ carregandoSituacaoAssinatura ? 'Consultando...' : processandoAssinatura ? 'Preparando...' : acaoAssinaturaTitulo }}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <FormularioEfertivar @success="carregarDashboard" />
   </div>
 </template>

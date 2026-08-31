@@ -111,6 +111,10 @@ export class LancamentosRepository {
   static async remove(id: number) {
     await http.delete(`/lancamentos/${id}`)
   }
+  static async converterTipo(id: number) {
+    const response = await http.post(`/lancamentos/${id}/converter-tipo`)
+    return response.data
+  }
   static async atualizarEmMassa(
     lancamentoIds: number[],
     data: { categoriaId?: number; clienteId?: number | null },

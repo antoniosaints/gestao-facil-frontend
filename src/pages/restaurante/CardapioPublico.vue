@@ -415,6 +415,61 @@ function customerToken() {
   return localStorage.getItem(customerTokenKey())
 }
 
+type GuestCheckoutData = Pick<
+  typeof form,
+  'nome' | 'telefone' | 'email' | 'cep' | 'cidade' | 'bairro' | 'logradouro' | 'numero' | 'complemento' | 'referencia'
+>
+
+function guestCheckoutStorageKey() {
+  return `restaurante:cliente:${String(route.params.slug)}:dados-checkout`
+}
+
+function saveGuestCheckoutData() {
+  if (customerAccount.value) return
+
+  const data: GuestCheckoutData = {
+    nome: form.nome,
+    telefone: form.telefone,
+    email: form.email,
+    cep: form.cep,
+    cidade: form.cidade,
+    bairro: form.bairro,
+    logradouro: form.logradouro,
+    numero: form.numero,
+    complemento: form.complemento,
+    referencia: form.referencia,
+  }
+
+  try {
+    if (Object.values(data).every((value) => !value.trim())) {
+      localStorage.removeItem(guestCheckoutStorageKey())
+      return
+    }
+    localStorage.setItem(guestCheckoutStorageKey(), JSON.stringify(data))
+  } catch {
+    // O cardápio continua funcionando mesmo em navegadores com armazenamento indisponível.
+  }
+}
+
+function restoreGuestCheckoutData() {
+  if (customerAccount.value) return
+
+  try {
+    const rawData = localStorage.getItem(guestCheckoutStorageKey())
+    if (!rawData) return
+    const storedData = JSON.parse(rawData) as Partial<GuestCheckoutData>
+    const fields = Object.keys(storedData) as Array<keyof GuestCheckoutData>
+    const validData = Object.fromEntries(
+      fields
+        .filter((field) => field in form && typeof storedData[field] === 'string')
+        .map((field) => [field, storedData[field]!.trim()]),
+    )
+    Object.assign(form, validData)
+  } catch {
+    localStorage.removeItem(guestCheckoutStorageKey())
+  }
+}
+
 function menuThemeStorageKey() {
   return `restaurante:tema:${String(route.params.slug)}`
 }
@@ -458,6 +513,7 @@ async function loadCustomerAccount(silent = false) {
   if (!token) {
     customerAccount.value = null
     accountMode.value = 'login'
+    restoreGuestCheckoutData()
     return
   }
   accountLoading.value = true
@@ -471,6 +527,7 @@ async function loadCustomerAccount(silent = false) {
     localStorage.removeItem(customerTokenKey())
     customerAccount.value = null
     accountMode.value = 'login'
+    restoreGuestCheckoutData()
     if (!silent) toast.info('Entre novamente para acessar sua conta.')
   } finally {
     accountLoading.value = false
@@ -1226,6 +1283,10 @@ watch(isPromotionsPage, async () => {
   setupMenuToolbar()
 })
 watch(() => [origem.value, form.telefone, form.cep, form.cidade, form.bairro, form.logradouro, form.numero, form.complemento, form.referencia, JSON.stringify(payloadItems.value), JSON.stringify(selectedFidelityProgramIds.value)], scheduleCheckoutPreview)
+watch(
+  () => [form.nome, form.telefone, form.email, form.cep, form.cidade, form.bairro, form.logradouro, form.numero, form.complemento, form.referencia],
+  saveGuestCheckoutData,
+)
 watch(useAccountData, (enabled) => { if (enabled && customerAccount.value) applyCustomerAccount(customerAccount.value) })
 watch([trackingDetailsOpen, trackingDetails], async ([open, order]) => {
   if (!open || !order?.acompanhamentoEntrega) return clearTrackingMap()
@@ -1238,6 +1299,7 @@ onMounted(async () => {
   paymentClockTimer = setInterval(() => { paymentClock.value = Date.now() }, 1000)
   await carregar()
   if (customerToken()) await loadCustomerAccount(true)
+  if (!customerAccount.value) restoreGuestCheckoutData()
   if (route.name === 'restaurante-conta-publica') await openCustomerAccount()
   await nextTick()
   setupMenuToolbar()
@@ -2037,7 +2099,13 @@ onBeforeUnmount(() => {
     </component>
 
     <component :is="menuModalRoot" v-bind="menuModalRootProps" v-model:open="accountOpen">
-      <component :is="menuModalContent" class="menu-overlay h-[88dvh] max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:h-[min(90vh,760px)] lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]" :class="{ dark: menuDarkMode, 'text-zinc-100': menuDarkMode }" :content-style="menuThemeStyle">
+      <component :is="menuModalContent"
+        class="menu-overlay max-h-[88dvh] overflow-hidden rounded-t-[24px] border-0 p-0 lg:flex lg:max-h-[90vh] lg:max-w-2xl lg:flex-col lg:gap-0 lg:overflow-hidden lg:rounded-[24px]"
+        :class="[
+          accountMode === 'profile' ? 'h-[88dvh] lg:h-[min(90vh,760px)]' : 'h-auto lg:h-auto',
+          { dark: menuDarkMode, 'text-zinc-100': menuDarkMode },
+        ]"
+        :content-style="menuThemeStyle">
         <component :is="menuModalHeader" class="shrink-0 border-b md:px-5 md:py-5 text-left sm:px-7"><component :is="menuModalTitle" class="menu-heading flex items-center gap-2 text-2xl"><UserRound class="brand-text h-5 w-5" />{{ accountMode === 'profile' ? 'Minha conta' : accountMode === 'register' ? 'Criar conta' : 'Entrar na conta' }}</component><component :is="menuModalDescription">{{ accountMode === 'profile' ? 'Seus dados, endereços e histórico neste restaurante.' : 'Entre com telefone e senha para ter seus pedidos sempre com você.' }}</component></component>
         <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [scrollbar-gutter:stable]">
         <div v-if="accountLoading" class="flex justify-center py-16"><LoaderCircle class="h-6 w-6 animate-spin brand-text" /></div>

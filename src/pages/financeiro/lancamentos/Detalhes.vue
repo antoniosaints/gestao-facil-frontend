@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import {
   ArrowLeft,
+  ArrowLeftRight,
   BadgeDollarSign,
   BadgeInfo,
   Bell,
@@ -36,6 +37,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Input } from '@/components/ui/input'
@@ -105,6 +107,8 @@ const vendasStore = useVendasStore()
 
 const loading = ref(false)
 const salvandoParcela = ref(false)
+const convertDialogOpen = ref(false)
+const converting = ref(false)
 const openAdicionarParcela = ref(false)
 const cobrancaRapidaOpen = ref(false)
 const cobrancaRapidaSending = ref(false)
@@ -192,6 +196,9 @@ const parcelasOrdenadas = computed(() => {
 const podeNotificarCliente = computed(
   () => lancamento.value?.tipo === 'RECEITA' && Boolean(lancamento.value?.clienteId),
 )
+
+const tipoAtual = computed(() => lancamento.value?.tipo === 'RECEITA' ? 'receita' : 'despesa')
+const tipoDestino = computed(() => lancamento.value?.tipo === 'RECEITA' ? 'despesa' : 'receita')
 
 const valorTotal = computed(() =>
   parcelasOrdenadas.value.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0),
@@ -535,6 +542,23 @@ async function deletar(id: number) {
   }
 }
 
+async function converterTipo() {
+  if (!lancamento.value?.id) return
+  const destino = tipoDestino.value
+  try {
+    converting.value = true
+    await LancamentosRepository.converterTipo(lancamento.value.id)
+    convertDialogOpen.value = false
+    store.updateTable()
+    await loadLancamento()
+    toast.success(`Lançamento convertido para ${destino} com sucesso.`)
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Erro ao converter o lançamento.')
+  } finally {
+    converting.value = false
+  }
+}
+
 async function toggleNotificacaoVencimento() {
   if (!lancamento.value?.id) return
 
@@ -695,7 +719,7 @@ watch(() => store.filters.update, loadLancamento)
 <template>
   <div class="mx-auto space-y-4 pb-20 md:pb-0">
     <div
-      class="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between"
+      class="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between"
     >
       <div class="space-y-2">
         <div class="flex flex-wrap items-center gap-2">
@@ -705,7 +729,7 @@ watch(() => store.filters.update, loadLancamento)
           <Badge class="border-0" :class="resumoStatus.classes">
             {{ resumoStatus.label }}
           </Badge>
-          <Badge v-if="lancamento?.vendaId" variant="outline">Lançamento automático</Badge>
+          <Badge v-if="lancamento?.vendaId" variant="outline">Automático</Badge>
           <Badge v-if="recorrencia" variant="outline" class="gap-1">
             <Repeat class="h-3 w-3" /> Recorrente
           </Badge>
@@ -758,6 +782,9 @@ watch(() => store.filters.update, loadLancamento)
             <DropdownMenuItem :disabled="!lancamento?.id" @click="recorrenciaOpen = true">
               <Repeat class="mr-2 h-4 w-4" />
               {{ recorrencia ? 'Editar recorrência' : 'Tornar recorrente' }}
+            </DropdownMenuItem>
+            <DropdownMenuItem :disabled="!lancamento?.id" @click="convertDialogOpen = true">
+              <ArrowLeftRight class="mr-2 h-4 w-4" /> Converter para {{ tipoDestino }}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem :disabled="!lancamento?.id" @click="toggleNotificacaoVencimento">
@@ -1547,6 +1574,23 @@ watch(() => store.filters.update, loadLancamento)
       :cliente-id="lancamento?.clienteId"
       @finished="finalizarLote"
     />
+
+    <AlertDialog :open="convertDialogOpen" @update:open="convertDialogOpen = $event">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Converter lançamento</AlertDialogTitle>
+          <AlertDialogDescription>
+            Este lançamento é uma {{ tipoAtual }} e será convertido em uma {{ tipoDestino }}. As parcelas existentes também passarão a ter essa nova natureza financeira.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel :disabled="converting">Cancelar</AlertDialogCancel>
+          <AlertDialogAction :disabled="converting" @click="converterTipo">
+            {{ converting ? 'Convertendo...' : `Converter para ${tipoDestino}` }}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
     <FormularioRecorrencia
       v-if="lancamento?.id"

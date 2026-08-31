@@ -120,7 +120,7 @@ const title = computed(() => {
 
 const description = computed(() =>
   isEditMode.value
-    ? 'Nesta edição rápida você pode ajustar descrição, categoria, conta financeira, cliente/fornecedor e forma de pagamento padrão. Valores, datas, parcelas e status permanecem preservados.'
+    ? 'Edite as informações do lançamento'
     : 'Preencha os campos abaixo',
 )
 
@@ -426,7 +426,7 @@ watch(
 </script>
 
 <template>
-  <ModalView v-model:open="store.openModal" :title="title" :description="description" size="4xl">
+  <ModalView v-model:open="store.openModal" :title="title" :description="description" :size="isEditMode ? '2xl' : '4xl'">
     <form class="space-y-4 px-4" @submit.prevent="submit">
       <template v-if="isEditMode">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">

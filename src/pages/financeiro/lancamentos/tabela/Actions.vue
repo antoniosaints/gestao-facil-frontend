@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { Menu, Pencil, Settings2 } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { ArrowLeftRight, Menu, Pencil, Settings2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { LancamentoFinanceiro } from '@/types/schemas';
 import { useToast } from 'vue-toastification';
@@ -10,11 +12,15 @@ import { useConfirm } from '@/composables/useConfirm';
 
 const store = useLancamentosStore()
 const toast = useToast()
+const converting = ref(false)
+const convertDialogOpen = ref(false)
 
 const { data } = defineProps<{
     data: LancamentoFinanceiro,
 }>()
 
+const tipoAtual = computed(() => data.tipo === 'RECEITA' ? 'receita' : 'despesa')
+const tipoDestino = computed(() => data.tipo === 'RECEITA' ? 'despesa' : 'receita')
 
 async function deletar(id: number) {
     if (!id) return toast.error('ID não informado!')
@@ -31,6 +37,21 @@ async function deletar(id: number) {
     } catch (error) {
         console.log(error)
         toast.error('Erro ao deletar o lançamento')
+    }
+}
+
+async function converterTipo() {
+    if (!data.id) return toast.error('ID não informado!')
+    try {
+        converting.value = true
+        await LancamentosRepository.converterTipo(data.id)
+        convertDialogOpen.value = false
+        store.updateTable()
+        toast.success(`Lançamento convertido para ${tipoDestino.value} com sucesso.`)
+    } catch (error: any) {
+        toast.error(error?.response?.data?.message || 'Erro ao converter o lançamento.')
+    } finally {
+        converting.value = false
     }
 }
 </script>
@@ -55,11 +76,31 @@ async function deletar(id: number) {
                         Gerenciar
                     </DropdownMenuItem>
                 </RouterLink>
+                <DropdownMenuItem @click="convertDialogOpen = true">
+                    <ArrowLeftRight class="w-4 h-4 mr-1" />
+                    Converter para {{ tipoDestino }}
+                </DropdownMenuItem>
                 <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">
                     <i class="fa-regular fa-trash-can mr-1"></i>
                     Excluir
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
+        <AlertDialog :open="convertDialogOpen" @update:open="convertDialogOpen = $event">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Converter lançamento</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Este lançamento é uma {{ tipoAtual }} e será convertido em uma {{ tipoDestino }}. As parcelas existentes também passarão a ter essa nova natureza financeira.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel :disabled="converting">Cancelar</AlertDialogCancel>
+                    <AlertDialogAction :disabled="converting" @click="converterTipo">
+                        {{ converting ? 'Convertendo...' : `Converter para ${tipoDestino}` }}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>
