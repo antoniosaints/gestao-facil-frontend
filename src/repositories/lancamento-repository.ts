@@ -543,7 +543,12 @@ export class LancamentosRepository {
     id: number,
     data: Pick<
       FormularioLancamento,
-      'descricao' | 'formaPagamento' | 'clienteId' | 'categoriaId' | 'contasFinanceiroId'
+      | 'descricao'
+      | 'dataLancamento'
+      | 'formaPagamento'
+      | 'clienteId'
+      | 'categoriaId'
+      | 'contasFinanceiroId'
     >,
   ) {
     const response = await http.post(`/lancamentos/${id}/atualizar-basico`, data)

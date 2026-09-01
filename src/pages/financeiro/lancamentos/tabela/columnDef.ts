@@ -24,6 +24,7 @@ import { formatDate, isAfter } from 'date-fns'
 import { RouterLink } from 'vue-router'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
+import { getDatasTabelaLancamento } from './dateColumns'
 const store = useLancamentosStore()
 export const columnsLancamentos: ColumnDef<
   LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro>; categoria: CategoriaFinanceiro }
@@ -227,20 +228,28 @@ export const columnsLancamentos: ColumnDef<
     },
   },
   {
-    accessorKey: 'dataLancamento',
-    header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Data', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+    id: 'vencimento',
+    enableSorting: false,
+    header: () => render('div', {}, 'Vencimento'),
     cell: ({ row }) => {
+      const { vencimento } = getDatasTabelaLancamento(row.original.parcelas)
       return render(BadgeCell, {
-        label: formatDate(row.getValue('dataLancamento') as string, 'dd/MM/yyyy'),
+        label: vencimento ? formatDate(vencimento, 'dd/MM/yyyy') : '—',
         color: 'gray',
+        icon: Calendar,
+        capitalize: false,
+      })
+    },
+  },
+  {
+    id: 'quitacao',
+    enableSorting: false,
+    header: () => render('div', {}, 'Quitação'),
+    cell: ({ row }) => {
+      const { quitacao } = getDatasTabelaLancamento(row.original.parcelas)
+      return render(BadgeCell, {
+        label: quitacao ? formatDate(quitacao, 'dd/MM/yyyy') : '—',
+        color: 'green',
         icon: Calendar,
         capitalize: false,
       })

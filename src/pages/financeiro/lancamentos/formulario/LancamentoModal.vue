@@ -240,6 +240,7 @@ async function submitFormulario() {
       categoriaId: store.form.categoriaId,
       clienteId: store.form.clienteId,
       descricao: store.form.descricao,
+      dataLancamento: store.form.dataLancamento,
       contasFinanceiroId: store.form.contasFinanceiroId,
       formaPagamento: store.form.formaPagamento,
     })
@@ -327,10 +328,14 @@ const validar = () => {
   if (!store.form.categoriaId) erros.value.categoriaId = 'A categoria é obrigatória.'
   if (!store.form.contasFinanceiroId)
     erros.value.contasFinanceiroId = 'A conta financeira é obrigatória.'
+  if (
+    !store.form.dataLancamento ||
+    Number.isNaN(new Date(store.form.dataLancamento).getTime())
+  ) {
+    erros.value.dataLancamento = 'A data é obrigatória.'
+  }
 
   if (isEditMode.value) return
-
-  if (!store.form.dataLancamento) erros.value.dataLancamento = 'A data é obrigatória.'
 
   if (params.value.metodo === 'PARCELADO' && parcelasQuantidade.value < 1) {
     erros.value.parcelas = 'Informe ao menos 1 parcela.'
@@ -433,12 +438,12 @@ watch(
           <div
             class="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
           >
-            Recomendado para manter consistência contábil: valores, datas, parcelamento e status
-            ficam congelados após o lançamento. Se for necessário corrigir valor, o ideal é
-            estornar/ajustar com rastreabilidade em vez de reescrever o histórico.
+            Para manter a consistência contábil, valores, parcelamento e status ficam congelados
+            após o lançamento. A data do lançamento pode ser corrigida aqui; vencimentos e
+            quitação continuam sendo definidos pelas parcelas.
           </div>
 
-          <div class="md:col-span-2">
+          <div>
             <label for="descricao-edicao" class="mb-1 block text-sm font-medium">Descrição *</label>
             <Input
               id="descricao-edicao"
@@ -447,6 +452,22 @@ watch(
               placeholder="Ex: Mensalidade do cliente XPTO"
             />
             <p v-if="erros.descricao" class="text-sm text-red-600">{{ erros.descricao }}</p>
+          </div>
+
+          <div>
+            <label for="dataLancamentoEdicao" class="mb-1 block text-sm font-medium">
+              Data do lançamento *
+            </label>
+            <Calendarpicker
+              id="dataLancamentoEdicao"
+              :teleport="true"
+              :required="true"
+              name="dataLancamento"
+              v-model="store.form.dataLancamento"
+            />
+            <p v-if="erros.dataLancamento" class="text-sm text-red-600">
+              {{ erros.dataLancamento }}
+            </p>
           </div>
 
           <div>

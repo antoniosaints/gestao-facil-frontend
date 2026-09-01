@@ -196,7 +196,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
         | 'TRANSFERENCIA'
         | 'CHEQUE'
         | 'PIX',
-      dataLancamento: data.dataLancamento,
+      dataLancamento: new Date(data.dataLancamento),
     })
     form.value = {
       ...form.value,
@@ -205,7 +205,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
       contasFinanceiroId: data.contasFinanceiroId!,
       clienteId: data.clienteId ? data.clienteId : null,
       dataEntrada: data.dataEntrada ? data.dataEntrada : null,
-      dataLancamento: data.dataLancamento,
+      dataLancamento: new Date(data.dataLancamento),
       desconto: data.desconto,
       descricao: data.descricao,
       parcelas: 1,

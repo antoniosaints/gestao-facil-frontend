@@ -4,7 +4,8 @@
         <div class="flex items-center justify-between py-2 gap-2">
             <div class="flex items-center space-x-1 bg-card rounded-md border border-border pl-4 w-96">
                 <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                <Input type="search" placeholder="Buscar registro..." v-model="search"
+                <Input type="search" placeholder="Buscar registro..." :model-value="search"
+                    @update:model-value="setSearch"
                     class="border-none outline-none focus-visible:ring-0 shadow-none" />
             </div>
             <div class="flex items-center space-x-2">
@@ -15,6 +16,9 @@
                     <SelectContent>
                         <SelectItem :value="10">
                             10
+                        </SelectItem>
+                        <SelectItem :value="20">
+                            20
                         </SelectItem>
                         <SelectItem :value="25">
                             25
@@ -48,7 +52,7 @@
         <slot name="toolbar" :table="table" :selected-count="table.getSelectedRowModel().rows.length" />
 
         <!-- Tabela -->
-        <div class="rounded-lg border bg-background border-gray-300 dark:border-gray-600 overflow-x-auto">
+        <div class="relative rounded-lg border bg-background border-gray-300 dark:border-gray-600 overflow-x-auto">
             <Table class="min-w-full">
                 <TableHeader class="bg-gray-100 dark:bg-gray-800">
                     <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
@@ -113,6 +117,12 @@
                     </TableRow>
                 </TableBody>
             </Table>
+            <div v-if="loading && data.length"
+                class="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
+                <span class="flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm font-medium shadow-sm">
+                    <Loader class="h-4 w-4 animate-spin text-primary" /> Atualizando tabela...
+                </span>
+            </div>
         </div>
 
 
@@ -144,14 +154,20 @@ import { Input } from '../ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { BadgeQuestionMark, Eye, Loader } from 'lucide-vue-next';
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
 
-const { columns, api, filters } = defineProps<{
+const props = defineProps<{
     columns: ColumnDef<any>[],
     api: string,
     filters?: Record<string, any> // 🔑 filtros externos opcionais
+    /** Chave opcional para diferenciar tabelas que compartilham rota e endpoint. */
+    stateKey?: string
 }>()
+
+const route = useRoute()
+const stateKey = props.stateKey || `${route.path}:${props.api}`
 
 const {
     data,
@@ -159,14 +175,10 @@ const {
     pageSize,
     totalPages,
     search,
+    setSearch,
     table,
-    loading,
-    fetchData
-} = useServerTable(api, columns, filters ?? {});
-
-watch(() => filters!.update, () => {
-    fetchData()
-})
+    loading
+} = useServerTable(props.api, props.columns, props.filters ?? {}, stateKey);
 
 // Identifica as linhas atualmente exibidas; ver o comentário no <TableHead> do cabeçalho.
 const rowsKey = computed(() => data.value.map((row: any) => row?.id).join(','))

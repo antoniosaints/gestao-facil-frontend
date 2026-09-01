@@ -9,7 +9,12 @@ const store = useLancamentosStore()
 </script>
 
 <template>
-    <DataTable :columns="columnsLancamentos" api="/lancamentos/getDataTable" :filters="store.filters">
+    <DataTable
+        state-key="financeiro-lancamentos"
+        :columns="columnsLancamentos"
+        api="/lancamentos/getDataTable"
+        :filters="store.filters"
+    >
         <template #toolbar="{ table }">
             <BulkActionsLancamentos :table="(table as Table<any>)" />
         </template>
