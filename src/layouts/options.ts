@@ -249,6 +249,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'restaurante:impressao', nome: 'Impressão QZ' },
     { key: 'restaurante:cardapio', nome: 'Cardápio' },
     { key: 'restaurante:pedidos', nome: 'Pedidos' },
+    { key: 'restaurante:caixas', nome: 'Caixas' },
     { key: 'restaurante:configuracoes', nome: 'Configurações' },
   ],
   ourive: [
@@ -542,6 +543,14 @@ export const sidebarMenuOptions = (
           link: '/restaurante/pedidos',
           show: restaurantAccess.has('PEDIDOS_VISUALIZAR'),
           icone: ClipboardList,
+          color: 'orange',
+        },
+        {
+          key: 'restaurante:caixas',
+          nome: 'Caixas',
+          link: '/restaurante/caixas',
+          show: restaurantAccess.has('PEDIDOS_VISUALIZAR'),
+          icone: HandCoins,
           color: 'orange',
         },
         {

@@ -587,6 +587,24 @@ export interface RestauranteCaixaContexto {
   }
 }
 
+export interface RestauranteCaixaRelatorio {
+  caixas: RestauranteCaixaContexto[]
+  resumo: {
+    caixas: number
+    pedidos: number
+    totalPedidos: number
+    totalReforcos: number
+    totalSangrias: number
+    diferenca: number
+  }
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
 export type RestauranteCatalogoBulkAction =
   | 'EXIBIR'
   | 'OCULTAR'
@@ -612,6 +630,17 @@ export interface RestauranteGrupoPayload {
 }
 
 export class RestauranteRepository {
+  static async relatorioCaixas(params?: {
+    inicio?: string
+    fim?: string
+    status?: 'ABERTO' | 'FECHADO' | 'CANCELADO'
+    page?: number
+    limit?: number
+  }) {
+    const { data } = await http.get('/v1/restaurante/caixa', { params })
+    return data.data as RestauranteCaixaRelatorio
+  }
+
   static async contextoCaixa() {
     const { data } = await http.get('/v1/restaurante/caixa/contexto')
     return data.data as RestauranteCaixaContexto | null

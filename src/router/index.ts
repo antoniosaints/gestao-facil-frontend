@@ -689,6 +689,17 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'caixas',
+        name: 'restaurante-caixas',
+        component: () => import('@/pages/restaurante/Caixas.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 1,
+          modulo: 'restaurante-delivery',
+          restauranteCapability: 'PEDIDOS_VISUALIZAR',
+        },
+      },
+      {
         path: 'acompanhar-entregas',
         name: 'restaurante-acompanhar-entregas',
         component: () => import('@/pages/restaurante/AcompanharEntregas.vue'),

@@ -33,8 +33,9 @@ const props = withDefaults(
   defineProps<{
     contexto: RestauranteCaixaContexto
     loading?: boolean
+    podeOperar?: boolean
   }>(),
-  { loading: false },
+  { loading: false, podeOperar: true },
 )
 
 const emit = defineEmits<{
@@ -46,6 +47,30 @@ const emit = defineEmits<{
 const open = defineModel<boolean>('open', { default: false })
 const caixa = computed(() => props.contexto.caixa)
 const resumo = computed(() => props.contexto.resumo)
+const caixaAberto = computed(() => caixa.value.status === 'ABERTO')
+const podeOperar = computed(() => caixaAberto.value && props.podeOperar)
+
+const statusVisual = computed(() => {
+  if (caixa.value.status === 'ABERTO') {
+    return {
+      label: 'Aberto',
+      icon: DoorOpen,
+      classe: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+    }
+  }
+  if (caixa.value.status === 'FECHADO') {
+    return {
+      label: 'Fechado',
+      icon: Lock,
+      classe: 'border-muted-foreground/30 bg-muted text-muted-foreground',
+    }
+  }
+  return {
+    label: 'Cancelado',
+    icon: Lock,
+    classe: 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400',
+  }
+})
 
 function formatarDataHora(valor?: string | null) {
   if (!valor) return '-'
@@ -74,6 +99,18 @@ const conferencia = computed(() => {
     esperado,
     contado,
     diferenca: contado === null ? null : Math.round((contado - esperado) * 100) / 100,
+  }
+})
+
+const consolidadoTurno = computed(() => {
+  const pedidos = Number(resumo.value.totalPedidos || 0)
+  const reforcos = Number(resumo.value.totalReforcos || 0)
+  const sangrias = Number(resumo.value.totalSangrias || 0)
+  return {
+    pedidos,
+    reforcos,
+    sangrias,
+    totalLiquido: pedidos + reforcos - sangrias,
   }
 })
 
@@ -233,15 +270,16 @@ function statusPedidoClasse(status: string) {
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <h3 class="truncate text-lg font-semibold">{{ caixa.codigo }}</h3>
-                <Badge
-                  class="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                  ><DoorOpen class="mr-1 h-3 w-3" />Aberto</Badge
+                <Badge :class="statusVisual.classe"
+                  ><component :is="statusVisual.icon" class="mr-1 h-3 w-3" />{{
+                    statusVisual.label
+                  }}</Badge
                 >
               </div>
               <p class="mt-1 text-xs text-muted-foreground">Turno operacional do Restaurante</p>
             </div>
           </div>
-          <div class="flex flex-wrap gap-2">
+          <div v-if="podeOperar" class="flex flex-wrap gap-2">
             <Button variant="outline" :disabled="loading" @click="emit('sangria')"
               ><ArrowUpFromLine class="h-4 w-4" />Sangria</Button
             ><Button variant="outline" :disabled="loading" @click="emit('reforco')"
@@ -263,11 +301,18 @@ function statusPedidoClasse(status: string) {
             </div>
           </div>
           <div class="flex items-center gap-2 rounded-lg border bg-background px-3 py-2">
-            <Lock class="h-4 w-4 shrink-0 text-emerald-600" />
+            <Lock
+              class="h-4 w-4 shrink-0"
+              :class="caixaAberto ? 'text-emerald-600' : 'text-muted-foreground'"
+            />
             <div class="min-w-0">
               <p class="text-[10px] uppercase tracking-wide text-muted-foreground">Fechamento</p>
-              <p class="truncate text-xs font-semibold">Em andamento</p>
-              <p class="truncate text-[11px] text-muted-foreground">Aguardando contagem final</p>
+              <p class="truncate text-xs font-semibold">
+                {{ caixaAberto ? 'Em andamento' : formatarDataHora(caixa.fechadoEm) }}
+              </p>
+              <p class="truncate text-[11px] text-muted-foreground">
+                {{ caixaAberto ? 'Aguardando contagem final' : caixa.fechadoPor?.nome || '-' }}
+              </p>
             </div>
           </div>
           <div class="flex items-center gap-2 rounded-lg border bg-background px-3 py-2">
@@ -277,11 +322,59 @@ function statusPedidoClasse(status: string) {
                 Duração do turno
               </p>
               <p class="truncate text-sm font-semibold">{{ duracaoTurno || '—' }}</p>
-              <p class="text-[11px] text-muted-foreground">Contando até agora</p>
+              <p class="text-[11px] text-muted-foreground">
+                {{ caixaAberto ? 'Contando até agora' : 'Turno encerrado' }}
+              </p>
             </div>
           </div>
         </div>
       </header>
+
+      <section class="overflow-hidden rounded-xl border border-primary/30 bg-primary/5">
+        <div class="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-center">
+          <div>
+            <div class="flex items-center gap-2">
+              <CircleDollarSign class="h-4 w-4 text-primary" />
+              <h3 class="text-sm font-semibold">Consolidado do turno</h3>
+            </div>
+            <p class="mt-1 text-xs text-muted-foreground">
+              Pedidos + reforços − sangrias. O fundo de troco não entra neste total.
+            </p>
+            <div
+              class="mt-4 grid grid-cols-3 divide-x rounded-lg border bg-background/70 text-center"
+            >
+              <div class="px-2 py-2.5">
+                <p class="text-[10px] uppercase tracking-wide text-muted-foreground">Pedidos</p>
+                <p class="mt-1 text-sm font-semibold tabular-nums text-emerald-600">
+                  + {{ formatCurrencyBR(consolidadoTurno.pedidos) }}
+                </p>
+              </div>
+              <div class="px-2 py-2.5">
+                <p class="text-[10px] uppercase tracking-wide text-muted-foreground">Reforços</p>
+                <p class="mt-1 text-sm font-semibold tabular-nums text-blue-600">
+                  + {{ formatCurrencyBR(consolidadoTurno.reforcos) }}
+                </p>
+              </div>
+              <div class="px-2 py-2.5">
+                <p class="text-[10px] uppercase tracking-wide text-muted-foreground">Sangrias</p>
+                <p class="mt-1 text-sm font-semibold tabular-nums text-amber-600">
+                  − {{ formatCurrencyBR(consolidadoTurno.sangrias) }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-xl bg-primary p-4 text-primary-foreground shadow-sm">
+            <p class="text-xs font-medium opacity-80">Total líquido do turno</p>
+            <p class="mt-1 text-3xl font-black tabular-nums">
+              {{ formatCurrencyBR(consolidadoTurno.totalLiquido) }}
+            </p>
+            <p class="mt-2 text-[11px] leading-snug opacity-80">
+              Faturamento líquido operacional; não representa lucro, pois custos e despesas não
+              estão incluídos.
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section class="rounded-xl border bg-card p-4">
         <div class="mb-3 flex items-center gap-2">
