@@ -5,6 +5,7 @@ import {
   Ban,
   CalendarClock,
   CreditCard,
+  Crown,
   Eye,
   EyeOff,
   KeyRound,
@@ -25,7 +26,13 @@ import { Input } from '@/components/ui/input'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useConfirm } from '@/composables/useConfirm'
@@ -52,11 +59,17 @@ const loading = ref(false)
 const appsLoading = ref(false)
 const appSavingId = ref<number | null>(null)
 const status = ref<'ATIVO' | 'INATIVO' | 'BLOQUEADO'>('ATIVO')
+const vip = ref(false)
 const manageTab = ref<'geral' | 'financeiro' | 'conta' | 'ia' | 'apps' | 'seguranca'>('geral')
 const vencimento = ref<Date | null>(new Date())
 const apps = ref<AssinanteAdminAppItem[]>([])
 const iaLimiteTokensMensal = ref<number | undefined>(undefined)
-const iaUsoMes = ref<{ totalTokens: number; limite: number | null; restante: number | null; custoEstimado: number } | null>(null)
+const iaUsoMes = ref<{
+  totalTokens: number
+  limite: number | null
+  restante: number | null
+  custoEstimado: number
+} | null>(null)
 
 const dados = ref({
   nome: '',
@@ -90,6 +103,7 @@ watch(
     manageTab.value = 'geral'
     if (!value) return
     status.value = (value.status as 'ATIVO' | 'INATIVO' | 'BLOQUEADO') || 'ATIVO'
+    vip.value = Boolean(value.vipPagante)
     vencimento.value = value.vencimento ? new Date(value.vencimento) : new Date()
     dados.value = {
       nome: value.nome || '',
@@ -258,6 +272,7 @@ async function submit() {
     loading.value = true
     await ContaRepository.gerenciarAssinante(props.conta.id, {
       status: status.value,
+      vip: vip.value,
       vencimento: vencimento.value.toISOString(),
       nome: dados.value.nome.trim(),
       nomeFantasia: dados.value.nomeFantasia.trim() || null,
@@ -293,12 +308,20 @@ async function submit() {
     <form class="grid gap-4 px-4" @submit.prevent="submit">
       <Tabs v-model="manageTab" class="w-full">
         <TabsList class="flex h-auto w-full max-w-full gap-1 overflow-x-auto p-1">
-          <TabsTrigger value="geral" class="gap-2 px-4"><UserCog class="h-4 w-4" />Geral</TabsTrigger>
-          <TabsTrigger value="financeiro" class="gap-2 px-4"><CreditCard class="h-4 w-4" />Financeiro / Cobranças</TabsTrigger>
-          <TabsTrigger value="conta" class="gap-2 px-4"><CalendarClock class="h-4 w-4" />Conta</TabsTrigger>
+          <TabsTrigger value="geral" class="gap-2 px-4"
+            ><UserCog class="h-4 w-4" />Geral</TabsTrigger
+          >
+          <TabsTrigger value="financeiro" class="gap-2 px-4"
+            ><CreditCard class="h-4 w-4" />Financeiro / Cobranças</TabsTrigger
+          >
+          <TabsTrigger value="conta" class="gap-2 px-4"
+            ><CalendarClock class="h-4 w-4" />Conta</TabsTrigger
+          >
           <TabsTrigger value="ia" class="gap-2 px-4"><Sparkles class="h-4 w-4" />IA</TabsTrigger>
           <TabsTrigger value="apps" class="gap-2 px-4"><Power class="h-4 w-4" />Apps</TabsTrigger>
-          <TabsTrigger value="seguranca" class="gap-2 px-4"><ShieldCheck class="h-4 w-4" />Segurança</TabsTrigger>
+          <TabsTrigger value="seguranca" class="gap-2 px-4"
+            ><ShieldCheck class="h-4 w-4" />Segurança</TabsTrigger
+          >
         </TabsList>
       </Tabs>
 
@@ -311,11 +334,45 @@ async function submit() {
           </div>
 
           <div class="rounded-lg border border-border/70 bg-background/70 p-3">
-            <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Vencimento atual</div>
+            <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Vencimento atual
+            </div>
             <div class="mt-1 text-sm font-medium text-foreground">
               {{ conta?.vencimento ? formatDateToPtBR(conta.vencimento) : '-' }}
             </div>
-            <div class="mt-1 text-xs text-muted-foreground">Status atual: {{ conta?.status || '-' }}</div>
+            <div class="mt-1 text-xs text-muted-foreground">
+              Status atual: {{ conta?.status || '-' }}
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-border/70 bg-background/70 p-3 md:col-span-2">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div class="flex items-center gap-2">
+                <span
+                  class="grid h-9 w-9 place-items-center rounded-lg border border-yellow-400 text-yellow-600"
+                >
+                  <Crown class="h-4 w-4" />
+                </span>
+                <div>
+                  <div class="text-sm font-medium text-foreground">Tratamento VIP</div>
+                  <div class="text-xs text-muted-foreground">
+                    {{
+                      vip
+                        ? 'Este assinante recebe o selo VIP na listagem.'
+                        : 'Marque assinantes prioritários para destacar o atendimento.'
+                    }}
+                  </div>
+                </div>
+              </div>
+              <Button
+                type="button"
+                :variant="vip ? 'default' : 'outline'"
+                class="gap-2"
+                @click="vip = !vip"
+              >
+                <Crown class="h-4 w-4" />{{ vip ? 'VIP ativo' : 'Marcar como VIP' }}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -350,49 +407,96 @@ async function submit() {
         </Card>
       </div>
 
-      <Card v-show="manageTab === 'financeiro'" class="w-full border-border/70 bg-card shadow-sm dark:bg-card">
-          <CardContent class="space-y-3 p-4">
-            <div class="text-sm font-medium text-foreground">Mensalidade</div>
-            <div class="space-y-1">
-              <Label>Valor base do plano (R$)</Label>
-              <Input v-model="valorBasePlano" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
-              <p class="text-xs text-muted-foreground">
-                Este é o valor base cobrado do cliente. O total soma os apps ativos.
-              </p>
+      <Card
+        v-show="manageTab === 'financeiro'"
+        class="w-full border-border/70 bg-card shadow-sm dark:bg-card"
+      >
+        <CardContent class="space-y-3 p-4">
+          <div class="text-sm font-medium text-foreground">Mensalidade</div>
+          <div class="space-y-1">
+            <Label>Valor base do plano (R$)</Label>
+            <Input
+              v-model="valorBasePlano"
+              v-maska="moneyMaskOptions"
+              type="text"
+              inputmode="decimal"
+              placeholder="0,00"
+            />
+            <p class="text-xs text-muted-foreground">
+              Este é o valor base cobrado do cliente. O total soma os apps ativos.
+            </p>
+          </div>
+          <div class="rounded-lg border border-border/70 bg-background/70 p-3 text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-muted-foreground">Base</span>
+              <span class="font-medium">{{ formatCurrencyBR(Number(valorBasePlano || 0)) }}</span>
             </div>
-            <div class="rounded-lg border border-border/70 bg-background/70 p-3 text-sm">
-              <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Base</span>
-                <span class="font-medium">{{ formatCurrencyBR(Number(valorBasePlano || 0)) }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Apps ativos</span>
-                <span class="font-medium">{{ formatCurrencyBR(valorAppsAtivos) }}</span>
-              </div>
-              <div class="mt-1 flex items-center justify-between border-t border-border/70 pt-1">
-                <span class="font-medium text-foreground">Total estimado / mês</span>
-                <span class="font-semibold text-primary">{{ formatCurrencyBR(valorTotalEstimado) }}</span>
-              </div>
-              <p v-if="Number(conta?.creditoIndicacao || 0) > 0" class="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
-                Crédito de indicação: {{ formatCurrencyBR(Number(conta?.creditoIndicacao || 0)) }} (abate da próxima mensalidade)
-              </p>
+            <div class="flex items-center justify-between">
+              <span class="text-muted-foreground">Apps ativos</span>
+              <span class="font-medium">{{ formatCurrencyBR(valorAppsAtivos) }}</span>
             </div>
-          </CardContent>
+            <div class="mt-1 flex items-center justify-between border-t border-border/70 pt-1">
+              <span class="font-medium text-foreground">Total estimado / mês</span>
+              <span class="font-semibold text-primary">{{
+                formatCurrencyBR(valorTotalEstimado)
+              }}</span>
+            </div>
+            <p
+              v-if="Number(conta?.creditoIndicacao || 0) > 0"
+              class="mt-2 text-xs text-emerald-600 dark:text-emerald-400"
+            >
+              Crédito de indicação:
+              {{ formatCurrencyBR(Number(conta?.creditoIndicacao || 0)) }} (abate da próxima
+              mensalidade)
+            </p>
+          </div>
+        </CardContent>
       </Card>
 
-      <Card v-show="manageTab === 'financeiro'" class="border-border/70 bg-card shadow-sm dark:bg-card">
+      <Card
+        v-show="manageTab === 'financeiro'"
+        class="border-border/70 bg-card shadow-sm dark:bg-card"
+      >
         <CardContent class="space-y-3 p-4">
           <div>
             <div class="text-sm font-medium text-foreground">Cobranças vinculadas aos apps</div>
-            <p class="text-xs text-muted-foreground">Acompanhe a cobrança atual de cada app, quando houver.</p>
+            <p class="text-xs text-muted-foreground">
+              Acompanhe a cobrança atual de cada app, quando houver.
+            </p>
           </div>
-          <div v-if="appsLoading" class="flex items-center gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground"><LoaderCircle class="h-4 w-4 animate-spin" />Carregando cobranças...</div>
-          <div v-else-if="!apps.some((app) => app.cobrancaAtual)" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Não há cobranças de apps disponíveis para esta conta.</div>
+          <div
+            v-if="appsLoading"
+            class="flex items-center gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground"
+          >
+            <LoaderCircle class="h-4 w-4 animate-spin" />Carregando cobranças...
+          </div>
+          <div
+            v-else-if="!apps.some((app) => app.cobrancaAtual)"
+            class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground"
+          >
+            Não há cobranças de apps disponíveis para esta conta.
+          </div>
           <div v-else class="grid gap-2 md:grid-cols-2">
-            <div v-for="app in apps.filter((item) => item.cobrancaAtual)" :key="app.id" class="rounded-lg border bg-background/70 p-3 text-sm">
-              <div class="flex items-center justify-between gap-3"><span class="font-medium">{{ app.nome }}</span><span class="text-xs text-muted-foreground">{{ app.cobrancaAtual?.status }}</span></div>
-              <p class="mt-1 text-xs text-muted-foreground">{{ app.cobrancaAtual?.gateway }} · {{ formatCurrencyBR(app.preco) }}/mês</p>
-              <a v-if="app.cobrancaAtual?.linkPagamento" :href="app.cobrancaAtual.linkPagamento" target="_blank" rel="noreferrer" class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"><CreditCard class="h-3.5 w-3.5" />Abrir cobrança</a>
+            <div
+              v-for="app in apps.filter((item) => item.cobrancaAtual)"
+              :key="app.id"
+              class="rounded-lg border bg-background/70 p-3 text-sm"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <span class="font-medium">{{ app.nome }}</span
+                ><span class="text-xs text-muted-foreground">{{ app.cobrancaAtual?.status }}</span>
+              </div>
+              <p class="mt-1 text-xs text-muted-foreground">
+                {{ app.cobrancaAtual?.gateway }} · {{ formatCurrencyBR(app.preco) }}/mês
+              </p>
+              <a
+                v-if="app.cobrancaAtual?.linkPagamento"
+                :href="app.cobrancaAtual.linkPagamento"
+                target="_blank"
+                rel="noreferrer"
+                class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
+                ><CreditCard class="h-3.5 w-3.5" />Abrir cobrança</a
+              >
             </div>
           </div>
         </CardContent>
@@ -428,20 +532,36 @@ async function submit() {
           <CardContent class="space-y-3 p-4">
             <div>
               <div class="text-sm font-medium text-foreground">Ações rápidas</div>
-              <div class="text-xs text-muted-foreground">Use um atalho para preparar o status antes de salvar.</div>
+              <div class="text-xs text-muted-foreground">
+                Use um atalho para preparar o status antes de salvar.
+              </div>
             </div>
 
-            <Button type="button" class="w-full justify-start gap-2 text-white" @click="aplicarStatus('ATIVO')">
+            <Button
+              type="button"
+              class="w-full justify-start gap-2 text-white"
+              @click="aplicarStatus('ATIVO')"
+            >
               <ShieldCheck class="h-4 w-4" />
               Liberar manualmente
             </Button>
 
-            <Button type="button" variant="outline" class="w-full justify-start gap-2" @click="aplicarStatus('INATIVO')">
+            <Button
+              type="button"
+              variant="outline"
+              class="w-full justify-start gap-2"
+              @click="aplicarStatus('INATIVO')"
+            >
               <CalendarClock class="h-4 w-4" />
               Desativar conta
             </Button>
 
-            <Button type="button" variant="destructive" class="w-full justify-start gap-2" @click="aplicarStatus('BLOQUEADO')">
+            <Button
+              type="button"
+              variant="destructive"
+              class="w-full justify-start gap-2"
+              @click="aplicarStatus('BLOQUEADO')"
+            >
               <Ban class="h-4 w-4" />
               Bloquear conta
             </Button>
@@ -457,25 +577,51 @@ async function submit() {
           <div class="grid gap-3 md:grid-cols-2">
             <div class="space-y-1">
               <Label>Limite mensal desta conta</Label>
-              <Input v-model.number="iaLimiteTokensMensal" type="number" min="0" placeholder="Vazio = usa o padrão global" />
-              <p class="text-xs text-muted-foreground">Vazio ou 0 = usa o limite padrão definido no Core IA. Salvo junto com "Salvar controle".</p>
+              <Input
+                v-model.number="iaLimiteTokensMensal"
+                type="number"
+                min="0"
+                placeholder="Vazio = usa o padrão global"
+              />
+              <p class="text-xs text-muted-foreground">
+                Vazio ou 0 = usa o limite padrão definido no Core IA. Salvo junto com "Salvar
+                controle".
+              </p>
             </div>
-            <div v-if="iaUsoMes" class="rounded-lg border border-border/70 bg-background/70 p-3 text-sm">
+            <div
+              v-if="iaUsoMes"
+              class="rounded-lg border border-border/70 bg-background/70 p-3 text-sm"
+            >
               <div class="flex items-center justify-between">
                 <span class="text-muted-foreground">Consumo do mês</span>
-                <span class="font-medium">{{ iaUsoMes.totalTokens.toLocaleString('pt-BR') }} tokens</span>
+                <span class="font-medium"
+                  >{{ iaUsoMes.totalTokens.toLocaleString('pt-BR') }} tokens</span
+                >
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-muted-foreground">Custo estimado</span>
-                <span class="font-medium">{{ iaUsoMes.custoEstimado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) }}</span>
+                <span class="font-medium">{{
+                  iaUsoMes.custoEstimado.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 4,
+                  })
+                }}</span>
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-muted-foreground">Limite efetivo</span>
-                <span class="font-medium">{{ iaUsoMes.limite == null ? 'Ilimitado' : iaUsoMes.limite.toLocaleString('pt-BR') }}</span>
+                <span class="font-medium">{{
+                  iaUsoMes.limite == null ? 'Ilimitado' : iaUsoMes.limite.toLocaleString('pt-BR')
+                }}</span>
               </div>
-              <div v-if="iaUsoMes.restante != null" class="mt-1 flex items-center justify-between border-t border-border/70 pt-1">
+              <div
+                v-if="iaUsoMes.restante != null"
+                class="mt-1 flex items-center justify-between border-t border-border/70 pt-1"
+              >
                 <span class="text-muted-foreground">Restante</span>
-                <span class="font-semibold" :class="iaUsoMes.restante > 0 ? 'text-primary' : 'text-danger'">
+                <span
+                  class="font-semibold"
+                  :class="iaUsoMes.restante > 0 ? 'text-primary' : 'text-danger'"
+                >
                   {{ iaUsoMes.restante.toLocaleString('pt-BR') }}
                 </span>
               </div>
@@ -504,12 +650,18 @@ async function submit() {
             </Button>
           </div>
 
-          <div v-if="appsLoading" class="flex items-center justify-center rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+          <div
+            v-if="appsLoading"
+            class="flex items-center justify-center rounded-xl border border-dashed p-6 text-sm text-muted-foreground"
+          >
             <LoaderCircle class="mr-2 h-4 w-4 animate-spin" />
             Carregando apps da conta...
           </div>
 
-          <div v-else-if="!apps.length" class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          <div
+            v-else-if="!apps.length"
+            class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground"
+          >
             Nenhum app encontrado para controle.
           </div>
 
@@ -525,9 +677,14 @@ async function submit() {
                     <Sparkles class="h-4 w-4 text-primary" />
                     {{ app.nome }}
                   </div>
-                  <div class="text-xs text-muted-foreground">{{ app.categoria }} • {{ formatCurrencyBR(app.preco) }}/mês</div>
+                  <div class="text-xs text-muted-foreground">
+                    {{ app.categoria }} • {{ formatCurrencyBR(app.preco) }}/mês
+                  </div>
                 </div>
-                <span class="rounded-full px-2 py-1 text-[11px] font-medium" :class="getAppStatusMeta(app).className">
+                <span
+                  class="rounded-full px-2 py-1 text-[11px] font-medium"
+                  :class="getAppStatusMeta(app).className"
+                >
                   {{ getAppStatusMeta(app).label }}
                 </span>
               </div>
@@ -537,7 +694,9 @@ async function submit() {
               </p>
 
               <div class="mt-3 space-y-1 text-xs text-muted-foreground">
-                <div v-if="app.vigenciaAte">Vigência até {{ formatDateToPtBR(app.vigenciaAte) }}</div>
+                <div v-if="app.vigenciaAte">
+                  Vigência até {{ formatDateToPtBR(app.vigenciaAte) }}
+                </div>
                 <div v-if="app.cobrancaAtual">
                   Cobrança {{ app.cobrancaAtual.gateway }} • {{ app.cobrancaAtual.status }}
                 </div>
@@ -585,7 +744,10 @@ async function submit() {
         </CardContent>
       </Card>
 
-      <Card v-show="manageTab === 'seguranca'" class="border-amber-300/60 bg-amber-50/50 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/10">
+      <Card
+        v-show="manageTab === 'seguranca'"
+        class="border-amber-300/60 bg-amber-50/50 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/10"
+      >
         <CardContent class="space-y-3 p-4">
           <div class="flex items-start gap-2">
             <KeyRound class="mt-0.5 h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -598,7 +760,9 @@ async function submit() {
             </div>
           </div>
 
-          <div class="flex flex-col gap-2 rounded-lg border border-border/70 bg-background/70 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div
+            class="flex flex-col gap-2 rounded-lg border border-border/70 bg-background/70 p-3 sm:flex-row sm:items-center sm:justify-between"
+          >
             <div>
               <div class="text-sm font-medium text-foreground">Enviar link por e-mail</div>
               <div class="text-xs text-muted-foreground">
@@ -659,8 +823,9 @@ async function submit() {
             v-if="rootResetInfo"
             class="rounded-lg border border-emerald-300/60 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"
           >
-            Senha redefinida para <span class="font-medium">{{ rootResetInfo.nome }}</span>.
-            O cliente deve entrar com o e-mail <span class="font-medium">{{ rootResetInfo.email }}</span> e a nova senha.
+            Senha redefinida para <span class="font-medium">{{ rootResetInfo.nome }}</span
+            >. O cliente deve entrar com o e-mail
+            <span class="font-medium">{{ rootResetInfo.email }}</span> e a nova senha.
             <span v-if="rootResetInfo.totalUsuariosRoot > 1">
               ({{ rootResetInfo.totalUsuariosRoot }} usuários root foram atualizados.)
             </span>
@@ -671,7 +836,9 @@ async function submit() {
       <Separator />
 
       <div class="flex justify-end gap-2 pb-1">
-        <Button type="button" variant="secondary" :disabled="loading" @click="open = false">Fechar</Button>
+        <Button type="button" variant="secondary" :disabled="loading" @click="open = false"
+          >Fechar</Button
+        >
         <Button type="submit" class="text-white" :disabled="loading">
           {{ loading ? 'Salvando...' : 'Salvar controle' }}
         </Button>

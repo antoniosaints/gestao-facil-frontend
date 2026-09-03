@@ -9,6 +9,7 @@ import {
   CalendarClock,
   CircleOff,
   CreditCard,
+  Crown,
   ShieldCheck,
   UserRound,
   Wifi,
@@ -77,12 +78,25 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
         () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
       ),
     cell: ({ row }) =>
-      render(BadgeCell, {
-        label: row.original.Uid,
-        color: 'gray',
-        icon: UserRound,
-        capitalize: false,
-      }),
+      render('div', { class: 'flex items-center gap-1.5' }, [
+        render(BadgeCell, {
+          label: row.original.Uid,
+          color: 'gray',
+          icon: UserRound,
+          capitalize: false,
+        }),
+        ...(row.original.vipPagante
+          ? [
+              render(BadgeCell, {
+                label: 'VIP',
+                color: 'yellow',
+                icon: Crown,
+                capitalize: false,
+                size: 'sm',
+              }),
+            ]
+          : []),
+      ]),
   },
   {
     accessorKey: 'nome',
@@ -201,12 +215,12 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
           label: row.original.temUsuarioOnline
             ? `${row.original.usuariosOnline} online`
             : row.original.ultimoLoginEm
-            ? `${formatDateToPtBR(row.original.ultimoLoginEm)}`
-            : 'Offline',
+              ? `${formatDateToPtBR(row.original.ultimoLoginEm)}`
+              : 'Offline',
           color: row.original.temUsuarioOnline ? 'green' : 'gray',
           icon: row.original.temUsuarioOnline ? Wifi : WifiOff,
           capitalize: false,
-        })
+        }),
       ]),
   },
   {

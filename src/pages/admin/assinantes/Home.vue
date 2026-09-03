@@ -20,6 +20,7 @@ import {
   ArrowRight,
   CalendarClock,
   CircleOff,
+  Crown,
   Loader,
   LogIn,
   RefreshCcw,
@@ -294,6 +295,13 @@ useIntervalFn(() => {
           </div>
 
           <div class="mt-2 flex flex-wrap gap-2">
+            <BadgeCell
+              v-if="item.vipPagante"
+              label="VIP"
+              color="yellow"
+              :icon="Crown"
+              :capitalize="false"
+            />
             <BadgeCell
               :label="getStatusBadge(item.status).label"
               :color="getStatusBadge(item.status).color"

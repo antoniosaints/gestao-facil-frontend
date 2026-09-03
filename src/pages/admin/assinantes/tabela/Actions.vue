@@ -12,7 +12,17 @@ import {
 import { useConfirm } from '@/composables/useConfirm'
 import { ContaRepository, type ContaAssinanteAdmin } from '@/repositories/conta-repository'
 import { useAssinantesAdmin } from '../useAssinantesAdmin'
-import { Ban, CalendarClock, Loader, LogIn, Menu, MenuSquare, ShieldCheck, Trash2 } from 'lucide-vue-next'
+import {
+  Ban,
+  CalendarClock,
+  Crown,
+  Loader,
+  LogIn,
+  Menu,
+  MenuSquare,
+  ShieldCheck,
+  Trash2,
+} from 'lucide-vue-next'
 
 const { openManage, openAcessar, triggerRefresh } = useAssinantesAdmin()
 const confirm = useConfirm()
@@ -25,7 +35,12 @@ const props = defineProps<{
 
 type StatusAssinante = 'ATIVO' | 'INATIVO' | 'BLOQUEADO'
 
-async function alterarStatus(status: StatusAssinante, titulo: string, mensagem: string, confirmText: string) {
+async function alterarStatus(
+  status: StatusAssinante,
+  titulo: string,
+  mensagem: string,
+  confirmText: string,
+) {
   const ok = await confirm.confirm({
     title: titulo,
     message: mensagem,
@@ -71,6 +86,31 @@ function inativar() {
     `Deseja inativar a conta "${props.data.nome}"?`,
     'Inativar',
   )
+}
+
+async function alterarVip(vip: boolean) {
+  const acao = vip ? 'marcar como VIP' : 'remover o selo VIP de'
+  const ok = await confirm.confirm({
+    title: vip ? 'Marcar assinante VIP' : 'Remover selo VIP',
+    message: `Deseja ${acao} "${props.data.nome}"?`,
+    confirmText: vip ? 'Marcar VIP' : 'Remover selo',
+  })
+  if (!ok) return
+
+  try {
+    busy.value = true
+    const res = await ContaRepository.gerenciarAssinante(props.data.id, {
+      status: props.data.status as StatusAssinante,
+      vip,
+    })
+    toast.success(res?.message || 'Selo VIP atualizado com sucesso')
+    triggerRefresh()
+  } catch (error: any) {
+    console.log(error)
+    toast.error(error.response?.data?.message || 'Erro ao atualizar o selo VIP')
+  } finally {
+    busy.value = false
+  }
 }
 
 async function apagarAssinante() {
@@ -126,6 +166,15 @@ async function apagarAssinante() {
       <DropdownMenuItem @click="openAcessar(data)">
         <LogIn class="h-4 w-4" />
         Acessar (suporte)
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem v-if="!data.vipPagante" @click="alterarVip(true)">
+        <Crown class="h-4 w-4 text-yellow-600" />
+        Marcar como VIP
+      </DropdownMenuItem>
+      <DropdownMenuItem v-else @click="alterarVip(false)">
+        <Crown class="h-4 w-4" />
+        Remover selo VIP
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem v-if="data.status !== 'ATIVO'" @click="liberar">

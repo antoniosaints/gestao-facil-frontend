@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
 import { vMaska } from 'maska/vue'
 import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
+import { allocateModalLayer, modalLayerKey } from '@/components/formulario/modal-layer'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -82,6 +83,8 @@ type CartItem = {
 }
 
 const toast = useToast()
+const parentModalLayer = inject(modalLayerKey, null)
+const seletorMesaLayer = ref(80)
 const seletorMesaDesktop = useMediaQuery('(min-width: 768px)')
 const seletorMesaRoot = computed(() => (seletorMesaDesktop.value ? Dialog : Drawer))
 const seletorMesaRootProps = computed(() => (seletorMesaDesktop.value ? {} : { handleOnly: true }))
@@ -93,6 +96,8 @@ const seletorMesaTitle = computed(() => (seletorMesaDesktop.value ? DialogTitle 
 const seletorMesaDescription = computed(() =>
   seletorMesaDesktop.value ? DialogDescription : DrawerDescription,
 )
+const seletorMesaOverlayStyle = computed(() => ({ zIndex: seletorMesaLayer.value }))
+const seletorMesaContentStyle = computed(() => ({ zIndex: seletorMesaLayer.value + 1 }))
 const loadingCatalog = ref(false)
 const saving = ref(false)
 const catalogo = ref<RestauranteCatalogoItem[]>([])
@@ -440,6 +445,12 @@ watch(
     } else reset()
   },
 )
+
+// O seletor é aberto a partir de dentro do modal manual. Reservar uma camada nova
+// no momento da abertura evita que ele fique atrás de qualquer modal já em tela.
+watch(mesasSheetAberto, (aberto) => {
+  if (aberto) seletorMesaLayer.value = allocateModalLayer(parentModalLayer?.value)
+})
 </script>
 
 <template>
@@ -798,8 +809,8 @@ watch(
             ? '!right-0 !top-0 !left-auto !h-dvh !max-w-md !translate-x-0 !translate-y-0 rounded-none border-y-0 border-r-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:rounded-none'
             : 'h-[82dvh] max-h-[82dvh] rounded-t-[24px] border-x-0 border-b-0'
         "
-        :overlay-style="{ zIndex: 80 }"
-        :content-style="{ zIndex: 81 }"
+        :overlay-style="seletorMesaOverlayStyle"
+        :content-style="seletorMesaContentStyle"
       >
         <component :is="seletorMesaHeader" class="border-b px-5 py-4 text-left">
           <component :is="seletorMesaTitle" class="flex items-center gap-2 text-lg">

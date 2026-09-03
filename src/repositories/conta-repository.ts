@@ -28,6 +28,7 @@ export interface ContaAssinanteAdmin {
   protegidaPorSuperAdmin?: boolean
   diasParaVencer: number
   statusAssinatura: 'EM_DIA' | 'VENCE_HOJE' | 'VENCIDA'
+  vipPagante: boolean
   linkPagamentoPendente?: string | null
 }
 
@@ -69,6 +70,7 @@ export interface AcessoSuporteLog {
 
 export interface UpdateAssinanteAdminPayload {
   status: 'ATIVO' | 'INATIVO' | 'BLOQUEADO'
+  vip?: boolean
   vencimento?: string
   nome?: string
   nomeFantasia?: string | null
@@ -431,7 +433,9 @@ export class ContaRepository {
     const res = await http.get('/contas/integracoes/mercadopago/status')
     return res.data.data
   }
-  static async conectarMercadoPago(retorno?: '/restaurante/configuracoes'): Promise<{ url: string }> {
+  static async conectarMercadoPago(
+    retorno?: '/restaurante/configuracoes',
+  ): Promise<{ url: string }> {
     const res = await http.get('/contas/integracoes/mercadopago/conectar', {
       params: retorno ? { retorno } : undefined,
     })
