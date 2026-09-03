@@ -26,7 +26,7 @@ const { size, themeStyle } = defineProps<{
     icon?: LucideIcon
     title: string
     description?: string,
-    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
+    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl'
     themeStyle?: CSSProperties
 }>()
 
@@ -39,6 +39,8 @@ const sizeClasses: Record<string, string> = {
     '3xl': 'max-w-3xl',
     '4xl': 'max-w-4xl',
     '5xl': 'max-w-5xl',
+    '6xl': 'max-w-6xl',
+    '7xl': 'max-w-7xl',
 }
 
 const sizeModal = computed(() => size ? sizeClasses[size] : 'max-w-4xl')
@@ -77,13 +79,18 @@ const contentStyle = computed(() => ({
                 :overlay-style="overlayStyle" :content-style="contentStyle"
                 :class="[sizeModal, 'mx-auto']">
                 <DialogHeader class="p-6 pb-0">
-                    <DialogTitle class="font-normal text-xl -mb-1 flex items-center gap-1">
-                        <component v-if="icon" :is="icon" class="h-5 w-5 inline-flex" />
-                        {{ title }}
-                    </DialogTitle>
-                    <DialogDescription v-if="description">
-                        {{ description }}
-                    </DialogDescription>
+                    <div class="flex items-start justify-between gap-3 pr-8">
+                        <div class="min-w-0">
+                            <DialogTitle class="font-normal text-xl -mb-1 flex items-center gap-1">
+                                <component v-if="icon" :is="icon" class="h-5 w-5 inline-flex" />
+                                {{ title }}
+                            </DialogTitle>
+                            <DialogDescription v-if="description">
+                                {{ description }}
+                            </DialogDescription>
+                        </div>
+                        <slot name="header-actions" />
+                    </div>
                 </DialogHeader>
                 <div class="grid gap-4 py-4 overflow-y-auto px-2">
                     <slot />
@@ -95,10 +102,15 @@ const contentStyle = computed(() => ({
         <Drawer v-else v-model:open="isOpen">
             <DrawerContent :overlay-style="overlayStyle" :content-style="contentStyle">
                 <DrawerHeader class="text-left">
-                    <DrawerTitle>{{ title }}</DrawerTitle>
-                    <DrawerDescription v-if="description">
-                        {{ description }}
-                    </DrawerDescription>
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <DrawerTitle>{{ title }}</DrawerTitle>
+                            <DrawerDescription v-if="description">
+                                {{ description }}
+                            </DrawerDescription>
+                        </div>
+                        <slot name="header-actions" />
+                    </div>
                 </DrawerHeader>
                 <div class="overflow-y-auto max-h-[calc(100vh-6rem)] pb-6">
                     <slot />

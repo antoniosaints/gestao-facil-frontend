@@ -115,6 +115,18 @@ export class LancamentosRepository {
     const response = await http.post(`/lancamentos/${id}/converter-tipo`)
     return response.data
   }
+  static async atualizarIgnorado(id: number, ignorado: boolean) {
+    const response = await http.post(`/lancamentos/${id}/ignorar`, { ignorado })
+    return response.data
+  }
+  static async atualizarIgnoradoParcela(id: number, ignorado: boolean) {
+    const response = await http.post(`/lancamentos/parcelas/${id}/ignorar`, { ignorado })
+    return response.data
+  }
+  static async atualizarIgnoradoMultiplasParcelas(parcelas: number[], ignorado: boolean) {
+    const response = await http.post('/lancamentos/parcelas/ignorar-multiplas', { parcelas, ignorado })
+    return response.data as { message: string; data: { atualizadas: number; ignorado: boolean } }
+  }
   static async atualizarEmMassa(
     lancamentoIds: number[],
     data: { categoriaId?: number; clienteId?: number | null },

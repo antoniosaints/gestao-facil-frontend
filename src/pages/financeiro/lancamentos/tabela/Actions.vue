@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ArrowLeftRight, Menu, Pencil, Settings2 } from 'lucide-vue-next'
+import { ArrowLeftRight, EyeOff, Menu, Pencil, Settings2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -54,6 +54,26 @@ async function converterTipo() {
         converting.value = false
     }
 }
+
+async function alternarIgnorado() {
+    if (!data.id) return toast.error('ID não informado!')
+    const ignorado = !data.ignorado
+    const confirm = await useConfirm().confirm({
+        title: ignorado ? 'Ignorar lançamento' : 'Reativar lançamento',
+        message: ignorado
+            ? 'O lançamento e suas parcelas deixarão de compor saldos, resumos e relatórios. As novas parcelas recorrentes também nascerão ignoradas.'
+            : 'O lançamento e todas as suas parcelas voltarão a compor os cálculos.',
+        confirmText: ignorado ? 'Sim, ignorar' : 'Sim, reativar',
+    })
+    if (!confirm) return
+    try {
+        await LancamentosRepository.atualizarIgnorado(data.id, ignorado)
+        store.updateTable()
+        toast.success(ignorado ? 'Lançamento ignorado nos cálculos.' : 'Lançamento reativado.')
+    } catch (error: any) {
+        toast.error(error?.response?.data?.message || 'Não foi possível atualizar o lançamento.')
+    }
+}
 </script>
 
 <template>
@@ -79,6 +99,10 @@ async function converterTipo() {
                 <DropdownMenuItem @click="convertDialogOpen = true">
                     <ArrowLeftRight class="w-4 h-4 mr-1" />
                     Converter para {{ tipoDestino }}
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="alternarIgnorado">
+                    <EyeOff class="w-4 h-4 mr-1" />
+                    {{ data.ignorado ? 'Reativar nos cálculos' : 'Ignorar nos cálculos' }}
                 </DropdownMenuItem>
                 <DropdownMenuItem class="text-danger" @click="deletar(data.id!)">
                     <i class="fa-regular fa-trash-can mr-1"></i>

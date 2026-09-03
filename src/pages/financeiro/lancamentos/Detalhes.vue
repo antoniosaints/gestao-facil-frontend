@@ -15,6 +15,7 @@ import {
   Clock3,
   Copy,
   ExternalLink,
+  EyeOff,
   Landmark,
   MoreVertical,
   Pause,
@@ -201,7 +202,8 @@ const tipoAtual = computed(() => lancamento.value?.tipo === 'RECEITA' ? 'receita
 const tipoDestino = computed(() => lancamento.value?.tipo === 'RECEITA' ? 'despesa' : 'receita')
 
 const valorTotal = computed(() =>
-  parcelasOrdenadas.value.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0),
+  parcelasOrdenadas.value
+    .reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0),
 )
 
 const totalPago = computed(() =>
@@ -401,6 +403,7 @@ function editarParcela(parcela: ParcelaDetalhe) {
     vencimentoOriginal: new Date(parcela.vencimento),
     numero: parcela.numero,
     pago: parcela.pago,
+    ignorado: Boolean(parcela.ignorado),
     escopo: 'ATUAL',
   }
   store.openModalParcela = true
@@ -600,6 +603,43 @@ async function toggleNotificacaoClienteVencimento() {
   }
 }
 
+async function alternarIgnoradoParcela(parcela: ParcelaDetalhe) {
+  if (!parcela.id) return
+  try {
+    await LancamentosRepository.atualizarIgnoradoParcela(parcela.id, !parcela.ignorado)
+    toast.success(parcela.ignorado ? 'Parcela reativada nos cálculos.' : 'Parcela ignorada nos cálculos.')
+    store.updateTable()
+    await loadLancamento()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível atualizar a parcela.')
+  }
+}
+
+async function atualizarIgnoradoSelecionadas(ignorado: boolean) {
+  const ids = selecao.selecionadas.value.map((parcela) => parcela.id as number)
+  if (!ids.length) return
+
+  const confirmado = await useConfirm().confirm({
+    title: ignorado ? 'Ignorar parcelas' : 'Reativar parcelas',
+    message: ignorado
+      ? `As ${ids.length} parcela(s) selecionada(s) deixarão de compor os cálculos financeiros.`
+      : `As ${ids.length} parcela(s) selecionada(s) voltarão a compor os cálculos financeiros.`,
+    confirmText: ignorado ? 'Sim, ignorar' : 'Sim, reativar',
+  })
+  if (!confirmado) return
+
+  try {
+    loteProcessando.value = true
+    const response = await LancamentosRepository.atualizarIgnoradoMultiplasParcelas(ids, ignorado)
+    toast.success(response.message)
+    await finalizarLote()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível atualizar as parcelas.')
+  } finally {
+    loteProcessando.value = false
+  }
+}
+
 // ---- Seleção e ações em massa nas parcelas ----
 const selecao = useParcelasSelecao(() => parcelasOrdenadas.value)
 const loteProcessando = ref(false)
@@ -732,6 +772,9 @@ watch(() => store.filters.update, loadLancamento)
           <Badge v-if="lancamento?.vendaId" variant="outline">Automático</Badge>
           <Badge v-if="recorrencia" variant="outline" class="gap-1">
             <Repeat class="h-3 w-3" /> Recorrente
+          </Badge>
+          <Badge v-if="lancamento?.ignorado" variant="destructive" class="gap-1">
+            <EyeOff class="h-3 w-3" /> Ignorado nos cálculos
           </Badge>
         </div>
         <div>
@@ -1207,6 +1250,8 @@ watch(() => store.filters.update, loadLancamento)
           @cobrar="abrirCobrancaLote"
           @estornar="estornarSelecionadas"
           @excluir="excluirSelecionadas"
+          @ignorar="atualizarIgnoradoSelecionadas(true)"
+          @reativar="atualizarIgnoradoSelecionadas(false)"
           @limpar="selecao.limpar()"
         />
 
@@ -1261,6 +1306,9 @@ watch(() => store.filters.update, loadLancamento)
                       >
                         Cobrança</Badge
                       >
+                      <Badge v-if="parcela.ignorado" variant="outline" class="px-2 py-0 text-[10px]">
+                        Ignorada
+                      </Badge>
                     </span>
                   </p>
                   <div class="flex items-center gap-1">
@@ -1287,6 +1335,15 @@ watch(() => store.filters.update, loadLancamento)
 
             <div class="flex items-center gap-1">
               <div class="hidden items-center gap-1 md:flex">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  class="h-8 w-8"
+                  v-tooltip="parcela.ignorado ? 'Reativar nos cálculos' : 'Ignorar nos cálculos'"
+                  @click="alternarIgnoradoParcela(parcela)"
+                >
+                  <EyeOff class="h-4 w-4" />
+                </Button>
                 <Button
                   v-if="!parcela.pago"
                   variant="outline"
@@ -1367,9 +1424,13 @@ watch(() => store.filters.update, loadLancamento)
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" class="w-44">
-                  <DropdownMenuItem v-if="!parcela.pago" @click="editarParcela(parcela)">
+            <DropdownMenuItem v-if="!parcela.pago" @click="editarParcela(parcela)">
                     <PenLine class="mr-2 h-4 w-4" /> Editar
-                  </DropdownMenuItem>
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="alternarIgnoradoParcela(parcela)">
+              <EyeOff class="mr-2 h-4 w-4" />
+              {{ parcela.ignorado ? 'Reativar nos cálculos' : 'Ignorar nos cálculos' }}
+            </DropdownMenuItem>
                   <DropdownMenuItem v-if="!parcela.pago" @click="excluirParcela(parcela)">
                     <Trash2 class="mr-2 h-4 w-4" /> Excluir
                   </DropdownMenuItem>

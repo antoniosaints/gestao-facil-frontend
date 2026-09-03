@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
@@ -24,6 +25,10 @@ async function registrarAlteracao() {
       valor: formatToNumberValue(store.formParcela.valor as string),
       escopo: store.formParcela.escopo,
     })
+    await LancamentosRepository.atualizarIgnoradoParcela(
+      store.idMutation,
+      store.formParcela.ignorado,
+    )
 
     toast.success('Parcela atualizada com sucesso!')
     store.openModalParcela = false
@@ -48,6 +53,13 @@ async function registrarAlteracao() {
         <Label>Vencimento</Label>
         <Calendarpicker required :teleport="true" v-model="store.formParcela.vencimento" />
       </div>
+      <label class="flex cursor-pointer items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm">
+        <span>
+          <span class="block font-medium">Ignorar nos cálculos</span>
+          <span class="block text-xs text-muted-foreground">Esta parcela não entrará em saldos, painéis e relatórios.</span>
+        </span>
+        <Switch v-model="store.formParcela.ignorado" class="shrink-0" />
+      </label>
       <div>
         <Label>Valor</Label>
         <Input

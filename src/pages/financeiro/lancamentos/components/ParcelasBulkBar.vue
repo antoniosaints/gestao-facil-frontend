@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CheckCircle2, CircleDollarSign, MoreVertical, Trash2, Undo2, X } from 'lucide-vue-next'
+import { CheckCircle2, CircleDollarSign, Eye, EyeOff, MoreVertical, Trash2, Undo2, X } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -27,6 +27,8 @@ const emit = defineEmits<{
   cobrar: []
   estornar: []
   excluir: []
+  ignorar: []
+  reativar: []
   limpar: []
 }>()
 
@@ -57,6 +59,12 @@ const podeExcluir = computed(() => !props.processando && props.pendentes > 0)
         @click="emit('efetivar')"
       >
         <CheckCircle2 class="h-4 w-4" /> Efetivar
+      </Button>
+      <Button size="sm" variant="outline" :disabled="processando" @click="emit('ignorar')">
+        <EyeOff class="h-4 w-4" /> Ignorar
+      </Button>
+      <Button size="sm" variant="outline" :disabled="processando" @click="emit('reativar')">
+        <Eye class="h-4 w-4" /> Reativar
       </Button>
       <Button
         v-if="uiStore.canCreateCharge"
@@ -107,6 +115,12 @@ const podeExcluir = computed(() => !props.processando && props.pendentes > 0)
           </DropdownMenuItem>
           <DropdownMenuItem :disabled="!podeEstornar" @click="emit('estornar')">
             <Undo2 class="mr-2 h-4 w-4" /> Estornar ({{ pagas }})
+          </DropdownMenuItem>
+          <DropdownMenuItem :disabled="processando" @click="emit('ignorar')">
+            <EyeOff class="mr-2 h-4 w-4" /> Ignorar nos cálculos
+          </DropdownMenuItem>
+          <DropdownMenuItem :disabled="processando" @click="emit('reativar')">
+            <Eye class="mr-2 h-4 w-4" /> Reativar nos cálculos
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

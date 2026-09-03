@@ -8,10 +8,10 @@ import {
   Calendar,
   CircleDollarSign,
   ClockAlert,
+  EyeOff,
   FlagTriangleRight,
   Loader,
   MessageCircle,
-  Repeat,
   Tag,
   TrendingDown,
   TrendingUp,
@@ -121,9 +121,9 @@ export const columnsLancamentos: ColumnDef<
           onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
         },
         () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+    ),
     cell: ({ row }) => {
-      const status = row.original.status as string
+      let status = row.original.status as string
       const parcelas = row.original.parcelas.filter((p) => p.numero !== 0)
       const efetivadas = parcelas.filter((p) => p.pago).length
       const pendentes = parcelas.length - efetivadas
@@ -142,22 +142,20 @@ export const columnsLancamentos: ColumnDef<
         ATRASADO: { color: 'red', icon: ClockAlert },
       }
 
-      let { color, icon } = statusConfig[status] || { color: 'gray', icon: BadgeCheck }
+      // O status persistido na API é a regra principal. O cálculo abaixo só
+      // cobre o vencimento que pode ter ocorrido desde a última atualização.
+      if (hasOverdue && status === 'PENDENTE') status = 'ATRASADO'
+
+      const { color, icon } = statusConfig[status] || { color: 'gray', icon: BadgeCheck }
       let label = status
 
       if (pendentes > 0 && row.original.recorrente) {
         const percentual = Math.round((efetivadas / parcelas.length) * 100)
-        label = `${efetivadas}/${parcelas.length} ${percentual}%`
+        label = `${status} (${efetivadas}/${parcelas.length} · ${percentual}%)`
       }
 
       if (row.original.recorrencia?.ativo) {
-        icon = Repeat
-        label = `FIXA (${efetivadas}/${parcelas.length})`
-      }
-
-      if (hasOverdue) {
-        color = 'red'
-        icon = ClockAlert
+        label = `${status} · FIXA (${efetivadas}/${parcelas.length})`
       }
 
       return render(BadgeCell, {
@@ -185,6 +183,15 @@ export const columnsLancamentos: ColumnDef<
           ? render('div', { class: 'flex flex-wrap items-center gap-2' }, [
               render('i', { class: 'fa-solid fa-bell text-yellow-600' }),
             ])
+          : null,
+        row.original.ignorado
+          ? render(BadgeCell, {
+              label: 'Ignorado',
+              color: 'gray',
+              icon: EyeOff,
+              capitalize: false,
+              size: 'sm',
+            })
           : null,
         render(
           'div',

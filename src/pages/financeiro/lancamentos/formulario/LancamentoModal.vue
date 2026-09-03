@@ -294,6 +294,7 @@ async function submitFormulario() {
     notificarVencimento: Boolean(store.form.notificarVencimento),
     notificarClienteVencimento:
       podeNotificarCliente.value && Boolean(store.form.notificarClienteVencimento),
+    ignorado: Boolean(store.form.ignorado),
     recorrencia: isRecorrente.value
       ? {
           frequencia: recorrencia.value.frequencia,
@@ -432,6 +433,15 @@ watch(
 
 <template>
   <ModalView v-model:open="store.openModal" :title="title" :description="description" :size="isEditMode ? '2xl' : '4xl'">
+    <template v-if="!isEditMode" #header-actions>
+      <label
+        for="ignorarLancamentoCalculos"
+        class="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium dark:bg-card-dark"
+      >
+        <Switch id="ignorarLancamentoCalculos" v-model="store.form.ignorado" />
+        <span class="whitespace-nowrap">Ignorar nos cálculos</span>
+      </label>
+    </template>
     <form class="space-y-4 px-4" @submit.prevent="submit">
       <template v-if="isEditMode">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">

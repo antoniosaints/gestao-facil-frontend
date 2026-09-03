@@ -18,6 +18,7 @@ import {
   CalendarDays,
   CheckCircle2,
   CircleDollarSign,
+  EyeOff,
   ExternalLink,
   FileText,
   Filter,
@@ -413,6 +414,7 @@ function editarParcela(item: LancamentoDia) {
     vencimentoOriginal: new Date(item.vencimento),
     numero: item.numero,
     pago: item.pago,
+    ignorado: false,
     escopo: 'ATUAL',
   }
   store.openModalParcela = true
@@ -442,6 +444,17 @@ async function estornarParcela(id: number) {
   } catch (error: any) {
     console.error(error)
     toast.error(error.response?.data?.message || 'Erro ao estornar a parcela')
+  }
+}
+
+async function ignorarParcelaDoAcompanhamento(item: LancamentoDia) {
+  try {
+    await LancamentosRepository.atualizarIgnoradoParcela(item.parcelaId, true)
+    toast.success('Parcela ignorada nos cálculos.')
+    openModalEvento.value = false
+    await recarregarMantendoPosicao()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Não foi possível ignorar a parcela.')
   }
 }
 
@@ -1370,6 +1383,13 @@ onMounted(async () => {
               @click="openLinkCobranca(eventoSelecionado.cobrancaLink)"
             >
               <ExternalLink class="h-4 w-4" /> Abrir cobrança
+            </Button>
+            <Button
+              variant="outline"
+              class="min-w-[9rem] flex-1"
+              @click="ignorarParcelaDoAcompanhamento(eventoSelecionado)"
+            >
+              <EyeOff class="h-4 w-4" /> Ignorar nos cálculos
             </Button>
           </div>
           <!-- Ações secundárias -->

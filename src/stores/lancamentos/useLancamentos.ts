@@ -43,6 +43,7 @@ function createDefaultForm(
       | 'modoValorParcelamento'
       | 'notificarVencimento'
       | 'notificarClienteVencimento'
+      | 'ignorado'
       | 'recorrencia'
     >
   >,
@@ -66,6 +67,7 @@ function createDefaultForm(
     modoValorParcelamento: overrides?.modoValorParcelamento ?? 'TOTAL',
     notificarVencimento: overrides?.notificarVencimento ?? false,
     notificarClienteVencimento: overrides?.notificarClienteVencimento ?? false,
+    ignorado: overrides?.ignorado ?? false,
     recorrencia: { ...createDefaultRecorrencia(), ...(overrides?.recorrencia ?? {}) },
   }
 }
@@ -122,6 +124,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     vencimentoOriginal: Date
     numero: number
     pago: boolean
+    ignorado: boolean
     escopo: EscopoAlteracaoParcela
   }>({
     vencimento: new Date(),
@@ -129,6 +132,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     vencimentoOriginal: new Date(),
     numero: 1,
     pago: false,
+    ignorado: false,
     escopo: 'ATUAL',
   })
 
@@ -160,6 +164,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
       vencimentoOriginal: new Date(),
       numero: 1,
       pago: false,
+      ignorado: false,
       escopo: 'ATUAL',
     }
   }
@@ -223,6 +228,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
       valorTotal: data.valorTotal,
       notificarVencimento: Boolean(data.notificarVencimento),
       notificarClienteVencimento: Boolean(data.notificarClienteVencimento),
+      ignorado: Boolean(data.ignorado),
     }
     openModal.value = true
   }

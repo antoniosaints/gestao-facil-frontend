@@ -507,6 +507,7 @@ export interface FormularioLancamento {
   modoValorParcelamento?: 'TOTAL' | 'FIXO_PARCELA'
   notificarVencimento?: boolean
   notificarClienteVencimento?: boolean
+  ignorado?: boolean
   /// Só no método RECORRENTE: configuração das ocorrências seguintes.
   recorrencia?: RecorrenciaConfig
 }
@@ -826,6 +827,7 @@ export interface LancamentoFinanceiro {
   formaPagamento: MetodoPagamento
   status: StatusPagamentoFinanceiro
   recorrente: boolean
+  ignorado?: boolean
   notificarVencimento?: boolean
   notificarClienteVencimento?: boolean
   origemSistema?: 'MANUAL' | 'ASSINATURA_PAGAR'
@@ -886,6 +888,7 @@ export interface ParcelaFinanceiro {
   contaFinanceira?: number | null
   descricao?: string | null
   pago: boolean
+  ignorado?: boolean
   valorPago?: number
   formaPagamento?: MetodoPagamento
   dataPagamento?: Date
