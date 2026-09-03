@@ -51,7 +51,11 @@
       id="container-main-app-sistema"
       class="min-h-0 flex-1 overflow-y-auto mt-0 text-gray-700 transition-all duration-300 ease-in-out dark:text-gray-300"
       :class="{
-        'md:ml-64': !store.kdsImersivo && store.openSidebar && !store.usaNavegacaoSemSidebar && !store.usaNavegacaoSideV2,
+        'md:ml-64':
+          !store.kdsImersivo &&
+          store.openSidebar &&
+          !store.usaNavegacaoSemSidebar &&
+          !store.usaNavegacaoSideV2,
         'md:ml-72': !store.kdsImersivo && store.openSidebar && store.usaNavegacaoSideV2,
         'p-0': isFullscreenContent,
         'p-6': !isFullscreenContent,
@@ -66,7 +70,13 @@
         <div v-if="!store.kdsImersivo && isSupportActive()" class="mb-4 flex justify-end md:hidden">
           <SupportBadge />
         </div>
-        <AlertTopbar v-if="!store.kdsImersivo" />
+        <div
+          v-if="!store.kdsImersivo"
+          class="mb-4 flex flex-wrap items-center justify-between gap-2"
+        >
+          <AlertTopbar />
+          <RestaurantModeAccess />
+        </div>
         <div
           v-if="!store.kdsImersivo && (store.loading || progress > 0)"
           class="absolute hidden md:block top-14 h-2 transition-all duration-100 ease-linear"
@@ -131,13 +141,19 @@ import { updateMetaTags } from '@/utils/theme'
 import { env } from '@/utils/dotenv'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { useRestaurantPrintAgent } from '@/stores/restaurante/useRestaurantPrintAgent'
+import RestaurantModeAccess from '@/components/restaurante/RestaurantModeAccess.vue'
 const store = useUiStore()
 const route = useRoute()
 const printAgent = useRestaurantPrintAgent()
 const loading = ref(false)
 const sidebarMenu = computed(() => {
   return filterSidebarMenuByVisibility(
-    sidebarMenuOptions(store.permissoes, store.appModules, store.restaurantAccess.capabilities, store.ouriveAccess.capabilities),
+    sidebarMenuOptions(
+      store.permissoes,
+      store.appModules,
+      store.restaurantAccess.capabilities,
+      store.ouriveAccess.capabilities,
+    ),
     store.visibleMenuKeys,
     store.usuarioLogged.permissao === 'root',
     store.hiddenSubmenuKeys,
@@ -146,7 +162,9 @@ const sidebarMenu = computed(() => {
 const isFullscreenContent = computed(
   () => route.name === 'restaurante-acompanhar-entregas' || store.kdsImersivo,
 )
-const isRestaurantRoute = computed(() => route.matched.some((record) => record.path === '/restaurante'))
+const isRestaurantRoute = computed(() =>
+  route.matched.some((record) => record.path === '/restaurante'),
+)
 
 type RestaurantOrderSocketEvent = {
   pedidoId?: number

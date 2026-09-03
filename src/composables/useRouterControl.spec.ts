@@ -72,6 +72,46 @@ describe('handleRouteGuard', () => {
     )
 
     expect(result).toEqual({ name: 'assinatura-resumo' })
-    expect(toast.info).toHaveBeenCalledWith('Sua conta está inativa, realize o pagamento para ativá-la.')
+    expect(toast.info).toHaveBeenCalledWith(
+      'Sua conta está inativa, realize o pagamento para ativá-la.',
+    )
+  })
+
+  it('leva o entregador exclusivo direto para o Delivery', async () => {
+    localStorage.setItem('gestao_facil:token', 'token-entregador')
+    const store = useUiStore()
+    vi.spyOn(store, 'getDataUsuario').mockImplementation(async () => {
+      store.usuarioLogged = { superAdmin: false, permissao: '1' } as any
+      store.contaInfo = { vencimento: new Date(Date.now() + 86_400_000) } as any
+      store.restaurantAccess = { papeis: ['ENTREGADOR'], capabilities: [], fallbackLegado: false }
+    })
+
+    const result = await handleRouteGuard(
+      { name: 'home', path: '/', meta: {} } as any,
+      { name: 'login', path: '/login', meta: { isPublic: true } } as any,
+    )
+
+    expect(result).toEqual({ name: 'restaurante-entregador' })
+  })
+
+  it('mantém no sistema o usuário que também é garçom para escolher o modo', async () => {
+    localStorage.setItem('gestao_facil:token', 'token-duplo')
+    const store = useUiStore()
+    vi.spyOn(store, 'getDataUsuario').mockImplementation(async () => {
+      store.usuarioLogged = { superAdmin: false, permissao: '1' } as any
+      store.contaInfo = { vencimento: new Date(Date.now() + 86_400_000) } as any
+      store.restaurantAccess = {
+        papeis: ['ENTREGADOR', 'GARCOM'],
+        capabilities: ['SALAO_VISUALIZAR'],
+        fallbackLegado: false,
+      }
+    })
+
+    const result = await handleRouteGuard(
+      { name: 'home', path: '/', meta: {} } as any,
+      { name: 'login', path: '/login', meta: { isPublic: true } } as any,
+    )
+
+    expect(result).toBe(true)
   })
 })

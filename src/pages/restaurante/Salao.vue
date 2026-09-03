@@ -27,11 +27,11 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import PedidoManualDialog from './PedidoManualDialog.vue'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { type ComandaOperacaoItem } from '@/repositories/comanda-operacao-repository'
 import {
   RestauranteRepository,
-  type RestauranteCatalogoItem,
   type RestauranteMesa,
   type RestauranteMesaStatus,
 } from '@/repositories/restaurante-repository'
@@ -47,7 +47,6 @@ import {
   Search,
   Send,
   Utensils,
-  X,
 } from 'lucide-vue-next'
 import { useComandasStore } from '@/stores/comandas/useComandas'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -60,7 +59,6 @@ const canConfigure = computed(() => uiStore.hasRestaurantCapability('SALAO_CONFI
 const loading = ref(true)
 const saving = ref(false)
 const mesas = ref<RestauranteMesa[]>([])
-const catalogo = ref<RestauranteCatalogoItem[]>([])
 const busca = ref('')
 const filtro = ref('TODAS')
 const mesaModal = ref(false)
@@ -69,14 +67,6 @@ const pedidoModal = ref(false)
 const mesaAtual = ref<RestauranteMesa | null>(null)
 const mesaForm = ref({ nome: '', ativa: true, version: undefined as number | undefined })
 const abertura = ref({ pessoas: 1, clienteNome: '', observacao: '' })
-const itemSelecionadoId = ref('')
-const quantidade = ref(1)
-const selecoes = ref<number[]>([])
-const itemObservacao = ref('')
-const pedidoObservacao = ref('')
-const carrinho = ref<
-  Array<{ catalogoItemId: number; quantidade: number; selecaoIds: number[]; observacao?: string }>
->([])
 
 const statusLabel: Record<RestauranteMesaStatus, string> = {
   LIVRE: 'Livre',
@@ -122,9 +112,6 @@ const filtradas = computed(() => {
       (!termo || mesa.nome.toLocaleLowerCase('pt-BR').includes(termo)),
   )
 })
-const itemSelecionado = computed(() =>
-  catalogo.value.find((item) => String(item.id) === itemSelecionadoId.value),
-)
 const sessaoAtual = computed(() => mesaAtual.value?.sessoes[0])
 const itensComandaEmAberto = computed(() =>
   (comandasStore.selectedComanda?.itens || []).filter((item) => !item.pagamentoId),
@@ -138,17 +125,7 @@ const totalComandaSelecionado = computed(() =>
 async function carregar(feedback = false) {
   try {
     loading.value = true
-    ;[mesas.value, catalogo.value] = await Promise.all([
-      RestauranteRepository.mesas(),
-      RestauranteRepository.catalogo({ limit: 100 }).then((response) =>
-        response.data
-          .filter((item) => item.disponivel)
-          .map((item) => ({
-            ...item,
-            grupos: item.grupos.filter((link) => link.Grupo.ativo),
-          })),
-      ),
-    ])
+    mesas.value = await RestauranteRepository.mesas()
     if (feedback) toast.info('Salão atualizado')
   } catch (error: any) {
     toast.error(error?.response?.data?.error?.message || 'Não foi possível carregar o salão.')
@@ -201,77 +178,7 @@ async function abrirMesa() {
 
 function prepararPedido(mesa: RestauranteMesa) {
   mesaAtual.value = mesa
-  carrinho.value = []
-  pedidoObservacao.value = ''
-  limparItem()
   pedidoModal.value = true
-}
-
-function fecharPedidoModal() {
-  pedidoModal.value = false
-}
-
-function limparItem() {
-  itemSelecionadoId.value = ''
-  quantidade.value = 1
-  selecoes.value = []
-  itemObservacao.value = ''
-}
-
-function alternarSelecao(id: number, grupoId: number, maximo: number) {
-  if (selecoes.value.includes(id)) selecoes.value = selecoes.value.filter((value) => value !== id)
-  else {
-    const group = itemSelecionado.value?.grupos.find((link) => link.grupoId === grupoId)?.Grupo
-    const idsGrupo = group?.opcoes.flatMap((option) => (option.id ? [option.id] : [])) || []
-    if (selecoes.value.filter((value) => idsGrupo.includes(value)).length >= maximo) return
-    selecoes.value.push(id)
-  }
-}
-
-function adicionarItem() {
-  const item = itemSelecionado.value
-  if (!item) return
-  for (const link of item.grupos) {
-    const ids = link.Grupo.opcoes.flatMap((option) => (option.id ? [option.id] : []))
-    const count = selecoes.value.filter((id) => ids.includes(id)).length
-    if (count < link.Grupo.minimo || count > link.Grupo.maximo) {
-      toast.warning(
-        `${link.Grupo.nome}: escolha entre ${link.Grupo.minimo} e ${link.Grupo.maximo}.`,
-      )
-      return
-    }
-  }
-  carrinho.value.push({
-    catalogoItemId: item.id,
-    quantidade: Math.max(1, quantidade.value),
-    selecaoIds: [...selecoes.value],
-    ...(itemObservacao.value.trim() ? { observacao: itemObservacao.value.trim() } : {}),
-  })
-  limparItem()
-}
-
-function nomeItem(id: number) {
-  const item = catalogo.value.find((candidate) => candidate.id === id)
-  return item?.nomePublico || item?.Produto.nome || 'Item'
-}
-
-async function enviarPedido() {
-  const sessao = sessaoAtual.value
-  if (!sessao || !carrinho.value.length) return
-  try {
-    saving.value = true
-    await RestauranteRepository.criarPedidoMesa(sessao.id, {
-      itens: carrinho.value,
-      observacao: pedidoObservacao.value || null,
-    })
-    pedidoModal.value = false
-    toast.success('Pedido enviado para produção')
-    await carregar()
-  } catch (error: any) {
-    toast.error(error?.response?.data?.error?.message || 'Não foi possível enviar o pedido.')
-  } finally {
-    saving.value = false
-  }
 }
 
 async function acaoMesa(mesa: RestauranteMesa, action: 'conta' | 'liberar' | 'limpeza') {
@@ -541,75 +448,12 @@ onMounted(() => carregar())
       </DialogContent>
     </Dialog>
 
-    <Teleport to="body">
-      <div
-        v-if="pedidoModal"
-        class="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4"
-        style="pointer-events: auto"
-        @click.self="fecharPedidoModal"
-      >
-        <section role="dialog" aria-modal="true" aria-labelledby="novo-pedido-title" class="relative grid max-h-[90dvh] w-full max-w-2xl gap-4 overflow-y-auto rounded-lg border bg-background p-6 shadow-lg">
-          <button type="button" class="absolute right-4 top-4 rounded-sm p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="Fechar novo pedido" @click="fecharPedidoModal"><X class="h-4 w-4" /></button>
-          <div class="pr-8">
-            <h2 id="novo-pedido-title" class="text-lg font-semibold">Novo pedido · {{ mesaAtual?.nome }}</h2>
-            <p class="mt-1 text-sm text-muted-foreground">Os itens serão lançados na comanda e enviados aos pontos do KDS.</p>
-          </div>
-          <div class="space-y-4">
-            <div class="grid gap-3 sm:grid-cols-[1fr_110px]">
-              <select v-model="itemSelecionadoId" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2" @change="selecoes = []">
-                <option disabled value="">Selecione um item</option>
-                <option v-for="item in catalogo" :key="item.id" :value="String(item.id)">{{ item.nomePublico || item.Produto?.nome || 'Item do cardápio' }} · {{ formatCurrencyBR(Number(item.Produto?.preco || item.preco)) }}</option>
-              </select>
-              <Input v-model.number="quantidade" type="number" min="1" />
-            </div>
-          <div v-if="itemSelecionado" class="space-y-3 rounded-xl border p-3">
-            <div v-for="link in itemSelecionado.grupos" :key="link.grupoId">
-              <p class="mb-2 text-sm font-medium">
-                {{ link.Grupo.nome }}
-                <span class="font-normal text-muted-foreground"
-                  >({{ link.Grupo.minimo }}–{{ link.Grupo.maximo }})</span
-                >
-              </p>
-              <div class="flex flex-wrap gap-2">
-                <Button
-                  v-for="opcao in link.Grupo.opcoes"
-                  :key="opcao.id"
-                  type="button"
-                  size="sm"
-                  :variant="opcao.id && selecoes.includes(opcao.id) ? 'default' : 'outline'"
-                  @click="opcao.id && alternarSelecao(opcao.id, link.grupoId, link.Grupo.maximo)"
-                  >{{ opcao.nome }}</Button
-                >
-              </div>
-            </div>
-            <Textarea v-model="itemObservacao" placeholder="Observação deste item" /><Button
-              type="button"
-              variant="secondary"
-              class="w-full"
-              @click="adicionarItem"
-            >
-              <Plus class="mr-2 h-4 w-4" />Adicionar ao pedido
-            </Button>
-          </div>
-          <div v-if="carrinho.length" class="space-y-2">
-            <div
-              v-for="(item, index) in carrinho"
-              :key="index"
-              class="flex items-center justify-between rounded-lg bg-muted p-3 text-sm"
-            >
-              <span>{{ item.quantidade }}× {{ nomeItem(item.catalogoItemId) }}</span
-              ><Button size="sm" variant="ghost" @click="carrinho.splice(index, 1)">Remover</Button>
-            </div>
-            <Textarea v-model="pedidoObservacao" placeholder="Observação geral do pedido" />
-          </div>
-          </div>
-          <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" @click="fecharPedidoModal">Cancelar</Button>
-            <Button :disabled="saving || !carrinho.length" @click="enviarPedido"><Send class="mr-2 h-4 w-4" />Enviar à produção</Button>
-          </div>
-        </section>
-      </div>
-    </Teleport>
+    <PedidoManualDialog
+      v-model:open="pedidoModal"
+      :sessao-mesa-id="sessaoAtual?.id"
+      :mesa-nome="mesaAtual?.nome"
+      @created="carregar()"
+    />
 
     <ModalView
       v-model:open="comandasStore.openFaturarModal"

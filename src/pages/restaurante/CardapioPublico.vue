@@ -1357,7 +1357,7 @@ onBeforeUnmount(() => {
                   <span v-if="cardapio.restaurante.retiradaAtiva" class="flex items-center gap-1.5"><Store class="h-4 w-4 text-white/80" />Retirada</span>
                   <span class="flex items-center gap-1.5 sm:hidden" :class="aceitaPedidos ? 'text-emerald-100' : 'text-amber-100'">
                     <span class="relative flex h-2.5 w-2.5"><span v-if="aceitaPedidos" class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-50" /><span class="relative inline-flex h-2.5 w-2.5 rounded-full" :class="aceitaPedidos ? 'bg-emerald-400' : 'bg-amber-300'" /></span>
-                    {{ aceitaPedidos ? 'Recebendo pedidos' : 'Fechado agora' }}
+                    {{ aceitaPedidos ? 'Aberto' : 'Fechado' }}
                   </span>
                 </div>
               </div>
@@ -1378,7 +1378,7 @@ onBeforeUnmount(() => {
                   <span v-if="aceitaPedidos" class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-50" />
                   <span class="relative inline-flex h-2.5 w-2.5 rounded-full" :class="aceitaPedidos ? 'bg-emerald-400' : 'bg-amber-300'" />
                 </span>
-                <span>{{ aceitaPedidos ? 'Recebendo pedidos' : 'Fechado agora' }}</span>
+                <span>{{ aceitaPedidos ? 'Aberto' : 'Fechado' }}</span>
               </div>
             </div>
           </div>
@@ -1921,7 +1921,7 @@ onBeforeUnmount(() => {
                     <label class="flex items-center gap-2 text-sm font-medium"><input v-model="precisaTroco" type="checkbox" class="h-4 w-4 rounded border-input" />Preciso de troco</label>
                     <div v-if="precisaTroco" class="space-y-1">
                       <Label for="change-for">Levar troco para</Label>
-                      <Input id="change-for" v-model="trocoPara" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="Ex.: 100,00" />
+                      <Input id="change-for" v-model="trocoPara" type="text" inputmode="decimal" autocomplete="off" placeholder="Ex.: 100,00" />
                       <p v-if="quote && trocoPara && !trocoValido" class="text-xs text-destructive">Informe um valor igual ou maior que o total de {{ formatCurrencyBR(Number(quote.total)) }}.</p>
                     </div>
                   </template>

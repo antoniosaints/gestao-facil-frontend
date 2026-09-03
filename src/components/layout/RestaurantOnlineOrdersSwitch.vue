@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useToast } from 'vue-toastification'
+import { POSITION, useToast } from 'vue-toastification'
 import { LoaderCircle, Store } from 'lucide-vue-next'
 import { Switch } from '@/components/ui/switch'
 import { RestauranteRepository } from '@/repositories/restaurante-repository'
@@ -16,7 +16,7 @@ const aceitarPedidosOnline = ref(true)
 
 const isRestaurantArea = computed(() => route.matched.some((record) => record.meta.modulo === 'restaurante-delivery'))
 const canManage = computed(() => uiStore.hasRestaurantCapability('CONFIGURACOES_GERENCIAR'))
-const label = computed(() => aceitarPedidosOnline.value ? 'Recebendo pedidos' : 'Pedidos pausados')
+const label = computed(() => aceitarPedidosOnline.value ? 'Aberto' : 'Fechado')
 const title = computed(() => canManage.value
   ? 'Controla apenas novos pedidos feitos no cardápio online.'
   : 'Você não tem permissão para alterar o recebimento de pedidos online.')
@@ -40,7 +40,9 @@ async function saveStatus(value: boolean) {
   try {
     const status = await RestauranteRepository.salvarStatusPedidosOnline(value)
     aceitarPedidosOnline.value = status.aceitarPedidosOnline
-    toast.success(value ? 'Cardápio online aberto para novos pedidos.' : 'Cardápio online pausado para novos pedidos.')
+    toast.success(value ? 'Cardápio online aberto para novos pedidos.' : 'Cardápio online pausado para novos pedidos.', {
+      position: POSITION.BOTTOM_CENTER
+    })
   } catch (error: any) {
     aceitarPedidosOnline.value = previous
     toast.error(error?.response?.data?.error?.message || 'Não foi possível atualizar os pedidos online.')
@@ -53,6 +55,9 @@ watch(isRestaurantArea, (active) => {
   if (active) void loadStatus()
   else loaded.value = false
 }, { immediate: true })
+
+onMounted(() => window.addEventListener('restaurant-cash-change', loadStatus))
+onUnmounted(() => window.removeEventListener('restaurant-cash-change', loadStatus))
 </script>
 
 <template>

@@ -62,6 +62,7 @@ const confirm = useConfirm()
 const uiStore = useUiStore()
 const router = useRouter()
 const canOperate = computed(() => uiStore.hasRestaurantCapability('PEDIDOS_OPERAR'))
+const canLinkTableOrder = computed(() => uiStore.hasRestaurantCapability('SALAO_OPERAR'))
 const canConfigure = computed(() => uiStore.hasRestaurantCapability('CONFIGURACOES_GERENCIAR'))
 const canViewKds = computed(() => uiStore.hasRestaurantCapability('KDS_VISUALIZAR'))
 const canPrint = computed(() => uiStore.hasRestaurantCapability('IMPRESSAO_VISUALIZAR'))
@@ -95,7 +96,8 @@ const imprimindo = ref(false)
 const pedidoArrastado = ref<RestaurantePedido | null>(null)
 const atendimentoDisponivel = computed(() => uiStore.hasActiveModule('atendimento'))
 const podeEditarClienteSelecionado = computed(
-  () => canOperate.value && !['CONCLUIDO', 'CANCELADO'].includes(pedidoSelecionado.value?.status || ''),
+  () =>
+    canOperate.value && !['CONCLUIDO', 'CANCELADO'].includes(pedidoSelecionado.value?.status || ''),
 )
 const podeEditarItensSelecionado = computed(() => {
   const pedido = pedidoSelecionado.value
@@ -1124,7 +1126,11 @@ onBeforeUnmount(() => handleRouteModalChange(false))
       </div>
     </ModalView>
 
-    <PedidoManualDialog v-model:open="openModalPedidoManual" @created="recarregar()" />
+    <PedidoManualDialog
+      v-model:open="openModalPedidoManual"
+      :permitir-vinculo-mesa="canLinkTableOrder"
+      @created="recarregar()"
+    />
 
     <PedidoManualDialog
       v-model:open="openModalEditarItens"
@@ -1134,7 +1140,9 @@ onBeforeUnmount(() => handleRouteModalChange(false))
 
     <ModalView
       v-model:open="openModalEditarCliente"
-      :title="pedidoSelecionado ? `Editar cliente — pedido ${pedidoSelecionado.codigo}` : 'Editar cliente'"
+      :title="
+        pedidoSelecionado ? `Editar cliente — pedido ${pedidoSelecionado.codigo}` : 'Editar cliente'
+      "
       description="Altere apenas os dados registrados neste pedido. O cadastro original do cliente não será modificado."
       size="lg"
     >

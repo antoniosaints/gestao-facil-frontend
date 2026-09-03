@@ -542,6 +542,51 @@ export interface RestauranteCatalogoPayload {
   version?: number
 }
 
+export interface RestauranteCaixaSessao {
+  id: number
+  codigo: string
+  status: 'ABERTO' | 'FECHADO' | 'CANCELADO'
+  abertoEm: string
+  fechadoEm?: string | null
+  saldoInicial: number
+  saldoEsperado: number
+  saldoContado?: number | null
+  diferenca?: number | null
+  observacaoAbertura?: string | null
+  observacaoFechamento?: string | null
+  abertoPor?: { id: number; nome: string }
+  fechadoPor?: { id: number; nome: string } | null
+  movimentos: Array<{
+    id: number
+    tipo: 'ABERTURA' | 'SANGRIA' | 'REFORCO' | 'FECHAMENTO'
+    valor: number
+    descricao?: string | null
+    createdAt: string
+    Usuario?: { id: number; nome: string }
+  }>
+  pedidos: Array<{
+    id: number
+    codigo: string
+    origem: string
+    status: string
+    pagamentoStatus: string
+    pagamentoMetodoSnapshot?: string | null
+    total: number
+    createdAt: string
+  }>
+}
+
+export interface RestauranteCaixaContexto {
+  caixa: RestauranteCaixaSessao
+  resumo: {
+    pedidos: number
+    totalPedidos: number
+    porMetodo: Record<string, number>
+    totalReforcos: number
+    totalSangrias: number
+  }
+}
+
 export type RestauranteCatalogoBulkAction =
   | 'EXIBIR'
   | 'OCULTAR'
@@ -567,6 +612,34 @@ export interface RestauranteGrupoPayload {
 }
 
 export class RestauranteRepository {
+  static async contextoCaixa() {
+    const { data } = await http.get('/v1/restaurante/caixa/contexto')
+    return data.data as RestauranteCaixaContexto | null
+  }
+
+  static async abrirCaixa(payload: { valorInicial: number; observacao?: string }) {
+    const { data } = await http.post('/v1/restaurante/caixa/abrir', payload)
+    return data.data as RestauranteCaixaContexto
+  }
+
+  static async movimentarCaixa(payload: {
+    tipo: 'SANGRIA' | 'REFORCO'
+    valor: number
+    descricao?: string
+  }) {
+    const { data } = await http.post('/v1/restaurante/caixa/movimentos', payload)
+    return data.data as RestauranteCaixaContexto
+  }
+
+  static async fecharCaixa(payload: {
+    valorFechamento: number
+    descricao?: string
+    metodosContados?: Array<{ metodo: string; esperado: number; contado: number; diferenca: number }>
+  }) {
+    const { data } = await http.put('/v1/restaurante/caixa/fechar', payload)
+    return data.data as RestauranteCaixaContexto
+  }
+
   static async acesso() {
     const { data } = await http.get('/v1/restaurante/acesso')
     return data.data as RestauranteAccess

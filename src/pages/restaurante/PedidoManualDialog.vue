@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 import { vMaska } from 'maska/vue'
 import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
@@ -7,11 +8,26 @@ import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   RestauranteRepository,
   type RestauranteCatalogoItem,
+  type RestauranteMesa,
   type RestaurantePedido,
 } from '@/repositories/restaurante-repository'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -19,6 +35,9 @@ import { phoneMaskOptions } from '@/lib/imaska'
 import { selectedMenuItemSummary } from './manualOrderSummary'
 import {
   ClipboardList,
+  CircleCheck,
+  DoorOpen,
+  LoaderCircle,
   MessageSquare,
   Minus,
   Phone,
@@ -28,10 +47,27 @@ import {
   Trash2,
   UtensilsCrossed,
   UserRound,
+  Users,
   X,
 } from 'lucide-vue-next'
 
-const props = defineProps<{ open: boolean; pedidoParaEditar?: RestaurantePedido | null }>()
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    pedidoParaEditar?: RestaurantePedido | null
+    /** Sessão recebida pelo Salão: o pedido sempre será vinculado a esta mesa. */
+    sessaoMesaId?: number | null
+    mesaNome?: string | null
+    /** Permite que a tela de Pedidos ofereça o vínculo opcional com uma mesa ocupada. */
+    permitirVinculoMesa?: boolean
+  }>(),
+  {
+    pedidoParaEditar: null,
+    sessaoMesaId: null,
+    mesaNome: null,
+    permitirVinculoMesa: false,
+  },
+)
 const emit = defineEmits<{
   'update:open': [open: boolean]
   created: []
@@ -46,6 +82,17 @@ type CartItem = {
 }
 
 const toast = useToast()
+const seletorMesaDesktop = useMediaQuery('(min-width: 768px)')
+const seletorMesaRoot = computed(() => (seletorMesaDesktop.value ? Dialog : Drawer))
+const seletorMesaRootProps = computed(() => (seletorMesaDesktop.value ? {} : { handleOnly: true }))
+const seletorMesaContent = computed(() =>
+  seletorMesaDesktop.value ? DialogContent : DrawerContent,
+)
+const seletorMesaHeader = computed(() => (seletorMesaDesktop.value ? DialogHeader : DrawerHeader))
+const seletorMesaTitle = computed(() => (seletorMesaDesktop.value ? DialogTitle : DrawerTitle))
+const seletorMesaDescription = computed(() =>
+  seletorMesaDesktop.value ? DialogDescription : DrawerDescription,
+)
 const loadingCatalog = ref(false)
 const saving = ref(false)
 const catalogo = ref<RestauranteCatalogoItem[]>([])
@@ -62,7 +109,49 @@ const clienteTelefone = ref('')
 const clienteId = ref<number | string | null>(null)
 const carrinho = ref<CartItem[]>([])
 const carrinhoMobileAberto = ref(false)
+const mesas = ref<RestauranteMesa[]>([])
+const loadingMesas = ref(false)
+const abrindoMesaId = ref<number | null>(null)
+const mesasSheetAberto = ref(false)
+const modoPedido = ref<'AVULSO' | 'MESA'>('AVULSO')
+const sessaoMesaSelecionadaId = ref<number | null>(null)
+const mesaSelecionadaNome = ref<string | null>(null)
 const editandoItens = computed(() => Boolean(props.pedidoParaEditar))
+const vinculoMesaFixo = computed(() => Boolean(props.sessaoMesaId))
+const podeVincularMesa = computed(
+  () => !editandoItens.value && !vinculoMesaFixo.value && props.permitirVinculoMesa,
+)
+const pedidoEmMesa = computed(() => vinculoMesaFixo.value || modoPedido.value === 'MESA')
+const sessoesDisponiveis = computed(() =>
+  mesas.value.flatMap((mesa) =>
+    mesa.sessoes
+      .filter((sessao) => sessao.status === 'ABERTA')
+      .map((sessao) => ({ id: sessao.id, mesaNome: mesa.nome, pessoas: sessao.pessoas })),
+  ),
+)
+const sessaoMesaDestinoId = computed(() => props.sessaoMesaId || sessaoMesaSelecionadaId.value)
+const nomeMesaDestino = computed(() => {
+  if (props.mesaNome) return props.mesaNome
+  if (mesaSelecionadaNome.value) return mesaSelecionadaNome.value
+  return (
+    sessoesDisponiveis.value.find((sessao) => sessao.id === sessaoMesaSelecionadaId.value)
+      ?.mesaNome || null
+  )
+})
+const tituloDialog = computed(() => {
+  if (editandoItens.value) return `Editar itens — pedido ${props.pedidoParaEditar?.codigo || ''}`
+  return pedidoEmMesa.value
+    ? `Novo pedido · ${nomeMesaDestino.value || 'mesa'}`
+    : 'Novo pedido manual'
+})
+const descricaoDialog = computed(() => {
+  if (editandoItens.value) {
+    return 'A alteração recalcula valores, estoque e envia os itens atualizados para a produção.'
+  }
+  return pedidoEmMesa.value
+    ? 'Os itens serão lançados na comanda da mesa e enviados aos pontos de produção configurados.'
+    : 'Monte o pedido, informe o cliente se necessário e envie a produção aos pontos configurados.'
+})
 
 const itemSelecionado = computed(
   () => catalogo.value.find((item) => item.id === itemSelecionadoId.value) || null,
@@ -70,8 +159,10 @@ const itemSelecionado = computed(
 const catalogoFiltrado = computed(() => {
   const term = busca.value.trim().toLocaleLowerCase('pt-BR')
   return catalogo.value.filter((item) => {
-    const categoryMatches = categoriaAtiva.value === 'TODAS' || itemCategoria(item) === categoriaAtiva.value
-    const searchMatches = !term ||
+    const categoryMatches =
+      categoriaAtiva.value === 'TODAS' || itemCategoria(item) === categoriaAtiva.value
+    const searchMatches =
+      !term ||
       `${item.nomePublico || ''} ${item.Produto?.nome || ''}`
         .toLocaleLowerCase('pt-BR')
         .includes(term)
@@ -122,7 +213,64 @@ function reset() {
   clienteId.value = null
   carrinho.value = []
   carrinhoMobileAberto.value = false
+  modoPedido.value = props.sessaoMesaId ? 'MESA' : 'AVULSO'
+  sessaoMesaSelecionadaId.value = null
+  mesaSelecionadaNome.value = null
+  mesasSheetAberto.value = false
   limparItem()
+}
+
+async function carregarMesas(force = false) {
+  if (!podeVincularMesa.value || loadingMesas.value || (!force && mesas.value.length)) return
+  try {
+    loadingMesas.value = true
+    mesas.value = await RestauranteRepository.mesas()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível carregar as mesas.')
+  } finally {
+    loadingMesas.value = false
+  }
+}
+
+function abrirSelecaoMesa() {
+  modoPedido.value = 'MESA'
+  mesasSheetAberto.value = true
+  void carregarMesas(true)
+}
+
+function selecionarPedidoAvulso() {
+  modoPedido.value = 'AVULSO'
+  sessaoMesaSelecionadaId.value = null
+  mesaSelecionadaNome.value = null
+}
+
+function selecionarMesaAberta(sessaoId: number, mesaNome: string) {
+  sessaoMesaSelecionadaId.value = sessaoId
+  mesaSelecionadaNome.value = mesaNome
+  mesasSheetAberto.value = false
+}
+
+async function abrirEVincularMesa(mesa: RestauranteMesa) {
+  try {
+    abrindoMesaId.value = mesa.id
+    const sessao = await RestauranteRepository.abrirMesa(mesa.id, { pessoas: 1 })
+    selecionarMesaAberta(sessao.id, mesa.nome)
+    await carregarMesas(true)
+    toast.success(`${mesa.nome} aberta e vinculada ao pedido`)
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível abrir esta mesa.')
+  } finally {
+    abrindoMesaId.value = null
+  }
+}
+
+function statusMesaLabel(mesa: RestauranteMesa) {
+  return {
+    LIVRE: 'Livre',
+    OCUPADA: 'Ocupada',
+    AGUARDANDO_CONTA: 'Aguardando conta',
+    LIMPEZA: 'Em limpeza',
+  }[mesa.status]
 }
 
 function selecaoIdsDoPedido(item: RestaurantePedido['itens'][number]) {
@@ -144,13 +292,19 @@ function preencherPedidoParaEdicao() {
   if (!pedido) return
   pedidoObservacao.value = pedido.observacao || ''
   carrinho.value = pedido.itens.flatMap((item) => {
-    if (!item.catalogoItemId || !catalogo.value.some((candidate) => candidate.id === item.catalogoItemId)) return []
-    return [{
-      catalogoItemId: item.catalogoItemId,
-      quantidade: Math.max(1, Number(item.quantidade)),
-      selecaoIds: selecaoIdsDoPedido(item),
-      ...(item.observacao ? { observacao: item.observacao } : {}),
-    }]
+    if (
+      !item.catalogoItemId ||
+      !catalogo.value.some((candidate) => candidate.id === item.catalogoItemId)
+    )
+      return []
+    return [
+      {
+        catalogoItemId: item.catalogoItemId,
+        quantidade: Math.max(1, Number(item.quantidade)),
+        selecaoIds: selecaoIdsDoPedido(item),
+        ...(item.observacao ? { observacao: item.observacao } : {}),
+      },
+    ]
   })
 }
 
@@ -252,6 +406,12 @@ async function salvar() {
       })
       toast.success('Itens do pedido atualizados')
       emit('updated', pedido)
+    } else if (pedidoEmMesa.value) {
+      const sessaoMesaId = sessaoMesaDestinoId.value
+      if (!sessaoMesaId) return toast.info('Selecione a mesa que receberá este pedido.')
+      await RestauranteRepository.criarPedidoMesa(sessaoMesaId, payload)
+      toast.success('Pedido vinculado à mesa e enviado para produção')
+      emit('created')
     } else {
       await RestauranteRepository.criarPedidoManual({
         ...payload,
@@ -277,8 +437,7 @@ watch(
       reset()
       await carregarCatalogo()
       if (props.pedidoParaEditar) preencherPedidoParaEdicao()
-    }
-    else reset()
+    } else reset()
   },
 )
 </script>
@@ -286,8 +445,8 @@ watch(
 <template>
   <ModalView
     :open="open"
-    :title="editandoItens ? `Editar itens — pedido ${props.pedidoParaEditar?.codigo || ''}` : 'Novo pedido manual'"
-    :description="editandoItens ? 'A alteração recalcula valores, estoque e envia os itens atualizados para a produção.' : 'Monte o pedido, informe o cliente se necessário e envie a produção aos pontos configurados.'"
+    :title="tituloDialog"
+    :description="descricaoDialog"
     size="5xl"
     @update:open="emit('update:open', $event)"
   >
@@ -310,7 +469,11 @@ watch(
           <Badge
             variant="outline"
             class="border-primary/25 bg-primary/5 text-primary dark:bg-primary/15 dark:text-primary-foreground"
-            >Pedido sem mesa</Badge
+            >{{
+              pedidoEmMesa
+                ? `Mesa${nomeMesaDestino ? ` · ${nomeMesaDestino}` : ''}`
+                : 'Pedido avulso'
+            }}</Badge
           >
         </div>
 
@@ -319,9 +482,32 @@ watch(
           <Input v-model="busca" class="h-10 pl-9" placeholder="Buscar item do cardápio" />
         </div>
 
-        <div v-if="categoriasCatalogo.length" class="flex gap-2 overflow-x-auto pb-1" aria-label="Filtrar itens por categoria">
-          <button type="button" class="shrink-0" @click="categoriaAtiva = 'TODAS'"><Badge :variant="categoriaAtiva === 'TODAS' ? 'default' : 'outline'" class="cursor-pointer">Todos <span class="ml-1 opacity-75">{{ catalogo.length }}</span></Badge></button>
-          <button v-for="categoria in categoriasCatalogo" :key="categoria.nome" type="button" class="shrink-0" @click="categoriaAtiva = categoria.nome"><Badge :variant="categoriaAtiva === categoria.nome ? 'default' : 'outline'" class="cursor-pointer">{{ categoria.nome }} <span class="ml-1 opacity-75">{{ categoria.quantidade }}</span></Badge></button>
+        <div
+          v-if="categoriasCatalogo.length"
+          class="flex gap-2 overflow-x-auto pb-1"
+          aria-label="Filtrar itens por categoria"
+        >
+          <button type="button" class="shrink-0" @click="categoriaAtiva = 'TODAS'">
+            <Badge
+              :variant="categoriaAtiva === 'TODAS' ? 'default' : 'outline'"
+              class="cursor-pointer"
+              >Todos <span class="ml-1 opacity-75">{{ catalogo.length }}</span></Badge
+            >
+          </button>
+          <button
+            v-for="categoria in categoriasCatalogo"
+            :key="categoria.nome"
+            type="button"
+            class="shrink-0"
+            @click="categoriaAtiva = categoria.nome"
+          >
+            <Badge
+              :variant="categoriaAtiva === categoria.nome ? 'default' : 'outline'"
+              class="cursor-pointer"
+              >{{ categoria.nome }}
+              <span class="ml-1 opacity-75">{{ categoria.quantidade }}</span></Badge
+            >
+          </button>
         </div>
 
         <div v-if="loadingCatalog" class="grid gap-2 sm:grid-cols-2">
@@ -331,7 +517,10 @@ watch(
             class="h-20 animate-pulse rounded-xl border bg-muted/50"
           />
         </div>
-        <div v-else class="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+        <div
+          v-else
+          class="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto pr-1 sm:grid-cols-2"
+        >
           <button
             v-for="item in catalogoFiltrado"
             :key="item.id"
@@ -351,13 +540,21 @@ watch(
               :alt="itemNome(item)"
               class="h-14 w-14 shrink-0 rounded-lg object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
             />
-            <span v-else class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"><UtensilsCrossed class="h-5 w-5" /></span>
+            <span
+              v-else
+              class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
+              ><UtensilsCrossed class="h-5 w-5"
+            /></span>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-semibold">{{ itemNome(item) }}</p>
               <p class="mt-0.5 truncate text-xs text-muted-foreground">{{ itemCategoria(item) }}</p>
-              <p class="mt-1 text-xs font-semibold text-primary dark:text-primary-foreground">{{ formatCurrencyBR(Number(item.preco)) }}</p>
+              <p class="mt-1 text-xs font-semibold text-primary dark:text-primary-foreground">
+                {{ formatCurrencyBR(Number(item.preco)) }}
+              </p>
             </div>
-            <Plus class="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary dark:group-hover:text-primary-foreground" />
+            <Plus
+              class="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary dark:group-hover:text-primary-foreground"
+            />
           </button>
           <p
             v-if="!catalogoFiltrado.length"
@@ -366,7 +563,6 @@ watch(
             Nenhum item disponível.
           </p>
         </div>
-
       </section>
 
       <Button
@@ -428,7 +624,10 @@ watch(
           >
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium">{{ nomeCarrinho(item) }}</p>
-              <p v-if="selecoesCarrinho(item)" class="mt-1 line-clamp-2 text-xs text-muted-foreground">
+              <p
+                v-if="selecoesCarrinho(item)"
+                class="mt-1 line-clamp-2 text-xs text-muted-foreground"
+              >
                 {{ selecoesCarrinho(item) }}
               </p>
               <p v-if="item.observacao" class="mt-1 truncate text-xs text-muted-foreground">
@@ -478,11 +677,53 @@ watch(
           </div>
         </div>
         <div class="space-y-3 border-t bg-muted/[0.16] p-4">
-          <div v-if="!editandoItens" class="flex items-center justify-between">
+          <div v-if="podeVincularMesa" class="space-y-2 rounded-xl border bg-background/70 p-3">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-sm font-semibold">Destino do pedido</p>
+              <span class="text-xs text-muted-foreground">Escolha como lançar</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                size="sm"
+                :variant="modoPedido === 'AVULSO' ? 'default' : 'outline'"
+                @click="selecionarPedidoAvulso"
+                >Avulso</Button
+              >
+              <Button
+                type="button"
+                size="sm"
+                :variant="modoPedido === 'MESA' ? 'default' : 'outline'"
+                @click="abrirSelecaoMesa"
+                >Vincular à mesa</Button
+              >
+            </div>
+            <button
+              v-if="modoPedido === 'MESA'"
+              type="button"
+              class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition hover:border-primary/50 hover:bg-muted/40"
+              @click="abrirSelecaoMesa"
+            >
+              <span class="min-w-0">
+                <span class="block text-xs text-muted-foreground">Mesa selecionada</span>
+                <span class="block truncate font-medium">{{
+                  nomeMesaDestino || 'Escolha uma mesa'
+                }}</span>
+              </span>
+              <span class="text-xs font-medium text-primary">Alterar</span>
+            </button>
+          </div>
+          <div
+            v-else-if="vinculoMesaFixo"
+            class="rounded-xl border bg-primary/[0.06] px-3 py-2 text-xs text-primary dark:bg-primary/15 dark:text-primary-foreground"
+          >
+            Este pedido será lançado em {{ nomeMesaDestino || 'uma mesa ocupada' }}.
+          </div>
+          <div v-if="!editandoItens && !pedidoEmMesa" class="flex items-center justify-between">
             <p class="text-sm font-semibold">Dados do pedido</p>
             <span class="text-xs text-muted-foreground">Opcional</span>
           </div>
-          <div v-if="!editandoItens" class="space-y-2">
+          <div v-if="!editandoItens && !pedidoEmMesa" class="space-y-2">
             <label class="space-y-1.5 text-xs font-medium text-muted-foreground">
               <span>Cliente cadastrado</span>
               <Select2Ajax
@@ -509,15 +750,15 @@ watch(
                 placeholder="(00) 00000-0000"
               />
             </div>
-            <div class="relative">
-              <MessageSquare
-                class="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground"
-              /><Textarea
-                v-model="pedidoObservacao"
-                class="min-h-20 pl-9"
-                placeholder="Observação geral do pedido"
-              />
-            </div>
+          </div>
+          <div v-if="!editandoItens" class="relative">
+            <MessageSquare
+              class="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground"
+            /><Textarea
+              v-model="pedidoObservacao"
+              class="min-h-20 pl-9"
+              placeholder="Observação geral do pedido"
+            />
           </div>
           <p
             v-if="!editandoItens"
@@ -534,13 +775,105 @@ watch(
               >Cancelar</Button
             ><Button class="flex-1" :disabled="saving || !carrinho.length" @click="salvar"
               ><ShoppingCart class="mr-2 h-4 w-4" />{{
-                saving ? (editandoItens ? 'Salvando...' : 'Criando...') : (editandoItens ? 'Salvar itens' : 'Criar pedido')
+                saving
+                  ? editandoItens
+                    ? 'Salvando...'
+                    : 'Criando...'
+                  : editandoItens
+                    ? 'Salvar itens'
+                    : 'Criar pedido'
               }}</Button
             >
           </div>
         </div>
       </aside>
     </div>
+
+    <component :is="seletorMesaRoot" v-bind="seletorMesaRootProps" v-model:open="mesasSheetAberto">
+      <component
+        :is="seletorMesaContent"
+        class="flex !w-full flex-col gap-0 p-0"
+        :class="
+          seletorMesaDesktop
+            ? '!right-0 !top-0 !left-auto !h-dvh !max-w-md !translate-x-0 !translate-y-0 rounded-none border-y-0 border-r-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:rounded-none'
+            : 'h-[82dvh] max-h-[82dvh] rounded-t-[24px] border-x-0 border-b-0'
+        "
+        :overlay-style="{ zIndex: 80 }"
+        :content-style="{ zIndex: 81 }"
+      >
+        <component :is="seletorMesaHeader" class="border-b px-5 py-4 text-left">
+          <component :is="seletorMesaTitle" class="flex items-center gap-2 text-lg">
+            <UtensilsCrossed class="h-5 w-5 text-primary" />Vincular à mesa
+          </component>
+          <component :is="seletorMesaDescription">
+            Escolha uma mesa ocupada ou abra uma mesa livre para lançar este pedido.
+          </component>
+        </component>
+
+        <div class="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+          <div v-if="loadingMesas" class="space-y-2">
+            <div
+              v-for="item in 4"
+              :key="item"
+              class="h-20 animate-pulse rounded-xl border bg-muted/50"
+            />
+          </div>
+          <p
+            v-else-if="!mesas.filter((mesa) => mesa.ativa).length"
+            class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground"
+          >
+            Nenhuma mesa cadastrada.
+          </p>
+          <article
+            v-for="mesa in mesas.filter((mesa) => mesa.ativa)"
+            :key="mesa.id"
+            class="rounded-xl border p-3"
+            :class="mesa.status === 'OCUPADA' ? 'border-primary/35 bg-primary/[0.04]' : 'bg-card'"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-semibold">{{ mesa.nome }}</p>
+                <p class="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Users class="h-3.5 w-3.5" />
+                  {{ mesa.sessoes[0]?.pessoas || 0 }} pessoa(s) · {{ statusMesaLabel(mesa) }}
+                </p>
+              </div>
+              <CircleCheck
+                v-if="sessaoMesaSelecionadaId === mesa.sessoes[0]?.id"
+                class="h-5 w-5 shrink-0 text-primary"
+              />
+            </div>
+            <Button
+              v-if="mesa.sessoes[0]?.status === 'ABERTA'"
+              type="button"
+              variant="outline"
+              size="sm"
+              class="mt-3 w-full"
+              @click="selecionarMesaAberta(mesa.sessoes[0].id, mesa.nome)"
+              >Selecionar mesa</Button
+            >
+            <Button
+              v-else-if="mesa.status === 'LIVRE'"
+              type="button"
+              size="sm"
+              class="mt-3 w-full"
+              :disabled="abrindoMesaId === mesa.id"
+              @click="abrirEVincularMesa(mesa)"
+            >
+              <LoaderCircle v-if="abrindoMesaId === mesa.id" class="mr-2 h-4 w-4 animate-spin" />
+              <DoorOpen v-else class="mr-2 h-4 w-4" />Abrir e vincular
+            </Button>
+            <p v-else class="mt-3 text-xs text-muted-foreground">
+              {{
+                mesa.status === 'LIMPEZA'
+                  ? 'Finalize a limpeza antes de abrir esta mesa.'
+                  : 'A conta desta mesa já foi solicitada.'
+              }}
+            </p>
+          </article>
+        </div>
+      </component>
+    </component>
 
     <ModalView
       :open="openItemConfig"
@@ -553,7 +886,9 @@ watch(
         <div class="flex items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3">
           <div class="min-w-0">
             <p class="truncate text-sm font-semibold">{{ itemNome(itemSelecionado) }}</p>
-            <p class="mt-0.5 text-xs text-muted-foreground">Configure antes de adicionar ao carrinho.</p>
+            <p class="mt-0.5 text-xs text-muted-foreground">
+              Configure antes de adicionar ao carrinho.
+            </p>
           </div>
           <Badge class="shrink-0 bg-primary text-primary-foreground">
             {{ formatCurrencyBR(Number(itemSelecionado.preco)) }}
@@ -591,7 +926,10 @@ watch(
                 />
                 <span class="truncate">{{ option.nome }}</span>
               </span>
-              <span v-if="Number(option.precoAdicional)" class="shrink-0 text-xs text-muted-foreground">
+              <span
+                v-if="Number(option.precoAdicional)"
+                class="shrink-0 text-xs text-muted-foreground"
+              >
                 + {{ formatCurrencyBR(Number(option.precoAdicional)) }}
               </span>
             </label>
@@ -603,7 +941,8 @@ watch(
             <span>Quantidade</span><Input v-model.number="quantidade" type="number" min="1" />
           </label>
           <label class="space-y-1.5 text-xs font-medium text-muted-foreground">
-            <span>Observação do item</span><Input v-model="itemObservacao" placeholder="Ex.: sem cebola" />
+            <span>Observação do item</span
+            ><Input v-model="itemObservacao" placeholder="Ex.: sem cebola" />
           </label>
         </div>
         <div class="flex justify-end gap-2 border-t pt-4">
@@ -663,7 +1002,9 @@ watch(
     border-bottom-left-radius: 0;
     transform: translateY(105%);
     visibility: hidden;
-    transition: transform 180ms ease, visibility 180ms step-end;
+    transition:
+      transform 180ms ease,
+      visibility 180ms step-end;
   }
 
   .manual-order-cart--mobile-open {
