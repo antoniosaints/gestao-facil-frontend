@@ -184,7 +184,7 @@ export const columnsLancamentos: ColumnDef<
               render('i', { class: 'fa-solid fa-bell text-yellow-600' }),
             ])
           : null,
-        row.original.ignorado
+        row.original.ignorado || row.original.parcelas.some((parcela) => parcela.ignorado)
           ? render(BadgeCell, {
               label: 'Ignorado',
               color: 'gray',

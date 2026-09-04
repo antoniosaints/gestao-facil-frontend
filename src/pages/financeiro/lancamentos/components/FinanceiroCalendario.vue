@@ -34,6 +34,7 @@ type CalendarEvent = {
   valor: number
   tipo: 'RECEITA' | 'DESPESA'
   status: 'PAGO' | 'PENDENTE' | 'ATRASADO'
+  ignorado?: boolean
   subtitulo?: string
   payload?: unknown
 }
@@ -178,7 +179,7 @@ function getStatusTone(evento: CalendarEvent) {
               >
                 <div class="truncate font-medium">{{ evento.descricao }}</div>
                 <div class="flex items-center justify-between gap-2">
-                  <span class="truncate">{{ formatCurrencyBR(evento.valor) }}</span>
+                  <span class="truncate" :class="evento.ignorado ? 'line-through opacity-70' : ''">{{ formatCurrencyBR(evento.valor) }}</span>
                   <span :class="getStatusTone(evento)">{{ evento.status }}</span>
                 </div>
               </button>
@@ -229,7 +230,7 @@ function getStatusTone(evento: CalendarEvent) {
               >
                 <div class="font-medium">{{ evento.descricao }}</div>
                 <div class="mt-1 flex items-center justify-between gap-2">
-                  <span class="truncate">{{ formatCurrencyBR(evento.valor) }}</span>
+                  <span class="truncate" :class="evento.ignorado ? 'line-through opacity-70' : ''">{{ formatCurrencyBR(evento.valor) }}</span>
                   <span :class="getStatusTone(evento)">{{ evento.status }}</span>
                 </div>
               </button>
@@ -272,7 +273,13 @@ function getStatusTone(evento: CalendarEvent) {
                 <p class="truncate text-xs text-muted-foreground">{{ evento.subtitulo || 'Sem observações adicionais' }}</p>
               </div>
               <div class="text-left md:text-right">
-                <p class="text-sm font-semibold" :class="evento.tipo === 'RECEITA' ? 'text-emerald-600' : 'text-rose-600'">
+                <p
+                  class="text-sm font-semibold"
+                  :class="[
+                    evento.tipo === 'RECEITA' ? 'text-emerald-600' : 'text-rose-600',
+                    evento.ignorado && 'line-through opacity-70',
+                  ]"
+                >
                   {{ evento.tipo === 'RECEITA' ? '+' : '-' }}{{ formatCurrencyBR(evento.valor) }}
                 </p>
                 <p class="text-xs" :class="getStatusTone(evento)">{{ evento.status }}</p>

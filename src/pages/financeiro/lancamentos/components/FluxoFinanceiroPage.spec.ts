@@ -21,6 +21,7 @@ const lancamentoDia = {
   dataPagamento: null,
   formaPagamento: 'PIX',
   cobrancaLink: null,
+  ignorado: false,
 }
 
 const resumo = {
@@ -43,8 +44,16 @@ const repositoryMock = vi.hoisted(() => ({
   estornarParcela: vi.fn(),
 }))
 
+const inadimplenciaMock = vi.hoisted(() => ({
+  getConfig: vi.fn(),
+}))
+
 vi.mock('@/repositories/lancamento-repository', () => ({
   LancamentosRepository: repositoryMock,
+}))
+
+vi.mock('@/repositories/inadimplencia-repository', () => ({
+  InadimplenciaRepository: inadimplenciaMock,
 }))
 
 vi.mock('vue-toastification', () => ({
@@ -81,6 +90,7 @@ async function mountPage() {
     },
     global: {
       plugins: [createPinia()],
+      directives: { tooltip: {} },
       stubs: {
         Badge: passthrough,
         Button: buttonStub,
@@ -127,6 +137,7 @@ describe('FluxoFinanceiroPage', () => {
     setActivePinia(createPinia())
     repositoryMock.listarContas.mockResolvedValue({ data: [] })
     repositoryMock.listarCategorias.mockResolvedValue({ data: [] })
+    inadimplenciaMock.getConfig.mockResolvedValue({ mensagemModelo: '' })
     repositoryMock.getLancamentosMensais.mockResolvedValue({
       data: {
         dias: [
@@ -162,5 +173,27 @@ describe('FluxoFinanceiroPage', () => {
     await wrapper.get('[data-testid="editar-parcela-501"]').trigger('click')
 
     expect(wrapper.find('[data-testid="quick-summary"]').exists()).toBe(false)
+  })
+
+  it('mantém parcelas ignoradas visíveis e identificadas', async () => {
+    repositoryMock.getLancamentosMensais.mockResolvedValueOnce({
+      data: {
+        dias: [{
+          dia: '2026-06-18T03:00:00.000Z',
+          entradasPrevistas: 0,
+          saidasPrevistas: 0,
+          entradasRealizadas: 0,
+          saidasRealizadas: 0,
+          saldoRealizado: 0,
+          saldoPrevisto: 0,
+          lancamentos: [{ ...lancamentoDia, ignorado: true }],
+        }],
+        resumo: { ...resumo, receitasPrevistas: 0, pendenteReceber: 0 },
+      },
+    })
+
+    const wrapper = await mountPage()
+    expect(wrapper.get('[data-testid="lancamento-row-501"]').text()).toContain('Ignorado')
+    expect(wrapper.get('[data-testid="lancamento-row-501"]').find('.line-through').exists()).toBe(true)
   })
 })

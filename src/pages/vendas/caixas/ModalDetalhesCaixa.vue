@@ -371,6 +371,78 @@ const maiorQuantidadeProduto = computed(() =>
         </div>
       </header>
 
+      <!-- Visão gerencial do turno. É deliberadamente separada da gaveta: aqui
+        entram todos os recebimentos, enquanto a conferência abaixo segue sendo
+        exclusivamente do dinheiro físico. -->
+      <section class="rounded-xl border bg-card p-4" data-testid="resumo-caixa">
+        <div class="mb-3 flex items-center gap-2">
+          <Wallet class="h-4 w-4 text-primary" />
+          <h3 class="text-sm font-semibold">Resumo do caixa</h3>
+          <span class="ml-auto text-[11px] text-muted-foreground">Balanço do turno</span>
+        </div>
+
+        <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <div class="rounded-lg border bg-background p-3">
+            <p class="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Vendas brutas</p>
+            <p class="mt-1 text-lg font-bold tabular-nums">{{ formatCurrencyBR(resumo.totalBruto || 0) }}</p>
+            <p class="text-[11px] text-muted-foreground">Antes dos descontos</p>
+          </div>
+          <div class="rounded-lg border bg-background p-3">
+            <p class="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Descontos aplicados</p>
+            <p class="mt-1 text-lg font-bold tabular-nums text-rose-600">- {{ formatCurrencyBR(resumo.totalDescontos || 0) }}</p>
+            <p class="text-[11px] text-muted-foreground">Concedidos nas vendas</p>
+          </div>
+          <div class="rounded-lg border bg-background p-3">
+            <p class="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Vendas líquidas</p>
+            <p class="mt-1 text-lg font-bold tabular-nums text-emerald-600">{{ formatCurrencyBR(resumo.totalVendido || 0) }}</p>
+            <p class="text-[11px] text-muted-foreground">{{ resumo.totalVendas || 0 }} venda(s) recebida(s)</p>
+          </div>
+          <div class="rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <p class="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Resultado geral</p>
+            <p class="mt-1 text-lg font-bold tabular-nums text-primary">{{ formatCurrencyBR(resumo.resultadoGeral || 0) }}</p>
+            <p class="text-[11px] text-muted-foreground">Vendas + reforços − sangrias</p>
+          </div>
+        </div>
+
+        <div class="mt-3 grid gap-2 border-t pt-3 sm:grid-cols-2">
+          <div class="flex items-center justify-between gap-3 rounded-lg bg-blue-500/5 px-3 py-2 text-sm">
+            <span class="flex items-center gap-2 text-muted-foreground"><BanknoteArrowUp class="h-4 w-4 text-blue-600" /> Reforços</span>
+            <strong class="tabular-nums text-blue-600">+ {{ formatCurrencyBR(resumo.totalReforcos || 0) }}</strong>
+          </div>
+          <div class="flex items-center justify-between gap-3 rounded-lg bg-amber-500/5 px-3 py-2 text-sm">
+            <span class="flex items-center gap-2 text-muted-foreground"><BanknoteArrowDown class="h-4 w-4 text-amber-600" /> Sangrias</span>
+            <strong class="tabular-nums text-amber-600">- {{ formatCurrencyBR(resumo.totalSangrias || 0) }}</strong>
+          </div>
+        </div>
+
+        <div class="mt-4 border-t pt-3">
+          <div class="mb-2 flex items-center gap-2">
+            <CreditCard class="h-4 w-4 text-primary" />
+            <h4 class="text-xs font-semibold">Recebimentos por método</h4>
+          </div>
+          <div v-if="!metodos.length" class="py-2 text-center text-sm text-muted-foreground">
+            Nenhum recebimento registrado neste caixa.
+          </div>
+          <div v-else class="grid gap-2 sm:grid-cols-2">
+            <div v-for="metodo in metodos" :key="metodo.metodo" class="rounded-lg border bg-background px-3 py-2.5">
+              <div class="flex items-center justify-between gap-2 text-sm">
+                <span class="flex min-w-0 items-center gap-2">
+                  <component :is="metodo.icon" class="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span class="truncate font-medium">{{ metodo.label }}</span>
+                </span>
+                <strong class="shrink-0 tabular-nums">{{ formatCurrencyBR(metodo.valor) }}</strong>
+              </div>
+              <div class="mt-2 flex items-center gap-2">
+                <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div class="h-full rounded-full bg-primary" :style="{ width: `${metodo.percentual}%` }" />
+                </div>
+                <span class="w-10 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">{{ metodo.percentual.toFixed(0) }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Conferência da gaveta: o bloco mais importante da tela -->
       <section v-if="conferencia" class="rounded-xl border bg-card p-4">
         <div class="mb-3 flex items-center gap-2">
@@ -459,37 +531,6 @@ const maiorQuantidadeProduto = computed(() =>
           </div>
           <p class="mt-2 truncate text-lg font-bold tabular-nums">{{ indicador.valor }}</p>
           <p class="truncate text-[11px] text-muted-foreground">{{ indicador.detalhe }}</p>
-        </div>
-      </section>
-
-      <!-- Recebimentos por método -->
-      <section class="rounded-xl border bg-card p-4">
-        <div class="mb-3 flex items-center gap-2">
-          <CreditCard class="h-4 w-4 text-primary" />
-          <h3 class="text-sm font-semibold">Recebimentos por método</h3>
-        </div>
-        <div v-if="!metodos.length" class="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground">
-          <Inbox class="h-8 w-8 opacity-50" />
-          Nenhum recebimento registrado neste caixa.
-        </div>
-        <div v-else class="grid gap-2 sm:grid-cols-2">
-          <div v-for="metodo in metodos" :key="metodo.metodo" class="rounded-lg border bg-background px-3 py-2.5">
-            <div class="flex items-center justify-between gap-2 text-sm">
-              <span class="flex min-w-0 items-center gap-2">
-                <component :is="metodo.icon" class="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span class="truncate font-medium">{{ metodo.label }}</span>
-              </span>
-              <strong class="shrink-0 tabular-nums">{{ formatCurrencyBR(metodo.valor) }}</strong>
-            </div>
-            <div class="mt-2 flex items-center gap-2">
-              <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                <div class="h-full rounded-full bg-primary" :style="{ width: `${metodo.percentual}%` }" />
-              </div>
-              <span class="w-10 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
-                {{ metodo.percentual.toFixed(0) }}%
-              </span>
-            </div>
-          </div>
         </div>
       </section>
 

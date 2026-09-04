@@ -12,6 +12,7 @@ interface filtro {
   tipo?: 'TODOS' | 'RECEITA' | 'DESPESA'
   status?: 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
   origem?: 'TODOS' | 'ASSINATURA_PAGAR'
+  ignorado?: 'TODOS' | 'COM_PARCELA_IGNORADA' | 'SEM_PARCELA_IGNORADA'
   contaFinanceiraId?: number | null
   categoriaId?: number | null
   clienteId?: number | null

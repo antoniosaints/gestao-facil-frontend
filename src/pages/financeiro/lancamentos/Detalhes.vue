@@ -1275,7 +1275,10 @@ watch(() => store.filters.update, loadLancamento)
             <div class="min-w-0 flex-1 space-y-1.5 pl-1">
               <div class="flex items-start justify-between gap-3 cursor-pointer" @click="selecao.toggle(parcela.id!)">
                 <div class="min-w-0">
-                  <p class="text-sm font-semibold text-foreground flex items-center gap-1">
+                  <p
+                    class="text-sm font-semibold text-foreground flex items-center gap-1"
+                    :class="parcela.ignorado ? 'line-through opacity-70' : ''"
+                  >
                     {{ formatCurrencyBR(parcela.valor || 0) }}
                     <span class="flex flex-wrap items-center gap-1.5">
                       <span class="px-2 py-0 text-[10px] border border-border rounded-md">{{

@@ -56,6 +56,7 @@ const filtros = reactive({
   tipo: (store.filters.tipo as 'TODOS' | 'RECEITA' | 'DESPESA') || 'TODOS',
   status: (store.filters.status as 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO') || 'TODOS',
   origem: (store.filters.origem as 'TODOS' | 'ASSINATURA_PAGAR') || 'TODOS',
+  ignorado: (store.filters.ignorado as 'TODOS' | 'COM_PARCELA_IGNORADA' | 'SEM_PARCELA_IGNORADA') || 'TODOS',
   contaFinanceiraId: store.filters.contaFinanceiraId ? String(store.filters.contaFinanceiraId) : 'all',
   categoriaId: store.filters.categoriaId ? String(store.filters.categoriaId) : 'all',
   clienteId: store.filters.clienteId || null,
@@ -88,6 +89,7 @@ function applyFilters() {
   store.filters.tipo = filtros.tipo
   store.filters.status = filtros.status
   store.filters.origem = filtros.origem
+  store.filters.ignorado = filtros.ignorado
   store.filters.contaFinanceiraId = filtros.contaFinanceiraId !== 'all' ? Number(filtros.contaFinanceiraId) : null
   store.filters.categoriaId = filtros.categoriaId !== 'all' ? Number(filtros.categoriaId) : null
   store.filters.clienteId = filtros.clienteId || null
@@ -101,6 +103,7 @@ function clearFilters() {
   filtros.tipo = 'TODOS'
   filtros.status = 'TODOS'
   filtros.origem = 'TODOS'
+  filtros.ignorado = 'TODOS'
   filtros.contaFinanceiraId = 'all'
   filtros.categoriaId = 'all'
   filtros.clienteId = null
@@ -257,6 +260,20 @@ useSocketEvent('financeiro:updated', () => {
             <SelectContent>
               <SelectItem value="TODOS">Todas</SelectItem>
               <SelectItem value="ASSINATURA_PAGAR">Assinatura</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Parcelas ignoradas</label>
+          <Select v-model="filtros.ignorado">
+            <SelectTrigger>
+              <SelectValue placeholder="Parcelas ignoradas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TODOS">Todos</SelectItem>
+              <SelectItem value="COM_PARCELA_IGNORADA">Com parcela ignorada</SelectItem>
+              <SelectItem value="SEM_PARCELA_IGNORADA">Sem parcelas ignoradas</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -27,6 +27,7 @@ function construirCaixa(
     porMetodo?: Record<string, number>
     totalSangrias?: number
     totalReforcos?: number
+    totalDescontos?: number
     status?: 'ABERTO' | 'FECHADO'
     fechadoEm?: string | null
   } = {},
@@ -37,6 +38,7 @@ function construirCaixa(
     porMetodo = { DINHEIRO: 500, PIX: 300 },
     totalSangrias = 200,
     totalReforcos = 50,
+    totalDescontos = 80,
     status = 'FECHADO',
     fechadoEm = '2026-07-21T18:00:00.000Z',
   } = overrides
@@ -61,6 +63,9 @@ function construirCaixa(
     },
     resumo: {
       totalVendido: Object.values(porMetodo).reduce((acc, v) => acc + v, 0),
+      totalDescontos,
+      totalBruto: Object.values(porMetodo).reduce((acc, v) => acc + v, 0) + totalDescontos,
+      resultadoGeral: Object.values(porMetodo).reduce((acc, v) => acc + v, 0) + totalReforcos - totalSangrias,
       totalVendas: 2,
       totalSangrias,
       totalReforcos,
@@ -79,6 +84,20 @@ function construirCaixa(
 }
 
 describe('ModalDetalhesCaixa', () => {
+  it('exibe o balanço completo antes da conferência da gaveta', () => {
+    const wrapper = montar(construirCaixa())
+    const resumo = semNbsp(wrapper.get('[data-testid="resumo-caixa"]').text())
+
+    expect(resumo).toContain('Vendas brutas')
+    expect(resumo).toContain('R$ 880,00')
+    expect(resumo).toContain('Descontos aplicados')
+    expect(resumo).toContain('- R$ 80,00')
+    expect(resumo).toContain('Resultado geral')
+    expect(resumo).toContain('R$ 650,00')
+    expect(resumo).toContain('PIX')
+    expect(wrapper.html().indexOf('Resumo do caixa')).toBeLessThan(wrapper.html().indexOf('Conferência da gaveta'))
+  })
+
   it('monta o extrato da gaveta usando só as vendas em dinheiro', () => {
     // Esperado = 100 inicial + 500 dinheiro + 50 reforços - 200 sangrias = 450.
     const wrapper = montar(construirCaixa())

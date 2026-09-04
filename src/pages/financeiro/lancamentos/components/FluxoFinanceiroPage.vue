@@ -105,6 +105,7 @@ type LancamentoDia = {
   dataPagamento: string | Date | null
   formaPagamento: string | null
   cobrancaLink: string | null
+  ignorado: boolean
 }
 
 type DiaLancamento = {
@@ -414,7 +415,7 @@ function editarParcela(item: LancamentoDia) {
     vencimentoOriginal: new Date(item.vencimento),
     numero: item.numero,
     pago: item.pago,
-    ignorado: false,
+    ignorado: item.ignorado,
     escopo: 'ATUAL',
   }
   store.openModalParcela = true
@@ -447,10 +448,10 @@ async function estornarParcela(id: number) {
   }
 }
 
-async function ignorarParcelaDoAcompanhamento(item: LancamentoDia) {
+async function atualizarIgnoradoParcelaDoAcompanhamento(item: LancamentoDia, ignorado: boolean) {
   try {
-    await LancamentosRepository.atualizarIgnoradoParcela(item.parcelaId, true)
-    toast.success('Parcela ignorada nos cálculos.')
+    await LancamentosRepository.atualizarIgnoradoParcela(item.parcelaId, ignorado)
+    toast.success(ignorado ? 'Parcela ignorada nos cálculos.' : 'Parcela reativada nos cálculos.')
     openModalEvento.value = false
     await recarregarMantendoPosicao()
   } catch (error: any) {
@@ -532,16 +533,16 @@ function getCategoriaNomeById(id: string) {
 
 function buildDiaWithFilteredLancamentos(dia: DiaLancamento, lancamentos: LancamentoDia[]) {
   const entradasPrevistas = lancamentos
-    .filter((item) => item.tipo === 'RECEITA')
+    .filter((item) => item.tipo === 'RECEITA' && !item.ignorado)
     .reduce((acc, item) => acc + Number(item.valor || 0), 0)
   const saidasPrevistas = lancamentos
-    .filter((item) => item.tipo === 'DESPESA')
+    .filter((item) => item.tipo === 'DESPESA' && !item.ignorado)
     .reduce((acc, item) => acc + Number(item.valor || 0), 0)
   const entradasRealizadas = lancamentos
-    .filter((item) => item.tipo === 'RECEITA' && item.pago)
+    .filter((item) => item.tipo === 'RECEITA' && item.pago && !item.ignorado)
     .reduce((acc, item) => acc + Number(item.valor || 0), 0)
   const saidasRealizadas = lancamentos
-    .filter((item) => item.tipo === 'DESPESA' && item.pago)
+    .filter((item) => item.tipo === 'DESPESA' && item.pago && !item.ignorado)
     .reduce((acc, item) => acc + Number(item.valor || 0), 0)
 
   return {
@@ -661,7 +662,10 @@ const eventosCalendario = computed<CalendarEvent[]>(() =>
       valor: Number(item.valor || 0),
       tipo: item.tipo,
       status: item.status,
-      subtitulo: [item.categoria, item.conta, item.cliente].filter(Boolean).join(' • '),
+      ignorado: item.ignorado,
+      subtitulo: [item.categoria, item.conta, item.cliente, item.ignorado ? 'Ignorado nos cálculos' : null]
+        .filter(Boolean)
+        .join(' • '),
       payload: item,
     })),
   ),
@@ -904,9 +908,12 @@ onMounted(async () => {
                         <p class="truncate text-sm font-semibold text-foreground">
                           {{ item.descricao }}
                         </p>
-                        <p class="truncate text-xs text-muted-foreground">
-                          {{ item.categoria }}<span v-if="item.conta"> • {{ item.conta }}</span
+                        <p class="truncate text-xs text-muted-foreground flex gap-1 items-center">
+                          {{ item.categoria }}<span v-if="item.conta"> • {{ item.conta }} </span
                           ><span v-if="item.cliente"> • {{ item.cliente }}</span>
+                          <span v-if="item.ignorado" variant="outline" class="gap-1 flex items-center rounded-sm border w-max border-dashed px-2 py-0 text-[10px] text-muted-foreground">
+                          <EyeOff class="h-3 w-3" /> Ignorado
+                        </span>
                         </p>
                         <p class="truncate text-[11px] text-muted-foreground">
                           Parcela
@@ -929,11 +936,12 @@ onMounted(async () => {
 
                       <div class="flex flex-col gap-1 text-right">
                         <p
-                          :class="
+                          :class="[
                             item.tipo === 'DESPESA'
                               ? 'text-rose-600 dark:text-rose-400'
-                              : 'text-emerald-600 dark:text-emerald-400'
-                          "
+                              : 'text-emerald-600 dark:text-emerald-400',
+                            item.ignorado && 'line-through opacity-70',
+                          ]"
                           class="text-md font-semibold px-2 rounded-md"
                         >
                           {{ formatCurrencyBR(item.valor) }}
@@ -1256,6 +1264,9 @@ onMounted(async () => {
             {{ eventoSelecionado.status }}
           </span>
           <Badge v-if="eventoSelecionado.cobrancaLink" variant="outline">Cobrança disponível</Badge>
+          <Badge v-if="eventoSelecionado.ignorado" variant="outline" class="gap-1 text-muted-foreground">
+            <EyeOff class="h-3 w-3" /> Ignorado nos cálculos
+          </Badge>
         </div>
 
         <!-- Valor em destaque -->
@@ -1266,7 +1277,10 @@ onMounted(async () => {
             <p class="text-xs uppercase tracking-wide text-muted-foreground">Valor da parcela</p>
             <p
               class="text-2xl font-bold"
-              :class="eventoSelecionado.tipo === 'DESPESA' ? 'text-rose-600' : 'text-emerald-600'"
+              :class="[
+                eventoSelecionado.tipo === 'DESPESA' ? 'text-rose-600' : 'text-emerald-600',
+                eventoSelecionado.ignorado && 'line-through opacity-70',
+              ]"
             >
               {{ eventoSelecionado.tipo === 'DESPESA' ? '-' : '+'
               }}{{ formatCurrencyBR(eventoSelecionado.valor) }}
@@ -1387,9 +1401,9 @@ onMounted(async () => {
             <Button
               variant="outline"
               class="min-w-[9rem] flex-1"
-              @click="ignorarParcelaDoAcompanhamento(eventoSelecionado)"
+              @click="atualizarIgnoradoParcelaDoAcompanhamento(eventoSelecionado, !eventoSelecionado.ignorado)"
             >
-              <EyeOff class="h-4 w-4" /> Ignorar nos cálculos
+              <EyeOff class="h-4 w-4" /> {{ eventoSelecionado.ignorado ? 'Reativar nos cálculos' : 'Ignorar nos cálculos' }}
             </Button>
           </div>
           <!-- Ações secundárias -->

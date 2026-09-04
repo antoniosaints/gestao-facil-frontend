@@ -652,6 +652,9 @@ export interface CaixaMovimento {
 
 export interface CaixaRelatorioResumo {
   totalVendido: number
+  totalDescontos: number
+  totalBruto: number
+  resultadoGeral: number
   totalVendas: number
   totalSangrias: number
   totalReforcos: number

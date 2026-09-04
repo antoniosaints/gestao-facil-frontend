@@ -21,7 +21,10 @@
         >
           <div class="flex justify-between gap-3">
             <div class="min-w-0">
-              <div class="truncate text-sm font-semibold dark:text-white">{{ row.descricao }}</div>
+              <div class="flex items-center gap-2">
+                <div class="truncate text-sm font-semibold dark:text-white">{{ row.descricao }}</div>
+                <span v-if="row.ignorado || row.parcelas?.some((parcela) => parcela.ignorado)" class="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Ignorado</span>
+              </div>
               <div v-if="row.origemSistema === 'ASSINATURA_PAGAR' && row.assinaturaPagar" class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <span class="rounded-md border border-violet-300 px-2 py-0.5 text-violet-700 dark:border-violet-800 dark:text-violet-300">Assinatura</span>
                 <span class="truncate text-muted-foreground">{{ row.assinaturaPagar.nomeServico }}</span>
@@ -264,6 +267,7 @@ function renderListaVendas(page = 1) {
         tipo: store.filters.tipo,
         status: store.filters.status,
         origem: store.filters.origem,
+        ignorado: store.filters.ignorado,
         contaFinanceiraId: store.filters.contaFinanceiraId,
         categoriaId: store.filters.categoriaId,
         clienteId: store.filters.clienteId,
