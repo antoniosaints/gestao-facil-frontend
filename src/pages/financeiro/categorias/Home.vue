@@ -151,6 +151,7 @@ onMounted(loadCategorias)
       v-model:open="showSearchModal"
       title="Buscar categorias"
       description="Encontre uma categoria pelo nome ou pelo caminho na hierarquia."
+      desktop-variant="sheet"
     >
       <div class="space-y-3 px-4">
         <Input v-model="search" type="search" placeholder="Buscar categoria..." @keyup.enter="applySearch" />

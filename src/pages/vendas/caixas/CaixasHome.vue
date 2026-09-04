@@ -535,10 +535,10 @@ onMounted(() => {
       </section>
     </div>
 
-    <ModalView v-model:open="openModalFiltros" title="Filtros de caixas" size="lg">
+    <ModalView v-model:open="openModalFiltros" title="Filtros de caixas" size="lg" desktop-variant="sheet">
       <div class="grid gap-4 p-4">
         <div class="space-y-2">
-          <label class="text-sm font-medium">Atalhos rápidos</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><Filter class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Atalhos rápidos</label>
           <div class="flex flex-wrap gap-2">
             <Button v-for="p in presets" :key="p.key" type="button" variant="outline" size="sm"
               @click="applyPreset(p.key); openModalFiltros = false">
@@ -547,12 +547,12 @@ onMounted(() => {
           </div>
         </div>
         <div class="space-y-2">
-          <label class="text-sm font-medium">Intervalo de datas</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><CalendarDays class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Intervalo de datas</label>
           <Calendarpicker class="w-full" :range="true" v-model="filtroPeriodo" />
           <p v-if="filtroLabel" class="text-xs text-muted-foreground">{{ filtroLabel }}</p>
         </div>
         <div class="space-y-2">
-          <label class="text-sm font-medium">Status</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><CheckCircle2 class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Status</label>
           <select v-model="filtroStatus" class="h-10 w-full rounded-md border bg-background px-3 text-sm">
             <option value="TODOS">Todos</option>
             <option value="ABERTO">Aberto</option>

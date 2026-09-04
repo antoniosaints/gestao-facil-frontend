@@ -14,6 +14,13 @@ import {
     DrawerHeader,
     DrawerTitle,
 } from "@/components/ui/drawer"
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet"
 import { computed, inject, provide, ref, watch, type CSSProperties } from "vue";
 import { type LucideIcon } from "lucide-vue-next";
 import { allocateModalLayer, modalLayerKey } from "./modal-layer";
@@ -22,12 +29,13 @@ import { allocateModalLayer, modalLayerKey } from "./modal-layer";
 const isOpen = defineModel<boolean>("open", { default: false })
 
 // Propriedades fixas do componente
-const { size, themeStyle } = defineProps<{
+const { size, themeStyle, desktopVariant } = defineProps<{
     icon?: LucideIcon
     title: string
     description?: string,
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl'
     themeStyle?: CSSProperties
+    desktopVariant?: 'dialog' | 'sheet'
 }>()
 
 const sizeClasses: Record<string, string> = {
@@ -73,8 +81,32 @@ const contentStyle = computed(() => ({
 
 <template>
     <div>
-        <!-- Desktop: Modal -->
-        <Dialog v-if="isDesktop" v-model:open="isOpen">
+        <!-- Desktop: painel lateral opcional -->
+        <Sheet v-if="isDesktop && desktopVariant === 'sheet'" v-model:open="isOpen">
+            <SheetContent :overlay-style="overlayStyle" :content-style="contentStyle"
+                :class="[sizeModal, 'p-0']">
+                <SheetHeader class="p-6 pb-0">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <SheetTitle class="font-normal text-xl -mb-1 flex items-center gap-1">
+                                <component v-if="icon" :is="icon" class="h-5 w-5 inline-flex" />
+                                {{ title }}
+                            </SheetTitle>
+                            <SheetDescription v-if="description">
+                                {{ description }}
+                            </SheetDescription>
+                        </div>
+                        <slot name="header-actions" />
+                    </div>
+                </SheetHeader>
+                <div class="grid min-h-0 flex-1 gap-4 overflow-y-auto px-2 py-4">
+                    <slot />
+                </div>
+            </SheetContent>
+        </Sheet>
+
+        <!-- Desktop: modal central -->
+        <Dialog v-else-if="isDesktop" v-model:open="isOpen">
             <DialogContent class="p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
                 :overlay-style="overlayStyle" :content-style="contentStyle"
                 :class="[sizeModal, 'mx-auto']">

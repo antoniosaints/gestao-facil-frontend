@@ -4,7 +4,7 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import Button from '@/components/ui/button/Button.vue'
 import { useVendasStore } from '@/stores/vendas/useVenda'
-import { Funnel } from 'lucide-vue-next'
+import { BadgePercent, CalendarDays, CheckCircle2, Funnel, Package, UserRound, Users, Wallet, Wrench } from 'lucide-vue-next'
 import { inject, ref, watch } from 'vue'
 
 const open = inject('openModalFiltroVendas', ref(false))
@@ -100,17 +100,18 @@ function limparFiltro() {
     v-model:open="open"
     title="Filtrar vendas"
     size="lg"
+    desktop-variant="sheet"
     description="Preencha os dados para filtrar as vendas"
   >
     <div class="flex flex-col px-4">
       <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Período de vendas</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><CalendarDays class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Período de vendas</label>
           <Calendarpicker v-model="periodo" placeholder="Período" :range="true" :teleport="true" />
         </div>
 
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Status</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><CheckCircle2 class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Status</label>
           <Select2Ajax
             v-model="status"
             class="w-full"
@@ -122,7 +123,7 @@ function limparFiltro() {
         </div>
 
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Cliente</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><UserRound class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Cliente</label>
           <Select2Ajax
             v-model="clienteId"
             class="w-full"
@@ -133,7 +134,7 @@ function limparFiltro() {
         </div>
 
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Vendedor</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><Users class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Vendedor</label>
           <Select2Ajax
             v-model="vendedorId"
             class="w-full"
@@ -144,7 +145,7 @@ function limparFiltro() {
         </div>
 
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Caixa</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><Wallet class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Caixa</label>
           <Select2Ajax
             v-model="caixaId"
             class="w-full"
@@ -156,7 +157,7 @@ function limparFiltro() {
         </div>
 
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Produto</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><Package class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Produto</label>
           <Select2Ajax
             v-model="produtoId"
             class="w-full"
@@ -167,7 +168,7 @@ function limparFiltro() {
         </div>
 
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Serviço</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><Wrench class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Serviço</label>
           <Select2Ajax
             v-model="servicoId"
             class="w-full"
@@ -178,7 +179,7 @@ function limparFiltro() {
         </div>
 
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Desconto</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><BadgePercent class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Desconto</label>
           <Select2Ajax
             v-model="desconto"
             class="w-full"

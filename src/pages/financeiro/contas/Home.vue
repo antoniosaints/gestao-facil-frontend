@@ -229,7 +229,7 @@ onMounted(loadContas)
       </div>
     </div>
 
-    <ModalView v-model:open="showSearchModal" title="Buscar contas" description="Encontre uma conta pelo nome ou identificador.">
+    <ModalView v-model:open="showSearchModal" title="Buscar contas" description="Encontre uma conta pelo nome ou identificador." desktop-variant="sheet">
       <div class="space-y-3 px-4">
         <Input
           v-model="search"

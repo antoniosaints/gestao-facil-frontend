@@ -457,17 +457,17 @@ onMounted(carregar)
     </section>
 
     <!-- Modal de período personalizado -->
-    <ModalView v-model:open="openModalFiltros" title="Período personalizado" size="lg">
+    <ModalView v-model:open="openModalFiltros" title="Período personalizado" size="lg" desktop-variant="sheet">
       <div class="grid gap-4 p-4">
         <div class="space-y-2">
-          <label class="text-sm font-medium">Atalhos rápidos</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><Filter class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Atalhos rápidos</label>
           <div class="flex flex-wrap gap-2">
             <Button v-for="p in presets" :key="p.key" type="button" variant="outline" size="sm"
               @click="applyPreset(p.key); openModalFiltros = false">{{ p.label }}</Button>
           </div>
         </div>
         <div class="space-y-2">
-          <label class="text-sm font-medium">Intervalo de datas</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><CalendarRange class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Intervalo de datas</label>
           <Calendarpicker class="w-full" :range="true" v-model="filtroPeriodo" />
         </div>
         <div class="flex justify-end gap-2">

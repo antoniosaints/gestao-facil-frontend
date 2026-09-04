@@ -273,6 +273,8 @@ function renderListaVendas(page = 1) {
         clienteId: store.filters.clienteId,
         inicio: store.filters.inicio,
         fim: store.filters.fim,
+        valorMinimo: store.filters.valorMinimo,
+        valorMaximo: store.filters.valorMaximo,
       },
     })
     .then((response) => {

@@ -220,7 +220,7 @@ onMounted(loadCards)
       </div>
     </div>
 
-    <ModalView v-model:open="showSearchModal" title="Buscar assinatura" description="Filtre pelo nome do serviço, UID ou observações.">
+    <ModalView v-model:open="showSearchModal" title="Buscar assinatura" description="Filtre pelo nome do serviço, UID ou observações." desktop-variant="sheet">
       <div class="space-y-3 px-4 pb-4">
         <Input v-model="search" type="search" placeholder="Ex.: Figma, AWS, hospedagem" @keyup.enter="store.updateTable()" />
         <div class="flex gap-2">

@@ -30,6 +30,7 @@ import {
   RotateCw,
   Search,
   Send,
+  Tags,
   TrendingDown,
   TrendingUp,
   Undo2,
@@ -1433,10 +1434,10 @@ onMounted(async () => {
       </div>
     </ModalView>
 
-    <ModalView v-model:open="openModalFiltros" title="Filtros do fluxo financeiro" size="lg">
+    <ModalView v-model:open="openModalFiltros" title="Filtros do fluxo financeiro" size="lg" desktop-variant="sheet">
       <div class="grid gap-4 p-4 md:grid-cols-2">
         <div class="space-y-2 md:col-span-2">
-          <label class="text-sm font-medium">Atalhos rápidos</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><Filter class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Atalhos rápidos</label>
           <div class="flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" @click="applyPreset('today')"
               >Hoje</Button
@@ -1467,7 +1468,7 @@ onMounted(async () => {
         </div>
 
         <div class="space-y-2 md:col-span-2">
-          <label class="text-sm font-medium">Busca</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><Search class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Busca</label>
           <div class="relative">
             <Search
               class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -1481,7 +1482,7 @@ onMounted(async () => {
         </div>
 
         <div class="space-y-2" v-if="!tipoTravado">
-          <label class="text-sm font-medium">Tipo</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><HandCoins class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Tipo</label>
           <Select v-model="filtros.tipo">
             <SelectTrigger>
               <SelectValue placeholder="Tipo" />
@@ -1495,7 +1496,7 @@ onMounted(async () => {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Status</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><CheckCircle2 class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Status</label>
           <Select v-model="filtros.status">
             <SelectTrigger>
               <SelectValue placeholder="Status" />
@@ -1510,7 +1511,7 @@ onMounted(async () => {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Conta financeira</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><Wallet class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Conta financeira</label>
           <Select v-model="filtros.contaFinanceiraId">
             <SelectTrigger>
               <SelectValue placeholder="Conta financeira" />
@@ -1525,7 +1526,7 @@ onMounted(async () => {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Categoria</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><Tags class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Categoria</label>
           <Select v-model="filtros.categoriaId">
             <SelectTrigger>
               <SelectValue placeholder="Categoria" />

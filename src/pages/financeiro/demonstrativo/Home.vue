@@ -17,8 +17,11 @@ import {
   Percent,
   RefreshCw,
   Scale,
+  Tags,
   TrendingDown,
   TrendingUp,
+  Users,
+  Wallet,
   X,
 } from 'lucide-vue-next'
 
@@ -628,11 +631,11 @@ onMounted(async () => {
     </section>
 
     <!-- Filtros -->
-    <ModalView v-model:open="openModalFiltros" title="Filtros do demonstrativo" size="lg"
+    <ModalView v-model:open="openModalFiltros" title="Filtros do demonstrativo" size="lg" desktop-variant="sheet"
       description="Recorte o demonstrativo por período, conta, categoria e cliente.">
       <div class="grid gap-4 p-4 md:grid-cols-2">
         <div class="space-y-2 md:col-span-2">
-          <Label class="text-sm font-medium">Atalhos rápidos</Label>
+          <Label class="flex items-center gap-1.5 text-sm font-medium"><Filter class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Atalhos rápidos</Label>
           <div class="flex flex-wrap gap-2">
             <Button v-for="preset in presets" :key="preset.key" type="button" variant="outline" size="sm"
               @click="applyPreset(preset.key); openModalFiltros = false">
@@ -642,12 +645,12 @@ onMounted(async () => {
         </div>
 
         <div class="space-y-2 md:col-span-2">
-          <Label class="text-sm font-medium">Intervalo de datas</Label>
+          <Label class="flex items-center gap-1.5 text-sm font-medium"><CalendarRange class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Intervalo de datas</Label>
           <Calendarpicker class="w-full" :range="true" v-model="periodo" />
         </div>
 
         <div class="space-y-2">
-          <Label class="text-sm font-medium">Conta financeira</Label>
+          <Label class="flex items-center gap-1.5 text-sm font-medium"><Wallet class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Conta financeira</Label>
           <Select v-model="filtros.contaFinanceiraId">
             <SelectTrigger><SelectValue placeholder="Todas as contas" /></SelectTrigger>
             <SelectContent>
@@ -660,7 +663,7 @@ onMounted(async () => {
         </div>
 
         <div class="space-y-2">
-          <Label class="text-sm font-medium">Categoria</Label>
+          <Label class="flex items-center gap-1.5 text-sm font-medium"><Tags class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Categoria</Label>
           <Select v-model="filtros.categoriaId">
             <SelectTrigger><SelectValue placeholder="Todas as categorias" /></SelectTrigger>
             <SelectContent>
@@ -673,7 +676,7 @@ onMounted(async () => {
         </div>
 
         <div class="space-y-2 md:col-span-2">
-          <Label class="text-sm font-medium">Cliente / fornecedor</Label>
+          <Label class="flex items-center gap-1.5 text-sm font-medium"><Users class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Cliente / fornecedor</Label>
           <Select2Ajax id="demonstrativoCliente" v-model="filtros.clienteId" url="/clientes/select2" allowClear
             class="w-full" />
         </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject, ref, watch } from 'vue'
-import { Funnel } from 'lucide-vue-next'
+import { CheckCircle2, Funnel, Package, Tags, TrendingUp } from 'lucide-vue-next'
 
 import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
@@ -61,12 +61,13 @@ function limparFiltro() {
     v-model:open="open"
     title="Filtrar produtos"
     size="lg"
+    desktop-variant="sheet"
     description="Refine a listagem por status, categoria e critérios do estoque."
   >
     <div class="flex flex-col px-4">
       <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Status</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><CheckCircle2 class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Status</label>
           <Select2Ajax
             v-model="status"
             class="w-full"
@@ -78,7 +79,7 @@ function limparFiltro() {
         </div>
 
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Categoria</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><Tags class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Categoria</label>
           <Select2Ajax
             v-model="categoriaId"
             class="w-full"
@@ -89,7 +90,7 @@ function limparFiltro() {
         </div>
 
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Estoque baixo</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><Package class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Estoque baixo</label>
           <Select2Ajax
             v-model="estoqueBaixo"
             class="w-full"
@@ -101,7 +102,7 @@ function limparFiltro() {
         </div>
 
         <div class="md:col-span-6">
-          <label class="mb-1 block text-sm">Mais vendas</label>
+          <label class="mb-1 flex items-center gap-1.5 text-sm"><TrendingUp class="hidden h-3.5 w-3.5 text-muted-foreground md:inline-flex" aria-hidden="true" />Mais vendas</label>
           <Select2Ajax
             v-model="maisVendas"
             class="w-full"

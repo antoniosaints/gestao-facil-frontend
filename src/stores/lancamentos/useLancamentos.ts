@@ -18,6 +18,8 @@ interface filtro {
   clienteId?: number | null
   inicio?: string | null
   fim?: string | null
+  valorMinimo?: string | null
+  valorMaximo?: string | null
   update: boolean
 }
 

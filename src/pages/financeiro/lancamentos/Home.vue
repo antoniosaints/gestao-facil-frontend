@@ -6,14 +6,21 @@ import { useUiStore } from '@/stores/ui/uiStore'
 import LancamentoModal from './formulario/LancamentoModal.vue'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import {
+  ArrowDownUp,
   BadgePlus,
+  Ban,
   BookOpenText,
+  CalendarDays,
+  CheckCircle2,
   CircleChevronDown,
+  DollarSign,
   FileText,
   Filter,
+  GitBranch,
   RotateCw,
   Tags,
   Upload,
+  Users,
   Wallet,
   X,
 } from 'lucide-vue-next'
@@ -32,7 +39,10 @@ import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useToast } from 'vue-toastification'
 import router from '@/router'
 import ModalView from '@/components/formulario/ModalView.vue'
+import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { Input } from '@/components/ui/input'
+import { moneyMaskOptions } from '@/lib/imaska'
+import { vMaska } from 'maska/vue'
 import {
   Select,
   SelectContent,
@@ -62,6 +72,8 @@ const filtros = reactive({
   clienteId: store.filters.clienteId || null,
   inicio: store.filters.inicio || '',
   fim: store.filters.fim || '',
+  valorMinimo: store.filters.valorMinimo || '',
+  valorMaximo: store.filters.valorMaximo || '',
 })
 
 const openByTipo = (tipo: 'RECEITA' | 'DESPESA') => {
@@ -84,6 +96,26 @@ async function loadFilterOptions() {
   }
 }
 
+function formatFilterDate(value: unknown): string | null {
+  if (!value) return null
+
+  if (typeof value === 'string') return value
+
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) return null
+
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function formatFilterAmount(value: unknown): string | null {
+  if (typeof value !== 'string' && typeof value !== 'number') return null
+
+  const normalized = String(value).trim()
+  return normalized || null
+}
 
 function applyFilters() {
   store.filters.tipo = filtros.tipo
@@ -93,8 +125,10 @@ function applyFilters() {
   store.filters.contaFinanceiraId = filtros.contaFinanceiraId !== 'all' ? Number(filtros.contaFinanceiraId) : null
   store.filters.categoriaId = filtros.categoriaId !== 'all' ? Number(filtros.categoriaId) : null
   store.filters.clienteId = filtros.clienteId || null
-  store.filters.inicio = filtros.inicio || null
-  store.filters.fim = filtros.fim || null
+  store.filters.inicio = formatFilterDate(filtros.inicio)
+  store.filters.fim = formatFilterDate(filtros.fim)
+  store.filters.valorMinimo = formatFilterAmount(filtros.valorMinimo)
+  store.filters.valorMaximo = formatFilterAmount(filtros.valorMaximo)
   openFiltersModal.value = false
   store.updateTable()
 }
@@ -109,6 +143,8 @@ function clearFilters() {
   filtros.clienteId = null
   filtros.inicio = ''
   filtros.fim = ''
+  filtros.valorMinimo = ''
+  filtros.valorMaximo = ''
 }
 
 function clearAndApplyFilters() {
@@ -211,19 +247,28 @@ useSocketEvent('financeiro:updated', () => {
       <Mobile />
     </div>
 
-    <ModalView v-model:open="openFiltersModal" title="Filtros avançados" description="Aplique filtros estruturados na listagem principal de lançamentos." size="lg">
+    <ModalView v-model:open="openFiltersModal" title="Filtros avançados" description="Aplique filtros estruturados na listagem principal de lançamentos." size="lg" desktop-variant="sheet">
       <div class="grid gap-4 px-4 md:grid-cols-2">
         <div class="space-y-2">
-          <label class="text-sm font-medium">Período inicial</label>
-          <Input v-model="filtros.inicio" type="date" />
+          <label class="flex items-center gap-1.5 text-sm font-medium"><CalendarDays class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Período inicial</label>
+          <Calendarpicker v-model="filtros.inicio" placeholder="Selecione a data inicial" :teleport="true" />
         </div>
         <div class="space-y-2">
-          <label class="text-sm font-medium">Período final</label>
-          <Input v-model="filtros.fim" type="date" />
+          <label class="flex items-center gap-1.5 text-sm font-medium"><CalendarDays class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Período final</label>
+          <Calendarpicker v-model="filtros.fim" placeholder="Selecione a data final" :teleport="true" />
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Tipo</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><DollarSign class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Valor mínimo</label>
+          <Input v-model="filtros.valorMinimo" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
+        </div>
+        <div class="space-y-2">
+          <label class="flex items-center gap-1.5 text-sm font-medium"><DollarSign class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Valor máximo</label>
+          <Input v-model="filtros.valorMaximo" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
+        </div>
+
+        <div class="space-y-2">
+          <label class="flex items-center gap-1.5 text-sm font-medium"><ArrowDownUp class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Tipo</label>
           <Select v-model="filtros.tipo">
             <SelectTrigger>
               <SelectValue placeholder="Tipo" />
@@ -237,7 +282,7 @@ useSocketEvent('financeiro:updated', () => {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Status</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><CheckCircle2 class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Status</label>
           <Select v-model="filtros.status">
             <SelectTrigger>
               <SelectValue placeholder="Status" />
@@ -252,7 +297,7 @@ useSocketEvent('financeiro:updated', () => {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Origem</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><GitBranch class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Origem</label>
           <Select v-model="filtros.origem">
             <SelectTrigger>
               <SelectValue placeholder="Origem" />
@@ -265,7 +310,7 @@ useSocketEvent('financeiro:updated', () => {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Parcelas ignoradas</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><Ban class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Parcelas ignoradas</label>
           <Select v-model="filtros.ignorado">
             <SelectTrigger>
               <SelectValue placeholder="Parcelas ignoradas" />
@@ -279,7 +324,7 @@ useSocketEvent('financeiro:updated', () => {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Conta financeira</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><Wallet class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Conta financeira</label>
           <Select v-model="filtros.contaFinanceiraId">
             <SelectTrigger>
               <SelectValue placeholder="Conta financeira" />
@@ -294,7 +339,7 @@ useSocketEvent('financeiro:updated', () => {
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Categoria</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><Tags class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Categoria</label>
           <Select v-model="filtros.categoriaId">
             <SelectTrigger>
               <SelectValue placeholder="Categoria" />
@@ -309,7 +354,7 @@ useSocketEvent('financeiro:updated', () => {
         </div>
 
         <div class="space-y-2 md:col-span-2">
-          <label class="text-sm font-medium">Cliente / fornecedor</label>
+          <label class="flex items-center gap-1.5 text-sm font-medium"><Users class="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />Cliente / fornecedor</label>
           <Select2Ajax v-model="filtros.clienteId" url="/clientes/select2" allowClear />
         </div>
 
