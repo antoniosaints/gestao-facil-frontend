@@ -51,6 +51,7 @@ import {
   User,
   UserPlus,
   X,
+  UserSquare,
 } from 'lucide-vue-next'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { useConfirm } from '@/composables/useConfirm'
@@ -2246,18 +2247,20 @@ onMounted(async () => {
           <div class="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
             <button
               type="button"
-              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              class="flex justify-center rounded-md px-3 py-1.5 text-sm font-medium transition"
               :class="newChat.mode === 'cliente' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
               @click="setNewChatMode('cliente')"
             >
+              <User class="mr-1.5 h-4 w-4" />
               Cliente
             </button>
             <button
               type="button"
-              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              class="flex justify-center rounded-md px-3 py-1.5 text-sm font-medium transition"
               :class="newChat.mode === 'contato' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
               @click="setNewChatMode('contato')"
             >
+              <UserSquare class="mr-1.5 h-4 w-4" />
               Contato
             </button>
           </div>
