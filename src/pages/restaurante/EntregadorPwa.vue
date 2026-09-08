@@ -27,6 +27,7 @@ import { formatPaymentMethodLabel } from '@/utils/formatters'
 import { useAuthStore } from '@/stores/login/useAuthStore'
 import { useUiStore } from '@/stores/ui/uiStore'
 import router from '@/router'
+import { setThemeCustomization } from '@/utils/theme'
 
 const toast = useToast()
 const auth = useAuthStore()
@@ -46,6 +47,7 @@ let refreshTimer: ReturnType<typeof setInterval> | undefined
 let geoWatch: number | undefined
 let lastLocation: { latitude: number; longitude: number; sentAt: number } | undefined
 let originalManifest: string | null = null
+let appliedTheme = ''
 
 const signedIn = computed(() => Boolean(auth.token && context.value))
 const companyName = computed(
@@ -53,6 +55,12 @@ const companyName = computed(
 )
 const activeDelivery = computed(() => context.value?.entregaAtiva || null)
 const availability = computed(() => Boolean(context.value?.driver.disponivel))
+const offers = computed(
+  () =>
+    context.value?.ofertas.filter(
+      (order) => !['CANCELADO', 'CONCLUIDO'].includes(order.status),
+    ) || [],
+)
 const podeAcessarGestao = computed(() => {
   const papeis = uiStore.restaurantAccess.papeis
   return (
@@ -107,6 +115,12 @@ function pedidoStatusLabel(order: RestaurantePedido) {
   return pedidoStatusLabels[order.status] || order.status
 }
 
+function deliveryHistoryLabel(order: RestaurantePedido) {
+  if (order.entregaStatus === 'ENTREGUE') return 'Entregue'
+  if (order.entregaStatus === 'CANCELADA') return 'Cancelada'
+  return 'Não concluída'
+}
+
 function retiradaLiberada(order: RestaurantePedido) {
   return order.status === 'PRONTO'
 }
@@ -115,7 +129,14 @@ async function loadContext(silent = false) {
   if (!auth.token) return
   if (!silent) loading.value = true
   try {
-    context.value = await RestauranteRepository.entregadorContexto()
+    const updatedContext = await RestauranteRepository.entregadorContexto()
+    const theme = updatedContext.empresa?.temaPersonalizado || null
+    const themeKey = JSON.stringify(theme)
+    if (themeKey !== appliedTheme) {
+      setThemeCustomization(theme)
+      appliedTheme = themeKey
+    }
+    context.value = updatedContext
   } catch (error: any) {
     if (error.response?.status === 401 || error.response?.status === 403) {
       clearDriverSession()
@@ -216,6 +237,11 @@ async function toggleAvailability() {
 }
 
 async function accept(order: RestaurantePedido) {
+  if (['CANCELADO', 'CONCLUIDO'].includes(order.status)) {
+    toast.info('Este pedido não está mais disponível para entrega.')
+    await loadContext(true)
+    return
+  }
   acting.value = true
   try {
     await RestauranteRepository.aceitarEntrega(order.id)
@@ -436,7 +462,7 @@ onBeforeUnmount(() => {
             <div class="history-top">
               <span class="order-code">{{ order.codigo }}</span
               ><span class="history-status" :class="{ failed: order.entregaStatus === 'FALHOU' }">{{
-                order.entregaStatus === 'ENTREGUE' ? 'Entregue' : 'Não concluída'
+                deliveryHistoryLabel(order)
               }}</span>
             </div>
             <h2>{{ order.clienteNomeSnapshot || 'Cliente' }}</h2>
@@ -571,7 +597,7 @@ onBeforeUnmount(() => {
               </button>
             </div>
             <div
-              v-if="!context?.ofertas.length"
+              v-if="!offers.length"
               class="empty justify-center items-center flex flex-col"
             >
               <Clock3 :size="34" />
@@ -581,7 +607,7 @@ onBeforeUnmount(() => {
                 aqui.
               </p>
             </div>
-            <article v-for="order in context?.ofertas" :key="order.id" class="offer">
+            <article v-for="order in offers" :key="order.id" class="offer">
               <div class="offer-head">
                 <span>{{ order.codigo }}</span
                 ><small>{{ money(order.total) }}</small>
@@ -743,8 +769,8 @@ onBeforeUnmount(() => {
 .driver-header {
   height: 78px;
   padding: 0 max(18px, calc((100vw - 630px) / 2));
-  background: #08343a;
-  color: #fff;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -766,7 +792,7 @@ onBeforeUnmount(() => {
   background: #fff;
   display: grid;
   place-items: center;
-  color: #0a5557;
+  color: hsl(var(--primary));
 }
 
 .company small {
@@ -774,7 +800,7 @@ onBeforeUnmount(() => {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.1em;
-  color: #a9c6c4;
+  color: hsl(var(--primary-foreground) / 0.72);
 }
 
 .company strong {
@@ -933,7 +959,7 @@ onBeforeUnmount(() => {
 
 .offer-head span,
 .order-code {
-  font-size: 11px;
+  font-size: 18px;
   font-weight: 900;
   letter-spacing: 0.06em;
   color: #0b746e;

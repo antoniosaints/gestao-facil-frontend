@@ -90,6 +90,11 @@ const deliveryStatus = {
     className: 'border-red-200 bg-red-100 text-red-800',
     color: '#dc2626',
   },
+  CANCELADA: {
+    label: 'Entrega cancelada',
+    className: 'border-slate-200 bg-slate-100 text-slate-700',
+    color: '#64748b',
+  },
   NAO_APLICAVEL: {
     label: 'Sem delivery',
     className: 'border-stone-200 bg-stone-100 text-stone-700',

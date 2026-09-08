@@ -1,5 +1,6 @@
 import http from '@/utils/axios'
 import type { ThemeCustomization } from '@/types/schemas'
+import type { ThemeCustomization } from '@/types/schemas'
 
 export type RestaurantePapel =
   | 'GESTOR'
@@ -57,6 +58,7 @@ export type RestauranteEntregaStatus =
   | 'EM_ROTA'
   | 'ENTREGUE'
   | 'FALHOU'
+  | 'CANCELADA'
 
 export interface RestaurantePedido {
   id: number
@@ -128,6 +130,7 @@ export interface RestauranteEntregadorContexto {
     profile?: string | null
     endereco?: string | null
     telefone?: string | null
+    temaPersonalizado?: Partial<ThemeCustomization> | null
   } | null
   ofertas: RestaurantePedido[]
   entregaAtiva: RestaurantePedido | null
@@ -935,6 +938,11 @@ export class RestauranteRepository {
   static async ofertarEntrega(pedidoId: number) {
     const { data } = await http.post(`/v1/restaurante/entregas/${pedidoId}/ofertar`)
     return data.data
+  }
+
+  static async cancelarEntrega(pedidoId: number) {
+    const { data } = await http.post(`/v1/restaurante/entregas/${pedidoId}/cancelar`)
+    return data.data as RestaurantePedido
   }
 
   static async direcionarEntrega(pedidoId: number, entregadorId: number) {

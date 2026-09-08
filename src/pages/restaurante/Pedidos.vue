@@ -524,6 +524,38 @@ function podeCancelar(pedido: RestaurantePedido) {
   return !['CANCELADO', 'CONCLUIDO'].includes(pedido.status)
 }
 
+function podeCancelarEntrega(pedido: RestaurantePedido) {
+  return (
+    canOperate.value &&
+    pedido.origem === 'DELIVERY' &&
+    pedido.status === 'CANCELADO' &&
+    ['AGUARDANDO_DESPACHO', 'OFERTADA', 'ATRIBUIDA', 'RETIRADA', 'EM_ROTA'].includes(
+      pedido.entregaStatus,
+    )
+  )
+}
+
+async function cancelarEntrega(pedido: RestaurantePedido) {
+  const confirmed = await confirm.confirm({
+    title: 'Cancelar entrega',
+    message: `Encerrar a entrega do pedido ${pedido.codigo}? O entregador será liberado.`,
+    confirmText: 'Cancelar entrega',
+  })
+  if (!confirmed) return
+  try {
+    atualizando.value = pedido.id
+    const atualizado = await RestauranteRepository.cancelarEntrega(pedido.id)
+    substituirPedidoNaLista(atualizado)
+    if (pedidoSelecionado.value?.id === atualizado.id) pedidoSelecionado.value = atualizado
+    toast.success('Entrega cancelada e entregador liberado.')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível cancelar a entrega.')
+    if (error?.response?.status === 409) await recarregar()
+  } finally {
+    atualizando.value = null
+  }
+}
+
 function podeImprimirPedido(pedido: RestaurantePedido) {
   return ['CONFIRMADO', 'EM_PREPARO', 'PRONTO', 'CONCLUIDO'].includes(pedido.status)
 }
@@ -1071,6 +1103,15 @@ onBeforeUnmount(() => handleRouteModalChange(false))
             ><CircleX class="h-4 w-4" /><span class="sr-only">Cancelar pedido</span></Button
           >
           <Button
+            v-if="podeCancelarEntrega(pedido)"
+            size="sm"
+            variant="outline"
+            class="shrink-0"
+            :disabled="atualizando === pedido.id"
+            @click.stop="cancelarEntrega(pedido)"
+            ><CircleX class="mr-1.5 h-4 w-4" />Cancelar entrega</Button
+          >
+          <Button
             v-if="canPrint && podeImprimirPedido(pedido)"
             size="sm"
             variant="outline"
@@ -1471,6 +1512,13 @@ onBeforeUnmount(() => handleRouteModalChange(false))
             :disabled="atualizando === pedido.id"
             @click="cancelar(pedido)"
             ><CircleX class="mr-1.5 h-4 w-4" />Cancelar pedido</Button
+          >
+          <Button
+            v-if="podeCancelarEntrega(pedido)"
+            variant="outline"
+            :disabled="atualizando === pedido.id"
+            @click="cancelarEntrega(pedido)"
+            ><CircleX class="mr-1.5 h-4 w-4" />Cancelar entrega</Button
           >
         </div>
       </template>
