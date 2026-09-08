@@ -721,6 +721,10 @@ onBeforeUnmount(() => {
 }
 .delivery-map-shell {
   position: relative;
+  /* Leaflet usa camadas internas com z-index alto. Isolar o mapa impede que
+     marcadores, controles e rótulos ultrapassem o menu mobile (z-40). */
+  isolation: isolate;
+  z-index: 0;
   min-height: 0;
   background: hsl(var(--muted));
 }

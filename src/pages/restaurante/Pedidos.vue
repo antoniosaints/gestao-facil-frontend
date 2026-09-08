@@ -40,12 +40,14 @@ import { phoneMaskOptions } from '@/lib/imaska'
 import { restaurantMapIcons } from './restaurantMapIcons'
 import {
   ChefHat,
+  Bike,
   CircleCheckBig,
   CircleX,
   Columns3,
   Clock3,
   FileTextIcon,
   Filter,
+  LoaderCircle,
   Plus,
   Printer,
   RefreshCw,
@@ -81,6 +83,7 @@ const openModalPedidoManual = ref(false)
 const openModalEditarCliente = ref(false)
 const openModalEditarItens = ref(false)
 const openModalImpressao = ref(false)
+const openModalDespacho = ref(false)
 const abrindoChat = ref(false)
 const salvandoCliente = ref(false)
 const pedidoSelecionado = ref<RestaurantePedido | null>(null)
@@ -94,6 +97,13 @@ const estacoesImpressao = ref<RestauranteEstacaoImpressao[]>([])
 const estacoesSelecionadas = ref<number[]>([])
 const imprimindo = ref(false)
 const pedidoArrastado = ref<RestaurantePedido | null>(null)
+const pedidoParaDespacho = ref<RestaurantePedido | null>(null)
+const entregadoresDespacho = ref<
+  Array<{ id: number; disponivel: boolean; Usuario: { nome: string; telefone?: string | null } }>
+>([])
+const entregadorSelecionado = ref('')
+const carregandoDespacho = ref(false)
+const despachandoEntrega = ref(false)
 const atendimentoDisponivel = computed(() => uiStore.hasActiveModule('atendimento'))
 const podeEditarClienteSelecionado = computed(
   () =>
@@ -277,6 +287,48 @@ const filtrados = computed(() => {
   )
 })
 
+const pedidosPorStatus = computed(() => {
+  const agrupados = Object.fromEntries(
+    statusOptions.map((status) => [status, [] as RestaurantePedido[]]),
+  ) as Record<RestaurantePedidoStatus, RestaurantePedido[]>
+  for (const pedido of filtrados.value) agrupados[pedido.status].push(pedido)
+  return agrupados
+})
+
+function pedidoPertenceAoEscopoAtual(pedido: RestaurantePedido) {
+  if (!statusSelecionados.value.includes(pedido.status)) return false
+  if (presetAtivo.value === 'all') return true
+  const criadoEm = new Date(pedido.createdAt).getTime()
+  const [inicio, fim] = filtroPeriodo.value
+  return Number.isFinite(criadoEm) && criadoEm >= inicio.getTime() && criadoEm <= fim.getTime()
+}
+
+function substituirPedidoNaLista(atualizado: RestaurantePedido) {
+  const index = pedidos.value.findIndex((pedido) => pedido.id === atualizado.id)
+  if (index < 0) return false
+
+  // O Vue preserva os cards com a mesma chave; o splice altera somente o card
+  // correspondente (ou o move entre colunas), sem remontar o Kanban inteiro.
+  if (pedidoPertenceAoEscopoAtual(atualizado)) {
+    if (pedidos.value[index].version > atualizado.version) return true
+    pedidos.value.splice(index, 1, atualizado)
+  } else {
+    pedidos.value.splice(index, 1)
+    total.value = Math.max(0, total.value - 1)
+  }
+  return true
+}
+
+function inserirNovoPedidoNaLista(pedido: RestaurantePedido) {
+  if (!pedidoPertenceAoEscopoAtual(pedido) || pedidos.value.some((item) => item.id === pedido.id))
+    return
+
+  const quantidadeCarregada = Math.max(30, page.value * 30)
+  pedidos.value.unshift(pedido)
+  if (pedidos.value.length > quantidadeCarregada) pedidos.value.pop()
+  total.value += 1
+}
+
 function periodoQuery() {
   if (presetAtivo.value === 'all') return {}
   const [inicio, fim] = filtroPeriodo.value
@@ -375,7 +427,7 @@ async function moverParaStatus(pedido: RestaurantePedido, proximo: RestaurantePe
   try {
     atualizando.value = pedido.id
     const atualizado = await RestauranteRepository.transicionar(pedido.id, proximo, pedido.version)
-    pedidos.value = pedidos.value.map((item) => (item.id === atualizado.id ? atualizado : item))
+    substituirPedidoNaLista(atualizado)
     if (pedidoSelecionado.value?.id === atualizado.id) pedidoSelecionado.value = atualizado
     toast.success('Status do pedido atualizado')
   } catch (error: any) {
@@ -476,6 +528,74 @@ function podeImprimirPedido(pedido: RestaurantePedido) {
   return ['CONFIRMADO', 'EM_PREPARO', 'PRONTO', 'CONCLUIDO'].includes(pedido.status)
 }
 
+function podeDespacharEntrega(pedido: RestaurantePedido) {
+  return (
+    canOperate.value &&
+    pedido.origem === 'DELIVERY' &&
+    ['AGUARDANDO_DESPACHO', 'OFERTADA'].includes(pedido.entregaStatus)
+  )
+}
+
+async function abrirDespachoEntrega(pedido: RestaurantePedido) {
+  if (!podeDespacharEntrega(pedido)) return
+  pedidoParaDespacho.value = pedido
+  entregadorSelecionado.value = ''
+  openModalDespacho.value = true
+
+  try {
+    carregandoDespacho.value = true
+    const despacho = await RestauranteRepository.despachoEntregas()
+    entregadoresDespacho.value = despacho.entregadores
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.error?.message || 'Não foi possível carregar os entregadores.',
+    )
+    openModalDespacho.value = false
+  } finally {
+    carregandoDespacho.value = false
+  }
+}
+
+async function atualizarPedidoDoDespacho(pedidoId: number) {
+  const atualizado = await RestauranteRepository.pedido(pedidoId)
+  substituirPedidoNaLista(atualizado)
+  pedidoParaDespacho.value = atualizado
+  if (pedidoSelecionado.value?.id === atualizado.id) pedidoSelecionado.value = atualizado
+}
+
+async function ofertarEntrega() {
+  const pedido = pedidoParaDespacho.value
+  if (!pedido || pedido.entregaStatus !== 'AGUARDANDO_DESPACHO') return
+  try {
+    despachandoEntrega.value = true
+    await RestauranteRepository.ofertarEntrega(pedido.id)
+    await atualizarPedidoDoDespacho(pedido.id)
+    toast.success('Entrega ofertada aos entregadores disponíveis.')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível ofertar esta entrega.')
+  } finally {
+    despachandoEntrega.value = false
+  }
+}
+
+async function direcionarEntrega() {
+  const pedido = pedidoParaDespacho.value
+  if (!pedido || !entregadorSelecionado.value) return
+  try {
+    despachandoEntrega.value = true
+    await RestauranteRepository.direcionarEntrega(pedido.id, Number(entregadorSelecionado.value))
+    await atualizarPedidoDoDespacho(pedido.id)
+    toast.success('Entrega direcionada ao entregador selecionado.')
+    openModalDespacho.value = false
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.error?.message || 'Não foi possível direcionar esta entrega.',
+    )
+  } finally {
+    despachandoEntrega.value = false
+  }
+}
+
 function aguardandoPagamentoOnline(pedido: RestaurantePedido) {
   return (
     pedido.status === 'RECEBIDO' &&
@@ -498,7 +618,7 @@ async function cancelar(pedido: RestaurantePedido) {
       'CANCELADO',
       pedido.version,
     )
-    pedidos.value = pedidos.value.map((item) => (item.id === atualizado.id ? atualizado : item))
+    substituirPedidoNaLista(atualizado)
     if (pedidoSelecionado.value?.id === atualizado.id) pedidoSelecionado.value = atualizado
     toast[atualizado.status === 'CANCELADO' ? 'success' : 'info'](
       atualizado.status === 'CANCELADO'
@@ -525,7 +645,7 @@ function abrirDetalhes(pedido: RestaurantePedido) {
 }
 
 function atualizarPedidoLocal(atualizado: RestaurantePedido) {
-  pedidos.value = pedidos.value.map((item) => (item.id === atualizado.id ? atualizado : item))
+  substituirPedidoNaLista(atualizado)
   pedidoSelecionado.value = atualizado
 }
 
@@ -708,8 +828,28 @@ function handleRouteModalChange(open: boolean) {
   routeSummary.value = null
 }
 
-useSocketEvent('restaurante:pedido', () => {
-  void recarregar()
+type RestaurantePedidoSocketEvent = { pedidoId?: number; reason?: string }
+const newOrderReasons = new Set(['created', 'manual-created', 'table-created'])
+
+async function sincronizarPedidoDoSocket(event: RestaurantePedidoSocketEvent) {
+  const pedidoId = Number(event?.pedidoId)
+  if (!Number.isInteger(pedidoId) || pedidoId <= 0) return
+
+  try {
+    const atualizado = await RestauranteRepository.pedido(pedidoId)
+    if (substituirPedidoNaLista(atualizado)) {
+      if (pedidoSelecionado.value?.id === atualizado.id) pedidoSelecionado.value = atualizado
+      return
+    }
+    if (newOrderReasons.has(event.reason || '')) inserirNovoPedidoNaLista(atualizado)
+  } catch {
+    // Uma atualização em outra página não deve desmontar o quadro atual. O botão
+    // de atualizar continua disponível para uma sincronização completa quando necessária.
+  }
+}
+
+useSocketEvent<RestaurantePedidoSocketEvent>('restaurante:pedido', (event) => {
+  void sincronizarPedidoDoSocket(event)
 })
 
 onMounted(() => recarregar())
@@ -951,6 +1091,16 @@ onBeforeUnmount(() => handleRouteModalChange(false))
               >Pedido ainda não disponível para impressão</span
             ></Button
           >
+          <Button
+            v-if="podeDespacharEntrega(pedido)"
+            size="sm"
+            variant="outline"
+            class="shrink-0"
+            aria-label="Despachar entrega"
+            title="Despachar entrega"
+            @click.stop="abrirDespachoEntrega(pedido)"
+            ><Bike class="h-4 w-4" /><span class="sr-only">Despachar entrega</span></Button
+          >
         </CardFooter>
         <CardFooter
           v-else-if="
@@ -985,13 +1135,14 @@ onBeforeUnmount(() => handleRouteModalChange(false))
         >
           <span class="font-semibold">{{ statusLabels[status] }}</span
           ><Badge variant="outline" :class="statusBadgeClass(status)">{{
-            filtrados.filter((pedido) => pedido.status === status).length
+            pedidosPorStatus[status].length
           }}</Badge>
         </header>
         <div class="min-h-40 flex-1 space-y-2 p-2.5">
           <Card
-            v-for="pedido in filtrados.filter((item) => item.status === status)"
+            v-for="pedido in pedidosPorStatus[status]"
             :key="pedido.id"
+            v-memo="[pedido.version, atualizando === pedido.id]"
             :draggable="Boolean(canOperate && proximoDisponivel(pedido))"
             class="cursor-pointer rounded-md border-border/80 bg-card/95 shadow-sm transition hover:border-primary/40 hover:shadow-md"
             :class="{
@@ -1002,37 +1153,15 @@ onBeforeUnmount(() => handleRouteModalChange(false))
           >
             <CardContent class="space-y-2 p-3"
               ><div class="flex items-start justify-between gap-2">
-                <div>
-                  <p class="font-semibold">{{ pedido.codigo }}</p>
+                <div class="min-w-0">
+                  <p class="truncate font-semibold">{{ pedido.codigo }}</p>
                   <p class="text-xs text-muted-foreground">
                     {{ dataHora(pedido.createdAt) }} · {{ origemLabel(pedido.origem) }}
                   </p>
                 </div>
-                <div class="flex shrink-0 items-center gap-1">
+                <div class="flex shrink-0 flex-nowrap items-center gap-1">
                   <Button
-                    v-if="canOperate && pedido.status === 'RECEBIDO'"
-                    size="icon"
-                    class="h-7 w-7"
-                    :disabled="atualizando === pedido.id"
-                    aria-label="Confirmar pedido"
-                    title="Confirmar pedido"
-                    @click.stop="avancar(pedido)"
-                  >
-                    <CircleCheckBig class="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    v-if="canOperate && pedido.status === 'PRONTO'"
-                    size="icon"
-                    class="h-7 w-7"
-                    :disabled="atualizando === pedido.id"
-                    aria-label="Concluir pedido"
-                    title="Concluir pedido"
-                    @click.stop="avancar(pedido)"
-                  >
-                    <CircleCheckBig class="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    v-else-if="canViewKds && pedido.tickets?.length"
+                    v-if="canViewKds && pedido.tickets?.length"
                     as-child
                     size="icon"
                     variant="ghost"
@@ -1061,6 +1190,28 @@ onBeforeUnmount(() => handleRouteModalChange(false))
                     disabled
                     ><Printer class="h-3.5 w-3.5"
                   /></Button>
+                  <Button
+                    v-if="podeDespacharEntrega(pedido)"
+                    size="icon"
+                    variant="ghost"
+                    class="h-7 w-7 shrink-0"
+                    aria-label="Despachar entrega"
+                    title="Despachar entrega"
+                    @click.stop="abrirDespachoEntrega(pedido)"
+                    ><Bike class="h-3.5 w-3.5"
+                  /></Button>
+                  <Button
+                    v-if="canOperate && proximoDisponivel(pedido)"
+                    size="icon"
+                    class="h-7 w-7 shrink-0"
+                    :disabled="atualizando === pedido.id"
+                    :aria-label="nextLabel[pedido.status]"
+                    :title="nextLabel[pedido.status]"
+                    @click.stop="avancar(pedido)"
+                  >
+                    <CircleCheckBig class="h-3.5 w-3.5" />
+                    <span class="sr-only">{{ nextLabel[pedido.status] }}</span>
+                  </Button>
                 </div>
               </div>
               <div class="space-y-1 text-sm">
@@ -1071,16 +1222,16 @@ onBeforeUnmount(() => handleRouteModalChange(false))
                   + {{ pedido.itens.length - 3 }} item(ns)
                 </p>
               </div>
-              <div class="flex justify-between border-t pt-2 text-sm">
-                <span class="truncate text-muted-foreground">{{
+              <div class="flex min-w-0 justify-between gap-2 border-t pt-2 text-sm">
+                <span class="min-w-0 truncate text-muted-foreground">{{
                   pedido.Mesa?.nome || pedido.clienteNomeSnapshot || 'Cliente visitante'
                 }}</span
-                ><strong>{{ formatCurrencyBR(Number(pedido.total)) }}</strong>
+                ><strong class="shrink-0">{{ formatCurrencyBR(Number(pedido.total)) }}</strong>
               </div></CardContent
             >
           </Card>
           <p
-            v-if="!filtrados.some((pedido) => pedido.status === status)"
+            v-if="!pedidosPorStatus[status].length"
             class="rounded-xl border border-dashed border-border/80 bg-background/40 p-3 text-center text-xs text-muted-foreground"
           >
             Solte aqui para {{ statusLabels[status].toLocaleLowerCase('pt-BR') }}.
@@ -1088,6 +1239,81 @@ onBeforeUnmount(() => handleRouteModalChange(false))
         </div>
       </section>
     </div>
+
+    <ModalView
+      v-model:open="openModalDespacho"
+      title="Despachar entrega"
+      :description="pedidoParaDespacho ? `Pedido ${pedidoParaDespacho.codigo}` : undefined"
+      size="md"
+      desktop-variant="sheet"
+    >
+      <div v-if="pedidoParaDespacho" class="space-y-5 px-4 pb-4">
+        <div class="rounded-lg border bg-muted/30 p-3 text-sm">
+          <p class="font-medium">
+            {{ pedidoParaDespacho.clienteNomeSnapshot || 'Cliente visitante' }}
+          </p>
+          <p class="mt-1 text-muted-foreground">
+            {{ enderecoFormatado(pedidoParaDespacho) || 'Endereço não informado' }}
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-sm font-medium">Ofertar para a equipe</p>
+          <p class="text-xs text-muted-foreground">
+            Todos os entregadores disponíveis poderão aceitar a entrega.
+          </p>
+          <Button
+            v-if="pedidoParaDespacho.entregaStatus === 'AGUARDANDO_DESPACHO'"
+            class="w-full"
+            :disabled="carregandoDespacho || despachandoEntrega"
+            @click="ofertarEntrega"
+          >
+            <LoaderCircle v-if="despachandoEntrega" class="mr-2 h-4 w-4 animate-spin" />
+            <Bike v-else class="mr-2 h-4 w-4" />Ofertar entrega
+          </Button>
+          <p
+            v-else
+            class="rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-800"
+          >
+            Esta entrega já foi ofertada. Você ainda pode direcioná-la manualmente.
+          </p>
+        </div>
+
+        <div class="space-y-2 border-t pt-5">
+          <label for="entregador-despacho" class="text-sm font-medium">Direcionar para</label>
+          <select
+            id="entregador-despacho"
+            v-model="entregadorSelecionado"
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            :disabled="carregandoDespacho || despachandoEntrega"
+          >
+            <option value="">Selecione um entregador</option>
+            <option
+              v-for="entregador in entregadoresDespacho"
+              :key="entregador.id"
+              :value="entregador.id"
+            >
+              {{ entregador.Usuario.nome }}{{ entregador.disponivel ? ' · disponível' : '' }}
+            </option>
+          </select>
+          <p
+            v-if="!carregandoDespacho && !entregadoresDespacho.length"
+            class="text-xs text-muted-foreground"
+          >
+            Nenhum entregador ativo cadastrado.
+          </p>
+          <Button
+            variant="outline"
+            class="w-full"
+            :disabled="carregandoDespacho || despachandoEntrega || !entregadorSelecionado"
+            @click="direcionarEntrega"
+          >
+            <LoaderCircle v-if="despachandoEntrega" class="mr-2 h-4 w-4 animate-spin" />
+            <Bike v-else class="mr-2 h-4 w-4" />Direcionar entrega
+          </Button>
+        </div>
+      </div>
+    </ModalView>
 
     <div v-if="!loading && pedidos.length < total" class="flex justify-center">
       <Button variant="outline" :disabled="loadingMore" @click="carregarMais">

@@ -117,7 +117,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="mx-auto space-y-5 p-4 sm:p-6">
+  <div class="mx-auto space-y-5">
     <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
       <div>
         <h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Award class="h-6 w-6 text-primary" />Promoções de fidelidade</h1>

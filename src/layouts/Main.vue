@@ -67,11 +67,11 @@
       >
         <!-- O header é hidden md:flex, então no mobile o badge de suporte
                      não apareceria. Aqui ele cobre esse caso. -->
-        <div v-if="!store.kdsImersivo && isSupportActive()" class="mb-4 flex justify-end md:hidden">
+        <div v-if="!isFullscreenContent && isSupportActive()" class="mb-4 flex justify-end md:hidden">
           <SupportBadge />
         </div>
         <div
-          v-if="!store.kdsImersivo"
+          v-if="!isFullscreenContent"
           class="mb-4 flex flex-wrap items-center justify-between gap-2"
         >
           <AlertTopbar />

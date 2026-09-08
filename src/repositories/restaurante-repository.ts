@@ -156,6 +156,41 @@ export interface RestaurantePainel {
   vendasPorDia: Array<{ data: string; pedidos: number; valor: number }>
 }
 
+export interface RestauranteHistoricoEntregas {
+  periodo: { inicio: string; fim: string }
+  resumo: {
+    entregas: number
+    falhas: number
+    valor: number
+    ticketMedio: number
+    tempoMedioEntregaMinutos: number | null
+  }
+  entregadores: Array<{
+    id: number
+    nome: string
+    entregas: number
+    falhas: number
+    valor: number
+    ticketMedio: number
+    tempoMedioEntregaMinutos: number | null
+  }>
+  pedidos: Array<{
+    pedidoId: number
+    codigo: string
+    clienteNome?: string | null
+    total: string | number
+    status: RestaurantePedidoStatus
+    entregaStatus: RestauranteEntregaStatus
+    criadoEm: string
+    finalizadoEm?: string | null
+    entregador: { id: number; nome: string } | null
+    retiradaEm?: string | null
+    emRotaEm?: string | null
+  }>
+  filtros: { entregadores: Array<{ id: number; nome: string; ativo: boolean }> }
+  meta: { page: number; pages: number; total: number }
+}
+
 export interface RestaurantePublicOrderTracking {
   id: number
   cardapioSlug?: string | null
@@ -663,7 +698,12 @@ export class RestauranteRepository {
   static async fecharCaixa(payload: {
     valorFechamento: number
     descricao?: string
-    metodosContados?: Array<{ metodo: string; esperado: number; contado: number; diferenca: number }>
+    metodosContados?: Array<{
+      metodo: string
+      esperado: number
+      contado: number
+      diferenca: number
+    }>
   }) {
     const { data } = await http.put('/v1/restaurante/caixa/fechar', payload)
     return data.data as RestauranteCaixaContexto
@@ -816,6 +856,11 @@ export class RestauranteRepository {
     }
   }
 
+  static async pedido(id: number) {
+    const { data } = await http.get(`/v1/restaurante/pedidos/${id}`)
+    return data.data as RestaurantePedido
+  }
+
   static async painel(params: { inicio?: string; fim?: string } = {}) {
     const { data } = await http.get('/v1/restaurante/painel', { params })
     return data.data as RestaurantePainel
@@ -871,6 +916,20 @@ export class RestauranteRepository {
         Usuario: { nome: string; telefone?: string | null }
       }>
     }
+  }
+
+  static async historicoEntregas(
+    params: {
+      inicio?: string
+      fim?: string
+      entregadorId?: number
+      situacao?: 'TODAS' | 'ENTREGUE' | 'FALHOU'
+      page?: number
+      limit?: number
+    } = {},
+  ) {
+    const { data } = await http.get('/v1/restaurante/entregas/historico', { params })
+    return data.data as RestauranteHistoricoEntregas
   }
 
   static async ofertarEntrega(pedidoId: number) {
