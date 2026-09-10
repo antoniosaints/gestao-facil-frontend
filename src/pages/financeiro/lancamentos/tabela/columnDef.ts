@@ -4,14 +4,13 @@ import type { CategoriaFinanceiro, LancamentoFinanceiro, ParcelaFinanceiro } fro
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
   ArrowUpDown,
+  ArrowUpRightSquare,
   BadgeCheck,
   Calendar,
-  CircleDollarSign,
   ClockAlert,
   EyeOff,
   FlagTriangleRight,
   Loader,
-  MessageCircle,
   Tag,
   TrendingDown,
   TrendingUp,
@@ -77,19 +76,88 @@ export const columnsLancamentos: ColumnDef<
       }),
   },
   {
-    accessorKey: 'Uid',
-    enableSorting: false,
-    header: () => render('div', { class: 'ml-2 h-4 w-4' }, 'ID'),
-    cell: ({ row }) => {
-      return render(RouterLink, { to: `/financeiro/detalhes?id=${row.original.id}` }, () =>
-        render(BadgeCell, {
-          label: row.getValue('Uid') as string,
-          color: 'gray',
-          icon: row.original.vendaId ? Tag : CircleDollarSign,
-          capitalize: false,
-        }),
-      )
+    accessorKey: 'descricao',
+    header: ({ column }) =>
+      render(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['Descrição', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
+cell: ({ row }) =>
+  render(
+    RouterLink,
+    {
+      to: `/financeiro/detalhes?id=${row.original.id}`,
+      class:
+        'min-w-0 p-1 px-2 pl-4 flex items-center gap-2 cursor-pointer transition-colors',
+      title: 'Ver detalhes',
     },
+    () => [
+      row.original.notificarVencimento
+        ? render('div', { class: 'flex flex-wrap items-center gap-2 shrink-0' }, [
+            render('i', {
+              class: 'fa-solid fa-bell text-yellow-600',
+            }),
+          ])
+        : null,
+
+      row.original.ignorado ||
+      row.original.parcelas.some((parcela) => parcela.ignorado)
+        ? render(BadgeCell, {
+            label: 'Ignorado',
+            color: 'gray',
+            icon: EyeOff,
+            capitalize: false,
+            size: 'sm',
+          })
+        : null,
+
+      render(
+        'div',
+        {
+          class: 'truncate max-w-[420px] font-medium text-left',
+        },
+        row.original.vendaId
+          ? `🏷️ ${row.getValue('descricao')}`
+          : `${row.getValue('descricao') as string}`,
+      ),
+
+      render(
+        'div',
+        {
+          class:
+            'shrink-0 text-gray-600 dark:text-gray-300 border border-border rounded flex items-center transition-colors',
+        },
+        [
+          render(ArrowUpRightSquare, {
+            class: 'w-4 h-4',
+          }),
+        ],
+      ),
+
+      row.original.origemSistema === 'ASSINATURA_PAGAR' &&
+      row.original.assinaturaPagar
+        ? render(
+            'div',
+            {
+              class: 'mt-1 flex flex-wrap items-center gap-2',
+            },
+            [
+              render(BadgeCell, {
+                label: 'Assinatura',
+                color: 'violet',
+                icon: Tag,
+                capitalize: false,
+                size: 'sm',
+              }),
+            ],
+          )
+        : null,
+    ],
+  ),
   },
   {
     accessorKey: 'tipo',
@@ -167,55 +235,6 @@ export const columnsLancamentos: ColumnDef<
     },
   },
   {
-    accessorKey: 'descricao',
-    header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Descrição', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
-    cell: ({ row }) =>
-      render('div', { class: 'min-w-0 p-1 px-2 flex items-center gap-2' }, [
-        row.original.notificarVencimento
-          ? render('div', { class: 'flex flex-wrap items-center gap-2' }, [
-              render('i', { class: 'fa-solid fa-bell text-yellow-600' }),
-            ])
-          : null,
-        row.original.ignorado || row.original.parcelas.some((parcela) => parcela.ignorado)
-          ? render(BadgeCell, {
-              label: 'Ignorado',
-              color: 'gray',
-              icon: EyeOff,
-              capitalize: false,
-              size: 'sm',
-            })
-          : null,
-        render(
-          'div',
-          {
-            class: 'truncate max-w-[420px] font-medium text-left',
-          },
-          row.original.vendaId
-            ? `🏷️ ${row.getValue('descricao')}`
-            : `${row.getValue('descricao') as string}`,
-        ),
-        row.original.origemSistema === 'ASSINATURA_PAGAR' && row.original.assinaturaPagar
-          ? render('div', { class: 'mt-1 flex flex-wrap items-center gap-2' }, [
-              render(BadgeCell, {
-                label: 'Assinatura',
-                color: 'violet',
-                icon: Tag,
-                capitalize: false,
-                size: 'sm',
-              })
-            ])
-          : null,
-      ]),
-  },
-  {
     accessorKey: 'valorTotal',
     header: ({ column }) =>
       render(
@@ -236,8 +255,15 @@ export const columnsLancamentos: ColumnDef<
   },
   {
     id: 'vencimento',
-    enableSorting: false,
-    header: () => render('div', {}, 'Vencimento'),
+    header: ({ column }) =>
+      render(
+        Button,
+        {
+          variant: 'ghost',
+          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => ['Vencimento', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+      ),
     cell: ({ row }) => {
       const { vencimento } = getDatasTabelaLancamento(row.original.parcelas)
       return render(BadgeCell, {
