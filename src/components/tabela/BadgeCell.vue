@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, type Component } from 'vue'
 import { formatToCapitalize } from '@/utils/formatters'
+import { activeThemeCustomization } from '@/utils/theme'
 
 interface Props {
   label: string
@@ -8,6 +9,7 @@ interface Props {
   icon?: string | Component
   capitalize?: boolean
   size?: 'sm' | 'md' | 'lg'
+  border?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -20,11 +22,15 @@ const formattedLabel = computed(() =>
 )
 
 const baseClasses = computed(() => {
+  const classes = 'font-medium inline-flex items-center gap-1 w-max'
+  const borderClass =
+    (props.border ?? activeThemeCustomization.value.bordaBadgeCell) ? ' border' : ''
+
   if (props.size === 'sm') {
-    return 'inline-flex items-center gap-1 px-1.5 py-[1px] border rounded-md w-max text-[11px]'
+    return `${classes} px-1.5 py-[1px] rounded-md text-[11px]${borderClass}`
   }
 
-  return 'inline-flex items-center gap-1 px-2 py-1 border rounded-lg w-max'
+  return `${classes} px-2 py-1 rounded-lg${borderClass}`
 })
 
 const iconClasses = computed(() => (props.size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'))

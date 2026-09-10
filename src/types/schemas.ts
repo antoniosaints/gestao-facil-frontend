@@ -566,6 +566,7 @@ export interface ThemeCustomization {
   radius: string
   fonte: string
   tamanhoFonte: string
+  bordaBadgeCell: boolean
 }
 
 export interface ItensVendas {

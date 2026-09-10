@@ -12,6 +12,11 @@ describe('themeCustomization', () => {
     expect(normalizeThemeCustomization({ primariaLight: 'red' })).toEqual(DEFAULT_THEME_CUSTOMIZATION)
   })
 
+  it('mantém a preferência da borda dos badges e usa borda por padrão', () => {
+    expect(normalizeThemeCustomization({ bordaBadgeCell: false }).bordaBadgeCell).toBe(false)
+    expect(normalizeThemeCustomization({}).bordaBadgeCell).toBe(true)
+  })
+
   it('gera paletas diferentes e completas para light e dark', () => {
     const light = getThemePalette(DEFAULT_THEME_CUSTOMIZATION, 'light')
     const dark = getThemePalette(DEFAULT_THEME_CUSTOMIZATION, 'dark')

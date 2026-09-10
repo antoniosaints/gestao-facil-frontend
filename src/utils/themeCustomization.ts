@@ -12,6 +12,7 @@ export const DEFAULT_THEME_CUSTOMIZATION: ThemeCustomization = {
   radius: '0.5rem',
   fonte: 'Inter',
   tamanhoFonte: '100%',
+  bordaBadgeCell: true,
 }
 
 // Fontes instaladas no sistema (declaradas via @font-face em main.css).
@@ -55,6 +56,10 @@ function normalizeFromList(value: unknown, allowed: readonly string[], fallback:
   return typeof value === 'string' && allowed.includes(value) ? value : fallback
 }
 
+function normalizeBoolean(value: unknown, fallback: boolean) {
+  return typeof value === 'boolean' ? value : fallback
+}
+
 export function normalizeThemeCustomization(
   value?: Partial<ThemeCustomization> | null,
 ): ThemeCustomization {
@@ -71,6 +76,10 @@ export function normalizeThemeCustomization(
       value?.tamanhoFonte,
       FONT_SIZE_VALUES,
       DEFAULT_THEME_CUSTOMIZATION.tamanhoFonte,
+    ),
+    bordaBadgeCell: normalizeBoolean(
+      value?.bordaBadgeCell,
+      DEFAULT_THEME_CUSTOMIZATION.bordaBadgeCell,
     ),
   }
 }

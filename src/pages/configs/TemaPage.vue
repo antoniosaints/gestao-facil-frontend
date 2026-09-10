@@ -270,6 +270,35 @@
 
         <section class="space-y-3">
           <div>
+            <h3 class="font-medium">Detalhes dos badges</h3>
+            <p class="text-sm text-muted-foreground">
+              Ajuste a apresentação dos indicadores de status usados em tabelas e detalhes.
+            </p>
+          </div>
+          <div
+            class="flex items-center justify-between gap-4 rounded-2xl bg-card p-4 shadow-[var(--shadow-theme-card)]"
+          >
+            <div class="space-y-1">
+              <label for="borda-badge-cell" class="text-sm font-semibold"
+                >Exibir borda nos badges</label
+              >
+              <p class="text-xs leading-5 text-muted-foreground">
+                Desative para uma interface mais limpa, sem bordas nos indicadores de status.
+              </p>
+            </div>
+            <Switch
+              id="borda-badge-cell"
+              v-model="form.bordaBadgeCell"
+              aria-label="Exibir borda nos badges"
+              @update:model-value="aplicarPreview"
+            />
+          </div>
+        </section>
+
+        <Separator />
+
+        <section class="space-y-3">
+          <div>
             <h3 class="font-medium">Pré-visualização completa</h3>
             <p class="text-sm text-muted-foreground">
               Confira simultaneamente como sua identidade funciona nos dois modos.
@@ -392,6 +421,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore, type UiNavigationStyle } from '@/stores/ui/uiStore'
 import type { ThemeCustomization } from '@/types/schemas'
