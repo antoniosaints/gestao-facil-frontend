@@ -15,22 +15,25 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   capitalize: true,
   size: 'lg',
+  border: undefined,
 })
 
 const formattedLabel = computed(() =>
   props.capitalize ? formatToCapitalize(props.label) : props.label,
 )
 
+const hasBorder = computed(
+  () => props.border ?? activeThemeCustomization.value.bordaBadgeCell,
+)
+
 const baseClasses = computed(() => {
   const classes = 'font-medium inline-flex items-center gap-1 w-max'
-  const borderClass =
-    (props.border ?? activeThemeCustomization.value.bordaBadgeCell) ? ' border' : ''
 
   if (props.size === 'sm') {
-    return `${classes} px-1.5 py-[1px] rounded-md text-[11px]${borderClass}`
+    return `${classes} px-1.5 py-[1px] rounded-md text-[11px]`
   }
 
-  return `${classes} px-2 py-1 rounded-lg${borderClass}`
+  return `${classes} px-2 py-1 rounded-lg`
 })
 
 const iconClasses = computed(() => (props.size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'))
@@ -50,7 +53,10 @@ const colors = {
 </script>
 
 <template>
-  <span :class="[baseClasses, colors[props.color] || colors.cyan]">
+  <span
+    :class="[baseClasses, colors[props.color] || colors.cyan]"
+    :style="{ borderWidth: hasBorder ? '1px' : '0' }"
+  >
     <template v-if="props.icon">
       <i
         v-if="typeof props.icon === 'string'"
