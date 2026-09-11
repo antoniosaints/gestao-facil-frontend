@@ -17,6 +17,8 @@ const columns = computed(() => store.filters.listingMode === 'variante' ? column
     :columns="columns"
     api="/produtos"
     :filters="store.filters"
+    :clear-search-token="store.clearSearchToken"
+    :on-search-change="store.setTableSearch"
   >
     <template #toolbar>
       <BulkActionsProdutos />

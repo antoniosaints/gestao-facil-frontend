@@ -340,10 +340,30 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     listingMode: 'base',
     update: false,
   })
+  const tableSearch = ref('')
+  const clearSearchToken = ref(0)
 
   const updateListingMode = (mode: 'base' | 'variante') => {
     filters.value.listingMode = mode
     updateTable()
+  }
+
+  const clearFilters = () => {
+    filters.value.status = ''
+    filters.value.categoriaId = null
+    filters.value.estoqueBaixo = 'TODOS'
+    filters.value.maisVendas = 'TODOS'
+    updateTable()
+  }
+
+  const clearAllFilters = () => {
+    clearFilters()
+    tableSearch.value = ''
+    clearSearchToken.value += 1
+  }
+
+  const setTableSearch = (value: string) => {
+    tableSearch.value = value
   }
 
   const updateTable = () => {
@@ -514,6 +534,11 @@ export const useProdutoStore = defineStore('produtoStore', () => {
     gerarSkuProduto,
     gerarSkuVariante,
     updateTable,
+    clearFilters,
+    clearAllFilters,
+    clearSearchToken,
+    setTableSearch,
+    tableSearch,
     updateListingMode,
     filters,
     reset,

@@ -4,7 +4,7 @@ import Mobile from '@/pages/produtos/partials/Mobile.vue'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
 import ModalProdutos from './formulario/ModalProdutos.vue'
 import ModalCriarLote from './others/ModalCriarLote.vue'
-import { BadgePlus, ChevronDown, FileChartLine, FileUp, FolderTree, Funnel, Layers3, Menu, Package, RotateCw, Store } from 'lucide-vue-next'
+import { BadgePlus, ChevronDown, FileChartLine, FileUp, FilterX, FolderTree, Funnel, Layers3, Menu, Package, RotateCw, Store } from 'lucide-vue-next'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -22,11 +22,20 @@ import ModalTipoCadastroProduto from './others/ModalTipoCadastroProduto.vue'
 import ModalFiltroProdutos from './formulario/ModalFiltroProdutos.vue'
 import ModalCatalogoLink from './others/ModalCatalogoLink.vue'
 import router from '@/router'
-import { provide, ref } from 'vue'
+import { computed, provide, ref } from 'vue'
 
 const store = useProdutoStore()
 const openFilter = ref(false)
 const openCatalogo = ref(false)
+
+const hasActiveFilters = computed(
+    () =>
+        Boolean(store.tableSearch.trim()) ||
+        Boolean(store.filters.status) ||
+        Boolean(store.filters.categoriaId) ||
+        store.filters.estoqueBaixo !== 'TODOS' ||
+        store.filters.maisVendas !== 'TODOS',
+)
 
 provide('openModalFiltroProdutos', openFilter)
 
@@ -72,8 +81,14 @@ const relatorioGeral = async () => {
                     </button>
                 </div>
                 <button @click="openFilter = true" title="Filtrar produtos"
-                    class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-2 py-1.5 text-sm rounded-md">
+                    class="border border-blue-500 hover:border-blue-700 text-blue-900 dark:text-blue-200 bg-blue-500/20 px-3 py-1.5 text-sm rounded-md flex items-center gap-1.5">
                     <Funnel class="w-5 h-5" />
+                    <span>Filtro</span>
+                </button>
+                <button v-if="hasActiveFilters" @click="store.clearAllFilters" title="Limpar filtros"
+                    class="bg-background border border-border hover:bg-muted px-3 py-1.5 text-sm rounded-md flex items-center gap-1.5">
+                    <FilterX class="w-4 h-4" />
+                    <span>Limpar filtros</span>
                 </button>
                 <DropdownMenu>
                     <DropdownMenuTrigger as-child>

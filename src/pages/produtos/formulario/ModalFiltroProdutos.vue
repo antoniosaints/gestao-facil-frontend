@@ -46,12 +46,7 @@ function limparFiltro() {
   categoriaId.value = null
   estoqueBaixo.value = null
   maisVendas.value = null
-
-  store.filters.status = ''
-  store.filters.categoriaId = null
-  store.filters.estoqueBaixo = 'TODOS'
-  store.filters.maisVendas = 'TODOS'
-  store.updateTable()
+  store.clearFilters()
   open.value = false
 }
 </script>
