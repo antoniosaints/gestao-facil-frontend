@@ -16,6 +16,7 @@ import {
   Copy,
   ExternalLink,
   EyeOff,
+  FileDown,
   Landmark,
   MoreVertical,
   Pause,
@@ -84,6 +85,7 @@ import ModalParcela from './modais/ModalParcela.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue'
 import CobrancaRapidaModal from '../inadimplencia/CobrancaRapidaModal.vue'
+import ExportarCobrancaPdf from './modais/ExportarCobrancaPdf.vue'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 
@@ -113,6 +115,7 @@ const converting = ref(false)
 const openAdicionarParcela = ref(false)
 const cobrancaRapidaOpen = ref(false)
 const cobrancaRapidaSending = ref(false)
+const exportPdfOpen = ref(false)
 const cobrancaRapidaParcela = ref<ParcelaDetalhe | null>(null)
 const mensagemCobrancaPadrao = ref('')
 const lancamento = ref<LancamentoDetalhe | null>(null)
@@ -818,6 +821,9 @@ watch(() => store.filters.update, loadLancamento)
           <DropdownMenuContent align="end" class="w-60">
             <DropdownMenuItem :disabled="!lancamento?.id" @click="editarLancamento">
               <PenLine class="mr-2 h-4 w-4" /> Editar lançamento
+            </DropdownMenuItem>
+            <DropdownMenuItem :disabled="!lancamento?.id" @click="exportPdfOpen = true">
+              <FileDown class="mr-2 h-4 w-4" /> Exportar cobrança em PDF
             </DropdownMenuItem>
             <DropdownMenuItem @click="loadLancamento">
               <RotateCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': loading }" /> Atualizar dados
@@ -1556,6 +1562,15 @@ watch(() => store.filters.update, loadLancamento)
       </button>
       <button
         type="button"
+        class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
+        :disabled="!lancamento?.id"
+        @click="exportPdfOpen = true"
+      >
+        <FileDown class="h-5 w-5" />
+        <span class="text-xs">PDF</span>
+      </button>
+      <button
+        type="button"
         class="flex flex-col items-center text-red-600 transition hover:text-red-500 disabled:text-gray-300 dark:disabled:text-gray-600"
         :disabled="!lancamento?.id"
         @click="deletar(lancamento?.id!)"
@@ -1566,6 +1581,7 @@ watch(() => store.filters.update, loadLancamento)
     </MobileBottomBar>
 
     <GerarCobranca />
+    <ExportarCobrancaPdf v-if="lancamento" v-model:open="exportPdfOpen" :lancamento="lancamento" />
     <LancamentoModal />
     <ClientesModal />
     <DetalhesVenda :acoes-host="['cobranca']" />

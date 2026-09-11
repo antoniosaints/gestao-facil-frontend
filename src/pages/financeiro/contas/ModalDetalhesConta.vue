@@ -17,6 +17,8 @@ import { columnsMovimentacoesConta } from './tabela/columnDefMovimentacoes'
 
 const open = defineModel<boolean>('open', { default: false })
 
+type FiltroStatusParcela = Exclude<FiltroStatusFinanceiro, 'PARCIAL'>
+
 const props = defineProps<{
   conta: ContasFinanceiro | null
 }>()
@@ -28,7 +30,7 @@ const openAjusteModal = ref(false)
 const detalhes = ref<ContaFinanceiraDetalhesResponse | null>(null)
 const filtroPeriodo = ref<[Date, Date]>([startOfMonth(new Date()), endOfMonth(new Date())])
 const filtroTipo = ref<FiltroTipoFinanceiro>('TODOS')
-const filtroStatus = ref<FiltroStatusFinanceiro>('TODOS')
+const filtroStatus = ref<FiltroStatusParcela>('TODOS')
 
 const title = computed(() => `Detalhes da conta${props.conta?.nome ? ` • ${props.conta.nome}` : ''}`)
 const description = computed(

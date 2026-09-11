@@ -182,6 +182,14 @@ export class LancamentosRepository {
     const recibo = await http.post(`/lancamentos/parcelas/${idParcela}/recibo`)
     return recibo
   }
+  static async exportarCobrancaPdf(
+    lancamentoId: number,
+    data: { parcelaIds: number[]; observacao?: string; incluirPix: boolean; chavePix?: string },
+  ) {
+    return http.post(`/lancamentos/${lancamentoId}/cobranca-pdf`, data, {
+      responseType: 'blob',
+    })
+  }
   static async pagarParcela(
     idParcela: number,
     data: {

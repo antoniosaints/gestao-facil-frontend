@@ -40,6 +40,17 @@ const props = withDefaults(defineProps<Props>(), {
     maxDate: null
 })
 
+/** Datas sem horário representam dias do calendário, não instantes em UTC. */
+function parseLocalCalendarDate(value: Props['modelValue']) {
+    if (typeof value !== 'string') return value;
+
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return value;
+
+    const [, year, month, day] = match;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
 const presetDates = ref([
     { label: 'Ontem', value: [startOfDay(subDays(new Date(), 1)), endOfDay(subDays(new Date(), 1))] },
     { label: 'Hoje', value: [startOfDay(new Date()), endOfDay(new Date())] },
@@ -61,7 +72,7 @@ const presetDates = ref([
 const emit = defineEmits(["update:modelValue", "range-end"]);
 
 // Ref interna
-const data = ref(props.modelValue);
+const data = ref(parseLocalCalendarDate(props.modelValue));
 
 function emitRangeEnd() {
     emit("range-end", data.value);
@@ -75,7 +86,7 @@ watch(data, (val) => {
 watch(
     () => props.modelValue,
     (val) => {
-        data.value = val;
+        data.value = parseLocalCalendarDate(val);
     }
 );
 </script>

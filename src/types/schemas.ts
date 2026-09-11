@@ -715,7 +715,7 @@ export interface ContasFinanceiro {
   saldoAtual?: number | string
 }
 
-export type FiltroStatusFinanceiro = 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
+export type FiltroStatusFinanceiro = 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO' | 'PARCIAL'
 export type FiltroTipoFinanceiro = 'TODOS' | 'RECEITA' | 'DESPESA'
 
 export interface ContaFinanceiraDetalheMovimentacao {

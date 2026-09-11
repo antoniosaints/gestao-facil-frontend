@@ -15,13 +15,15 @@ import { useToast } from 'vue-toastification'
 
 const open = defineModel<boolean>('open', { default: false })
 
+type FiltroStatusParcela = Exclude<FiltroStatusFinanceiro, 'PARCIAL'>
+
 const props = defineProps<{
   contaOrigem: ContasFinanceiro | null
   filtros?: {
     inicio?: Date | string | null
     fim?: Date | string | null
     tipo?: FiltroTipoFinanceiro
-    status?: FiltroStatusFinanceiro
+    status?: FiltroStatusParcela
     search?: string
   }
 }>()

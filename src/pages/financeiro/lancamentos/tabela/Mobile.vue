@@ -38,7 +38,7 @@
             >
               <ArrowDown v-if="row.tipo === 'DESPESA'" class="inline-flex h-4 w-4" />
               <ArrowUp v-else class="inline-flex h-4 w-4" />
-              {{ formatCurrencyBR(Number(row.valorTotal)) }}
+              {{ getValorLabel(row) }}
             </div>
           </div>
           <div
@@ -240,6 +240,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useToast } from 'vue-toastification'
 import router from '@/router'
+import { getResumoValorLancamento } from './valorExibido'
 
 const store = useLancamentosStore()
 const toast = useToast()
@@ -250,6 +251,14 @@ const loading = ref(false)
 const searchQuery = ref('')
 const showModalBuscar = ref(false)
 const showDrawer = ref(false)
+
+function getValorLabel(row: LancamentoFinanceiro) {
+  const { temParcelasEmAberto, valorPendente, valorTotal } = getResumoValorLancamento(row.parcelas)
+  if (store.exibirValorParcelasAtuais && temParcelasEmAberto) {
+    return `${formatCurrencyBR(valorPendente)} de ${formatCurrencyBR(valorTotal)}`
+  }
+  return formatCurrencyBR(valorTotal)
+}
 
 function openSave(tipo: 'RECEITA' | 'DESPESA') {
   store.form.tipo = tipo

@@ -24,6 +24,7 @@ import { RouterLink } from 'vue-router'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { getDatasTabelaLancamento } from './dateColumns'
+import { getResumoValorLancamento } from './valorExibido'
 const store = useLancamentosStore()
 export const columnsLancamentos: ColumnDef<
   LancamentoFinanceiro & { parcelas: Array<ParcelaFinanceiro>; categoria: CategoriaFinanceiro }
@@ -243,11 +244,38 @@ cell: ({ row }) =>
           variant: 'ghost',
           onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
         },
-        () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+        () => [
+          store.exibirValorParcelasAtuais ? 'Pendente/Total' : 'Valor',
+          render(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
+        ],
+    ),
     cell: ({ row }) => {
+      const { temParcelasEmAberto, valorPendente, valorTotal } = getResumoValorLancamento(
+        row.original.parcelas,
+      )
+      const label = store.exibirValorParcelasAtuais && temParcelasEmAberto
+        ? `${formatCurrencyBR(valorPendente)}/${formatCurrencyBR(valorTotal)}`
+        : formatCurrencyBR(valorTotal)
+
+      if (store.exibirValorParcelasAtuais && temParcelasEmAberto) {
+        return render('span', { class: 'inline-flex items-center gap-1 font-medium' }, [
+          render('span', { class: 'text-yellow-700 dark:text-yellow-300' }, formatCurrencyBR(valorPendente)),
+          render('span', { class: 'text-muted-foreground' }, '/'),
+          render(
+            'span',
+            {
+              class:
+                row.original.tipo === 'RECEITA'
+                  ? 'text-green-800 dark:text-green-300'
+                  : 'text-red-800 dark:text-red-300',
+            },
+            formatCurrencyBR(valorTotal),
+          ),
+        ])
+      }
+
       return render(BadgeCell, {
-        label: formatCurrencyBR(row.original.parcelas.reduce((acc, p) => acc + Number(p.valor), 0)),
+        label,
         color: row.original.tipo === 'RECEITA' ? 'green' : 'red',
         capitalize: false,
       })

@@ -10,9 +10,10 @@ import { LancamentosRepository } from '@/repositories/lancamento-repository'
 interface filtro {
   periodo?: { inicio: string | null; fim: string | null }
   tipo?: 'TODOS' | 'RECEITA' | 'DESPESA'
-  status?: 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
+  status?: 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO' | 'PARCIAL'
   origem?: 'TODOS' | 'ASSINATURA_PAGAR'
   ignorado?: 'TODOS' | 'COM_PARCELA_IGNORADA' | 'SEM_PARCELA_IGNORADA'
+  modalidade?: 'TODOS' | 'PARCELADOS' | 'RECORRENTES'
   contaFinanceiraId?: number | null
   categoriaId?: number | null
   clienteId?: number | null
@@ -103,6 +104,7 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const contaFinanceiraParcelaEfetivar = ref<number | null>(null)
   const currentMonth = ref(new Date())
   const selectedIds = ref<number[]>([])
+  const exibirValorParcelasAtuais = ref(false)
 
   function resetSelectedIds() {
     selectedIds.value = []
@@ -119,6 +121,10 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     if (index !== -1) {
       selectedIds.value.splice(index, 1)
     }
+  }
+
+  function toggleExibicaoValorParcelas() {
+    exibirValorParcelasAtuais.value = !exibirValorParcelasAtuais.value
   }
 
   const formParcela = ref<{
@@ -249,6 +255,8 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     openModalParcela,
     openModalLote,
     currentMonth,
+    exibirValorParcelasAtuais,
+    toggleExibicaoValorParcelas,
     selectedIds,
     addSelectedId,
     resetSelectedIds,

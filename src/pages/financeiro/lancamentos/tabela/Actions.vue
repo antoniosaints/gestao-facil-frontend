@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ArrowLeftRight, EyeOff, Menu, Pencil, Settings2 } from 'lucide-vue-next'
+import { ArrowLeftRight, EyeOff, FileDown, Menu, Pencil, Settings2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -9,11 +9,13 @@ import { useToast } from 'vue-toastification';
 import { LancamentosRepository } from '@/repositories/lancamento-repository';
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos';
 import { useConfirm } from '@/composables/useConfirm';
+import ExportarCobrancaPdf from '../modais/ExportarCobrancaPdf.vue'
 
 const store = useLancamentosStore()
 const toast = useToast()
 const converting = ref(false)
 const convertDialogOpen = ref(false)
+const exportPdfOpen = ref(false)
 
 const { data } = defineProps<{
     data: LancamentoFinanceiro,
@@ -96,6 +98,10 @@ async function alternarIgnorado() {
                         Gerenciar
                     </DropdownMenuItem>
                 </RouterLink>
+                <DropdownMenuItem @click="exportPdfOpen = true">
+                    <FileDown class="w-4 h-4 mr-1" />
+                    Exportar cobrança em PDF
+                </DropdownMenuItem>
                 <DropdownMenuItem @click="convertDialogOpen = true">
                     <ArrowLeftRight class="w-4 h-4 mr-1" />
                     Converter para {{ tipoDestino }}
@@ -126,5 +132,6 @@ async function alternarIgnorado() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+        <ExportarCobrancaPdf v-model:open="exportPdfOpen" :lancamento="data" />
     </div>
 </template>

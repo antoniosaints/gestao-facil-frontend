@@ -88,19 +88,7 @@
                     </template>
 
                     <TableRow v-else>
-                        <TableCell v-if="loading" :colspan="columns.length">
-                            <Empty>
-                                <EmptyHeader>
-                                    <EmptyMedia variant="icon">
-                                        <Loader class="h-6 w-6 text-info animate-spin mr-1" />
-                                    </EmptyMedia>
-                                    <EmptyTitle>Carregando...</EmptyTitle>
-                                    <EmptyDescription>
-                                        Buscando registros para serem listados aqui.
-                                    </EmptyDescription>
-                                </EmptyHeader>
-                            </Empty>
-                        </TableCell>
+                        <TableCell v-if="loading" :colspan="columns.length" class="h-48" aria-busy="true" />
                         <TableCell v-else :colspan="columns.length" class="h-24 text-center">
                             <Empty>
                                 <EmptyHeader>
@@ -117,11 +105,11 @@
                     </TableRow>
                 </TableBody>
             </Table>
-            <div v-if="loading && data.length"
-                class="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
-                <span class="flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm font-medium shadow-sm">
-                    <Loader class="h-4 w-4 animate-spin text-primary" /> Atualizando tabela...
-                </span>
+            <div v-if="loading"
+                class="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/90 backdrop-blur-[1px]"
+                role="status">
+                <img src="/images/infinite-spinner.svg" alt="" class="h-14 w-28 object-contain" />
+                <span class="sr-only">Carregando tabela</span>
             </div>
         </div>
 
@@ -153,7 +141,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from '../ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
-import { BadgeQuestionMark, Eye, Loader } from 'lucide-vue-next';
+import { BadgeQuestionMark, Eye } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
