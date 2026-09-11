@@ -11,7 +11,13 @@ const columns = computed(() => store.filters.listingMode === 'variante' ? column
 </script>
 
 <template>
-  <DataTable :key="store.filters.listingMode" :columns="columns" api="/produtos" :filters="store.filters">
+  <DataTable
+    :key="store.filters.listingMode"
+    :state-key="`produtos:${store.filters.listingMode}`"
+    :columns="columns"
+    api="/produtos"
+    :filters="store.filters"
+  >
     <template #toolbar>
       <BulkActionsProdutos />
     </template>
