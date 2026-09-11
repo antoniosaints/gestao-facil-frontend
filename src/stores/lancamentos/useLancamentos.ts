@@ -105,6 +105,8 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
   const currentMonth = ref(new Date())
   const selectedIds = ref<number[]>([])
   const exibirValorParcelasAtuais = ref(false)
+  const clearSearchToken = ref(0)
+  const tableSearch = ref('')
 
   function resetSelectedIds() {
     selectedIds.value = []
@@ -125,6 +127,15 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
 
   function toggleExibicaoValorParcelas() {
     exibirValorParcelasAtuais.value = !exibirValorParcelasAtuais.value
+  }
+
+  function clearTableSearch() {
+    tableSearch.value = ''
+    clearSearchToken.value += 1
+  }
+
+  function setTableSearch(value: string) {
+    tableSearch.value = value
   }
 
   const formParcela = ref<{
@@ -257,6 +268,10 @@ export const useLancamentosStore = defineStore('lancamentosStore', () => {
     currentMonth,
     exibirValorParcelasAtuais,
     toggleExibicaoValorParcelas,
+    clearSearchToken,
+    tableSearch,
+    clearTableSearch,
+    setTableSearch,
     selectedIds,
     addSelectedId,
     resetSelectedIds,

@@ -310,6 +310,7 @@ function isQuickFilterActive(quickFilter: (typeof quickFilters)[number]) {
 
 const hasActiveFilters = computed(
   () =>
+    Boolean(store.tableSearch.trim()) ||
     filtros.tipo !== 'TODOS' ||
     filtros.status !== 'TODOS' ||
     filtros.modalidade !== 'TODOS' ||
@@ -378,6 +379,7 @@ function applyQuickFilter(quickFilter: (typeof quickFilters)[number]) {
 
 function clearAndApplyFilters() {
   clearFilters()
+  store.clearTableSearch()
   applyFilters()
 }
 

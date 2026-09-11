@@ -142,7 +142,7 @@ import { Input } from '../ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { BadgeQuestionMark, Eye } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
 
@@ -152,6 +152,10 @@ const props = defineProps<{
     filters?: Record<string, any> // 🔑 filtros externos opcionais
     /** Chave opcional para diferenciar tabelas que compartilham rota e endpoint. */
     stateKey?: string
+    /** Incrementado externamente quando a busca textual deve ser descartada. */
+    clearSearchToken?: number
+    /** Notifica o contexto da tabela sobre o texto de busca atual. */
+    onSearchChange?: (value: string) => void
 }>()
 
 const route = useRoute()
@@ -170,5 +174,16 @@ const {
 
 // Identifica as linhas atualmente exibidas; ver o comentário no <TableHead> do cabeçalho.
 const rowsKey = computed(() => data.value.map((row: any) => row?.id).join(','))
+
+watch(
+    () => props.clearSearchToken,
+    () => setSearch(''),
+)
+
+watch(
+    search,
+    (value) => props.onSearchChange?.(value),
+    { immediate: true },
+)
 
 </script>

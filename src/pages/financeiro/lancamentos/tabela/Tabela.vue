@@ -14,6 +14,8 @@ const store = useLancamentosStore()
         :columns="columnsLancamentos"
         api="/lancamentos/getDataTable"
         :filters="store.filters"
+        :clear-search-token="store.clearSearchToken"
+        :on-search-change="store.setTableSearch"
     >
         <template #toolbar="{ table }">
             <BulkActionsLancamentos :table="(table as Table<any>)" />
