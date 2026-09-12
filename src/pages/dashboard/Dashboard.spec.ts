@@ -27,6 +27,7 @@ vi.mock('@/repositories/lancamento-repository', () => ({
     getSaldoMensal: espiao('financeiro.saldoMensal', serie),
     resumoTotal: espiao('financeiro.resumoTotal', { saldo: 'R$ 10,00', receitas: 'R$ 1', despesas: 'R$ 1' }),
     resumoStatusTotal: espiao('financeiro.status', { pendente: 0, pago: 0 }),
+    getDashboardVisaoGeral: espiao('financeiro.painel', { data: { graficos: { fluxo: serie }, contas: [], assinaturasPagar: { totalPrevistoPeriodo: 0, proximas: [], vencidas: [] } } }),
   },
 }))
 vi.mock('@/repositories/produto-repository', () => ({
@@ -53,13 +54,20 @@ vi.mock('@/repositories/assinatura-repository', () => ({
 vi.mock('@/repositories/loja-repository', () => ({
   LojaRepository: { getResumo: espiao('loja.resumo', { pedidos: 9, emAberto: 3, faturamento: 1000, ticketMedio: 111, pedidosFaturados: 9, cancelados: 0, periodo: { inicio: '', fim: '' } }) },
 }))
+vi.mock('@/repositories/dashboard-repository', () => ({
+  DashboardRepository: {
+    getLayout: espiao('dashboard.layout', { layout: null, source: 'DEFAULT', canCustomize: true }),
+    saveLayout: vi.fn(),
+    saveDefaultLayout: vi.fn(),
+  },
+}))
 vi.mock('@/stores/dashboard/useDashboardStore', () => ({
   useDashboardStore: () => ({ getResumo: espiao('dashboard.resumo', { data: { vendasCount: 'R$ 500,00', clientes: 12, percentageByLastMonth: 5 } }) }),
 }))
 
 const permissaoCheia = { editar: true, visualizar: true, criar: true, excluir: true, painel: true }
 
-function montarUiStore(over: { visibleMenuKeys?: string[] | null; appModules?: Record<string, boolean> } = {}) {
+function montarUiStore(over: { visibleMenuKeys?: string[] | null; appModules?: Record<string, boolean>; financeiroPainel?: boolean } = {}) {
   const store = {
     isMobile: false,
     openSidebar: false,
@@ -74,7 +82,7 @@ function montarUiStore(over: { visibleMenuKeys?: string[] | null; appModules?: R
       clientes: { ...permissaoCheia },
       servicos: { ...permissaoCheia },
       vendas: { ...permissaoCheia },
-      financeiro: { ...permissaoCheia },
+      financeiro: { ...permissaoCheia, painel: over.financeiroPainel ?? true },
       relatorios: { ...permissaoCheia },
       configuracoes: { ...permissaoCheia },
       usuarios: { ...permissaoCheia },
@@ -142,6 +150,12 @@ describe('Dashboard — módulos ativos', () => {
     expect(chamadas).not.toContain('atendimento.painel')
     expect(chamadas).not.toContain('assinaturas.dashboard')
     expect(chamadas).not.toContain('loja.resumo')
+  })
+
+  it('não busca os dados detalhados do painel financeiro sem a permissão de painel', async () => {
+    uiStoreMock = montarUiStore({ financeiroPainel: false })
+    await montarDashboard()
+    expect(chamadas).not.toContain('financeiro.painel')
   })
 
   it('esconde KPIs de app não contratado mesmo com permissão total', async () => {

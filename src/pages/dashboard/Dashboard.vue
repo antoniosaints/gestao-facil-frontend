@@ -6,6 +6,7 @@ import { RouterLink } from 'vue-router'
 import {
   AlertTriangle,
   Boxes,
+  CalendarClock,
   ChartPie,
   ChevronRight,
   DollarSign,
@@ -14,6 +15,7 @@ import {
   Filter,
   HandCoins,
   Headset,
+  Landmark,
   Menu,
   PackageSearch,
   Receipt,
@@ -30,6 +32,11 @@ import {
   Wallet,
   Wrench,
   Eye,
+  EyeOff,
+  GripVertical,
+  Minus,
+  Plus,
+  Settings2,
 } from 'lucide-vue-next'
 
 import BarChart from '@/components/graficos/BarChart.vue'
@@ -40,6 +47,7 @@ import AutoGrid from '@/components/layout/AutoGrid.vue'
 import { intervaloDoPreset, PERIODO_PRESETS, type PeriodoPresetKey } from '@/components/layout/periodoPresets'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PALETTE, useChartTheme } from '@/composables/useChartTheme'
@@ -54,14 +62,17 @@ import { ProdutoRepository } from '@/repositories/produto-repository'
 import { VendaRepository } from '@/repositories/venda-repository'
 import { WhatsAppRepository, type PainelAtendimento } from '@/repositories/whatsapp-repository'
 import { useDashboardStore } from '@/stores/dashboard/useDashboardStore'
+import { DashboardRepository } from '@/repositories/dashboard-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { formatCurrencyBR, formatDuracaoMs, formatToCapitalize, formatToNumberValue } from '@/utils/formatters'
+import { resolveFileUrl } from '@/utils/fileUrl'
 import { IaRepository, isIaQuotaError } from '@/repositories/ia-repository'
 import { renderMarkdown } from '@/utils/simpleMarkdown'
 
 // Todo bloco da dashboard declara a que módulo pertence, e some junto com ele. Sem isso a
 // dashboard mostrava catálogo, estoque e serviços mesmo para contas com esses menus ocultos.
 type KpiCard = {
+  id: string
   modulo: ModuleKey
   titulo: string
   valor: string | any
@@ -90,6 +101,7 @@ type SummaryBlock = {
 }
 
 type ChartCard = {
+  id: string
   modulo: ModuleKey
   titulo: string
   descricao: string
@@ -100,9 +112,56 @@ type ChartCard = {
   options?: any
 }
 
+type FinanceiroDashboardResumo = {
+  data: {
+    graficos: { fluxo: { labels: string[]; datasets: any[] } }
+    contas: Array<{
+      contaId: number
+      conta: string
+      icone: string | null
+      corDestaque: string | null
+      saldoAtual: number
+      saldoPrevisto: number
+      pendenteReceber: number
+      pendentePagar: number
+    }>
+    assinaturasPagar: {
+      totalPrevistoPeriodo: number
+      proximas: Array<FinanceiroAssinatura>
+      vencidas: Array<FinanceiroAssinatura>
+    }
+  }
+}
+
+type FinanceiroAssinatura = {
+  id: number
+  nomeServico: string
+  valor: number
+  proximoVencimento: string
+  atrasada: boolean
+  icone?: string | null
+  corDestaque?: string | null
+}
+
+type DashboardWidgetLayout = {
+  id: string
+  visible: boolean
+  order: number
+  span: number
+}
+
+type DashboardWidget = {
+  id: string
+  kind: 'kpi' | 'alerts' | 'trend' | 'summary' | 'chart' | 'metas' | 'financial-subscriptions' | 'financial-accounts'
+  titulo: string
+  descricao: string
+  defaultSpan: number
+  item?: any
+}
+
 const mapperIndex = (index: any): string => String(index + 1).padStart(2, '0')
 
-const { primary, primarySoft, lineOptions, barOptions, barDualAxisOptions } = useChartTheme()
+const { primary, lineOptions, barOptions, barDualAxisOptions } = useChartTheme()
 
 const store = useDashboardStore()
 const uiStore = useUiStore()
@@ -129,6 +188,7 @@ const caixasResumo = ref<ResumoCaixas | null>(null)
 const atendimentoResumo = ref<PainelAtendimento | null>(null)
 const assinaturasResumo = ref<AssinaturaDashboardResponse['data'] | null>(null)
 const lojaResumo = ref<ResumoLoja | null>(null)
+const financeiroPainelResumo = ref<FinanceiroDashboardResumo['data'] | null>(null)
 
 // Combina permissões, apps contratados e a visibilidade configurada na conta. A regra vive em
 // moduleAccess.ts para espelhar o menu lateral: o que não aparece no menu não aparece aqui.
@@ -145,6 +205,12 @@ const modulos = computed(() => {
   ]
   return Object.fromEntries(chaves.map((k) => [k, isModuleActive(k, ctx)])) as Record<ModuleKey, boolean>
 })
+
+// Estes widgets trazem informações detalhadas de contas e obrigações. Além de o módulo estar
+// ativo, exigem exatamente a permissão do Painel financeiro — o layout padrão nunca a contorna.
+const podeVerWidgetsFinanceiros = computed(() =>
+  modulos.value.financeiro && uiStore.permissoes.financeiro.painel === true,
+)
 
 const periodoDescricao = computed(() => {
   const preset = PERIODO_PRESETS.find((p) => p.key === presetAtivo.value)
@@ -203,6 +269,7 @@ const todosKpis = computed<KpiCard[]>(() => {
 
   return [
     {
+      id: 'faturamento',
       modulo: 'vendas',
       titulo: 'Faturamento',
       valor: resumo?.vendasCount || 'R$ 0,00',
@@ -212,6 +279,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       link: '/vendas',
     },
     {
+      id: 'ticket-medio',
       modulo: 'vendas',
       titulo: 'Ticket médio',
       valor: uiStore.permissoes.vendas.painel ? formatCurrencyBR(vendas?.ticketMedio || 0) : EyeClosed,
@@ -221,6 +289,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       link: '/vendas/dashboard',
     },
     {
+      id: 'saldo-financeiro',
       modulo: 'financeiro',
       titulo: 'Saldo financeiro',
       valor: uiStore.permissoes.financeiro.painel ? (financeiro?.saldo || 'R$ 0,00') : EyeClosed,
@@ -230,6 +299,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       link: '/financeiro/painel',
     },
     {
+      id: 'clientes',
       modulo: 'clientes',
       titulo: 'Clientes',
       valor: `${resumo?.clientes || 0}`,
@@ -239,6 +309,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       link: '/clientes',
     },
     {
+      id: 'catalogo',
       modulo: 'produtos',
       titulo: 'Catálogo',
       valor: `${produtos?.totalProdutosBase || 0} Produto(s)`,
@@ -248,6 +319,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       link: '/produtos',
     },
     {
+      id: 'estoque-critico',
       modulo: 'produtos',
       titulo: 'Estoque crítico',
       valor: `${produtos?.estoqueBaixo || resumo?.estoquesBaixos?.length || 0}`,
@@ -257,6 +329,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       link: '/produtos/dashboard',
     },
     {
+      id: 'servicos-em-aberto',
       modulo: 'servicos',
       titulo: 'Serviços em aberto',
       valor: `${(servicos?.qtdAberta || 0) + (servicos?.qtdAndamento || 0)}`,
@@ -266,6 +339,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       link: '/servicos/os',
     },
     {
+      id: 'pendencias-financeiras',
       modulo: 'financeiro',
       titulo: 'Pendências financeiras',
       valor: uiStore.permissoes.financeiro.painel ? formatCurrencyBR(financeiroStatus.value?.pendente || 0) : EyeClosed,
@@ -277,6 +351,7 @@ const todosKpis = computed<KpiCard[]>(() => {
     // Estado agora, não recorte do período: "tem caixa aberto?" é a primeira pergunta do dia,
     // e caixa esquecido aberto não aparece em nenhum outro lugar do sistema.
     {
+      id: 'caixas-abertos',
       modulo: 'caixas',
       titulo: 'Caixas abertos',
       valor: `${caixas?.caixasAbertos || 0}`,
@@ -288,6 +363,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       link: '/vendas/caixas',
     },
     {
+      id: 'fila-atendimento',
       modulo: 'atendimento',
       titulo: 'Fila de atendimento',
       valor: `${atendimento?.agora.naFila || 0}`,
@@ -299,6 +375,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       link: '/atendimento/painel',
     },
     {
+      id: 'contratos-ativos',
       modulo: 'assinaturas',
       titulo: 'Contratos ativos',
       valor: `${assinaturas?.kpis.assinaturasAtivas || 0}`,
@@ -310,6 +387,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       link: '/assinaturas',
     },
     {
+      id: 'pedidos-loja',
       modulo: 'loja-virtual',
       titulo: 'Pedidos da loja',
       valor: `${loja?.pedidos || 0}`,
@@ -501,21 +579,39 @@ const vendasMensaisChart = computed(() => {
 const saldoMensalChart = computed(() => {
   const src = dataSaldoMensal.value
   const ds = src?.datasets?.[0]
+  const valores = (ds?.data ?? []).map((valor: unknown) => Number(valor) || 0)
   return {
     labels: src?.labels ?? [],
     datasets: [{
       label: ds?.label || 'Saldo',
-      data: ds?.data ?? [],
-      borderColor: primary.value,
-      backgroundColor: primarySoft.value,
-      fill: true,
-      tension: 0.35,
-      borderWidth: 2,
-      pointRadius: 2,
-      pointHoverRadius: 5,
+      data: valores,
+      // Saldo negativo pede destaque imediato; positivo conserva a cor primária da conta.
+      backgroundColor: valores.map((valor: number) => valor < 0 ? '#ef4444' : primary.value),
+      borderColor: valores.map((valor: number) => valor < 0 ? '#dc2626' : primary.value),
+      borderWidth: 1,
+      borderRadius: 6,
+      borderSkipped: false,
     }],
   }
 })
+
+const evolucaoSaldoFinanceiroChart = computed(() => {
+  const fluxo = financeiroPainelResumo.value?.graficos.fluxo
+  return {
+    labels: fluxo?.labels ?? [],
+    datasets: fluxo?.datasets ?? [],
+  }
+})
+
+const assinaturasFinanceiras = computed(() => {
+  const assinaturas = financeiroPainelResumo.value?.assinaturasPagar
+  if (!assinaturas) return []
+  return [...assinaturas.vencidas, ...assinaturas.proximas]
+    .filter((assinatura, index, lista) => lista.findIndex((item) => item.id === assinatura.id) === index)
+    .slice(0, 5)
+})
+
+const contasFinanceirasResumo = computed(() => financeiroPainelResumo.value?.contas ?? [])
 
 const ticketMedioChart = computed(() => {
   const src = dataTicketMedio.value
@@ -546,6 +642,7 @@ const topProdutosRanking = computed(() => {
 const charts = computed<ChartCard[]>(() =>
   [
     {
+      id: 'vendas-mensais',
       modulo: 'vendas' as const,
       titulo: 'Vendas mensais',
       descricao: 'Receita e volume vendidos ao longo dos meses.',
@@ -556,16 +653,18 @@ const charts = computed<ChartCard[]>(() =>
       options: barDualAxisOptions.value,
     },
     {
+      id: 'saldo-mensal',
       modulo: 'financeiro' as const,
       titulo: 'Saldo mensal',
       descricao: 'Evolução consolidada do financeiro.',
       icone: HandCoins,
       iconClass: 'text-emerald-600',
-      tipo: 'line' as const,
+      tipo: 'bar' as const,
       data: saldoMensalChart.value,
-      options: lineOptions.value,
+      options: barOptions.value,
     },
     {
+      id: 'ticket-medio-mensal',
       modulo: 'vendas' as const,
       titulo: 'Ticket médio mensal',
       descricao: 'Média de faturamento por venda faturada.',
@@ -576,6 +675,7 @@ const charts = computed<ChartCard[]>(() =>
       options: barOptions.value,
     },
     {
+      id: 'top-produtos',
       modulo: 'produtos' as const,
       titulo: 'Top produtos',
       descricao: 'Itens com melhor saída no período filtrado.',
@@ -610,6 +710,200 @@ const mobileLinks = computed(() =>
 const podeVerMetas = computed(() => modulos.value.metas)
 
 const metasSlider = computed(() => (podeVerMetas.value ? metasResumo.value.slice(0, 8) : []))
+
+const DEFAULT_WIDGET_LAYOUT: DashboardWidgetLayout[] = [
+  { id: 'metas', visible: true, order: 0, span: 6 },
+  { id: 'kpi:faturamento', visible: true, order: 1, span: 2 },
+  { id: 'kpi:ticket-medio', visible: true, order: 2, span: 2 },
+  { id: 'kpi:saldo-financeiro', visible: true, order: 3, span: 2 },
+  { id: 'kpi:clientes', visible: true, order: 4, span: 2 },
+  { id: 'kpi:catalogo', visible: true, order: 5, span: 2 },
+  { id: 'kpi:estoque-critico', visible: true, order: 6, span: 2 },
+  { id: 'kpi:servicos-em-aberto', visible: true, order: 7, span: 2 },
+  { id: 'kpi:pendencias-financeiras', visible: true, order: 8, span: 2 },
+  { id: 'kpi:caixas-abertos', visible: true, order: 9, span: 2 },
+  { id: 'kpi:fila-atendimento', visible: true, order: 10, span: 2 },
+  { id: 'kpi:contratos-ativos', visible: true, order: 11, span: 2 },
+  { id: 'kpi:pedidos-loja', visible: true, order: 12, span: 2 },
+  { id: 'alerts', visible: true, order: 13, span: 4 },
+  { id: 'trend', visible: true, order: 14, span: 2 },
+  { id: 'summary:vendas', visible: true, order: 15, span: 3 },
+  { id: 'summary:financeiro', visible: true, order: 16, span: 3 },
+  { id: 'summary:produtos', visible: true, order: 17, span: 3 },
+  { id: 'summary:servicos', visible: true, order: 18, span: 3 },
+  { id: 'chart:vendas-mensais', visible: true, order: 19, span: 3 },
+  { id: 'chart:saldo-mensal', visible: true, order: 20, span: 3 },
+  { id: 'chart:ticket-medio-mensal', visible: true, order: 21, span: 3 },
+  { id: 'chart:top-produtos', visible: true, order: 22, span: 3 },
+  // Opções avançadas do painel financeiro: ficam fora da dashboard até o administrador escolhê-las.
+  { id: 'chart:financeiro-evolucao-saldo', visible: false, order: 23, span: 3 },
+  { id: 'financeiro:assinaturas-a-pagar', visible: false, order: 24, span: 3 },
+  { id: 'financeiro:resumo-contas', visible: false, order: 25, span: 6 },
+]
+
+const dashboardLayout = ref<DashboardWidgetLayout[]>(DEFAULT_WIDGET_LAYOUT.map((item) => ({ ...item })))
+const openModalPersonalizar = ref(false)
+const modoPersonalizacao = ref(false)
+const draggingWidgetId = ref<string | null>(null)
+const canCustomizeDashboard = ref(false)
+let layoutSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+const widgetCatalog = computed<DashboardWidget[]>(() => [
+  ...(podeVerMetas.value ? [{ id: 'metas', kind: 'metas' as const, titulo: 'Metas em andamento', descricao: 'Acompanhamento das metas do período.', defaultSpan: 6 }] : []),
+  ...kpis.value.map((item) => ({ id: `kpi:${item.id}`, kind: 'kpi' as const, titulo: item.titulo, descricao: item.detalhe, defaultSpan: 2, item })),
+  { id: 'alerts', kind: 'alerts', titulo: 'Centro de alertas', descricao: 'Prioridades operacionais para revisão rápida.', defaultSpan: 4 },
+  ...(modulos.value.vendas ? [{ id: 'trend', kind: 'trend' as const, titulo: 'Tendência comercial', descricao: 'Comparação do faturamento com o mês anterior.', defaultSpan: 2 }] : []),
+  ...summaryBlocks.value.map((item) => ({ id: `summary:${item.modulo}`, kind: 'summary' as const, titulo: item.titulo, descricao: item.descricao, defaultSpan: 3, item })),
+  ...charts.value.map((item) => ({ id: `chart:${item.id}`, kind: 'chart' as const, titulo: item.titulo, descricao: item.descricao, defaultSpan: 3, item })),
+  ...(podeVerWidgetsFinanceiros.value
+    ? [
+        {
+          id: 'chart:financeiro-evolucao-saldo',
+          kind: 'chart' as const,
+          titulo: 'Evolução do saldo',
+          descricao: 'Saldo realizado acumulado e projeção prevista no período.',
+          defaultSpan: 3,
+          item: {
+            titulo: 'Evolução do saldo',
+            descricao: 'Saldo realizado acumulado e projeção prevista no período.',
+            icone: TrendingUp,
+            iconClass: 'text-emerald-600',
+            tipo: 'line' as const,
+            data: evolucaoSaldoFinanceiroChart.value,
+            options: lineOptions.value,
+          },
+        },
+        {
+          id: 'financeiro:assinaturas-a-pagar',
+          kind: 'financial-subscriptions' as const,
+          titulo: 'Assinaturas a pagar',
+          descricao: 'Vencimentos de assinaturas e serviços recorrentes.',
+          defaultSpan: 3,
+        },
+        {
+          id: 'financeiro:resumo-contas',
+          kind: 'financial-accounts' as const,
+          titulo: 'Resumo por conta financeira',
+          descricao: 'Saldos e pendências por conta.',
+          defaultSpan: 6,
+        },
+      ]
+    : []),
+])
+
+const widgetLayoutById = computed(() => new Map(dashboardLayout.value.map((item) => [item.id, item])))
+
+const visibleWidgets = computed(() =>
+  widgetCatalog.value
+    .map((widget) => {
+      const saved = widgetLayoutById.value.get(widget.id)
+      return {
+        ...widget,
+        visible: saved?.visible ?? true,
+        order: saved?.order ?? DEFAULT_WIDGET_LAYOUT.find((item) => item.id === widget.id)?.order ?? 999,
+        span: Math.min(6, Math.max(1, saved?.span ?? widget.defaultSpan)),
+      }
+    })
+    .filter((widget) => widget.visible)
+    .sort((a, b) => a.order - b.order),
+)
+
+function scheduleDashboardLayoutSave() {
+  if (!canCustomizeDashboard.value) return
+  if (layoutSaveTimer) clearTimeout(layoutSaveTimer)
+  layoutSaveTimer = setTimeout(() => {
+    DashboardRepository.saveLayout(dashboardLayout.value).catch(() => {
+      toast.error('Não foi possível salvar a personalização da dashboard.')
+    })
+  }, 400)
+}
+
+async function restoreDashboardLayout() {
+  try {
+    const saved = await DashboardRepository.getLayout()
+    canCustomizeDashboard.value = saved.canCustomize === true
+    if (!Array.isArray(saved.layout)) return
+
+    const savedById = new Map(saved.layout.filter((item: any) => typeof item?.id === 'string').map((item: any) => [item.id, item]))
+    dashboardLayout.value = DEFAULT_WIDGET_LAYOUT.map((item) => {
+      const savedItem = savedById.get(item.id)
+      return {
+        ...item,
+        visible: typeof savedItem?.visible === 'boolean' ? savedItem.visible : item.visible,
+        order: Number.isFinite(savedItem?.order) ? savedItem.order : item.order,
+        span: Number.isFinite(savedItem?.span) ? Math.min(6, Math.max(1, savedItem.span)) : item.span,
+      }
+    })
+  } catch {
+    dashboardLayout.value = DEFAULT_WIDGET_LAYOUT.map((item) => ({ ...item }))
+  }
+}
+
+function updateWidget(id: string, changes: Partial<DashboardWidgetLayout>) {
+  const widget = dashboardLayout.value.find((item) => item.id === id)
+  if (!widget) return
+  Object.assign(widget, changes)
+  scheduleDashboardLayoutSave()
+}
+
+function toggleWidget(id: string) {
+  const widget = dashboardLayout.value.find((item) => item.id === id)
+  if (!widget) return
+  updateWidget(id, { visible: !widget.visible })
+}
+
+function resizeWidget(id: string, amount: number) {
+  const widget = dashboardLayout.value.find((item) => item.id === id)
+  if (!widget) return
+  updateWidget(id, { span: Math.min(6, Math.max(1, widget.span + amount)) })
+}
+
+function resetDashboardLayout() {
+  dashboardLayout.value = DEFAULT_WIDGET_LAYOUT.map((item) => ({ ...item }))
+  scheduleDashboardLayoutSave()
+}
+
+async function saveDashboardLayoutAsDefault() {
+  try {
+    await DashboardRepository.saveDefaultLayout(dashboardLayout.value)
+    toast.success('Layout definido como padrão para todos os usuários da conta.')
+  } catch {
+    toast.error('Não foi possível definir o layout padrão da conta.')
+  }
+}
+
+function onWidgetDragStart(id: string, event: DragEvent) {
+  if (!modoPersonalizacao.value) return
+  draggingWidgetId.value = id
+  event.dataTransfer?.setData('text/plain', id)
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+
+function onWidgetDrop(targetId: string) {
+  const sourceId = draggingWidgetId.value
+  draggingWidgetId.value = null
+  if (!modoPersonalizacao.value || !sourceId || sourceId === targetId) return
+
+  const ids = visibleWidgets.value.map((widget) => widget.id)
+  const from = ids.indexOf(sourceId)
+  const to = ids.indexOf(targetId)
+  if (from < 0 || to < 0) return
+
+  ids.splice(to, 0, ...ids.splice(from, 1))
+  ids.forEach((id, index) => updateWidget(id, { order: index }))
+}
+
+function preventNavigationWhileCustomizing(event: MouseEvent) {
+  if (!modoPersonalizacao.value) return
+  const element = event.target as HTMLElement
+  if (!element.closest('[data-widget-control]')) event.preventDefault()
+}
+
+function abrirPersonalizacao() {
+  if (!canCustomizeDashboard.value) return
+  modoPersonalizacao.value = true
+  openModalPersonalizar.value = true
+}
 
 function getPeriodoSelecionado() {
   const inicio = filtroPeriodo.value === null
@@ -694,6 +988,7 @@ async function getDataDashboard(showFeedback = false) {
       topProdutos,
       resumoFinanceiro,
       resumoFinanceiroStatus,
+      painelFinanceiro,
       resumoProdutos,
       resumoServicos,
       resumoMetas,
@@ -710,6 +1005,7 @@ async function getDataDashboard(showFeedback = false) {
       quando(m.produtos, () => VendaRepository.getTopProdutos(inicio, fim)),
       quando(m.financeiro, () => LancamentosRepository.resumoTotal()),
       quando(m.financeiro, () => LancamentosRepository.resumoStatusTotal()),
+      quando(podeVerWidgetsFinanceiros.value, () => LancamentosRepository.getDashboardVisaoGeral({ inicio, fim })),
       quando(m.produtos, () => ProdutoRepository.getResumoGeral(inicio, fim)),
       quando(m.servicos, () => OrdensServicoRepository.getResumo()),
       quando(m.metas, () => MetasRepository.resumo()),
@@ -723,6 +1019,7 @@ async function getDataDashboard(showFeedback = false) {
     vendasResumo.value = resumoVendas?.data ?? null
     financeiroResumo.value = resumoFinanceiro
     financeiroStatus.value = resumoFinanceiroStatus
+    financeiroPainelResumo.value = painelFinanceiro?.data ?? null
     produtoResumo.value = resumoProdutos
     servicosResumo.value = resumoServicos
     metasResumo.value = resumoMetas?.data ?? []
@@ -755,6 +1052,7 @@ onMounted(async () => {
   // deles para decidir o que buscar. A chamada é cacheada; sem ela, uma mudança no guard faria
   // os KPIs de apps (atendimento, assinaturas, loja) sumirem silenciosamente.
   await uiStore.loadAppModules().catch(() => undefined)
+  await restoreDashboardLayout()
   getDataDashboard()
 })
 </script>
@@ -779,6 +1077,12 @@ onMounted(async () => {
         </div>
         <Button variant="outline" size="sm" @click="openModalFiltros = true">
           <Filter class="h-4 w-4" /> Período
+        </Button>
+        <Button v-if="canCustomizeDashboard" variant="outline" size="sm" class="gap-2" @click="abrirPersonalizacao">
+          <Settings2 class="h-4 w-4" /> Personalizar
+        </Button>
+        <Button v-if="modoPersonalizacao" variant="default" size="sm" class="gap-2" @click="modoPersonalizacao = false">
+          Concluir edição
         </Button>
         <Button v-if="iaInsightsAtivo" variant="outline" size="sm" class="gap-2 text-violet-600 dark:text-violet-400"
           :disabled="loading || insightsIa.loading" @click="analisarComIa">
@@ -814,7 +1118,7 @@ onMounted(async () => {
       </CardContent>
     </Card>
 
-    <section v-if="metasSlider.length" class="rounded-2xl border border-border/70 bg-card p-3 shadow-sm">
+    <section v-if="false" class="rounded-2xl border border-border/70 bg-card p-3 shadow-sm">
       <div class="mb-2 flex items-center justify-between gap-3">
         <div>
           <p class="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -855,35 +1159,145 @@ onMounted(async () => {
     </section>
 
     <div data-tour="dashboard-indicadores">
-    <AutoGrid v-if="loading" :items="kpis" :min="200">
+    <AutoGrid v-if="loading" :items="visibleWidgets" :min="200">
       <Skeleton class="h-[152px] w-full rounded-2xl" />
     </AutoGrid>
 
-    <AutoGrid v-else :items="kpis" :min="200" v-slot="{ item }">
-      <RouterLink :to="item.link || '/'" class="block h-full">
-        <Card
-          class="h-full rounded-2xl border-border/70 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
-          <CardHeader class="py-3">
-            <CardTitle class="flex items-center gap-3 text-sm text-foreground">
-              <span class="rounded-xl p-2" :class="item.colorClass">
-                <component :is="item.icone" class="h-4 w-4" />
-              </span>
-              <span>{{ item.titulo }}</span>
-            </CardTitle>
+    <div v-else-if="visibleWidgets.length" class="dashboard-widget-grid">
+      <div
+        v-for="widget in visibleWidgets"
+        :key="widget.id"
+        class="dashboard-widget relative min-w-0"
+        :class="{ 'dashboard-widget--editing': modoPersonalizacao, 'opacity-50': draggingWidgetId === widget.id }"
+        :style="{ '--dashboard-span': widget.span, order: widget.order }"
+        :draggable="modoPersonalizacao"
+        @dragstart="onWidgetDragStart(widget.id, $event)"
+        @dragend="draggingWidgetId = null"
+        @dragover.prevent
+        @drop.prevent="onWidgetDrop(widget.id)"
+        @click.capture="preventNavigationWhileCustomizing"
+      >
+        <div v-if="modoPersonalizacao" class="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-lg border border-border bg-background/95 p-1 shadow-sm" data-widget-control>
+          <button type="button" class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title="Arraste o card para reposicionar" data-widget-control>
+            <GripVertical class="h-4 w-4" />
+          </button>
+          <button type="button" class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40" title="Diminuir largura" :disabled="widget.span <= 1" @click="resizeWidget(widget.id, -1)" data-widget-control>
+            <Minus class="h-4 w-4" />
+          </button>
+          <button type="button" class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40" title="Aumentar largura" :disabled="widget.span >= 6" @click="resizeWidget(widget.id, 1)" data-widget-control>
+            <Plus class="h-4 w-4" />
+          </button>
+          <button type="button" class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title="Ocultar card" @click="toggleWidget(widget.id)" data-widget-control>
+            <EyeOff class="h-4 w-4" />
+          </button>
+        </div>
+        <RouterLink v-if="widget.kind === 'kpi'" :to="widget.item.link || '/'" class="block h-full">
+          <Card class="h-full rounded-2xl border-border/70 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
+            <CardHeader class="py-3">
+              <CardTitle class="flex items-center gap-3 text-sm text-foreground">
+                <span class="rounded-xl p-2" :class="widget.item.colorClass">
+                  <component :is="widget.item.icone" class="h-4 w-4" />
+                </span>
+                <span>{{ widget.item.titulo }}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-1 pb-3">
+              <p class="text-lg font-semibold text-foreground md:text-xl">
+                <component v-if="(typeof widget.item.valor !== 'string')" :is="widget.item.valor" class="h-5 w-5 my-1.5" />
+                <span v-else>{{ widget.item.valor }}</span>
+              </p>
+              <p class="text-xs leading-relaxed text-muted-foreground">{{ widget.item.detalhe }}</p>
+            </CardContent>
+          </Card>
+        </RouterLink>
+
+        <section v-else-if="widget.kind === 'metas'" class="h-full rounded-2xl border border-border/70 bg-card p-3 shadow-sm">
+          <div class="mb-2 flex items-center justify-between gap-3">
+            <div>
+              <p class="flex items-center gap-2 text-sm font-medium text-foreground"><Target class="h-4 w-4" /> Metas em andamento</p>
+              <p class="text-xs text-muted-foreground">Acompanhamento discreto do período atual.</p>
+            </div>
+            <RouterLink to="/metas"><Button variant="outline" size="sm" class="gap-1">Ver metas <ChevronRight class="h-4 w-4" /></Button></RouterLink>
+          </div>
+          <div v-if="metasSlider.length" class="flex gap-3 overflow-x-auto pb-1">
+            <RouterLink v-for="meta in metasSlider" :key="meta.id" to="/metas" class="min-w-[240px] flex-1 rounded-xl border bg-background/60 p-3 transition hover:border-primary/40">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0"><p class="truncate text-sm font-medium text-foreground">{{ meta.nome }}</p><p class="text-xs text-muted-foreground">{{ getMetaTipoLabel(meta) }} • {{ meta.periodoAtual.label }}</p></div>
+                <Badge class="rounded-sm px-2" :class="meta.atingida ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'">{{ meta.atingida ? '100%' : `${meta.percentual}%` }}</Badge>
+              </div>
+              <div class="mt-1 h-2 rounded-full bg-muted"><div class="h-2 rounded-full" :class="meta.atingida ? 'bg-emerald-500' : 'bg-primary'" :style="{ width: `${Math.min(meta.percentual, 100)}%` }" /></div>
+              <p class="mt-2 text-xs text-muted-foreground">{{ formatMetaValue(meta, meta.valorAtual) }} de {{ formatMetaValue(meta, meta.valorAlvo) }}</p>
+            </RouterLink>
+          </div>
+          <p v-else class="py-6 text-center text-sm text-muted-foreground">Nenhuma meta em andamento no momento.</p>
+        </section>
+
+        <Card v-else-if="widget.kind === 'alerts'" class="h-full border-border/70 bg-card shadow-sm">
+          <CardHeader><CardTitle class="flex items-center gap-2 text-lg"><AlertTriangle class="h-5 w-5 text-amber-600" />Centro de alertas</CardTitle><CardDescription>Prioridades operacionais para revisão rápida.</CardDescription></CardHeader>
+          <CardContent><AutoGrid :items="alerts" :max="2" :min="260" :gap="12" v-slot="{ item: alert }"><div class="h-full rounded-xl border px-4 py-2" :class="getAlertClasses(alert.tone)"><div class="flex items-start justify-between gap-3"><div><p class="font-medium text-foreground">{{ alert.titulo }}</p><p class="mt-1 text-sm text-muted-foreground">{{ alert.descricao }}</p></div><AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /></div><RouterLink v-if="alert.link" :to="alert.link" class="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary dark:text-blue-500">{{ alert.cta || 'Abrir' }}<ChevronRight class="h-4 w-4" /></RouterLink></div></AutoGrid></CardContent>
+        </Card>
+
+        <Card v-else-if="widget.kind === 'trend'" class="h-full border-border/70 bg-card shadow-sm">
+          <CardHeader><CardTitle class="flex items-center gap-2 text-lg"><TrendingUp class="h-5 w-5 text-green-600" />Tendência comercial</CardTitle><CardDescription>{{ dashboardResumo?.data?.percentageByLastMonth >= 0 ? 'Crescimento' : 'Queda' }} frente ao mês anterior.</CardDescription></CardHeader>
+          <CardContent class="flex flex-col gap-2"><div><p class="text-3xl font-semibold text-foreground">{{ dashboardResumo?.data?.percentageByLastMonth?.toFixed?.(1) || 0 }}%</p><p class="text-sm text-muted-foreground">Comparação do faturamento com o mês anterior.</p></div><div class="space-y-2 rounded-xl border border-border/70 bg-muted/10 p-3"><div class="flex items-center justify-between text-sm"><span class="text-muted-foreground">Vendas totais</span><span class="font-medium text-foreground">{{ vendasResumo?.totalVendas || 0 }}</span></div><div class="flex items-center justify-between text-sm"><span class="text-muted-foreground">Vendas em aberto</span><span class="font-medium text-foreground">{{ vendasResumo?.totalAberto || 0 }}</span></div><div class="flex items-center justify-between text-sm"><span class="text-muted-foreground">Orçamentos</span><span class="font-medium text-foreground">{{ vendasResumo?.totalOrcamento || 0 }}</span></div></div><RouterLink to="/vendas/dashboard"><Button variant="outline" class="w-full">Abrir painel de vendas</Button></RouterLink></CardContent>
+        </Card>
+
+        <Card v-else-if="widget.kind === 'financial-subscriptions'" class="h-full border-border/70 bg-card shadow-sm">
+          <CardHeader>
+            <CardTitle class="flex items-center gap-2 text-lg"><CalendarClock class="h-5 w-5 text-violet-600" />Assinaturas a pagar</CardTitle>
+            <CardDescription>Próximos vencimentos e assinaturas atrasadas.</CardDescription>
           </CardHeader>
-          <CardContent class="space-y-1 pb-3">
-            <p class="text-lg font-semibold text-foreground md:text-xl">
-              <component v-if="(typeof item.valor !== 'string')" :is="item.valor" class="h-5 w-5 my-1.5" />
-              <span v-else>{{ item.valor }}</span>
-            </p>
-            <p class="text-xs leading-relaxed text-muted-foreground">{{ item.detalhe }}</p>
+          <CardContent class="space-y-3">
+            <div class="rounded-xl border border-violet-100 bg-violet-50/70 px-4 py-3 dark:border-violet-900 dark:bg-violet-950/20">
+              <p class="text-xs font-medium uppercase tracking-wide text-violet-700 dark:text-violet-300">Total previsto no período</p>
+              <p class="mt-1 text-xl font-semibold text-violet-950 dark:text-violet-100">{{ formatCurrencyBR(financeiroPainelResumo?.assinaturasPagar.totalPrevistoPeriodo || 0) }}</p>
+            </div>
+            <p v-if="!assinaturasFinanceiras.length" class="py-4 text-center text-sm text-muted-foreground">Nenhuma assinatura a pagar no período.</p>
+            <RouterLink v-for="assinatura in assinaturasFinanceiras" :key="assinatura.id" to="/financeiro/assinaturas-a-pagar" class="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-2 transition hover:bg-muted/50">
+              <div class="flex min-w-0 items-center gap-2"><span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/30" :style="{ borderColor: assinatura.corDestaque || undefined }"><img v-if="assinatura.icone" :src="resolveFileUrl(assinatura.icone, { fallback: '/imgs/logo.png' })" alt="" class="h-full w-full object-cover" /><CalendarClock v-else class="h-4 w-4 text-muted-foreground" /></span><div class="min-w-0"><p class="truncate text-sm font-medium text-foreground">{{ assinatura.nomeServico }}</p><p class="text-xs text-muted-foreground">{{ new Date(assinatura.proximoVencimento).toLocaleDateString('pt-BR') }}</p></div></div>
+              <div class="flex shrink-0 items-center gap-2"><Badge v-if="assinatura.atrasada" class="bg-rose-100 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300">Vencida</Badge><div class="text-right"><p class="text-[11px] text-muted-foreground">Previsto</p><p class="font-semibold text-foreground">{{ formatCurrencyBR(assinatura.valor) }}</p></div></div>
+            </RouterLink>
+            <RouterLink to="/financeiro/assinaturas-a-pagar"><Button variant="outline" class="w-full">Ver assinaturas</Button></RouterLink>
           </CardContent>
         </Card>
-      </RouterLink>
-    </AutoGrid>
+
+        <Card v-else-if="widget.kind === 'financial-accounts'" class="h-full border-border/70 bg-card shadow-sm">
+          <CardHeader>
+            <CardTitle class="flex items-center gap-2 text-lg"><Landmark class="h-5 w-5 text-sky-600" />Resumo por conta financeira</CardTitle>
+            <CardDescription>Saldo atual, previsto e pendências de cada conta.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p v-if="!contasFinanceirasResumo.length" class="py-6 text-center text-sm text-muted-foreground">Nenhuma conta financeira encontrada.</p>
+            <div v-else class="grid gap-3 md:grid-cols-2">
+              <RouterLink v-for="conta in contasFinanceirasResumo" :key="conta.contaId" to="/financeiro/contas" class="rounded-xl border border-border/70 p-3 transition hover:bg-muted/50">
+                <div class="flex items-start justify-between gap-3"><div class="flex min-w-0 items-center gap-2"><span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/30" :style="{ borderColor: conta.corDestaque || undefined }"><img v-if="conta.icone" :src="resolveFileUrl(conta.icone, { fallback: '/imgs/logo.png' })" alt="" class="h-full w-full object-cover" /><Landmark v-else class="h-4 w-4 text-muted-foreground" /></span><p class="truncate font-medium text-foreground">{{ conta.conta }}</p></div><div class="shrink-0 text-right"><p class="text-[11px] text-muted-foreground">Previsto</p><p class="text-sm font-semibold" :class="conta.saldoPrevisto >= 0 ? 'text-emerald-600' : 'text-rose-600'">{{ formatCurrencyBR(conta.saldoPrevisto) }}</p></div></div>
+                <div class="mt-3 grid grid-cols-3 gap-2 text-xs"><div><p class="text-muted-foreground">Atual</p><p class="mt-1 font-medium text-foreground">{{ formatCurrencyBR(conta.saldoAtual) }}</p></div><div><p class="text-muted-foreground">A receber</p><p class="mt-1 font-medium text-amber-600">{{ formatCurrencyBR(conta.pendenteReceber) }}</p></div><div><p class="text-muted-foreground">A pagar</p><p class="mt-1 font-medium text-orange-600">{{ formatCurrencyBR(conta.pendentePagar) }}</p></div></div>
+              </RouterLink>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card v-else-if="widget.kind === 'summary'" class="h-full border-border/70 bg-card shadow-sm">
+          <CardHeader><CardTitle class="flex items-center gap-2 text-base"><component :is="widget.item.icone" class="h-5 w-5 text-primary" />{{ widget.item.titulo }}</CardTitle><CardDescription>{{ widget.item.descricao }}</CardDescription></CardHeader>
+          <CardContent class="space-y-3"><div v-for="metric in widget.item.metrics" :key="metric.label" class="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 px-3 py-2 text-sm"><span class="text-muted-foreground">{{ metric.label }}</span><component v-if="typeof metric.value !== 'string'" :is="metric.value" class="h-5 w-5" /><span v-else class="font-medium text-foreground">{{ metric.value }}</span></div><RouterLink :to="widget.item.link"><Button variant="outline" class="mt-1 w-full">Ver mais</Button></RouterLink></CardContent>
+        </Card>
+
+        <Card v-else-if="widget.kind === 'chart'" class="h-full border-border/70 bg-card shadow-sm">
+          <CardHeader><CardTitle class="flex items-center gap-2 text-lg"><component :is="widget.item.icone" class="h-5 w-5" :class="widget.item.iconClass" />{{ widget.item.titulo }}</CardTitle><CardDescription>{{ widget.item.descricao }}</CardDescription></CardHeader>
+          <CardContent><div v-if="widget.item.tipo === 'ranking'"><div v-if="!widget.item.data.length" class="flex h-72 items-center justify-center text-sm text-muted-foreground">Sem itens vendidos no período.</div><ul v-else class="space-y-3"><li v-for="(item, i) in widget.item.data" :key="i" class="space-y-1"><div class="flex items-center justify-between gap-2 text-sm"><span class="flex min-w-0 items-center gap-2"><span class="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">{{ mapperIndex(i) }}</span><span class="truncate font-medium" :title="item.nome">{{ item.nome }}</span></span><span class="shrink-0 text-xs text-muted-foreground">{{ item.qtd }} un</span></div><div class="h-1.5 w-full overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary" :style="{ width: `${item.pct}%` }" /></div></li></ul></div><div v-else class="h-72"><LineChart v-if="widget.item.tipo === 'line'" :data="widget.item.data" :options="widget.item.options" /><BarChart v-else :data="widget.item.data" :options="widget.item.options" /></div></CardContent>
+        </Card>
+      </div>
+    </div>
+    <Card v-else class="border-dashed border-border/80 bg-muted/10">
+      <CardContent class="flex flex-col items-center gap-3 py-10 text-center">
+        <EyeOff class="h-6 w-6 text-muted-foreground" />
+        <div><p class="font-medium text-foreground">Nenhum card visível</p><p class="text-sm text-muted-foreground">Escolha os cards essenciais para sua rotina.</p></div>
+        <Button variant="outline" size="sm" @click="abrirPersonalizacao">Personalizar dashboard</Button>
+      </CardContent>
+    </Card>
     </div>
 
-    <div v-if="loading" class="grid grid-cols-1 gap-4 lg:grid-cols-6">
+    <div v-if="false" class="grid grid-cols-1 gap-4 lg:grid-cols-6">
       <div class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm lg:col-span-4">
         <Skeleton class="h-6 w-44 rounded-lg" />
         <div class="grid gap-3 md:grid-cols-2">
@@ -898,7 +1312,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-6">
+    <div v-if="false" class="grid grid-cols-1 gap-4 lg:grid-cols-6">
       <!-- Sem "Tendência comercial" ao lado (conta sem vendas), os alertas ocupam a linha
            inteira em vez de deixar 2 colunas vazias. -->
       <Card class="border-border/70 bg-card shadow-sm" :class="modulos.vendas ? 'lg:col-span-4' : 'lg:col-span-6'">
@@ -919,7 +1333,7 @@ onMounted(async () => {
                 </div>
                 <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               </div>
-              <RouterLink v-if="alert.link" :to="alert.link"
+              <RouterLink v-if="alert.link" :to="(alert.link as string)"
                 class="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary dark:text-blue-500">
                 {{ alert.cta || 'Abrir' }}
                 <ChevronRight class="h-4 w-4" />
@@ -967,7 +1381,7 @@ onMounted(async () => {
       </Card>
     </div>
 
-    <AutoGrid v-if="loading" :items="summaryBlocks" :min="260">
+    <AutoGrid v-if="false" :items="summaryBlocks" :min="260">
       <div class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
         <Skeleton class="h-6 w-32 rounded-lg" />
         <Skeleton class="h-4 w-40 rounded" />
@@ -976,7 +1390,7 @@ onMounted(async () => {
       </div>
     </AutoGrid>
 
-    <AutoGrid v-else :items="summaryBlocks" :min="260" v-slot="{ item: block }">
+    <AutoGrid v-if="false" :items="summaryBlocks" :min="260" v-slot="{ item: block }">
       <Card class="h-full border-border/70 bg-card shadow-sm">
         <CardHeader>
           <CardTitle class="flex items-center gap-2 text-base">
@@ -999,7 +1413,7 @@ onMounted(async () => {
       </Card>
     </AutoGrid>
 
-    <AutoGrid v-if="loading" :items="charts" :max="2" :min="380">
+    <AutoGrid v-if="false" :items="charts" :max="2" :min="380">
       <div class="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
         <Skeleton class="h-6 w-44 rounded-lg" />
         <Skeleton class="h-4 w-56 rounded" />
@@ -1007,7 +1421,7 @@ onMounted(async () => {
       </div>
     </AutoGrid>
 
-    <AutoGrid v-else :items="charts" :max="2" :min="380" v-slot="{ item: chart }">
+    <AutoGrid v-if="false" :items="charts" :max="2" :min="380" v-slot="{ item: chart }">
       <Card class="h-full border-border/70 bg-card shadow-sm">
         <CardHeader>
           <CardTitle class="flex items-center gap-2 text-lg">
@@ -1072,6 +1486,32 @@ onMounted(async () => {
       </div>
     </ModalView>
 
+    <ModalView v-model:open="openModalPersonalizar" title="Personalizar dashboard" :icon="Settings2" size="2xl"
+      description="Escolha os cards essenciais. Depois, arraste os cards e ajuste a largura diretamente na dashboard.">
+      <div class="px-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <button v-for="widget in widgetCatalog" :key="widget.id" type="button"
+          class="flex w-full items-center justify-between gap-3 rounded-md border p-3 text-left transition hover:border-primary/40"
+          :class="widgetLayoutById.get(widget.id)?.visible !== false ? 'border-primary/30 bg-primary/5' : 'border-border bg-card'"
+          @click="toggleWidget(widget.id)">
+          <span class="min-w-0">
+            <span class="block text-sm font-medium text-foreground">{{ widget.titulo }}</span>
+            <span class="mt-0.5 block truncate text-xs text-muted-foreground">{{ widget.descricao }}</span>
+          </span>
+          <span class="shrink-0 rounded-full px-2 py-1 text-xs font-medium"
+            :class="widgetLayoutById.get(widget.id)?.visible !== false ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'">
+            {{ widgetLayoutById.get(widget.id)?.visible !== false ? 'Visível' : 'Oculto' }}
+          </span>
+        </button>
+      </div>
+      <div class="mt-5 px-3 flex flex-wrap justify-between gap-2">
+        <div class="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" @click="resetDashboardLayout">Restaurar padrão</Button>
+          <Button variant="outline" size="sm" @click="saveDashboardLayoutAsDefault">Usar como padrão da conta</Button>
+        </div>
+        <Button size="sm" @click="openModalPersonalizar = false">Organizar cards</Button>
+      </div>
+    </ModalView>
+
     <!-- Análise do período com IA -->
     <ModalView v-model:open="insightsIa.open" title="Análise com IA" :icon="Sparkles" size="xl"
       :description="`Panorama do período: ${periodoDescricao}`">
@@ -1115,5 +1555,29 @@ onMounted(async () => {
 
 .ia-markdown :deep(li) {
   margin: 0.15rem 0;
+}
+
+.dashboard-widget-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.dashboard-widget--editing {
+  cursor: grab;
+}
+
+.dashboard-widget--editing:active {
+  cursor: grabbing;
+}
+
+@media (min-width: 768px) {
+  .dashboard-widget-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .dashboard-widget {
+    grid-column: span var(--dashboard-span, 2) / span var(--dashboard-span, 2);
+  }
 }
 </style>

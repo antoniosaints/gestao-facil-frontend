@@ -83,13 +83,14 @@ export const formatLabel = (
   </span>`
 }
 
-export function getLettersName(name: string, letters: number = 2): string {
-  const split = name.split(' ')
+export function getLettersName(name: string | null | undefined, letters: number = 2): string {
+  const split = String(name || '').trim().split(/\s+/).filter(Boolean)
+  if (!split.length) return '--'
   let sigla = ''
   if (split.length > 1) {
     sigla = split[0][0] + split[1][0]
   } else {
-    sigla = split[0][0] + split[0][1]
+    sigla = split[0].slice(0, letters)
   }
 
   return sigla.toUpperCase()

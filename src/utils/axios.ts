@@ -41,11 +41,17 @@ http.interceptors.response.use(
 
     const msg = (error.response?.data as any)?.message || 'Erro inesperado na requisição'
     console.error(msg)
+    // O backend devolve 403 para JWT inválido/expirado. Isso é uma falha de
+    // autenticação (e não uma falta de permissão), portanto segue o mesmo fluxo
+    // de renovação usado pelo 401.
+    const tokenInvalido =
+      error.response?.status === 401 ||
+      (error.response?.status === 403 && msg === 'Token inválido ou expirado')
 
     // Sessão de suporte: não tem refresh (de propósito), então um 401 aqui significa
     // expiração ou revogação. Devolve o CEO para o painel em vez de deixar a tela
     // morta — sem este bloco o 401 nem entraria no fluxo de refresh abaixo.
-    if (error.response?.status === 401 && isSupportActive()) {
+    if (tokenInvalido && isSupportActive()) {
       exitSupport()
       toast.info('Sessão de suporte encerrada. Você voltou para o painel CEO.')
       // window.location e não router.push: a store está hidratada com a conta do
@@ -56,7 +62,7 @@ http.interceptors.response.use(
 
     // Só tenta renovar se for 401 e não for a rota de refresh
     if (
-      error.response?.status === 401 &&
+      tokenInvalido &&
       !originalRequest._retry &&
       localStorage.getItem('gestao_facil:refreshToken')
     ) {
