@@ -120,7 +120,7 @@
                       v-model.number="purchaseFor(need).quantidadeComprada"
                       type="number"
                       min="0.001"
-                      step="1"
+                      :step="need.unidade === 'PESO' ? '0.001' : '1'"
                       :placeholder="`Quantidade (${unitLabel(need.unidade)})`"
                     />
                     <Input
@@ -337,6 +337,28 @@
           </div>
         </CardContent>
       </Card>
+      <Card v-if="isFastService" class="border-sky-500/25">
+        <CardHeader>
+          <CardTitle>Dados essenciais do serviço</CardTitle>
+          <CardDescription>
+            Serviço rápido: não há etapa de orçamento ou produção. Confira estes dados antes de liberar a entrega.
+          </CardDescription>
+        </CardHeader>
+        <CardContent class="grid gap-4 sm:grid-cols-3">
+          <div>
+            <p class="text-xs font-medium uppercase text-muted-foreground">Solicitação</p>
+            <p class="mt-1 font-medium">{{ order.ordemServico?.descricao }}</p>
+          </div>
+          <div>
+            <p class="text-xs font-medium uppercase text-muted-foreground">Mão de obra</p>
+            <p class="mt-1 text-lg font-semibold text-emerald-700 dark:text-emerald-400">{{ money(order.valorMaoObra) }}</p>
+          </div>
+          <div>
+            <p class="text-xs font-medium uppercase text-muted-foreground">Responsável</p>
+            <p class="mt-1 font-medium">{{ order.responsaveis?.map((member: any) => member.nome).join(', ') || 'Será definido no financeiro' }}</p>
+          </div>
+        </CardContent>
+      </Card>
       <div class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div class="space-y-6">
           <Card
@@ -418,7 +440,7 @@
             ></Card
           >
 
-          <Card
+          <Card v-if="!isFastService"
             ><CardHeader
               ><CardTitle>Orçamento versionado</CardTitle
               ><CardDescription
@@ -1422,6 +1444,11 @@ const budgetLocked = computed(() =>
   ].includes(order.value?.status),
 )
 const currentBudget = computed(() => order.value?.orcamentos?.[0])
+const isFastService = computed(
+  () =>
+    order.value?.tipo === 'CONSERTO' &&
+    currentBudget.value?.aprovacaoOrigem === 'SERVICO_DIRETO',
+)
 const currentBudgetApproved = computed(() => Boolean(currentBudget.value?.aprovadoEm))
 const pendingPurchaseNeeds = computed(() =>
   (order.value?.necessidadesCompra || []).filter((need: any) => need.status === 'PENDENTE'),

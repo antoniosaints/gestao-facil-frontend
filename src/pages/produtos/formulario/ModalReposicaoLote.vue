@@ -205,7 +205,7 @@ async function submit() {
             </div>
             <div class="md:col-span-2">
               <label class="mb-1 block text-xs font-medium text-muted-foreground">Quantidade</label>
-              <Input type="number" min="1" v-model.number="item.quantidade" placeholder="Ex: 50" />
+              <Input type="number" min="0.001" step="0.001" v-model.number="item.quantidade" placeholder="Ex.: 0,300" />
             </div>
             <div class="md:col-span-3">
               <label class="mb-1 block text-xs font-medium text-muted-foreground">Valor unitário (R$)</label>

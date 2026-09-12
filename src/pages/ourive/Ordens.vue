@@ -54,6 +54,7 @@ const predefinicoes = ref<{
   pecas: Array<{ id: number; nome: string }>
   metais: Array<{ id: number; nome: string }>
 }>({ pecas: [], metais: [] })
+const ourives = ref<Array<{ id: number; nome: string; papeis: string[] }>>([])
 const tableUpdate = ref(0)
 const canReceive = ui.hasOuriveCapability('RECEBER')
 type TipoNovaOrdem = 'CONSERTO' | 'ENCOMENDA'
@@ -112,6 +113,7 @@ function openNewOrder() {
 
 function selectOrderType(type: TipoNovaOrdem) {
   selectedOrderType.value = type
+  draft.value.pecas = type === 'CONSERTO' ? [] : [emptyPiece()]
   newOrderStep.value = 'formulario'
 }
 
@@ -202,6 +204,7 @@ const draft = ref({
   observacoes: '',
   prazoPrevisto: null as Date | null,
   valorMaoObra: undefined as number | undefined,
+  responsavelIds: [] as number[],
   pecas: [emptyPiece()],
 })
 function resetDraft() {
@@ -212,6 +215,7 @@ function resetDraft() {
     observacoes: '',
     prazoPrevisto: null,
     valorMaoObra: undefined,
+    responsavelIds: [],
     pecas: [emptyPiece()],
   }
 }
@@ -221,6 +225,14 @@ async function loadPredefinicoes() {
     predefinicoes.value = { pecas: data.pecas, metais: data.metais }
   } catch {
     // O preenchimento manual segue disponível se o catálogo estiver indisponível.
+  }
+}
+async function loadOurives() {
+  try {
+    const team = await OuriveRepository.equipe()
+    ourives.value = team.filter((member: any) => member.papeis?.includes('OURIVE'))
+  } catch {
+    // O cadastro continua disponível; a pessoa pode ser escolhida no financeiro depois.
   }
 }
 async function savePreset(tipo: 'PECA' | 'METAL', nome: string) {
@@ -347,11 +359,13 @@ function addPiece() {
   draft.value.pecas.push(emptyPiece())
 }
 async function save() {
-  if (
-    draft.value.descricao.trim().length < 3 ||
-    draft.value.pecas.some((piece) => piece.descricao.trim().length < 2)
-  )
-    return toast.info('Informe a solicitação e a descrição de cada item.')
+  const isService = selectedOrderType.value === 'CONSERTO'
+  if (draft.value.descricao.trim().length < 3)
+    return toast.info('Informe a solicitação do cliente.')
+  if (isService && draft.value.valorMaoObra === undefined)
+    return toast.info('Informe o valor da mão de obra.')
+  if (!isService && draft.value.pecas.some((piece) => piece.descricao.trim().length < 2))
+    return toast.info('Informe a descrição de cada item da encomenda.')
   saving.value = true
   try {
     const created = await OuriveRepository.criarOrdem({
@@ -379,6 +393,7 @@ async function save() {
 onMounted(() => {
   void loadOrders()
   void loadPredefinicoes()
+  void loadOurives()
 })
 </script>
 
@@ -748,12 +763,6 @@ onMounted(() => {
             </template>
 
             <template v-else>
-              <div class="rounded-xl border border-sky-500/25 bg-sky-500/5 p-3 text-sm">
-                <p class="font-medium text-sky-700 dark:text-sky-300">Recebimento sob custódia</p>
-                <p class="mt-1 text-muted-foreground">
-                  Descreva a peça como foi recebida para manter o registro de custódia completo.
-                </p>
-              </div>
               <label class="grid gap-1 text-sm font-medium"
                 >Solicitação do cliente<textarea
                   v-model="draft.descricao"
@@ -777,6 +786,26 @@ onMounted(() => {
                 />
                 <span class="text-xs font-normal text-muted-foreground">O valor ficará preenchido no orçamento e no financeiro da OS.</span>
               </label>
+              <div class="grid gap-2 text-sm font-medium">
+                <span>Responsável pelo serviço <span class="font-normal text-muted-foreground">(opcional)</span></span>
+                <div v-if="ourives.length" class="flex flex-wrap gap-2">
+                  <label
+                    v-for="member in ourives"
+                    :key="member.id"
+                    class="cursor-pointer rounded-lg border px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                  ><input v-model="draft.responsavelIds" class="mr-2" type="checkbox" :value="member.id" />{{ member.nome }}</label>
+                </div>
+                <p v-else class="text-xs font-normal text-muted-foreground">
+                  Nenhum ourive ativo cadastrado. O responsável também pode ser definido no financeiro antes da entrega.
+                </p>
+              </div>
+              <div class="flex items-center justify-between gap-3 border-t pt-4">
+                <div>
+                  <p class="text-sm font-medium">Dados da peça recebida <span class="text-muted-foreground">(opcional)</span></p>
+                  <p class="text-xs text-muted-foreground">Registre peso, fotos e condição somente quando necessário.</p>
+                </div>
+                <Button type="button" size="sm" variant="outline" @click="addPiece"><Plus class="mr-1 h-4 w-4" />Adicionar peça</Button>
+              </div>
               <div
                 v-for="(piece, index) in draft.pecas"
                 :key="index"
@@ -785,7 +814,7 @@ onMounted(() => {
                 <div class="flex items-center justify-between">
                   <p class="font-semibold">Peça recebida {{ index + 1 }}</p>
                   <Button
-                    v-if="draft.pecas.length > 1"
+                    v-if="draft.pecas.length"
                     size="sm"
                     variant="ghost"
                     @click="draft.pecas.splice(index, 1)"
@@ -821,15 +850,12 @@ onMounted(() => {
                   placeholder="Checklist de recebimento (um item por linha)"
                 />
               </div>
-              <Button type="button" variant="outline" class="w-fit" @click="addPiece"
-                ><Plus class="mr-2 h-4 w-4" />Adicionar peça</Button
-              >
             </template>
           </div>
           <DialogFooter>
             <Button variant="outline" @click="updateNewOrderModal(false)">Cancelar</Button>
             <Button :disabled="saving" @click="save">
-              {{ selectedOrderType === 'ENCOMENDA' ? 'Criar encomenda' : 'Registrar recebimento' }}
+              {{ selectedOrderType === 'ENCOMENDA' ? 'Criar encomenda' : 'Criar serviço e enviar para revisão' }}
             </Button>
           </DialogFooter>
         </template>

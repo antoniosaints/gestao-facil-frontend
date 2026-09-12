@@ -91,12 +91,13 @@
               <Input
                 v-model.number="formFor(leftover).medidaReal"
                 type="number"
-                min="1"
-                step="1"
-                :placeholder="leftover.unidade === 'PESO' ? 'Ex.: 8' : 'Ex.: 1'"
+                :min="leftover.unidade === 'PESO' ? '0.001' : '1'"
+                :step="leftover.unidade === 'PESO' ? '0.001' : '1'"
+                :placeholder="leftover.unidade === 'PESO' ? 'Ex.: 8,250' : 'Ex.: 1'"
               />
               <span class="font-normal">
-                O estoque atual trabalha com {{ unitLabel(leftover.unidade) }} inteiras.
+                <template v-if="leftover.unidade === 'PESO'">Informe o peso real com até três casas decimais.</template>
+                <template v-else>O estoque trabalha com unidades inteiras.</template>
               </span>
             </label>
             <label class="grid gap-1 text-xs font-medium text-muted-foreground">
@@ -221,8 +222,8 @@ async function consolidate(leftover: any) {
         ? 'Informe o peso real pesado.'
         : 'Informe a quantidade real recuperável.',
     )
-  if (!Number.isInteger(form.medidaReal))
-    return toast.info(`O estoque atual aceita somente ${unitLabel(leftover.unidade)} inteiras.`)
+  if (leftover.unidade === 'QUANTIDADE' && !Number.isInteger(form.medidaReal))
+    return toast.info('Materiais por quantidade devem usar números inteiros.')
   if (!form.produtoDestinoId) return toast.info('Selecione o produto ou variante de destino.')
   consolidatingId.value = leftover.id
   try {

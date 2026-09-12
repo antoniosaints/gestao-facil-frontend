@@ -58,7 +58,14 @@ async function submit() {
                     <label class="block text-sm font-medium mb-1">
                         Quantidade <span class="text-red-500">*</span>
                     </label>
-                    <Input type="number" v-model.number="formulario.quantidade" placeholder="Ex: 50" required />
+                    <Input
+                        type="number"
+                        min="0.001"
+                        step="0.001"
+                        v-model.number="formulario.quantidade"
+                        placeholder="Ex.: 0,300"
+                        required
+                    />
                 </div>
 
                 <!-- Custo -->

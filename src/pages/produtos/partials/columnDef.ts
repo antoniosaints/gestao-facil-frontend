@@ -13,6 +13,10 @@ import ActionsVariante from './ActionsVariante.vue'
 import ThumbCell from './ThumbCell.vue'
 
 const store = useProdutoStore()
+const formatStock = (value: unknown) =>
+  new Intl.NumberFormat('pt-BR', {
+    maximumFractionDigits: 3,
+  }).format(Number(value || 0))
 
 type ProdutoVarianteRow = ProdutoVariante & {
   produtoBaseNome?: string
@@ -131,7 +135,7 @@ export const columnsProdutos: ColumnDef<ProdutoBase>[] = [
     header: () => render('div', {}, 'Estoque total'),
     cell: ({ row }) =>
       render(BadgeCell, {
-        label: `${row.original.estoqueTotal || 0} ${row.original.unidade || 'un'}`,
+        label: `${formatStock(row.original.estoqueTotal)} ${row.original.unidade || 'un'}`,
         color: 'gray',
       }),
     enableSorting: false,
@@ -263,7 +267,7 @@ export const columnsVariantes: ColumnDef<ProdutoVarianteRow>[] = [
       ),
     cell: ({ row }) =>
       render(BadgeCell, {
-        label: `${row.original.estoque || 0} ${row.original.unidade || 'un'}`,
+        label: `${formatStock(row.original.estoque)} ${row.original.unidade || 'un'}`,
         color: 'gray',
         capitalize: false,
       }),

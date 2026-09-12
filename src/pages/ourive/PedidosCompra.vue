@@ -85,7 +85,7 @@
                 v-model.number="purchaseFor(need).quantidadeComprada"
                 type="number"
                 min="0.001"
-                step="1"
+                :step="need.unidade === 'PESO' ? '0.001' : '1'"
                 :placeholder="`Quantidade (${unitLabel(need.unidade)})`"
               />
             </label>
