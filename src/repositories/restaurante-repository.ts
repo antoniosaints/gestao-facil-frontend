@@ -692,7 +692,7 @@ export class RestauranteRepository {
   static async movimentarCaixa(payload: {
     tipo: 'SANGRIA' | 'REFORCO'
     valor: number
-    descricao?: string
+    descricao: string
   }) {
     const { data } = await http.post('/v1/restaurante/caixa/movimentos', payload)
     return data.data as RestauranteCaixaContexto

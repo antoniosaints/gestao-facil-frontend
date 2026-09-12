@@ -97,8 +97,13 @@ function abrirMovimento(tipo: 'SANGRIA' | 'REFORCO') {
 async function salvarMovimento() {
   const tipo = movimentoAberto.value
   const valor = toNumber(movimentoValor.value)
+  const descricao = movimentoObservacao.value.trim()
   if (!tipo || !Number.isFinite(valor) || valor <= 0) {
     toast.info('Informe um valor maior que zero.')
+    return
+  }
+  if (descricao.length < 2) {
+    toast.info('Informe o motivo da sangria ou do reforço.')
     return
   }
   try {
@@ -106,7 +111,7 @@ async function salvarMovimento() {
     contexto.value = await RestauranteRepository.movimentarCaixa({
       tipo,
       valor,
-      descricao: movimentoObservacao.value.trim() || undefined,
+      descricao,
     })
     movimentoAberto.value = null
     toast.success(tipo === 'SANGRIA' ? 'Sangria registrada.' : 'Reforço registrado.')
@@ -227,8 +232,7 @@ watch(
           >Valor<Input v-model="movimentoValor" type="text" inputmode="decimal" placeholder="0,00"
         /></label>
         <label class="grid gap-1.5 text-sm font-medium"
-          >Observação <span class="font-normal text-muted-foreground">(opcional)</span
-          ><Input v-model="movimentoObservacao" placeholder="Descreva a movimentação"
+          >Motivo / razão<Input v-model="movimentoObservacao" required placeholder="Ex.: retirada para depósito"
         /></label>
         <div class="flex justify-end gap-2">
           <Button type="button" variant="outline" @click="movimentoAberto = null">Cancelar</Button
