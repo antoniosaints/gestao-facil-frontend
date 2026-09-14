@@ -126,7 +126,7 @@ const cards = computed(() => {
   if (!k) return []
   return [
     { titulo: "Receita vendida", valor: formatCurrencyBR(k.receita.atual), delta: k.receita.delta, comparar: true, detalhe: "vs. período anterior", icone: CircleDollarSign, cor: "emerald" },
-    { titulo: "Lucro realizado", valor: formatCurrencyBR(k.lucro.atual), delta: k.lucro.delta, comparar: true, detalhe: "receita menos custo", icone: TrendingUp, cor: "blue" },
+    { titulo: "Lucro realizado", valor: formatCurrencyBR(k.lucro.atual), delta: k.lucro.delta, comparar: true, detalhe: "receita menos custo médio aplicado", icone: TrendingUp, cor: "blue" },
     { titulo: "Ticket médio", valor: formatCurrencyBR(k.ticketMedio.atual), delta: k.ticketMedio.delta, comparar: true, detalhe: "vs. período anterior", icone: ReceiptText, cor: "violet" },
     { titulo: "Itens vendidos", valor: String(k.itensVendidos.atual), delta: k.itensVendidos.delta, comparar: true, detalhe: "unidades no período", icone: ShoppingBag, cor: "sky" },
   ]
@@ -245,7 +245,7 @@ onMounted(carregar)
         <div class="min-w-0">
           <p class="text-xs text-muted-foreground">Valor em estoque</p>
           <p class="text-lg font-bold truncate">{{ formatCurrencyBR(painel.kpis.valorEstoque.atual) }}</p>
-          <p class="text-xs text-muted-foreground">custo estimado</p>
+          <p class="text-xs text-muted-foreground">média das reposições concluídas</p>
         </div>
       </div>
       <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">

@@ -102,7 +102,13 @@ export interface CatalogoLojaConfig {
 }
 
 export interface CatalogoPublico {
-  conta: { id: number; nome: string; nomeFantasia: string | null; profile: string | null; telefone: string | null }
+  conta: {
+    id: number
+    nome: string
+    nomeFantasia: string | null
+    profile: string | null
+    telefone: string | null
+  }
   produtos: CatalogoProduto[]
   combos?: Array<{
     id: number
@@ -112,11 +118,57 @@ export interface CatalogoPublico {
     imagem: string | null
     preco: number
     quantidadeDisponivel: number | null
-    componentes: Array<{ tipo: 'PRODUTO' | 'SERVICO'; id: number; nome: string; quantidade: number }>
+    componentes: Array<{
+      tipo: 'PRODUTO' | 'SERVICO'
+      id: number
+      nome: string
+      quantidade: number
+    }>
   }>
   categorias: string[]
   // Presente quando o módulo Loja Virtual está ativo: a vitrine vira loja personalizada.
   loja?: { ativa: boolean; config: CatalogoLojaConfig | null }
+}
+
+export interface ProdutoAnalytics {
+  ano: number
+  moduloOuriveAtivo: boolean
+  produto: {
+    id: number
+    nome: string
+    variante: { id: number; nome: string } | null
+  }
+  anosDisponiveis: number[]
+  kpis: {
+    faturamento: number
+    lucroLiquido: number
+    markup: number
+    vendas: number
+    ordensServico: number
+    ordensOurive?: number
+    unidadesSaidas: number
+    unidadesOutrasSaidas: number
+    ticketMedio: number
+    custoMedioAplicado: number
+    custoMedioReposicao: number
+    totalReposicoes: number
+    estoqueAtual: number
+    valorEstoque: number
+  }
+  mensal: Array<{
+    mes: string
+    vendas: number
+    ordensServico: number
+    ordensOurive?: number
+    unidadesVendas: number
+    unidadesOrdensServico: number
+    unidadesOrdensOurive?: number
+    unidadesOutrasSaidas: number
+    unidadesSaidas: number
+    faturamento: number
+    lucroLiquido: number
+    markup: number
+  }>
 }
 
 export class ProdutoRepository {
@@ -131,7 +183,11 @@ export class ProdutoRepository {
     return data?.data as CatalogoPublico
   }
 
-  static async gerarSku(params: { nome?: string; nomeVariante?: string; produtoBaseId?: number | null }) {
+  static async gerarSku(params: {
+    nome?: string
+    nomeVariante?: string
+    produtoBaseId?: number | null
+  }) {
     const { data } = await http.get(`/produtos/gerar-sku`, {
       params: {
         nome: params.nome?.trim() || undefined,
@@ -177,6 +233,22 @@ export class ProdutoRepository {
     return data
   }
 
+  static async getAnalytics(id: number, ano: number, varianteId?: number) {
+    const { data } = await http.get(`/produtos/${id}/analytics`, {
+      params: { ano, varianteId },
+    })
+    return data as ProdutoAnalytics
+  }
+
+  static async exportAnalyticsPdf(id: number, ano: number, varianteId?: number) {
+    const response = await http.get(`/produtos/${id}/analytics/pdf`, {
+      params: { ano, varianteId },
+      responseType: 'blob',
+    })
+    const variantSuffix = varianteId ? `_variante-${varianteId}` : ''
+    downloadBlob(response.data, `analytics_produto_${ano}${variantSuffix}.pdf`)
+  }
+
   static async csvDownload() {
     const data = await http.get(`/produtos/download/csv`, {
       responseType: 'blob',
@@ -211,7 +283,12 @@ export class ProdutoRepository {
     downloadBlob(data.data, `relatorio-catalogo-produtos-${getTodayFileSuffix()}.pdf`)
   }
 
-  static async gerarRelatorioVendas(scope: ProductReportScope, targetId: number, inicio?: string, fim?: string) {
+  static async gerarRelatorioVendas(
+    scope: ProductReportScope,
+    targetId: number,
+    inicio?: string,
+    fim?: string,
+  ) {
     const data = await http.get(`/produtos/relatorio/vendas`, {
       params: {
         targetType: scope === 'produto-base' ? 'BASE' : 'VARIANTE',
@@ -228,7 +305,12 @@ export class ProdutoRepository {
     downloadBlob(data.data, `relatorio-vendas-produto-${getTodayFileSuffix()}.pdf`)
   }
 
-  static async gerarRelatorioLucro(scope: ProductReportScope, targetId: number, inicio?: string, fim?: string) {
+  static async gerarRelatorioLucro(
+    scope: ProductReportScope,
+    targetId: number,
+    inicio?: string,
+    fim?: string,
+  ) {
     const data = await http.get(`/produtos/relatorio/lucro`, {
       params: {
         targetType: scope === 'produto-base' ? 'BASE' : 'VARIANTE',

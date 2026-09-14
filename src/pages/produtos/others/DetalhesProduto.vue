@@ -14,10 +14,23 @@ import { resolveFileUrl } from '@/utils/fileUrl'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import ModalProdutos from '../formulario/ModalProdutos.vue'
 import ModalVariante from '../formulario/ModalVariante.vue'
@@ -25,6 +38,7 @@ import ModalReposicao from '../formulario/ModalReposicao.vue'
 import ModalDescarte from '../formulario/ModalDescarte.vue'
 import ModalRelatorio from '../formulario/ModalRelatorio.vue'
 import GerarEtiquetas from './GerarEtiquetas.vue'
+import ProdutoAnalytics from './ProdutoAnalytics.vue'
 import {
   ArchiveRestore,
   ArrowLeft,
@@ -38,6 +52,7 @@ import {
   Edit,
   FileBarChart,
   FileText,
+  BarChart3,
   Package,
   PackagePlus,
   PackageX,
@@ -51,19 +66,25 @@ import {
 } from 'lucide-vue-next'
 
 interface ResumoEstoque {
-  totalGasto: string
-  lucroLiquido: string
   totalEntradas: number
   totalSaidas: number
   estoqueAtual: number
-  custoMedio: string
-  valorEstoque: string
-  margemLucro: string
-  ticketMedio: string
+  valorEstoque: number
+  totalReposicoes: number
 }
 
-type BadgeColor = 'cyan' | 'yellow' | 'gray' | 'violet' | 'purple' | 'green' | 'emerald' | 'orange' | 'red' | 'blue'
-type ActiveTab = 'variante' | 'variantes' | 'visao-geral'
+type BadgeColor =
+  | 'cyan'
+  | 'yellow'
+  | 'gray'
+  | 'violet'
+  | 'purple'
+  | 'green'
+  | 'emerald'
+  | 'orange'
+  | 'red'
+  | 'blue'
+type ActiveTab = 'variante' | 'variantes' | 'visao-geral' | 'analytics'
 
 type RuleConfig = {
   label: string
@@ -83,6 +104,7 @@ const loading = ref(false)
 const loadingResumoProduto = ref(false)
 const loadingResumoVariante = ref(false)
 const activeTab = ref<ActiveTab>('variante')
+const analyticsOpened = ref(false)
 const selectedVariantId = ref<string>('')
 
 // Lightbox: ao clicar na imagem de uma variante, abre em tamanho maior.
@@ -143,14 +165,29 @@ const fiscalFields = computed(() => {
     { label: 'CEST', value: base.cest },
     { label: 'CFOP', value: base.cfop },
     { label: 'Origem', value: base.origem },
-    { label: 'ICMS', value: base.aliquotaIcms != null && base.aliquotaIcms !== '' ? `${base.aliquotaIcms}%` : null },
-    { label: 'IPI', value: base.aliquotaIpi != null && base.aliquotaIpi !== '' ? `${base.aliquotaIpi}%` : null },
-    { label: 'PIS', value: base.aliquotaPis != null && base.aliquotaPis !== '' ? `${base.aliquotaPis}%` : null },
+    {
+      label: 'ICMS',
+      value: base.aliquotaIcms != null && base.aliquotaIcms !== '' ? `${base.aliquotaIcms}%` : null,
+    },
+    {
+      label: 'IPI',
+      value: base.aliquotaIpi != null && base.aliquotaIpi !== '' ? `${base.aliquotaIpi}%` : null,
+    },
+    {
+      label: 'PIS',
+      value: base.aliquotaPis != null && base.aliquotaPis !== '' ? `${base.aliquotaPis}%` : null,
+    },
     {
       label: 'COFINS',
-      value: base.aliquotaCofins != null && base.aliquotaCofins !== '' ? `${base.aliquotaCofins}%` : null,
+      value:
+        base.aliquotaCofins != null && base.aliquotaCofins !== ''
+          ? `${base.aliquotaCofins}%`
+          : null,
     },
-    { label: 'ISS', value: base.issAliquota != null && base.issAliquota !== '' ? `${base.issAliquota}%` : null },
+    {
+      label: 'ISS',
+      value: base.issAliquota != null && base.issAliquota !== '' ? `${base.issAliquota}%` : null,
+    },
   ]
 
   return fields.filter((field) => field.value != null && String(field.value).trim() !== '')
@@ -159,7 +196,11 @@ const fiscalFields = computed(() => {
 const productStatusBadge = computed(() => getStatusBadge(produto.value?.status))
 const variantStatusBadge = computed(() => getStatusBadge(selectedVariant.value?.status))
 const variantStockBadge = computed(() =>
-  getStockBadge(selectedVariant.value?.estoque, selectedVariant.value?.minimo, selectedVariant.value?.controlaEstoque),
+  getStockBadge(
+    selectedVariant.value?.estoque,
+    selectedVariant.value?.minimo,
+    selectedVariant.value?.controlaEstoque,
+  ),
 )
 const productRules = computed(() => getRuleBadges(produto.value))
 const variantRules = computed(() => getRuleBadges(selectedVariant.value))
@@ -201,7 +242,10 @@ function getStockBadge(
 }
 
 function getRuleBadges(
-  item?: Pick<ProdutoBase, 'entradas' | 'saidas' | 'controlaEstoque' | 'producaoLocal' | 'mostrarNoPdv' | 'materiaPrima'> | null,
+  item?: Pick<
+    ProdutoBase,
+    'entradas' | 'saidas' | 'controlaEstoque' | 'producaoLocal' | 'mostrarNoPdv' | 'materiaPrima'
+  > | null,
 ): RuleConfig[] {
   if (!item) return []
 
@@ -247,12 +291,18 @@ async function loadProduto() {
     produto.value = response.data
 
     const variantFromQuery = Number(route.query.varianteId)
-    const hasVariantFromQuery = !Number.isNaN(variantFromQuery)
-      && response.data?.variantes?.some((item: ProdutoVariante) => Number(item.id) === variantFromQuery)
+    const hasVariantFromQuery =
+      !Number.isNaN(variantFromQuery) &&
+      response.data?.variantes?.some(
+        (item: ProdutoVariante) => Number(item.id) === variantFromQuery,
+      )
 
     const nextVariantId = hasVariantFromQuery
       ? String(variantFromQuery)
-      : selectedVariantId.value && response.data?.variantes?.some((item: ProdutoVariante) => Number(item.id) === Number(selectedVariantId.value))
+      : selectedVariantId.value &&
+          response.data?.variantes?.some(
+            (item: ProdutoVariante) => Number(item.id) === Number(selectedVariantId.value),
+          )
         ? selectedVariantId.value
         : String(response.data?.variantePadraoId || response.data?.variantes?.[0]?.id || '')
 
@@ -321,9 +371,27 @@ function openReposicao() {
   store.openModalReposicao = true
 }
 
+function focusVariant(varianteId?: number) {
+  if (!varianteId) return
+  selectedVariantId.value = String(varianteId)
+  activeTab.value = 'variante'
+}
+
+function openReposicaoVariante(varianteId?: number) {
+  if (!varianteId) return toast.error('Selecione uma variante')
+  store.idMutation = varianteId
+  store.openModalReposicao = true
+}
+
 function openDescarte() {
   if (!selectedVariant.value?.id) return toast.error('Selecione uma variante')
   store.idMutation = selectedVariant.value.id
+  store.openModalDescarte = true
+}
+
+function openDescarteVariante(varianteId?: number) {
+  if (!varianteId) return toast.error('Selecione uma variante')
+  store.idMutation = varianteId
   store.openModalDescarte = true
 }
 
@@ -389,8 +457,18 @@ watch(selectedVariantId, () => {
   loadResumoVariante()
 })
 
+watch(activeTab, (tab) => {
+  if (tab === 'analytics') analyticsOpened.value = true
+})
+
 watch(
-  () => [store.openModal, store.openModalVariante, store.openModalReposicao, store.openModalDescarte, store.openModalRelatorio],
+  () => [
+    store.openModal,
+    store.openModalVariante,
+    store.openModalReposicao,
+    store.openModalDescarte,
+    store.openModalRelatorio,
+  ],
   (
     [produtoModal, varianteModal, reposicaoModal, descarteModal, relatorioModal],
     [prevProduto, prevVariante, prevReposicao, prevDescarte, prevRelatorio],
@@ -474,8 +552,17 @@ onMounted(async () => {
             <ArrowLeft class="mr-2 h-4 w-4" />
             Voltar
           </Button>
-          <Button variant="outline" @click="reloadDetalhes" :disabled="loading || loadingResumoProduto || loadingResumoVariante">
-            <RefreshCw :class="['mr-2 h-4 w-4', loading || loadingResumoProduto || loadingResumoVariante ? 'animate-spin' : '']" />
+          <Button
+            variant="outline"
+            @click="reloadDetalhes"
+            :disabled="loading || loadingResumoProduto || loadingResumoVariante"
+          >
+            <RefreshCw
+              :class="[
+                'mr-2 h-4 w-4',
+                loading || loadingResumoProduto || loadingResumoVariante ? 'animate-spin' : '',
+              ]"
+            />
             Atualizar
           </Button>
           <Button variant="outline" @click="store.openUpdate(produto?.id!)">
@@ -510,6 +597,12 @@ onMounted(async () => {
             <span>Visão geral</span>
           </span>
         </TabsTrigger>
+        <TabsTrigger value="analytics" class="h-10 px-4">
+          <span class="flex items-center gap-2">
+            <BarChart3 class="h-4 w-4" />
+            <span>Analytics</span>
+          </span>
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="variante" class="space-y-4">
@@ -517,7 +610,9 @@ onMounted(async () => {
           <Card class="border-border">
             <CardContent class="space-y-4 mt-4">
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-foreground">Produto selecionado</label>
+                <label class="mb-1.5 block text-sm font-medium text-foreground"
+                  >Produto selecionado</label
+                >
                 <Select v-model="selectedVariantId">
                   <SelectTrigger class="w-full">
                     <SelectValue placeholder="Selecione uma variante" />
@@ -575,48 +670,70 @@ onMounted(async () => {
 
                 <div class="grid gap-3 sm:grid-cols-2">
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Preço de venda</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Preço de venda
+                    </div>
                     <div class="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                       {{ formatCurrencyBR(Number(selectedVariant.preco || 0)) }}
                     </div>
                   </div>
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Preço de compra</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Preço de compra
+                    </div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ formatCurrencyBR(Number(selectedVariant.precoCompra || 0)) }}
                     </div>
                   </div>
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Estoque atual</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Estoque atual
+                    </div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ selectedVariant.estoque || 0 }} {{ selectedVariant.unidade || 'un' }}
                     </div>
                   </div>
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Estoque mínimo</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Estoque mínimo
+                    </div>
                     <div class="mt-1 text-sm font-semibold text-foreground">
                       {{ selectedVariant.minimo || 0 }} {{ selectedVariant.unidade || 'un' }}
                     </div>
                   </div>
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Código</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">{{ selectedVariant.codigo || 'Sem código' }}</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Código
+                    </div>
+                    <div class="mt-1 text-sm font-semibold text-foreground">
+                      {{ selectedVariant.codigo || 'Sem código' }}
+                    </div>
                   </div>
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Unidade</div>
-                    <div class="mt-1 text-sm font-semibold text-foreground">{{ selectedVariant.unidade || 'un' }}</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Unidade
+                    </div>
+                    <div class="mt-1 text-sm font-semibold text-foreground">
+                      {{ selectedVariant.unidade || 'un' }}
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <div class="text-xs uppercase tracking-wide text-muted-foreground">Descrição da variante</div>
-                  <div class="mt-1 text-sm whitespace-pre-wrap text-foreground truncate max-w-[500px]">
+                  <div class="text-xs uppercase tracking-wide text-muted-foreground">
+                    Descrição da variante
+                  </div>
+                  <div
+                    class="mt-1 text-sm whitespace-pre-wrap text-foreground truncate max-w-[500px]"
+                  >
                     {{ selectedVariant.descricao || 'Sem descrição adicional para esta variante.' }}
                   </div>
                 </div>
 
                 <div class="space-y-2">
-                  <div class="text-xs uppercase tracking-wide text-muted-foreground">Regras da variante</div>
+                  <div class="text-xs uppercase tracking-wide text-muted-foreground">
+                    Regras da variante
+                  </div>
                   <div class="flex flex-wrap gap-2">
                     <BadgeCell
                       v-for="rule in variantRules"
@@ -667,48 +784,51 @@ onMounted(async () => {
                 Resumo da variante
               </CardTitle>
               <CardDescription>
-                Indicadores rápidos da variante ativa para apoiar decisão de compra, venda e reposição.
+                Situação de estoque da variante ativa, considerando somente movimentações
+                concluídas.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div v-if="loadingResumoVariante" class="text-sm text-muted-foreground">Carregando resumo da variante...</div>
-              <div v-else-if="resumoVariante" class="grid gap-3 sm:grid-cols-2">
+              <div v-if="loadingResumoVariante" class="text-sm text-muted-foreground">
+                Carregando resumo da variante...
+              </div>
+              <div v-else-if="resumoVariante" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Valor em estoque</div>
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Valor em estoque
+                  </div>
                   <div class="mt-1 text-sm font-semibold text-foreground">
                     {{ formatCurrencyBR(Number(resumoVariante.valorEstoque || 0)) }}
                   </div>
                 </div>
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Lucro líquido</div>
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Estoque atual
+                  </div>
                   <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ formatCurrencyBR(Number(resumoVariante.lucroLiquido || 0)) }}
+                    {{ resumoVariante.estoqueAtual }} unidade(s)
                   </div>
                 </div>
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Custo médio</div>
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Entradas concluídas
+                  </div>
                   <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ formatCurrencyBR(Number(resumoVariante.custoMedio || 0)) }}
+                    {{ resumoVariante.totalEntradas }} unidade(s)
                   </div>
                 </div>
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
-                  <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ formatCurrencyBR(Number(resumoVariante.ticketMedio || 0)) }}
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Saídas concluídas
                   </div>
-                </div>
-                <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Entradas / saídas</div>
                   <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ resumoVariante.totalEntradas }} / {{ resumoVariante.totalSaidas }}
+                    {{ resumoVariante.totalSaidas }} unidade(s)
                   </div>
-                </div>
-                <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Margem</div>
-                  <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoVariante.margemLucro }}</div>
                 </div>
               </div>
-              <div v-else class="text-sm text-muted-foreground">Resumo da variante indisponível.</div>
+              <div v-else class="text-sm text-muted-foreground">
+                Resumo da variante indisponível.
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -716,14 +836,17 @@ onMounted(async () => {
 
       <TabsContent value="variantes">
         <Card class="border-border">
-          <CardHeader class="flex flex-col gap-2 px-6 py-3 md:flex-row md:items-center md:justify-between">
+          <CardHeader
+            class="flex flex-col gap-2 px-6 py-3 md:flex-row md:items-center md:justify-between"
+          >
             <div>
               <CardTitle class="flex items-center gap-2">
                 <Boxes class="h-5 w-5" />
                 Variantes do produto
               </CardTitle>
               <CardDescription>
-                Selecione a variante que deseja analisar ou editar. O botão de foco abre a primeira aba já com ela destacada.
+                Selecione a variante que deseja analisar ou editar. O botão de foco abre a primeira
+                aba já com ela destacada.
               </CardDescription>
             </div>
             <Button class="text-white" @click="store.openSaveVariante(produto?.id!)">
@@ -741,11 +864,17 @@ onMounted(async () => {
                       <Boxes class="h-5 w-5" />
                     </EmptyMedia>
                     <EmptyTitle>Nenhuma variante cadastrada</EmptyTitle>
-                    <EmptyDescription>Cadastre uma nova variante para começar a segmentar estoque e preço.</EmptyDescription>
+                    <EmptyDescription
+                      >Cadastre uma nova variante para começar a segmentar estoque e
+                      preço.</EmptyDescription
+                    >
                   </EmptyHeader>
                 </Empty>
               </div>
-              <div v-else class="relative overflow-x-auto rounded-lg border border-border bg-background">
+              <div
+                v-else
+                class="relative overflow-x-auto rounded-lg border border-border bg-background"
+              >
                 <Table class="min-w-full">
                   <TableHeader>
                     <TableRow class="text-xs uppercase tracking-wide text-muted-foreground/80">
@@ -801,12 +930,20 @@ onMounted(async () => {
                       </TableCell>
                       <TableCell class="align-middle">
                         <div class="flex gap-2 items-center">
-                          <span class="text-sm text-foreground">{{ item.estoque }} {{ item.unidade || 'un' }}</span>
+                          <span class="text-sm text-foreground"
+                            >{{ item.estoque }} {{ item.unidade || 'un' }}
+                            </span>
                           <BadgeCell
                             size="sm"
-                            :label="getStockBadge(item.estoque, item.minimo, item.controlaEstoque).label"
-                            :color="getStockBadge(item.estoque, item.minimo, item.controlaEstoque).color"
-                            :icon="getStockBadge(item.estoque, item.minimo, item.controlaEstoque).icon"
+                            :label="
+                              getStockBadge(item.estoque, item.minimo, item.controlaEstoque).label
+                            "
+                            :color="
+                              getStockBadge(item.estoque, item.minimo, item.controlaEstoque).color
+                            "
+                            :icon="
+                              getStockBadge(item.estoque, item.minimo, item.controlaEstoque).icon
+                            "
                             :capitalize="false"
                           />
                         </div>
@@ -832,7 +969,7 @@ onMounted(async () => {
                             size="icon"
                             class="h-8 w-8"
                             v-tooltip="'Focar esta variante'"
-                            @click="selectedVariantId = String(item.id); activeTab = 'variante'"
+                            @click="focusVariant(item.id)"
                           >
                             <Box class="h-4 w-4" />
                           </Button>
@@ -852,7 +989,7 @@ onMounted(async () => {
                             size="icon"
                             class="h-8 w-8"
                             v-tooltip="'Reposição de estoque'"
-                            @click="store.idMutation = item.id!; store.openModalReposicao = true"
+                            @click="openReposicaoVariante(item.id)"
                           >
                             <ArchiveRestore class="h-4 w-4" />
                           </Button>
@@ -862,7 +999,7 @@ onMounted(async () => {
                             size="icon"
                             class="h-8 w-8"
                             v-tooltip="'Descarte de estoque'"
-                            @click="store.idMutation = item.id!; store.openModalDescarte = true"
+                            @click="openDescarteVariante(item.id)"
                           >
                             <PackageX class="h-4 w-4" />
                           </Button>
@@ -871,7 +1008,11 @@ onMounted(async () => {
                             variant="ghost"
                             size="icon"
                             class="h-8 w-8 text-red-600 hover:text-red-700"
-                            v-tooltip="item.ehPadrao ? 'Variante padrão não pode ser excluída' : 'Excluir variante'"
+                            v-tooltip="
+                              item.ehPadrao
+                                ? 'Variante padrão não pode ser excluída'
+                                : 'Excluir variante'
+                            "
                             :disabled="item.ehPadrao"
                             @click="deletarVariante(item.id)"
                           >
@@ -895,34 +1036,51 @@ onMounted(async () => {
               <CardHeader>
                 <CardTitle>Visão geral do produto base</CardTitle>
                 <CardDescription>
-                  Informações do cadastro principal que valem para todas as variantes sem poluir a leitura operacional.
+                  Informações do cadastro principal que valem para todas as variantes sem poluir a
+                  leitura operacional.
                 </CardDescription>
               </CardHeader>
               <CardContent class="space-y-4">
                 <div class="max-w-max">
                   <div class="text-xs uppercase tracking-wide text-muted-foreground">Descrição</div>
-                  <div class="mt-1 text-sm whitespace-pre-wrap text-foreground truncate max-w-[500px]">
+                  <div
+                    class="mt-1 text-sm whitespace-pre-wrap text-foreground truncate max-w-[500px]"
+                  >
                     {{ produto?.descricao || 'Sem descrição cadastrada.' }}
                   </div>
                 </div>
 
                 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Categoria</div>
-                    <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.categoria || 'Sem categoria' }}</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Categoria
+                    </div>
+                    <div class="mt-1 text-sm font-medium text-foreground">
+                      {{ produto?.categoria || 'Sem categoria' }}
+                    </div>
                   </div>
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Produto base</div>
-                    <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.nome || 'Sem nome' }}</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Produto base
+                    </div>
+                    <div class="mt-1 text-sm font-medium text-foreground">
+                      {{ produto?.nome || 'Sem nome' }}
+                    </div>
                   </div>
                   <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Total de variantes</div>
-                    <div class="mt-1 text-sm font-medium text-foreground">{{ produto?.totalVariantes || 0 }}</div>
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Total de variantes
+                    </div>
+                    <div class="mt-1 text-sm font-medium text-foreground">
+                      {{ produto?.totalVariantes || 0 }}
+                    </div>
                   </div>
                 </div>
 
                 <div class="space-y-2">
-                  <div class="text-xs uppercase tracking-wide text-muted-foreground">Regras operacionais compartilhadas</div>
+                  <div class="text-xs uppercase tracking-wide text-muted-foreground">
+                    Regras operacionais compartilhadas
+                  </div>
                   <div class="flex flex-wrap gap-2">
                     <BadgeCell
                       v-for="rule in productRules"
@@ -944,12 +1102,20 @@ onMounted(async () => {
             <Card v-if="fiscalFields.length" class="border-border">
               <CardHeader>
                 <CardTitle>Dados fiscais</CardTitle>
-                <CardDescription>Campos fiscais retornados no cadastro base do produto.</CardDescription>
+                <CardDescription
+                  >Campos fiscais retornados no cadastro base do produto.</CardDescription
+                >
               </CardHeader>
               <CardContent>
                 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <div v-for="field in fiscalFields" :key="field.label" class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">{{ field.label }}</div>
+                  <div
+                    v-for="field in fiscalFields"
+                    :key="field.label"
+                    class="rounded-xl border border-border bg-background px-3 py-2"
+                  >
+                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      {{ field.label }}
+                    </div>
                     <div class="mt-1 text-sm font-medium text-foreground">{{ field.value }}</div>
                   </div>
                 </div>
@@ -964,49 +1130,62 @@ onMounted(async () => {
                 Resumo consolidado do produto
               </CardTitle>
               <CardDescription>
-                Indicadores agrupados considerando todas as variantes do produto base.
+                Situação de estoque de todas as variantes, considerando somente movimentações
+                concluídas.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div v-if="loadingResumoProduto" class="text-sm text-muted-foreground">Carregando resumo do produto...</div>
-              <div v-else-if="resumoProduto" class="grid gap-3 sm:grid-cols-2">
+              <div v-if="loadingResumoProduto" class="text-sm text-muted-foreground">
+                Carregando resumo do produto...
+              </div>
+              <div v-else-if="resumoProduto" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Valor em estoque</div>
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Valor em estoque
+                  </div>
                   <div class="mt-1 text-sm font-semibold text-foreground">
                     {{ formatCurrencyBR(Number(resumoProduto.valorEstoque || 0)) }}
                   </div>
                 </div>
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Lucro líquido</div>
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Estoque atual
+                  </div>
                   <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ formatCurrencyBR(Number(resumoProduto.lucroLiquido || 0)) }}
+                    {{ resumoProduto.estoqueAtual }} unidade(s)
                   </div>
                 </div>
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Custo médio</div>
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Entradas concluídas
+                  </div>
                   <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ formatCurrencyBR(Number(resumoProduto.custoMedio || 0)) }}
+                    {{ resumoProduto.totalEntradas }} unidade(s)
                   </div>
                 </div>
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
-                  <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ formatCurrencyBR(Number(resumoProduto.ticketMedio || 0)) }}
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Saídas concluídas
                   </div>
-                </div>
-                <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Entradas</div>
-                  <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoProduto.totalEntradas }}</div>
-                </div>
-                <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Saídas</div>
-                  <div class="mt-1 text-sm font-semibold text-foreground">{{ resumoProduto.totalSaidas }}</div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ resumoProduto.totalSaidas }} unidade(s)
+                  </div>
                 </div>
               </div>
-              <div v-else class="text-sm text-muted-foreground">Resumo consolidado indisponível.</div>
+              <div v-else class="text-sm text-muted-foreground">
+                Resumo consolidado indisponível.
+              </div>
             </CardContent>
           </Card>
         </div>
+      </TabsContent>
+
+      <TabsContent value="analytics" force-mount class="space-y-4">
+        <ProdutoAnalytics
+          v-if="analyticsOpened && produto?.id"
+          :produto-id="produto.id"
+          :variantes="variants"
+        />
       </TabsContent>
     </Tabs>
 
@@ -1053,7 +1232,11 @@ onMounted(async () => {
         <FileBarChart />
         <span class="text-xs">Relatórios</span>
       </button>
-      <button type="button" @click="goBack" class="flex flex-col items-center text-foreground transition hover:text-primary">
+      <button
+        type="button"
+        @click="goBack"
+        class="flex flex-col items-center text-foreground transition hover:text-primary"
+      >
         <Undo2 />
         <span class="text-xs">Voltar</span>
       </button>

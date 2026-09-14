@@ -159,7 +159,7 @@ const cards = computed(() => {
   if (!k) return []
   return [
     { titulo: "Faturamento", valor: formatCurrencyBR(k.faturamento.atual), delta: k.faturamento.delta, comparar: true, detalhe: "vs. período anterior", icone: CircleDollarSign, cor: "emerald" },
-    { titulo: "Vendas faturadas", valor: String(k.vendas.atual), delta: k.vendas.delta, comparar: true, detalhe: `${k.totalVendas} venda(s) no total`, icone: ShoppingCart, cor: "blue" },
+    { titulo: "Vendas concluídas", valor: String(k.vendas.atual), delta: k.vendas.delta, comparar: true, detalhe: `${k.totalVendas} venda(s) no total`, icone: ShoppingCart, cor: "blue" },
     { titulo: "Ticket médio", valor: formatCurrencyBR(k.ticketMedio.atual), delta: k.ticketMedio.delta, comparar: true, detalhe: "vs. período anterior", icone: ReceiptText, cor: "violet" },
     { titulo: "Descontos concedidos", valor: formatCurrencyBR(k.descontos.atual), comparar: false, detalhe: "no período selecionado", icone: BadgePercent, cor: "amber" },
   ]
