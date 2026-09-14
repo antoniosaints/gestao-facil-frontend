@@ -35,7 +35,17 @@ const analytics = ref<ProdutoAnalytics | null>(null)
 const loading = ref(false)
 const exporting = ref(false)
 const selectedYear = ref(String(new Date().getFullYear()))
+const selectedMonth = ref('todos')
 const selectedVariantId = ref('todas')
+
+const months = [
+  { value: '1', label: 'Janeiro' }, { value: '2', label: 'Fevereiro' },
+  { value: '3', label: 'Março' }, { value: '4', label: 'Abril' },
+  { value: '5', label: 'Maio' }, { value: '6', label: 'Junho' },
+  { value: '7', label: 'Julho' }, { value: '8', label: 'Agosto' },
+  { value: '9', label: 'Setembro' }, { value: '10', label: 'Outubro' },
+  { value: '11', label: 'Novembro' }, { value: '12', label: 'Dezembro' },
+]
 
 const numberFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 })
 const formatNumber = (value: number) => numberFormatter.format(value || 0)
@@ -161,8 +171,10 @@ async function loadAnalytics() {
       props.produtoId,
       Number(selectedYear.value),
       selectedVariantId.value === 'todas' ? undefined : Number(selectedVariantId.value),
+      selectedMonth.value === 'todos' ? undefined : Number(selectedMonth.value),
     )
     selectedYear.value = String(analytics.value.ano)
+    selectedMonth.value = analytics.value.mes ? String(analytics.value.mes) : 'todos'
   } catch (error) {
     console.error(error)
     toast.error('Não foi possível carregar os analytics deste produto.')
@@ -171,8 +183,8 @@ async function loadAnalytics() {
   }
 }
 
-watch([selectedYear, selectedVariantId], ([year, variantId], [previousYear, previousVariantId]) => {
-  if ((year !== previousYear || variantId !== previousVariantId) && analytics.value) loadAnalytics()
+watch([selectedYear, selectedMonth, selectedVariantId], ([year, month, variantId], [previousYear, previousMonth, previousVariantId]) => {
+  if ((year !== previousYear || month !== previousMonth || variantId !== previousVariantId) && analytics.value) loadAnalytics()
 })
 
 async function exportPdf() {
@@ -184,6 +196,7 @@ async function exportPdf() {
       props.produtoId,
       Number(selectedYear.value),
       selectedVariantId.value === 'todas' ? undefined : Number(selectedVariantId.value),
+      selectedMonth.value === 'todos' ? undefined : Number(selectedMonth.value),
     )
   } catch (error) {
     console.error(error)
@@ -232,6 +245,15 @@ onMounted(loadAnalytics)
               :value="String(year)"
             >
               {{ year }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <Select v-model="selectedMonth" :disabled="loading">
+          <SelectTrigger class="w-36"><SelectValue placeholder="Mês" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os meses</SelectItem>
+            <SelectItem v-for="month in months" :key="month.value" :value="month.value">
+              {{ month.label }}
             </SelectItem>
           </SelectContent>
         </Select>
@@ -344,7 +366,7 @@ onMounted(loadAnalytics)
               ><Package class="h-4 w-4 text-pink-500" />
             </div>
             <p class="mt-2 text-xl font-semibold">
-              {{ formatNumber(analytics.kpis.ordensOurive) }}
+              {{ formatNumber(analytics.kpis.ordensOurive as number) }}
             </p>
             <p class="mt-1 text-xs text-muted-foreground">
               Materiais baixados na produção
@@ -365,67 +387,47 @@ onMounted(loadAnalytics)
             </p></CardContent
           ></Card
         >
-        <Card class="border-border"
-          ><CardContent class="p-4"
-            ><div class="flex items-center justify-between">
-              <span class="text-sm text-muted-foreground">Estoque atual</span
-              ><Warehouse class="h-4 w-4 text-primary" />
-            </div>
-            <p class="mt-2 text-xl font-semibold">
-              {{ formatNumber(analytics.kpis.estoqueAtual) }}
-            </p>
-            <p class="mt-1 text-xs text-muted-foreground">
-              {{ analytics.kpis.totalReposicoes }} reposição(ões)
-            </p></CardContent
-          ></Card
-        >
-        <Card class="border-border"
-          ><CardContent class="p-4"
-            ><div class="flex items-center justify-between">
-              <span class="text-sm text-muted-foreground">Valor em estoque</span
-              ><Warehouse class="h-4 w-4 text-primary" />
-            </div>
-            <p class="mt-2 text-xl font-semibold">
-              {{ formatCurrencyBR(analytics.kpis.valorEstoque) }}
-            </p>
-            <p class="mt-1 text-xs text-muted-foreground">Pelo custo médio aplicado</p></CardContent
-          ></Card
-        >
       </div>
 
-      <Card class="border-border">
-        <CardHeader class="flex-row items-start justify-between gap-4 space-y-0">
-          <div>
-            <CardTitle>Resultado financeiro por mês</CardTitle>
-            <CardDescription class="mt-1"
-              >Barras com faturamento e lucro líquido (eixo em reais); linha com markup (eixo em
-              percentual).</CardDescription
-            >
-          </div>
-          <span class="shrink-0 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">{{
-            analytics.ano
-          }}</span>
-        </CardHeader>
-        <CardContent>
-          <div class="h-80">
-            <BarChart :data="financialChartData" :options="financialChartOptions" />
-          </div>
-        </CardContent>
-      </Card>
+      <p v-if="analytics.mes" class="text-xs text-muted-foreground">
+        KPIs filtrados para {{ months[analytics.mes - 1]?.label }}. Os gráficos abaixo permanecem
+        anuais para facilitar a comparação entre os meses.
+      </p>
+      <div class="grid gap-3 lg:grid-cols-2">
+        <Card class="border-border">
+          <CardHeader class="flex-row items-start justify-between gap-4 space-y-0">
+            <div>
+              <CardTitle>Resultado financeiro por mês</CardTitle>
+              <CardDescription class="mt-1"
+                >Barras com faturamento e lucro líquido (eixo em reais); linha com markup (eixo em
+                percentual).</CardDescription
+              >
+            </div>
+            <span class="shrink-0 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">{{
+              analytics.ano
+            }}</span>
+          </CardHeader>
+          <CardContent>
+            <div class="h-60">
+              <BarChart :data="financialChartData" :options="financialChartOptions" />
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card class="border-border">
-        <CardHeader>
-          <CardTitle>Saídas por origem</CardTitle>
-          <CardDescription class="mt-1"
-            >Quantidade de unidades baixadas em vendas, ordens de serviço,
-            <template v-if="analytics.moduloOuriveAtivo"> produção do ourive,</template>
-            e outras saídas.</CardDescription
-          >
-        </CardHeader>
-        <CardContent>
-          <div class="h-64"><BarChart :data="outputChartData" :options="outputChartOptions" /></div>
-        </CardContent>
-      </Card>
+        <Card class="border-border">
+          <CardHeader>
+            <CardTitle>Saídas por origem</CardTitle>
+            <CardDescription class="mt-1"
+              >Quantidade de unidades baixadas em vendas, ordens de serviço,
+              <template v-if="analytics.moduloOuriveAtivo"> produção do ourive,</template>
+              e outras saídas.</CardDescription
+            >
+          </CardHeader>
+          <CardContent>
+            <div class="h-60"><BarChart :data="outputChartData" :options="outputChartOptions" /></div>
+          </CardContent>
+        </Card>
+      </div>
     </template>
 
     <div

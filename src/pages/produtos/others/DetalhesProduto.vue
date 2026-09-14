@@ -51,13 +51,11 @@ import {
   CircleOff,
   Edit,
   FileBarChart,
-  FileText,
   BarChart3,
   Package,
   PackagePlus,
   PackageX,
   PencilLine,
-  ReceiptText,
   RefreshCw,
   ShieldCheck,
   Tag,
@@ -73,6 +71,14 @@ interface ResumoEstoque {
   totalReposicoes: number
 }
 
+interface ResumoVariante extends ResumoEstoque {
+  valorReposicoes: number
+  faturamentoTotal: number
+  lucroLiquidoTotal: number
+  vendas: number
+  valorVendas: number
+}
+
 type BadgeColor =
   | 'cyan'
   | 'yellow'
@@ -84,7 +90,7 @@ type BadgeColor =
   | 'orange'
   | 'red'
   | 'blue'
-type ActiveTab = 'variante' | 'variantes' | 'visao-geral' | 'analytics'
+type ActiveTab = 'variante' | 'variantes' | 'analytics'
 
 type RuleConfig = {
   label: string
@@ -98,13 +104,10 @@ const uiStore = useUiStore()
 const toast = useToast()
 
 const produto = ref<ProdutoBase | null>(null)
-const resumoProduto = ref<ResumoEstoque | null>(null)
-const resumoVariante = ref<ResumoEstoque | null>(null)
+const resumoVariante = ref<ResumoVariante | null>(null)
 const loading = ref(false)
-const loadingResumoProduto = ref(false)
 const loadingResumoVariante = ref(false)
 const activeTab = ref<ActiveTab>('variante')
-const analyticsOpened = ref(false)
 const selectedVariantId = ref<string>('')
 
 // Lightbox: ao clicar na imagem de uma variante, abre em tamanho maior.
@@ -155,44 +158,6 @@ const overviewHighlights = computed(() => {
   ]
 })
 
-const fiscalFields = computed(() => {
-  const base = produto.value
-  if (!base) return []
-
-  const fields = [
-    { label: 'Código fiscal', value: base.codigoProduto },
-    { label: 'NCM', value: base.ncm },
-    { label: 'CEST', value: base.cest },
-    { label: 'CFOP', value: base.cfop },
-    { label: 'Origem', value: base.origem },
-    {
-      label: 'ICMS',
-      value: base.aliquotaIcms != null && base.aliquotaIcms !== '' ? `${base.aliquotaIcms}%` : null,
-    },
-    {
-      label: 'IPI',
-      value: base.aliquotaIpi != null && base.aliquotaIpi !== '' ? `${base.aliquotaIpi}%` : null,
-    },
-    {
-      label: 'PIS',
-      value: base.aliquotaPis != null && base.aliquotaPis !== '' ? `${base.aliquotaPis}%` : null,
-    },
-    {
-      label: 'COFINS',
-      value:
-        base.aliquotaCofins != null && base.aliquotaCofins !== ''
-          ? `${base.aliquotaCofins}%`
-          : null,
-    },
-    {
-      label: 'ISS',
-      value: base.issAliquota != null && base.issAliquota !== '' ? `${base.issAliquota}%` : null,
-    },
-  ]
-
-  return fields.filter((field) => field.value != null && String(field.value).trim() !== '')
-})
-
 const productStatusBadge = computed(() => getStatusBadge(produto.value?.status))
 const variantStatusBadge = computed(() => getStatusBadge(selectedVariant.value?.status))
 const variantStockBadge = computed(() =>
@@ -202,7 +167,6 @@ const variantStockBadge = computed(() =>
     selectedVariant.value?.controlaEstoque,
   ),
 )
-const productRules = computed(() => getRuleBadges(produto.value))
 const variantRules = computed(() => getRuleBadges(selectedVariant.value))
 
 function getStatusBadge(status?: string) {
@@ -315,24 +279,6 @@ async function loadProduto() {
   }
 }
 
-async function loadResumoProduto() {
-  const id = Number(route.query.id)
-  if (!id || Number.isNaN(id)) {
-    resumoProduto.value = null
-    return
-  }
-
-  try {
-    loadingResumoProduto.value = true
-    resumoProduto.value = await ProdutoRepository.resumo(id)
-  } catch (error) {
-    console.log(error)
-    toast.error('Erro ao buscar o resumo do produto')
-  } finally {
-    loadingResumoProduto.value = false
-  }
-}
-
 async function loadResumoVariante() {
   if (!selectedVariantId.value) {
     resumoVariante.value = null
@@ -352,7 +298,7 @@ async function loadResumoVariante() {
 
 async function reloadDetalhes() {
   await loadProduto()
-  await Promise.all([loadResumoProduto(), loadResumoVariante()])
+  await loadResumoVariante()
 }
 
 function syncVariantQueryParam() {
@@ -457,10 +403,6 @@ watch(selectedVariantId, () => {
   loadResumoVariante()
 })
 
-watch(activeTab, (tab) => {
-  if (tab === 'analytics') analyticsOpened.value = true
-})
-
 watch(
   () => [
     store.openModal,
@@ -488,7 +430,7 @@ watch(
 
 onMounted(async () => {
   await loadProduto()
-  await Promise.all([loadResumoProduto(), loadResumoVariante()])
+  await loadResumoVariante()
 })
 </script>
 
@@ -555,13 +497,10 @@ onMounted(async () => {
           <Button
             variant="outline"
             @click="reloadDetalhes"
-            :disabled="loading || loadingResumoProduto || loadingResumoVariante"
+            :disabled="loading || loadingResumoVariante"
           >
             <RefreshCw
-              :class="[
-                'mr-2 h-4 w-4',
-                loading || loadingResumoProduto || loadingResumoVariante ? 'animate-spin' : '',
-              ]"
+              :class="['mr-2 h-4 w-4', loading || loadingResumoVariante ? 'animate-spin' : '']"
             />
             Atualizar
           </Button>
@@ -591,12 +530,6 @@ onMounted(async () => {
             <span>Variantes</span>
           </span>
         </TabsTrigger>
-        <TabsTrigger value="visao-geral" class="h-10 px-4">
-          <span class="flex items-center gap-2">
-            <FileText class="h-4 w-4" />
-            <span>Visão geral</span>
-          </span>
-        </TabsTrigger>
         <TabsTrigger value="analytics" class="h-10 px-4">
           <span class="flex items-center gap-2">
             <BarChart3 class="h-4 w-4" />
@@ -606,7 +539,7 @@ onMounted(async () => {
       </TabsList>
 
       <TabsContent value="variante" class="space-y-4">
-        <div class="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <Card class="border-border">
             <CardContent class="space-y-4 mt-4">
               <div>
@@ -784,7 +717,7 @@ onMounted(async () => {
                 Resumo da variante
               </CardTitle>
               <CardDescription>
-                Situação de estoque da variante ativa, considerando somente movimentações
+                Estoque e resultado acumulado da variante selecionada, considerando as movimentações
                 concluídas.
               </CardDescription>
             </CardHeader>
@@ -792,7 +725,7 @@ onMounted(async () => {
               <div v-if="loadingResumoVariante" class="text-sm text-muted-foreground">
                 Carregando resumo da variante...
               </div>
-              <div v-else-if="resumoVariante" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div v-else-if="resumoVariante" class="grid grid-cols-2 gap-3">
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
                   <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
                     Valor em estoque
@@ -823,6 +756,61 @@ onMounted(async () => {
                   </div>
                   <div class="mt-1 text-sm font-semibold text-foreground">
                     {{ resumoVariante.totalSaidas }} unidade(s)
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Faturamento total
+                  </div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoVariante.faturamentoTotal || 0)) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Lucro líquido total
+                  </div>
+                  <div
+                    class="mt-1 text-sm font-semibold"
+                    :class="
+                      resumoVariante.lucroLiquidoTotal >= 0
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                    "
+                  >
+                    {{ formatCurrencyBR(Number(resumoVariante.lucroLiquidoTotal || 0)) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Vendas
+                  </div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ resumoVariante.vendas }} venda(s)
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Reposições concluídas
+                  </div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ resumoVariante.totalReposicoes }} reposição(ões)
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Valor das reposições
+                  </div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoVariante.valorReposicoes || 0)) }}
+                  </div>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-3 py-2">
+                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Valor das vendas
+                  </div>
+                  <div class="mt-1 text-sm font-semibold text-foreground">
+                    {{ formatCurrencyBR(Number(resumoVariante.valorVendas || 0)) }}
                   </div>
                 </div>
               </div>
@@ -932,7 +920,7 @@ onMounted(async () => {
                         <div class="flex gap-2 items-center">
                           <span class="text-sm text-foreground"
                             >{{ item.estoque }} {{ item.unidade || 'un' }}
-                            </span>
+                          </span>
                           <BadgeCell
                             size="sm"
                             :label="
@@ -1029,160 +1017,9 @@ onMounted(async () => {
         </Card>
       </TabsContent>
 
-      <TabsContent value="visao-geral" class="space-y-4">
-        <div class="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-          <div class="space-y-4">
-            <Card class="border-border">
-              <CardHeader>
-                <CardTitle>Visão geral do produto base</CardTitle>
-                <CardDescription>
-                  Informações do cadastro principal que valem para todas as variantes sem poluir a
-                  leitura operacional.
-                </CardDescription>
-              </CardHeader>
-              <CardContent class="space-y-4">
-                <div class="max-w-max">
-                  <div class="text-xs uppercase tracking-wide text-muted-foreground">Descrição</div>
-                  <div
-                    class="mt-1 text-sm whitespace-pre-wrap text-foreground truncate max-w-[500px]"
-                  >
-                    {{ produto?.descricao || 'Sem descrição cadastrada.' }}
-                  </div>
-                </div>
-
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
-                      Categoria
-                    </div>
-                    <div class="mt-1 text-sm font-medium text-foreground">
-                      {{ produto?.categoria || 'Sem categoria' }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
-                      Produto base
-                    </div>
-                    <div class="mt-1 text-sm font-medium text-foreground">
-                      {{ produto?.nome || 'Sem nome' }}
-                    </div>
-                  </div>
-                  <div class="rounded-xl border border-border bg-background px-3 py-2">
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
-                      Total de variantes
-                    </div>
-                    <div class="mt-1 text-sm font-medium text-foreground">
-                      {{ produto?.totalVariantes || 0 }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="space-y-2">
-                  <div class="text-xs uppercase tracking-wide text-muted-foreground">
-                    Regras operacionais compartilhadas
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    <BadgeCell
-                      v-for="rule in productRules"
-                      :key="rule.label"
-                      :label="rule.label"
-                      :color="rule.color"
-                      :icon="rule.icon"
-                      :capitalize="false"
-                      size="sm"
-                    />
-                    <span v-if="!productRules.length" class="text-sm text-muted-foreground">
-                      Nenhuma regra operacional ativa.
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card v-if="fiscalFields.length" class="border-border">
-              <CardHeader>
-                <CardTitle>Dados fiscais</CardTitle>
-                <CardDescription
-                  >Campos fiscais retornados no cadastro base do produto.</CardDescription
-                >
-              </CardHeader>
-              <CardContent>
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <div
-                    v-for="field in fiscalFields"
-                    :key="field.label"
-                    class="rounded-xl border border-border bg-background px-3 py-2"
-                  >
-                    <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
-                      {{ field.label }}
-                    </div>
-                    <div class="mt-1 text-sm font-medium text-foreground">{{ field.value }}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card class="border-border">
-            <CardHeader>
-              <CardTitle class="flex items-center gap-2">
-                <ReceiptText class="h-4 w-4" />
-                Resumo consolidado do produto
-              </CardTitle>
-              <CardDescription>
-                Situação de estoque de todas as variantes, considerando somente movimentações
-                concluídas.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div v-if="loadingResumoProduto" class="text-sm text-muted-foreground">
-                Carregando resumo do produto...
-              </div>
-              <div v-else-if="resumoProduto" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Valor em estoque
-                  </div>
-                  <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ formatCurrencyBR(Number(resumoProduto.valorEstoque || 0)) }}
-                  </div>
-                </div>
-                <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Estoque atual
-                  </div>
-                  <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ resumoProduto.estoqueAtual }} unidade(s)
-                  </div>
-                </div>
-                <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Entradas concluídas
-                  </div>
-                  <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ resumoProduto.totalEntradas }} unidade(s)
-                  </div>
-                </div>
-                <div class="rounded-xl border border-border bg-background px-3 py-2">
-                  <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Saídas concluídas
-                  </div>
-                  <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ resumoProduto.totalSaidas }} unidade(s)
-                  </div>
-                </div>
-              </div>
-              <div v-else class="text-sm text-muted-foreground">
-                Resumo consolidado indisponível.
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </TabsContent>
-
-      <TabsContent value="analytics" force-mount class="space-y-4">
+      <TabsContent value="analytics" class="space-y-4">
         <ProdutoAnalytics
-          v-if="analyticsOpened && produto?.id"
+          v-if="activeTab === 'analytics' && produto?.id"
           :produto-id="produto.id"
           :variantes="variants"
         />

@@ -132,6 +132,7 @@ export interface CatalogoPublico {
 
 export interface ProdutoAnalytics {
   ano: number
+  mes: number | null
   moduloOuriveAtivo: boolean
   produto: {
     id: number
@@ -152,6 +153,9 @@ export interface ProdutoAnalytics {
     custoMedioAplicado: number
     custoMedioReposicao: number
     totalReposicoes: number
+    valorReposicoes: number
+    valorVendas: number
+    totalEntradas: number
     estoqueAtual: number
     valorEstoque: number
   }
@@ -233,20 +237,21 @@ export class ProdutoRepository {
     return data
   }
 
-  static async getAnalytics(id: number, ano: number, varianteId?: number) {
+  static async getAnalytics(id: number, ano: number, varianteId?: number, mes?: number) {
     const { data } = await http.get(`/produtos/${id}/analytics`, {
-      params: { ano, varianteId },
+      params: { ano, varianteId, mes },
     })
     return data as ProdutoAnalytics
   }
 
-  static async exportAnalyticsPdf(id: number, ano: number, varianteId?: number) {
+  static async exportAnalyticsPdf(id: number, ano: number, varianteId?: number, mes?: number) {
     const response = await http.get(`/produtos/${id}/analytics/pdf`, {
-      params: { ano, varianteId },
+      params: { ano, varianteId, mes },
       responseType: 'blob',
     })
     const variantSuffix = varianteId ? `_variante-${varianteId}` : ''
-    downloadBlob(response.data, `analytics_produto_${ano}${variantSuffix}.pdf`)
+    const monthSuffix = mes ? `_mes-${String(mes).padStart(2, '0')}` : ''
+    downloadBlob(response.data, `analytics_produto_${ano}${monthSuffix}${variantSuffix}.pdf`)
   }
 
   static async csvDownload() {
