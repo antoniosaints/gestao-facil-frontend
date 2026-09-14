@@ -75,6 +75,7 @@ interface ResumoVariante extends ResumoEstoque {
   valorReposicoes: number
   faturamentoTotal: number
   lucroLiquidoTotal: number
+  markup: number
   vendas: number
   valorVendas: number
 }
@@ -121,6 +122,15 @@ const selectedVariant = computed<ProdutoVariante | null>(() => {
   const id = Number(selectedVariantId.value)
   return variants.value.find((item) => Number(item.id) === id) ?? null
 })
+
+const margemLucroVariante = computed(() => {
+  const resumo = resumoVariante.value
+  if (!resumo?.faturamentoTotal) return 0
+  return (Number(resumo.lucroLiquidoTotal || 0) / Number(resumo.faturamentoTotal)) * 100
+})
+
+const formatPercent = (value: number) =>
+  `${Number(value || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
 
 const pageTitle = computed(() => {
   if (!produto.value) return 'Produto'
@@ -778,15 +788,17 @@ onMounted(async () => {
                         : 'text-red-600 dark:text-red-400'
                     "
                   >
-                    {{ formatCurrencyBR(Number(resumoVariante.lucroLiquidoTotal || 0)) }}
+                    {{ formatCurrencyBR(Number(resumoVariante.lucroLiquidoTotal || 0)) }} /
+                    {{ formatPercent(margemLucroVariante) }}
                   </div>
                 </div>
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
                   <div class="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Vendas
+                    Markup
                   </div>
                   <div class="mt-1 text-sm font-semibold text-foreground">
-                    {{ resumoVariante.vendas }} venda(s)
+                    {{ formatCurrencyBR(Number(resumoVariante.faturamentoTotal || 0)) }} /
+                    {{ formatPercent(resumoVariante.markup) }}
                   </div>
                 </div>
                 <div class="rounded-xl border border-border bg-background px-3 py-2">
