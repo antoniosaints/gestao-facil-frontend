@@ -262,6 +262,14 @@ export interface ProdutoVariante {
   imagem?: string | null
   // Se a variante aparece no catálogo/loja online pública.
   mostrarNoCatalogo?: boolean
+  ncm?: string | null
+  cfop?: string | null
+  origem?: number | null
+  icmsCsosn?: string | null
+  icmsCst?: string | null
+  icmsModBcSt?: string | null
+  icmsMva?: number | string | null
+  icmsAliquotaSt?: number | string | null
 }
 
 export interface ProdutoBase {

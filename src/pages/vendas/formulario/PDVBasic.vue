@@ -585,6 +585,27 @@
     </ModalView>
 
     <ModalView
+      v-model:open="openModalPendenciasFiscais"
+      title="Dados fiscais pendentes"
+      description="A venda ainda não foi concluída nem enviada para emissão. Corrija os cadastros ou escolha concluir sem emitir agora."
+      size="lg"
+    >
+      <div class="space-y-4 p-4">
+        <div class="space-y-2">
+          <div v-for="issue in pendenciasFiscais" :key="`${issue.produtoId}-${issue.descricao}`" class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+            <p class="font-semibold">{{ issue.descricao }}</p>
+            <p class="mt-1 text-xs">Preencher: {{ issue.campos.join(', ') }}</p>
+          </div>
+        </div>
+        <p class="text-xs text-muted-foreground">Ao concluir sem emitir, a venda ficará faturada e poderá receber NF-e/NFC-e depois de regularizar os produtos.</p>
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" @click="openModalPendenciasFiscais = false">Voltar ao carrinho</Button>
+          <Button type="button" class="text-white" @click="concluirVendaSemEmitir">Concluir sem emitir agora</Button>
+        </div>
+      </div>
+    </ModalView>
+
+    <ModalView
       v-model:open="openModalVendaFinalizada"
       title="Comprovante da venda"
       description="Ticket da venda pronto para imprimir, baixar ou enviar."
@@ -1218,6 +1239,9 @@ const openModalAcoes = ref(false)
 const openModalVendaFinalizada = ref(false)
 const openModalEnvioComprovante = ref(false)
 const openModalCrediario = ref(false)
+const openModalPendenciasFiscais = ref(false)
+const pendenciasFiscais = ref<Array<{ produtoId: number | null; descricao: string; campos: string[] }>>([])
+const opcoesFinalizacaoFiscalPendente = ref<{ print?: boolean; crediarioConfirmado?: boolean } | undefined>()
 const printingCupom = ref(false)
 const downloadingCupom = ref(false)
 const vendaRecibo = ref<{
@@ -2152,8 +2176,22 @@ async function finalizarVendaPDV(options?: { print?: boolean; crediarioConfirmad
     }
     searchInputField.value?.focus()
   } catch (err: any) {
+    const issues = err?.response?.data?.error?.details?.itens
+    if (err?.response?.data?.error?.code === 'fiscal_product_data_incomplete' && Array.isArray(issues)) {
+      pendenciasFiscais.value = issues
+      opcoesFinalizacaoFiscalPendente.value = options
+      openModalPendenciasFiscais.value = true
+      return
+    }
     toast.error(err.response?.data?.message || 'Erro inesperado')
   }
+}
+
+async function concluirVendaSemEmitir() {
+  openModalPendenciasFiscais.value = false
+  tipoDocumentoFiscal.value = 'NENHUM'
+  await finalizarVendaPDV(opcoesFinalizacaoFiscalPendente.value)
+  opcoesFinalizacaoFiscalPendente.value = undefined
 }
 
 async function confirmarCrediarioEFinalizar() {

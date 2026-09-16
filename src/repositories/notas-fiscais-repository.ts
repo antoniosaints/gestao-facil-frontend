@@ -81,6 +81,19 @@ export type FiscalDocument = {
   cliente?: { id: number; nome: string; documento?: string | null } | null
 }
 
+export type UninvoicedSale = {
+  id: number
+  uid: string
+  valorTotal: number
+  data: string
+  cliente: { id: number; nome: string; documento?: string | null } | null
+}
+
+export type FiscalBatchResult = {
+  emitidas: Array<{ vendaId: number; notaFiscalId: number }>
+  pendencias: Array<{ vendaId: number; codigo: string; mensagem: string; detalhes?: { itens?: Array<{ produtoId: number | null; descricao: string; campos: string[] }> } }>
+}
+
 export class NotasFiscaisRepository {
   static async getConfig() {
     const { data } = await http.get('/v1/notas-fiscais/configuracao')
@@ -145,6 +158,16 @@ export class NotasFiscaisRepository {
   static async createSaleDocument(vendaId: number, tipo: 'NFE' | 'NFCE') {
     const { data } = await http.post(`/v1/notas-fiscais/vendas/${vendaId}/documentos`, { tipo }, { headers: { 'Idempotency-Key': crypto.randomUUID() } })
     return data.data as FiscalDocument
+  }
+
+  static async listUninvoicedSales() {
+    const { data } = await http.get('/v1/notas-fiscais/vendas/sem-documento', { params: { limit: 50 } })
+    return data.data as UninvoicedSale[]
+  }
+
+  static async createSaleDocumentsBatch(vendaIds: number[], tipo: 'NFE' | 'NFCE') {
+    const { data } = await http.post('/v1/notas-fiscais/vendas/documentos/lote', { vendaIds, tipo })
+    return data.data as FiscalBatchResult
   }
 
   static async retryDocument(id: number) {
