@@ -309,6 +309,19 @@ export interface ProdutoBase {
   tipoItem?: string | null
   icmsCsosn?: string | null
   icmsCst?: string | null
+  icmsModBcSt?: string | null
+  icmsMva?: number | string | null
+  icmsReducaoBcSt?: number | string | null
+  icmsAliquotaSt?: number | string | null
+  fcpAliquota?: number | string | null
+  fcpStAliquota?: number | string | null
+  icmsDesoneradoValor?: number | string | null
+  icmsDesoneradoMotivo?: string | null
+  icmsCreditoAliquota?: number | string | null
+  ipiCst?: string | null
+  ipiCodigoEnquadramento?: string | null
+  difalAliquotaInterna?: number | string | null
+  difalFcpAliquota?: number | string | null
   pisCst?: string | null
   cofinsCst?: string | null
   issAliquota?: number | string | null

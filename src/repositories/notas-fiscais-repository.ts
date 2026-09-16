@@ -31,7 +31,7 @@ export type FiscalConfig = {
   serieNfce: number
   proximoNumeroNfce: number
   nfce: { cscId: string; cscConfigurado: boolean }
-  nfse: { codigoServicoNacional: string; codigoTributacaoMunicipio: string; codigoCnae: string; dataOpcaoSimples: string; regimeApuracaoSn: string; issRetido: string; responsavelRetencao: string; naturezaOperacao: string; incentivadorCultural: string; exigibilidadeIss: string }
+  nfse: { codigoServicoNacional: string; codigoTributacaoMunicipio: string; codigoCnae: string; dataOpcaoSimples: string; regimeApuracaoSn: string; issRetido: string; responsavelRetencao: string; naturezaOperacao: string; incentivadorCultural: string; exigibilidadeIss: string; regimeEspecialTributacao: string }
   nfe: { naturezaOperacao: string; tipoAtividade: string; indicadorPresenca: string; indicativoIntermediador: string; frete: string }
   responsavelTecnico: { cnpj: string; contato: string; email: string; telefone: string; csrtId: string; csrtConfigurado: boolean }
   codigoServicoPadrao: string

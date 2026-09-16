@@ -45,6 +45,19 @@ type ProdutoForm = {
   tipoItem?: string | null
   icmsCsosn?: string | null
   icmsCst?: string | null
+  icmsModBcSt?: string | null
+  icmsMva?: number | string | null
+  icmsReducaoBcSt?: number | string | null
+  icmsAliquotaSt?: number | string | null
+  fcpAliquota?: number | string | null
+  fcpStAliquota?: number | string | null
+  icmsDesoneradoValor?: number | string | null
+  icmsDesoneradoMotivo?: string | null
+  icmsCreditoAliquota?: number | string | null
+  ipiCst?: string | null
+  ipiCodigoEnquadramento?: string | null
+  difalAliquotaInterna?: number | string | null
+  difalFcpAliquota?: number | string | null
   pisCst?: string | null
   cofinsCst?: string | null
   aliquotaIcms?: number | string | null
@@ -89,6 +102,19 @@ type ProdutoVarianteForm = {
   tipoItem?: string | null
   icmsCsosn?: string | null
   icmsCst?: string | null
+  icmsModBcSt?: string | null
+  icmsMva?: number | string | null
+  icmsReducaoBcSt?: number | string | null
+  icmsAliquotaSt?: number | string | null
+  fcpAliquota?: number | string | null
+  fcpStAliquota?: number | string | null
+  icmsDesoneradoValor?: number | string | null
+  icmsDesoneradoMotivo?: string | null
+  icmsCreditoAliquota?: number | string | null
+  ipiCst?: string | null
+  ipiCodigoEnquadramento?: string | null
+  difalAliquotaInterna?: number | string | null
+  difalFcpAliquota?: number | string | null
   pisCst?: string | null
   cofinsCst?: string | null
   aliquotaIcms?: number | string | null
@@ -126,6 +152,8 @@ function getDefaultFiscalFields() {
     tipoItem: '00',
     icmsCsosn: null,
     icmsCst: null,
+    icmsModBcSt: null, icmsMva: null, icmsReducaoBcSt: null, icmsAliquotaSt: null, fcpAliquota: null, fcpStAliquota: null,
+    icmsDesoneradoValor: null, icmsDesoneradoMotivo: null, icmsCreditoAliquota: null, ipiCst: null, ipiCodigoEnquadramento: null, difalAliquotaInterna: null, difalFcpAliquota: null,
     pisCst: null,
     cofinsCst: null,
     aliquotaIcms: null,
@@ -148,6 +176,8 @@ function extractFiscalFields(data: any) {
     tipoItem: data?.tipoItem ?? '00',
     icmsCsosn: data?.icmsCsosn ?? null,
     icmsCst: data?.icmsCst ?? null,
+    icmsModBcSt: data?.icmsModBcSt ?? null, icmsMva: data?.icmsMva ?? null, icmsReducaoBcSt: data?.icmsReducaoBcSt ?? null, icmsAliquotaSt: data?.icmsAliquotaSt ?? null, fcpAliquota: data?.fcpAliquota ?? null, fcpStAliquota: data?.fcpStAliquota ?? null,
+    icmsDesoneradoValor: data?.icmsDesoneradoValor ?? null, icmsDesoneradoMotivo: data?.icmsDesoneradoMotivo ?? null, icmsCreditoAliquota: data?.icmsCreditoAliquota ?? null, ipiCst: data?.ipiCst ?? null, ipiCodigoEnquadramento: data?.ipiCodigoEnquadramento ?? null, difalAliquotaInterna: data?.difalAliquotaInterna ?? null, difalFcpAliquota: data?.difalFcpAliquota ?? null,
     pisCst: data?.pisCst ?? null,
     cofinsCst: data?.cofinsCst ?? null,
     aliquotaIcms: data?.aliquotaIcms ?? null,

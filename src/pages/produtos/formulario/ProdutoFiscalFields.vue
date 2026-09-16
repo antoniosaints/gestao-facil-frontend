@@ -62,6 +62,20 @@
         <Input v-model="form.aliquotaIpi" type="number" min="0" step="0.01" placeholder="0,00"
           class="bg-background dark:bg-background/60" />
       </div>
+      <div class="md:col-span-12 mt-2 border-t pt-4"><p class="text-sm font-semibold">ICMS-ST, crédito e desoneração</p><p class="text-xs text-muted-foreground">A Geranet recebe ICMS-ST por MVA (modalidade 4). Crédito, desoneração, IPI, FCP e DIFAL ficam registrados na matriz fiscal e dependem do contrato específico da Geranet para envio.</p></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Modalidade BC-ST</label><Input v-model="form.icmsModBcSt" maxlength="1" placeholder="Ex.: 4" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">MVA-ST (%)</label><Input v-model="form.icmsMva" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Redução BC-ST (%)</label><Input v-model="form.icmsReducaoBcSt" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota ICMS-ST (%)</label><Input v-model="form.icmsAliquotaSt" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">FCP próprio (%)</label><Input v-model="form.fcpAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">FCP-ST (%)</label><Input v-model="form.fcpStAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Crédito Simples (%)</label><Input v-model="form.icmsCreditoAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Valor desonerado</label><Input v-model="form.icmsDesoneradoValor" type="number" min="0" step="0.01" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Motivo desoneração</label><Input v-model="form.icmsDesoneradoMotivo" maxlength="2" placeholder="Ex.: 3" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">CST IPI</label><Input v-model="form.ipiCst" maxlength="2" placeholder="Ex.: 99" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Enquadramento IPI</label><Input v-model="form.ipiCodigoEnquadramento" maxlength="3" placeholder="Ex.: 999" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">DIFAL interna (%)</label><Input v-model="form.difalAliquotaInterna" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">FCP DIFAL (%)</label><Input v-model="form.difalFcpAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota PIS (%)</label>
         <Input v-model="form.aliquotaPis" type="number" min="0" step="0.01" placeholder="0,00"
