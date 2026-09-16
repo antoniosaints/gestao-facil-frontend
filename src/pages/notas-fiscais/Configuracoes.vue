@@ -20,13 +20,16 @@ const certificateFile = ref<File | null>(null)
 const certificatePassword = ref('')
 const d2tiToken = ref('')
 const nfceCscToken = ref('')
+const responsavelTecnicoCsrt = ref('')
 const municipalitySearch = ref('')
 const municipalities = ref<MunicipioIbge[]>([])
+const checkingGeranet = ref(false)
+const geranetStatus = ref<{ apiKeyValida: boolean; certificadoConfigurado: boolean; nfsePronta: boolean; nfePronta: boolean; nfcePronta: boolean; motivo?: string } | null>(null)
 
 const config = reactive<FiscalConfig>({
   razaoSocial: '', nomeFantasia: '', documento: '', inscricaoEstadual: '', inscricaoMunicipal: '', regimeTributario: 0,
   codigoMunicipioIbge: '', codigoMunicipioPrestador: '', municipioNome: '', uf: '', cep: '', logradouro: '', numero: '', bairro: '', complemento: '',
-  email: '', telefone: '', ambiente: 'HOMOLOGACAO', nfseHabilitado: false, nfeHabilitado: false, nfceHabilitado: false, modoEmissaoNfse: 'NACIONAL', provedorNfse: 'NACIONAL', serieRps: 1, proximoNumeroRps: 1, serieNfe: 1, proximoNumeroNfe: 1, serieNfce: 1, proximoNumeroNfce: 1, nfce: { cscId: '', cscConfigurado: false },
+  email: '', telefone: '', ambiente: 'HOMOLOGACAO', nfseHabilitado: false, nfeHabilitado: false, nfceHabilitado: false, modoEmissaoNfse: 'GERANET', provedorNfse: 'GERANET_NFSE', serieRps: 1, proximoNumeroRps: 1, serieNfe: 1, proximoNumeroNfe: 1, serieNfce: 1, proximoNumeroNfce: 1, nfce: { cscId: '', cscConfigurado: false }, nfse: { codigoServicoNacional: '', codigoTributacaoMunicipio: '', codigoCnae: '', dataOpcaoSimples: '', regimeApuracaoSn: '1', issRetido: '2', responsavelRetencao: '4', naturezaOperacao: '1', incentivadorCultural: '2', exigibilidadeIss: '1' }, nfe: { naturezaOperacao: 'Venda de mercadoria', tipoAtividade: '1', indicadorPresenca: '1', indicativoIntermediador: '0', frete: '9' }, responsavelTecnico: { cnpj: '', contato: '', email: '', telefone: '', csrtId: '', csrtConfigurado: false },
   codigoServicoPadrao: '', descricaoServicoPadrao: '', codigoAtividadePadrao: '', descricaoAtividadePadrao: '', tipoTributacaoPadrao: null, tipoRecolhimentoPadrao: null, notaIntermediadaPadrao: 2, aliquotaIssPadrao: null,
   certificado: { configurado: false, nome: null, atualizadoEm: null }, integracao: { tipo: 'CERTIFICADO_A1', configurada: false, atualizadoEm: null }, emissaoNfsePronta: false, emissaoNfePronta: false, emissaoNfcePronta: false,
 })
@@ -46,12 +49,19 @@ async function load() {
 async function save() {
   try {
     saving.value = true
-    const { certificado: _certificate, integracao: _integration, emissaoNfsePronta: _nfseReady, emissaoNfePronta: _nfeReady, emissaoNfcePronta: _nfceReady, proximoNumeroRps: _nextRps, proximoNumeroNfe: _nextNfe, proximoNumeroNfce: _nextNfce, nfce: _nfce, ...payload } = config
-    assignConfig(await NotasFiscaisRepository.saveConfig({ ...payload, nfceCscId: config.nfce.cscId, nfceCscToken: nfceCscToken.value || undefined } as any))
+    const { certificado: _certificate, integracao: _integration, emissaoNfsePronta: _nfseReady, emissaoNfePronta: _nfeReady, emissaoNfcePronta: _nfceReady, proximoNumeroRps: _nextRps, proximoNumeroNfe: _nextNfe, proximoNumeroNfce: _nextNfce, nfce: _nfce, nfse: _nfse, nfe: _nfe, responsavelTecnico: _responsavel, ...payload } = config
+    assignConfig(await NotasFiscaisRepository.saveConfig({ ...payload, nfceCscId: config.nfce.cscId, nfceCscToken: nfceCscToken.value || undefined, nfseCodigoServicoNacional: config.nfse.codigoServicoNacional || undefined, nfseCodigoTributacaoMunicipio: config.nfse.codigoTributacaoMunicipio, nfseCodigoCnae: config.nfse.codigoCnae || undefined, nfseDataOpcaoSimples: config.nfse.dataOpcaoSimples || undefined, nfseRegimeApuracaoSn: config.nfse.regimeApuracaoSn, nfseIssRetido: config.nfse.issRetido, nfseResponsavelRetencao: config.nfse.responsavelRetencao, nfseNaturezaOperacao: config.nfse.naturezaOperacao, nfseIncentivadorCultural: config.nfse.incentivadorCultural, nfseExigibilidadeIss: config.nfse.exigibilidadeIss, nfeNaturezaOperacao: config.nfe.naturezaOperacao, nfeTipoAtividade: config.nfe.tipoAtividade, nfeIndicadorPresenca: config.nfe.indicadorPresenca, nfeIndicativoIntermediador: config.nfe.indicativoIntermediador, nfeFrete: config.nfe.frete, responsavelTecnicoCnpj: config.responsavelTecnico.cnpj, responsavelTecnicoContato: config.responsavelTecnico.contato, responsavelTecnicoEmail: config.responsavelTecnico.email || undefined, responsavelTecnicoTelefone: config.responsavelTecnico.telefone, responsavelTecnicoCsrtId: config.responsavelTecnico.csrtId, responsavelTecnicoCsrt: responsavelTecnicoCsrt.value || undefined } as any))
     nfceCscToken.value = ''
+    responsavelTecnicoCsrt.value = ''
     toast.success('Configuração fiscal salva.')
   } catch (error: any) { toast.error(errorMessage(error, 'Não foi possível salvar a configuração fiscal.')) }
   finally { saving.value = false }
+}
+
+async function checkGeranet() {
+  try { checkingGeranet.value = true; geranetStatus.value = await NotasFiscaisRepository.geranetHomologacao() }
+  catch (error: any) { geranetStatus.value = error?.response?.data?.data || { apiKeyValida: false, certificadoConfigurado: config.certificado.configurado, nfsePronta: config.emissaoNfsePronta, nfePronta: config.emissaoNfePronta, nfcePronta: config.emissaoNfcePronta, motivo: errorMessage(error, 'Não foi possível consultar a Geranet.') } }
+  finally { checkingGeranet.value = false }
 }
 
 async function searchMunicipality() {
@@ -153,12 +163,12 @@ onMounted(load)
       </div>
 
       <Card class="border-primary/20">
-        <CardHeader><CardTitle class="flex items-center gap-2"><Landmark class="size-5 text-primary" />Rota de emissão</CardTitle><CardDescription>Escolha o autorizador usado pela prefeitura. O código IBGE continua sendo a referência das regras municipais.</CardDescription></CardHeader>
+        <CardHeader><CardTitle class="flex items-center gap-2"><Landmark class="size-5 text-primary" />Rota de emissão NFS-e</CardTitle><CardDescription>A Geranet é o emissor padrão. O código IBGE continua sendo a referência das regras municipais.</CardDescription></CardHeader>
         <CardContent class="grid gap-3 md:grid-cols-2">
-          <button type="button" class="rounded-xl border p-4 text-left transition-colors" :class="config.modoEmissaoNfse === 'NACIONAL' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'hover:bg-accent'" @click="config.modoEmissaoNfse = 'NACIONAL'"><p class="font-semibold">Emissor Público Nacional</p><p class="mt-1 text-sm text-muted-foreground">Monta a DPS pelo padrão SEFIN Nacional a partir dos parâmetros do município.</p></button>
+          <button type="button" class="rounded-xl border p-4 text-left transition-colors" :class="config.modoEmissaoNfse === 'GERANET' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'hover:bg-accent'" @click="config.modoEmissaoNfse = 'GERANET'"><p class="font-semibold">Geranet NFS-e</p><p class="mt-1 text-sm text-muted-foreground">Emite e autoriza a NFS-e pelo mesmo integrador de NF-e e NFC-e, com A1 por assinante.</p></button>
           <button type="button" :disabled="!isSaoMateus" class="rounded-xl border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50" :class="config.modoEmissaoNfse === 'LEGADO_D2TI' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'hover:bg-accent'" @click="config.modoEmissaoNfse = 'LEGADO_D2TI'"><p class="font-semibold">Legado D2TI</p><p class="mt-1 text-sm text-muted-foreground">Integração municipal disponível para São Mateus do Maranhão - MA.</p></button>
         </CardContent>
-        <div class="px-6 pb-5 text-sm text-muted-foreground">{{ isSaoMateus ? 'São Mateus pode usar o Emissor Nacional ou continuar no legado D2TI.' : 'O legado D2TI só está disponível para São Mateus do Maranhão - MA.' }}</div>
+        <div class="px-6 pb-5 text-sm text-muted-foreground">{{ isSaoMateus ? 'São Mateus pode usar a Geranet ou continuar temporariamente no legado D2TI.' : 'O legado D2TI só está disponível para São Mateus do Maranhão - MA.' }}</div>
       </Card>
 
       <Card>
@@ -171,9 +181,11 @@ onMounted(load)
 
       <div class="grid gap-5 lg:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle class="flex items-center gap-2"><Cog class="size-5 text-primary" />Parâmetros da NFS-e</CardTitle><CardDescription>Use exatamente os códigos habilitados para o seu cadastro no portal municipal.</CardDescription></CardHeader>
+          <CardHeader><CardTitle class="flex items-center gap-2"><Cog class="size-5 text-primary" />Parâmetros da NFS-e</CardTitle><CardDescription>Na Geranet, item da lista, código nacional e tributação municipal são códigos diferentes.</CardDescription></CardHeader>
           <CardContent class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-1.5"><Label for="serie-rps">Série RPS</Label><Input id="serie-rps" v-model.number="config.serieRps" type="number" min="1" /></div><div class="space-y-1.5"><Label for="codigo-servico">Código de serviço</Label><Input id="codigo-servico" v-model="config.codigoServicoPadrao" inputmode="numeric" placeholder="Ex.: 1005" /></div>
+            <div class="space-y-1.5"><Label for="codigo-servico-nacional">Código nacional</Label><Input id="codigo-servico-nacional" v-model="config.nfse.codigoServicoNacional" inputmode="numeric" placeholder="Ex.: 010701" /></div><div class="space-y-1.5"><Label for="codigo-tributacao-municipio">Tributação municipal</Label><Input id="codigo-tributacao-municipio" v-model="config.nfse.codigoTributacaoMunicipio" placeholder="Conforme prefeitura" /></div>
+            <div class="space-y-1.5"><Label for="codigo-cnae-nfse">CNAE</Label><Input id="codigo-cnae-nfse" v-model="config.nfse.codigoCnae" inputmode="numeric" placeholder="Opcional" /></div><div class="space-y-1.5"><Label for="data-opcao-simples">Opção pelo Simples</Label><Input id="data-opcao-simples" v-model="config.nfse.dataOpcaoSimples" type="date" /></div>
             <div class="space-y-1.5 sm:col-span-2"><Label for="descricao-servico">Descrição do serviço</Label><Input id="descricao-servico" v-model="config.descricaoServicoPadrao" placeholder="Ex.: Serviços de alimentação" /></div>
             <div class="space-y-1.5"><Label for="codigo-atividade">CNAE / atividade</Label><Input id="codigo-atividade" v-model="config.codigoAtividadePadrao" inputmode="numeric" placeholder="Ex.: 5611203" /></div><div class="space-y-1.5"><Label for="aliquota-iss">Alíquota ISS (%)</Label><Input id="aliquota-iss" v-model.number="(config.aliquotaIssPadrao as number)" type="number" min="0" max="100" step="0.01" placeholder="Ex.: 5,00" /></div>
             <div class="space-y-1.5 sm:col-span-2"><Label for="descricao-atividade">Descrição da atividade</Label><Input id="descricao-atividade" v-model="config.descricaoAtividadePadrao" placeholder="Ex.: Restaurantes e similares" /></div>
@@ -187,10 +199,14 @@ onMounted(load)
         </Card>
 
         <Card v-else class="border-primary/25">
-          <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Certificado digital A1</CardTitle><CardDescription>O Emissor Nacional usa o certificado e os parâmetros municipais oficiais para preparar a DPS. Arquivos .pfx ou .p12 de até 5 MB são cifrados antes de serem persistidos.</CardDescription></CardHeader>
-          <CardContent class="space-y-4"><div v-if="config.certificado.configurado" class="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 class="size-5" /><span>Certificado configurado: {{ config.certificado.nome }}</span></div><div class="space-y-1.5"><Label for="certificado">Arquivo do certificado</Label><Input id="certificado" type="file" accept=".pfx,.p12,application/x-pkcs12" @change="certificateFile = ($event.target as HTMLInputElement).files?.[0] ?? null" /></div><div class="space-y-1.5"><Label for="senha-certificado">Senha do certificado</Label><Input id="senha-certificado" v-model="certificatePassword" type="password" autocomplete="new-password" placeholder="Senha cadastrada no certificado A1" /></div><div class="flex flex-wrap gap-2"><Button variant="outline" :disabled="uploadingCredential" @click="uploadCertificate"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.certificado.configurado ? 'Substituir certificado' : 'Salvar certificado' }}</Button><Button variant="secondary" :disabled="uploadingCredential" @click="consultNationalParameters"><Search />Consultar regras municipais</Button></div></CardContent>
+          <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Certificado digital A1</CardTitle><CardDescription>O certificado continua por assinante e é usado pela Geranet para assinar NF-e e NFC-e. Arquivos .pfx ou .p12 de até 5 MB são cifrados antes de serem persistidos.</CardDescription></CardHeader>
+          <CardContent class="space-y-4"><div v-if="config.certificado.configurado" class="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 class="size-5" /><span>Certificado configurado: {{ config.certificado.nome }}</span></div><div class="space-y-1.5"><Label for="certificado">Arquivo do certificado</Label><Input id="certificado" type="file" accept=".pfx,.p12,application/x-pkcs12" @change="certificateFile = ($event.target as HTMLInputElement).files?.[0] ?? null" /></div><div class="space-y-1.5"><Label for="senha-certificado">Senha do certificado</Label><Input id="senha-certificado" v-model="certificatePassword" type="password" autocomplete="new-password" placeholder="Senha cadastrada no certificado A1" /></div><div class="flex flex-wrap gap-2"><Button variant="outline" :disabled="uploadingCredential" @click="uploadCertificate"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.certificado.configurado ? 'Substituir certificado' : 'Salvar certificado' }}</Button></div></CardContent>
         </Card>
       </div>
+      <Card v-if="config.nfeHabilitado || config.nfceHabilitado" class="border-sky-500/30">
+        <CardHeader><CardTitle>Homologação Geranet</CardTitle><CardDescription>Valide a credencial do integrador e o checklist antes de usar produção. A validação do A1 ocorre na primeira emissão real com ambiente Homologação.</CardDescription></CardHeader>
+        <CardContent class="flex flex-wrap items-center gap-3"><Button variant="outline" :disabled="checkingGeranet" @click="checkGeranet"><LoaderCircle v-if="checkingGeranet" class="animate-spin" /><Search v-else />Validar integração</Button><template v-if="geranetStatus"><span :class="geranetStatus.apiKeyValida ? 'text-emerald-600' : 'text-destructive'">{{ geranetStatus.apiKeyValida ? 'API Key válida' : (geranetStatus.motivo || 'API Key indisponível') }}</span><span class="text-sm text-muted-foreground">A1: {{ geranetStatus.certificadoConfigurado ? 'salvo' : 'pendente' }} · NFS-e: {{ geranetStatus.nfsePronta ? 'pronta' : 'pendente' }} · NF-e: {{ geranetStatus.nfePronta ? 'pronta' : 'pendente' }} · NFC-e: {{ geranetStatus.nfcePronta ? 'pronta' : 'pendente' }}</span></template></CardContent>
+      </Card>
       <Card v-if="config.nfeHabilitado || config.nfceHabilitado">
         <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Parâmetros NF-e e NFC-e</CardTitle><CardDescription>Séries e CSC são dados estaduais. O token é cifrado e nunca volta pela API.</CardDescription></CardHeader>
         <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -198,7 +214,16 @@ onMounted(load)
           <div class="space-y-1.5"><Label for="serie-nfce">Série NFC-e</Label><Input id="serie-nfce" v-model.number="config.serieNfce" type="number" min="1" /></div>
           <div class="space-y-1.5"><Label for="csc-id">CSC ID</Label><Input id="csc-id" v-model="config.nfce.cscId" :disabled="!config.nfceHabilitado" /></div>
           <div class="space-y-1.5"><Label for="csc-token">CSC token</Label><Input id="csc-token" v-model="nfceCscToken" :disabled="!config.nfceHabilitado" type="password" autocomplete="new-password" :placeholder="config.nfce.cscConfigurado ? 'Configurado — informe para substituir' : 'Token fornecido pela SEFAZ'" /></div>
+          <div class="space-y-1.5 sm:col-span-2"><Label for="natureza-operacao">Natureza da operação</Label><Input id="natureza-operacao" v-model="config.nfe.naturezaOperacao" placeholder="Ex.: Venda de mercadoria" /></div>
+          <div class="space-y-1.5"><Label for="tipo-atividade">Tipo de atividade</Label><Select v-model="config.nfe.tipoAtividade"><SelectTrigger id="tipo-atividade"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">Comércio</SelectItem><SelectItem value="2">Serviço</SelectItem><SelectItem value="3">Comércio e serviço</SelectItem><SelectItem value="4">Indústria e comércio</SelectItem><SelectItem value="5">Indústria, comércio e serviço</SelectItem></SelectContent></Select></div>
+          <div class="space-y-1.5"><Label for="presenca">Presença</Label><Select v-model="config.nfe.indicadorPresenca"><SelectTrigger id="presenca"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">Presencial</SelectItem><SelectItem value="2">Internet</SelectItem><SelectItem value="3">Teleatendimento</SelectItem><SelectItem value="4">Entrega</SelectItem><SelectItem value="5">Fora do estabelecimento</SelectItem><SelectItem value="9">Outros</SelectItem></SelectContent></Select></div>
+          <div class="space-y-1.5"><Label for="intermediador">Intermediador</Label><Select v-model="config.nfe.indicativoIntermediador"><SelectTrigger id="intermediador"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="0">Sem intermediador</SelectItem><SelectItem value="1">Marketplace/intermediador</SelectItem></SelectContent></Select></div>
+          <div class="space-y-1.5"><Label for="frete">Frete</Label><Select v-model="config.nfe.frete"><SelectTrigger id="frete"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="9">Sem frete</SelectItem><SelectItem value="0">Emitente</SelectItem><SelectItem value="1">Destinatário</SelectItem><SelectItem value="2">Terceiros</SelectItem></SelectContent></Select></div>
         </CardContent>
+      </Card>
+      <Card v-if="config.nfeHabilitado || config.nfceHabilitado">
+        <CardHeader><CardTitle>Responsável técnico e CSRT</CardTitle><CardDescription>Preencha apenas quando a SEFAZ da UF exigir. O CSRT é cifrado e não volta pela API.</CardDescription></CardHeader>
+        <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><div class="space-y-1.5"><Label>CNPJ</Label><Input v-model="config.responsavelTecnico.cnpj" inputmode="numeric" /></div><div class="space-y-1.5"><Label>Contato</Label><Input v-model="config.responsavelTecnico.contato" /></div><div class="space-y-1.5"><Label>E-mail</Label><Input v-model="config.responsavelTecnico.email" type="email" /></div><div class="space-y-1.5"><Label>Telefone</Label><Input v-model="config.responsavelTecnico.telefone" inputmode="tel" /></div><div class="space-y-1.5"><Label>ID CSRT</Label><Input v-model="config.responsavelTecnico.csrtId" /></div><div class="space-y-1.5"><Label>CSRT</Label><Input v-model="responsavelTecnicoCsrt" type="password" :placeholder="config.responsavelTecnico.csrtConfigurado ? 'Configurado — informe para substituir' : 'Token fornecido pela SEFAZ'" /></div></CardContent>
       </Card>
     </template>
   </div>

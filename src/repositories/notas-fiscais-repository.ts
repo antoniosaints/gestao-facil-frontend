@@ -22,7 +22,7 @@ export type FiscalConfig = {
   nfseHabilitado: boolean
   nfeHabilitado: boolean
   nfceHabilitado: boolean
-  modoEmissaoNfse: 'NACIONAL' | 'LEGADO_D2TI'
+  modoEmissaoNfse: 'GERANET' | 'NACIONAL' | 'LEGADO_D2TI'
   provedorNfse: string
   serieRps: number
   proximoNumeroRps: number
@@ -31,6 +31,9 @@ export type FiscalConfig = {
   serieNfce: number
   proximoNumeroNfce: number
   nfce: { cscId: string; cscConfigurado: boolean }
+  nfse: { codigoServicoNacional: string; codigoTributacaoMunicipio: string; codigoCnae: string; dataOpcaoSimples: string; regimeApuracaoSn: string; issRetido: string; responsavelRetencao: string; naturezaOperacao: string; incentivadorCultural: string; exigibilidadeIss: string }
+  nfe: { naturezaOperacao: string; tipoAtividade: string; indicadorPresenca: string; indicativoIntermediador: string; frete: string }
+  responsavelTecnico: { cnpj: string; contato: string; email: string; telefone: string; csrtId: string; csrtConfigurado: boolean }
   codigoServicoPadrao: string
   descricaoServicoPadrao: string
   codigoAtividadePadrao: string
@@ -97,6 +100,11 @@ export class NotasFiscaisRepository {
   static async consultarParametrosMunicipais() {
     const { data } = await http.get('/v1/notas-fiscais/parametros-municipais')
     return data.data as unknown
+  }
+
+  static async geranetHomologacao() {
+    const { data } = await http.get('/v1/notas-fiscais/homologacao/geranet')
+    return data.data as { apiKeyValida: boolean; certificadoConfigurado: boolean; nfsePronta: boolean; nfePronta: boolean; nfcePronta: boolean; motivo?: string }
   }
 
   static async uploadCertificate(file: File, senha: string) {

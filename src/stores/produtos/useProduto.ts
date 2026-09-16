@@ -41,6 +41,12 @@ type ProdutoForm = {
   cfop?: string | null
   origem?: number | null
   codigoProduto?: string | null
+  ean?: string | null
+  tipoItem?: string | null
+  icmsCsosn?: string | null
+  icmsCst?: string | null
+  pisCst?: string | null
+  cofinsCst?: string | null
   aliquotaIcms?: number | string | null
   aliquotaIpi?: number | string | null
   aliquotaPis?: number | string | null
@@ -79,6 +85,12 @@ type ProdutoVarianteForm = {
   cfop?: string | null
   origem?: number | null
   codigoProduto?: string | null
+  ean?: string | null
+  tipoItem?: string | null
+  icmsCsosn?: string | null
+  icmsCst?: string | null
+  pisCst?: string | null
+  cofinsCst?: string | null
   aliquotaIcms?: number | string | null
   aliquotaIpi?: number | string | null
   aliquotaPis?: number | string | null
@@ -110,6 +122,12 @@ function getDefaultFiscalFields() {
     cfop: null,
     origem: null,
     codigoProduto: null,
+    ean: null,
+    tipoItem: '00',
+    icmsCsosn: null,
+    icmsCst: null,
+    pisCst: null,
+    cofinsCst: null,
     aliquotaIcms: null,
     aliquotaIpi: null,
     aliquotaPis: null,
@@ -126,6 +144,12 @@ function extractFiscalFields(data: any) {
     cfop: data?.cfop ?? null,
     origem: data?.origem ?? null,
     codigoProduto: data?.codigoProduto ?? null,
+    ean: data?.ean ?? null,
+    tipoItem: data?.tipoItem ?? '00',
+    icmsCsosn: data?.icmsCsosn ?? null,
+    icmsCst: data?.icmsCst ?? null,
+    pisCst: data?.pisCst ?? null,
+    cofinsCst: data?.cofinsCst ?? null,
     aliquotaIcms: data?.aliquotaIcms ?? null,
     aliquotaIpi: data?.aliquotaIpi ?? null,
     aliquotaPis: data?.aliquotaPis ?? null,

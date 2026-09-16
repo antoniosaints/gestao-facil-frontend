@@ -305,6 +305,12 @@ export interface ProdutoBase {
   aliquotaPis?: number | string | null
   aliquotaCofins?: number | string | null
   codigoProduto?: string | null
+  ean?: string | null
+  tipoItem?: string | null
+  icmsCsosn?: string | null
+  icmsCst?: string | null
+  pisCst?: string | null
+  cofinsCst?: string | null
   issAliquota?: number | string | null
   variantes?: ProdutoVariante[]
 }

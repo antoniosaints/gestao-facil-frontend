@@ -21,6 +21,14 @@
         <Input v-model="form.codigoProduto" type="text" placeholder="Código do produto (NF)"
           class="bg-background dark:bg-background/60" />
       </div>
+      <div class="md:col-span-3">
+        <label class="mb-1.5 block text-sm font-medium text-foreground">GTIN/EAN</label>
+        <Input v-model="form.ean" type="text" inputmode="numeric" placeholder="Sem GTIN, deixe vazio" class="bg-background dark:bg-background/60" />
+      </div>
+      <div class="md:col-span-3">
+        <label class="mb-1.5 block text-sm font-medium text-foreground">Tipo do item</label>
+        <Input v-model="form.tipoItem" type="text" maxlength="2" placeholder="00" class="bg-background dark:bg-background/60" />
+      </div>
 
       <div class="md:col-span-12">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Origem da mercadoria</label>
@@ -42,6 +50,14 @@
           class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
+        <label class="mb-1.5 block text-sm font-medium text-foreground">CSOSN ICMS</label>
+        <Input v-model="form.icmsCsosn" type="text" maxlength="3" placeholder="Ex.: 102 (Simples/MEI)" class="bg-background dark:bg-background/60" />
+      </div>
+      <div class="md:col-span-3">
+        <label class="mb-1.5 block text-sm font-medium text-foreground">CST ICMS</label>
+        <Input v-model="form.icmsCst" type="text" maxlength="3" placeholder="Ex.: 00 (regime normal)" class="bg-background dark:bg-background/60" />
+      </div>
+      <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota IPI (%)</label>
         <Input v-model="form.aliquotaIpi" type="number" min="0" step="0.01" placeholder="0,00"
           class="bg-background dark:bg-background/60" />
@@ -52,9 +68,17 @@
           class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
+        <label class="mb-1.5 block text-sm font-medium text-foreground">CST PIS</label>
+        <Input v-model="form.pisCst" type="text" maxlength="2" placeholder="Ex.: 08" class="bg-background dark:bg-background/60" />
+      </div>
+      <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota COFINS (%)</label>
         <Input v-model="form.aliquotaCofins" type="number" min="0" step="0.01" placeholder="0,00"
           class="bg-background dark:bg-background/60" />
+      </div>
+      <div class="md:col-span-3">
+        <label class="mb-1.5 block text-sm font-medium text-foreground">CST COFINS</label>
+        <Input v-model="form.cofinsCst" type="text" maxlength="2" placeholder="Ex.: 08" class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota ISS (%)</label>
