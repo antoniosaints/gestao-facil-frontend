@@ -139,6 +139,8 @@ type ProductReportForm = {
   targetId: number | null
   targetLabel: string
   orderBy: 'asc' | 'desc'
+  catalogOrderBy: 'codigo' | 'nome'
+  catalogModel: 'detalhado' | 'simples'
 }
 
 function getDefaultFiscalFields() {
@@ -262,6 +264,8 @@ function getDefaultReportForm(): ProductReportForm {
     targetId: null,
     targetLabel: '',
     orderBy: 'desc',
+    catalogOrderBy: 'nome',
+    catalogModel: 'detalhado',
   }
 }
 

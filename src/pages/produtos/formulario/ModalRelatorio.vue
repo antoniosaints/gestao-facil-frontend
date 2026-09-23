@@ -29,7 +29,7 @@ const reportTypeMeta = computed(() => {
     case 'catalogo':
       return {
         title: 'Catálogo e estoque',
-        description: 'Exporta o catálogo geral com produto base, variante, preço e estoque. O período filtra a data de cadastro.',
+        description: 'Exporta o catálogo com preços, estoque e mínimo. Escolha abaixo o modelo e a ordenação. O período filtra a data de cadastro.',
         icon: FileSearch,
       }
     case 'movimentacoes':
@@ -139,6 +139,8 @@ async function generateRelatorio() {
       inicio: periodoFormatado.value.inicio,
       fim: periodoFormatado.value.fim,
       orderBy: store.reportForm.orderBy,
+      catalogOrderBy: store.reportForm.catalogOrderBy,
+      catalogModel: store.reportForm.catalogModel,
     })
 
     store.openModalRelatorio = false
@@ -241,6 +243,34 @@ async function generateRelatorio() {
               <SelectGroup>
                 <SelectItem value="desc">Mais novo → mais antigo</SelectItem>
                 <SelectItem value="asc">Mais antigo → mais novo</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <div v-if="isCatalogReport" class="md:col-span-6">
+          <Label>Modelo do catálogo</Label>
+          <Select v-model="store.reportForm.catalogModel">
+            <SelectTrigger class="w-full">
+              <SelectValue placeholder="Selecione o modelo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="detalhado">Detalhado: base e variante</SelectItem>
+                <SelectItem value="simples">Simples: produto</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <div v-if="isCatalogReport" class="md:col-span-6">
+          <Label>Ordenar catálogo por</Label>
+          <Select v-model="store.reportForm.catalogOrderBy">
+            <SelectTrigger class="w-full">
+              <SelectValue placeholder="Selecione a ordem" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="nome">Nome do produto</SelectItem>
+                <SelectItem value="codigo">Código</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>

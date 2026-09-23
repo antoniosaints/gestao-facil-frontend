@@ -46,6 +46,8 @@ type ProductReportParams = {
   inicio?: string
   fim?: string
   orderBy?: 'asc' | 'desc'
+  catalogOrderBy?: 'codigo' | 'nome'
+  catalogModel?: 'detalhado' | 'simples'
 }
 
 function downloadBlob(data: BlobPart, filename: string) {
@@ -273,11 +275,18 @@ export class ProdutoRepository {
     })
   }
 
-  static async gerarRelatorioGeral(inicio?: string, fim?: string) {
+  static async gerarRelatorioGeral(
+    inicio?: string,
+    fim?: string,
+    orderBy: 'codigo' | 'nome' = 'nome',
+    model: 'detalhado' | 'simples' = 'detalhado',
+  ) {
     const data = await http.get(`/produtos/relatorio`, {
       params: {
         inicio,
         fim,
+        orderBy,
+        model,
       },
       responseType: 'blob',
       headers: {
@@ -285,7 +294,7 @@ export class ProdutoRepository {
       },
     })
 
-    downloadBlob(data.data, `relatorio-catalogo-produtos-${getTodayFileSuffix()}.pdf`)
+    downloadBlob(data.data, `relatorio-catalogo-produtos-${model}-${getTodayFileSuffix()}.pdf`)
   }
 
   static async gerarRelatorioVendas(
@@ -334,7 +343,7 @@ export class ProdutoRepository {
 
   static async gerarRelatorio(params: ProductReportParams) {
     if (params.reportType === 'catalogo') {
-      return this.gerarRelatorioGeral(params.inicio, params.fim)
+      return this.gerarRelatorioGeral(params.inicio, params.fim, params.catalogOrderBy, params.catalogModel)
     }
 
     if (params.reportType === 'vendas') {
