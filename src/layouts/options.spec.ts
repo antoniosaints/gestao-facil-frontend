@@ -30,8 +30,12 @@ describe('MAIN_MENU_VISIBILITY_OPTIONS', () => {
   })
 
   it('permite configurar a visibilidade das Notas Fiscais quando o app está ativo', () => {
-    expect(getMainMenuVisibilityOptions({ 'notas-fiscais': true }).map((m) => m.key)).toContain('notas-fiscais')
-    expect(MENU_SUBMENU_VISIBILITY_OPTIONS['notas-fiscais'].map((m) => m.key)).toContain('notas-fiscais:nfse')
+    expect(getMainMenuVisibilityOptions({ 'notas-fiscais': true }).map((m) => m.key)).toContain(
+      'notas-fiscais',
+    )
+    expect(MENU_SUBMENU_VISIBILITY_OPTIONS['notas-fiscais'].map((m) => m.key)).toContain(
+      'notas-fiscais:nfse',
+    )
   })
 
   // 'loja' é a App Store (complementos) e 'loja-virtual' é a vitrine: menus diferentes, que
@@ -43,7 +47,9 @@ describe('MAIN_MENU_VISIBILITY_OPTIONS', () => {
   })
   it('configura Comandas como submenu do Restaurante, não como menu principal', () => {
     expect(MAIN_MENU_VISIBILITY_OPTIONS.map((m) => m.key)).not.toContain('comandas')
-    expect(MENU_SUBMENU_VISIBILITY_OPTIONS.restaurante.map((m) => m.key)).toContain('restaurante:comandas')
+    expect(MENU_SUBMENU_VISIBILITY_OPTIONS.restaurante.map((m) => m.key)).toContain(
+      'restaurante:comandas',
+    )
   })
   it('mostra configuracao apenas dos menus de apps ativos na conta', () => {
     const semApps = getMainMenuVisibilityOptions({}).map((m) => m.key)
@@ -114,12 +120,12 @@ describe('PDV no submenu de Vendas', () => {
 })
 
 describe('Operação no submenu de Restaurante', () => {
-  const restaurante = sidebarMenuOptions(
-    permissoes(1),
-    { 'restaurante-delivery': true },
-    ['SALAO_VISUALIZAR', 'COMANDAS_OPERAR', 'KDS_VISUALIZAR', 'IMPRESSAO_VISUALIZAR'],
-  )
-    .find((item) => item.key === 'restaurante')
+  const restaurante = sidebarMenuOptions(permissoes(1), { 'restaurante-delivery': true }, [
+    'SALAO_VISUALIZAR',
+    'COMANDAS_OPERAR',
+    'KDS_VISUALIZAR',
+    'IMPRESSAO_VISUALIZAR',
+  ]).find((item) => item.key === 'restaurante')
 
   it('mantém Salão, Comandas, KDS e Impressão dentro de Restaurante, sem depender do app Atendimento', () => {
     expect(restaurante?.children?.map((child) => child.key)).toContain('restaurante:salao')
@@ -145,21 +151,41 @@ describe('Operação no submenu de Restaurante', () => {
       'restaurante:impressao',
       'restaurante:cardapio',
       'restaurante:pedidos',
+      'restaurante:caixas',
       'restaurante:configuracoes',
     ])
   })
 
   it('oculta telas que o papel do restaurante nao permite', () => {
-    const item = sidebarMenuOptions(
-      permissoes(1),
-      { 'restaurante-delivery': true },
-      ['KDS_VISUALIZAR'],
-    ).find((menu) => menu.key === 'restaurante')
+    const item = sidebarMenuOptions(permissoes(1), { 'restaurante-delivery': true }, [
+      'KDS_VISUALIZAR',
+    ]).find((menu) => menu.key === 'restaurante')
 
     expect(item?.show).toBe(true)
     expect(item?.children?.find((child) => child.key === 'restaurante:kds')?.show).toBe(true)
     expect(item?.children?.find((child) => child.key === 'restaurante:salao')?.show).toBe(false)
-    expect(item?.children?.find((child) => child.key === 'restaurante:configuracoes')?.show).toBe(false)
+    expect(item?.children?.find((child) => child.key === 'restaurante:configuracoes')?.show).toBe(
+      false,
+    )
+  })
+})
+
+describe('Equipe no submenu do Ourive', () => {
+  const ourive = sidebarMenuOptions(
+    permissoes(4),
+    { ourives: true },
+    [],
+    ['VISUALIZAR', 'EQUIPE'],
+  ).find((item) => item.key === 'ourive')
+
+  it('mantém a tela de papéis visível e configurável para gestores', () => {
+    expect(ourive?.children?.find((child) => child.key === 'ourive:equipe')).toMatchObject({
+      link: '/ourive/equipe',
+      show: true,
+    })
+    expect(MENU_SUBMENU_VISIBILITY_OPTIONS.ourive.map((item) => item.key)).toContain(
+      'ourive:equipe',
+    )
   })
 })
 
@@ -187,17 +213,17 @@ describe('filterSidebarMenuByVisibility', () => {
   })
 
   it('hides unchecked top-level menu cards and removes empty dividers', () => {
-    expect(filterSidebarMenuByVisibility(menu, ['dashboard', 'configuracoes'], false).map((item) => item.nome)).toEqual([
-      'Dashboard',
-      'Configurações',
-    ])
+    expect(
+      filterSidebarMenuByVisibility(menu, ['dashboard', 'configuracoes'], false).map(
+        (item) => item.nome,
+      ),
+    ).toEqual(['Dashboard', 'Configurações'])
   })
 
   it('keeps settings visible for root users so they can recover hidden menus', () => {
-    expect(filterSidebarMenuByVisibility(menu, ['dashboard'], true).map((item) => item.nome)).toEqual([
-      'Dashboard',
-      'Configurações',
-    ])
+    expect(
+      filterSidebarMenuByVisibility(menu, ['dashboard'], true).map((item) => item.nome),
+    ).toEqual(['Dashboard', 'Configurações'])
   })
 
   const menuComSubmenus: SidebarMenuType[] = [
@@ -224,7 +250,9 @@ describe('filterSidebarMenuByVisibility', () => {
   })
 
   it('filters submenus even when top-level visibility is also applied', () => {
-    const [vendas] = filterSidebarMenuByVisibility(menuComSubmenus, ['vendas'], false, ['vendas:painel'])
+    const [vendas] = filterSidebarMenuByVisibility(menuComSubmenus, ['vendas'], false, [
+      'vendas:painel',
+    ])
     expect(vendas.children?.map((child) => child.nome)).toEqual(['Vendas', 'Caixas'])
   })
 })

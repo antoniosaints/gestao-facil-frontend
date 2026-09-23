@@ -259,6 +259,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'ourive:pedidos-compra', nome: 'Pedidos de compra' },
     { key: 'ourive:sobras', nome: 'Sobras e quebras' },
     { key: 'ourive:financeiro', nome: 'Financeiro' },
+    { key: 'ourive:equipe', nome: 'Equipe e papéis' },
     { key: 'ourive:relatorios', nome: 'Relatórios' },
     { key: 'ourive:configuracoes', nome: 'Configurações' },
   ],
@@ -642,6 +643,15 @@ export const sidebarMenuOptions = (
           icone: WalletCards,
           color: 'yellow',
         },
+        {
+          key: 'ourive:equipe',
+          nome: 'Equipe e papéis',
+          link: '/ourive/equipe',
+          show: ouriveAccess.has('EQUIPE'),
+          icone: Users,
+          color: 'yellow',
+        },
+
         {
           key: 'ourive:relatorios',
           nome: 'Relatórios',

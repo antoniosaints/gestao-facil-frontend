@@ -19,7 +19,7 @@ import {
   Wrench,
 } from 'lucide-vue-next'
 import DataTable from '@/components/tabela/DataTable.vue'
-import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import Select2AjaxCreate from '@/components/formulario/Select2AjaxCreate.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -35,16 +35,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { OuriveRepository } from '@/repositories/ourive-repository'
-import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { useClientesStore } from '@/stores/clientes/useClientes'
 import { useConfirm } from '@/composables/useConfirm'
-import type { ClientesFornecedores } from '@/types/schemas'
+import { hasPermission } from '@/hooks/authorize'
 
 const router = useRouter()
 const toast = useToast()
 const ui = useUiStore()
-const clientesStore = useClientesStore()
 const open = ref(false)
 const saving = ref(false)
 const ordersLoading = ref(false)
@@ -57,6 +54,7 @@ const predefinicoes = ref<{
 const ourives = ref<Array<{ id: number; nome: string; papeis: string[] }>>([])
 const tableUpdate = ref(0)
 const canReceive = ui.hasOuriveCapability('RECEBER')
+const isAdmin = computed(() => hasPermission(ui.usuarioLogged, 4))
 type TipoNovaOrdem = 'CONSERTO' | 'ENCOMENDA'
 type OuriveOrderStatus =
   | 'RECEBIDA'
@@ -115,12 +113,6 @@ function selectOrderType(type: TipoNovaOrdem) {
   selectedOrderType.value = type
   draft.value.pecas = type === 'CONSERTO' ? [] : [emptyPiece()]
   newOrderStep.value = 'formulario'
-}
-
-function openQuickClientCreate() {
-  clientesStore.openSave((client: ClientesFornecedores) => {
-    if (client?.id != null) draft.value.clienteId = Number(client.id)
-  })
 }
 
 function updateNewOrderModal(isOpen: boolean) {
@@ -199,6 +191,7 @@ const emptyPiece = () => ({
 })
 const draft = ref({
   clienteId: undefined as number | undefined,
+  antecipacaoCliente: 0,
   descricao: '',
   garantia: 'Sem garantia informada',
   observacoes: '',
@@ -210,6 +203,7 @@ const draft = ref({
 function resetDraft() {
   draft.value = {
     clienteId: undefined,
+    antecipacaoCliente: 0,
     descricao: '',
     garantia: 'Sem garantia informada',
     observacoes: '',
@@ -250,7 +244,7 @@ async function savePreset(tipo: 'PECA' | 'METAL', nome: string) {
 async function removeOrder(order: any) {
   const confirmed = await useConfirm().confirm({
     title: 'Apagar ordem de serviço',
-    message: `A ordem ${order.codigoRastreio} será apagada definitivamente. Ordens com faturamento ou estoque movimentado não podem ser apagadas.`,
+    message: `A ordem ${order.codigoRastreio} será apagada definitivamente. O estoque vinculado será revertido; lançamentos ou repasses já pagos impedem a exclusão.`,
     confirmText: 'Apagar ordem',
     colorButton: 'danger',
   })
@@ -317,7 +311,7 @@ const columns: ColumnDef<any>[] = [
           },
           () => [h(Eye, { class: 'mr-1 h-4 w-4' }), 'Abrir'],
         ),
-        ui.hasOuriveCapability('CONFIGURAR') && !row.original.faturadaEm
+        isAdmin.value
           ? h(
               Button,
               {
@@ -673,26 +667,34 @@ onMounted(() => {
             </DialogHeader>
           </div>
           <div class="grid gap-4 py-2">
-            <div class="grid gap-1 text-sm font-medium">
-              <div class="flex items-center justify-between gap-2">
-                <span>Cliente <span class="text-muted-foreground">(opcional)</span></span>
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  class="h-auto px-0 text-primary"
-                  @click="openQuickClientCreate"
-                >
-                  <Plus class="mr-1 h-3.5 w-3.5" />Novo cliente
-                </Button>
-              </div>
-              <Select2Ajax
+            <label class="grid gap-1 text-sm font-medium">
+              Cliente <span class="text-xs font-normal text-muted-foreground">(opcional)</span>
+              <Select2AjaxCreate
                 v-model="draft.clienteId"
                 url="/clientes/select2"
+                create-url="/clientes"
+                create-label="cliente"
+                :create-defaults="{ status: 'ATIVO', tipo: 'CLIENTE' }"
                 :allow-clear="true"
-                placeholder="Busque o cliente ou deixe em branco"
+                placeholder="Digite o nome para buscar ou criar"
               />
-            </div>
+              <span class="text-xs font-normal text-muted-foreground">
+                Se o nome não existir, use “Criar cliente?” para cadastrá-lo imediatamente.
+              </span>
+            </label>
+            <label class="grid gap-1 text-sm font-medium">
+              Antecipação do cliente
+              <Input
+                v-model.number="draft.antecipacaoCliente"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0,00"
+              />
+              <span class="text-xs font-normal text-muted-foreground">
+                Valor já deixado pelo cliente; será abatido do saldo na conclusão da OS.
+              </span>
+            </label>
             <template v-if="selectedOrderType === 'ENCOMENDA'">
               <div class="rounded-xl border border-amber-500/25 bg-amber-500/5 p-3 text-sm">
                 <p class="font-medium text-amber-700 dark:text-amber-300">Detalhes da produção</p>
@@ -740,12 +742,34 @@ onMounted(() => {
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2">
                   <div class="flex gap-2">
-                    <Input v-model="piece.descricao" list="ourive-piece-presets" placeholder="Peça a produzir" />
-                    <Button type="button" size="icon" variant="outline" title="Salvar tipo de peça" @click="savePreset('PECA', piece.descricao)"><Plus class="h-4 w-4" /></Button>
+                    <Input
+                      v-model="piece.descricao"
+                      list="ourive-piece-presets"
+                      placeholder="Peça a produzir"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      title="Salvar tipo de peça"
+                      @click="savePreset('PECA', piece.descricao)"
+                      ><Plus class="h-4 w-4"
+                    /></Button>
                   </div>
                   <div class="flex gap-2">
-                    <Input v-model="piece.metal" list="ourive-metal-presets" placeholder="Metal desejado (ex.: ouro 18k)" />
-                    <Button type="button" size="icon" variant="outline" title="Salvar metal" @click="savePreset('METAL', piece.metal)"><Plus class="h-4 w-4" /></Button>
+                    <Input
+                      v-model="piece.metal"
+                      list="ourive-metal-presets"
+                      placeholder="Metal desejado (ex.: ouro 18k)"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      title="Salvar metal"
+                      @click="savePreset('METAL', piece.metal)"
+                      ><Plus class="h-4 w-4"
+                    /></Button>
                   </div>
                   <Input v-model="piece.pedras" placeholder="Pedras e detalhes" />
                   <Input
@@ -784,27 +808,45 @@ onMounted(() => {
                   step="0.01"
                   placeholder="0,00"
                 />
-                <span class="text-xs font-normal text-muted-foreground">O valor ficará preenchido no orçamento e no financeiro da OS.</span>
+                <span class="text-xs font-normal text-muted-foreground"
+                  >O valor ficará preenchido no orçamento e no financeiro da OS.</span
+                >
               </label>
               <div class="grid gap-2 text-sm font-medium">
-                <span>Responsável pelo serviço <span class="font-normal text-muted-foreground">(opcional)</span></span>
+                <span
+                  >Responsável pelo serviço
+                  <span class="font-normal text-muted-foreground">(opcional)</span></span
+                >
                 <div v-if="ourives.length" class="flex flex-wrap gap-2">
                   <label
                     v-for="member in ourives"
                     :key="member.id"
                     class="cursor-pointer rounded-lg border px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
-                  ><input v-model="draft.responsavelIds" class="mr-2" type="checkbox" :value="member.id" />{{ member.nome }}</label>
+                    ><input
+                      v-model="draft.responsavelIds"
+                      class="mr-2"
+                      type="checkbox"
+                      :value="member.id"
+                    />{{ member.nome }}</label
+                  >
                 </div>
                 <p v-else class="text-xs font-normal text-muted-foreground">
-                  Nenhum ourive ativo cadastrado. O responsável também pode ser definido no financeiro antes da entrega.
+                  Nenhum ourive ativo cadastrado. O responsável também pode ser definido no
+                  financeiro antes da entrega.
                 </p>
               </div>
               <div class="flex items-center justify-between gap-3 border-t pt-4">
                 <div>
-                  <p class="text-sm font-medium">Dados da peça recebida <span class="text-muted-foreground">(opcional)</span></p>
-                  <p class="text-xs text-muted-foreground">Registre peso, fotos e condição somente quando necessário.</p>
+                  <p class="text-sm font-medium">
+                    Dados da peça recebida <span class="text-muted-foreground">(opcional)</span>
+                  </p>
+                  <p class="text-xs text-muted-foreground">
+                    Registre peso, fotos e condição somente quando necessário.
+                  </p>
                 </div>
-                <Button type="button" size="sm" variant="outline" @click="addPiece"><Plus class="mr-1 h-4 w-4" />Adicionar peça</Button>
+                <Button type="button" size="sm" variant="outline" @click="addPiece"
+                  ><Plus class="mr-1 h-4 w-4" />Adicionar peça</Button
+                >
               </div>
               <div
                 v-for="(piece, index) in draft.pecas"
@@ -823,12 +865,34 @@ onMounted(() => {
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2">
                   <div class="flex gap-2">
-                    <Input v-model="piece.descricao" list="ourive-piece-presets" placeholder="Descrição da peça" />
-                    <Button type="button" size="icon" variant="outline" title="Salvar tipo de peça" @click="savePreset('PECA', piece.descricao)"><Plus class="h-4 w-4" /></Button>
+                    <Input
+                      v-model="piece.descricao"
+                      list="ourive-piece-presets"
+                      placeholder="Descrição da peça"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      title="Salvar tipo de peça"
+                      @click="savePreset('PECA', piece.descricao)"
+                      ><Plus class="h-4 w-4"
+                    /></Button>
                   </div>
                   <div class="flex gap-2">
-                    <Input v-model="piece.metal" list="ourive-metal-presets" placeholder="Metal (ex.: ouro 18k)" />
-                    <Button type="button" size="icon" variant="outline" title="Salvar metal" @click="savePreset('METAL', piece.metal)"><Plus class="h-4 w-4" /></Button>
+                    <Input
+                      v-model="piece.metal"
+                      list="ourive-metal-presets"
+                      placeholder="Metal (ex.: ouro 18k)"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      title="Salvar metal"
+                      @click="savePreset('METAL', piece.metal)"
+                      ><Plus class="h-4 w-4"
+                    /></Button>
                   </div>
                   <Input v-model="piece.pedras" placeholder="Pedras" />
                   <Input
@@ -855,14 +919,21 @@ onMounted(() => {
           <DialogFooter>
             <Button variant="outline" @click="updateNewOrderModal(false)">Cancelar</Button>
             <Button :disabled="saving" @click="save">
-              {{ selectedOrderType === 'ENCOMENDA' ? 'Criar encomenda' : 'Criar serviço e enviar para revisão' }}
+              {{
+                selectedOrderType === 'ENCOMENDA'
+                  ? 'Criar encomenda'
+                  : 'Criar serviço e enviar para revisão'
+              }}
             </Button>
           </DialogFooter>
         </template>
       </DialogContent>
     </Dialog>
-    <ClientesModal />
-    <datalist id="ourive-piece-presets"><option v-for="piece in predefinicoes.pecas" :key="piece.id" :value="piece.nome" /></datalist>
-    <datalist id="ourive-metal-presets"><option v-for="metal in predefinicoes.metais" :key="metal.id" :value="metal.nome" /></datalist>
+    <datalist id="ourive-piece-presets">
+      <option v-for="piece in predefinicoes.pecas" :key="piece.id" :value="piece.nome" />
+    </datalist>
+    <datalist id="ourive-metal-presets">
+      <option v-for="metal in predefinicoes.metais" :key="metal.id" :value="metal.nome" />
+    </datalist>
   </section>
 </template>

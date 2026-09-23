@@ -7,6 +7,7 @@
 - `ui/`: primitives reutilizáveis baseadas no design system atual.
 - `layout/`: header, sidebar, prompts e componentes da casca do app; `RestaurantPrintStatusButton.vue` expõe no header o estado persistente do agente QZ do Restaurante e o atalho para sua configuração.
 - `formulario/`: modais, selects, upload e entradas reutilizáveis; `calendarpicker.vue` aceita limites opcionais `minDate` e `maxDate` para impedir datas inválidas no próprio seletor.
+- `formulario/Select2AjaxCreate.vue`: variante independente do select assíncrono que mantém busca/seleção por API e oferece criação rápida por nome quando não existe resultado exato, sem alterar o contrato do `Select2Ajax` existente.
 - `tabela/`: blocos genéricos de tabela e células.
 - `graficos/`: wrappers de gráficos.
 - `calendario/`: calendário compartilhado e variantes de mês, semana, dia e agenda. O contrato genérico `CalendarEvent` permite reutilização entre OS e reservas, com eventos clicáveis e criação rápida por horário.

@@ -24,10 +24,37 @@
             <Badge variant="outline" class="ml-1">
               {{ order.tipo === 'ENCOMENDA' ? 'Encomenda' : 'Serviço' }}
             </Badge>
+            <Badge v-if="Number(order.antecipacaoCliente)" variant="secondary">
+              Antecipação: {{ money(order.antecipacaoCliente) }}
+            </Badge>
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">{{ label(order.status) }}</Badge>
+          <Button
+            v-if="can('RECEBER') && !order.faturadaEm"
+            variant="outline"
+            size="sm"
+            @click="openEditOrder"
+          >
+            <Pencil class="mr-2 h-4 w-4" />Editar informações
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="pdfLoading !== null"
+            @click="downloadReceipt('A4')"
+          >
+            <Download class="mr-2 h-4 w-4" />PDF A4
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="pdfLoading !== null"
+            @click="downloadReceipt('CUPOM')"
+          >
+            <Download class="mr-2 h-4 w-4" />PDF cupom
+          </Button>
           <Button variant="outline" size="sm" @click="historyModalOpen = true">
             <History class="mr-2 h-4 w-4" />Histórico da OS
           </Button>
@@ -35,7 +62,7 @@
             >Cancelar</Button
           >
           <Button
-            v-if="can('CONFIGURAR') && !order.faturadaEm"
+            v-if="isAdmin"
             variant="outline"
             class="border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
             @click="deleteOrder"
@@ -105,133 +132,133 @@
 
               <div v-if="materialActionAvailable" class="w-full">
                 <div class="grid gap-3 lg:grid-cols-2">
-                <div
-                  v-for="need in pendingPurchaseNeeds"
-                  :key="`action-need-${need.id}`"
-                  class="rounded-lg border border-amber-500/35 bg-amber-500/10 p-3"
-                >
-                  <p class="font-medium text-amber-900 dark:text-amber-200">Compra necessária</p>
-                  <p class="mt-1 text-xs text-muted-foreground">
-                    {{ measure(need.quantidadeNecessaria, need.unidade) }} para
-                    {{ need.produto?.nome || `o material #${need.produtoId}` }}.
-                  </p>
-                  <div class="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                    <Input
-                      v-model.number="purchaseFor(need).quantidadeComprada"
-                      type="number"
-                      min="0.001"
-                      :step="need.unidade === 'PESO' ? '0.001' : '1'"
-                      :placeholder="`Quantidade (${unitLabel(need.unidade)})`"
-                    />
-                    <Input
-                      :icon-label="'R$'"
-                      icon-label-position="left"
-                      v-model="purchaseFor(need).custoUnitarioReal"
-                      v-maska="moneyMaskOptions"
-                      type="text"
-                      inputmode="decimal"
-                      :placeholder="`Custo / ${unitLabel(need.unidade)}`"
-                    />
-                    <Button size="sm" @click="fulfillPurchase(need)">Registrar compra</Button>
-                  </div>
-                </div>
-
-                <div
-                  v-for="material in ['PRODUCAO', 'REVISAO'].includes(order.status)
-                    ? materialsPendingReconciliation
-                    : []"
-                  :key="`action-material-${material.id}`"
-                  class="rounded-lg border bg-muted/20 p-3"
-                >
-                  <p class="font-medium">
-                    {{ materialName(material) }}
-                  </p>
-                  <p class="mt-1 text-xs text-muted-foreground">
-                    Retirado:
-                    {{
-                      measure(
-                        material.medidaConsumida || material.quantidadeConsumida,
-                        material.unidade,
-                      )
-                    }}. Informe o destino de todo o material retirado.
-                  </p>
-                  <div class="mt-3 grid gap-2 sm:grid-cols-2">
-                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                      Material utilizado ({{ unitLabel(material.unidade) }})
+                  <div
+                    v-for="need in pendingPurchaseNeeds"
+                    :key="`action-need-${need.id}`"
+                    class="rounded-lg border border-amber-500/35 bg-amber-500/10 p-3"
+                  >
+                    <p class="font-medium text-amber-900 dark:text-amber-200">Compra necessária</p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      {{ measure(need.quantidadeNecessaria, need.unidade) }} para
+                      {{ need.produto?.nome || `o material #${need.produtoId}` }}.
+                    </p>
+                    <div class="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
                       <Input
-                        v-model.number="outcomeFor(material).medidaUtilizada"
+                        v-model.number="purchaseFor(need).quantidadeComprada"
                         type="number"
-                        min="0"
-                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
-                        :placeholder="`Informe o utilizado em ${unitLabel(material.unidade)}`"
+                        min="0.001"
+                        :step="need.unidade === 'PESO' ? '0.001' : '1'"
+                        :placeholder="`Quantidade (${unitLabel(need.unidade)})`"
                       />
-                    </label>
-                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                      Sobra devolvida ({{ unitLabel(material.unidade) }})
                       <Input
-                        v-model.number="outcomeFor(material).medidaSobra"
-                        type="number"
-                        min="0"
-                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
-                        :placeholder="`Informe a sobra em ${unitLabel(material.unidade)}`"
-                      />
-                    </label>
-                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                      Quebra recuperável ({{ unitLabel(material.unidade) }})
-                      <Input
-                        v-model.number="outcomeFor(material).medidaQuebra"
-                        type="number"
-                        min="0"
-                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
-                        :placeholder="`Informe a quebra em ${unitLabel(material.unidade)}`"
-                      />
-                    </label>
-                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                      Perda real ({{ unitLabel(material.unidade) }})
-                      <Input
-                        v-model.number="outcomeFor(material).medidaPerdaReal"
-                        type="number"
-                        min="0"
-                        :step="material.unidade === 'PESO' ? '0.001' : '1'"
-                        :placeholder="`Informe a perda em ${unitLabel(material.unidade)}`"
-                      />
-                    </label>
-                  </div>
-                  <div class="mt-2 flex flex-col gap-2 sm:flex-row">
-                    <Input
-                      v-model="outcomeFor(material).observacao"
-                      placeholder="Observação do fechamento"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      class="shrink-0"
-                      @click="finalizeMaterial(material)"
-                      >Salvar resultado real</Button
-                    >
-                  </div>
-                </div>
-
-                <div v-if="order.status === 'PRODUCAO' && !closed" class="rounded-lg border p-3">
-                  <p class="mb-2 text-sm font-semibold">Registrar custo extra</p>
-                  <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-end">
-                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                      Descrição do custo
-                      <Input v-model="extra.descricao" placeholder="Ex.: gravação terceirizada" />
-                    </label>
-                    <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                      Valor (R$)
-                      <Input
-                        v-model="extra.valor"
+                        :icon-label="'R$'"
+                        icon-label-position="left"
+                        v-model="purchaseFor(need).custoUnitarioReal"
                         v-maska="moneyMaskOptions"
                         type="text"
                         inputmode="decimal"
-                        placeholder="0,00"
+                        :placeholder="`Custo / ${unitLabel(need.unidade)}`"
                       />
-                    </label>
-                    <Button size="sm" @click="addCost">Adicionar</Button>
+                      <Button size="sm" @click="fulfillPurchase(need)">Registrar compra</Button>
+                    </div>
                   </div>
-                </div>
+
+                  <div
+                    v-for="material in ['PRODUCAO', 'REVISAO'].includes(order.status)
+                      ? materialsPendingReconciliation
+                      : []"
+                    :key="`action-material-${material.id}`"
+                    class="rounded-lg border bg-muted/20 p-3"
+                  >
+                    <p class="font-medium">
+                      {{ materialName(material) }}
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      Retirado:
+                      {{
+                        measure(
+                          material.medidaConsumida || material.quantidadeConsumida,
+                          material.unidade,
+                        )
+                      }}. Informe o destino de todo o material retirado.
+                    </p>
+                    <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                      <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                        Material utilizado ({{ unitLabel(material.unidade) }})
+                        <Input
+                          v-model.number="outcomeFor(material).medidaUtilizada"
+                          type="number"
+                          min="0"
+                          :step="material.unidade === 'PESO' ? '0.001' : '1'"
+                          :placeholder="`Informe o utilizado em ${unitLabel(material.unidade)}`"
+                        />
+                      </label>
+                      <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                        Sobra devolvida ({{ unitLabel(material.unidade) }})
+                        <Input
+                          v-model.number="outcomeFor(material).medidaSobra"
+                          type="number"
+                          min="0"
+                          :step="material.unidade === 'PESO' ? '0.001' : '1'"
+                          :placeholder="`Informe a sobra em ${unitLabel(material.unidade)}`"
+                        />
+                      </label>
+                      <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                        Quebra recuperável ({{ unitLabel(material.unidade) }})
+                        <Input
+                          v-model.number="outcomeFor(material).medidaQuebra"
+                          type="number"
+                          min="0"
+                          :step="material.unidade === 'PESO' ? '0.001' : '1'"
+                          :placeholder="`Informe a quebra em ${unitLabel(material.unidade)}`"
+                        />
+                      </label>
+                      <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                        Perda real ({{ unitLabel(material.unidade) }})
+                        <Input
+                          v-model.number="outcomeFor(material).medidaPerdaReal"
+                          type="number"
+                          min="0"
+                          :step="material.unidade === 'PESO' ? '0.001' : '1'"
+                          :placeholder="`Informe a perda em ${unitLabel(material.unidade)}`"
+                        />
+                      </label>
+                    </div>
+                    <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <Input
+                        v-model="outcomeFor(material).observacao"
+                        placeholder="Observação do fechamento"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        class="shrink-0"
+                        @click="finalizeMaterial(material)"
+                        >Salvar resultado real</Button
+                      >
+                    </div>
+                  </div>
+
+                  <div v-if="order.status === 'PRODUCAO' && !closed" class="rounded-lg border p-3">
+                    <p class="mb-2 text-sm font-semibold">Registrar custo extra</p>
+                    <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-end">
+                      <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                        Descrição do custo
+                        <Input v-model="extra.descricao" placeholder="Ex.: gravação terceirizada" />
+                      </label>
+                      <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                        Valor (R$)
+                        <Input
+                          v-model="extra.valor"
+                          v-maska="moneyMaskOptions"
+                          type="text"
+                          inputmode="decimal"
+                          placeholder="0,00"
+                        />
+                      </label>
+                      <Button size="sm" @click="addCost">Adicionar</Button>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div
@@ -341,7 +368,8 @@
         <CardHeader>
           <CardTitle>Dados essenciais do serviço</CardTitle>
           <CardDescription>
-            Serviço rápido: não há etapa de orçamento ou produção. Confira estes dados antes de liberar a entrega.
+            Serviço rápido: não há etapa de orçamento ou produção. Confira estes dados antes de
+            liberar a entrega.
           </CardDescription>
         </CardHeader>
         <CardContent class="grid gap-4 sm:grid-cols-3">
@@ -351,11 +379,18 @@
           </div>
           <div>
             <p class="text-xs font-medium uppercase text-muted-foreground">Mão de obra</p>
-            <p class="mt-1 text-lg font-semibold text-emerald-700 dark:text-emerald-400">{{ money(order.valorMaoObra) }}</p>
+            <p class="mt-1 text-lg font-semibold text-emerald-700 dark:text-emerald-400">
+              {{ money(order.valorMaoObra) }}
+            </p>
           </div>
           <div>
             <p class="text-xs font-medium uppercase text-muted-foreground">Responsável</p>
-            <p class="mt-1 font-medium">{{ order.responsaveis?.map((member: any) => member.nome).join(', ') || 'Será definido no financeiro' }}</p>
+            <p class="mt-1 font-medium">
+              {{
+                order.responsaveis?.map((member: any) => member.nome).join(', ') ||
+                'Será definido no financeiro'
+              }}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -524,7 +559,10 @@
                           </p>
                         </div>
                         <div class="flex shrink-0 gap-1">
-                          <Button size="sm" variant="ghost" @click="openMaterialModal(index as number)"
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            @click="openMaterialModal(index as number)"
                             >Editar</Button
                           >
                           <Button
@@ -786,10 +824,14 @@
                   {{ measure(material.medidaPerdaReal, material.unidade) }}
                 </p>
                 <p
-                  v-if="material.finalizadoEm && (Number(material.medidaSobra) || Number(material.medidaQuebra))"
+                  v-if="
+                    material.finalizadoEm &&
+                    (Number(material.medidaSobra) || Number(material.medidaQuebra))
+                  "
                   class="mt-1 text-xs text-amber-700 dark:text-amber-300"
                 >
-                  Sobra/quebra pendente de pesagem e consolidação em <strong>Sobras e quebras</strong>.
+                  Sobra/quebra pendente de pesagem e consolidação em
+                  <strong>Sobras e quebras</strong>.
                 </p>
                 <p
                   v-else-if="can('PRODUCAO') && ['PRODUCAO', 'REVISAO'].includes(order.status)"
@@ -820,6 +862,100 @@
       </div>
     </section>
     <div v-else class="p-10 text-center text-sm text-muted-foreground">Carregando ordem…</div>
+    <Dialog v-model:open="editModalOpen">
+      <DialogContent class="max-h-[92vh] max-w-3xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Editar informações da OS</DialogTitle>
+          <DialogDescription>
+            Atualize cliente, solicitação, prazo, antecipação e identificação das peças.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4 py-2">
+          <label class="grid gap-1 text-sm font-medium">
+            Cliente <span class="text-xs font-normal text-muted-foreground">(opcional)</span>
+            <Select2AjaxCreate
+              v-model="editDraft.clienteId"
+              url="/clientes/select2"
+              create-url="/clientes"
+              create-label="cliente"
+              :create-defaults="{ status: 'ATIVO', tipo: 'CLIENTE' }"
+              :allow-clear="true"
+              placeholder="Digite o nome para buscar ou criar"
+            />
+          </label>
+          <label class="grid gap-1 text-sm font-medium">
+            Solicitação do cliente
+            <textarea
+              v-model="editDraft.descricao"
+              class="min-h-20 rounded-md border bg-background p-3"
+              placeholder="Descreva o serviço solicitado"
+            />
+          </label>
+          <div class="grid gap-4 sm:grid-cols-3">
+            <label class="grid gap-1 text-sm font-medium">
+              Garantia
+              <Input v-model="editDraft.garantia" placeholder="Ex.: 90 dias" />
+            </label>
+            <label class="grid gap-1 text-sm font-medium">
+              Prazo previsto
+              <Calendarpicker v-model="editDraft.prazoPrevisto" :teleport="true" />
+            </label>
+            <label class="grid gap-1 text-sm font-medium">
+              Antecipação do cliente
+              <Input
+                v-model.number="editDraft.antecipacaoCliente"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0,00"
+              />
+            </label>
+          </div>
+          <label class="grid gap-1 text-sm font-medium">
+            Observações
+            <textarea
+              v-model="editDraft.observacoes"
+              class="min-h-20 rounded-md border bg-background p-3"
+              placeholder="Orientações e informações complementares"
+            />
+          </label>
+          <div v-if="editDraft.pecas?.length" class="space-y-3 border-t pt-4">
+            <p class="font-semibold">Peças da ordem</p>
+            <div
+              v-for="(piece, index) in editDraft.pecas"
+              :key="piece.id"
+              class="space-y-3 rounded-xl border bg-muted/20 p-4"
+            >
+              <p class="text-sm font-semibold">Peça {{ index + 1 }} · {{ piece.codigoRastreio }}</p>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <Input v-model="piece.descricao" placeholder="Descrição da peça" />
+                <Input v-model="piece.metal" placeholder="Metal" />
+                <Input v-model="piece.pedras" placeholder="Pedras e detalhes" />
+                <Input
+                  v-model.number="piece.pesoInformado"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  placeholder="Peso informado (g)"
+                />
+              </div>
+              <textarea
+                v-model="piece.estadoConservacao"
+                class="min-h-16 w-full rounded-md border bg-background p-3 text-sm"
+                placeholder="Estado de conservação"
+              />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="editModalOpen = false">Cancelar</Button>
+          <Button :disabled="editingOrder" @click="saveOrderInformation">
+            {{ editingOrder ? 'Salvando…' : 'Salvar alterações' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <Dialog v-model:open="historyModalOpen">
       <DialogContent class="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
@@ -956,6 +1092,16 @@
                   <strong>Receita total</strong
                   ><strong>{{ money(financialDetail.valorCobrado) }}</strong>
                 </div>
+              </div>
+              <div
+                class="flex items-center justify-between border-t pt-3 text-amber-700 dark:text-amber-300"
+              >
+                <span>− Antecipação já deixada</span>
+                <strong>{{ money(financialDetail.antecipacaoCliente) }}</strong>
+              </div>
+              <div class="flex items-center justify-between border-t pt-3 text-base">
+                <strong>Saldo do cliente na conclusão</strong>
+                <strong>{{ money(financialDetail.saldoCliente) }}</strong>
               </div>
             </section>
 
@@ -1341,6 +1487,8 @@ import {
   ClipboardList,
   Copy,
   FileText,
+  Download,
+  Pencil,
   Handshake,
   History,
   ListChecks,
@@ -1371,6 +1519,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import Select2AjaxCreate from '@/components/formulario/Select2AjaxCreate.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { OuriveRepository, type OuriveCapability } from '@/repositories/ourive-repository'
 import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
@@ -1381,6 +1530,7 @@ import { useSocketEvent } from '@/composables/useSocketEvent'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters'
 import { vMaska } from 'maska/vue'
+import { hasPermission } from '@/hooks/authorize'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -1393,6 +1543,10 @@ const financialOuriveIds = ref<number[]>([])
 const consolidatingFinancial = ref(false)
 const financialModalOpen = ref(false)
 const historyModalOpen = ref(false)
+const editModalOpen = ref(false)
+const editingOrder = ref(false)
+const pdfLoading = ref<'A4' | 'CUPOM' | null>(null)
+const editDraft = reactive<any>({})
 const productionWeight = ref<number | '' | undefined>()
 const budgetLink = ref('')
 const photoPreview = ref('')
@@ -1424,6 +1578,7 @@ const emptyBudget = (valorMaoObra = 0) => ({
 const budget = reactive<any>(emptyBudget())
 const monetaryValue = (value: string | number | null | undefined) => formatToNumberValue(value ?? 0)
 const can = (capability: OuriveCapability) => ui.hasOuriveCapability(capability)
+const isAdmin = computed(() => hasPermission(ui.usuarioLogged, 4))
 const financialOurives = computed(() =>
   financialTeam.value.filter(
     (member) => member.status === 'ATIVO' && member.papeis?.includes('OURIVE'),
@@ -1446,8 +1601,7 @@ const budgetLocked = computed(() =>
 const currentBudget = computed(() => order.value?.orcamentos?.[0])
 const isFastService = computed(
   () =>
-    order.value?.tipo === 'CONSERTO' &&
-    currentBudget.value?.aprovacaoOrigem === 'SERVICO_DIRETO',
+    order.value?.tipo === 'CONSERTO' && currentBudget.value?.aprovacaoOrigem === 'SERVICO_DIRETO',
 )
 const currentBudgetApproved = computed(() => Boolean(currentBudget.value?.aprovadoEm))
 const pendingPurchaseNeeds = computed(() =>
@@ -1614,6 +1768,12 @@ const financialDetail = computed<any>(() => {
   const raw = financial.value?.detalhamento || {}
   const memory = financial.value?.memoria || {}
   const valorCobrado = monetaryValue(raw.valorCobrado ?? memory.valorBruto)
+  const antecipacaoCliente = monetaryValue(
+    raw.antecipacaoCliente ?? order.value?.antecipacaoCliente,
+  )
+  const saldoCliente = monetaryValue(
+    raw.saldoCliente ?? Math.max(0, valorCobrado - antecipacaoCliente),
+  )
   const valorMateriaisLoja = monetaryValue(raw.valorMateriaisLoja)
   const custoMaterialLoja = monetaryValue(raw.custoMaterialLoja ?? memory.custoMaterialLoja)
   const outrosCustos = monetaryValue(raw.outrosCustos ?? memory.outrosCustos)
@@ -1669,6 +1829,8 @@ const financialDetail = computed<any>(() => {
   return {
     ...raw,
     valorCobrado,
+    antecipacaoCliente,
+    saldoCliente,
     valorMateriaisLoja,
     custoMaterialLoja,
     outrosCustos,
@@ -1890,6 +2052,82 @@ async function updateMaterialCost(material: any, produtoId: number | string | nu
     toast.error('Não foi possível carregar o custo do material.')
   }
 }
+function openEditOrder() {
+  Object.keys(editDraft).forEach((key) => delete editDraft[key])
+  Object.assign(editDraft, {
+    clienteId: order.value?.ordemServico?.clienteId || undefined,
+    descricao: order.value?.ordemServico?.descricao || '',
+    garantia: order.value?.ordemServico?.garantia || 'Sem garantia informada',
+    observacoes: order.value?.observacoes || '',
+    prazoPrevisto: order.value?.prazoPrevisto ? new Date(order.value.prazoPrevisto) : null,
+    antecipacaoCliente: Number(order.value?.antecipacaoCliente || 0),
+    pecas: (order.value?.pecas || []).map((piece: any) => ({
+      id: piece.id,
+      codigoRastreio: piece.codigoRastreio,
+      descricao: piece.descricao || '',
+      metal: piece.metal || '',
+      pedras: piece.pedras || '',
+      pesoInformado: piece.pesoInformado == null ? null : Number(piece.pesoInformado),
+      estadoConservacao: piece.estadoConservacao || '',
+    })),
+  })
+  editModalOpen.value = true
+}
+async function saveOrderInformation() {
+  if (String(editDraft.descricao || '').trim().length < 3)
+    return toast.info('Informe a solicitação do cliente.')
+  if ((editDraft.pecas || []).some((piece: any) => String(piece.descricao || '').trim().length < 2))
+    return toast.info('Informe a descrição de todas as peças.')
+  editingOrder.value = true
+  try {
+    await OuriveRepository.atualizarOrdem(order.value.id, {
+      clienteId: editDraft.clienteId || null,
+      descricao: String(editDraft.descricao).trim(),
+      garantia: String(editDraft.garantia || 'Sem garantia informada').trim(),
+      observacoes: String(editDraft.observacoes || '').trim() || null,
+      prazoPrevisto: editDraft.prazoPrevisto || null,
+      antecipacaoCliente: monetaryValue(editDraft.antecipacaoCliente),
+      pecas: (editDraft.pecas || []).map((piece: any) => ({
+        id: piece.id,
+        descricao: String(piece.descricao).trim(),
+        metal: String(piece.metal || '').trim() || null,
+        pedras: String(piece.pedras || '').trim() || null,
+        pesoInformado:
+          piece.pesoInformado === '' || piece.pesoInformado == null
+            ? null
+            : Number(piece.pesoInformado),
+        estadoConservacao: String(piece.estadoConservacao || '').trim() || null,
+      })),
+    })
+    editModalOpen.value = false
+    await load()
+    toast.success('Informações da OS atualizadas.')
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível atualizar a OS.')
+  } finally {
+    editingOrder.value = false
+  }
+}
+async function downloadReceipt(format: 'A4' | 'CUPOM') {
+  pdfLoading.value = format
+  try {
+    const blob = await OuriveRepository.comprovantePdf(order.value.id, format)
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `ordem-${order.value.codigoRastreio}-${format.toLowerCase()}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+    toast.success(`Comprovante ${format === 'A4' ? 'A4' : 'em cupom'} gerado.`)
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error?.message || 'Não foi possível gerar o comprovante.')
+  } finally {
+    pdfLoading.value = null
+  }
+}
+
 async function load() {
   try {
     order.value = await OuriveRepository.ordem(Number(route.params.id))
@@ -2215,7 +2453,7 @@ async function deleteOrder() {
   const confirmed = await useConfirm().confirm({
     title: 'Apagar ordem de serviço',
     message:
-      'A OS, suas peças, orçamento, etapas e histórico serão apagados definitivamente. Ordens faturadas ou com estoque movimentado não podem ser apagadas.',
+      'A OS, suas peças, orçamento, etapas e histórico serão apagados definitivamente. O estoque vinculado será revertido; lançamentos ou repasses já pagos impedem a exclusão.',
     confirmText: 'Apagar definitivamente',
     colorButton: 'danger',
   })
