@@ -264,9 +264,10 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'ourive:configuracoes', nome: 'Configurações' },
   ],
   'notas-fiscais': [
-    { key: 'notas-fiscais:nfse', nome: 'NFS-e' },
+    { key: 'notas-fiscais:nfse', nome: 'Notas de serviço' },
     { key: 'notas-fiscais:nfe', nome: 'NF-e' },
     { key: 'notas-fiscais:nfce', nome: 'NFC-e' },
+    { key: 'notas-fiscais:homologacao', nome: 'Testes de homologação' },
     { key: 'notas-fiscais:configuracoes', nome: 'Configurações' },
   ],
   assinaturas: [
@@ -898,7 +899,7 @@ export const sidebarMenuOptions = (
       children: [
         {
           key: 'notas-fiscais:nfse',
-          nome: 'NFS-e',
+          nome: 'Notas de serviço',
           link: '/notas-fiscais/nfs-e',
           icone: FileCheck2,
           color: 'cyan',
@@ -915,6 +916,13 @@ export const sidebarMenuOptions = (
           nome: 'NFC-e',
           link: '/notas-fiscais/nfc-e',
           icone: ReceiptText,
+          color: 'cyan',
+        },
+        {
+          key: 'notas-fiscais:homologacao',
+          nome: 'Testes de homologação',
+          link: '/notas-fiscais/homologacao',
+          icone: FileCheck2,
           color: 'cyan',
         },
         {

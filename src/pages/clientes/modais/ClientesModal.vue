@@ -13,7 +13,9 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import IaTextAssistant from '@/components/ia/IaTextAssistant.vue'
 import { ClienteRepository } from '@/repositories/cliente-repository'
+import { cepMaskOptions, cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
 import { useClientesStore } from '@/stores/clientes/useClientes'
+import { vMaska } from 'maska/vue'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -31,8 +33,7 @@ async function submit() {
     store.reset()
     store.openModal = false
   } catch (e: any) {
-    console.log(e)
-    toast.error('Erro ao salvar o cliente, verifique sua conexão e tente novamente.')
+    toast.error(e?.response?.data?.message || 'Erro ao salvar o cliente, verifique sua conexão e tente novamente.')
   }
 }
 </script>
@@ -70,15 +71,15 @@ async function submit() {
         </div>
         <div class="w-full gap-2 flex flex-col">
           <Label for="telefone">Telefone</Label>
-          <Input id="telefone" v-model="store.form.telefone" placeholder="Telefone" />
+          <Input id="telefone" v-model="store.form.telefone" v-maska="phoneMaskOptions" inputmode="tel" placeholder="(00) 00000-0000" />
         </div>
         <div class="w-full gap-2 flex flex-col">
           <Label for="documento">CPF/CNPJ</Label>
-          <Input id="documento" v-model="store.form.documento" placeholder="CPF/CNPJ" />
+          <Input id="documento" v-model="store.form.documento" v-maska="cpfCnpjMaskOptions" inputmode="numeric" placeholder="CPF ou CNPJ" />
         </div>
         <div class="w-full gap-2 flex flex-col">
           <Label for="whatsapp">WhatsApp</Label>
-          <Input id="whatsapp" v-model="store.form.whastapp" placeholder="WhatsApp" />
+          <Input id="whatsapp" v-model="store.form.whastapp" v-maska="phoneMaskOptions" inputmode="tel" placeholder="(00) 00000-0000" />
         </div>
         <div class="w-full gap-2 flex flex-col">
           <Label for="status">Status</Label>
@@ -102,11 +103,19 @@ async function submit() {
         </div>
         <div class="w-full gap-2 flex flex-col">
           <Label for="cep">CEP</Label>
-          <Input id="cep" v-model="store.form.cep" placeholder="CEP" />
+          <Input id="cep" v-model="store.form.cep" v-maska="cepMaskOptions" inputmode="numeric" placeholder="00000-000" />
         </div>
         <div class="w-full gap-2 flex flex-col col-span-2">
           <Label for="endereco">Endereço</Label>
           <Input id="endereco" v-model="store.form.endereco" placeholder="Endereço" />
+        </div>
+        <div class="w-full gap-2 flex flex-col">
+          <Label for="numero">Número</Label>
+          <Input id="numero" v-model="store.form.numero" placeholder="Número do endereço" />
+        </div>
+        <div class="w-full gap-2 flex flex-col">
+          <Label for="bairro">Bairro</Label>
+          <Input id="bairro" v-model="store.form.bairro" placeholder="Bairro" />
         </div>
         <div class="w-full gap-2 flex flex-col col-span-2">
           <div class="flex items-center justify-between gap-2">

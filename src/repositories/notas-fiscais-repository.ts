@@ -43,6 +43,7 @@ export type FiscalConfig = {
   notaIntermediadaPadrao: number
   aliquotaIssPadrao: number | null
   certificado: { configurado: boolean; nome: string | null; atualizadoEm: string | null }
+  criptografiaFiscalDisponivel: boolean
   integracao: { tipo: 'TOKEN_D2TI' | 'CERTIFICADO_A1'; configurada: boolean; atualizadoEm: string | null }
   emissaoNfsePronta: boolean
   emissaoNfePronta: boolean
@@ -70,6 +71,7 @@ export type FiscalDocument = {
   vendaId?: number | null
   tipo: 'NFE' | 'NFCE' | 'NFSE'
   status: string
+  ambiente?: 'HOMOLOGACAO' | 'PRODUCAO' | null
   serie?: number | null
   numero?: string | null
   chaveAcesso?: string | null
@@ -86,7 +88,7 @@ export type UninvoicedSale = {
   uid: string
   valorTotal: number
   data: string
-  cliente: { id: number; nome: string; documento?: string | null } | null
+  cliente: { id: number; nome: string; documento?: string | null; documentoValido?: boolean } | null
 }
 
 export type FiscalBatchResult = {
@@ -95,12 +97,22 @@ export type FiscalBatchResult = {
 }
 
 export class NotasFiscaisRepository {
+  static async getFiscalSaleCustomer(vendaId: number) {
+    const { data } = await http.get(`/v1/notas-fiscais/vendas/${vendaId}/cliente`)
+    return data.data as UninvoicedSale
+  }
+
+  static async linkFiscalSaleCustomer(vendaId: number, clienteId: number) {
+    const { data } = await http.patch(`/v1/notas-fiscais/vendas/${vendaId}/cliente`, { clienteId })
+    return data.data as UninvoicedSale
+  }
+
   static async getConfig() {
     const { data } = await http.get('/v1/notas-fiscais/configuracao')
     return data.data as FiscalConfig
   }
 
-  static async saveConfig(payload: Omit<FiscalConfig, 'certificado' | 'integracao' | 'emissaoNfsePronta' | 'proximoNumeroRps'>) {
+  static async saveConfig(payload: Omit<FiscalConfig, 'certificado' | 'criptografiaFiscalDisponivel' | 'integracao' | 'emissaoNfsePronta' | 'proximoNumeroRps'>) {
     const { data } = await http.put('/v1/notas-fiscais/configuracao', payload)
     return data.data as FiscalConfig
   }
@@ -150,6 +162,16 @@ export class NotasFiscaisRepository {
     return data.data as NfseListItem
   }
 
+  static async emitNfseHomologacao(payload: { clienteId: number; valorTotal: number; codigoServico?: string; codigoMunicipioTomador?: string; discriminacao: string }, idempotencyKey: string) {
+    const { data } = await http.post('/v1/notas-fiscais/homologacao/nfs-e/emitir', payload, { headers: { 'Idempotency-Key': idempotencyKey } })
+    return data.data as NfseListItem
+  }
+
+  static async emitSaleHomologacao(vendaId: number, tipo: 'NFE' | 'NFCE') {
+    const { data } = await http.post(`/v1/notas-fiscais/homologacao/vendas/${vendaId}/documentos`, { tipo }, { headers: { 'Idempotency-Key': crypto.randomUUID() } })
+    return data.data as FiscalDocument
+  }
+
   static async listDocuments(tipo?: FiscalDocument['tipo'], page = 1) {
     const { data } = await http.get('/v1/notas-fiscais/documentos', { params: { tipo, page, limit: 30 } })
     return data as { data: FiscalDocument[]; pagination: { page: number; total: number; pages: number } }
@@ -158,11 +180,6 @@ export class NotasFiscaisRepository {
   static async createSaleDocument(vendaId: number, tipo: 'NFE' | 'NFCE') {
     const { data } = await http.post(`/v1/notas-fiscais/vendas/${vendaId}/documentos`, { tipo }, { headers: { 'Idempotency-Key': crypto.randomUUID() } })
     return data.data as FiscalDocument
-  }
-
-  static async listUninvoicedSales() {
-    const { data } = await http.get('/v1/notas-fiscais/vendas/sem-documento', { params: { limit: 50 } })
-    return data.data as UninvoicedSale[]
   }
 
   static async createSaleDocumentsBatch(vendaIds: number[], tipo: 'NFE' | 'NFCE') {

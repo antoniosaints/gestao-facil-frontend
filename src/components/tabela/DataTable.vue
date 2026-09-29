@@ -95,9 +95,9 @@
                                     <EmptyMedia variant="icon">
                                         <BadgeQuestionMark />
                                     </EmptyMedia>
-                                    <EmptyTitle>Nenhum registro encontrado</EmptyTitle>
+                                    <EmptyTitle>{{ emptyTitle || 'Nenhum registro encontrado' }}</EmptyTitle>
                                     <EmptyDescription>
-                                        Cadastre algo para que possa ser listado aqui.
+                                        {{ emptyDescription || 'Cadastre algo para que possa ser listado aqui.' }}
                                     </EmptyDescription>
                                 </EmptyHeader>
                             </Empty>
@@ -156,6 +156,9 @@ const props = defineProps<{
     clearSearchToken?: number
     /** Notifica o contexto da tabela sobre o texto de busca atual. */
     onSearchChange?: (value: string) => void
+    /** Mensagens opcionais para o estado vazio de cada domínio. */
+    emptyTitle?: string
+    emptyDescription?: string
 }>()
 
 const route = useRoute()

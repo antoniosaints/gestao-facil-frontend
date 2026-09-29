@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { Building2, CheckCircle2, Cog, FileKey2, Landmark, LoaderCircle, MapPin, MapPinCheck, Save, Search } from 'lucide-vue-next'
+import { Building2, CheckCircle2, CircleAlert, Cog, FileKey2, Landmark, LoaderCircle, MapPin, MapPinCheck, Save, Search } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { NotasFiscaisRepository, type FiscalConfig, type MunicipioIbge } from '@/repositories/notas-fiscais-repository'
 import { cepMaskOptions, cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
+import FiscalSetupGuide from './FiscalSetupGuide.vue'
 
 const toast = useToast()
+const router = useRouter()
+const activeTab = ref('geral')
 const saving = ref(false)
 const loading = ref(true)
 const searchingMunicipio = ref(false)
@@ -31,11 +36,27 @@ const config = reactive<FiscalConfig>({
   codigoMunicipioIbge: '', codigoMunicipioPrestador: '', municipioNome: '', uf: '', cep: '', logradouro: '', numero: '', bairro: '', complemento: '',
   email: '', telefone: '', ambiente: 'HOMOLOGACAO', nfseHabilitado: false, nfeHabilitado: false, nfceHabilitado: false, modoEmissaoNfse: 'GERANET', provedorNfse: 'GERANET_NFSE', serieRps: 1, proximoNumeroRps: 1, serieNfe: 1, proximoNumeroNfe: 1, serieNfce: 1, proximoNumeroNfce: 1, nfce: { cscId: '', cscConfigurado: false }, nfse: { codigoServicoNacional: '', codigoTributacaoMunicipio: '', codigoCnae: '', dataOpcaoSimples: '', regimeApuracaoSn: '1', issRetido: '2', responsavelRetencao: '4', naturezaOperacao: '1', incentivadorCultural: '2', exigibilidadeIss: '1', regimeEspecialTributacao: '1' }, nfe: { naturezaOperacao: 'Venda de mercadoria', tipoAtividade: '1', indicadorPresenca: '1', indicativoIntermediador: '0', frete: '9' }, responsavelTecnico: { cnpj: '', contato: '', email: '', telefone: '', csrtId: '', csrtConfigurado: false },
   codigoServicoPadrao: '', descricaoServicoPadrao: '', codigoAtividadePadrao: '', descricaoAtividadePadrao: '', tipoTributacaoPadrao: null, tipoRecolhimentoPadrao: null, notaIntermediadaPadrao: 2, aliquotaIssPadrao: null,
-  certificado: { configurado: false, nome: null, atualizadoEm: null }, integracao: { tipo: 'CERTIFICADO_A1', configurada: false, atualizadoEm: null }, emissaoNfsePronta: false, emissaoNfePronta: false, emissaoNfcePronta: false,
+  certificado: { configurado: false, nome: null, atualizadoEm: null }, criptografiaFiscalDisponivel: false, integracao: { tipo: 'CERTIFICADO_A1', configurada: false, atualizadoEm: null }, emissaoNfsePronta: false, emissaoNfePronta: false, emissaoNfcePronta: false,
 })
 
 const isSaoMateus = computed(() => config.codigoMunicipioIbge === '2111508')
 const usingLegacyD2ti = computed(() => config.modoEmissaoNfse === 'LEGADO_D2TI')
+
+async function navigateToSection(target: string) {
+  const tabByTarget: Record<string, string> = {
+    'fiscal-guide': 'geral', 'fiscal-documentos': 'geral',
+    'fiscal-emissor': 'emissor', 'fiscal-municipio': 'emissor',
+    'fiscal-nfse': 'nfse', 'fiscal-nfe': 'nfe', 'fiscal-nfce': 'nfce',
+    'fiscal-credencial': 'integracao',
+  }
+  activeTab.value = tabByTarget[target] || 'geral'
+  await nextTick()
+  const element = document.getElementById(target)
+  if (element) return element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  activeTab.value = 'geral'
+  await nextTick()
+  document.getElementById('fiscal-documentos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 function assignConfig(data: FiscalConfig) { Object.assign(config, data) }
 function errorMessage(error: any, fallback: string) { return error?.response?.data?.error?.message || error?.response?.data?.message || fallback }
@@ -49,7 +70,7 @@ async function load() {
 async function save() {
   try {
     saving.value = true
-    const { certificado: _certificate, integracao: _integration, emissaoNfsePronta: _nfseReady, emissaoNfePronta: _nfeReady, emissaoNfcePronta: _nfceReady, proximoNumeroRps: _nextRps, proximoNumeroNfe: _nextNfe, proximoNumeroNfce: _nextNfce, nfce: _nfce, nfse: _nfse, nfe: _nfe, responsavelTecnico: _responsavel, ...payload } = config
+    const { certificado: _certificate, criptografiaFiscalDisponivel: _cryptoReady, integracao: _integration, emissaoNfsePronta: _nfseReady, emissaoNfePronta: _nfeReady, emissaoNfcePronta: _nfceReady, proximoNumeroRps: _nextRps, proximoNumeroNfe: _nextNfe, proximoNumeroNfce: _nextNfce, nfce: _nfce, nfse: _nfse, nfe: _nfe, responsavelTecnico: _responsavel, ...payload } = config
     const fiscalPayload = { ...payload, nfceCscId: config.nfce.cscId, nfceCscToken: nfceCscToken.value || undefined, nfseCodigoServicoNacional: config.nfse.codigoServicoNacional || undefined, nfseCodigoTributacaoMunicipio: config.nfse.codigoTributacaoMunicipio, nfseCodigoCnae: config.nfse.codigoCnae || undefined, nfseDataOpcaoSimples: config.nfse.dataOpcaoSimples || undefined, nfseRegimeApuracaoSn: config.nfse.regimeApuracaoSn, nfseIssRetido: config.nfse.issRetido, nfseResponsavelRetencao: config.nfse.responsavelRetencao, nfseNaturezaOperacao: config.nfse.naturezaOperacao, nfseIncentivadorCultural: config.nfse.incentivadorCultural, nfseExigibilidadeIss: config.nfse.exigibilidadeIss, nfseRegimeEspecialTributacao: config.nfse.regimeEspecialTributacao || undefined, nfeNaturezaOperacao: config.nfe.naturezaOperacao, nfeTipoAtividade: config.nfe.tipoAtividade, nfeIndicadorPresenca: config.nfe.indicadorPresenca, nfeIndicativoIntermediador: config.nfe.indicativoIntermediador, nfeFrete: config.nfe.frete, responsavelTecnicoCnpj: config.responsavelTecnico.cnpj, responsavelTecnicoContato: config.responsavelTecnico.contato, responsavelTecnicoEmail: config.responsavelTecnico.email || undefined, responsavelTecnicoTelefone: config.responsavelTecnico.telefone, responsavelTecnicoCsrtId: config.responsavelTecnico.csrtId, responsavelTecnicoCsrt: responsavelTecnicoCsrt.value || undefined } as any
     assignConfig(await NotasFiscaisRepository.saveConfig(fiscalPayload))
     nfceCscToken.value = ''
@@ -84,6 +105,7 @@ function selectMunicipality(item: MunicipioIbge) {
 }
 
 async function uploadCertificate() {
+  if (!config.criptografiaFiscalDisponivel) return toast.error('A criptografia fiscal precisa ser configurada no servidor antes de salvar o certificado.')
   if (!certificateFile.value || !certificatePassword.value) return toast.info('Selecione o certificado A1 e informe a senha.')
   try {
     uploadingCredential.value = true
@@ -97,6 +119,7 @@ async function uploadCertificate() {
 }
 
 async function saveD2tiToken() {
+  if (!config.criptografiaFiscalDisponivel) return toast.error('A criptografia fiscal precisa ser configurada no servidor antes de salvar o token.')
   if (!/^[a-fA-F0-9]{32}$/.test(d2tiToken.value.trim())) return toast.info('Informe o token D2TI de 32 caracteres gerado no portal da prefeitura.')
   try {
     uploadingCredential.value = true
@@ -131,7 +154,19 @@ onMounted(load)
     <div v-if="loading" class="flex min-h-64 items-center justify-center text-sm text-muted-foreground"><LoaderCircle class="mr-2 size-5 animate-spin" />Carregando configuração fiscal…</div>
 
     <template v-else>
-      <Card class="border-primary/20">
+      <Tabs v-model="activeTab" :unmount-on-hide="false" class="space-y-5">
+        <div class="overflow-x-auto"><TabsList class="w-max min-w-full rounded-md">
+          <TabsTrigger value="geral" class="whitespace-nowrap">Visão geral</TabsTrigger>
+          <TabsTrigger value="emissor" class="whitespace-nowrap">Emissor</TabsTrigger>
+          <TabsTrigger value="nfse" class="whitespace-nowrap">NFS-e</TabsTrigger>
+          <TabsTrigger value="nfe" class="whitespace-nowrap">NF-e</TabsTrigger>
+          <TabsTrigger value="nfce" class="whitespace-nowrap">NFC-e</TabsTrigger>
+          <TabsTrigger value="integracao" class="whitespace-nowrap">Integração</TabsTrigger>
+        </TabsList></div>
+
+      <TabsContent value="geral" class="space-y-5">
+      <FiscalSetupGuide :config="config" :saving="saving" @save="save" @navigate="navigateToSection" />
+      <Card id="fiscal-documentos" class="border-primary/20">
         <CardHeader><CardTitle>Documentos habilitados</CardTitle><CardDescription>Ative somente os tipos já credenciados. A emissão fica bloqueada até o checklist estar completo.</CardDescription></CardHeader>
         <CardContent class="grid gap-3 md:grid-cols-3">
           <label class="rounded-xl border p-4" :class="config.nfseHabilitado ? 'border-primary bg-primary/5' : ''"><div class="flex items-center justify-between gap-3"><div><p class="font-semibold">NFS-e</p><p class="text-xs text-muted-foreground">Prestação de serviços</p></div><input v-model="config.nfseHabilitado" type="checkbox" class="size-4 accent-primary" /></div><p class="mt-3 text-xs" :class="config.emissaoNfsePronta ? 'text-emerald-600' : 'text-amber-600'">{{ config.emissaoNfsePronta ? 'Configuração pronta' : 'Complete os requisitos abaixo' }}</p></label>
@@ -139,8 +174,13 @@ onMounted(load)
           <label class="rounded-xl border p-4" :class="config.nfceHabilitado ? 'border-primary bg-primary/5' : ''"><div class="flex items-center justify-between gap-3"><div><p class="font-semibold">NFC-e</p><p class="text-xs text-muted-foreground">Venda ao consumidor no PDV</p></div><input v-model="config.nfceHabilitado" type="checkbox" class="size-4 accent-primary" /></div><p class="mt-3 text-xs" :class="config.emissaoNfcePronta ? 'text-emerald-600' : 'text-amber-600'">{{ config.emissaoNfcePronta ? 'Configuração pronta' : 'Exige CSC, IE, endereço e certificado' }}</p></label>
         </CardContent>
       </Card>
+      <div class="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">Comece pelo assistente, ative os documentos desejados e salve. As outras abas reúnem os dados que serão enviados à Geranet e aos órgãos fiscais.</div>
+      </TabsContent>
+
+      <TabsContent value="emissor" class="space-y-5">
+      <div class="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm"><p class="font-semibold">Onde conseguir os dados do emissor?</p><p class="mt-1 text-muted-foreground">Razão social, CNPJ e endereço constam no comprovante da Receita Federal. Consulte a inscrição estadual para NF-e/NFC-e no cadastro da SEFAZ da sua UF, a inscrição municipal para NFS-e na prefeitura e confirme o regime tributário com a contabilidade.</p><div class="mt-2 flex flex-wrap gap-x-4 gap-y-1"><a class="text-primary underline underline-offset-2" href="https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/Cnpjreva_S.aspx" target="_blank" rel="noopener noreferrer">Consultar CNPJ na Receita Federal</a><a class="text-primary underline underline-offset-2" href="https://www.ibge.gov.br/explica/codigos-dos-municipios.php" target="_blank" rel="noopener noreferrer">Códigos dos municípios no IBGE</a></div></div>
       <div class="grid gap-5 lg:grid-cols-2">
-        <Card>
+        <Card id="fiscal-emissor">
           <CardHeader><CardTitle class="flex items-center gap-2"><Building2 class="size-5 text-primary" />Emissor</CardTitle><CardDescription>Quem presta o serviço e emite a nota.</CardDescription></CardHeader>
           <CardContent class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-1.5 sm:col-span-2"><Label for="razao-social">Razão social</Label><Input id="razao-social" v-model="config.razaoSocial" autocomplete="organization" placeholder="Ex.: Pizzaria Sabor da Casa LTDA" /></div>
@@ -153,7 +193,7 @@ onMounted(load)
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="fiscal-municipio">
           <CardHeader><CardTitle class="flex items-center gap-2"><MapPin class="size-5 text-primary" />Município do prestador</CardTitle><CardDescription>O código IBGE é consultado pela fonte oficial.</CardDescription></CardHeader>
           <CardContent class="space-y-4">
             <div class="grid gap-4 sm:grid-cols-[110px_1fr_auto]"><div class="space-y-1.5"><Label for="uf">UF</Label><Input id="uf" v-model="config.uf" maxlength="2" class="uppercase" placeholder="MA" /></div><div class="space-y-1.5"><Label for="buscar-municipio">Consultar IBGE</Label><Input id="buscar-municipio" v-model="municipalitySearch" placeholder="Ex.: São Mateus" @keyup.enter="searchMunicipality" /></div><Button class="mt-auto" variant="outline" :disabled="searchingMunicipio" @click="searchMunicipality"><LoaderCircle v-if="searchingMunicipio" class="animate-spin" /><Search v-else />Buscar</Button></div>
@@ -163,6 +203,17 @@ onMounted(load)
         </Card>
       </div>
 
+      <Card>
+        <CardHeader><CardTitle class="flex items-center gap-2"><MapPinCheck class="size-5 text-primary" />Endereço e contato</CardTitle><CardDescription>Dados do prestador enviados à prefeitura.</CardDescription></CardHeader>
+        <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="space-y-1.5"><Label for="cep">CEP</Label><Input id="cep" v-model="config.cep" v-maska="cepMaskOptions" inputmode="numeric" placeholder="00000-000" /></div><div class="space-y-1.5 lg:col-span-2"><Label for="logradouro">Logradouro</Label><Input id="logradouro" v-model="config.logradouro" placeholder="Ex.: Rua do Sol" /></div><div class="space-y-1.5"><Label for="numero">Número</Label><Input id="numero" v-model="config.numero" inputmode="numeric" placeholder="Ex.: 143" /></div>
+          <div class="space-y-1.5"><Label for="bairro">Bairro</Label><Input id="bairro" v-model="config.bairro" placeholder="Ex.: Centro" /></div><div class="space-y-1.5"><Label for="complemento">Complemento</Label><Input id="complemento" v-model="config.complemento" placeholder="Opcional" /></div><div class="space-y-1.5"><Label for="email">E-mail</Label><Input id="email" v-model="config.email" type="email" placeholder="fiscal@empresa.com.br" /></div><div class="space-y-1.5"><Label for="telefone">Telefone</Label><Input id="telefone" v-model="config.telefone" v-maska="phoneMaskOptions" inputmode="tel" placeholder="(99) 99999-9999" /></div>
+        </CardContent>
+      </Card>
+      </TabsContent>
+
+      <TabsContent value="nfse" class="space-y-5">
+      <div class="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm"><p class="font-semibold">Onde conseguir os dados da NFS-e?</p><p class="mt-1 text-muted-foreground">A inscrição municipal, o item da lista de serviços, o código de tributação municipal e a alíquota de ISS vêm do cadastro e das regras da prefeitura. O código nacional, quando exigido, é diferente do código municipal. Confirme os códigos e a retenção com a contabilidade. A data de opção pelo Simples pode ser conferida no Portal do Simples Nacional.</p><div class="mt-2 flex flex-wrap gap-x-4 gap-y-1"><a class="text-primary underline underline-offset-2" href="https://nfe.geranet.net/documentacao/nfse" target="_blank" rel="noopener noreferrer">Campos NFS-e na Geranet</a><a class="text-primary underline underline-offset-2" href="https://www.gov.br/nfse/pt-br/municipios/" target="_blank" rel="noopener noreferrer">Municípios no portal NFS-e</a><a class="text-primary underline underline-offset-2" href="https://www8.receita.fazenda.gov.br/SimplesNacional/" target="_blank" rel="noopener noreferrer">Portal do Simples Nacional</a></div></div>
       <Card class="border-primary/20">
         <CardHeader><CardTitle class="flex items-center gap-2"><Landmark class="size-5 text-primary" />Rota de emissão NFS-e</CardTitle><CardDescription>A Geranet é o emissor padrão. O código IBGE continua sendo a referência das regras municipais.</CardDescription></CardHeader>
         <CardContent class="grid gap-3 md:grid-cols-2">
@@ -172,16 +223,8 @@ onMounted(load)
         <div class="px-6 pb-5 text-sm text-muted-foreground">{{ isSaoMateus ? 'São Mateus pode usar a Geranet ou continuar temporariamente no legado D2TI.' : 'O legado D2TI só está disponível para São Mateus do Maranhão - MA.' }}</div>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle class="flex items-center gap-2"><MapPinCheck class="size-5 text-primary" />Endereço e contato</CardTitle><CardDescription>Dados do prestador enviados à prefeitura.</CardDescription></CardHeader>
-        <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="space-y-1.5"><Label for="cep">CEP</Label><Input id="cep" v-model="config.cep" v-maska="cepMaskOptions" inputmode="numeric" placeholder="00000-000" /></div><div class="space-y-1.5 lg:col-span-2"><Label for="logradouro">Logradouro</Label><Input id="logradouro" v-model="config.logradouro" placeholder="Ex.: Rua do Sol" /></div><div class="space-y-1.5"><Label for="numero">Número</Label><Input id="numero" v-model="config.numero" inputmode="numeric" placeholder="Ex.: 143" /></div>
-          <div class="space-y-1.5"><Label for="bairro">Bairro</Label><Input id="bairro" v-model="config.bairro" placeholder="Ex.: Centro" /></div><div class="space-y-1.5"><Label for="complemento">Complemento</Label><Input id="complemento" v-model="config.complemento" placeholder="Opcional" /></div><div class="space-y-1.5"><Label for="email">E-mail</Label><Input id="email" v-model="config.email" type="email" placeholder="fiscal@empresa.com.br" /></div><div class="space-y-1.5"><Label for="telefone">Telefone</Label><Input id="telefone" v-model="config.telefone" v-maska="phoneMaskOptions" inputmode="tel" placeholder="(99) 99999-9999" /></div>
-        </CardContent>
-      </Card>
-
-      <div class="grid gap-5 lg:grid-cols-2">
-        <Card>
+      <div class="grid gap-5">
+        <Card id="fiscal-nfse">
           <CardHeader><CardTitle class="flex items-center gap-2"><Cog class="size-5 text-primary" />Parâmetros da NFS-e</CardTitle><CardDescription>Na Geranet, item da lista, código nacional e tributação municipal são códigos diferentes.</CardDescription></CardHeader>
           <CardContent class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-1.5"><Label for="serie-rps">Série RPS</Label><Input id="serie-rps" v-model.number="config.serieRps" type="number" min="1" /></div><div class="space-y-1.5"><Label for="codigo-servico">Código de serviço</Label><Input id="codigo-servico" v-model="config.codigoServicoPadrao" inputmode="numeric" placeholder="Ex.: 1005" /></div>
@@ -194,28 +237,37 @@ onMounted(load)
             <div class="space-y-1.5"><Label for="tributacao">Tipo de tributação</Label><Input id="tributacao" v-model.number="(config.tipoTributacaoPadrao as number)" type="number" min="1" max="9" placeholder="Conforme portal" /></div><div class="space-y-1.5"><Label for="recolhimento">Tipo de recolhimento</Label><Input id="recolhimento" v-model.number="(config.tipoRecolhimentoPadrao as number)" type="number" min="1" max="9" placeholder="Conforme portal" /></div>
           </CardContent>
         </Card>
+      </div>
+      <div class="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">Série RPS e numeração inicial devem seguir o cadastro fiscal do prestador. O código TOM e o token D2TI são fornecidos pelo portal municipal apenas no legado de São Mateus do Maranhão.</div>
+      </TabsContent>
 
-        <Card v-if="usingLegacyD2ti" class="border-primary/25">
+      <TabsContent value="integracao" class="space-y-5">
+      <div class="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm"><p class="font-semibold">Onde conseguir as credenciais?</p><p class="mt-1 text-muted-foreground">O certificado A1 (.pfx/.p12) e a senha vêm da certificadora da empresa credenciada na ICP-Brasil. A API Key da Geranet é gerada no painel da Geranet e configurada pela equipe técnica no servidor; ela não é digitada nesta tela. Para o legado D2TI, obtenha o token no portal da prefeitura de São Mateus do Maranhão.</p><div class="mt-2 flex flex-wrap gap-x-4 gap-y-1"><a class="text-primary underline underline-offset-2" href="https://www.gov.br/iti/pt-br/assuntos/icp-brasil" target="_blank" rel="noopener noreferrer">Entenda o certificado ICP-Brasil</a><a class="text-primary underline underline-offset-2" href="https://nfe.geranet.net/documentacao/introducao" target="_blank" rel="noopener noreferrer">API Key da Geranet</a></div></div>
+      <div v-if="!config.criptografiaFiscalDisponivel" role="alert" class="flex gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-100"><CircleAlert class="mt-0.5 size-5 shrink-0" /><div><p class="font-semibold">Criptografia fiscal pendente no servidor</p><p class="mt-1">Peça ao administrador para configurar a chave <code>FISCAL_CERTIFICATE_ENC_KEY</code> no ambiente da API e reiniciá-la. Se já havia certificado ou tokens salvos, é preciso restaurar a mesma chave usada antes. Depois, atualize esta página para continuar.</p></div></div>
+      <div class="grid gap-5 lg:grid-cols-2">
+
+        <Card v-if="usingLegacyD2ti" id="fiscal-credencial" class="border-primary/25">
           <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Integração D2TI</CardTitle><CardDescription>São Mateus do Maranhão usa token de emissor RPS. Ele é cifrado antes de ser salvo.</CardDescription></CardHeader>
-          <CardContent class="space-y-4"><div v-if="config.integracao.configurada" class="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 class="size-5" /><span>Token D2TI configurado.</span></div><div class="space-y-1.5"><Label for="d2ti-token">Token do portal municipal</Label><Input id="d2ti-token" v-model="d2tiToken" maxlength="32" autocomplete="off" placeholder="32 caracteres da Configuração da Nota" /></div><Button variant="outline" :disabled="uploadingCredential" @click="saveD2tiToken"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.integracao.configurada ? 'Substituir token' : 'Salvar token' }}</Button></CardContent>
+          <CardContent class="space-y-4"><div v-if="config.integracao.configurada" class="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 class="size-5" /><span>Token D2TI configurado.</span></div><div class="space-y-1.5"><Label for="d2ti-token">Token do portal municipal</Label><Input id="d2ti-token" v-model="d2tiToken" maxlength="32" autocomplete="off" placeholder="32 caracteres da Configuração da Nota" /></div><Button variant="outline" :disabled="uploadingCredential || !config.criptografiaFiscalDisponivel" @click="saveD2tiToken"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.integracao.configurada ? 'Substituir token' : 'Salvar token' }}</Button></CardContent>
         </Card>
 
-        <Card v-else class="border-primary/25">
+        <Card v-else id="fiscal-credencial" class="border-primary/25">
           <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Certificado digital A1</CardTitle><CardDescription>O certificado continua por assinante e é usado pela Geranet para assinar NF-e e NFC-e. Arquivos .pfx ou .p12 de até 5 MB são cifrados antes de serem persistidos.</CardDescription></CardHeader>
-          <CardContent class="space-y-4"><div v-if="config.certificado.configurado" class="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 class="size-5" /><span>Certificado configurado: {{ config.certificado.nome }}</span></div><div class="space-y-1.5"><Label for="certificado">Arquivo do certificado</Label><Input id="certificado" type="file" accept=".pfx,.p12,application/x-pkcs12" @change="certificateFile = ($event.target as HTMLInputElement).files?.[0] ?? null" /></div><div class="space-y-1.5"><Label for="senha-certificado">Senha do certificado</Label><Input id="senha-certificado" v-model="certificatePassword" type="password" autocomplete="new-password" placeholder="Senha cadastrada no certificado A1" /></div><div class="flex flex-wrap gap-2"><Button variant="outline" :disabled="uploadingCredential" @click="uploadCertificate"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.certificado.configurado ? 'Substituir certificado' : 'Salvar certificado' }}</Button></div></CardContent>
+          <CardContent class="space-y-4"><div v-if="config.certificado.configurado" class="flex items-center gap-2 rounded-lg p-3 text-sm" :class="config.criptografiaFiscalDisponivel ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-amber-500/10 text-amber-900 dark:text-amber-200'"><CheckCircle2 v-if="config.criptografiaFiscalDisponivel" class="size-5" /><CircleAlert v-else class="size-5" /><span>{{ config.criptografiaFiscalDisponivel ? 'Certificado salvo' : 'Certificado salvo, mas indisponível neste servidor' }}: {{ config.certificado.nome }}</span></div><div class="space-y-1.5"><Label for="certificado">Arquivo do certificado</Label><Input id="certificado" type="file" accept=".pfx,.p12,application/x-pkcs12" :disabled="!config.criptografiaFiscalDisponivel" @change="certificateFile = ($event.target as HTMLInputElement).files?.[0] ?? null" /></div><div class="space-y-1.5"><Label for="senha-certificado">Senha do certificado</Label><Input id="senha-certificado" v-model="certificatePassword" type="password" autocomplete="new-password" placeholder="Senha cadastrada no certificado A1" :disabled="!config.criptografiaFiscalDisponivel" /></div><div class="flex flex-wrap gap-2"><Button variant="outline" :disabled="uploadingCredential || !config.criptografiaFiscalDisponivel" @click="uploadCertificate"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.certificado.configurado ? 'Substituir certificado' : 'Salvar certificado' }}</Button></div></CardContent>
         </Card>
       </div>
-      <Card v-if="config.nfeHabilitado || config.nfceHabilitado" class="border-sky-500/30">
-        <CardHeader><CardTitle>Homologação Geranet</CardTitle><CardDescription>Valide a credencial do integrador e o checklist antes de usar produção. A validação do A1 ocorre na primeira emissão real com ambiente Homologação.</CardDescription></CardHeader>
-        <CardContent class="flex flex-wrap items-center gap-3"><Button variant="outline" :disabled="checkingGeranet" @click="checkGeranet"><LoaderCircle v-if="checkingGeranet" class="animate-spin" /><Search v-else />Validar integração</Button><template v-if="geranetStatus"><span :class="geranetStatus.apiKeyValida ? 'text-emerald-600' : 'text-destructive'">{{ geranetStatus.apiKeyValida ? 'API Key válida' : (geranetStatus.motivo || 'API Key indisponível') }}</span><span class="text-sm text-muted-foreground">A1: {{ geranetStatus.certificadoConfigurado ? 'salvo' : 'pendente' }} · NFS-e: {{ geranetStatus.nfsePronta ? 'pronta' : 'pendente' }} · NF-e: {{ geranetStatus.nfePronta ? 'pronta' : 'pendente' }} · NFC-e: {{ geranetStatus.nfcePronta ? 'pronta' : 'pendente' }}</span></template></CardContent>
+      <Card v-if="config.nfseHabilitado || config.nfeHabilitado || config.nfceHabilitado" class="border-sky-500/30">
+        <CardHeader><CardTitle>Homologação Geranet</CardTitle><CardDescription>Valide a API Key e depois envie uma nota de teste para confirmar certificado, cadastro e regras fiscais do município ou da SEFAZ.</CardDescription></CardHeader>
+        <CardContent class="flex flex-wrap items-center gap-3"><Button variant="outline" :disabled="checkingGeranet" @click="checkGeranet"><LoaderCircle v-if="checkingGeranet" class="animate-spin" /><Search v-else />Validar integração</Button><Button variant="outline" @click="router.push({ name: 'notas-fiscais-homologacao' })">Abrir testes</Button><template v-if="geranetStatus"><span :class="geranetStatus.apiKeyValida ? 'text-emerald-600' : 'text-destructive'">{{ geranetStatus.apiKeyValida ? 'API Key válida' : (geranetStatus.motivo || 'API Key indisponível') }}</span><span class="text-sm text-muted-foreground">A1: {{ geranetStatus.certificadoConfigurado ? 'salvo' : 'pendente' }} · NFS-e: {{ geranetStatus.nfsePronta ? 'pronta' : 'pendente' }} · NF-e: {{ geranetStatus.nfePronta ? 'pronta' : 'pendente' }} · NFC-e: {{ geranetStatus.nfcePronta ? 'pronta' : 'pendente' }}</span></template></CardContent>
       </Card>
-      <Card v-if="config.nfeHabilitado || config.nfceHabilitado">
-        <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Parâmetros NF-e e NFC-e</CardTitle><CardDescription>Séries e CSC são dados estaduais. O token é cifrado e nunca volta pela API.</CardDescription></CardHeader>
+      </TabsContent>
+
+      <TabsContent value="nfe" class="space-y-5">
+      <div class="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm"><p class="font-semibold">Onde conseguir os dados da NF-e?</p><p class="mt-1 text-muted-foreground">Peça à contabilidade a natureza da operação, série e regras fiscais dos produtos (como CFOP, NCM e CST/CSOSN). Confira o credenciamento e a inscrição estadual no portal da SEFAZ da sua UF. Os itens fiscais são preenchidos no cadastro de produtos; a nota é gerada a partir de uma venda faturada.</p></div>
+      <Card v-if="config.nfeHabilitado || config.nfceHabilitado" id="fiscal-nfe">
+        <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Parâmetros de produtos</CardTitle><CardDescription>Estes parâmetros são compartilhados por NF-e e NFC-e. A série e o CSC da NFC-e ficam na aba própria.</CardDescription></CardHeader>
         <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div class="space-y-1.5"><Label for="serie-nfe">Série NF-e</Label><Input id="serie-nfe" v-model.number="config.serieNfe" type="number" min="1" /></div>
-          <div class="space-y-1.5"><Label for="serie-nfce">Série NFC-e</Label><Input id="serie-nfce" v-model.number="config.serieNfce" type="number" min="1" /></div>
-          <div class="space-y-1.5"><Label for="csc-id">CSC ID</Label><Input id="csc-id" v-model="config.nfce.cscId" :disabled="!config.nfceHabilitado" /></div>
-          <div class="space-y-1.5"><Label for="csc-token">CSC token</Label><Input id="csc-token" v-model="nfceCscToken" :disabled="!config.nfceHabilitado" type="password" autocomplete="new-password" :placeholder="config.nfce.cscConfigurado ? 'Configurado — informe para substituir' : 'Token fornecido pela SEFAZ'" /></div>
           <div class="space-y-1.5 sm:col-span-2"><Label for="natureza-operacao">Natureza da operação</Label><Input id="natureza-operacao" v-model="config.nfe.naturezaOperacao" placeholder="Ex.: Venda de mercadoria" /></div>
           <div class="space-y-1.5"><Label for="tipo-atividade">Tipo de atividade</Label><Select v-model="config.nfe.tipoAtividade"><SelectTrigger id="tipo-atividade"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">Comércio</SelectItem><SelectItem value="2">Serviço</SelectItem><SelectItem value="3">Comércio e serviço</SelectItem><SelectItem value="4">Indústria e comércio</SelectItem><SelectItem value="5">Indústria, comércio e serviço</SelectItem></SelectContent></Select></div>
           <div class="space-y-1.5"><Label for="presenca">Presença</Label><Select v-model="config.nfe.indicadorPresenca"><SelectTrigger id="presenca"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">Presencial</SelectItem><SelectItem value="2">Internet</SelectItem><SelectItem value="3">Teleatendimento</SelectItem><SelectItem value="4">Entrega</SelectItem><SelectItem value="5">Fora do estabelecimento</SelectItem><SelectItem value="9">Outros</SelectItem></SelectContent></Select></div>
@@ -227,6 +279,22 @@ onMounted(load)
         <CardHeader><CardTitle>Responsável técnico e CSRT</CardTitle><CardDescription>Preencha apenas quando a SEFAZ da UF exigir. O CSRT é cifrado e não volta pela API.</CardDescription></CardHeader>
         <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><div class="space-y-1.5"><Label>CNPJ</Label><Input v-model="config.responsavelTecnico.cnpj" inputmode="numeric" /></div><div class="space-y-1.5"><Label>Contato</Label><Input v-model="config.responsavelTecnico.contato" /></div><div class="space-y-1.5"><Label>E-mail</Label><Input v-model="config.responsavelTecnico.email" type="email" /></div><div class="space-y-1.5"><Label>Telefone</Label><Input v-model="config.responsavelTecnico.telefone" inputmode="tel" /></div><div class="space-y-1.5"><Label>ID CSRT</Label><Input v-model="config.responsavelTecnico.csrtId" /></div><div class="space-y-1.5"><Label>CSRT</Label><Input v-model="responsavelTecnicoCsrt" type="password" :placeholder="config.responsavelTecnico.csrtConfigurado ? 'Configurado — informe para substituir' : 'Token fornecido pela SEFAZ'" /></div></CardContent>
       </Card>
+      </TabsContent>
+
+      <TabsContent value="nfce" class="space-y-5">
+      <div class="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm"><p class="font-semibold">Onde conseguir os dados da NFC-e?</p><p class="mt-1 text-muted-foreground">Após o credenciamento para NFC-e, gere o CSC e seu ID no portal da SEFAZ da sua UF. Homologação e produção podem ter códigos diferentes: use o CSC do ambiente selecionado. A série da NFC-e também deve ser confirmada com a contabilidade. Natureza da operação e responsável técnico ficam na aba NF-e porque são compartilhados.</p><div class="mt-2 flex flex-wrap gap-x-4 gap-y-1"><a class="text-primary underline underline-offset-2" href="https://www.nfe.fazenda.gov.br/portal/principal.aspx" target="_blank" rel="noopener noreferrer">Portal Nacional da NF-e</a><button type="button" class="text-primary underline underline-offset-2" @click="activeTab = 'nfe'">Abrir regras compartilhadas</button></div></div>
+      <Card id="fiscal-nfce" class="border-primary/20">
+        <CardHeader><CardTitle>Parâmetros NFC-e</CardTitle><CardDescription>O CSC é protegido e seu token não volta pela API após salvar.</CardDescription></CardHeader>
+        <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="space-y-1.5"><Label for="serie-nfce">Série NFC-e</Label><Input id="serie-nfce" v-model.number="config.serieNfce" type="number" min="1" :disabled="!config.nfceHabilitado" /></div>
+          <div class="space-y-1.5"><Label for="csc-id">CSC ID</Label><Input id="csc-id" v-model="config.nfce.cscId" :disabled="!config.nfceHabilitado" /></div>
+          <div class="space-y-1.5"><Label for="csc-token">CSC token</Label><Input id="csc-token" v-model="nfceCscToken" :disabled="!config.nfceHabilitado" type="password" autocomplete="new-password" :placeholder="config.nfce.cscConfigurado ? 'Configurado — informe para substituir' : 'Token fornecido pela SEFAZ'" /></div>
+        </CardContent>
+      </Card>
+      <p v-if="!config.nfceHabilitado" class="text-sm text-muted-foreground">Ative a NFC-e na aba Visão geral para preencher estes campos.</p>
+      </TabsContent>
+      </Tabs>
+      <div class="flex justify-end"><Button :disabled="saving" @click="save"><LoaderCircle v-if="saving" class="animate-spin" /><Save v-else />Salvar configurações</Button></div>
     </template>
   </div>
 </template>

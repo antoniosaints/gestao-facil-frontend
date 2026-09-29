@@ -420,6 +420,12 @@ const routes: RouteInterface[] = [
         meta: { layout: 'main', permissao: 4 },
       },
       {
+        path: 'homologacao',
+        name: 'notas-fiscais-homologacao',
+        component: () => import('@/pages/notas-fiscais/Homologacao.vue'),
+        meta: { layout: 'main', permissao: 4 },
+      },
+      {
         path: 'nf-e',
         name: 'notas-fiscais-nfe',
         component: () => import('@/pages/notas-fiscais/Documentos.vue'),

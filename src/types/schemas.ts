@@ -194,6 +194,8 @@ export interface ClientesFornecedores {
   status: Status
   documento?: string
   endereco?: string
+    numero?: string
+    bairro?: string
   cep?: string
   cidade?: string
   estado?: string
