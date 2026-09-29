@@ -23,6 +23,7 @@ export function useServerTable<T>(
   const columnVisibility = ref<VisibilityState>({})
   const rowSelection = ref({})
   const loading = ref(false)
+  const error = ref('')
   let correctingPage = false
   let searchTimer: ReturnType<typeof setTimeout> | null = null
   let latestRequestId = 0
@@ -54,6 +55,7 @@ export function useServerTable<T>(
   async function fetchData() {
     const requestId = ++latestRequestId
     loading.value = true
+    error.value = ''
     try {
       const requestedPageIndex = pageIndex.value
       let res = await requestPage(requestedPageIndex)
@@ -96,6 +98,8 @@ export function useServerTable<T>(
       data.value = rows
       totalPages.value = availablePages
       pageIndex.value = Math.min(Math.max(0, returnedPage - 1), availablePages - 1)
+    } catch (cause: any) {
+      if (requestId === latestRequestId) error.value = cause?.response?.data?.error?.message || cause?.response?.data?.message || 'Não foi possível carregar os registros.'
     } finally {
       if (requestId === latestRequestId) {
         correctingPage = false
@@ -192,5 +196,6 @@ export function useServerTable<T>(
     fetchData,
     table,
     loading,
+    error,
   }
 }

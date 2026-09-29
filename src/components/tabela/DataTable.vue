@@ -1,14 +1,14 @@
 <template>
     <div class="w-full">
         <!-- Busca e menu -->
-        <div class="flex items-center justify-between py-2 gap-2">
-            <div class="flex items-center space-x-1 bg-card rounded-md border border-border pl-4 w-96">
+        <div class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex w-full items-center space-x-1 rounded-md border border-border bg-card pl-4 sm:max-w-96">
                 <i class="fa-solid fa-magnifying-glass text-sm"></i>
                 <Input type="search" placeholder="Buscar registro..." :model-value="search"
                     @update:model-value="setSearch"
                     class="border-none outline-none focus-visible:ring-0 shadow-none" />
             </div>
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center justify-between space-x-2 sm:justify-end">
                 <Select v-model="pageSize">
                     <SelectTrigger class="border border-border">
                         <SelectValue placeholder="Registros por página" />
@@ -50,6 +50,11 @@
 
         <!-- Barra de ações (ex: ações em massa por seleção) -->
         <slot name="toolbar" :table="table" :selected-count="table.getSelectedRowModel().rows.length" />
+
+        <div v-if="error" class="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+            <span>{{ error }}</span>
+            <Button size="sm" variant="outline" @click="fetchData">Tentar novamente</Button>
+        </div>
 
         <!-- Tabela -->
         <div class="relative rounded-lg border bg-background border-gray-300 dark:border-gray-600 overflow-x-auto">
@@ -172,7 +177,9 @@ const {
     search,
     setSearch,
     table,
-    loading
+    loading,
+    error,
+    fetchData,
 } = useServerTable(props.api, props.columns, props.filters ?? {}, stateKey);
 
 // Identifica as linhas atualmente exibidas; ver o comentário no <TableHead> do cabeçalho.

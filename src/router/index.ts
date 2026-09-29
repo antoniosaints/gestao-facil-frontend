@@ -404,9 +404,15 @@ const routes: RouteInterface[] = [
   {
     path: '/notas-fiscais',
     name: 'notas-fiscais',
-    redirect: { name: 'notas-fiscais-nfse' },
+    redirect: { name: 'notas-fiscais-painel' },
     meta: { modulo: 'notas-fiscais' },
     children: [
+      {
+        path: 'painel',
+        name: 'notas-fiscais-painel',
+        component: () => import('@/pages/notas-fiscais/Painel.vue'),
+        meta: { layout: 'main', permissao: 3 },
+      },
       {
         path: 'nfs-e',
         name: 'notas-fiscais-nfse',
@@ -424,6 +430,12 @@ const routes: RouteInterface[] = [
         name: 'notas-fiscais-homologacao',
         component: () => import('@/pages/notas-fiscais/Homologacao.vue'),
         meta: { layout: 'main', permissao: 4 },
+      },
+      {
+        path: 'relatorio',
+        name: 'notas-fiscais-relatorio',
+        component: () => import('@/pages/notas-fiscais/Relatorio.vue'),
+        meta: { layout: 'main', permissao: 3 },
       },
       {
         path: 'nf-e',

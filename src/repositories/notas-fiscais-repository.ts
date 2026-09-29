@@ -69,18 +69,49 @@ export type NfseListItem = {
 export type FiscalDocument = {
   id: number
   vendaId?: number | null
+  vendaUid?: string | null
   tipo: 'NFE' | 'NFCE' | 'NFSE'
   status: string
   ambiente?: 'HOMOLOGACAO' | 'PRODUCAO' | null
   serie?: number | null
   numero?: string | null
+  rpsNumero?: string | null
+  codigoServico?: string | null
+  discriminacao?: string | null
   chaveAcesso?: string | null
+  protocolo?: string | null
+  provedor?: string | null
+  xmlDisponivel?: boolean
+  pdfDisponivel?: boolean
   valorTotal: number
   erroMensagem?: string | null
   criadoEm: string
+  atualizadaEm?: string | null
   emitidaEm?: string | null
   canceladaEm?: string | null
   cliente?: { id: number; nome: string; documento?: string | null } | null
+  eventos?: Array<{ id: number; tipo: string; status: string; motivo?: string | null; createdAt: string }>
+  itens?: Array<{ id: number; descricao: string; quantidade: number; valorTotal: number; ncm?: string | null; cfop?: string | null }>
+}
+
+export type FiscalReportSummary = {
+  total: number
+  authorized: number
+  homologated: number
+  pending: number
+  uncertain: number
+  rejected: number
+  canceled: number
+  authorizedValue: number
+  byStatus: Record<string, number>
+}
+
+export type FiscalDashboard = {
+  kpis: { total: number; authorized: number; authorizedValue: number; approvalRate: number; previous: { total: number; authorized: number; authorizedValue: number } }
+  byStatus: Record<string, number>
+  byType: Record<string, number>
+  series: Array<{ data: string; total: number; autorizadas: number }>
+  attention: Array<{ id: number; tipo: string; status: string; criadoEm: string; erroMensagem?: string | null; cliente: string }>
 }
 
 export type UninvoicedSale = {
@@ -177,6 +208,21 @@ export class NotasFiscaisRepository {
     return data as { data: FiscalDocument[]; pagination: { page: number; total: number; pages: number } }
   }
 
+  static async getDocument(id: number) {
+    const { data } = await http.get(`/v1/notas-fiscais/documentos/${id}`)
+    return data.data as FiscalDocument
+  }
+
+  static async summarizeDocuments(filters: Record<string, string>) {
+    const { data } = await http.get('/v1/notas-fiscais/documentos/resumo', { params: filters })
+    return data.data as FiscalReportSummary
+  }
+
+  static async getDashboard(inicio: string, fim: string) {
+    const { data } = await http.get('/v1/notas-fiscais/documentos/painel', { params: { inicio, fim } })
+    return data.data as FiscalDashboard
+  }
+
   static async createSaleDocument(vendaId: number, tipo: 'NFE' | 'NFCE') {
     const { data } = await http.post(`/v1/notas-fiscais/vendas/${vendaId}/documentos`, { tipo }, { headers: { 'Idempotency-Key': crypto.randomUUID() } })
     return data.data as FiscalDocument
@@ -203,7 +249,9 @@ export class NotasFiscaisRepository {
     const link = document.createElement('a')
     link.href = url
     link.download = filename
+    document.body.appendChild(link)
     link.click()
-    URL.revokeObjectURL(url)
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
   }
 }

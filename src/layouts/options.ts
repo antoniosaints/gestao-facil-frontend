@@ -18,6 +18,7 @@ import {
   Cog,
   FileBox,
   FileCheck2,
+  FileBarChart2,
   FileDigit,
   FilePenLineIcon,
   FolderTree,
@@ -264,9 +265,11 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'ourive:configuracoes', nome: 'Configurações' },
   ],
   'notas-fiscais': [
+    { key: 'notas-fiscais:painel', nome: 'Painel' },
     { key: 'notas-fiscais:nfse', nome: 'Notas de serviço' },
     { key: 'notas-fiscais:nfe', nome: 'NF-e' },
     { key: 'notas-fiscais:nfce', nome: 'NFC-e' },
+    { key: 'notas-fiscais:relatorio', nome: 'Relatório' },
     { key: 'notas-fiscais:homologacao', nome: 'Testes de homologação' },
     { key: 'notas-fiscais:configuracoes', nome: 'Configurações' },
   ],
@@ -349,7 +352,7 @@ export const sidebarMenuOptions = (
     (permissions.reservas.visualizar && hasReservationsApp) ||
     (hasRestauranteApp && hasRestaurantAccess) ||
     (hasOuriveApp && hasOuriveAccess) ||
-    (permissions.configuracoes.visualizar && hasNotasFiscaisApp)
+    (permissions.relatorios.visualizar && hasNotasFiscaisApp)
 
   return [
     {
@@ -894,9 +897,16 @@ export const sidebarMenuOptions = (
       key: 'notas-fiscais',
       nome: 'Notas Fiscais',
       icone: FileCheck2,
-      show: permissions.configuracoes.visualizar && hasNotasFiscaisApp,
+      show: permissions.relatorios.visualizar && hasNotasFiscaisApp,
       color: 'cyan',
       children: [
+        {
+          key: 'notas-fiscais:painel',
+          nome: 'Painel',
+          link: '/notas-fiscais/painel',
+          icone: ChartPie,
+          color: 'cyan',
+        },
         {
           key: 'notas-fiscais:nfse',
           nome: 'Notas de serviço',
@@ -919,11 +929,19 @@ export const sidebarMenuOptions = (
           color: 'cyan',
         },
         {
+          key: 'notas-fiscais:relatorio',
+          nome: 'Relatório',
+          link: '/notas-fiscais/relatorio',
+          icone: FileBarChart2,
+          color: 'cyan',
+        },
+        {
           key: 'notas-fiscais:homologacao',
           nome: 'Testes de homologação',
           link: '/notas-fiscais/homologacao',
           icone: FileCheck2,
           color: 'cyan',
+          show: permissions.configuracoes.visualizar,
         },
         {
           key: 'notas-fiscais:configuracoes',
@@ -931,6 +949,7 @@ export const sidebarMenuOptions = (
           link: '/notas-fiscais/configuracoes',
           icone: Cog,
           color: 'cyan',
+          show: permissions.configuracoes.visualizar,
         },
       ],
     },
