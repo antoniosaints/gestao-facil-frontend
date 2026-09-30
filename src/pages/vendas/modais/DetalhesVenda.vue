@@ -53,6 +53,8 @@ import { useVendasStore } from '@/stores/vendas/useVenda'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { formatCurrencyBR, formatPaymentMethodLabel } from '@/utils/formatters'
 import FormularioEfertivar from '@/pages/financeiro/lancamentos/modais/FormularioEfertivar.vue'
+import VendaNotasFiscais from './VendaNotasFiscais.vue'
+import FiscalDocumentDetails from '@/pages/notas-fiscais/FiscalDocumentDetails.vue'
 import {
   deletarVenda,
   editarVenda,
@@ -95,6 +97,12 @@ const venda = computed(() => store.venda ?? null)
 const itens = computed(() => venda.value?.ItensVendas ?? [])
 const cobrancas = computed(() => venda.value?.CobrancasFinanceiras ?? [])
 const lancamentosFinanceiros = computed(() => venda.value?.LancamentoFinanceiro || [])
+const fiscalAtivo = computed(() => uiStore.hasActiveModule('notas-fiscais'))
+
+async function atualizarNotasFiscais() {
+  store.updateTable()
+  if (store.openModalDetalhes) await recarregar()
+}
 
 const subtotal = computed(() =>
   itens.value.reduce(
@@ -475,6 +483,13 @@ watch(() => storeCobranca.filters.update, recarregar)
         </div>
       </header>
 
+      <VendaNotasFiscais
+        v-if="fiscalAtivo && store.openModalDetalhes"
+        :notes="venda.NotaFiscals || []"
+        @open-detail="store.openNotaFiscal"
+        @changed="atualizarNotasFiscais"
+      />
+
       <!-- Indicadores -->
       <section class="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
         <div
@@ -780,4 +795,10 @@ watch(() => storeCobranca.filters.update, recarregar)
 
     <FormularioEfertivar @success="recarregar" />
   </ModalView>
+  <FiscalDocumentDetails
+    v-if="fiscalAtivo"
+    v-model:open="store.openModalNotaFiscal"
+    :document-id="store.notaFiscalId"
+    @changed="atualizarNotasFiscais"
+  />
 </template>

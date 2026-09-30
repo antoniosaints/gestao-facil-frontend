@@ -27,6 +27,8 @@ export const useVendasStore = defineStore('vendasStore', () => {
   const openModalPropor = ref(false)
   const openModalFaturar = ref(false)
   const openModalDetalhes = ref(false)
+  const openModalNotaFiscal = ref(false)
+  const notaFiscalId = ref<number | null>(null)
   const openModalComprovante = ref(false)
   const vendaComprovante = ref<{
     id: number
@@ -105,6 +107,11 @@ export const useVendasStore = defineStore('vendasStore', () => {
     }
   }
 
+  const openNotaFiscal = (id: number) => {
+    notaFiscalId.value = id
+    openModalNotaFiscal.value = true
+  }
+
   const filters = ref<Partial<filtroVendas>>({
     periodo: { inicio: null, fim: null },
     status: '',
@@ -125,7 +132,12 @@ export const useVendasStore = defineStore('vendasStore', () => {
     const { data } = (await VendaRepository.get(id)) as {
       data: Vendas & {
         ItensVendas: ItensVendas[]
-        ComboSaidas?: Array<{ comboId: number; nomeSnapshot: string; quantidade: number; precoUnitarioSnapshot: number | string }>
+        ComboSaidas?: Array<{
+          comboId: number
+          nomeSnapshot: string
+          quantidade: number
+          precoUnitarioSnapshot: number | string
+        }>
       }
     }
 
@@ -153,11 +165,16 @@ export const useVendasStore = defineStore('vendasStore', () => {
 
       const newItem = {
         id: itemId,
-        produto: item.itemName || item.produto?.label || item.produto?.nome || item.servico?.nome || 'Item',
+        produto:
+          item.itemName ||
+          item.produto?.label ||
+          item.produto?.nome ||
+          item.servico?.nome ||
+          'Item',
         quantidade: item.quantidade,
         preco: parseFloat(String(item.valor).replace(',', '.')),
         subtotal: parseFloat(String(item.valor).replace(',', '.')) * item.quantidade,
-        tipo: item.produtoId ? 'PRODUTO' as const : 'SERVICO' as const,
+        tipo: item.produtoId ? ('PRODUTO' as const) : ('SERVICO' as const),
       }
       carrinho.value.push(newItem)
     })
@@ -183,6 +200,9 @@ export const useVendasStore = defineStore('vendasStore', () => {
     openModalPropor,
     openModalFaturar,
     openModalDetalhes,
+    openModalNotaFiscal,
+    notaFiscalId,
+    openNotaFiscal,
     openModalComprovante,
     vendaComprovante,
     openSave,

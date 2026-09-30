@@ -22,6 +22,9 @@ import { formatCurrencyBR } from '@/utils/formatters'
 import type { Component } from 'vue'
 import { useVendasStore } from '@/stores/vendas/useVenda'
 import { Checkbox } from '@/components/ui/checkbox'
+import { hasPermission } from '@/hooks/authorize'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { statusLabels, typeLabels } from '@/pages/notas-fiscais/fiscalPresentation'
 const store = useVendasStore()
 const allColumnsVendas: ColumnDef<Vendas>[] = [
   {
@@ -191,9 +194,32 @@ const allColumnsVendas: ColumnDef<Vendas>[] = [
       const nota = row.original.NotaFiscals?.[0]
       if (!nota) return render(BadgeCell, { label: 'Sem emissão', color: 'yellow', icon: FileText })
 
-      const label = `${nota.tipo === 'NFCE' ? 'NFC-e' : nota.tipo === 'NFE' ? 'NF-e' : 'NFS-e'}${nota.numero ? ` #${nota.numero}` : ''}`
-      const color = nota.status === 'AUTORIZADA' ? 'green' : nota.status.includes('FALHA') || nota.status === 'REJEITADA' ? 'red' : 'yellow'
-      return render(BadgeCell, { label: `${label} · ${nota.status}`, color, icon: FileText })
+      const label = `${typeLabels[nota.tipo]}${nota.numero ? ` #${nota.numero}` : ` #${nota.id}`}`
+      const color =
+        nota.status === 'AUTORIZADA'
+          ? 'green'
+          : nota.status.includes('FALHA') || nota.status === 'REJEITADA'
+            ? 'red'
+            : 'yellow'
+      const badge = render(BadgeCell, {
+        label: `${label} · ${statusLabels[nota.status] || nota.status}`,
+        color,
+        icon: FileText,
+        capitalize: false,
+      })
+      const ui = useUiStore()
+      if (!hasPermission(ui.usuarioLogged, 3)) return badge
+      return render(
+        'button',
+        {
+          type: 'button',
+          class:
+            'rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'aria-label': `Ver detalhes de ${label}`,
+          onClick: () => store.openNotaFiscal(nota.id),
+        },
+        badge,
+      )
     },
   },
   {
@@ -221,11 +247,15 @@ export function getColumnsVendas(
       : {
           ...column,
           cell: ({ row, table }) =>
-            render('div', { class: 'text-right' }, render(TabelaActions, {
-              data: row.original,
-              table,
-              fiscalTypes,
-            })),
+            render(
+              'div',
+              { class: 'text-right' },
+              render(TabelaActions, {
+                data: row.original,
+                table,
+                fiscalTypes,
+              }),
+            ),
         },
   )
 }

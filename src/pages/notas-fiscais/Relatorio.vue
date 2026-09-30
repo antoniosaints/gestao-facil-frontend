@@ -2,7 +2,7 @@
 import { computed, h, reactive, ref, watch } from 'vue'
 import { format } from 'date-fns'
 import type { Column, ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Download, Eye, FileBarChart2, Funnel, LoaderCircle, RefreshCw, X } from 'lucide-vue-next'
+import { ArrowUpDown, Eye, FileBarChart2, Funnel, RefreshCw, X } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from '@/components/tabela/DataTable.vue'
@@ -10,7 +10,8 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import FiscalDocumentDetails from './FiscalDocumentDetails.vue'
+import { statuses, statusLabels, typeLabels, statusClass, formatFiscalDate as formatDate } from './fiscalPresentation'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -28,9 +29,7 @@ const draftPeriod = ref<Date[] | null>(null)
 const tableVersion = ref(0)
 const filterOpen = ref(false)
 const detailOpen = ref(false)
-const detailLoading = ref(false)
-const detail = ref<FiscalDocument | null>(null)
-const detailError = ref('')
+const detailId = ref<number | null>(null)
 const busyId = ref<number | null>(null)
 const invalidPeriod = computed(() => Boolean(draftPeriod.value?.length === 2 && draftPeriod.value[0] > draftPeriod.value[1]))
 const activeFilters = computed(() => [
@@ -40,29 +39,6 @@ const activeFilters = computed(() => [
   filters.inicio ? { key: 'inicio', label: `Desde ${new Date(`${filters.inicio}T12:00:00`).toLocaleDateString('pt-BR')}` } : null,
   filters.fim ? { key: 'fim', label: `Até ${new Date(`${filters.fim}T12:00:00`).toLocaleDateString('pt-BR')}` } : null,
 ].filter((item): item is { key: string; label: string } => Boolean(item)))
-
-const statuses = [
-  ['PENDENTE', 'Pendente'], ['PRONTA_PARA_EMISSAO', 'Pronta para emissão'], ['EMITINDO', 'Emitindo'],
-  ['EM_PROCESSAMENTO', 'Em processamento'], ['AUTORIZADA', 'Autorizada'], ['HOMOLOGADA', 'Homologada'],
-  ['FALHA_REPROCESSAVEL', 'Falha reprocessável'], ['REJEITADA', 'Rejeitada'],
-  ['RESULTADO_INCERTO', 'Resultado incerto'], ['EMISSAO_INCERTA', 'Emissão incerta'], ['CANCELADA', 'Cancelada'],
-] as const
-const statusLabels = Object.fromEntries(statuses) as Record<string, string>
-const typeLabels: Record<string, string> = { NFE: 'NF-e', NFCE: 'NFC-e', NFSE: 'NFS-e' }
-
-function statusClass(status: string) {
-  if (['AUTORIZADA', 'HOMOLOGADA'].includes(status)) return 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-  if (['REJEITADA', 'FALHA_REPROCESSAVEL'].includes(status)) return 'border-destructive/40 bg-destructive/10 text-destructive'
-  if (status === 'CANCELADA') return 'border-muted-foreground/40 bg-muted text-muted-foreground'
-  if (['RESULTADO_INCERTO', 'EMISSAO_INCERTA'].includes(status)) return 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-  return 'border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300'
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return '—'
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('pt-BR')
-}
 
 function canRetry(document: FiscalDocument) {
   return hasPermission(ui.usuarioLogged, 4) && ['NFE', 'NFCE'].includes(document.tipo) && ['PENDENTE', 'FALHA_REPROCESSAVEL'].includes(document.status)
@@ -101,14 +77,9 @@ function refresh() {
   tableVersion.value += 1
 }
 
-async function openDetailById(id: number) {
+function openDetailById(id: number) {
+  detailId.value = id
   detailOpen.value = true
-  detail.value = null
-  detailError.value = ''
-  detailLoading.value = true
-  try { detail.value = await NotasFiscaisRepository.getDocument(id) }
-  catch (error: any) { detailError.value = error?.response?.data?.error?.message || 'Não foi possível carregar os detalhes da nota.' }
-  finally { detailLoading.value = false }
 }
 
 function openDetail(document: FiscalDocument) { void openDetailById(document.id) }
@@ -127,10 +98,6 @@ async function retry(document: FiscalDocument) {
     await NotasFiscaisRepository.retryDocument(document.id)
     toast.success('Nota reenfileirada. Acompanhe o novo status neste relatório.')
     refresh()
-    if (detailOpen.value && detail.value?.id === document.id) {
-      try { detail.value = await NotasFiscaisRepository.getDocument(document.id) }
-      catch { detailError.value = 'A nota foi reenfileirada, mas não foi possível atualizar os detalhes. Abra a nota novamente.' }
-    }
   } catch (error: any) { toast.error(error?.response?.data?.error?.message || 'Não foi possível reenfileirar a nota.') }
   finally { busyId.value = null }
 }
@@ -175,9 +142,8 @@ const columns: ColumnDef<FiscalDocument>[] = [
       <button type="button" class="text-primary underline-offset-2 hover:underline" @click="clearFilters">Limpar todos</button>
     </div>
 
-    <div class="rounded-lg border bg-card p-3 sm:p-4">
-      <DataTable :key="tableVersion" :columns="columns" api="/v1/notas-fiscais/documentos" :filters="filters" state-key="relatorio-notas-fiscais" empty-title="Nenhuma nota encontrada" empty-description="Ajuste os filtros ou emita uma nota para acompanhá-la aqui." />
-    </div>
+    <DataTable :key="tableVersion" :columns="columns" api="/v1/notas-fiscais/documentos" :filters="filters" state-key="relatorio-notas-fiscais" empty-title="Nenhuma nota encontrada" empty-description="Ajuste os filtros ou emita uma nota para acompanhá-la aqui." />
+  
 
     <ModalView v-model:open="filterOpen" title="Filtrar notas fiscais" description="Refine a listagem por tipo, status, ambiente e período de criação." size="lg" desktop-variant="sheet">
       <div class="space-y-4 px-4">
@@ -192,20 +158,6 @@ const columns: ColumnDef<FiscalDocument>[] = [
       </div>
     </ModalView>
 
-    <Dialog v-model:open="detailOpen"><DialogContent class="max-h-[90vh] max-w-3xl overflow-y-auto"><DialogHeader><DialogTitle>Detalhes da nota fiscal</DialogTitle><DialogDescription>Dados do processamento e arquivos disponíveis.</DialogDescription></DialogHeader>
-      <div v-if="detailLoading" class="flex min-h-36 items-center justify-center text-muted-foreground"><LoaderCircle class="mr-2 size-4 animate-spin" />Carregando nota...</div>
-      <p v-else-if="detailError" class="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">{{ detailError }}</p>
-      <div v-else-if="detail" class="space-y-4 text-sm">
-        <div class="flex flex-wrap items-center gap-2"><Badge variant="outline">{{ typeLabels[detail.tipo] || detail.tipo }}</Badge><Badge variant="outline" :class="statusClass(detail.status)">{{ statusLabels[detail.status] || detail.status }}</Badge><Badge variant="outline">{{ detail.ambiente === 'HOMOLOGACAO' ? 'Homologação' : 'Produção' }}</Badge></div>
-        <div class="grid gap-3 rounded-lg border p-4 sm:grid-cols-2"><p><span class="text-muted-foreground">Número:</span> {{ detail.numero ? `${detail.serie || 1}/${detail.numero}` : detail.rpsNumero ? `RPS ${detail.rpsNumero}` : 'Ainda não atribuído' }}</p><p><span class="text-muted-foreground">Valor:</span> {{ formatCurrencyBR(detail.valorTotal) }}</p><p><span class="text-muted-foreground">Cliente:</span> {{ detail.cliente?.nome || 'Consumidor final' }}</p><p><span class="text-muted-foreground">Venda:</span> {{ detail.vendaUid || (detail.vendaId ? `#${detail.vendaId}` : 'Nota avulsa') }}</p><p><span class="text-muted-foreground">Criada em:</span> {{ formatDate(detail.criadoEm) }}</p><p><span class="text-muted-foreground">Atualizada em:</span> {{ formatDate(detail.atualizadaEm) }}</p><p v-if="detail.emitidaEm"><span class="text-muted-foreground">Emitida em:</span> {{ formatDate(detail.emitidaEm) }}</p><p v-if="detail.canceladaEm"><span class="text-muted-foreground">Cancelada em:</span> {{ formatDate(detail.canceladaEm) }}</p></div>
-        <div v-if="detail.erroMensagem" class="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-destructive"><strong>Ocorrência:</strong> {{ detail.erroMensagem }}</div>
-        <p v-if="['RESULTADO_INCERTO', 'EMISSAO_INCERTA'].includes(detail.status)" class="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-200">O resultado ainda não foi confirmado. Consulte o portal do provedor antes de iniciar outra emissão para evitar duplicidade.</p>
-        <div v-if="detail.chaveAcesso || detail.protocolo" class="space-y-1 rounded-lg border p-3"><p v-if="detail.chaveAcesso" class="break-all"><span class="text-muted-foreground">Chave de acesso:</span> {{ detail.chaveAcesso }}</p><p v-if="detail.protocolo"><span class="text-muted-foreground">Protocolo:</span> {{ detail.protocolo }}</p></div>
-        <p v-if="detail.discriminacao" class="rounded-lg border p-3"><span class="text-muted-foreground">Serviço:</span> {{ detail.discriminacao }}</p>
-        <div v-if="detail.itens?.length"><p class="mb-2 font-semibold">Itens</p><div class="divide-y rounded-lg border"><div v-for="item in detail.itens" :key="item.id" class="flex justify-between gap-3 p-2"><span>{{ item.quantidade }} × {{ item.descricao }}</span><span class="whitespace-nowrap">{{ formatCurrencyBR(item.valorTotal) }}</span></div></div></div>
-        <div v-if="detail.eventos?.length"><p class="mb-2 font-semibold">Eventos</p><div class="space-y-2"><div v-for="event in detail.eventos" :key="event.id" class="rounded-lg border p-2"><strong>{{ event.tipo }}</strong> · {{ event.status }} <span class="text-muted-foreground">· {{ formatDate(event.createdAt) }}</span><p v-if="event.motivo" class="mt-1 text-muted-foreground">{{ event.motivo }}</p></div></div></div>
-        <div class="flex flex-wrap gap-2 border-t pt-3"><Button v-if="canRetry(detail)" size="sm" variant="outline" :disabled="busyId === detail.id" @click="retry(detail)"><RefreshCw class="size-4" />Tentar novamente</Button><Button v-if="detail.xmlDisponivel" size="sm" variant="outline" :disabled="busyId === detail.id" @click="download(detail, 'xml')"><Download class="size-4" />Baixar XML</Button><Button v-if="detail.pdfDisponivel" size="sm" variant="outline" :disabled="busyId === detail.id" @click="download(detail, 'pdf')"><Download class="size-4" />Baixar PDF</Button></div>
-      </div>
-    </DialogContent></Dialog>
+    <FiscalDocumentDetails v-model:open="detailOpen" :document-id="detailId" @changed="refresh" />
   </div>
 </template>

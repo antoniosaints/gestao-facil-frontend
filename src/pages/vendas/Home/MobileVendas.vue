@@ -27,11 +27,11 @@
                         Date(venda.data).toLocaleDateString('pt-BR') }}</div>
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ venda.observacoes || '-' }}</div>
-                <div v-if="fiscalAtivo && venda.NotaFiscals?.[0]" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <button v-if="fiscalAtivo && venda.NotaFiscals?.[0]" type="button" :disabled="!hasPermission(storeUi.usuarioLogged, 3)" class="mt-1 text-left text-xs text-primary underline-offset-2 enabled:hover:underline" @click="store.openNotaFiscal(venda.NotaFiscals[0].id)">
                     Nota fiscal: {{ venda.NotaFiscals[0].tipo === 'NFCE' ? 'NFC-e' : venda.NotaFiscals[0].tipo === 'NFE' ? 'NF-e' : 'NFS-e' }}
                     <span v-if="venda.NotaFiscals[0].numero">#{{ venda.NotaFiscals[0].numero }}</span>
                     · {{ venda.NotaFiscals[0].status }}
-                </div>
+                </button>
                 <div v-if="podeEmitirNota(venda)" class="mt-3 flex items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
                     <span class="text-xs font-medium">Emitir nota fiscal</span>
                     <div class="flex gap-1.5">
