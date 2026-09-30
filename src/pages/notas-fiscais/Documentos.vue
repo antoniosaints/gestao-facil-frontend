@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { FileText, LoaderCircle, Settings2 } from 'lucide-vue-next'
+import { FileText, LoaderCircle, RefreshCw, Settings2 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import FiscalHistoryTable from './FiscalHistoryTable.vue'
@@ -21,6 +21,9 @@ const loading = ref(true)
 const config = ref<FiscalConfig | null>(null)
 const emittingSales = ref(false)
 const pendingTableVersion = ref(0)
+const historyVersion = ref(0)
+const activeTab = ref('emissao')
+const actionsTarget = computed(() => `fiscal-actions-${props.tipo}`)
 const batchResult = ref<FiscalBatchResult | null>(null)
 const ready = computed(() =>
   props.tipo === 'NFE' ? config.value?.emissaoNfePronta : config.value?.emissaoNfcePronta,
@@ -70,6 +73,7 @@ watch(
   () => props.tipo,
   () => {
     batchResult.value = null
+    activeTab.value = 'emissao'
   },
 )
 </script>
@@ -83,9 +87,18 @@ watch(
         </h1>
         <p class="mt-1 text-sm text-muted-foreground">{{ description }}</p>
       </div>
-      <Button variant="outline" @click="router.push({ name: 'notas-fiscais-configuracoes' })"
-        ><Settings2 />Configurar emissor</Button
-      >
+      <div :id="actionsTarget" class="flex flex-wrap items-center gap-2">
+        <Button variant="outline" @click="router.push({ name: 'notas-fiscais-configuracoes' })"
+          ><Settings2 />Configurar emissor</Button
+        >
+        <Button
+          v-if="activeTab === 'historico'"
+          variant="outline"
+          :disabled="loading"
+          @click="historyVersion++"
+          ><RefreshCw />Atualizar</Button
+        >
+      </div>
     </header>
     <div v-if="loading" class="flex min-h-60 items-center justify-center text-muted-foreground">
       <LoaderCircle class="mr-2 animate-spin" />Carregando documentos...
@@ -105,7 +118,7 @@ watch(
           ></CardContent
         >
       </Card>
-      <Tabs :key="tipo" default-value="emissao" class="space-y-2">
+      <Tabs :key="tipo" v-model="activeTab" class="space-y-2">
         <TabsList
           ><TabsTrigger value="emissao">Vendas sem {{ label }}</TabsTrigger
           ><TabsTrigger value="historico">Histórico de {{ label }}</TabsTrigger></TabsList
@@ -113,6 +126,7 @@ watch(
         <TabsContent value="emissao" class="space-y-3">
           <PendingSalesTable
             :tipo="tipo"
+            :actions-target="`#${actionsTarget}`"
             :ready="Boolean(ready)"
             :emitting="emittingSales"
             :refresh-token="pendingTableVersion"
@@ -131,7 +145,11 @@ watch(
           </div>
         </TabsContent>
         <TabsContent value="historico"
-          ><FiscalHistoryTable :tipo="tipo" :refresh-token="pendingTableVersion"
+          ><FiscalHistoryTable
+            :tipo="tipo"
+            :refresh-token="historyVersion"
+            :show-header="false"
+            @changed="pendingTableVersion++"
         /></TabsContent>
       </Tabs>
     </template>

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
+import NfseAdditionalFields from './NfseAdditionalFields.vue'
 import { ClienteRepository } from '@/repositories/cliente-repository'
 import { NotasFiscaisRepository, type FiscalConfig, type UninvoicedSale } from '@/repositories/notas-fiscais-repository'
 
@@ -31,8 +32,9 @@ const saleError = ref('')
 let saleRequest = 0
 const connection = ref<{ apiKeyValida: boolean; motivo?: string } | null>(null)
 const result = ref<{ tipo: string; id: number; status: string; message: string } | null>(null)
-const nfse = reactive({ clienteId: null as number | null, valorTotal: 0, codigoServico: '', codigoMunicipioTomador: '', discriminacao: '' })
+const nfse = reactive({ clienteId: null as number | null, valorTotal: 0, codigoServico: '', dataCompetencia: '', codigoNbs: '', codigoAnexoCnae: '', percentualTributosSimplesNacional: null as number | null, municipioIncidencia: '', substitutoTributario: '2' as '1' | '2', valorIssRetido: null as number | null, discriminacao: '' })
 const nfseDialogOpen = ref(false)
+const nfseEmissionKey = ref<string | null>(null)
 const showNfseErrors = ref(false)
 const nfseServerError = ref('')
 const tomador = ref<TomadorFiscal | null>(null)
@@ -40,14 +42,12 @@ const loadingTomador = ref(false)
 const tomadorLoadError = ref('')
 let tomadorRequest = 0
 const homologation = computed(() => config.value?.ambiente === 'HOMOLOGACAO')
-const isD2ti = computed(() => config.value?.modoEmissaoNfse === 'LEGADO_D2TI')
-const ready = (tipo: 'NFSE' | 'NFE' | 'NFCE') => tipo === 'NFSE' ? config.value?.emissaoNfsePronta : tipo === 'NFE' ? config.value?.emissaoNfePronta : config.value?.emissaoNfcePronta
+const ready = (tipo: 'NFSE' | 'NFE' | 'NFCE') => tipo === 'NFSE' ? config.value?.modoEmissaoNfse !== 'LEGADO_D2TI' && config.value?.emissaoNfsePronta : tipo === 'NFE' ? config.value?.emissaoNfePronta : config.value?.emissaoNfcePronta
 
 const nfseFieldErrors = computed(() => ({
   clienteId: nfse.clienteId ? '' : 'Selecione o tomador.',
   valorTotal: Number.isFinite(Number(nfse.valorTotal)) && nfse.valorTotal > 0 && nfse.valorTotal <= 99_999_999 ? '' : 'Informe um valor maior que zero.',
-  codigoServico: nfse.codigoServico.trim().length <= (isD2ti.value ? 5 : 32) ? '' : `Use no máximo ${isD2ti.value ? 5 : 32} caracteres.`,
-  codigoMunicipioTomador: !isD2ti.value || /^\d{3,6}$/.test(nfse.codigoMunicipioTomador.trim()) ? '' : 'Informe de 3 a 6 dígitos do código TOM.',
+  codigoServico: nfse.codigoServico.trim().length <= 32 ? '' : 'Use no máximo 32 caracteres.',
   discriminacao: nfse.discriminacao.trim().length >= 3 && nfse.discriminacao.trim().length <= 8_000 ? '' : 'Descreva o serviço com pelo menos 3 caracteres.',
 }))
 
@@ -55,7 +55,7 @@ const tomadorMissing = computed(() => {
   if (!tomador.value) return []
   const required: Array<[keyof TomadorFiscal, string]> = [
     ['documento', 'CPF/CNPJ'], ['endereco', 'endereço'],
-    ...(!isD2ti.value ? [['numero', 'número'] as [keyof TomadorFiscal, string]] : []),
+    ['numero', 'número'],
     ['bairro', 'bairro'], ['cep', 'CEP'], ['cidade', 'cidade'], ['estado', 'UF'],
   ]
   const missing = required.filter(([key]) => !String(tomador.value?.[key] ?? '').trim()).map(([, label]) => label)
@@ -141,7 +141,6 @@ async function load() {
     const fiscalConfig = await NotasFiscaisRepository.getConfig()
     config.value = fiscalConfig
     nfse.codigoServico = fiscalConfig.codigoServicoPadrao
-    nfse.codigoMunicipioTomador = fiscalConfig.codigoMunicipioPrestador || ''
   } catch (error: any) { toast.error(error?.response?.data?.error?.message || 'Não foi possível carregar a homologação fiscal.') }
   finally { loading.value = false }
 }
@@ -163,13 +162,16 @@ async function emitNfseTest() {
   try {
     emitting.value = 'NFSE'
     result.value = null
-    const invoice = await NotasFiscaisRepository.emitNfseHomologacao({ ...nfse, clienteId: nfse.clienteId }, crypto.randomUUID())
+    const invoice = await NotasFiscaisRepository.emitNfseHomologacao({ ...nfse, clienteId: nfse.clienteId }, (nfseEmissionKey.value ||= crypto.randomUUID()))
     result.value = { tipo: 'NFS-e', id: invoice.id, status: invoice.status, message: 'Retorno recebido do provedor em homologação.' }
     nfseDialogOpen.value = false
-    toast.success('Teste de NFS-e concluído. Consulte o histórico para baixar XML e PDF.')
+    nfseEmissionKey.value = null
+    if (invoice.status === 'AUTORIZADA') toast.success('NFS-e autorizada em homologação. Consulte o histórico para baixar XML e PDF.')
+    else toast.info('Emissão registrada. Acompanhe o status no histórico.')
   } catch (error: any) {
     result.value = { tipo: 'NFS-e', id: error?.response?.data?.error?.details?.notaFiscalId || 0, status: 'FALHA', message: error?.response?.data?.error?.message || 'Não foi possível confirmar a emissão.' }
     nfseServerError.value = result.value.message
+    if (error?.response?.status === 422) nfseEmissionKey.value = null
     toast.error(result.value.message)
   } finally { emitting.value = null }
 }
@@ -216,7 +218,7 @@ onMounted(load)
       <Card>
         <CardHeader><CardTitle>NFS-e · serviço avulso</CardTitle><CardDescription>Selecione um tomador cadastrado e informe um serviço prestado. O tomador precisa ter CPF/CNPJ e endereço completos. Confira a cobertura do município na Geranet antes do primeiro teste; não reenvie se o resultado for incerto.</CardDescription></CardHeader>
         <CardContent class="space-y-4">
-          <div class="flex flex-wrap items-center gap-2"><Badge variant="secondary">{{ ready('NFSE') ? 'Configuração pronta' : 'Configuração pendente' }}</Badge><span v-if="isD2ti" class="text-xs text-muted-foreground">Provedor municipal legado D2TI</span><a v-else class="text-xs text-primary underline underline-offset-2" href="https://nfe.geranet.net/" target="_blank" rel="noopener noreferrer">Consultar municípios atendidos</a></div>
+          <div class="flex flex-wrap items-center gap-2"><Badge variant="secondary">{{ ready('NFSE') ? 'Configuração pronta' : 'Configuração pendente' }}</Badge><a class="text-xs text-primary underline underline-offset-2" href="https://nfe.geranet.net/" target="_blank" rel="noopener noreferrer">Consultar municípios atendidos</a></div>
           <p class="text-sm text-muted-foreground">O formulário de teste reúne tomador, valor e descrição do serviço. Antes do envio, ele confere o endereço do tomador e mostra exatamente o que falta.</p>
           <div class="flex flex-wrap gap-2"><Button :disabled="!!emitting" @click="openNfseDialog"><Send />Preencher dados e emitir teste</Button><Button variant="outline" @click="router.push({ name: 'notas-fiscais-nfse' })">Ver histórico NFS-e</Button></div>
         </CardContent>
@@ -230,9 +232,9 @@ onMounted(load)
           </DialogHeader>
           <form class="space-y-4" @submit.prevent="emitNfseTest">
             <div class="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
-              <p><strong class="text-foreground">Tomador:</strong> CPF/CNPJ, endereço, bairro, CEP, cidade e UF{{ isD2ti ? '' : ', além do número' }} no cadastro do cliente.</p>
+              <p><strong class="text-foreground">Tomador:</strong> CPF/CNPJ, endereço, bairro, CEP, cidade e UF, além do número no cadastro do cliente.</p>
               <p class="mt-1"><strong class="text-foreground">Serviço:</strong> valor maior que zero e descrição com pelo menos 3 caracteres. O código de serviço vem da configuração fiscal e pode ser ajustado aqui.</p>
-              <p v-if="isD2ti" class="mt-1"><strong class="text-foreground">D2TI:</strong> informe também o código TOM do município do tomador.</p>
+
             </div>
 
             <div class="space-y-1.5">
@@ -249,11 +251,12 @@ onMounted(load)
 
             <div class="grid gap-4 sm:grid-cols-2">
               <div class="space-y-1.5"><Label for="teste-valor">Valor do serviço *</Label><Input id="teste-valor" v-model.number="nfse.valorTotal" type="number" min="0.01" max="99999999" step="0.01" :aria-invalid="showNfseErrors && !!nfseFieldErrors.valorTotal" /><p v-if="showNfseErrors && nfseFieldErrors.valorTotal" class="text-xs text-destructive">{{ nfseFieldErrors.valorTotal }}</p></div>
-              <div class="space-y-1.5"><Label for="teste-servico">Código do serviço</Label><Input id="teste-servico" v-model="nfse.codigoServico" :maxlength="isD2ti ? 5 : 32" :aria-invalid="showNfseErrors && !!nfseFieldErrors.codigoServico" /><p class="text-xs text-muted-foreground">Padrão configurado: {{ config?.codigoServicoPadrao || 'não informado' }}</p><p v-if="showNfseErrors && nfseFieldErrors.codigoServico" class="text-xs text-destructive">{{ nfseFieldErrors.codigoServico }}</p></div>
-              <div v-if="isD2ti" class="space-y-1.5 sm:col-span-2"><Label for="teste-tom">Código TOM do município *</Label><Input id="teste-tom" v-model="nfse.codigoMunicipioTomador" inputmode="numeric" maxlength="6" :aria-invalid="showNfseErrors && !!nfseFieldErrors.codigoMunicipioTomador" /><p v-if="showNfseErrors && nfseFieldErrors.codigoMunicipioTomador" class="text-xs text-destructive">{{ nfseFieldErrors.codigoMunicipioTomador }}</p></div>
+              <div class="space-y-1.5"><Label for="teste-servico">Código do serviço</Label><Input id="teste-servico" v-model="nfse.codigoServico" maxlength="32" :aria-invalid="showNfseErrors && !!nfseFieldErrors.codigoServico" /><p class="text-xs text-muted-foreground">Padrão configurado: {{ config?.codigoServicoPadrao || 'não informado' }}</p><p v-if="showNfseErrors && nfseFieldErrors.codigoServico" class="text-xs text-destructive">{{ nfseFieldErrors.codigoServico }}</p></div>
+
               <div class="space-y-1.5 sm:col-span-2"><Label for="teste-descricao">Descrição do serviço *</Label><Textarea id="teste-descricao" v-model="nfse.discriminacao" class="min-h-24" maxlength="8000" placeholder="Descreva o serviço prestado ao tomador" :aria-invalid="showNfseErrors && !!nfseFieldErrors.discriminacao" /><p v-if="showNfseErrors && nfseFieldErrors.discriminacao" class="text-xs text-destructive">{{ nfseFieldErrors.discriminacao }}</p></div>
             </div>
 
+            <NfseAdditionalFields :form="nfse" :config="config" :disabled="emitting !== null" />
             <div class="rounded-lg border p-3 text-sm" :class="nfseMissing.length ? 'border-amber-500/40 bg-amber-500/5' : 'border-emerald-500/30 bg-emerald-500/5'" role="status">
               <p class="font-semibold">{{ nfseMissing.length ? `${nfseMissing.length} pendência(s) antes do envio` : 'Dados prontos para envio' }}</p>
               <ul v-if="nfseMissing.length" class="mt-2 list-disc space-y-1 pl-5"><li v-for="item in nfseMissing" :key="item">{{ item }}</li></ul>

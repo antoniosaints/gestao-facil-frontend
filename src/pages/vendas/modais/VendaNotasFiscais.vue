@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Eye, FileText, RefreshCw } from 'lucide-vue-next'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { hasPermission } from '@/hooks/authorize'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -11,7 +10,8 @@ import {
   type FiscalDocument,
 } from '@/repositories/notas-fiscais-repository'
 import FiscalDocumentActions from '@/pages/notas-fiscais/FiscalDocumentActions.vue'
-import { statusClass, statusLabels, typeLabels } from '@/pages/notas-fiscais/fiscalPresentation'
+import FiscalStatusBadge from '@/pages/notas-fiscais/FiscalStatusBadge.vue'
+import { typeLabels } from '@/pages/notas-fiscais/fiscalPresentation'
 
 const props = defineProps<{ notes: NonNullable<Vendas['NotaFiscals']> }>()
 const emit = defineEmits<{ openDetail: [id: number]; changed: [] }>()
@@ -92,22 +92,16 @@ watch(
             >{{ typeLabels[note.tipo] }} #{{
               documents[note.id]?.numero || note.numero || note.id
             }}</strong
-          ><Badge
-            variant="outline"
-            :class="statusClass(documents[note.id]?.status || note.status)"
-            >{{ statusLabels[documents[note.id]?.status || note.status] || note.status }}</Badge
           >
+          <FiscalStatusBadge
+            :status="documents[note.id]?.status || note.status"
+            :error="documents[note.id] ? documents[note.id].erroMensagem : note.erroMensagem"
+          />
         </div>
         <Button v-if="canRead" size="sm" variant="outline" @click="emit('openDetail', note.id)"
-          ><Eye />Ver detalhes</Button
+          ><Eye />Acompanhar</Button
         >
       </div>
-      <p
-        v-if="documents[note.id] ? documents[note.id].erroMensagem : note.erroMensagem"
-        class="text-xs text-destructive"
-      >
-        {{ documents[note.id] ? documents[note.id].erroMensagem : note.erroMensagem }}
-      </p>
       <p v-if="errors[note.id]" class="text-xs text-destructive" role="alert">
         {{ errors[note.id] }}
       </p>
@@ -118,6 +112,7 @@ watch(
         v-else-if="documents[note.id]"
         :document="documents[note.id]"
         @changed="refresh"
+        @deleted="emit('changed')"
       />
     </div>
   </section>

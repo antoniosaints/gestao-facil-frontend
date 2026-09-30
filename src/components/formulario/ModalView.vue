@@ -36,6 +36,10 @@ const { size, themeStyle, desktopVariant } = defineProps<{
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl'
     themeStyle?: CSSProperties
     desktopVariant?: 'dialog' | 'sheet'
+    contentClass?: string
+    headerClass?: string
+    bodyClass?: string
+    bodyKey?: string | number
 }>()
 
 const sizeClasses: Record<string, string> = {
@@ -84,13 +88,13 @@ const contentStyle = computed(() => ({
         <!-- Desktop: painel lateral opcional -->
         <Sheet v-if="isDesktop && desktopVariant === 'sheet'" v-model:open="isOpen">
             <SheetContent :overlay-style="overlayStyle" :content-style="contentStyle"
-                :class="[sizeModal, 'p-0']">
-                <SheetHeader class="p-6 pb-0">
+                :class="[sizeModal, 'p-0', contentClass]">
+                <SheetHeader :class="headerClass || 'p-6 pb-0'">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <SheetTitle class="font-normal text-xl -mb-1 flex items-center gap-1">
                                 <component v-if="icon" :is="icon" class="h-5 w-5 inline-flex" />
-                                {{ title }}
+                                <slot name="title">{{ title }}</slot>
                             </SheetTitle>
                             <SheetDescription v-if="description">
                                 {{ description }}
@@ -99,9 +103,10 @@ const contentStyle = computed(() => ({
                         <slot name="header-actions" />
                     </div>
                 </SheetHeader>
-                <div class="grid min-h-0 flex-1 gap-4 overflow-y-auto px-2 py-4">
+                <div :key="bodyKey" :class="bodyClass || 'grid min-h-0 flex-1 gap-4 overflow-y-auto px-2 py-4'">
                     <slot />
                 </div>
+                <div v-if="$slots.footer" class="shrink-0 border-t bg-background px-6 py-4"><slot name="footer" /></div>
             </SheetContent>
         </Sheet>
 
@@ -109,13 +114,13 @@ const contentStyle = computed(() => ({
         <Dialog v-else-if="isDesktop" v-model:open="isOpen">
             <DialogContent class="p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
                 :overlay-style="overlayStyle" :content-style="contentStyle"
-                :class="[sizeModal, 'mx-auto']">
-                <DialogHeader class="p-6 pb-0">
+                :class="[sizeModal, 'mx-auto', contentClass]">
+                <DialogHeader :class="headerClass || 'p-6 pb-0'">
                     <div class="flex items-start justify-between gap-3 pr-8">
                         <div class="min-w-0">
                             <DialogTitle class="font-normal text-xl -mb-1 flex items-center gap-1">
                                 <component v-if="icon" :is="icon" class="h-5 w-5 inline-flex" />
-                                {{ title }}
+                                <slot name="title">{{ title }}</slot>
                             </DialogTitle>
                             <DialogDescription v-if="description">
                                 {{ description }}
@@ -124,19 +129,20 @@ const contentStyle = computed(() => ({
                         <slot name="header-actions" />
                     </div>
                 </DialogHeader>
-                <div class="grid gap-4 py-4 overflow-y-auto px-2">
+                <div :key="bodyKey" :class="bodyClass || 'grid gap-4 py-4 overflow-y-auto px-2'">
                     <slot />
                 </div>
+                <div v-if="$slots.footer" class="shrink-0 border-t bg-background px-6 py-4"><slot name="footer" /></div>
             </DialogContent>
         </Dialog>
 
         <!-- Mobile: Drawer -->
         <Drawer v-else v-model:open="isOpen">
-            <DrawerContent :overlay-style="overlayStyle" :content-style="contentStyle">
-                <DrawerHeader class="text-left">
+            <DrawerContent :overlay-style="overlayStyle" :content-style="contentStyle" :class="contentClass">
+                <DrawerHeader :class="headerClass || 'text-left'">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                            <DrawerTitle>{{ title }}</DrawerTitle>
+                            <DrawerTitle><slot name="title">{{ title }}</slot></DrawerTitle>
                             <DrawerDescription v-if="description">
                                 {{ description }}
                             </DrawerDescription>
@@ -144,9 +150,10 @@ const contentStyle = computed(() => ({
                         <slot name="header-actions" />
                     </div>
                 </DrawerHeader>
-                <div class="overflow-y-auto max-h-[calc(100vh-6rem)] pb-6">
+                <div :key="bodyKey" :class="bodyClass || 'overflow-y-auto max-h-[calc(100vh-6rem)] pb-6'">
                     <slot />
                 </div>
+                <div v-if="$slots.footer" class="shrink-0 border-t bg-background px-6 py-4"><slot name="footer" /></div>
             </DrawerContent>
         </Drawer>
     </div>

@@ -53,7 +53,7 @@
 
         <div v-if="error" class="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
             <span>{{ error }}</span>
-            <Button size="sm" variant="outline" @click="fetchData">Tentar novamente</Button>
+            <Button size="sm" variant="outline" @click="fetchData()">Tentar novamente</Button>
         </div>
 
         <!-- Tabela -->
@@ -147,7 +147,7 @@ import { Input } from '../ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { BadgeQuestionMark, Eye } from 'lucide-vue-next';
-import { computed, watch } from 'vue';
+import { computed, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
 
@@ -164,6 +164,8 @@ const props = defineProps<{
     /** Mensagens opcionais para o estado vazio de cada domínio. */
     emptyTitle?: string
     emptyDescription?: string
+    /** Atualização silenciosa enquanto houver registros em andamento. */
+    autoRefresh?: { intervalMs: number; when: (rows: any[]) => boolean }
 }>()
 
 const route = useRoute()
@@ -184,6 +186,24 @@ const {
 
 // Identifica as linhas atualmente exibidas; ver o comentário no <TableHead> do cabeçalho.
 const rowsKey = computed(() => data.value.map((row: any) => row?.id).join(','))
+
+let refreshTimer: ReturnType<typeof setInterval> | undefined
+function stopAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer)
+    refreshTimer = undefined
+}
+watch(
+    [() => props.autoRefresh?.intervalMs, () => props.autoRefresh?.when(data.value)],
+    ([intervalMs, active]) => {
+        stopAutoRefresh()
+        if (!active || !intervalMs || intervalMs <= 0) return
+        refreshTimer = setInterval(() => {
+            if (document.visibilityState !== 'hidden') void fetchData({ background: true })
+        }, intervalMs)
+    },
+    { immediate: true },
+)
+onUnmounted(stopAutoRefresh)
 
 watch(
     () => props.clearSearchToken,

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { Building2, CheckCircle2, CircleAlert, Cog, FileKey2, Landmark, LoaderCircle, MapPin, MapPinCheck, Save, Search } from 'lucide-vue-next'
+import { Building2, CheckCircle2, CircleAlert, Cog, FileKey2, LoaderCircle, MapPin, MapPinCheck, Save, Search } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,15 @@ import { NotasFiscaisRepository, type FiscalConfig, type MunicipioIbge } from '@
 import { cepMaskOptions, cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
 import { vMaska } from 'maska/vue'
 import FiscalSetupGuide from './FiscalSetupGuide.vue'
+import GeranetCities from './GeranetCities.vue'
+
+const nfseSettings = [
+  { key: 'regimeApuracaoSn', label: 'Regime de apuração do Simples', options: [['1', 'Federais e ISS pelo Simples'], ['2', 'Federais pelo Simples, ISS municipal'], ['3', 'Legislação própria de cada tributo']] },
+  { key: 'issRetido', label: 'Retenção do ISS', options: [['1', 'Retido'], ['2', 'Não retido'], ['3', 'Substituição tributária']] },
+  { key: 'responsavelRetencao', label: 'Responsável pela retenção', options: [['1', 'Tomador'], ['2', 'Prestador'], ['3', 'Intermediário'], ['4', 'Nenhum']] },
+  { key: 'exigibilidadeIss', label: 'Exigibilidade do ISS', options: [['1', 'Exigível'], ['2', 'Não incidência'], ['3', 'Isenção'], ['4', 'Exportação'], ['5', 'Imunidade'], ['6', 'Suspensão judicial'], ['7', 'Suspensão administrativa'], ['8', 'ISS fixo']] },
+  { key: 'incentivadorCultural', label: 'Incentivador cultural', options: [['1', 'Sim'], ['2', 'Não']] },
+] as const
 
 const toast = useToast()
 const router = useRouter()
@@ -23,7 +32,6 @@ const searchingMunicipio = ref(false)
 const uploadingCredential = ref(false)
 const certificateFile = ref<File | null>(null)
 const certificatePassword = ref('')
-const d2tiToken = ref('')
 const nfceCscToken = ref('')
 const responsavelTecnicoCsrt = ref('')
 const municipalitySearch = ref('')
@@ -38,9 +46,6 @@ const config = reactive<FiscalConfig>({
   codigoServicoPadrao: '', descricaoServicoPadrao: '', codigoAtividadePadrao: '', descricaoAtividadePadrao: '', tipoTributacaoPadrao: null, tipoRecolhimentoPadrao: null, notaIntermediadaPadrao: 2, aliquotaIssPadrao: null,
   certificado: { configurado: false, nome: null, atualizadoEm: null }, criptografiaFiscalDisponivel: false, integracao: { tipo: 'CERTIFICADO_A1', configurada: false, atualizadoEm: null }, emissaoNfsePronta: false, emissaoNfePronta: false, emissaoNfcePronta: false,
 })
-
-const isSaoMateus = computed(() => config.codigoMunicipioIbge === '2111508')
-const usingLegacyD2ti = computed(() => config.modoEmissaoNfse === 'LEGADO_D2TI')
 
 async function navigateToSection(target: string) {
   const tabByTarget: Record<string, string> = {
@@ -58,7 +63,12 @@ async function navigateToSection(target: string) {
   document.getElementById('fiscal-documentos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-function assignConfig(data: FiscalConfig) { Object.assign(config, data) }
+function assignConfig(data: FiscalConfig) {
+  Object.assign(config, data, { modoEmissaoNfse: 'GERANET', provedorNfse: 'GERANET_NFSE',
+    emissaoNfsePronta: data.modoEmissaoNfse === 'LEGADO_D2TI' ? false : data.emissaoNfsePronta,
+    integracao: { tipo: 'CERTIFICADO_A1', configurada: data.certificado.configurado && data.criptografiaFiscalDisponivel, atualizadoEm: data.certificado.atualizadoEm },
+  })
+}
 function errorMessage(error: any, fallback: string) { return error?.response?.data?.error?.message || error?.response?.data?.message || fallback }
 
 async function load() {
@@ -115,29 +125,6 @@ async function uploadCertificate() {
     assignConfig(await NotasFiscaisRepository.getConfig())
     toast.success('Certificado protegido e salvo com sucesso.')
   } catch (error: any) { toast.error(errorMessage(error, 'Não foi possível salvar o certificado.')) }
-  finally { uploadingCredential.value = false }
-}
-
-async function saveD2tiToken() {
-  if (!config.criptografiaFiscalDisponivel) return toast.error('A criptografia fiscal precisa ser configurada no servidor antes de salvar o token.')
-  if (!/^[a-fA-F0-9]{32}$/.test(d2tiToken.value.trim())) return toast.info('Informe o token D2TI de 32 caracteres gerado no portal da prefeitura.')
-  try {
-    uploadingCredential.value = true
-    await NotasFiscaisRepository.saveD2tiToken(d2tiToken.value)
-    d2tiToken.value = ''
-    assignConfig(await NotasFiscaisRepository.getConfig())
-    toast.success('Token D2TI protegido e salvo com sucesso.')
-  } catch (error: any) { toast.error(errorMessage(error, 'Não foi possível salvar o token D2TI.')) }
-  finally { uploadingCredential.value = false }
-}
-
-async function consultNationalParameters() {
-  if (!config.codigoMunicipioIbge) return toast.info('Selecione o município antes de consultar as regras nacionais.')
-  try {
-    uploadingCredential.value = true
-    await NotasFiscaisRepository.consultarParametrosMunicipais()
-    toast.success('Parâmetros municipais consultados no Emissor Nacional.')
-  } catch (error: any) { toast.error(errorMessage(error, 'Não foi possível consultar os parâmetros municipais agora.')) }
   finally { uploadingCredential.value = false }
 }
 
@@ -198,7 +185,7 @@ onMounted(load)
           <CardContent class="space-y-4">
             <div class="grid gap-4 sm:grid-cols-[110px_1fr_auto]"><div class="space-y-1.5"><Label for="uf">UF</Label><Input id="uf" v-model="config.uf" maxlength="2" class="uppercase" placeholder="MA" /></div><div class="space-y-1.5"><Label for="buscar-municipio">Consultar IBGE</Label><Input id="buscar-municipio" v-model="municipalitySearch" placeholder="Ex.: São Mateus" @keyup.enter="searchMunicipality" /></div><Button class="mt-auto" variant="outline" :disabled="searchingMunicipio" @click="searchMunicipality"><LoaderCircle v-if="searchingMunicipio" class="animate-spin" /><Search v-else />Buscar</Button></div>
             <div v-if="municipalities.length" class="max-h-44 overflow-y-auto rounded-lg border p-1"><button v-for="item in municipalities" :key="item.codigoIbge" type="button" class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-accent" @click="selectMunicipality(item)"><span>{{ item.nome }} — {{ item.uf }}</span><span class="font-mono text-xs text-muted-foreground">{{ item.codigoIbge }}</span></button></div>
-            <div class="grid gap-4 sm:grid-cols-2"><div class="space-y-1.5"><Label for="municipio">Município</Label><Input id="municipio" v-model="config.municipioNome" placeholder="Ex.: São Mateus do Maranhão" /></div><div class="space-y-1.5"><Label for="codigo-ibge">Código IBGE</Label><Input id="codigo-ibge" v-model="config.codigoMunicipioIbge" inputmode="numeric" placeholder="Ex.: 2111508" /></div><div class="space-y-1.5 sm:col-span-2"><Label for="codigo-prefeitura">Código do provedor</Label><Input id="codigo-prefeitura" v-model="config.codigoMunicipioPrestador" readonly placeholder="Preenchido automaticamente quando disponível" /></div></div>
+            <div class="grid gap-4 sm:grid-cols-2"><div class="space-y-1.5"><Label for="municipio">Município</Label><Input id="municipio" v-model="config.municipioNome" placeholder="Ex.: São Mateus do Maranhão" /></div><div class="space-y-1.5"><Label for="codigo-ibge">Código IBGE</Label><Input id="codigo-ibge" v-model="config.codigoMunicipioIbge" inputmode="numeric" placeholder="Ex.: 2111508" /></div></div>
           </CardContent>
         </Card>
       </div>
@@ -214,45 +201,35 @@ onMounted(load)
 
       <TabsContent value="nfse" class="space-y-5">
       <div class="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm"><p class="font-semibold">Onde conseguir os dados da NFS-e?</p><p class="mt-1 text-muted-foreground">A inscrição municipal, o item da lista de serviços, o código de tributação municipal e a alíquota de ISS vêm do cadastro e das regras da prefeitura. O código nacional, quando exigido, é diferente do código municipal. Confirme os códigos e a retenção com a contabilidade. A data de opção pelo Simples pode ser conferida no Portal do Simples Nacional.</p><div class="mt-2 flex flex-wrap gap-x-4 gap-y-1"><a class="text-primary underline underline-offset-2" href="https://nfe.geranet.net/documentacao/nfse" target="_blank" rel="noopener noreferrer">Campos NFS-e na Geranet</a><a class="text-primary underline underline-offset-2" href="https://www.gov.br/nfse/pt-br/municipios/" target="_blank" rel="noopener noreferrer">Municípios no portal NFS-e</a><a class="text-primary underline underline-offset-2" href="https://www8.receita.fazenda.gov.br/SimplesNacional/" target="_blank" rel="noopener noreferrer">Portal do Simples Nacional</a></div></div>
-      <Card class="border-primary/20">
-        <CardHeader><CardTitle class="flex items-center gap-2"><Landmark class="size-5 text-primary" />Rota de emissão NFS-e</CardTitle><CardDescription>A Geranet é o emissor padrão. O código IBGE continua sendo a referência das regras municipais.</CardDescription></CardHeader>
-        <CardContent class="grid gap-3 md:grid-cols-2">
-          <button type="button" class="rounded-xl border p-4 text-left transition-colors" :class="config.modoEmissaoNfse === 'GERANET' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'hover:bg-accent'" @click="config.modoEmissaoNfse = 'GERANET'"><p class="font-semibold">Geranet NFS-e</p><p class="mt-1 text-sm text-muted-foreground">Emite e autoriza a NFS-e pelo mesmo integrador de NF-e e NFC-e, com A1 por assinante.</p></button>
-          <button type="button" :disabled="!isSaoMateus" class="rounded-xl border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50" :class="config.modoEmissaoNfse === 'LEGADO_D2TI' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'hover:bg-accent'" @click="config.modoEmissaoNfse = 'LEGADO_D2TI'"><p class="font-semibold">Legado D2TI</p><p class="mt-1 text-sm text-muted-foreground">Integração municipal disponível para São Mateus do Maranhão - MA.</p></button>
-        </CardContent>
-        <div class="px-6 pb-5 text-sm text-muted-foreground">{{ isSaoMateus ? 'São Mateus pode usar a Geranet ou continuar temporariamente no legado D2TI.' : 'O legado D2TI só está disponível para São Mateus do Maranhão - MA.' }}</div>
-      </Card>
+      <GeranetCities selectable @select="selectMunicipality" />
 
       <div class="grid gap-5">
         <Card id="fiscal-nfse">
           <CardHeader><CardTitle class="flex items-center gap-2"><Cog class="size-5 text-primary" />Parâmetros da NFS-e</CardTitle><CardDescription>Na Geranet, item da lista, código nacional e tributação municipal são códigos diferentes.</CardDescription></CardHeader>
           <CardContent class="grid gap-4 sm:grid-cols-2">
-            <div class="space-y-1.5"><Label for="serie-rps">Série RPS</Label><Input id="serie-rps" v-model.number="config.serieRps" type="number" min="1" /></div><div class="space-y-1.5"><Label for="codigo-servico">Código de serviço</Label><Input id="codigo-servico" v-model="config.codigoServicoPadrao" inputmode="numeric" placeholder="Ex.: 1005" /></div>
+            <div class="space-y-1.5"><Label for="serie-rps">Série RPS</Label><Input id="serie-rps" v-model.number="config.serieRps" type="number" min="1" /></div><div class="space-y-1.5"><Label for="codigo-servico">Item da lista de serviços</Label><Input id="codigo-servico" v-model="config.codigoServicoPadrao" inputmode="numeric" placeholder="Ex.: 01.07 — conforme prefeitura" /></div>
             <div class="space-y-1.5"><Label for="codigo-servico-nacional">Código nacional</Label><Input id="codigo-servico-nacional" v-model="config.nfse.codigoServicoNacional" inputmode="numeric" placeholder="Ex.: 010701" /></div><div class="space-y-1.5"><Label for="codigo-tributacao-municipio">Tributação municipal</Label><Input id="codigo-tributacao-municipio" v-model="config.nfse.codigoTributacaoMunicipio" placeholder="Conforme prefeitura" /></div>
             <div class="space-y-1.5"><Label for="codigo-cnae-nfse">CNAE</Label><Input id="codigo-cnae-nfse" v-model="config.nfse.codigoCnae" inputmode="numeric" placeholder="Opcional" /></div><div class="space-y-1.5"><Label for="data-opcao-simples">Opção pelo Simples</Label><Input id="data-opcao-simples" v-model="config.nfse.dataOpcaoSimples" type="date" /></div>
             <div class="space-y-1.5"><Label for="regime-especial-nfse">Regime especial NFS-e</Label><Input id="regime-especial-nfse" v-model="config.nfse.regimeEspecialTributacao" maxlength="2" placeholder="1 - conforme município" /></div>
-            <div class="space-y-1.5 sm:col-span-2"><Label for="descricao-servico">Descrição do serviço</Label><Input id="descricao-servico" v-model="config.descricaoServicoPadrao" placeholder="Ex.: Serviços de alimentação" /></div>
-            <div class="space-y-1.5"><Label for="codigo-atividade">CNAE / atividade</Label><Input id="codigo-atividade" v-model="config.codigoAtividadePadrao" inputmode="numeric" placeholder="Ex.: 5611203" /></div><div class="space-y-1.5"><Label for="aliquota-iss">Alíquota ISS (%)</Label><Input id="aliquota-iss" v-model.number="(config.aliquotaIssPadrao as number)" type="number" min="0" max="100" step="0.01" placeholder="Ex.: 5,00" /></div>
-            <div class="space-y-1.5 sm:col-span-2"><Label for="descricao-atividade">Descrição da atividade</Label><Input id="descricao-atividade" v-model="config.descricaoAtividadePadrao" placeholder="Ex.: Restaurantes e similares" /></div>
-            <div class="space-y-1.5"><Label for="tributacao">Tipo de tributação</Label><Input id="tributacao" v-model.number="(config.tipoTributacaoPadrao as number)" type="number" min="1" max="9" placeholder="Conforme portal" /></div><div class="space-y-1.5"><Label for="recolhimento">Tipo de recolhimento</Label><Input id="recolhimento" v-model.number="(config.tipoRecolhimentoPadrao as number)" type="number" min="1" max="9" placeholder="Conforme portal" /></div>
+            <div v-for="setting in nfseSettings" :key="setting.key" class="space-y-1.5"><Label :for="`nfse-${setting.key}`">{{ setting.label }}</Label><Select v-model="config.nfse[setting.key]"><SelectTrigger :id="`nfse-${setting.key}`"><SelectValue /></SelectTrigger><SelectContent><SelectItem v-for="[value, label] in setting.options" :key="value" :value="value">{{ label }}</SelectItem></SelectContent></Select></div>
+            <div class="space-y-1.5"><Label for="natureza-operacao-nfse">Natureza da operação NFS-e</Label><Input id="natureza-operacao-nfse" v-model="config.nfse.naturezaOperacao" inputmode="numeric" maxlength="1" placeholder="Código da prefeitura" /></div>
+
+            <div class="space-y-1.5"><Label for="aliquota-iss">Alíquota ISS (%)</Label><Input id="aliquota-iss" v-model.number="(config.aliquotaIssPadrao as number)" type="number" min="0" max="100" step="0.01" placeholder="Ex.: 5,00" /></div>
+
+
           </CardContent>
         </Card>
       </div>
-      <div class="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">Série RPS e numeração inicial devem seguir o cadastro fiscal do prestador. O código TOM e o token D2TI são fornecidos pelo portal municipal apenas no legado de São Mateus do Maranhão.</div>
+      <div class="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">Série RPS e numeração inicial devem seguir o cadastro fiscal do prestador. Os próximos números são reservados automaticamente a cada tentativa de emissão.</div>
       </TabsContent>
 
       <TabsContent value="integracao" class="space-y-5">
-      <div class="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm"><p class="font-semibold">Onde conseguir as credenciais?</p><p class="mt-1 text-muted-foreground">O certificado A1 (.pfx/.p12) e a senha vêm da certificadora da empresa credenciada na ICP-Brasil. A API Key da Geranet é gerada no painel da Geranet e configurada pela equipe técnica no servidor; ela não é digitada nesta tela. Para o legado D2TI, obtenha o token no portal da prefeitura de São Mateus do Maranhão.</p><div class="mt-2 flex flex-wrap gap-x-4 gap-y-1"><a class="text-primary underline underline-offset-2" href="https://www.gov.br/iti/pt-br/assuntos/icp-brasil" target="_blank" rel="noopener noreferrer">Entenda o certificado ICP-Brasil</a><a class="text-primary underline underline-offset-2" href="https://nfe.geranet.net/documentacao/introducao" target="_blank" rel="noopener noreferrer">API Key da Geranet</a></div></div>
+      <div class="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm"><p class="font-semibold">Onde conseguir as credenciais?</p><p class="mt-1 text-muted-foreground">O certificado A1 (.pfx/.p12) e a senha vêm da certificadora da empresa credenciada na ICP-Brasil. A API Key da Geranet é gerada no painel da Geranet e configurada pela equipe técnica no servidor; ela não é digitada nesta tela.</p><div class="mt-2 flex flex-wrap gap-x-4 gap-y-1"><a class="text-primary underline underline-offset-2" href="https://www.gov.br/iti/pt-br/assuntos/icp-brasil" target="_blank" rel="noopener noreferrer">Entenda o certificado ICP-Brasil</a><a class="text-primary underline underline-offset-2" href="https://nfe.geranet.net/documentacao/introducao" target="_blank" rel="noopener noreferrer">API Key da Geranet</a></div></div>
       <div v-if="!config.criptografiaFiscalDisponivel" role="alert" class="flex gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-100"><CircleAlert class="mt-0.5 size-5 shrink-0" /><div><p class="font-semibold">Criptografia fiscal pendente no servidor</p><p class="mt-1">Peça ao administrador para configurar a chave <code>FISCAL_CERTIFICATE_ENC_KEY</code> no ambiente da API e reiniciá-la. Se já havia certificado ou tokens salvos, é preciso restaurar a mesma chave usada antes. Depois, atualize esta página para continuar.</p></div></div>
       <div class="grid gap-5 lg:grid-cols-2">
 
-        <Card v-if="usingLegacyD2ti" id="fiscal-credencial" class="border-primary/25">
-          <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Integração D2TI</CardTitle><CardDescription>São Mateus do Maranhão usa token de emissor RPS. Ele é cifrado antes de ser salvo.</CardDescription></CardHeader>
-          <CardContent class="space-y-4"><div v-if="config.integracao.configurada" class="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 class="size-5" /><span>Token D2TI configurado.</span></div><div class="space-y-1.5"><Label for="d2ti-token">Token do portal municipal</Label><Input id="d2ti-token" v-model="d2tiToken" maxlength="32" autocomplete="off" placeholder="32 caracteres da Configuração da Nota" /></div><Button variant="outline" :disabled="uploadingCredential || !config.criptografiaFiscalDisponivel" @click="saveD2tiToken"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.integracao.configurada ? 'Substituir token' : 'Salvar token' }}</Button></CardContent>
-        </Card>
-
-        <Card v-else id="fiscal-credencial" class="border-primary/25">
-          <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Certificado digital A1</CardTitle><CardDescription>O certificado continua por assinante e é usado pela Geranet para assinar NF-e e NFC-e. Arquivos .pfx ou .p12 de até 5 MB são cifrados antes de serem persistidos.</CardDescription></CardHeader>
+        <Card id="fiscal-credencial" class="border-primary/25">
+          <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Certificado digital A1</CardTitle><CardDescription>O certificado continua por assinante e é usado pela Geranet para assinar NFS-e, NF-e e NFC-e. Arquivos .pfx ou .p12 de até 5 MB são cifrados antes de serem persistidos.</CardDescription></CardHeader>
           <CardContent class="space-y-4"><div v-if="config.certificado.configurado" class="flex items-center gap-2 rounded-lg p-3 text-sm" :class="config.criptografiaFiscalDisponivel ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-amber-500/10 text-amber-900 dark:text-amber-200'"><CheckCircle2 v-if="config.criptografiaFiscalDisponivel" class="size-5" /><CircleAlert v-else class="size-5" /><span>{{ config.criptografiaFiscalDisponivel ? 'Certificado salvo' : 'Certificado salvo, mas indisponível neste servidor' }}: {{ config.certificado.nome }}</span></div><div class="space-y-1.5"><Label for="certificado">Arquivo do certificado</Label><Input id="certificado" type="file" accept=".pfx,.p12,application/x-pkcs12" :disabled="!config.criptografiaFiscalDisponivel" @change="certificateFile = ($event.target as HTMLInputElement).files?.[0] ?? null" /></div><div class="space-y-1.5"><Label for="senha-certificado">Senha do certificado</Label><Input id="senha-certificado" v-model="certificatePassword" type="password" autocomplete="new-password" placeholder="Senha cadastrada no certificado A1" :disabled="!config.criptografiaFiscalDisponivel" /></div><div class="flex flex-wrap gap-2"><Button variant="outline" :disabled="uploadingCredential || !config.criptografiaFiscalDisponivel" @click="uploadCertificate"><LoaderCircle v-if="uploadingCredential" class="animate-spin" /><FileKey2 v-else />{{ config.certificado.configurado ? 'Substituir certificado' : 'Salvar certificado' }}</Button></div></CardContent>
         </Card>
       </div>

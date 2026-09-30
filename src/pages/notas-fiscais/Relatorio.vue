@@ -8,10 +8,10 @@ import { useRoute, useRouter } from 'vue-router'
 import DataTable from '@/components/tabela/DataTable.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import FiscalDocumentDetails from './FiscalDocumentDetails.vue'
-import { statuses, statusLabels, typeLabels, statusClass, formatFiscalDate as formatDate } from './fiscalPresentation'
+import FiscalStatusBadge from './FiscalStatusBadge.vue'
+import { statuses, statusLabels, typeLabels, hasFiscalDocumentsInProgress, formatFiscalDate as formatDate } from './fiscalPresentation'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -27,6 +27,7 @@ const filters = reactive({ tipo: 'TODOS', status: 'TODOS', ambiente: 'TODOS', in
 const draft = reactive({ ...filters })
 const draftPeriod = ref<Date[] | null>(null)
 const tableVersion = ref(0)
+const autoRefresh = { intervalMs: 5000, when: hasFiscalDocumentsInProgress }
 const filterOpen = ref(false)
 const detailOpen = ref(false)
 const detailId = ref<number | null>(null)
@@ -115,7 +116,7 @@ const columns: ColumnDef<FiscalDocument>[] = [
   { accessorKey: 'tipo', header: ({ column }) => sortHeader('Tipo', column), cell: ({ row }) => h('span', { class: 'font-semibold' }, typeLabels[row.original.tipo] || row.original.tipo) },
   { accessorKey: 'numero', header: ({ column }) => sortHeader('Número', column), cell: ({ row }) => h('div', { class: 'min-w-28' }, [h('p', { class: 'font-medium' }, row.original.numero ? `${row.original.serie || 1}/${row.original.numero}` : row.original.rpsNumero ? `RPS ${row.original.rpsNumero}` : `#${row.original.id}`), h('p', { class: 'text-xs text-muted-foreground' }, row.original.vendaUid || (row.original.vendaId ? `Venda #${row.original.vendaId}` : 'Avulsa'))]) },
   { id: 'cliente', header: 'Cliente / tomador', cell: ({ row }) => h('div', { class: 'min-w-36' }, [h('p', { class: 'font-medium' }, row.original.cliente?.nome || 'Consumidor final'), h('p', { class: 'text-xs text-muted-foreground' }, row.original.cliente?.documento || 'Sem documento')]) },
-  { accessorKey: 'status', header: ({ column }) => sortHeader('Status', column), cell: ({ row }) => h('div', { class: 'min-w-36 space-y-1' }, [h(Badge, { variant: 'outline', class: statusClass(row.original.status) }, () => statusLabels[row.original.status] || row.original.status), ...(row.original.erroMensagem ? [h('p', { class: 'max-w-52 truncate text-xs text-destructive', title: row.original.erroMensagem }, row.original.erroMensagem)] : [])]) },
+  { accessorKey: 'status', header: ({ column }) => sortHeader('Status', column), cell: ({ row }) => h(FiscalStatusBadge, { status: row.original.status, error: row.original.erroMensagem }) },
   { accessorKey: 'valorTotal', header: ({ column }) => sortHeader('Valor', column), cell: ({ row }) => h('strong', { class: 'whitespace-nowrap' }, formatCurrencyBR(row.original.valorTotal)) },
   { id: 'ambiente', header: 'Ambiente', cell: ({ row }) => h('span', { class: 'text-xs' }, row.original.ambiente === 'HOMOLOGACAO' ? 'Homologação' : row.original.ambiente === 'PRODUCAO' ? 'Produção' : '—') },
   { id: 'acoes', header: 'Ações', enableSorting: false, enableHiding: false, cell: ({ row }) => h('div', { class: 'flex items-center gap-1' }, [
@@ -142,7 +143,7 @@ const columns: ColumnDef<FiscalDocument>[] = [
       <button type="button" class="text-primary underline-offset-2 hover:underline" @click="clearFilters">Limpar todos</button>
     </div>
 
-    <DataTable :key="tableVersion" :columns="columns" api="/v1/notas-fiscais/documentos" :filters="filters" state-key="relatorio-notas-fiscais" empty-title="Nenhuma nota encontrada" empty-description="Ajuste os filtros ou emita uma nota para acompanhá-la aqui." />
+    <DataTable :key="tableVersion" :columns="columns" api="/v1/notas-fiscais/documentos" :filters="filters" :auto-refresh="autoRefresh" state-key="relatorio-notas-fiscais" empty-title="Nenhuma nota encontrada" empty-description="Ajuste os filtros ou emita uma nota para acompanhá-la aqui." />
   
 
     <ModalView v-model:open="filterOpen" title="Filtrar notas fiscais" description="Refine a listagem por tipo, status, ambiente e período de criação." size="lg" desktop-variant="sheet">

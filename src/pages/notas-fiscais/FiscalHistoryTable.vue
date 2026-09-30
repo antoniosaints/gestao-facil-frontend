@@ -1,27 +1,36 @@
 <script setup lang="ts">
 import { h, reactive, ref, watch } from 'vue'
 import type { Column, ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Eye, RefreshCw } from 'lucide-vue-next'
+import { ArrowUpDown, Eye, FileText, RefreshCw } from 'lucide-vue-next'
 import DataTable from '@/components/tabela/DataTable.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrencyBR } from '@/utils/formatters'
 import type { FiscalDocument } from '@/repositories/notas-fiscais-repository'
 import FiscalDocumentDetails from './FiscalDocumentDetails.vue'
-import { formatFiscalDate, statusClass, statusLabels, typeLabels } from './fiscalPresentation'
+import FiscalStatusBadge from './FiscalStatusBadge.vue'
+import { formatFiscalDate, hasFiscalDocumentsInProgress, typeLabels } from './fiscalPresentation'
 
 const props = withDefaults(
   defineProps<{
     tipo: FiscalDocument['tipo']
     refreshToken: number
     showHeader?: boolean
+    emitting?: boolean
   }>(),
   { showHeader: true },
 )
+const emit = defineEmits<{ changed: [] }>()
 const filters = reactive({ tipo: props.tipo })
 const tableVersion = ref(0)
 const detailOpen = ref(false)
 const detailId = ref<number | null>(null)
+const detailView = ref<'acompanhamento' | 'nota'>('acompanhamento')
+const autoRefresh = {
+  intervalMs: 5000,
+  when: (documents: FiscalDocument[]) =>
+    Boolean(props.emitting) || hasFiscalDocumentsInProgress(documents),
+}
 watch(
   () => props.tipo,
   (tipo) => {
@@ -30,9 +39,14 @@ watch(
   },
 )
 
-function openDetail(document: FiscalDocument) {
+function openDetail(document: FiscalDocument, view: 'acompanhamento' | 'nota' = 'acompanhamento') {
   detailId.value = document.id
+  detailView.value = view
   detailOpen.value = true
+}
+function documentChanged() {
+  tableVersion.value++
+  emit('changed')
 }
 function sortHeader(label: string, column: Column<FiscalDocument>) {
   return h(
@@ -51,7 +65,7 @@ const columns: ColumnDef<FiscalDocument>[] = [
         {
           variant: 'link',
           class: 'h-auto p-0 font-semibold',
-          onClick: () => openDetail(row.original),
+          onClick: () => openDetail(row.original, 'nota'),
         },
         () =>
           row.original.numero
@@ -96,25 +110,7 @@ const columns: ColumnDef<FiscalDocument>[] = [
     accessorKey: 'status',
     header: ({ column }) => sortHeader('Status', column),
     cell: ({ row }) =>
-      h('div', { class: 'space-y-1' }, [
-        h(
-          Badge,
-          { variant: 'outline', class: statusClass(row.original.status) },
-          () => statusLabels[row.original.status] || row.original.status,
-        ),
-        ...(row.original.erroMensagem
-          ? [
-              h(
-                'p',
-                {
-                  class: 'max-w-48 truncate text-xs text-destructive',
-                  title: row.original.erroMensagem,
-                },
-                row.original.erroMensagem,
-              ),
-            ]
-          : []),
-      ]),
+      h(FiscalStatusBadge, { status: row.original.status, error: row.original.erroMensagem }),
   },
   {
     accessorKey: 'criadoEm',
@@ -140,9 +136,23 @@ const columns: ColumnDef<FiscalDocument>[] = [
     enableSorting: false,
     enableHiding: false,
     cell: ({ row }) =>
-      h(Button, { variant: 'outline', size: 'sm', onClick: () => openDetail(row.original) }, () => [
-        h(Eye, { class: 'size-4' }),
-        'Detalhes',
+      h('div', { class: 'flex items-center gap-1.5' }, [
+        h(
+          Button,
+          { variant: 'outline', size: 'sm', onClick: () => openDetail(row.original) },
+          () => [h(Eye, { class: 'size-4' }), 'Acompanhar'],
+        ),
+        h(
+          Button,
+          {
+            variant: 'outline',
+            size: 'icon',
+            class: 'size-8',
+            'aria-label': `Visualizar ${typeLabels[row.original.tipo]} ${row.original.numero || row.original.rpsNumero || row.original.id}`,
+            onClick: () => openDetail(row.original, 'nota'),
+          },
+          () => h(FileText, { class: 'size-4' }),
+        ),
       ]),
   },
 ]
@@ -164,6 +174,7 @@ const columns: ColumnDef<FiscalDocument>[] = [
       :columns="columns"
       api="/v1/notas-fiscais/documentos"
       :filters="filters"
+      :auto-refresh="autoRefresh"
       :state-key="`historico-notas-fiscais-${tipo}`"
       empty-title="Nenhuma nota emitida ainda"
       empty-description="As notas desta conta aparecerão aqui após a emissão."
@@ -172,6 +183,7 @@ const columns: ColumnDef<FiscalDocument>[] = [
   <FiscalDocumentDetails
     v-model:open="detailOpen"
     :document-id="detailId"
-    @changed="tableVersion++"
+    :initial-view="detailView"
+    @changed="documentChanged"
   />
 </template>

@@ -23,6 +23,7 @@ export function useServerTable<T>(
   const columnVisibility = ref<VisibilityState>({})
   const rowSelection = ref({})
   const loading = ref(false)
+  const refreshing = ref(false)
   const error = ref('')
   let correctingPage = false
   let searchTimer: ReturnType<typeof setTimeout> | null = null
@@ -52,9 +53,11 @@ export function useServerTable<T>(
     })
   }
 
-  async function fetchData() {
+  async function fetchData(options: { background?: boolean } = {}) {
+    if (options.background && (refreshing.value || searchTimer)) return
     const requestId = ++latestRequestId
-    loading.value = true
+    refreshing.value = true
+    if (!options.background) loading.value = true
     error.value = ''
     try {
       const requestedPageIndex = pageIndex.value
@@ -104,6 +107,7 @@ export function useServerTable<T>(
       if (requestId === latestRequestId) {
         correctingPage = false
         loading.value = false
+        refreshing.value = false
       }
     }
   }
@@ -196,6 +200,7 @@ export function useServerTable<T>(
     fetchData,
     table,
     loading,
+    refreshing,
     error,
   }
 }

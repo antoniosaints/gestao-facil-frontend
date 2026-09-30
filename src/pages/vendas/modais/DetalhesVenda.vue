@@ -486,7 +486,7 @@ watch(() => storeCobranca.filters.update, recarregar)
       <VendaNotasFiscais
         v-if="fiscalAtivo && store.openModalDetalhes"
         :notes="venda.NotaFiscals || []"
-        @open-detail="store.openNotaFiscal"
+        @open-detail="store.openNotaFiscal($event, 'acompanhamento')"
         @changed="atualizarNotasFiscais"
       />
 
@@ -799,6 +799,7 @@ watch(() => storeCobranca.filters.update, recarregar)
     v-if="fiscalAtivo"
     v-model:open="store.openModalNotaFiscal"
     :document-id="store.notaFiscalId"
+    :initial-view="store.notaFiscalView"
     @changed="atualizarNotasFiscais"
   />
 </template>

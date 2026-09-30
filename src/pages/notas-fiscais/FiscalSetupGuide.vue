@@ -14,7 +14,6 @@ type Requirement = { label: string; done: boolean }
 const selectedType = ref<FiscalType>('NFSE')
 const selectedStep = ref(0)
 const typeLabels: Record<FiscalType, string> = { NFSE: 'NFS-e', NFE: 'NF-e', NFCE: 'NFC-e' }
-const d2ti = computed(() => selectedType.value === 'NFSE' && props.config.modoEmissaoNfse === 'LEGADO_D2TI')
 const filled = (value: unknown) => Boolean(String(value ?? '').trim())
 
 const steps = computed(() => {
@@ -25,23 +24,17 @@ const steps = computed(() => {
     { label: 'Razão social e CPF/CNPJ do emissor', done: filled(c.razaoSocial) && filled(c.documento) },
     { label: type === 'NFSE' ? 'Inscrição municipal' : 'Inscrição estadual', done: filled(type === 'NFSE' ? c.inscricaoMunicipal : c.inscricaoEstadual) },
   ]
-  if (type !== 'NFSE') identification.push({ label: 'Regime tributário', done: c.regimeTributario >= 1 })
+  identification.push({ label: 'Regime tributário', done: c.regimeTributario >= 1 })
   const address: Requirement[] = [
-    { label: 'Município e código IBGE', done: filled(c.codigoMunicipioIbge) && (d2ti.value || filled(c.municipioNome)) },
+    { label: 'Município e código IBGE', done: filled(c.codigoMunicipioIbge) && filled(c.municipioNome) },
   ]
-  if (!d2ti.value) address.push(
+  address.push(
     { label: 'UF e CEP', done: filled(c.uf) && filled(c.cep) },
     { label: 'Logradouro, número e bairro', done: filled(c.logradouro) && filled(c.numero) && filled(c.bairro) },
   )
-  const credentials: Requirement[] = [{ label: d2ti.value ? 'Token D2TI protegido' : 'Certificado A1 e senha salvos', done: c.integracao.configurada }]
+  const credentials: Requirement[] = [{ label: 'Certificado A1 e senha salvos', done: c.certificado.configurado && c.criptografiaFiscalDisponivel }]
   const parameters: Requirement[] = type === 'NFSE'
-    ? d2ti.value
-      ? [
-          { label: 'Código e descrição do serviço', done: filled(c.codigoServicoPadrao) && filled(c.descricaoServicoPadrao) },
-          { label: 'Atividade e descrição', done: filled(c.codigoAtividadePadrao) && filled(c.descricaoAtividadePadrao) },
-          { label: 'Tributação, recolhimento e alíquota ISS', done: c.tipoTributacaoPadrao != null && c.tipoRecolhimentoPadrao != null && c.aliquotaIssPadrao != null },
-        ]
-      : [
+    ? [
           { label: 'Código do serviço e tributação municipal', done: filled(c.codigoServicoPadrao) && filled(c.nfse.codigoTributacaoMunicipio) },
           { label: 'Alíquota ISS', done: c.aliquotaIssPadrao != null },
           ...([1, 4].includes(c.regimeTributario) ? [{ label: 'Data de opção pelo Simples', done: filled(c.nfse.dataOpcaoSimples) }] : []),
@@ -54,7 +47,7 @@ const steps = computed(() => {
   return [
     { title: '1. Identificação', description: 'Dados legais e credenciamento do emissor.', target: 'fiscal-emissor', items: identification },
     { title: '2. Localização', description: 'Município IBGE e endereço usados na transmissão.', target: 'fiscal-municipio', items: address },
-    { title: '3. Credencial', description: d2ti.value ? 'Token municipal protegido por conta.' : 'Certificado digital A1 protegido por conta.', target: 'fiscal-credencial', items: credentials },
+    { title: '3. Credencial', description: 'Certificado digital A1 protegido por conta.', target: 'fiscal-credencial', items: credentials },
     { title: '4. Parâmetros', description: 'Códigos e regras do documento selecionado.', target: type === 'NFSE' ? 'fiscal-nfse' : type === 'NFCE' && filled(c.nfe.naturezaOperacao) ? 'fiscal-nfce' : 'fiscal-nfe', items: parameters },
     { title: '5. Homologação', description: 'Salve os dados e valide uma emissão de teste.', target: 'fiscal-guide', items: [
       { label: 'Configuração salva e pronta no servidor', done: savedReady },

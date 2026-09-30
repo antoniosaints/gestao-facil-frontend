@@ -2,11 +2,30 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { FileText, LoaderCircle, Plus, RefreshCw, Settings2 } from 'lucide-vue-next'
+import {
+  FileText,
+  LoaderCircle,
+  MapPinCheck,
+  MoreHorizontal,
+  Plus,
+  RefreshCw,
+  Search,
+  Settings2,
+} from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import ModalView from '@/components/formulario/ModalView.vue'
 import FiscalHistoryTable from './FiscalHistoryTable.vue'
+import GeranetCities from './GeranetCities.vue'
+import NfseConsult from './NfseConsult.vue'
+import NfseAdditionalFields from './NfseAdditionalFields.vue'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -20,13 +39,23 @@ const issuing = ref(false)
 const emissionOpen = ref(false)
 const config = ref<FiscalConfig | null>(null)
 const historyVersion = ref(0)
-const ready = computed(() => Boolean(config.value?.emissaoNfsePronta))
-const isD2ti = computed(() => config.value?.modoEmissaoNfse === 'LEGADO_D2TI')
+const ready = computed(
+  () => Boolean(config.value?.emissaoNfsePronta) && config.value?.modoEmissaoNfse !== 'LEGADO_D2TI',
+)
+const citiesOpen = ref(false)
+const consultOpen = ref(false)
+const emissionKey = ref<string | null>(null)
 const form = reactive({
   clienteId: null as number | null,
   valorTotal: 0,
   codigoServico: '',
-  codigoMunicipioTomador: '',
+  dataCompetencia: '',
+  codigoNbs: '',
+  codigoAnexoCnae: '',
+  percentualTributosSimplesNacional: null as number | null,
+  municipioIncidencia: '',
+  substitutoTributario: '2' as '1' | '2',
+  valorIssRetido: null as number | null,
   discriminacao: '',
 })
 
@@ -35,8 +64,6 @@ async function load() {
     const fiscalConfig = await NotasFiscaisRepository.getConfig()
     config.value = fiscalConfig
     form.codigoServico = fiscalConfig.codigoServicoPadrao
-    if (fiscalConfig.codigoMunicipioPrestador)
-      form.codigoMunicipioTomador = fiscalConfig.codigoMunicipioPrestador
   } catch {
     toast.error('Não foi possível carregar as NFS-e.')
   } finally {
@@ -47,44 +74,44 @@ onMounted(load)
 
 async function emit() {
   if (issuing.value || !ready.value) return
-  if (
-    !form.clienteId ||
-    form.valorTotal <= 0 ||
-    (isD2ti.value && !form.codigoMunicipioTomador) ||
-    form.discriminacao.trim().length < 3
-  ) {
-    toast.info(
-      isD2ti.value
-        ? 'Selecione o tomador, informe valor, código TOM do município e a descrição do serviço.'
-        : 'Selecione o tomador, informe valor e a descrição do serviço para gerar a DPS.',
-    )
+  if (!form.clienteId || form.valorTotal <= 0 || form.discriminacao.trim().length < 3) {
+    toast.info('Selecione o tomador, informe o valor e a descrição do serviço.')
     return
   }
   try {
     issuing.value = true
     const invoice = await NotasFiscaisRepository.emitNfse(
       { ...form, clienteId: form.clienteId },
-      crypto.randomUUID(),
+      (emissionKey.value ||= crypto.randomUUID()),
     )
     historyVersion.value += 1
     Object.assign(form, {
       clienteId: null,
       valorTotal: 0,
       codigoServico: config.value?.codigoServicoPadrao || '',
-      codigoMunicipioTomador: config.value?.codigoMunicipioPrestador || '',
+      dataCompetencia: '',
+      codigoNbs: '',
+      codigoAnexoCnae: '',
+      percentualTributosSimplesNacional: null,
+      municipioIncidencia: '',
+      substitutoTributario: '2',
+      valorIssRetido: null,
       discriminacao: '',
+      codigoClassificacaoTributaria: '',
+      ibscbs: undefined,
     })
     emissionOpen.value = false
-    toast.success(
-      isD2ti.value
-        ? invoice.status === 'HOMOLOGADA'
-          ? 'XML validado em homologação.'
-          : 'NFS-e autorizada pela prefeitura.'
-        : 'NFS-e autorizada pela Geranet.',
-    )
+    emissionKey.value = null
+    if (invoice.status === 'AUTORIZADA') toast.success('NFS-e autorizada pela Geranet.')
+    else toast.info('Emissão registrada. Acompanhe o status no histórico.')
   } catch (error: any) {
     const data = error?.response?.data?.error
     toast.error(data?.message || 'Não foi possível emitir a NFS-e.')
+    if (
+      error?.response?.status === 422 &&
+      error?.response?.data?.error?.code !== 'emission_uncertain'
+    )
+      emissionKey.value = null
     historyVersion.value += 1
   } finally {
     issuing.value = false
@@ -104,12 +131,26 @@ async function emit() {
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <Button variant="outline" @click="router.push({ name: 'notas-fiscais-homologacao' })"
-          >Testar em homologação</Button
-        >
-        <Button variant="outline" @click="router.push({ name: 'notas-fiscais-configuracoes' })"
-          ><Settings2 />Configurar emissor</Button
-        >
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child
+            ><Button variant="outline"><MoreHorizontal />Mais ações</Button></DropdownMenuTrigger
+          >
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem @select="citiesOpen = true"
+              ><MapPinCheck />Cidades atendidas</DropdownMenuItem
+            >
+            <DropdownMenuItem @select="consultOpen = true"
+              ><Search />Consultar notas</DropdownMenuItem
+            >
+            <DropdownMenuSeparator />
+            <DropdownMenuItem @select="router.push({ name: 'notas-fiscais-homologacao' })"
+              >Testar em homologação</DropdownMenuItem
+            >
+            <DropdownMenuItem @select="router.push({ name: 'notas-fiscais-configuracoes' })"
+              ><Settings2 />Configurar emissor</DropdownMenuItem
+            >
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button :disabled="loading || issuing || !ready" @click="emissionOpen = true"
           ><Plus />Nova NFS-e</Button
         >
@@ -140,7 +181,12 @@ async function emit() {
           ></CardContent
         >
       </Card>
-      <FiscalHistoryTable tipo="NFSE" :refresh-token="historyVersion" :show-header="false" />
+      <FiscalHistoryTable
+        tipo="NFSE"
+        :refresh-token="historyVersion"
+        :show-header="false"
+        :emitting="issuing"
+      />
     </template>
 
     <ModalView
@@ -180,16 +226,6 @@ async function emit() {
             :disabled="issuing"
           />
         </div>
-        <div v-if="isD2ti" class="space-y-1.5">
-          <Label for="nfse-codigo-tom">Código TOM do município do tomador</Label>
-          <Input
-            id="nfse-codigo-tom"
-            v-model="form.codigoMunicipioTomador"
-            inputmode="numeric"
-            placeholder="Ex.: 0923 para São Mateus"
-            :disabled="issuing"
-          />
-        </div>
         <div class="space-y-1.5 sm:col-span-2">
           <Label for="nfse-discriminacao">Discriminação do serviço</Label>
           <Textarea
@@ -199,6 +235,9 @@ async function emit() {
             placeholder="Descreva o serviço prestado…"
             :disabled="issuing"
           />
+        </div>
+        <div class="space-y-4 sm:col-span-2">
+          <NfseAdditionalFields :form="form" :config="config" :disabled="issuing" />
         </div>
         <div class="flex flex-wrap justify-end gap-2 sm:col-span-2">
           <Button type="button" variant="outline" :disabled="issuing" @click="emissionOpen = false"
@@ -212,5 +251,19 @@ async function emit() {
         </div>
       </form>
     </ModalView>
+    <ModalView
+      v-model:open="citiesOpen"
+      size="2xl"
+      title="Cidades atendidas"
+      description="Disponibilidade de emissão NFS-e na Geranet."
+      ><div class="px-4 pb-4"><GeranetCities /></div
+    ></ModalView>
+    <ModalView
+      v-model:open="consultOpen"
+      size="4xl"
+      title="Consultar NFS-e recebidas"
+      description="Notas disponíveis para sua conta no portal nacional."
+      ><div class="px-4 pb-4"><NfseConsult /></div
+    ></ModalView>
   </div>
 </template>

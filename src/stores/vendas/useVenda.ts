@@ -29,6 +29,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
   const openModalDetalhes = ref(false)
   const openModalNotaFiscal = ref(false)
   const notaFiscalId = ref<number | null>(null)
+  const notaFiscalView = ref<'acompanhamento' | 'nota'>('nota')
   const openModalComprovante = ref(false)
   const vendaComprovante = ref<{
     id: number
@@ -107,8 +108,9 @@ export const useVendasStore = defineStore('vendasStore', () => {
     }
   }
 
-  const openNotaFiscal = (id: number) => {
+  const openNotaFiscal = (id: number, view: 'acompanhamento' | 'nota' = 'nota') => {
     notaFiscalId.value = id
+    notaFiscalView.value = view
     openModalNotaFiscal.value = true
   }
 
@@ -202,6 +204,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
     openModalDetalhes,
     openModalNotaFiscal,
     notaFiscalId,
+    notaFiscalView,
     openNotaFiscal,
     openModalComprovante,
     vendaComprovante,

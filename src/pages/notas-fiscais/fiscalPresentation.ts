@@ -2,7 +2,7 @@ import type { FiscalDocument } from '@/repositories/notas-fiscais-repository'
 
 export const typeLabels: Record<string, string> = { NFE: 'NF-e', NFCE: 'NFC-e', NFSE: 'NFS-e' }
 export const statuses = [
-  ['PENDENTE', 'Pendente'],
+  ['PENDENTE', 'Registrada'],
   ['PRONTA_PARA_EMISSAO', 'Pronta para emissão'],
   ['EMITINDO', 'Emitindo'],
   ['EM_PROCESSAMENTO', 'Em processamento'],
@@ -37,5 +37,11 @@ export function isRetryable(document: Pick<FiscalDocument, 'tipo' | 'status'>) {
   return (
     ['NFE', 'NFCE'].includes(document.tipo) &&
     ['PENDENTE', 'FALHA_REPROCESSAVEL'].includes(document.status)
+  )
+}
+
+export function hasFiscalDocumentsInProgress(documents: Array<Pick<FiscalDocument, 'status'>>) {
+  return documents.some((document) =>
+    ['PENDENTE', 'REGISTRADA', 'EMITINDO', 'EM_PROCESSAMENTO'].includes(document.status),
   )
 }
