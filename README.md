@@ -1,5 +1,9 @@
 �### Gestão Fácil ERP
 
+### Pagamento do cliente no Ourive
+
+O cadastro de encomendas e serviços e a edição da OS usam os mesmos campos de antecipação com máscara monetária brasileira e seleção dos métodos padrão (PIX, dinheiro, cartão etc.). Após criar a ordem, a ação **Pagamento do cliente** no detalhe permite informar ou corrigir o total já pago e sua forma de pagamento. Informe o total acumulado; cada salvamento substitui esse valor. A ação exige a capacidade `RECEBER` e fica disponível até o faturamento. A antecipação é abatida do saldo na conclusão; após salvar, o detalhe e o resumo financeiro são recarregados. Quando o valor é positivo, a forma de pagamento é obrigatória. Os campos compartilhados ficam em `src/pages/ourive/ClientPaymentFields.vue`.
+
 ### Vitrine pública por nicho
 
 Em `/site`, a seção **Soluções por nicho** apresenta Restaurante & delivery, Ourives, Lojas & varejo, Atendimento & suporte, Loja virtual e Arenas esportivas. A seleção troca o cenário e o acento visual do segmento; cada opção abre sua apresentação pública em `/site/solucoes/:nicho`, com conteúdo e chamada de cadastro próprios. A definição compartilhada dos nichos fica em `src/pages/site/siteNiches.ts` e alimenta tanto a vitrine quanto as páginas detalhadas. Os links de âncora do header e footer usam a rolagem suave do router, com compensação do header fixo.

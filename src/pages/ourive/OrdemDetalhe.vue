@@ -27,10 +27,21 @@
             <Badge v-if="Number(order.antecipacaoCliente)" variant="secondary">
               Antecipação: {{ money(order.antecipacaoCliente) }}
             </Badge>
+            <Badge v-if="order.formaPagamentoCliente" variant="outline">
+              {{ formatPaymentMethodLabel(order.formaPagamentoCliente) }}
+            </Badge>
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">{{ label(order.status) }}</Badge>
+          <Button
+            v-if="can('RECEBER') && !order.faturadaEm"
+            variant="outline"
+            size="sm"
+            @click="openClientPayment"
+          >
+            <WalletCards class="mr-2 h-4 w-4" />Pagamento do cliente
+          </Button>
           <Button
             v-if="can('RECEBER') && !order.faturadaEm"
             variant="outline"
@@ -862,6 +873,32 @@
       </div>
     </section>
     <div v-else class="p-10 text-center text-sm text-muted-foreground">Carregando ordem…</div>
+    <Dialog v-model:open="clientPaymentModalOpen">
+      <DialogContent class="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Pagamento do cliente</DialogTitle>
+          <DialogDescription>
+            Informe o total já pago pelo cliente e a forma de pagamento desta OS.
+          </DialogDescription>
+        </DialogHeader>
+        <ClientPaymentFields
+          v-model:amount="clientPaymentDraft.antecipacaoCliente"
+          v-model:method="clientPaymentDraft.formaPagamentoCliente"
+        />
+        <DialogFooter>
+          <Button
+            variant="outline"
+            :disabled="savingClientPayment"
+            @click="clientPaymentModalOpen = false"
+          >
+            Cancelar
+          </Button>
+          <Button :disabled="savingClientPayment" @click="saveClientPayment">
+            {{ savingClientPayment ? 'Salvando…' : 'Salvar pagamento' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <Dialog v-model:open="editModalOpen">
       <DialogContent class="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
@@ -891,7 +928,7 @@
               placeholder="Descreva o serviço solicitado"
             />
           </label>
-          <div class="grid gap-4 sm:grid-cols-3">
+          <div class="grid gap-4 sm:grid-cols-2">
             <label class="grid gap-1 text-sm font-medium">
               Garantia
               <Input v-model="editDraft.garantia" placeholder="Ex.: 90 dias" />
@@ -900,17 +937,11 @@
               Prazo previsto
               <Calendarpicker v-model="editDraft.prazoPrevisto" :teleport="true" />
             </label>
-            <label class="grid gap-1 text-sm font-medium">
-              Antecipação do cliente
-              <Input
-                v-model.number="editDraft.antecipacaoCliente"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0,00"
-              />
-            </label>
           </div>
+          <ClientPaymentFields
+            v-model:amount="editDraft.antecipacaoCliente"
+            v-model:method="editDraft.formaPagamentoCliente"
+          />
           <label class="grid gap-1 text-sm font-medium">
             Observações
             <textarea
@@ -1497,6 +1528,7 @@ import {
   Trash2,
   Upload,
   Wrench,
+  WalletCards,
   X,
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -1528,7 +1560,9 @@ import { useUiStore } from '@/stores/ui/uiStore'
 import { useConfirm } from '@/composables/useConfirm'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters'
+import { formatCurrencyBR, formatPaymentMethodLabel, formatToNumberValue } from '@/utils/formatters'
+import { MetodoPagamento } from '@/types/schemas'
+import ClientPaymentFields from './ClientPaymentFields.vue'
 import { vMaska } from 'maska/vue'
 import { hasPermission } from '@/hooks/authorize'
 const route = useRoute()
@@ -1547,6 +1581,12 @@ const editModalOpen = ref(false)
 const editingOrder = ref(false)
 const pdfLoading = ref<'A4' | 'CUPOM' | null>(null)
 const editDraft = reactive<any>({})
+const clientPaymentModalOpen = ref(false)
+const savingClientPayment = ref(false)
+const clientPaymentDraft = reactive({
+  antecipacaoCliente: '',
+  formaPagamentoCliente: undefined as MetodoPagamento | undefined,
+})
 const productionWeight = ref<number | '' | undefined>()
 const budgetLink = ref('')
 const photoPreview = ref('')
@@ -1577,6 +1617,12 @@ const emptyBudget = (valorMaoObra = 0) => ({
 })
 const budget = reactive<any>(emptyBudget())
 const monetaryValue = (value: string | number | null | undefined) => formatToNumberValue(value ?? 0)
+const paymentAmount = (value: string | number | null | undefined) =>
+  monetaryValue(value).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  })
 const can = (capability: OuriveCapability) => ui.hasOuriveCapability(capability)
 const isAdmin = computed(() => hasPermission(ui.usuarioLogged, 4))
 const financialOurives = computed(() =>
@@ -2052,6 +2098,32 @@ async function updateMaterialCost(material: any, produtoId: number | string | nu
     toast.error('Não foi possível carregar o custo do material.')
   }
 }
+function openClientPayment() {
+  clientPaymentDraft.antecipacaoCliente = paymentAmount(order.value?.antecipacaoCliente)
+  clientPaymentDraft.formaPagamentoCliente = order.value?.formaPagamentoCliente || undefined
+  clientPaymentModalOpen.value = true
+}
+async function saveClientPayment() {
+  const antecipacaoCliente = monetaryValue(clientPaymentDraft.antecipacaoCliente)
+  if (antecipacaoCliente > 0 && !clientPaymentDraft.formaPagamentoCliente)
+    return toast.info('Informe a forma de pagamento do cliente.')
+  savingClientPayment.value = true
+  try {
+    await OuriveRepository.atualizarPagamentoCliente(order.value.id, {
+      antecipacaoCliente,
+      formaPagamentoCliente: clientPaymentDraft.formaPagamentoCliente || null,
+    })
+    clientPaymentModalOpen.value = false
+    await load()
+    toast.success('Pagamento do cliente atualizado.')
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.error?.message || 'Não foi possível salvar o pagamento do cliente.',
+    )
+  } finally {
+    savingClientPayment.value = false
+  }
+}
 function openEditOrder() {
   Object.keys(editDraft).forEach((key) => delete editDraft[key])
   Object.assign(editDraft, {
@@ -2060,7 +2132,8 @@ function openEditOrder() {
     garantia: order.value?.ordemServico?.garantia || 'Sem garantia informada',
     observacoes: order.value?.observacoes || '',
     prazoPrevisto: order.value?.prazoPrevisto ? new Date(order.value.prazoPrevisto) : null,
-    antecipacaoCliente: Number(order.value?.antecipacaoCliente || 0),
+    antecipacaoCliente: paymentAmount(order.value?.antecipacaoCliente),
+    formaPagamentoCliente: order.value?.formaPagamentoCliente || undefined,
     pecas: (order.value?.pecas || []).map((piece: any) => ({
       id: piece.id,
       codigoRastreio: piece.codigoRastreio,
@@ -2074,6 +2147,8 @@ function openEditOrder() {
   editModalOpen.value = true
 }
 async function saveOrderInformation() {
+  if (monetaryValue(editDraft.antecipacaoCliente) > 0 && !editDraft.formaPagamentoCliente)
+    return toast.info('Informe a forma de pagamento do cliente.')
   if (String(editDraft.descricao || '').trim().length < 3)
     return toast.info('Informe a solicitação do cliente.')
   if ((editDraft.pecas || []).some((piece: any) => String(piece.descricao || '').trim().length < 2))
@@ -2087,6 +2162,7 @@ async function saveOrderInformation() {
       observacoes: String(editDraft.observacoes || '').trim() || null,
       prazoPrevisto: editDraft.prazoPrevisto || null,
       antecipacaoCliente: monetaryValue(editDraft.antecipacaoCliente),
+      formaPagamentoCliente: editDraft.formaPagamentoCliente || null,
       pecas: (editDraft.pecas || []).map((piece: any) => ({
         id: piece.id,
         descricao: String(piece.descricao).trim(),

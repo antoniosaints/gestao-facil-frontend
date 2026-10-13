@@ -15,7 +15,7 @@
 - Áreas complementares: `site`, `auth`, `assinatura`, `assinaturas`, `agente`, `chats`, `whatsapp` e `loja`.
 - O domínio `restaurante` separa salão (`Salao.vue`), comandas operacionais (`pages/comandas/Home.vue`, em `/restaurante/comandas`), produção (`Kds.vue`), impressão térmica (`Impressao.vue`), fila de pedidos (`Pedidos.vue`), itens/grupos (`Cardapio.vue`), publicação (`Configuracoes.vue`) e cardápio visitante (`CardapioPublico.vue`).
 - Modo alternativo do produto: `arena`, com rotas, telas e fluxos próprios.
-- O domínio `ourive` concentra ordens, orçamento, produção, financeiro e equipe. A entrada da OS permite criar cliente apenas pelo nome e registrar antecipação; o detalhe permite editar informações, exportar comprovantes A4/cupom e, para administradores, apagar ordens ainda reversíveis mesmo após finalização. A opção `ourive:equipe` deve permanecer na sidebar para atribuição dos papéis, inclusive `OURIVE`.
+- O domínio `ourive` concentra ordens, orçamento, produção, financeiro e equipe. A entrada da OS permite criar cliente apenas pelo nome e registrar antecipação com máscara monetária e forma de pagamento padrão. No detalhe, **Pagamento do cliente** permite registrar ou corrigir o total já pago após a criação, até o faturamento, com a capacidade `RECEBER`; esses campos também estão na edição geral. Uma antecipação positiva exige método de pagamento. `ClientPaymentFields.vue` compartilha os campos entre os fluxos. O detalhe permite ainda exportar comprovantes A4/cupom e, para administradores, apagar ordens ainda reversíveis mesmo após finalização. A opção `ourive:equipe` deve permanecer na sidebar para atribuição dos papéis, inclusive `OURIVE`.
 - Administração separada: `admin`.
 
 ## Padrão de composição

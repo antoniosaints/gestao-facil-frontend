@@ -38,6 +38,9 @@ import { OuriveRepository } from '@/repositories/ourive-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { useConfirm } from '@/composables/useConfirm'
 import { hasPermission } from '@/hooks/authorize'
+import ClientPaymentFields from './ClientPaymentFields.vue'
+import { MetodoPagamento } from '@/types/schemas'
+import { formatToNumberValue } from '@/utils/formatters'
 
 const router = useRouter()
 const toast = useToast()
@@ -191,7 +194,8 @@ const emptyPiece = () => ({
 })
 const draft = ref({
   clienteId: undefined as number | undefined,
-  antecipacaoCliente: 0,
+  antecipacaoCliente: '',
+  formaPagamentoCliente: undefined as MetodoPagamento | undefined,
   descricao: '',
   garantia: 'Sem garantia informada',
   observacoes: '',
@@ -203,7 +207,8 @@ const draft = ref({
 function resetDraft() {
   draft.value = {
     clienteId: undefined,
-    antecipacaoCliente: 0,
+    antecipacaoCliente: '',
+    formaPagamentoCliente: undefined,
     descricao: '',
     garantia: 'Sem garantia informada',
     observacoes: '',
@@ -354,6 +359,9 @@ function addPiece() {
 }
 async function save() {
   const isService = selectedOrderType.value === 'CONSERTO'
+  const antecipacaoCliente = formatToNumberValue(draft.value.antecipacaoCliente)
+  if (antecipacaoCliente > 0 && !draft.value.formaPagamentoCliente)
+    return toast.info('Informe a forma de pagamento do cliente.')
   if (draft.value.descricao.trim().length < 3)
     return toast.info('Informe a solicitação do cliente.')
   if (isService && draft.value.valorMaoObra === undefined)
@@ -364,6 +372,8 @@ async function save() {
   try {
     const created = await OuriveRepository.criarOrdem({
       ...draft.value,
+      antecipacaoCliente,
+      formaPagamentoCliente: draft.value.formaPagamentoCliente || null,
       tipo: selectedOrderType.value || 'CONSERTO',
       prazoPrevisto: draft.value.prazoPrevisto || undefined,
       pecas: draft.value.pecas.map((piece) => ({
@@ -682,19 +692,10 @@ onMounted(() => {
                 Se o nome não existir, use “Criar cliente?” para cadastrá-lo imediatamente.
               </span>
             </label>
-            <label class="grid gap-1 text-sm font-medium">
-              Antecipação do cliente
-              <Input
-                v-model.number="draft.antecipacaoCliente"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0,00"
-              />
-              <span class="text-xs font-normal text-muted-foreground">
-                Valor já deixado pelo cliente; será abatido do saldo na conclusão da OS.
-              </span>
-            </label>
+            <ClientPaymentFields
+              v-model:amount="draft.antecipacaoCliente"
+              v-model:method="draft.formaPagamentoCliente"
+            />
             <template v-if="selectedOrderType === 'ENCOMENDA'">
               <div class="rounded-xl border border-amber-500/25 bg-amber-500/5 p-3 text-sm">
                 <p class="font-medium text-amber-700 dark:text-amber-300">Detalhes da produção</p>

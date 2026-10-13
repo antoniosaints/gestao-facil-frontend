@@ -1,4 +1,5 @@
 import http from '@/utils/axios'
+import type { MetodoPagamento } from '@/types/schemas'
 
 export type OuriveCapability =
   | 'VISUALIZAR'
@@ -43,6 +44,13 @@ export class OuriveRepository {
   }
   static async atualizarOrdem(id: number, payload: unknown) {
     const { data } = await http.patch(`/v1/ourive/ordens/${id}`, payload)
+    return data.data
+  }
+  static async atualizarPagamentoCliente(
+    id: number,
+    payload: { antecipacaoCliente: number; formaPagamentoCliente: MetodoPagamento | null },
+  ) {
+    const { data } = await http.patch(`/v1/ourive/ordens/${id}/pagamento-cliente`, payload)
     return data.data
   }
   static async comprovantePdf(id: number, formato: 'A4' | 'CUPOM') {
