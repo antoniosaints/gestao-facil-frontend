@@ -1,5 +1,9 @@
 # Repositories
 
+## Cadastro orientado
+
+`onboarding-repository.ts` concentra configuração pública e prévia de onboarding. `types/onboarding.ts` define perguntas, catálogo, seleções, token de catálogo e tema enviado na criação. `ContaRepository.create` aceita `onboarding` opcional em `CreateConta`; campos de preço/status/permissões nunca são enviados pelo wizard. Erro `409 ONBOARDING_CATALOG_CHANGED` deve exigir nova revisão, sem repetir automaticamente a criação.
+
 ## Papel da pasta
 `repositories` encapsula o acesso HTTP ao backend. O objetivo é evitar chamadas dispersas nas páginas e concentrar contratos de API por domínio.
 

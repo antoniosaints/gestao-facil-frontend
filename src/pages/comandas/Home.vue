@@ -443,17 +443,17 @@ onMounted(loadComandas)
             <SelectItem value="CANCELADA">Canceladas</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" @click="applySearch">
+        <Button variant="outline" aria-label="Buscar comandas" @click="applySearch">
           <Search class="h-4 w-4" />
         </Button>
         <Button v-if="uiStore.permissoes.vendas.criar" @click="store.openCreate()">
           <BadgePlus class="mr-2 h-4 w-4" />
           Nova comanda
         </Button>
-        <Button v-if="uiStore.permissoes.configuracoes.visualizar" variant="outline" @click="store.openConfiguracao()">
+        <Button v-if="uiStore.permissoes.configuracoes.visualizar" variant="outline" aria-label="Configurar comandas" @click="store.openConfiguracao()">
           <Cog class="h-4 w-4" />
         </Button>
-        <Button variant="outline" @click="store.updateTable()">
+        <Button variant="outline" aria-label="Atualizar comandas" @click="store.updateTable()">
           <RefreshCcw class="h-4 w-4" />
         </Button>
       </div>
@@ -465,7 +465,7 @@ onMounted(loadComandas)
         <div class="text-xl font-semibold text-foreground">{{ total }}</div>
       </div>
       <div class="rounded-lg border border-border bg-card p-3">
-        <div class="text-xs text-muted-foreground">Em operacao</div>
+        <div class="text-xs text-muted-foreground">Em operação na página</div>
         <div class="text-xl font-semibold text-foreground">{{ comandas.filter((item) => ['ABERTA', 'PENDENTE'].includes(item.status)).length }}</div>
       </div>
       <div class="rounded-lg border border-border bg-card p-3">

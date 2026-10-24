@@ -1,5 +1,6 @@
 import type { Contas, UpdateParametrosConta, Usuarios } from '@/types/schemas'
 import http from '@/utils/axios'
+import type { RegistrationOnboarding } from '@/types/onboarding'
 
 export interface ContaAssinanteAdmin {
   id: number
@@ -391,6 +392,7 @@ export interface UpdateConta {
   tipo: string
 }
 export interface CreateConta {
+  onboarding?: RegistrationOnboarding
   nome: string
   email: string
   senha: string

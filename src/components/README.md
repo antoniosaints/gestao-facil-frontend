@@ -1,5 +1,12 @@
 # Componentes Compartilhados
 
+## Padrão de UX das listagens
+
+- `DataTable.vue` oferece `searchPlaceholder` e `columnLabels` opcionais. O menu de colunas usa o rótulo informado, `meta.label`, cabeçalho textual ou o identificador separado em palavras, nessa ordem.
+- A busca tem nome acessível, foco visível no grupo e ação **Limpar busca**. Uma busca sem resultado orienta a mudar ou limpar o termo; erro de conexão não apresenta o estado vazio de cadastro.
+- A persistência existente de filtros, página e colunas permanece em `useServerTable`/`serverTableState`.
+- `useConfirm` resolve como cancelamento também quando o diálogo fecha por Escape, overlay ou gesto do drawer. Uma nova confirmação cancela a anterior, evitando promessas pendentes.
+
 ## Papel da pasta
 `components` agrupa peças reutilizáveis do frontend. Ela não substitui `pages`: serve para blocos genéricos, estruturas compartilhadas e elementos visuais reaproveitados entre módulos.
 

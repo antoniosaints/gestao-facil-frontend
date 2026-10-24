@@ -1,0 +1,7 @@
+/* Public pages use the installed font files with explicit weights.
+   Distinct family names avoid changing typography in the private ERP. */
+@font-face { font-family: 'Site Inter'; src: url('/fonts/Inter/Inter_24pt-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Site Inter'; src: url('/fonts/Inter/Inter_18pt-SemiBold.ttf') format('truetype'); font-weight: 500 600; font-display: swap; }
+@font-face { font-family: 'Site Inter'; src: url('/fonts/Inter/Inter_18pt-Bold.ttf') format('truetype'); font-weight: 700 900; font-display: swap; }
+@font-face { font-family: 'Site Sora'; src: url('/fonts/Sora/Sora-Medium.ttf') format('truetype'); font-weight: 400 500; font-display: swap; }
+@font-face { font-family: 'Site Sora'; src: url('/fonts/Sora/Sora-Bold.ttf') format('truetype'); font-weight: 600 900; font-display: swap; }

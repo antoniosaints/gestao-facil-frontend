@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 export interface ConfirmOptions {
   title?: string
@@ -18,8 +18,21 @@ const confirmText = ref<string>('Confirmar')
 const cancelText = ref<string>('Cancelar')
 let resolveFn: ((value: boolean) => void) | null = null
 
+function settle(value: boolean) {
+  const resolve = resolveFn
+  resolveFn = null
+  isOpen.value = false
+  resolve?.(value)
+}
+
+// Escape, overlay e gesto do drawer também são cancelamentos.
+watch(isOpen, (open) => {
+  if (!open) settle(false)
+}, { flush: 'sync' })
+
 export function useConfirm() {
   const confirm = (opts: ConfirmOptions = {}): Promise<boolean> => {
+    settle(false)
     title.value = opts.title ?? 'Confirmação'
     message.value = opts.message ?? 'Tem certeza disso?'
     confirmText.value = opts.confirmText ?? 'Confirmar'
@@ -33,15 +46,11 @@ export function useConfirm() {
   }
 
   const onYes = (): void => {
-    isOpen.value = false
-    resolveFn?.(true)
-    resolveFn = null
+    settle(true)
   }
 
   const onNo = (): void => {
-    isOpen.value = false
-    resolveFn?.(false)
-    resolveFn = null
+    settle(false)
   }
 
   return {

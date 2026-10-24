@@ -6,6 +6,8 @@ O cadastro de encomendas e serviços e a edição da OS usam os mesmos campos de
 
 ### Vitrine pública por nicho
 
+O site público e o cadastro de novos assinantes têm apresentação renovada. O cadastro usa cinco etapas com perguntas operacionais, recomendações revisáveis da API, escolha de paleta/fonte e prévia isolada light/dark. Apps pagos exigem contratação posterior; nenhuma cobrança é disparada pelo wizard. O frontend encaminha `catalogVersion` e exige nova revisão em `409 ONBOARDING_CATALOG_CHANGED`. Contratos e testes em [src/pages/site/README.md](src/pages/site/README.md).
+
 Em `/site`, a seção **Soluções por nicho** apresenta Restaurante & delivery, Ourives, Lojas & varejo, Atendimento & suporte, Loja virtual e Arenas esportivas. A seleção troca o cenário e o acento visual do segmento; cada opção abre sua apresentação pública em `/site/solucoes/:nicho`, com conteúdo e chamada de cadastro próprios. A definição compartilhada dos nichos fica em `src/pages/site/siteNiches.ts` e alimenta tanto a vitrine quanto as páginas detalhadas. Os links de âncora do header e footer usam a rolagem suave do router, com compensação do header fixo.
 
 ### Atualização em tempo real de pedidos

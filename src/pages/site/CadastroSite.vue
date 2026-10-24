@@ -1,406 +1,797 @@
-<template>
-    <div class="min-h-screen grid lg:grid-cols-2">
-
-        <!-- Lado Esquerdo (Marca / Valor) -->
-        <div class="hidden lg:flex flex-col justify-between bg-zinc-950 p-12 xl:p-16 text-white relative overflow-hidden">
-            <!-- Background decoration -->
-            <div class="absolute inset-0 z-0">
-                <div
-                    class="absolute top-0 right-0 h-[520px] w-[520px] -translate-y-1/3 translate-x-1/3 rounded-full bg-primary/25 blur-[130px] animate-pulse-slow">
-                </div>
-                <div class="absolute bottom-0 left-0 h-[520px] w-[520px] translate-y-1/3 -translate-x-1/3 rounded-full bg-blue-600/20 blur-[130px] animate-pulse-slow"
-                    style="animation-delay: 2s"></div>
-                <div
-                    class="absolute inset-0 opacity-[0.04] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:40px_40px]">
-                </div>
-            </div>
-
-            <!-- Marca -->
-            <div class="relative z-10 flex items-center gap-3">
-                <img src="/imgs/logo.png" alt="Gestão Fácil" class="h-11 w-11 rounded-xl" />
-                <span class="text-lg font-bold tracking-tight">Gestão Fácil</span>
-            </div>
-
-            <!-- Headline + features -->
-            <div class="relative z-10 max-w-xl space-y-10">
-                <div class="space-y-5">
-                    <span
-                        class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300 backdrop-blur-sm">
-                        <span class="relative flex h-2 w-2">
-                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75"></span>
-                            <span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
-                        </span>
-                        7 dias grátis · sem cartão de crédito
-                    </span>
-                    <h1 class="text-4xl font-extrabold leading-[1.1] tracking-tight xl:text-5xl">
-                        Comece sua jornada<br />para o <span class="text-primary">sucesso</span>.
-                    </h1>
-                    <p class="max-w-md text-lg text-zinc-400">
-                        Crie sua conta e organize vendas, estoque e financeiro em uma única plataforma —
-                        do balcão ao caixa.
-                    </p>
-                </div>
-
-                <!-- Feature grid -->
-                <ul class="grid max-w-lg grid-cols-2 gap-3">
-                    <li v-for="f in features" :key="f.title"
-                        class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-white/[0.07]">
-                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                            <component :is="f.icon" class="h-5 w-5" />
-                        </div>
-                        <div class="min-w-0">
-                            <p class="text-sm font-semibold leading-tight">{{ f.title }}</p>
-                            <p class="truncate text-xs text-zinc-400">{{ f.desc }}</p>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Trust row -->
-            <div class="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/10 pt-6 text-sm text-zinc-400">
-                <div v-for="t in trust" :key="t.label" class="flex items-center gap-2">
-                    <component :is="t.icon" class="h-4 w-4 text-primary" />
-                    <span>{{ t.label }}</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Lado Direito (Formulário) -->
-        <div class="bg-background flex flex-col justify-center p-6 lg:p-12 overflow-y-auto">
-            <div class="max-w-md mx-auto w-full">
-                <div class="lg:hidden mb-8">
-                    <div class="flex items-center gap-2">
-                        <div
-                            class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
-                            G</div>
-                        <span class="font-bold text-xl text-foreground">Gestão Fácil</span>
-                    </div>
-                </div>
-
-                <div class="mb-8">
-                    <h2 class="text-2xl font-bold mb-2">Crie sua conta</h2>
-                    <p class="text-muted-foreground">Preencha os dados abaixo para começar seu teste gratuito.</p>
-                </div>
-
-                <!-- Stepper Visual -->
-                <div class="flex items-center gap-2 mb-8">
-                    <div v-for="s in 3" :key="s" class="h-2 flex-1 rounded-full transition-colors duration-300"
-                        :class="step >= s ? 'bg-primary' : 'bg-muted'"></div>
-                </div>
-
-                <form @submit.prevent="submitForm" class="space-y-6">
-
-                    <!-- Passo 1: Informações Pessoais -->
-                    <div v-show="step === 1" class="space-y-4 animate-in fade-in slide-in-from-right-8 duration-300">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-2">
-                                <Label for="firstName">Nome</Label>
-                                <Input id="firstName" v-model="store.form.firstName" placeholder="Seu nome"
-                                    :class="{ 'border-red-500': errors.firstName }" />
-                                <span v-if="errors.firstName" class="text-xs text-red-500">Obrigatório</span>
-                            </div>
-                            <div class="space-y-2">
-                                <Label for="lastName">Sobrenome</Label>
-                                <Input id="lastName" v-model="store.form.lastName" placeholder="Seu sobrenome"
-                                    :class="{ 'border-red-500': errors.lastName }" />
-                                <span v-if="errors.lastName" class="text-xs text-red-500">Obrigatório</span>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2">
-                            <Label for="email">E-mail</Label>
-                            <Input id="email" type="email" v-model="store.form.email" placeholder="seu@email.com"
-                                :class="{ 'border-red-500': errors.email }" />
-                            <span v-if="errors.email" class="text-xs text-red-500">E-mail inválido</span>
-                        </div>
-
-                        <div class="space-y-2">
-                            <Label for="phone">Telefone / WhatsApp</Label>
-                            <Input id="phone" v-model="store.form.phone" v-maska="phoneMaskOptions"
-                                placeholder="(00) 00000-0000" :class="{ 'border-red-500': errors.phone }" />
-                            <span v-if="errors.phone" class="text-xs text-red-500">Obrigatório</span>
-                        </div>
-
-                        <div class="space-y-2">
-                            <Label for="password">Senha</Label>
-                            <Input id="password" type="password" v-model="store.form.password"
-                                placeholder="Mínimo 6 caracteres" :class="{ 'border-red-500': errors.password }" />
-
-                            <!-- Password Strength Bar -->
-                            <div class="h-1.5 w-full bg-muted rounded-full overflow-hidden mt-2">
-                                <div class="h-full transition-all duration-300" :class="strengthColor"
-                                    :style="{ width: `${strength * 25}%` }"></div>
-                            </div>
-                            <p class="text-xs text-muted-foreground text-right">{{ strengthText }}</p>
-                        </div>
-
-                        <div class="space-y-2">
-                            <Label for="indicacao">Código de indicação <span class="text-muted-foreground">(opcional)</span></Label>
-                            <Input id="indicacao" v-model="store.form.indicacao" placeholder="Recebeu um convite? Digite o código"
-                                class="uppercase" />
-                        </div>
-
-                        <Button type="button" class="w-full" @click="nextStep">Continuar
-                            <ArrowRight class="ml-2 w-4 h-4" />
-                        </Button>
-                    </div>
-
-                    <!-- Passo 2: Dados da Empresa -->
-                    <div v-show="step === 2" class="space-y-4 animate-in fade-in slide-in-from-right-8 duration-300">
-                        <div class="space-y-2">
-                            <Label for="storeName">Nome da Loja</Label>
-                            <Input id="storeName" v-model="store.form.storeName" placeholder="Ex: Minha Loja Top"
-                                :class="{ 'border-red-500': errors.storeName }" />
-                            <span v-if="errors.storeName" class="text-xs text-red-500">Obrigatório</span>
-                        </div>
-
-                        <div class="space-y-2">
-                            <Label for="segment">Segmento</Label>
-                            <Select v-model="store.form.segment">
-                                <SelectTrigger :class="{ 'border-red-500': errors.segment }">
-                                    <SelectValue placeholder="Selecione o segmento" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="moda">Moda e Vestuário</SelectItem>
-                                    <SelectItem value="eletronicos">Eletrônicos e Informática</SelectItem>
-                                    <SelectItem value="alimentacao">Alimentação e Bebidas</SelectItem>
-                                    <SelectItem value="servicos">Prestação de Serviços</SelectItem>
-                                    <SelectItem value="varejo">Varejo em Geral</SelectItem>
-                                    <SelectItem value="outros">Outros</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <span v-if="errors.segment" class="text-xs text-red-500">Obrigatório</span>
-                        </div>
-
-                        <div class="space-y-2">
-                            <Label for="cnpj">CPF ou CNPJ (Opcional)</Label>
-                            <Input id="cnpj" v-model="store.form.cnpj" v-maska="cpfCnpjMaskOptions"
-                                placeholder="Apenas números" />
-                        </div>
-
-                        <div class="space-y-2">
-                            <Label for="employees">Tamanho da Equipe</Label>
-                            <Select v-model="store.form.employees">
-                                <SelectTrigger :class="{ 'border-red-500': errors.employees }">
-                                    <SelectValue placeholder="Quantas pessoas?" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="1">Apenas eu</SelectItem>
-                                    <SelectItem value="5">2 a 5 pessoas</SelectItem>
-                                    <SelectItem value="10">6 a 10 pessoas</SelectItem>
-                                    <SelectItem value="20">Mais de 10</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <span v-if="errors.employees" class="text-xs text-red-500">Obrigatório</span>
-                        </div>
-
-                        <div class="flex gap-3">
-                            <Button type="button" variant="outline" class="flex-1" @click="prevStep">Voltar</Button>
-                            <Button type="button" class="flex-1" @click="nextStep">Continuar</Button>
-                        </div>
-                    </div>
-
-                    <!-- Passo 3: Confirmação -->
-                    <div v-show="step === 3" class="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300">
-                        <div class="bg-muted/50 p-6 rounded-xl border space-y-3">
-                            <h3 class="font-bold border-b pb-2 mb-2">Resumo</h3>
-                            <div class="grid grid-cols-[100px_1fr] gap-2 text-sm">
-                                <span class="text-muted-foreground">Nome:</span>
-                                <span class="font-medium truncate">{{ store.form.firstName }} {{ store.form.lastName
-                                    }}</span>
-
-                                <span class="text-muted-foreground">Loja:</span>
-                                <span class="font-medium truncate">{{ store.form.storeName }}</span>
-
-                                <span class="text-muted-foreground">Email:</span>
-                                <span class="font-medium truncate">{{ store.form.email }}</span>
-                            </div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div class="flex items-start gap-2">
-                                <Checkbox id="terms" v-model="store.form.terms" />
-                                <label for="terms"
-                                    class="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Aceito os <RouterLink to="/site/termos-politica#termos" target="_blank"
-                                        class="text-primary hover:underline">Termos de Uso</RouterLink> e <RouterLink
-                                        to="/site/termos-politica#privacidade" target="_blank" class="text-primary hover:underline">
-                                        Política de Privacidade</RouterLink>.
-                                </label>
-                            </div>
-                            <span v-if="errors.terms" class="text-xs text-red-500 block mt-1">Você precisa aceitar os
-                                termos</span>
-
-                            <div class="flex items-center gap-2">
-                                <Checkbox id="newsletter" v-model="store.form.newsletter" />
-                                <Label for="newsletter" class="font-normal">Quero receber dicas e novidades.</Label>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-3">
-                            <Button type="button" variant="outline" class="flex-1" @click="prevStep">Voltar</Button>
-                            <Button type="submit" class="flex-1" :disabled="loading">
-                                <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
-                                <span v-else>Finalizar Cadastro</span>
-                            </Button>
-                        </div>
-                    </div>
-
-                </form>
-
-                <p class="text-center text-sm text-muted-foreground mt-8">
-                    Já tem uma conta?
-                    <RouterLink to="/login" class="text-primary hover:underline font-medium">Fazer Login</RouterLink>
-                </p>
-            </div>
-        </div>
-    </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import './siteTypography.css'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { isAxiosError } from 'axios'
+import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { vMaska } from 'maska/vue'
 import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
-import { useAccountCreateStore } from '@/stores/login/useCreateAccount'
-import { ContaRepository } from '@/repositories/conta-repository'
-
-// UI Components
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
+import { useAccountCreateStore } from '@/stores/login/useCreateAccount'
+import { ContaRepository, type CreateConta } from '@/repositories/conta-repository'
+import { OnboardingRepository } from '@/repositories/onboarding-repository'
 import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
-import {
-    ArrowRight, Loader2,
-    ScanLine, Boxes, Wallet, LineChart,
-    ShieldCheck, DatabaseBackup, Headset,
-} from 'lucide-vue-next'
+  OPERATION_KEYS,
+  type OnboardingConfig,
+  type OnboardingPreview,
+  type OperationAnswers,
+} from '@/types/onboarding'
+import { FONT_OPTIONS, normalizeThemeCustomization } from '@/utils/themeCustomization'
+import ThemePreview from './components/ThemePreview.vue'
 
+const store = useAccountCreateStore()
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
-const store = useAccountCreateStore()
-
-const features = [
-    { icon: ScanLine, title: 'Vendas e PDV', desc: 'Caixa rápido e cupom' },
-    { icon: Boxes, title: 'Estoque', desc: 'Controle em tempo real' },
-    { icon: Wallet, title: 'Financeiro', desc: 'Fluxo de caixa e DRE' },
-    { icon: LineChart, title: 'Relatórios', desc: 'Decisões com dados' },
-]
-
-const trust = [
-    { icon: ShieldCheck, label: 'Dados criptografados' },
-    { icon: DatabaseBackup, label: 'Backup diário' },
-    { icon: Headset, label: 'Suporte dedicado' },
-]
-
+const steps = ['Seu acesso', 'Seu empreendimento', 'Seus módulos', 'Sua identidade', 'Confirmação']
 const step = ref(1)
-const loading = ref(false)
+const heading = ref<HTMLElement | null>(null)
+const formElement = ref<HTMLFormElement | null>(null)
+const busy = ref(false)
+const configLoading = ref(false)
+const config = ref<OnboardingConfig | null>(null)
+const preview = ref<OnboardingPreview | null>(null)
+const message = ref('')
+const errors = ref<Record<string, string>>({})
+const answers = ref<OperationAnswers>(
+  Object.fromEntries(OPERATION_KEYS.map((key) => [key, false])) as OperationAnswers,
+)
+const selectedModules = ref<string[]>([])
+const selectedMenus = ref<string[]>([])
+const theme = ref(normalizeThemeCustomization())
+const selectedPreset = ref('')
+const reviewedAnswers = ref('')
+let alive = true
 
-const errors = ref({
-    firstName: false,
-    lastName: false,
-    email: false,
-    phone: false,
-    password: false,
-    storeName: false,
-    segment: false,
-    employees: false,
-    terms: false
-})
-
-const strength = computed(() => {
-    let score = 0
-    const pwd = store.form.password || ''
-    if (pwd.length >= 6) score++
-    if (/[A-Z]/.test(pwd)) score++
-    if (/[0-9]/.test(pwd)) score++
-    if (/[^A-Za-z0-9]/.test(pwd)) score++
-    return score
-})
-
-const strengthText = computed(() => {
-    if (!store.form.password) return ''
-    if (strength.value <= 1) return 'Senha Fraca'
-    if (strength.value === 2) return 'Senha Média'
-    if (strength.value >= 3) return 'Senha Forte'
-    return ''
-})
-
-const strengthColor = computed(() => {
-    if (strength.value <= 1) return 'bg-red-500'
-    if (strength.value === 2) return 'bg-yellow-500'
-    return 'bg-green-500'
-})
-
-const validateStep1 = () => {
-    errors.value.firstName = !store.form.firstName
-    errors.value.lastName = !store.form.lastName
-    errors.value.email = !store.form.email || !/^\S+@\S+\.\S+$/.test(store.form.email)
-    errors.value.phone = !store.form.phone
-    errors.value.password = !store.form.password || store.form.password.length < 6
-
-    return !errors.value.firstName && !errors.value.lastName && !errors.value.email && !errors.value.phone && !errors.value.password
+const menuNames: Record<string, string> = {
+  dashboard: 'Visão geral',
+  financeiro: 'Financeiro',
+  clientes: 'Clientes',
+  vendas: 'Vendas',
+  produtos: 'Produtos',
+  servicos: 'Serviços',
+  reservas: 'Agendamento',
+  arena: 'Arena',
+  ourive: 'Ourivesaria',
+  restaurante: 'Restaurante',
+  assinaturas: 'Contratos',
+  atendimento: 'Atendimento',
+  'loja-virtual': 'Loja virtual',
+  'produtos:combos': 'Combos',
+  configuracoes: 'Configurações',
+  perfil: 'Perfil',
+  loja: 'App Store',
+  usuarios: 'Equipe',
+  changelog: 'Novidades',
+  metas: 'Metas',
+  whatsapp: 'WhatsApp',
+  'notas-fiscais': 'Notas fiscais',
+  'core-ia': 'CORE IA',
 }
+const menuLabel = (key: string) => menuNames[key] || key
+const menus = computed(() =>
+  [
+    ...new Set([
+      ...(config.value?.baseMenuKeys || []),
+      ...(config.value?.modules
+        .map((module) => module.menuKey)
+        .filter((key): key is string => !!key) || []),
+      ...(preview.value?.menusSugeridos || []),
+      ...selectedMenus.value,
+    ]),
+  ].filter((key) => !key.includes(':')),
+)
+const fonts = computed(() =>
+  (config.value?.fonts || FONT_OPTIONS)
+    .map((font) => (typeof font === 'string' ? { value: font, label: font } : font))
+    .filter((font) => FONT_OPTIONS.some((option) => option.value === font.value)),
+)
+const modules = computed(() =>
+  (preview.value?.modulos || []).map((module) => ({
+    ...module,
+    name:
+      config.value?.modules.find((item) => item.codigo === module.codigo)?.nome || module.codigo,
+  })),
+)
+const selectedSummary = computed(() => modules.value.filter((module) => module.selecionado))
+const formatMoney = (value: number) =>
+  Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-const validateStep2 = () => {
-    errors.value.storeName = !store.form.storeName
-    errors.value.segment = !store.form.segment
-    errors.value.employees = !store.form.employees
-
-    return !errors.value.storeName && !errors.value.segment && !errors.value.employees
+function toggle(values: string[], key: string, checked: boolean) {
+  return checked ? [...new Set([...values, key])] : values.filter((value) => value !== key)
 }
-
-const validateStep3 = () => {
-    errors.value.terms = !store.form.terms
-    return !errors.value.terms
+function applyPreset(preset: OnboardingConfig['themePresets'][number]) {
+  theme.value = normalizeThemeCustomization({ ...preset.tema, fonte: theme.value.fonte })
+  selectedPreset.value = preset.id
 }
-
-const nextStep = () => {
-    if (step.value === 1 && validateStep1()) step.value++
-    else if (step.value === 2 && validateStep2()) step.value++
+function checked(event: Event) {
+  return (event.target as HTMLInputElement).checked
 }
-
-const prevStep = () => {
-    if (step.value > 1) step.value--
+async function focusHeading() {
+  await nextTick()
+  heading.value?.focus()
 }
-
-const submitForm = async () => {
-    if (!validateStep3()) return
-
-    loading.value = true
-    try {
-        await ContaRepository.create({
-            nome: `${store.form.firstName} ${store.form.lastName}`,
-            cpfCnpj: store.form.cnpj,
-            conta: store.form.storeName,
-            telefone: store.form.phone,
-            dicasNovidades: store.form.newsletter,
-            email: store.form.email,
-            senha: store.form.password,
-            funcionarios: Number(store.form.employees),
-            tipo: store.form.segment,
-            indicacao: store.form.indicacao?.trim() || undefined,
-        })
-        toast.success("Conta criada com sucesso! Faça login para continuar.")
-        router.push("/login")
-    } catch (error) {
-        console.error(error)
-        toast.error("Erro ao criar conta. Verifique os dados e tente novamente.")
-    } finally {
-        loading.value = false
+async function goTo(value: number) {
+  step.value = value
+  await focusHeading()
+}
+async function focusError() {
+  await nextTick()
+  formElement.value?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+}
+async function loadConfig() {
+  configLoading.value = true
+  message.value = ''
+  try {
+    const data = await OnboardingRepository.config()
+    if (!alive) return
+    config.value = data
+    if (!selectedPreset.value && data.themePresets.length) {
+      const preset = data.themePresets[0]!
+      theme.value = normalizeThemeCustomization(preset.tema)
+      selectedPreset.value = preset.id
     }
+  } catch {
+    if (alive) message.value = 'Não foi possível carregar as opções do cadastro. Tente novamente.'
+  } finally {
+    if (alive) configLoading.value = false
+  }
 }
-
+function validate(current: number) {
+  errors.value = {}
+  const form = store.form
+  if (current === 1) {
+    if (!form.firstName.trim()) errors.value.firstName = 'Informe seu nome.'
+    if (!form.lastName.trim()) errors.value.lastName = 'Informe seu sobrenome.'
+    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) errors.value.email = 'Informe um e-mail válido.'
+    if (form.phone.replace(/\D/g, '').length < 10)
+      errors.value.phone = 'Informe um telefone com DDD.'
+    if (form.password.length < 6) errors.value.password = 'Use pelo menos 6 caracteres.'
+  }
+  if (current === 2) {
+    if (!form.storeName.trim()) errors.value.storeName = 'Informe o nome do empreendimento.'
+    if (!form.segment) errors.value.segment = 'Selecione o segmento.'
+    if (!form.employees) errors.value.employees = 'Selecione o tamanho da equipe.'
+  }
+  if (current === 5 && !form.terms) errors.value.terms = 'Aceite os termos para criar sua conta.'
+  if (Object.keys(errors.value).length) {
+    void focusError()
+    return false
+  }
+  return true
+}
+async function review(reset: boolean) {
+  const result = await OnboardingRepository.preview({
+    version: 1,
+    catalogVersion: config.value?.catalogVersion,
+    respostas: { ...answers.value },
+    ...(reset
+      ? {}
+      : {
+          modulosSelecionados: [...selectedModules.value],
+          menusSelecionados: [...selectedMenus.value],
+        }),
+  })
+  if (!alive) return
+  preview.value = result
+  selectedModules.value = result.modulos
+    .filter((module) => module.selecionado)
+    .map((module) => module.codigo)
+  selectedMenus.value = [...result.menusEfetivos]
+  reviewedAnswers.value = JSON.stringify(answers.value)
+}
+async function next() {
+  if (busy.value || !validate(step.value)) return
+  busy.value = true
+  message.value = ''
+  try {
+    if (step.value === 2) await review(reviewedAnswers.value !== JSON.stringify(answers.value))
+    if (step.value === 3) await review(false)
+    if (alive) await goTo(Math.min(5, step.value + 1))
+  } catch (error: unknown) {
+    if (
+      isAxiosError<{ code?: string }>(error) &&
+      error.response?.status === 409 &&
+      error.response.data.code === 'ONBOARDING_CATALOG_CHANGED'
+    ) {
+      await loadConfig()
+      try {
+        await review(true)
+        await goTo(3)
+      } catch {
+        preview.value = null
+        await goTo(2)
+      }
+      message.value = 'O catálogo mudou. Revise os módulos e preços atualizados antes de continuar.'
+    } else
+      message.value =
+        'Não foi possível revisar os módulos. Seus dados foram mantidos. Tente novamente.'
+  } finally {
+    busy.value = false
+  }
+}
+function payload(): CreateConta {
+  const form = store.form
+  return {
+    nome: `${form.firstName.trim()} ${form.lastName.trim()}`,
+    cpfCnpj: form.cnpj,
+    conta: form.storeName.trim(),
+    telefone: form.phone,
+    dicasNovidades: form.newsletter,
+    email: form.email.trim(),
+    senha: form.password,
+    funcionarios: Number(form.employees),
+    tipo: form.segment,
+    indicacao: form.indicacao.trim() || undefined,
+    onboarding: {
+      version: 1,
+      catalogVersion: preview.value?.catalogVersion || config.value?.catalogVersion,
+      respostas: { ...answers.value },
+      modulosSelecionados: [...selectedModules.value],
+      menusSelecionados: [...selectedMenus.value],
+      temaPersonalizado: normalizeThemeCustomization(theme.value),
+    },
+  }
+}
+async function submit() {
+  if (step.value !== 5) return next()
+  if (busy.value || !preview.value || !validate(5)) return
+  busy.value = true
+  message.value = ''
+  try {
+    await ContaRepository.create(payload())
+    store.form.password = ''
+    toast.success('Conta criada! Faça login para continuar.')
+    await router.push('/login')
+  } catch (error: unknown) {
+    if (
+      isAxiosError<{
+        code?: string
+        message?: string
+        fieldErrors?: Record<string, string | string[]>
+      }>(error)
+    ) {
+      if (
+        error.response?.status === 409 &&
+        error.response.data.code === 'ONBOARDING_CATALOG_CHANGED'
+      ) {
+        await loadConfig()
+        try {
+          await review(true)
+        } catch {
+          preview.value = null
+        }
+        await goTo(preview.value ? 3 : 2)
+        message.value =
+          'O catálogo mudou. Revise os módulos e preços atualizados antes de confirmar.'
+      } else {
+        message.value =
+          error.response?.data.message ||
+          'Não foi possível criar a conta. Confira os dados e tente novamente.'
+        const fields = error.response?.data.fieldErrors
+        if (fields) {
+          const aliases: Record<string, string> = {
+            nome: 'firstName',
+            senha: 'password',
+            telefone: 'phone',
+            conta: 'storeName',
+            tipo: 'segment',
+            funcionarios: 'employees',
+            cpfCnpj: 'cnpj',
+          }
+          errors.value = Object.fromEntries(
+            Object.entries(fields).map(([key, value]) => [
+              aliases[key] || key,
+              Array.isArray(value) ? value.join(' ') : value,
+            ]),
+          )
+          const first = Object.keys(errors.value)[0]
+          if (first) {
+            busy.value = false
+            await goTo(['storeName', 'segment', 'employees', 'cnpj'].includes(first) ? 2 : 1)
+            await focusError()
+          }
+        }
+      }
+    } else
+      message.value = 'Não foi possível criar a conta. Seus dados foram mantidos. Tente novamente.'
+  } finally {
+    busy.value = false
+  }
+}
 onMounted(() => {
-    // Captura o código de indicação do link (?ref=CODIGO) automaticamente.
-    const ref = route.query.ref
-    if (typeof ref === 'string' && ref.trim()) {
-        store.form.indicacao = ref.trim().toUpperCase()
-    }
+  if (typeof route.query.ref === 'string')
+    store.form.indicacao = route.query.ref.trim().toUpperCase()
+  void loadConfig()
+})
+onUnmounted(() => {
+  alive = false
+  store.form.password = ''
 })
 </script>
+
+<template>
+  <main
+    class="registration min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[minmax(20rem,.75fr)_minmax(0,1.25fr)]"
+  >
+    <aside
+      class="relative flex flex-col justify-between overflow-hidden bg-[#122b29] p-6 text-white sm:p-10 lg:sticky lg:top-0 lg:h-screen lg:p-12"
+    >
+      <RouterLink to="/site" class="flex w-fit items-center gap-3 font-semibold"
+        ><img src="/imgs/logo.png" alt="" class="h-9 w-9 rounded-lg" />Gestão Fácil</RouterLink
+      >
+      <div class="relative mb-0 mt-4 max-w-lg lg:my-16">
+        <p
+          class="mb-4 hidden text-xs font-semibold uppercase tracking-[.2em] text-[#b8e7bc] lg:block"
+        >
+          Um começo com direção
+        </p>
+        <h1 class="text-2xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+          Seu negócio tem um jeito.<br /><span class="text-[#b8e7bc]">Seu sistema também.</span>
+        </h1>
+        <p class="mt-5 hidden leading-relaxed text-white/70 lg:block">
+          Conte como você trabalha. Organize seus módulos e escolha uma identidade para o seu
+          painel.
+        </p>
+        <ol class="mt-8 hidden space-y-5 lg:block">
+          <li
+            v-for="(label, index) in steps"
+            :key="label"
+            class="flex items-center gap-3"
+            :class="step === index + 1 ? 'text-white' : 'text-white/50'"
+          >
+            <span
+              class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white/30 text-xs"
+              ><Check v-if="step > index + 1" class="h-4 w-4" aria-hidden="true" /><template
+                v-else
+                >{{ index + 1 }}</template
+              ></span
+            >{{ label }}
+          </li>
+        </ol>
+      </div>
+      <p class="hidden text-sm text-white/60 lg:block">
+        Você poderá ajustar módulos e aparência depois, nas configurações e na App Store.
+      </p>
+    </aside>
+    <section class="mx-auto w-full max-w-4xl px-5 py-8 sm:px-10 lg:py-12">
+      <div class="mb-8 flex items-center justify-between gap-4 text-sm">
+        <RouterLink to="/site" class="inline-flex items-center gap-2 text-muted-foreground"
+          ><ArrowLeft class="h-4 w-4" aria-hidden="true" />Site</RouterLink
+        ><RouterLink to="/login" class="font-medium underline underline-offset-4"
+          >Já tenho conta</RouterLink
+        >
+      </div>
+      <p
+        class="mb-2 text-xs font-semibold uppercase tracking-widest text-primary"
+        aria-live="polite"
+      >
+        Etapa {{ step }} de 5
+      </p>
+      <h2
+        ref="heading"
+        tabindex="-1"
+        class="text-3xl font-semibold tracking-tight focus:outline-none"
+      >
+        {{ steps[step - 1] }}
+      </h2>
+      <div
+        class="mb-7 mt-5 flex gap-2"
+        role="progressbar"
+        :aria-valuenow="step"
+        :aria-valuemin="1"
+        :aria-valuemax="5"
+        :aria-valuetext="steps[step - 1]"
+        aria-label="Progresso do cadastro"
+      >
+        <span
+          v-for="n in 5"
+          :key="n"
+          class="h-1 flex-1 rounded-full"
+          :class="n <= step ? 'bg-primary' : 'bg-muted'"
+        />
+      </div>
+      <div
+        v-if="message"
+        role="alert"
+        class="mb-5 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm"
+      >
+        {{ message }}
+      </div>
+      <div v-if="configLoading" role="status" class="py-8">Carregando opções do cadastro…</div>
+      <div v-else-if="!config" class="space-y-4">
+        <p>Precisamos carregar o catálogo para preparar sua conta.</p>
+        <Button @click="loadConfig">Tentar novamente</Button>
+      </div>
+      <form v-else ref="formElement" novalidate class="space-y-6" @submit.prevent="submit">
+        <fieldset :disabled="busy" class="min-w-0 space-y-5">
+          <legend class="sr-only">{{ steps[step - 1] }}</legend>
+          <div v-if="step === 1" class="space-y-4">
+            <p class="text-sm text-muted-foreground">
+              Crie o acesso do responsável pelo empreendimento.
+            </p>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label
+                v-for="field in [
+                  { key: 'firstName', label: 'Nome', autocomplete: 'given-name' },
+                  { key: 'lastName', label: 'Sobrenome', autocomplete: 'family-name' },
+                ]"
+                :key="field.key"
+                class="block space-y-2"
+                ><span class="text-sm font-medium">{{ field.label }}</span
+                ><Input
+                  :id="field.key"
+                  v-model="store.form[field.key as 'firstName' | 'lastName']"
+                  :autocomplete="field.autocomplete"
+                  :aria-invalid="!!errors[field.key]"
+                  :aria-describedby="errors[field.key] ? `${field.key}-error` : undefined"
+                /><span
+                  v-if="errors[field.key]"
+                  :id="`${field.key}-error`"
+                  class="block text-sm text-destructive"
+                  >{{ errors[field.key] }}</span
+                ></label
+              >
+            </div>
+            <label class="block space-y-2"
+              ><span class="text-sm font-medium">E-mail</span
+              ><Input
+                id="email"
+                v-model="store.form.email"
+                type="email"
+                autocomplete="email"
+                :aria-invalid="!!errors.email"
+                aria-describedby="email-error"
+              /><span v-if="errors.email" id="email-error" class="block text-sm text-destructive">{{
+                errors.email
+              }}</span></label
+            >
+            <label class="block space-y-2"
+              ><span class="text-sm font-medium">Telefone / WhatsApp</span
+              ><Input
+                id="phone"
+                v-model="store.form.phone"
+                v-maska="phoneMaskOptions"
+                type="tel"
+                autocomplete="tel"
+                :aria-invalid="!!errors.phone"
+                aria-describedby="phone-error"
+              /><span v-if="errors.phone" id="phone-error" class="block text-sm text-destructive">{{
+                errors.phone
+              }}</span></label
+            >
+            <label class="block space-y-2"
+              ><span class="text-sm font-medium">Senha</span
+              ><Input
+                id="password"
+                v-model="store.form.password"
+                type="password"
+                autocomplete="new-password"
+                :aria-invalid="!!errors.password"
+                aria-describedby="password-help password-error"
+              /><span id="password-help" class="block text-xs text-muted-foreground"
+                >Use pelo menos 6 caracteres. Combine letras, números e símbolos.</span
+              ><span
+                v-if="errors.password"
+                id="password-error"
+                class="block text-sm text-destructive"
+                >{{ errors.password }}</span
+              ></label
+            >
+            <label class="block space-y-2"
+              ><span class="text-sm font-medium">Código de indicação (opcional)</span
+              ><Input id="indicacao" v-model="store.form.indicacao" class="uppercase"
+            /></label>
+          </div>
+          <div v-else-if="step === 2" class="space-y-5">
+            <label class="block space-y-2"
+              ><span class="text-sm font-medium">Nome do empreendimento</span
+              ><Input
+                id="storeName"
+                v-model="store.form.storeName"
+                autocomplete="organization"
+                :aria-invalid="!!errors.storeName"
+                aria-describedby="storeName-error"
+              /><span
+                v-if="errors.storeName"
+                id="storeName-error"
+                class="block text-sm text-destructive"
+                >{{ errors.storeName }}</span
+              ></label
+            >
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="block space-y-2"
+                ><span class="text-sm font-medium">Segmento</span
+                ><select
+                  id="segment"
+                  v-model="store.form.segment"
+                  class="registration-select"
+                  :aria-invalid="!!errors.segment"
+                  aria-describedby="segment-error"
+                >
+                  <option value="" disabled>Selecione</option>
+                  <option value="moda">Moda e vestuário</option>
+                  <option value="eletronicos">Eletrônicos</option>
+                  <option value="alimentacao">Alimentação</option>
+                  <option value="servicos">Serviços</option>
+                  <option value="varejo">Varejo</option>
+                  <option value="outros">Outros / negócio híbrido</option></select
+                ><span
+                  v-if="errors.segment"
+                  id="segment-error"
+                  class="block text-sm text-destructive"
+                  >{{ errors.segment }}</span
+                ></label
+              ><label class="block space-y-2"
+                ><span class="text-sm font-medium">Equipe</span
+                ><select
+                  id="employees"
+                  v-model="store.form.employees"
+                  class="registration-select"
+                  :aria-invalid="!!errors.employees"
+                  aria-describedby="employees-error"
+                >
+                  <option value="" disabled>Selecione</option>
+                  <option value="1">Apenas eu</option>
+                  <option value="5">2 a 5 pessoas</option>
+                  <option value="10">6 a 10 pessoas</option>
+                  <option value="20">Mais de 10 pessoas</option></select
+                ><span
+                  v-if="errors.employees"
+                  id="employees-error"
+                  class="block text-sm text-destructive"
+                  >{{ errors.employees }}</span
+                ></label
+              >
+            </div>
+            <label class="block space-y-2"
+              ><span class="text-sm font-medium">CPF ou CNPJ (opcional)</span
+              ><Input
+                id="cnpj"
+                v-model="store.form.cnpj"
+                v-maska="cpfCnpjMaskOptions"
+                inputmode="numeric"
+                :aria-invalid="!!errors.cnpj"
+              /><span v-if="errors.cnpj" class="block text-sm text-destructive">{{
+                errors.cnpj
+              }}</span></label
+            >
+            <div class="border-t pt-5">
+              <h3 class="font-semibold">Como seu negócio funciona?</h3>
+              <p class="mb-4 mt-1 text-sm text-muted-foreground">
+                Marque as atividades que fazem parte da sua operação. Você pode combinar várias.
+              </p>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <label
+                  v-for="question in config.questions"
+                  :key="question.key"
+                  class="flex min-h-16 cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                  ><input
+                    v-model="answers[question.key]"
+                    type="checkbox"
+                    class="mt-1 h-4 w-4 shrink-0 accent-[var(--color-primary)]"
+                  /><span
+                    ><span class="text-sm font-medium">{{ question.label }}</span
+                    ><small v-if="question.description" class="mt-1 block text-muted-foreground">{{
+                      question.description
+                    }}</small></span
+                  ></label
+                >
+              </div>
+            </div>
+          </div>
+          <div v-else-if="step === 3" class="space-y-5">
+            <p class="text-sm text-muted-foreground">
+              Revise nossa sugestão. Os módulos gratuitos elegíveis serão ativados. Apps pagos ficam
+              como recomendações e exigem contratação posterior na App Store.
+            </p>
+            <section>
+              <h3 class="mb-3 font-semibold">Organização do painel</h3>
+              <div class="flex flex-wrap gap-2">
+                <label
+                  v-for="menu in menus"
+                  :key="menu"
+                  class="flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm"
+                  ><input
+                    type="checkbox"
+                    :checked="selectedMenus.includes(menu)"
+                    :disabled="config.baseMenuKeys.includes(menu)"
+                    @change="selectedMenus = toggle(selectedMenus, menu, checked($event))"
+                  />{{ menuLabel(menu)
+                  }}<span
+                    v-if="config.baseMenuKeys.includes(menu)"
+                    class="text-xs text-muted-foreground"
+                    >essencial</span
+                  ></label
+                >
+              </div>
+            </section>
+            <section>
+              <h3 class="mb-3 font-semibold">Apps para sua operação</h3>
+              <div class="space-y-3">
+                <label
+                  v-for="module in modules"
+                  :key="module.codigo"
+                  class="flex cursor-pointer items-start gap-3 rounded-xl border p-4"
+                  ><input
+                    type="checkbox"
+                    class="mt-1 h-4 w-4"
+                    :checked="selectedModules.includes(module.codigo)"
+                    :disabled="
+                      !config.modules.find((item) => item.codigo === module.codigo)?.status
+                    "
+                    @change="
+                      selectedModules = toggle(selectedModules, module.codigo, checked($event))
+                    "
+                  /><span class="min-w-0 flex-1"
+                    ><strong class="block text-sm">{{ module.name }}</strong
+                    ><span class="mt-1 block text-sm text-muted-foreground">{{
+                      module.motivo
+                    }}</span
+                    ><span class="mt-2 block text-xs font-medium">{{
+                      module.precoMensal > 0
+                        ? `${formatMoney(module.precoMensal)}/mês · contratação posterior`
+                        : 'Gratuito · sujeito à disponibilidade do catálogo'
+                    }}</span></span
+                  ></label
+                >
+              </div>
+            </section>
+            <ul v-if="preview?.avisos.length" class="space-y-2 rounded-xl bg-muted p-4 text-sm">
+              <li v-for="warning in preview.avisos" :key="warning">{{ warning }}</li>
+            </ul>
+          </div>
+          <div v-else-if="step === 4" class="space-y-6">
+            <p class="text-sm text-muted-foreground">
+              Escolha uma paleta e uma fonte. A prévia não altera a aparência desta página.
+            </p>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <button
+                v-for="preset in config.themePresets"
+                :key="preset.id"
+                type="button"
+                class="flex min-h-16 items-center gap-3 rounded-xl border p-3 text-left focus-visible:ring-2 focus-visible:ring-ring"
+                :class="selectedPreset === preset.id ? 'border-primary ring-1 ring-primary' : ''"
+                :aria-pressed="selectedPreset === preset.id"
+                @click="applyPreset(preset)"
+              >
+                <span class="flex -space-x-1" aria-hidden="true"
+                  ><span
+                    v-for="color in [
+                      preset.tema.primariaLight,
+                      preset.tema.sidebarLight,
+                      preset.tema.fundoLight,
+                    ]"
+                    :key="color"
+                    class="h-7 w-7 rounded-full border border-white"
+                    :style="{ background: color }" /></span
+                ><span class="text-sm font-medium">{{ preset.nome }}</span>
+              </button>
+            </div>
+            <label class="block space-y-2"
+              ><span class="text-sm font-medium">Fonte do painel</span
+              ><select id="font" v-model="theme.fonte" class="registration-select">
+                <option v-for="font in fonts" :key="font.value" :value="font.value">
+                  {{ font.label }}
+                </option>
+              </select></label
+            >
+            <div class="grid gap-4 sm:grid-cols-2">
+              <ThemePreview :theme="theme" mode="light" :name="store.form.storeName" /><ThemePreview
+                :theme="theme"
+                mode="dark"
+                :name="store.form.storeName"
+              />
+            </div>
+          </div>
+          <div v-else class="space-y-5">
+            <p class="text-sm text-muted-foreground">
+              Confira antes de criar sua conta. Nenhum app pago será contratado nesta etapa.
+            </p>
+            <dl class="space-y-3 rounded-xl border bg-card p-5 text-sm">
+              <div>
+                <dt class="text-muted-foreground">Responsável</dt>
+                <dd class="break-words font-medium">
+                  {{ store.form.firstName }} {{ store.form.lastName }} · {{ store.form.email }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-muted-foreground">Empreendimento</dt>
+                <dd class="font-medium">{{ store.form.storeName }}</dd>
+              </div>
+              <div>
+                <dt class="text-muted-foreground">Menus</dt>
+                <dd>
+                  {{
+                    selectedMenus
+                      .filter((key) => !key.includes(':'))
+                      .map(menuLabel)
+                      .join(', ')
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-muted-foreground">Aparência</dt>
+                <dd>
+                  {{ config.themePresets.find((preset) => preset.id === selectedPreset)?.nome }} ·
+                  {{ theme.fonte }}
+                </dd>
+              </div>
+            </dl>
+            <ul class="space-y-2 text-sm">
+              <li v-for="module in selectedSummary" :key="module.codigo">
+                <strong>{{ module.name }}</strong> —
+                {{
+                  module.acao === 'ATIVAR_GRATUITO'
+                    ? 'ativação gratuita'
+                    : `recomendado, ${formatMoney(module.precoMensal)}/mês; não contratado`
+                }}
+              </li>
+            </ul>
+            <p class="rounded-xl bg-muted p-4 text-sm">
+              Teste inicial de 7 dias. O plano e os apps adicionais seguem suas condições
+              comerciais. Você poderá revisar sua assinatura dentro do sistema.
+            </p>
+            <label class="flex items-start gap-3 text-sm"
+              ><input
+                id="terms"
+                v-model="store.form.terms"
+                type="checkbox"
+                class="mt-1 h-4 w-4"
+                :aria-invalid="!!errors.terms"
+                aria-describedby="terms-error"
+              /><span
+                >Li e aceito os
+                <RouterLink
+                  to="/site/termos-politica"
+                  target="_blank"
+                  class="underline underline-offset-4"
+                  >Termos de Uso e a Política de Privacidade</RouterLink
+                >.</span
+              ></label
+            >
+            <p v-if="errors.terms" id="terms-error" class="text-sm text-destructive">
+              {{ errors.terms }}
+            </p>
+            <label class="flex items-start gap-3 text-sm"
+              ><input v-model="store.form.newsletter" type="checkbox" class="mt-1 h-4 w-4" /><span
+                >Quero receber dicas e novidades por e-mail (opcional).</span
+              ></label
+            >
+          </div>
+          <div class="flex flex-wrap justify-between gap-3 border-t pt-5">
+            <Button
+              v-if="step > 1"
+              type="button"
+              variant="outline"
+              class="min-h-11"
+              @click="goTo(step - 1)"
+              ><ArrowLeft class="h-4 w-4" aria-hidden="true" />Voltar</Button
+            ><Button type="submit" class="ml-auto min-h-11"
+              ><Loader2 v-if="busy" class="h-4 w-4 animate-spin" aria-hidden="true" />{{
+                busy ? 'Aguarde…' : step === 5 ? 'Criar minha conta' : 'Continuar'
+              }}<ArrowRight v-if="!busy && step < 5" class="h-4 w-4" aria-hidden="true"
+            /></Button>
+          </div>
+        </fieldset>
+      </form>
+    </section>
+  </main>
+</template>
+
+<style scoped>
+.registration {
+  --app-font: 'Site Inter';
+  font-family: 'Site Inter', sans-serif;
+}
+.registration h1,
+.registration h2 {
+  --app-font: 'Site Sora';
+  font-family: 'Site Sora', sans-serif;
+}
+.registration-select {
+  @apply flex min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring;
+}
+</style>

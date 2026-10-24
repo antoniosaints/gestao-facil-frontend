@@ -1,5 +1,7 @@
 # Stores
 
+O formulário `login/useCreateAccount.ts` permanece somente em memória no cadastro guiado; não habilitar persistência para ele. O wizard mantém respostas/seleções/tema localmente, preserva dados ao voltar e limpa a senha ao sair ou após criação. A prévia de tema não modifica a store global de UI.
+
 ## Papel da pasta
 `stores` concentra estado compartilhado, formulários, flags visuais e ações de cada domínio. A implementação usa Pinia com Composition API.
 

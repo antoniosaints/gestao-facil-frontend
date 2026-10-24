@@ -2,15 +2,15 @@
     <div class="w-full">
         <!-- Busca e menu -->
         <div class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
-            <div class="flex w-full items-center space-x-1 rounded-md border border-border bg-card pl-4 sm:max-w-96">
-                <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                <Input type="search" placeholder="Buscar registro..." :model-value="search"
+            <div class="flex w-full items-center space-x-1 rounded-md border border-border bg-card pl-4 sm:max-w-96 focus-within:ring-2 focus-within:ring-ring">
+                <i class="fa-solid fa-magnifying-glass text-sm" aria-hidden="true"></i>
+                <Input type="search" :aria-label="searchPlaceholder || 'Buscar registros'" :placeholder="searchPlaceholder || 'Buscar registros…'" :model-value="search"
                     @update:model-value="setSearch"
                     class="border-none outline-none focus-visible:ring-0 shadow-none" />
             </div>
             <div class="flex items-center justify-between space-x-2 sm:justify-end">
                 <Select v-model="pageSize">
-                    <SelectTrigger class="border border-border">
+                    <SelectTrigger class="border border-border" aria-label="Registros por página">
                         <SelectValue placeholder="Registros por página" />
                     </SelectTrigger>
                     <SelectContent>
@@ -32,7 +32,7 @@
                     <DropdownMenuTrigger as-child>
                         <Button variant="outline" class="ml-auto bg-card border border-border">
                             <Eye />
-                            Mostrar
+                            Colunas
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -41,7 +41,7 @@
                             .filter((column) => column.getCanHide())" :key="column.id" class="capitalize"
                             :model-value="column.getIsVisible()"
                             @update:model-value="(value: boolean) => column.toggleVisibility(!!value)">
-                            {{ column.id }}
+                            {{ columnLabel(column) }}
                         </DropdownMenuCheckboxItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -49,6 +49,10 @@
         </div>
 
         <!-- Barra de ações (ex: ações em massa por seleção) -->
+        <div v-if="search.trim()" class="mb-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span class="min-w-0 break-words">Busca: {{ search }}</span>
+            <Button size="sm" variant="outline" @click="setSearch('')">Limpar busca</Button>
+        </div>
         <slot name="toolbar" :table="table" :selected-count="table.getSelectedRowModel().rows.length" />
 
         <div v-if="error" class="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
@@ -92,7 +96,7 @@
                         </TableRow>
                     </template>
 
-                    <TableRow v-else>
+                    <TableRow v-else-if="!error">
                         <TableCell v-if="loading" :colspan="columns.length" class="h-48" aria-busy="true" />
                         <TableCell v-else :colspan="columns.length" class="h-24 text-center">
                             <Empty>
@@ -100,9 +104,9 @@
                                     <EmptyMedia variant="icon">
                                         <BadgeQuestionMark />
                                     </EmptyMedia>
-                                    <EmptyTitle>{{ emptyTitle || 'Nenhum registro encontrado' }}</EmptyTitle>
+                                    <EmptyTitle>{{ search.trim() ? 'Nenhum resultado para esta busca' : (emptyTitle || 'Nenhum registro encontrado') }}</EmptyTitle>
                                     <EmptyDescription>
-                                        {{ emptyDescription || 'Cadastre algo para que possa ser listado aqui.' }}
+                                        {{ search.trim() ? 'Tente outro termo ou limpe a busca para ver os registros.' : (emptyDescription || 'Não há registros para os filtros atuais. Revise os filtros ou adicione um novo cadastro.') }}
                                     </EmptyDescription>
                                 </EmptyHeader>
                             </Empty>
@@ -140,7 +144,7 @@
 
 <script setup lang="ts">
 import { useServerTable } from '@/composables/useServerTable';
-import { FlexRender, type ColumnDef } from '@tanstack/vue-table';
+import { FlexRender, type Column, type ColumnDef } from '@tanstack/vue-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
@@ -164,11 +168,20 @@ const props = defineProps<{
     /** Mensagens opcionais para o estado vazio de cada domínio. */
     emptyTitle?: string
     emptyDescription?: string
+    searchPlaceholder?: string
+    columnLabels?: Record<string, string>
     /** Atualização silenciosa enquanto houver registros em andamento. */
     autoRefresh?: { intervalMs: number; when: (rows: any[]) => boolean }
 }>()
 
 const route = useRoute()
+function columnLabel(column: Column<any>) {
+    const meta = column.columnDef.meta as { label?: string } | undefined
+    if (props.columnLabels?.[column.id]) return props.columnLabels[column.id]
+    if (meta?.label) return meta.label
+    if (typeof column.columnDef.header === 'string') return column.columnDef.header
+    return column.id.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]/g, ' ')
+}
 const stateKey = props.stateKey || `${route.path}:${props.api}`
 
 const {

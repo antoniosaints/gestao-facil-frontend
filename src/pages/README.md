@@ -1,5 +1,17 @@
 # Páginas por Domínio
 
+## Site e cadastro de assinantes
+
+O site público foi renovado mantendo `SitePublicConfig`, editor, nichos e links existentes. O cadastro possui cinco etapas, perguntas operacionais, revisão de módulos e prévia isolada de tema light/dark. Recomendações/preços vêm da API; apps pagos não são contratados no cadastro. Ver [site/README.md](site/README.md) para contrato, tratamento de catálogo e validação.
+
+## Piloto de UX em Clientes
+
+- No desktop, as ações de Clientes ficam no cabeçalho. No mobile, a listagem segue Serviços, Usuários e Contratos: cards `rounded-2xl` em área rolável e barra inferior única com **Anterior**, **Busca**, **Mais** e **Próximo**. A busca abre em `ModalView`; **Mais** reúne **Novo cliente**, **Link público** e **Atualizar**. O indicador de página fica acima da lista; a paginação bloqueia limites, carregamento e erro. Uma consulta concluída retorna a rolagem da lista ao topo. A altura da lista mobile de Clientes usa a posição real da barra inferior, mantendo 8 px de intervalo e se ajustando ao redimensionamento, sem alterar o layout compartilhado.
+- Falha de carregamento exibe erro com **Tentar novamente**, separada de ausência de cadastros ou de resultados. Busca e página mobile ficam na sessão da aba; respostas atrasadas não substituem a consulta mais recente.
+- O formulário adapta-se a uma coluna em telas pequenas, valida e-mail pelo tipo do campo e identifica criação/edição e cliente/fornecedor nos textos. Durante o envio, os campos e o botão ficam bloqueados; falhas preservam os dados com mensagem no formulário.
+- Fechar o formulário por botão, Escape, overlay ou gesto pede confirmação se houver alterações. A navegação interna também é protegida; ao sair/recarregar a página, usa-se o aviso nativo do navegador. Após confirmação de descarte, os campos são resetados.
+- Em Comandas, os indicadores calculados a partir dos registros carregados identificam explicitamente o escopo **na página**.
+
 ## Papel da pasta
 
 `pages` organiza as telas do produto por domínio de negócio. O router carrega essas páginas de forma lazy e usa `meta` para layout, permissão e visibilidade pública.

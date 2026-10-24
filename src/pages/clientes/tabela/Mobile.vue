@@ -1,221 +1,320 @@
+﻿<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useElementBounding, useSessionStorage } from '@vueuse/core'
+import http from '@/utils/axios'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  ArrowLeft,
+  ArrowRight,
+  BadgePlus,
+  Info,
+  Link,
+  MoreHorizontal,
+  PenLine,
+  RotateCw,
+  Search,
+  Trash,
+} from 'lucide-vue-next'
+import { useClientesStore } from '@/stores/clientes/useClientes'
+import type { ClientesFornecedores } from '@/types/schemas'
+import { useConfirm } from '@/composables/useConfirm'
+import { ClienteRepository } from '@/repositories/cliente-repository'
+import { useToast } from 'vue-toastification'
+
+import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
+import ModalView from '@/components/formulario/ModalView.vue'
+
+const showSearchModal = ref(false)
+const showActionsModal = ref(false)
+const listViewport = ref<HTMLElement | null>(null)
+const bottomBar = ref<InstanceType<typeof MobileBottomBar> | null>(null)
+const { top: listTop } = useElementBounding(listViewport)
+const { top: barTop } = useElementBounding(bottomBar)
+const listMaxHeight = computed(() => `${Math.max(0, barTop.value - listTop.value - 8)}px`)
+const store = useClientesStore()
+const toast = useToast()
+const mobileData = ref<ClientesFornecedores[]>([])
+const savedState = useSessionStorage('gestaofacil:clientes:mobile', { search: '', page: 1 })
+const searchQuery = ref(savedState.value.search)
+const appliedSearch = ref(savedState.value.search)
+const currentPage = ref(savedState.value.page)
+const requestedPage = ref(currentPage.value)
+const totalPages = ref(1)
+const loading = ref(false)
+const error = ref('')
+const deleting = ref<number | null>(null)
+let requestId = 0
+
+async function renderMobile(page = currentPage.value) {
+  requestedPage.value = page
+  const id = ++requestId
+  loading.value = true
+  error.value = ''
+  try {
+    const response = await http.get('/clientes/mobile', {
+      params: { search: appliedSearch.value, limit: 10, page },
+    })
+    if (id !== requestId) return
+    totalPages.value = Math.max(1, Number(response.data.pagination.totalPages) || 1)
+    if (page > totalPages.value) {
+      await renderMobile(totalPages.value)
+      return
+    }
+    mobileData.value = response.data.data
+    showSearchModal.value = false
+    if (listViewport.value) listViewport.value.scrollTop = 0
+    currentPage.value = Math.max(1, Number(response.data.pagination.page) || 1)
+    savedState.value = { search: appliedSearch.value, page: currentPage.value }
+  } catch {
+    if (id === requestId)
+      error.value =
+        'Não foi possível carregar clientes e fornecedores. Verifique sua conexão e tente novamente.'
+  } finally {
+    if (id === requestId) loading.value = false
+  }
+}
+function changePage(page: number) {
+  if (loading.value || error.value || page < 1 || page > totalPages.value) return
+  void renderMobile(page)
+}
+function openCreate() {
+  showActionsModal.value = false
+  store.openSave()
+}
+function openPublicLink() {
+  showActionsModal.value = false
+  store.openModalLink = true
+}
+function refresh() {
+  showActionsModal.value = false
+  store.updateTable()
+}
+function search() {
+  appliedSearch.value = searchQuery.value.trim()
+  void renderMobile(1)
+}
+function clearSearch() {
+  searchQuery.value = ''
+  search()
+}
+async function edit(id: number) {
+  try {
+    await store.openUpdate(id)
+  } catch {
+    toast.error('Não foi possível abrir o cadastro. Tente novamente.')
+  }
+}
+async function deletar(row: ClientesFornecedores) {
+  if (!row.id || deleting.value) return
+  const confirmed = await useConfirm().confirm({
+    title: 'Excluir cadastro',
+    message: `Deseja excluir o cadastro de ${row.nome}? Esta ação não pode ser desfeita.`,
+    confirmText: 'Excluir cadastro',
+  })
+  if (!confirmed) return
+  deleting.value = row.id
+  try {
+    await ClienteRepository.remove(row.id)
+    store.updateTable()
+    toast.success('Cadastro excluído com sucesso')
+  } catch {
+    toast.error('Não foi possível excluir o cadastro. Tente novamente.')
+  } finally {
+    deleting.value = null
+  }
+}
+watch(
+  () => store.filters.update,
+  () => void renderMobile(),
+)
+onMounted(() => void renderMobile())
+onUnmounted(() => {
+  requestId++
+})
+</script>
+
 <template>
-    <div>
-        <div class="flex flex-col gap-2 mt-2 overflow-auto max-h-[calc(100vh-13rem)] md:max-h-full">
-            <!-- Lista de Vendas -->
-            <div v-if="loading" class="flex items-center justify-center h-[calc(100vh-13rem)]">
-                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark">
-                </div>
-            </div>
-            <div v-else class="flex flex-col gap-2">
-                <div v-if="mobileData.length === 0"
-                    class="flex items-center rounded-md bg-card dark:bg-card-dark justify-center h-[calc(100vh-13rem)]">
-                    <div class="text-center">
-                        <i class="fa-solid fa-box-open text-4xl text-gray-500 dark:text-gray-300 mb-4"></i>
-                        <p class="text-gray-500 dark:text-gray-300">Nenhum ítem encontrado.</p>
-                    </div>
-                </div>
-                <div v-for="row in mobileData" :key="row.id"
-                    class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
-                    <div class="flex justify-between">
-                        <div class="text-sm font-semibold dark:text-white">{{ row.nome }}</div>
-                        <div
-                            :class="['text-sm', row.status === 'ATIVO' ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400']">
-                            {{ row.status }}
-                        </div>
-                    </div>
-                    <div class="flex justify-between">
-                        <div :class="`text-xs`">
-                            {{ row.documento || '-' }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                            {{ row.telefone || '-' }}
-                        </div>
-                    </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.observacaos || '-' }}</div>
-                    <div class="mt-2 flex justify-between gap-2">
-                        <div class="flex gap-2">
-                            <button @click="store.openUpdate(row.id!)"
-                                class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
-                                <PenLine class="w-5 h-5" />
-                            </button>
-                            <button @click="$router.push({ name: 'clientes-detalhes', params: { id: row.id } })"
-                                class="bg-gray-200 text-gray-900 dark:text-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md text-sm">
-                                <Info class="w-5 h-5" />
-                            </button>
-                        </div>
-                        <button @click="deletar(row.id!)"
-                            class="bg-red-200 text-red-900 dark:text-red-100 dark:bg-red-800 px-2 py-1 rounded-md text-sm">
-                            <Trash class="w-5 h-5" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Buscar Vendas -->
-        <div v-if="showModalBuscar" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div
-                class="bg-card dark:bg-card-dark border-t border-border dark:border-border-dark p-6 rounded shadow-xl max-w-[95%] transform transition-all duration-300 scale-95 opacity-0 animate-fade-in">
-                <h2 class="text-xl font-bold mb-4">Buscar registro</h2>
-                <p class="mb-4">Digite o nome do ítem que deseja buscar.</p>
-                <input type="text" v-model="searchQuery"
-                    class="border bg-card dark:bg-card-dark border-border dark:border-border-dark rounded px-4 py-2 w-full mb-4"
-                    placeholder="Digite o nome do ítem" />
-                <div class="w-full flex justify-between items-center mb-4">
-                    <button
-                        class="bg-secondary text-sm dark:bg-secondary-dark hover:opacity-90 text-white px-3 py-1.5 rounded-md"
-                        @click="showModalBuscar = false">
-                        <i class="fa-regular fa-circle-xmark"></i> Fechar
-                    </button>
-                    <button type="button"
-                        class="bg-primary text-sm dark:bg-primary-dark hover:opacity-90 text-white px-3 py-1.5 rounded-md"
-                        @click="renderMobile(1)">
-                        <i class="fa-solid fa-magnifying-glass"></i> Buscar
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <Drawer v-model:open="showDrawer">
-            <DrawerContent>
-                <DrawerHeader class="text-left">
-                    <DrawerTitle>Clientes & Fornecedores</DrawerTitle>
-                </DrawerHeader>
-                <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
-                    <div @click="openSave"
-                        class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
-                        <div
-                            class="flex justify-center items-center mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
-                            <UserPlus class="w-6 h-6" />
-                        </div>
-                        <div class="font-medium text-center text-gray-500 dark:text-gray-400">Cadastrar</div>
-                    </div>
-
-                    <div @click="store.openModalLink = true"
-                        class="p-4 rounded-lg cursor-pointer border-2 bg-gray-50 hover:bg-gray-200 dark:hover:bg-gray-600 dark:bg-gray-700">
-                        <div
-                            class="flex justify-center items-center mx-auto mb-2 rounded-full w-[30px] h-[30px] max-w-[30px] max-h-[30px]">
-                            <Link class="w-6 h-6" />
-                        </div>
-                        <div class="font-medium text-center text-gray-500 dark:text-gray-400">Link</div>
-                    </div>
-                    <!-- Outros itens iguais -->
-                </div>
-                <DrawerFooter class="pt-2">
-                    <DrawerClose as-child>
-                        <Button variant="outline">
-                            Fechar
-                        </Button>
-                    </DrawerClose>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
-
-        <!-- Navegação Mobile -->
-        <nav
-            class="fixed bottom-0 left-0 w-full bg-card dark:bg-card-dark border-t border-border dark:border-border-dark md:hidden flex justify-around pt-4 h-20 shadow-lg z-20">
-            <button type="button" @click="previousPage" :disabled="currentPage <= 1"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <i class="fa-solid fa-arrow-left text-lg"></i>
-                <span class="text-xs">Anterior</span>
-            </button>
-            <button type="button" @click="showModalBuscar = true"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <i class="fa-solid fa-search text-lg"></i>
-                <span class="text-xs">Busca</span>
-            </button>
-            <button type="button" @click="showDrawer = !showDrawer"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <i class="fa-solid fa-bars text-lg"></i>
-                <span class="text-xs">Mais</span>
-            </button>
-            <button type="button" @click="nextPage" :disabled="currentPage >= totalPages"
-                class="flex flex-col items-center disabled:text-gray-300 disabled:dark:text-gray-600 text-gray-700 dark:text-gray-300 cursor-pointer hover:text-primary transition">
-                <i class="fa-solid fa-arrow-right text-lg"></i>
-                <span class="text-xs">Próximo</span>
-            </button>
-        </nav>
+  <section aria-label="Clientes e fornecedores">
+    <p class="mb-2 text-xs text-muted-foreground" aria-live="polite">
+      Página {{ currentPage }} de {{ totalPages }}
+    </p>
+    <div
+      ref="listViewport"
+      class="mt-2 flex flex-col gap-2 overflow-auto"
+      :style="{ maxHeight: listMaxHeight }"
+      :aria-busy="loading"
+    >
+      <div
+        v-if="error"
+        role="alert"
+        class="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm"
+      >
+        <p>{{ error }}</p>
+        <Button
+          variant="outline"
+          class="mt-3"
+          :disabled="loading"
+          @click="renderMobile(requestedPage)"
+          >Tentar novamente</Button
+        >
+      </div>
+      <p v-if="loading" role="status" class="py-8 text-center text-muted-foreground">
+        Carregando cadastros…
+      </p>
+      <div
+        v-else-if="!error && !mobileData.length"
+        class="rounded-xl border bg-card p-6 text-center"
+      >
+        <h3 class="font-semibold">
+          {{ appliedSearch ? 'Nenhum resultado para esta busca' : 'Nenhum cadastro ainda' }}
+        </h3>
+        <p class="mt-2 text-sm text-muted-foreground">
+          {{
+            appliedSearch
+              ? 'Tente outro nome ou limpe a busca.'
+              : 'Cadastre seu primeiro cliente ou fornecedor para começar.'
+          }}
+        </p>
+        <Button class="mt-4" @click="appliedSearch ? clearSearch() : store.openSave()">{{
+          appliedSearch ? 'Limpar busca' : 'Novo cliente'
+        }}</Button>
+      </div>
+      <div v-if="!loading && !error" class="flex flex-col gap-2 pb-2">
+        <article
+          v-for="row in mobileData"
+          :key="row.id"
+          class="rounded-2xl border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="min-w-0 break-words text-sm font-semibold">{{ row.nome }}</h3>
+            <span
+              class="shrink-0 text-xs"
+              :class="
+                row.status === 'ATIVO' ? 'text-green-700 dark:text-green-300' : 'text-destructive'
+              "
+              >{{ row.status === 'ATIVO' ? 'Ativo' : 'Inativo' }}</span
+            >
+          </div>
+          <p class="mt-1 text-xs text-muted-foreground">
+            {{ row.tipo === 'FORNECEDOR' ? 'Fornecedor' : 'Cliente' }}
+          </p>
+          <p class="mt-2 break-words text-sm text-muted-foreground">
+            {{ row.documento || 'Documento não informado' }}
+          </p>
+          <p class="break-words text-sm text-muted-foreground">
+            {{ row.telefone || 'Telefone não informado' }}
+          </p>
+          <p
+            v-if="row.observacaos"
+            class="mt-2 line-clamp-2 break-words text-sm text-muted-foreground"
+          >
+            {{ row.observacaos }}
+          </p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              class="min-h-11"
+              :aria-label="`Editar ${row.nome}`"
+              @click="edit(row.id!)"
+              ><PenLine aria-hidden="true" />Editar</Button
+            >
+            <Button variant="outline" class="min-h-11" as-child>
+              <RouterLink
+                :to="{ name: 'clientes-detalhes', params: { id: row.id } }"
+                :aria-label="`Ver detalhes de ${row.nome}`"
+                ><Info aria-hidden="true" />Detalhes</RouterLink
+              >
+            </Button>
+            <Button
+              variant="outline"
+              class="min-h-11 text-destructive"
+              :disabled="deleting !== null"
+              :aria-label="`Excluir ${row.nome}`"
+              @click="deletar(row)"
+              ><Trash aria-hidden="true" />{{
+                deleting === row.id ? 'Excluindo…' : 'Excluir'
+              }}</Button
+            >
+          </div>
+        </article>
+      </div>
     </div>
+    <ModalView
+      v-model:open="showSearchModal"
+      title="Buscar clientes e fornecedores"
+      description="Busque pelo nome do cliente ou fornecedor."
+    >
+      <form class="flex flex-wrap gap-2 px-4 pb-4" @submit.prevent="search">
+        <label class="sr-only" for="clientes-mobile-search">Buscar clientes e fornecedores</label>
+        <Input
+          id="clientes-mobile-search"
+          v-model="searchQuery"
+          type="search"
+          placeholder="Buscar clientes e fornecedores…"
+          class="min-w-0 flex-1"
+        />
+        <Button type="submit" variant="outline" :disabled="loading">Buscar</Button>
+        <Button
+          v-if="appliedSearch"
+          type="button"
+          variant="outline"
+          :disabled="loading"
+          @click="clearSearch"
+          >Limpar busca</Button
+        >
+      </form>
+    </ModalView>
+    <ModalView
+      v-model:open="showActionsModal"
+      title="Clientes e fornecedores"
+      description="Ações da listagem."
+    >
+      <div class="flex flex-col gap-2 px-4 pb-4">
+        <Button class="min-h-11 justify-start" @click="openCreate"
+          ><BadgePlus aria-hidden="true" />Novo cliente</Button
+        >
+        <Button variant="outline" class="min-h-11 justify-start" @click="openPublicLink"
+          ><Link aria-hidden="true" />Link público</Button
+        >
+        <Button
+          variant="outline"
+          class="min-h-11 justify-start"
+          :disabled="loading"
+          @click="refresh"
+          ><RotateCw aria-hidden="true" />Atualizar</Button
+        >
+      </div>
+    </ModalView>
+    <MobileBottomBar ref="bottomBar" aria-label="Navegação de clientes e fornecedores">
+      <button
+        type="button"
+        class="mobile-client-action"
+        :disabled="loading || !!error || currentPage <= 1"
+        @click="changePage(currentPage - 1)"
+      >
+        <ArrowLeft class="h-5 w-5" aria-hidden="true" /><span class="text-xs">Anterior</span>
+      </button>
+      <button type="button" class="mobile-client-action" @click="showSearchModal = true">
+        <Search class="h-5 w-5" aria-hidden="true" /><span class="text-xs">Busca</span>
+      </button>
+      <button type="button" class="mobile-client-action" @click="showActionsModal = true">
+        <MoreHorizontal class="h-5 w-5" aria-hidden="true" /><span class="text-xs">Mais</span>
+      </button>
+      <button
+        type="button"
+        class="mobile-client-action"
+        :disabled="loading || !!error || currentPage >= totalPages"
+        @click="changePage(currentPage + 1)"
+      >
+        <ArrowRight class="h-5 w-5" aria-hidden="true" /><span class="text-xs">Pr&oacute;ximo</span>
+      </button>
+    </MobileBottomBar>
+  </section>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted } from "vue";
-import http from "@/utils/axios";
-import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
-import { Info, Link, PenLine, Trash, UserPlus } from "lucide-vue-next";
-import { useClientesStore } from "@/stores/clientes/useClientes";
-import type { ClientesFornecedores } from "@/types/schemas";
-import { useConfirm } from "@/composables/useConfirm";
-import { ClienteRepository } from "@/repositories/cliente-repository";
-import { useToast } from "vue-toastification";
-import { watch } from "vue";
-
-const store = useClientesStore();
-const toast = useToast();
-const mobileData = ref<ClientesFornecedores[]>([]);
-const currentPage = ref(1);
-const totalPages = ref(1);
-const loading = ref(false);
-const searchQuery = ref("");
-const showModalBuscar = ref(false);
-const showDrawer = ref(false);
-
-const emit = defineEmits(["openModalProduto"]);
-
-function renderMobile(page: number = 1) {
-    loading.value = true;
-    http.get(`/clientes/mobile`, {
-        params: {
-            search: searchQuery.value,
-            limit: 10,
-            page
-        }
-    }).then(response => {
-        mobileData.value = response.data.data;
-        currentPage.value = response.data.pagination.page;
-        totalPages.value = response.data.pagination.totalPages;
-        loading.value = false;
-        showModalBuscar.value = false;
-    }).catch(err => {
-        console.error("mobile_clientes:", err);
-        mobileData.value = [];
-        loading.value = false;
-    });
+<style scoped>
+.mobile-client-action {
+  @apply flex min-h-11 flex-col items-center px-3 text-gray-700 transition hover:text-primary disabled:cursor-not-allowed disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600;
 }
-
-function openSave() {
-    store.openSave();
-}
-
-function previousPage() {
-    if (currentPage.value > 1) renderMobile(currentPage.value - 1);
-}
-
-function nextPage() {
-    if (currentPage.value < totalPages.value) renderMobile(currentPage.value + 1);
-}
-
-async function deletar(id: number) {
-    if (!id) return toast.error('ID não informado!')
-    const confirm = await useConfirm().confirm({
-        title: 'Excluir cliente',
-        message: 'Tem certeza que deseja excluir este cliente?',
-        confirmText: 'Sim, excluir!',
-    })
-    if (!confirm) return
-    try {
-        await ClienteRepository.remove(id)
-        store.updateTable()
-        toast.success('Cliente deletado com sucesso')
-    } catch (error) {
-        console.log(error)
-        toast.error('Erro ao deletar o cliente')
-    }
-}
-
-watch(() => store.filters.update, () => {
-    renderMobile();
-})
-
-onMounted(() => renderMobile());
-</script>
+</style>

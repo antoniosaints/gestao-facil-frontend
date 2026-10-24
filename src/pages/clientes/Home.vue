@@ -5,8 +5,8 @@ import { useClientesStore } from '@/stores/clientes/useClientes'
 import ClientesModal from './modais/ClientesModal.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { BadgePlus, Link, RotateCw, UserStar } from 'lucide-vue-next'
-import { ref } from 'vue'
 import ModalFormularioPublico from './publico/ModalFormularioPublico.vue'
+import { Button } from '@/components/ui/button'
 const store = useClientesStore()
 const uiStore = useUiStore()
 </script>
@@ -19,22 +19,18 @@ const uiStore = useUiStore()
           <UserStar class="h-6 w-6 text-primary dark:text-white" :stroke-width="2.5" />
           Clientes & Fornecedores
         </h2>
-        <p class="text-sm text-muted-foreground">Clientes cadastrados no sistema</p>
+        <p class="text-sm text-muted-foreground">Gerencie os contatos de clientes e fornecedores.</p>
       </div>
-      <div class="justify-between gap-2 items-center hidden md:flex">
-        <button @click="store.openModalLink = true"
-          class="bg-success text-white border border-border px-2 py-1.5 text-sm rounded-md flex gap-2 items-center">
-          <Link class="w-5 h-5 inline-flex" />
-          <span class="hidden md:inline">Link público</span>
-        </button>
-        <button @click="store.openSave"
-          class="bg-primary text-white px-2 py-1.5 text-sm rounded-md flex items-center gap-1">
-          <BadgePlus class="h-5 w-5 inline-flex" />
-          <span class="hidden md:inline">Novo cliente</span>
-        </button>
-        <button @click="store.updateTable" class="bg-background border border-border px-2 py-1.5 text-sm rounded-md">
-          <RotateCw class="w-5 h-5" />
-        </button>
+      <div v-if="!uiStore.isMobile" class="hidden md:flex flex-wrap gap-2 items-center">
+        <Button @click="store.openSave" class="min-h-11 md:min-h-9">
+          <BadgePlus aria-hidden="true" />Novo cliente
+        </Button>
+        <Button variant="outline" @click="store.openModalLink = true" class="min-h-11 md:min-h-9">
+          <Link aria-hidden="true" />Link público
+        </Button>
+        <Button variant="outline" @click="store.updateTable" aria-label="Atualizar clientes e fornecedores" title="Atualizar listagem" class="min-h-11 md:min-h-9">
+          <RotateCw aria-hidden="true" />
+        </Button>
       </div>
     </div>
     <div v-if="!uiStore.isMobile" class="overflow-x-auto hidden md:block rounded-lg">

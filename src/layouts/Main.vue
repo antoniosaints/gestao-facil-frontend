@@ -6,6 +6,8 @@
     <button
       v-if="!store.kdsImersivo && !store.usaNavegacaoSemSidebar"
       type="button"
+      aria-label="Abrir menu de navegação"
+      :aria-expanded="store.openSidebar"
       @click="store.toggleSidebar"
       class="md:hidden fixed flex items-center right-0 w-10 h-14 pl-3 pr-0 bottom-16 transform -translate-y-1/2 z-30 bg-primary/70 text-gray-200 dark:text-gray-300 px-2 py-3 rounded-l-full shadow-lg"
     >

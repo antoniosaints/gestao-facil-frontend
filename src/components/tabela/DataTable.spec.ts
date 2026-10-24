@@ -95,3 +95,35 @@ describe('Atualização automática da tabela fiscal', () => {
     },
   )
 })
+
+describe('Busca e recuperação na tabela compartilhada', () => {
+  it('distingue busca sem resultado e permite limpar o termo', async () => {
+    vi.mocked(http.get).mockResolvedValue({ data: { data: [], page: 1, pageSize: 10, total: 0, totalPages: 1 } })
+    const wrapper = mountTable()
+    await flushPromises()
+    const input = wrapper.get('input[type="search"]')
+    expect(input.attributes('aria-label')).toBe('Buscar registros')
+    await input.setValue('Inexistente')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+    expect(wrapper.text()).toContain('Nenhum resultado para esta busca')
+    const clear = wrapper.findAll('button').find(button => button.text() === 'Limpar busca')!
+    await clear.trigger('click')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('Nenhum resultado para esta busca')
+    expect((input.element as HTMLInputElement).value).toBe('')
+  })
+
+  it('não apresenta erro de conexão como ausência de cadastros', async () => {
+    vi.mocked(http.get).mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(response('AUTORIZADA') as any)
+    const wrapper = mountTable()
+    await flushPromises()
+    expect(wrapper.get('[role="alert"]').text()).toContain('Não foi possível carregar')
+    expect(wrapper.text()).not.toContain('Nenhum registro encontrado')
+    await wrapper.get('[role="alert"] button').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Autorizada')
+  })
+})
