@@ -24,6 +24,10 @@
                         <ShoppingCart class="inline-flex mr-1 h-5 w-5" />
                         Vendas
                     </TabsTrigger>
+                    <TabsTrigger value="experiencia" class="flex items-center">
+                        <LayoutGrid class="inline-flex mr-1 h-5 w-5" />
+                        Experiência
+                    </TabsTrigger>
                     <TabsTrigger value="aparencia" class="flex items-center">
                         <Palette class="inline-flex mr-1 h-5 w-5" />
                         Aparência
@@ -38,6 +42,7 @@
                 </TabsList>
             </div>
 
+            <TabsContent value="experiencia"><ExperienceSettings inherit-theme /></TabsContent>
             <TabsContent value="empresa">
                 <EmpresaPage />
             </TabsContent>
@@ -575,6 +580,7 @@
 </template>
 
 <script setup lang="ts">
+import ExperienceSettings from '@/modofacil/components/ExperienceSettings.vue'
 import { computed, ref, reactive, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -611,7 +617,7 @@ import {
     type MainMenuVisibilityKey,
 } from '@/layouts/options'
 
-const tab = ref<'empresa' | 'notificacoes' | 'impressao' | 'vendas' | 'aparencia' | 'financeiro' | 'menus'>('empresa')
+const tab = ref<'empresa' | 'notificacoes' | 'impressao' | 'vendas' | 'experiencia' | 'aparencia' | 'financeiro' | 'menus'>('empresa')
 const toast = useToast()
 const storeUi = useUiStore()
 const loading = ref(false)

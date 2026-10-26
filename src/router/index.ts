@@ -1,4 +1,5 @@
-import { handleRouteGuard } from '@/composables/useRouterControl'
+import { registerModoFacilPolicy } from '@/modofacil/bootstrap'
+import { modoFacilRoutes } from '@/modofacil/routes'
 import { env } from '@/utils/dotenv'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import type { RestauranteCapability } from '@/repositories/restaurante-repository'
@@ -19,6 +20,7 @@ type RouteMeta = {
 type RouteInterface = RouteRecordRaw & RouteMeta
 
 const routes: RouteInterface[] = [
+  ...modoFacilRoutes,
   {
     path: '/',
     name: 'home',
@@ -1263,6 +1265,6 @@ const router = createRouter({
   },
 })
 
-router.beforeEach((to, from) => handleRouteGuard(to, from))
+registerModoFacilPolicy(router)
 
 export default router

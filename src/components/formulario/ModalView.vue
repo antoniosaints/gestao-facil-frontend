@@ -29,13 +29,15 @@ import { allocateModalLayer, modalLayerKey } from "./modal-layer";
 const isOpen = defineModel<boolean>("open", { default: false })
 
 // Propriedades fixas do componente
-const { size, themeStyle, desktopVariant } = defineProps<{
+const { size, themeStyle, desktopVariant, mobileVariant } = defineProps<{
     icon?: LucideIcon
     title: string
     description?: string,
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl'
     themeStyle?: CSSProperties
     desktopVariant?: 'dialog' | 'sheet'
+    /** Keeps slotted form state mounted when crossing the mobile breakpoint. */
+    mobileVariant?: 'drawer' | 'dialog'
     contentClass?: string
     headerClass?: string
     bodyClass?: string
@@ -111,7 +113,7 @@ const contentStyle = computed(() => ({
         </Sheet>
 
         <!-- Desktop: modal central -->
-        <Dialog v-else-if="isDesktop" v-model:open="isOpen">
+        <Dialog v-else-if="isDesktop || mobileVariant === 'dialog'" v-model:open="isOpen">
             <DialogContent class="p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
                 :overlay-style="overlayStyle" :content-style="contentStyle"
                 :class="[sizeModal, 'mx-auto', contentClass]">
