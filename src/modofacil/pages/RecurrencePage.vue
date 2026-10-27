@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormSelect from '../components/FormSelect.vue'
 import FormBack from '../components/FormBack.vue'
 import ReviewPanel from '../components/ReviewPanel.vue'
 import PageHeader from '../components/PageHeader.vue'
@@ -25,6 +26,7 @@ useFlow(dirty, busy)
 const base = computed(() => `/modofacil/financeiro/lancamentos/${Number(route.params.id)}`)
 async function load() {
   loading.value = true
+  validation.value = ''
   try {
     record.value = await api.read(base.value)
     draft.value = recurrenceDraft(
@@ -97,18 +99,24 @@ async function save() {
       <fieldset :disabled="busy || uncertain || loading" class="mf-stack grid gap-4">
         <template v-if="!review"
           ><label
-            >O que deseja fazer?<select v-model="action">
-              <option value="configurar">
-                {{ record.recorrencia ? 'Alterar' : 'Criar' }} configuração
-              </option>
-              <template v-if="record.recorrencia"
-                ><option value="gerar">Gerar a próxima ocorrência</option>
-                <option :value="record.recorrencia.ativo ? 'pausar' : 'retomar'">
-                  {{ record.recorrencia.ativo ? 'Pausar' : 'Retomar' }} geração
-                </option>
-                <option value="encerrar">Encerrar recorrência</option></template
-              >
-            </select></label
+            >O que deseja fazer?<FormSelect
+              v-model="action"
+              :options="[
+                {
+                  value: 'configurar',
+                  label: `${record.recorrencia ? 'Alterar' : 'Criar'} configuração`,
+                },
+                ...(record.recorrencia
+                  ? [
+                      { value: 'gerar', label: 'Gerar a próxima ocorrência' },
+                      {
+                        value: record.recorrencia.ativo ? 'pausar' : 'retomar',
+                        label: `${record.recorrencia.ativo ? 'Pausar' : 'Retomar'} geração`,
+                      },
+                      { value: 'encerrar', label: 'Encerrar recorrência' },
+                    ]
+                  : []),
+              ]" /></label
           ><RecurrenceFields v-if="action === 'configurar'" v-model="draft"
         /></template>
         <ReviewPanel v-else>
@@ -128,7 +136,7 @@ async function save() {
             Não crie receitas ou despesas paralelas.
           </p>
         </ReviewPanel>
-        <div class="mf-actions my-4 flex flex-wrap items-end gap-3">
+        <div class="mf-form-actions mf-actions my-4 flex flex-wrap items-end gap-3">
           <button v-if="review" type="button" @click="review = false">Voltar</button
           ><button
             class="mf-primary !border-blue-600 !bg-blue-600 !text-white hover:!border-blue-700 hover:!bg-blue-700"

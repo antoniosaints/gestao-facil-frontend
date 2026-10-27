@@ -3,6 +3,18 @@ export interface PaymentDraft {
   metodo: string
   valor: string
 }
+export const financialPaymentOptions = (
+  [
+    ['PIX', 'Pix'],
+    ['DINHEIRO', 'Dinheiro'],
+    ['DEBITO', 'Cartão de débito'],
+    ['CREDITO', 'Cartão de crédito'],
+    ['BOLETO', 'Boleto'],
+    ['DEPOSITO', 'Depósito'],
+    ['TRANSFERENCIA', 'Transferência'],
+    ['CHEQUE', 'Cheque'],
+  ] as const
+).map(([value, label]) => ({ value, label }))
 export const paymentMethods = [
   ['PIX', 'Pix já recebido'],
   ['DINHEIRO', 'Dinheiro'],

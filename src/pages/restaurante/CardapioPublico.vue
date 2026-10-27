@@ -55,7 +55,7 @@ const itemAddedOpen = ref(false)
 const suggestionsOpen = ref(false)
 const suggestionSource = ref<any>(null)
 const suggestionAddedItemId = ref<number | null>(null)
-const cardapio = ref<any>(null)
+const cardapio = ref<Awaited<ReturnType<typeof RestauranteRepository.cardapioPublico>> | null>(null)
 const menuDarkMode = ref(false)
 const currentYear = new Date().getFullYear()
 type CartLine = {
@@ -242,7 +242,8 @@ const selectedRewardDiscount = computed(() => {
   return selectedFidelityProgramIds.value.reduce((total, programId) => {
     const program = checkoutFidelities.value.find((entry: any) => entry.id === programId)
     if (!program?.premio?.catalogoItemId || rewardedItemIds.has(program.premio.catalogoItemId)) return total
-    const line = cartLines.value.find((entry) => entry.item.id === program.premio.catalogoItemId && entry.quantidade > 0)
+    const rewardItemId = program.premio.catalogoItemId
+    const line = cartLines.value.find((entry) => entry.item.id === rewardItemId && entry.quantidade > 0)
     if (!line) return total
     rewardedItemIds.add(program.premio.catalogoItemId)
     return total + ((lineTotal(line) / line.quantidade) * Number(program.descontoPercentual || 0) / 100)

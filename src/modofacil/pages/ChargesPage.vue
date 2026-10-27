@@ -6,11 +6,15 @@ import { Input } from '@/components/ui/input'
 import ModalDialog from '../components/ModalDialog.vue'
 import PageHeader from '../components/PageHeader.vue'
 import PageFrame from '../components/PageFrame.vue'
-import { ref, computed, onMounted } from 'vue'
+import RecordsTable from '../components/RecordsTable.vue'
+import StatusBadge from '../components/StatusBadge.vue'
+import PageControls from '../components/PageControls.vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { api, type Row } from '../adapters/domain'
 import { money, dateLabel, errorMessage } from '../application/format'
 import { useDomainMutation } from '../application/useDomainMutation'
 import Feedback from '../components/Feedback.vue'
+const pix = ref<Row | null>(null)
 const rows = ref<Row[]>([]),
   selected = ref<Row | null>(null),
   action = ref('cancelar'),
@@ -26,6 +30,7 @@ const matches = computed(() =>
   ),
   pages = computed(() => Math.max(1, Math.ceil(matches.value.length / 12))),
   visible = computed(() => matches.value.slice((page.value - 1) * 12, page.value * 12))
+watch(pages, (value) => (page.value = Math.min(page.value, value)))
 async function load() {
   loading.value = true
   loadError.value = ''
@@ -38,6 +43,10 @@ async function load() {
   }
 }
 onMounted(load)
+function choose(row: Row, next: 'cancelar' | 'estornar') {
+  selected.value = row
+  action.value = next
+}
 async function confirm() {
   const result = await run(
     () =>
@@ -68,68 +77,92 @@ async function confirm() {
       :message="message"
       @retry="load"
     /><label
-      >Buscar por código, situação ou valor<Input v-model="search" @input="page = 1"
+      >Buscar por código, situação ou valor<Input
+        placeholder="Buscar por código, situação ou valor"
+        v-model="search"
+        @input="page = 1"
     /></label>
-    <p>{{ matches.length }} cobrança(s). Lista integral recebida do servidor; navegação local.</p>
-    <ul class="mf-list m-0 grid list-none gap-3 p-0">
-      <li
-        v-for="row in visible"
-        :key="row.id"
-        class="mf-row flex flex-wrap items-center justify-between gap-4 break-words rounded-[6px] border border-border p-4 [&>div]:min-w-0 min-w-0 bg-card"
+    <p class="text-xs text-muted-foreground">{{ matches.length }} cobrança(s) encontrada(s).</p>
+    <RecordsTable
+      :rows="visible"
+      :loading="loading"
+      :failed="!!loadError"
+      caption="Cobranças financeiras"
+      empty="Nenhuma cobrança encontrada."
+      :columns="[
+        { key: 'code', label: 'Cobrança' },
+        { key: 'status', label: 'Situação' },
+        { key: 'value', label: 'Valor', right: true },
+        { key: 'due', label: 'Vencimento' },
+        { key: 'origin', label: 'Vínculo' },
+        { key: 'actions', label: 'Ações', right: true },
+      ]"
+    >
+      <template #code="{ row }"
+        ><strong>{{ row.Uid || `Cobrança #${row.id}` }}</strong></template
       >
-        <div>
-          <strong>{{ row.Uid }} · {{ money(row.valor) }}</strong>
-          <p>{{ row.status }} · vence {{ dateLabel(row.dataVencimento) }}</p>
+      <template #status="{ row }"><StatusBadge :value="row.status" /></template>
+      <template #value="{ row }">{{ money(row.valor) }}</template>
+      <template #due="{ row }">{{ dateLabel(row.dataVencimento) }}</template>
+      <template #origin="{ row }"
+        ><RouterLink v-if="row.vendaId" :to="`/modofacil/vendas/${row.vendaId}`"
+          >Venda #{{ row.vendaId }}</RouterLink
+        ><RouterLink
+          v-else-if="row.ordemServicoId"
+          :to="`/modofacil/servicos/ordens/${row.ordemServicoId}`"
+          >OS #{{ row.ordemServicoId }}</RouterLink
+        ><span v-else>{{ row.parcelaId ? `Parcela #${row.parcelaId}` : '—' }}</span></template
+      >
+      <template #actions="{ row }"
+        ><div class="flex flex-wrap gap-2 md:justify-end">
           <a
             v-if="row.externalLink && /^https?:\/\//.test(row.externalLink)"
+            class="mf-button"
             :href="row.externalLink"
             target="_blank"
             rel="noopener noreferrer"
-            >Abrir link da cobrança</a
+            >Abrir cobrança</a
           >
-          <details v-if="row.pixCopiaCola">
-            <summary>Código PIX</summary>
-            <Textarea readonly :value="row.pixCopiaCola" aria-label="PIX copia e cola" />
-          </details>
-          <RouterLink v-if="row.vendaId" :to="`/modofacil/vendas/${row.vendaId}`"
-            >Venda vinculada</RouterLink
-          ><RouterLink
-            v-if="row.ordemServicoId"
-            :to="`/modofacil/servicos/ordens/${row.ordemServicoId}`"
-            >OS vinculada</RouterLink
+          <button v-if="row.pixCopiaCola" @click="pix = row">Código Pix</button>
+          <button
+            v-if="['PENDENTE', 'ATRASADO'].includes(row.status)"
+            :disabled="busy || uncertain"
+            @click="choose(row, 'cancelar')"
           >
-        </div>
-        <button
-          v-if="['PENDENTE', 'ATRASADO'].includes(row.status)"
-          :disabled="busy || uncertain"
-          @click="
-            () => {
-              selected = row
-              action = 'cancelar'
-            }
-          "
-        >
-          Cancelar cobrança</button
-        ><button
-          v-if="row.status === 'PAGO'"
-          class="mf-danger !border-red-500/30 !bg-red-500/10 !text-red-600 dark:!text-red-300 hover:!bg-red-500/15"
-          :disabled="busy || uncertain"
-          @click="
-            () => {
-              selected = row
-              action = 'estornar'
-            }
-          "
-        >
-          Estornar no gateway
-        </button>
-      </li>
-    </ul>
-    <nav class="mf-actions my-4 flex flex-wrap items-end gap-3" aria-label="Páginas de cobranças">
-      <button :disabled="page <= 1" @click="page--">Anterior</button
-      ><span>{{ page }} de {{ pages }}</span
-      ><button :disabled="page >= pages" @click="page++">Próxima</button>
-    </nav>
+            Cancelar cobrança
+          </button>
+          <button
+            v-if="row.status === 'PAGO'"
+            class="!text-destructive"
+            :disabled="busy || uncertain"
+            @click="choose(row, 'estornar')"
+          >
+            Estornar no gateway
+          </button>
+        </div></template
+      >
+    </RecordsTable>
+    <PageControls
+      :page="page"
+      :pages="pages"
+      :total="matches.length"
+      :loading="loading"
+      @change="page = $event"
+    />
+    <ModalDialog
+      v-if="pix"
+      title="Código Pix da cobrança"
+      :description="`${pix.Uid || `Cobrança #${pix.id}`} · ${money(pix.valor)}`"
+      @close="pix = null"
+    >
+      <label
+        >Pix copia e cola<Textarea
+          :model-value="pix.pixCopiaCola"
+          readonly
+          placeholder="O código Pix aparecerá aqui"
+      /></label>
+      <template #footer><button @click="pix = null">Fechar</button></template>
+    </ModalDialog>
     <ModalDialog
       v-if="selected"
       :title="action === 'cancelar' ? 'Cancelar cobrança' : 'Solicitar estorno no gateway'"

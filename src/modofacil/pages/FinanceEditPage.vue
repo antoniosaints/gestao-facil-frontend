@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { financialPaymentOptions } from '../application/payments'
+import { useLookupOptions } from '../adapters/lookups'
+import FormSelect from '../components/FormSelect.vue'
 import FormBack from '../components/FormBack.vue'
 import { Input } from '@/components/ui/input'
 
@@ -17,8 +20,6 @@ import ItemSearch from '../components/ItemSearch.vue'
 const route = useFormContext(),
   id = Number(route.params.id),
   record = ref<Row | null>(null),
-  accounts = ref<Row[]>([]),
-  categories = ref<Row[]>([]),
   loading = ref(false),
   loadError = ref(''),
   validation = ref(''),
@@ -34,17 +35,15 @@ const form = reactive({
   clienteId: null as number | null,
   formaPagamento: 'PIX',
 })
+const { load: loadAccounts, rows: accounts } = useLookupOptions('finance-accounts')
+const { load: loadCategories, rows: categories } = useLookupOptions('finance-categories')
 const { busy, error, message, uncertain, run } = useDomainMutation()
 useFlow(dirty, busy)
 async function load() {
   loading.value = true
   loadError.value = ''
   try {
-    ;[record.value, accounts.value, categories.value] = await Promise.all([
-      api.read(`/modofacil/financeiro/lancamentos/${id}`),
-      api.read('/modofacil/financeiro/contas'),
-      api.read('/modofacil/financeiro/categorias'),
-    ])
+    record.value = await api.read(`/modofacil/financeiro/lancamentos/${id}`)
     const row = record.value!
     Object.assign(form, {
       descricao: row.descricao,
@@ -114,39 +113,33 @@ async function save() {
       <fieldset :disabled="busy || uncertain" class="mf-stack grid gap-4">
         <section v-if="!review" class="mf-stack grid gap-4">
           <div class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
-            <label>Descrição<Input v-model="form.descricao" required maxlength="191" /></label
-            ><label>Data de lançamento<Input v-model="form.data" type="date" required /></label
+            <label
+              >Descrição<Input
+                placeholder="Descreva o lançamento financeiro"
+                v-model="form.descricao"
+                required
+                maxlength="191" /></label
             ><label
-              >Categoria<select v-model="form.categoriaId" required>
-                <option v-for="row in categories" :key="row.id" :value="row.id">
-                  {{ row.nome }}
-                </option>
-              </select></label
+              >Data de lançamento<Input
+                placeholder="dd/mm/aaaa"
+                v-model="form.data"
+                type="date"
+                required /></label
             ><label
-              >Conta financeira<select v-model="form.contasFinanceiroId" required>
-                <option v-for="row in accounts" :key="row.id" :value="row.id">
-                  {{ row.nome }}
-                </option>
-              </select></label
+              >Categoria<FormSelect
+                v-model="form.categoriaId"
+                required
+                :load-options="loadCategories" /></label
             ><label
-              >Forma de pagamento<select v-model="form.formaPagamento">
-                <option
-                  v-for="m in [
-                    'PIX',
-                    'DINHEIRO',
-                    'DEBITO',
-                    'CREDITO',
-                    'BOLETO',
-                    'DEPOSITO',
-                    'TRANSFERENCIA',
-                    'CHEQUE',
-                  ]"
-                  :key="m"
-                >
-                  {{ m }}
-                </option>
-              </select></label
-            >
+              >Conta financeira<FormSelect
+                v-model="form.contasFinanceiroId"
+                required
+                :load-options="loadAccounts" /></label
+            ><label
+              >Forma de pagamento<FormSelect
+                v-model="form.formaPagamento"
+                :options="financialPaymentOptions"
+            /></label>
           </div>
           <p>Pessoa vinculada: {{ personLabel }}</p>
           <ItemSearch

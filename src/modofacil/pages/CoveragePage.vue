@@ -47,7 +47,7 @@ const modules = computed(() =>
         >Abrir {{ current.label }} na interface completa</RouterLink
       >
       <p v-else>Este módulo não está ativo na conta.</p>
-      <RouterLink to="/modofacil">Voltar ao Modo Fácil</RouterLink>
+      <RouterLink to="/modofacil" class="mf-button">Voltar ao Modo Fácil</RouterLink>
     </section>
     <p>
       O Modo Fácil está em construção. Consulte abaixo o que já tem tela própria e o que ainda
@@ -111,7 +111,9 @@ const modules = computed(() =>
             pendente</span
           >
         </div>
-        <RouterLink :to="`/modofacil/recursos/${module.code}`">Ver cobertura</RouterLink>
+        <RouterLink :to="`/modofacil/recursos/${module.code}`" class="mf-button"
+          >Ver cobertura</RouterLink
+        >
       </li>
     </ul>
     <p

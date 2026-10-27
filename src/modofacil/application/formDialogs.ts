@@ -72,7 +72,7 @@ export const forms = {
     () => import('../pages/PersonFormPage.vue'),
   ),
   'pessoa-editar': defineForm(
-    'Editar nome e contato',
+    'Editar pessoa',
     '/modofacil/pessoas',
     2,
     'pessoas/:id/editar',
@@ -158,9 +158,9 @@ export const forms = {
     () => import('../pages/ServiceFormPage.vue'),
   ),
   'servico-avancado': defineForm(
-    'Informações do serviço',
+    'Informações fiscais do serviço',
     '/modofacil/servicos',
-    2,
+    4,
     'servicos/:id/avancado',
     () => import('../pages/AdvancedFieldsPage.vue'),
     { entity: 'servico' },

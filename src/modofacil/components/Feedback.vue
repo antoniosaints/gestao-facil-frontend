@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { AlertCircle, CheckCircle2, LoaderCircle } from 'lucide-vue-next'
-defineProps<{ loading?: boolean; error?: string; message?: string }>()
+import { useFeedbackToasts } from '../application/notifications'
+const props = defineProps<{ loading?: boolean; error?: string; message?: string }>()
+useFeedbackToasts(
+  () => props.error,
+  () => props.message,
+)
 defineEmits<{ retry: [] }>()
 </script>
 <template>

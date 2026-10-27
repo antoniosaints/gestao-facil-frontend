@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import ModalDialog from '../components/ModalDialog.vue'
 import PageHeader from '../components/PageHeader.vue'
 import PageFrame from '../components/PageFrame.vue'
+import RecordsTable from '../components/RecordsTable.vue'
 import { ref, onMounted } from 'vue'
 import { usePage } from '../application/usePage'
 import { api } from '../adapters/domain'
@@ -21,6 +22,7 @@ onMounted(() => load())
 async function save() {
   busy.value = true
   error.value = ''
+  message.value = ''
   try {
     await api.post('/modofacil/produtos/categorias', { nome: nome.value.trim() })
     nome.value = ''
@@ -59,32 +61,40 @@ async function save() {
       :error="error"
       @close="creating = false"
     >
-      <form
-        class="mf-card min-w-0 rounded-[8px] border border-border bg-card p-5 mf-actions my-4 flex flex-wrap items-end gap-3"
-        @submit.prevent="save"
-      >
-        <label>Nome da nova categoria<Input v-model="nome" required /></label
-        ><button
-          class="mf-primary !border-blue-600 !bg-blue-600 !text-white hover:!border-blue-700 hover:!bg-blue-700"
-          :disabled="busy"
-        >
-          Criar categoria
-        </button>
+      <form class="grid gap-4" @submit.prevent="save">
+        <fieldset :disabled="busy" class="grid gap-4">
+          <label
+            >Nome da nova categoria<Input placeholder="Ex.: Bebidas" v-model="nome" required
+          /></label>
+          <div class="mf-form-actions mf-actions">
+            <button type="button" @click="creating = false">Cancelar</button>
+            <button class="mf-primary" :disabled="busy">
+              {{ busy ? 'Salvando…' : 'Criar categoria' }}
+            </button>
+          </div>
+        </fieldset>
       </form>
     </ModalDialog>
     <form class="mf-actions my-4 flex flex-wrap items-end gap-3" @submit.prevent="load(true)">
-      <label>Buscar categoria<Input v-model="search" type="search" /></label><button>Buscar</button>
+      <label
+        >Buscar categoria<Input
+          placeholder="Buscar pelo nome da categoria"
+          v-model="search"
+          type="search" /></label
+      ><button>Buscar</button>
     </form>
     <Feedback :error="error" :loading="loading" :message="message" @retry="load()" />
-    <ul class="mf-list m-0 grid list-none gap-3 p-0">
-      <li
-        class="mf-row flex flex-wrap items-center justify-between gap-4 break-words rounded-[6px] border border-border p-4 [&>div]:min-w-0 min-w-0 bg-card"
-        v-for="row in rows"
-        :key="row.id"
-      >
-        {{ row.nome }}
-      </li>
-    </ul>
+    <RecordsTable
+      :rows="rows"
+      :loading="loading"
+      :failed="!!error"
+      caption="Categorias de produtos"
+      empty="Nenhuma categoria encontrada."
+      :columns="[
+        { key: 'id', label: 'Código' },
+        { key: 'nome', label: 'Categoria' },
+      ]"
+    />
     <PageControls
       :page="page"
       :pages="pages"

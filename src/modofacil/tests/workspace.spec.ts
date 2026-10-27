@@ -172,6 +172,16 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 describe('modais por estado local', () => {
+  it.each<{ params: Record<string, number>; title: string }>([
+    { params: { id: 5 }, title: 'Adicionar parcela' },
+    { params: { id: 5, parcelaId: 9 }, title: 'Editar parcela' },
+  ])('identifica a operação da parcela no título do modal: $title', async ({ params, title }) => {
+    vi.spyOn(forms['financeiro-parcela'], 'component').mockResolvedValue({ default: Form })
+    const { wrapper, workspace } = await open()
+    workspace.open({ form: 'financeiro-parcela', params }, '/modofacil/financeiro')
+    await flushPromises()
+    expect(wrapper.get('[role=dialog]').attributes('aria-label')).toBe(title)
+  })
   it('abre e cancela sem navegar, remontar a lista ou repetir consultas', async () => {
     const { wrapper, router, push, replace } = await open()
     const field = wrapper.get('input').element
@@ -246,9 +256,7 @@ describe('modais por estado local', () => {
     expect(api.patch).toHaveBeenCalledExactlyOnceWith('/modofacil/pessoas/7/basico', {
       nome: 'Maria atualizada',
     })
-    expect(wrapper.get('[role=dialog]').text()).toContain(
-      'Documento, endereço, tipo e status preservados',
-    )
+    expect(wrapper.get('[role=dialog]').text()).toContain('Pessoa atualizada')
     expect(router.currentRoute.value.fullPath).toBe('/modofacil/produtos?page=3&search=cafe')
     expect(push).not.toHaveBeenCalled()
   })

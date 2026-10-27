@@ -5,6 +5,16 @@ import { useFormDestination } from '../application/formReturn'
 import { Textarea } from '@/components/ui/textarea'
 
 import { Input } from '@/components/ui/input'
+import {
+  Package,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  ArrowRight,
+  History,
+  ChevronDown,
+  Truck,
+  Info,
+} from 'lucide-vue-next'
 
 import { useConfirmation } from '../application/confirmation'
 import PageHeader from '../components/PageHeader.vue'
@@ -12,7 +22,7 @@ import PageFrame from '../components/PageFrame.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useFormContext } from '../application/modalWorkspace'
 import { api, type Row } from '../adapters/domain'
-import { decimal, quantity, money, errorMessage, today } from '../application/format'
+import { decimal, quantity, money, errorMessage } from '../application/format'
 import { useFlow } from '../application/useFlow'
 import ItemSearch from '../components/ItemSearch.vue'
 import Feedback from '../components/Feedback.vue'
@@ -33,16 +43,53 @@ const product = ref<Row | null>(null),
   uncertain = ref(false)
 const after = computed(() => {
   try {
-    return Number(product.value?.estoque) + (discard.value ? -1 : 1) * decimal(amount.value, 3)
+    const q = decimal(amount.value, 3)
+    if (!product.value || q <= 0) return null
+    return Math.round((Number(product.value.estoque) + (discard.value ? -q : q)) * 1000) / 1000
   } catch {
     return null
   }
 })
+const purchase = computed(() => {
+  try {
+    const q = decimal(amount.value, 3)
+    if (q <= 0) return null
+    const subtotal = Math.round(q * decimal(cost.value) * 100)
+    return {
+      subtotal: subtotal / 100,
+      total:
+        (subtotal +
+          Math.round(decimal(freight.value) * 100) -
+          Math.round(decimal(discount.value) * 100)) /
+        100,
+    }
+  } catch {
+    return null
+  }
+})
+function reset() {
+  product.value = null
+  amount.value = ''
+  cost.value = ''
+  reason.value = ''
+  supplier.value = null
+  note.value = ''
+  freight.value = '0'
+  discount.value = '0'
+  dirty.value = false
+}
+function removeSupplier() {
+  supplier.value = null
+  dirty.value = true
+}
 useFlow(dirty, busy)
 async function select(row: Row) {
+  reset()
+  error.value = ''
+  message.value = ''
   product.value = row
   dirty.value = true
-  cost.value = row.precoCompra == null ? '' : String(row.precoCompra)
+  cost.value = row.precoCompra == null ? '' : Number(row.precoCompra).toFixed(2).replace('.', ',')
 }
 onMounted(async () => {
   if (route.query.produtoId) {
@@ -59,11 +106,16 @@ async function save() {
   if (!product.value) return
   busy.value = true
   error.value = ''
+  message.value = ''
   let sent = false
   try {
     const q = decimal(amount.value, 3)
     if (q <= 0) throw new Error('Informe uma quantidade maior que zero.')
     if (discard.value && !reason.value.trim()) throw new Error('Informe o motivo do descarte.')
+    if (discard.value && reason.value.trim().length > 191)
+      throw new Error('Use até 191 caracteres no motivo do descarte.')
+    if (!discard.value && note.value.length > 191)
+      throw new Error('Use até 191 caracteres na nota fiscal.')
     const body = discard.value
       ? { produtoId: product.value.id, quantidade: q, motivo: reason.value.trim() }
       : {
@@ -78,7 +130,7 @@ async function save() {
     if (
       !(await confirmOperation({
         title: discard.value ? 'Confirmar descarte?' : 'Confirmar reposição?',
-        description: `${product.value.nome} · ${q} ${product.value.unidade || 'un'}. ${discard.value ? `Motivo: ${reason.value.trim()}. O saldo de estoque será reduzido.` : `Custo unitário: ${money(body.custo)}. O saldo de estoque será aumentado.`}`,
+        description: `${product.value.nome} · ${product.value.nomeVariante || 'Padrão'}. ${discard.value ? 'Saída' : 'Entrada'} de ${quantity(q)} ${product.value.unidade || 'un'}. Saldo previsto: ${quantity(after.value)} ${product.value.unidade || 'un'}. ${discard.value ? `Motivo: ${reason.value.trim()}.` : `Custo unitário: ${money(body.custo)}. Total previsto: ${money(purchase.value?.total)}. Fornecedor: ${supplier.value?.nome || 'não informado'}.`}`,
         confirmLabel: discard.value ? 'Confirmar descarte' : 'Confirmar reposição',
         danger: discard.value,
       }))
@@ -90,10 +142,7 @@ async function save() {
       body,
     )
     message.value = 'Operação registrada. Consulte o histórico para conferir os movimentos.'
-    dirty.value = false
-    product.value = null
-    amount.value = ''
-    reason.value = ''
+    reset()
   } catch (e) {
     error.value = errorMessage(e)
     if (sent && (!(e as any).response || (e as any).response.status >= 500)) {
@@ -109,96 +158,240 @@ async function save() {
 const formDestination = useFormDestination()
 </script>
 <template>
-  <PageFrame compact>
+  <PageFrame compact class="!space-y-4">
     <PageHeader
-      ><template #title>{{ discard ? 'Registrar descarte' : 'Repor estoque' }}</template
-      ><template #description>
-        {{
-          discard
-            ? 'Registre perdas com uma justificativa.'
-            : 'Informe o que chegou e quanto custou.'
-        }}
-      </template></PageHeader
-    >
-
-    <div class="mf-actions my-4 flex flex-wrap items-end gap-3">
-      <FormResultLink :to="formDestination('/modofacil/produtos')">Produtos</FormResultLink
-      ><FormResultLink :to="formDestination('/modofacil/estoque/movimentacoes')"
-        >Conferir histórico</FormResultLink
+      :title="discard ? 'Registrar descarte' : 'Repor estoque'"
+      :description="
+        discard
+          ? 'Registre uma saída por perda e informe o motivo.'
+          : 'Registre a entrada do produto e confira o novo saldo.'
+      "
+    />
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <span
+        class="inline-flex items-center gap-2 text-xs font-medium"
+        :class="discard ? 'text-orange-600 dark:text-orange-300' : 'text-primary'"
       >
+        <ArrowUpFromLine v-if="discard" :size="16" aria-hidden="true" />
+        <ArrowDownToLine v-else :size="16" aria-hidden="true" />
+        {{ discard ? 'Saída por descarte' : 'Entrada de estoque' }}
+      </span>
+      <FormResultLink
+        :to="formDestination('/modofacil/estoque/movimentacoes')"
+        class="mf-button !h-8 !min-h-8 !px-3 !text-xs"
+      >
+        <History :size="14" aria-hidden="true" />Conferir histórico
+      </FormResultLink>
     </div>
     <Feedback :error="error" :message="message" @retry="error = ''" />
-    <ItemSearch v-if="!product && !uncertain" @select="select" />
-    <form
-      v-if="product"
-      class="mf-card min-w-0 rounded-[8px] border border-border bg-card p-5 mf-stack grid gap-4"
-      @submit.prevent="save"
-      @input="dirty = true"
-    >
-      <h2>{{ product.nome }} · {{ product.nomeVariante || 'Padrão' }}</h2>
-      <p>
-        Saldo consultado: {{ quantity(product.estoque) }} {{ product.unidade }} ·
-        {{
-          product.controlaEstoque
-            ? 'Estoque controlado'
-            : 'Este produto não controla estoque; a operação será validada pelo servidor.'
-        }}
+    <section v-if="!product && !uncertain" class="rounded-lg border border-border bg-muted/20 p-4">
+      <h2 class="!mb-1 !text-sm">Qual produto deseja movimentar?</h2>
+      <p class="!mb-0 text-xs text-muted-foreground">
+        Busque pelo nome ou código e escolha a variante.
       </p>
-      <fieldset :disabled="busy || uncertain" class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
-        <label
-          >Quantidade {{ discard ? 'descartada' : 'recebida'
-          }}<Input v-model="amount" inputmode="decimal" required /><small
-            >Até 3 casas decimais.</small
-          ></label
-        ><label v-if="!discard"
-          >Custo unitário<Input v-model="cost" inputmode="decimal" required /></label
-        ><label v-else>Motivo<Textarea v-model="reason" required /></label>
-        <p
-          class="mf-notice my-4 break-words rounded-[6px] border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-800 dark:text-blue-300 mf-full col-span-full"
-          v-if="after !== null"
+      <ItemSearch @select="select" />
+    </section>
+    <form v-if="product" class="min-w-0" @submit.prevent="save" @input="dirty = true">
+      <fieldset :disabled="busy || uncertain" class="grid min-w-0 gap-4">
+        <section
+          class="min-w-0 rounded-lg border border-border bg-muted/20 p-4"
+          aria-label="Produto e prévia do estoque"
         >
-          {{ quantity(product.estoque) }} → {{ discard ? 'Saída' : 'Entrada' }} {{ amount }} →
-          {{ quantity(after) }} {{ product.unidade
-          }}<small>Prévia. Reservas e outras operações serão conferidas pelo servidor.</small>
-        </p>
-        <details v-if="!discard" class="mf-full col-span-full">
-          <summary>Detalhes da compra</summary>
-          <p>Fornecedor: {{ supplier?.nome || 'Não informado' }}</p>
-          <ItemSearch
-            kind="PESSOA"
-            person-type="FORNECEDOR"
-            @select="
-              (row) => {
-                supplier = row
-                dirty = true
-              }
-            "
-          /><button v-if="supplier" type="button" @click="supplier = null">
-            Remover fornecedor</button
-          ><ModalAction form="pessoa-nova" :query="{ tipo: 'FORNECEDOR' }"
-            >Cadastrar fornecedor</ModalAction
+          <div class="flex items-start gap-3">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary"
+              ><Package :size="21" aria-hidden="true"
+            /></span>
+            <div class="min-w-0 flex-1">
+              <h2 class="!mb-1 !text-sm break-words">{{ product.nome }}</h2>
+              <p class="!mb-0 text-xs text-muted-foreground">
+                {{ product.nomeVariante || 'Padrão' }} ·
+                {{ product.controlaEstoque ? 'Estoque controlado' : 'Sem controle de estoque' }}
+              </p>
+            </div>
+            <button type="button" class="!h-8 !min-h-8 !px-3 !text-xs" @click="reset">
+              Trocar
+            </button>
+          </div>
+          <dl
+            class="mt-4 grid !grid-cols-3 gap-2 border-t border-border pt-3"
+            aria-label="Prévia do saldo"
           >
-          <div class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
-            <label>Nota fiscal<Input v-model="note" /></label
-            ><label>Frete<Input v-model="freight" inputmode="decimal" /></label
-            ><label>Desconto<Input v-model="discount" inputmode="decimal" /></label>
+            <div class="min-w-0">
+              <dt class="text-[11px] text-muted-foreground">Saldo atual</dt>
+              <dd class="mt-1 break-words text-sm font-semibold">
+                {{ quantity(product.estoque) }}
+                <span class="text-xs font-normal">{{ product.unidade || 'un' }}</span>
+              </dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="text-[11px] text-muted-foreground">{{ discard ? 'Saída' : 'Entrada' }}</dt>
+              <dd
+                class="mt-1 break-words text-sm font-semibold"
+                :class="discard ? 'text-orange-600 dark:text-orange-300' : 'text-primary'"
+              >
+                {{ after !== null ? `${discard ? '−' : '+'}${quantity(decimal(amount, 3))}` : '—' }}
+                <span v-if="after !== null" class="text-xs font-normal">{{
+                  product.unidade || 'un'
+                }}</span>
+              </dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <ArrowRight :size="12" aria-hidden="true" />Saldo previsto
+              </dt>
+              <dd class="mt-1 break-words text-sm font-semibold">
+                {{ after !== null ? quantity(after) : '—' }}
+                <span v-if="after !== null" class="text-xs font-normal">{{
+                  product.unidade || 'un'
+                }}</span>
+              </dd>
+            </div>
+          </dl>
+          <p v-if="!product.controlaEstoque" class="!mb-0 mt-3 text-xs text-muted-foreground">
+            A disponibilidade desta operação será validada ao registrar.
+          </p>
+        </section>
+        <section class="space-y-3" aria-labelledby="stock-fields-title">
+          <h2 id="stock-fields-title" class="!mb-0 !text-sm">Dados da movimentação</h2>
+          <div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
+            <label
+              >Quantidade {{ discard ? 'descartada' : 'recebida' }}
+              <span class="text-destructive">*</span>
+              <Input
+                v-model="amount"
+                placeholder="Ex.: 10,500"
+                inputmode="decimal"
+                required
+                aria-describedby="stock-quantity-hint"
+              />
+              <small id="stock-quantity-hint"
+                >Em {{ product.unidade || 'un' }}, com até 3 casas decimais.</small
+              >
+            </label>
+            <label v-if="!discard"
+              >Custo unitário <span class="text-destructive">*</span>
+              <Input
+                v-model="cost"
+                placeholder="Ex.: 50,00"
+                inputmode="decimal"
+                required
+                aria-describedby="stock-cost-hint"
+              />
+              <small id="stock-cost-hint">Valor em reais por {{ product.unidade || 'un' }}.</small>
+            </label>
+            <label v-else class="sm:col-span-2"
+              >Motivo do descarte <span class="text-destructive">*</span>
+              <Textarea
+                v-model="reason"
+                placeholder="Ex.: produto avariado durante o transporte"
+                :rows="3"
+                maxlength="191"
+                required
+              />
+              <small>{{ reason.length }}/191 caracteres · Registrado no histórico.</small>
+            </label>
+          </div>
+        </section>
+        <details v-if="!discard" class="group rounded-lg border border-border !p-0">
+          <summary
+            class="flex cursor-pointer list-none items-center gap-2 !mb-0 !p-3 [&::-webkit-details-marker]:hidden"
+          >
+            <Truck :size="17" class="shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span class="flex-1 text-sm font-medium"
+              >Detalhes da compra
+              <span class="ml-1 text-[11px] font-normal text-muted-foreground">Opcional</span></span
+            >
+            <ChevronDown
+              :size="16"
+              class="shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+              aria-hidden="true"
+            />
+          </summary>
+          <div class="space-y-4 border-t border-border p-4">
+            <div class="space-y-2">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-sm font-medium">Fornecedor</span>
+                <ModalAction
+                  form="pessoa-nova"
+                  :query="{ tipo: 'FORNECEDOR' }"
+                  class="!h-8 !min-h-8 !px-2 !text-xs"
+                  >Cadastrar fornecedor</ModalAction
+                >
+              </div>
+              <div
+                v-if="supplier"
+                class="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-2"
+              >
+                <span class="min-w-0 break-words text-sm">{{ supplier.nome }}</span>
+                <button type="button" class="!h-8 !min-h-8 !px-2 !text-xs" @click="removeSupplier">
+                  Remover fornecedor
+                </button>
+              </div>
+              <ItemSearch
+                v-if="!supplier"
+                kind="PESSOA"
+                person-type="FORNECEDOR"
+                class="!my-0"
+                @select="
+                  (row) => {
+                    supplier = row
+                    dirty = true
+                  }
+                "
+              />
+            </div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <label
+                >Nota fiscal<Input v-model="note" placeholder="Ex.: NF 12345" maxlength="191"
+              /></label>
+              <label
+                >Frete (R$)<Input v-model="freight" placeholder="Ex.: 15,00" inputmode="decimal"
+              /></label>
+              <label
+                >Desconto (R$)<Input v-model="discount" placeholder="Ex.: 5,00" inputmode="decimal"
+              /></label>
+            </div>
           </div>
         </details>
-        <div
-          class="mf-actions col-span-full flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
+        <section
+          v-if="!discard"
+          class="rounded-lg border border-primary/20 bg-primary/5 p-3"
+          aria-label="Resumo do custo da entrada"
+          aria-live="polite"
         >
-          <button type="button" @click="product = null">Escolher outro</button
-          ><button
-            class="mf-primary !border-blue-600 !bg-blue-600 !text-white hover:!border-blue-700 hover:!bg-blue-700"
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p class="!mb-0 text-xs text-muted-foreground">Total previsto da entrada</p>
+              <small>Quantidade × custo + frete − desconto</small>
+            </div>
+            <strong class="text-lg text-primary">{{
+              purchase ? money(purchase.total) : '—'
+            }}</strong>
+          </div>
+        </section>
+        <p class="!mb-0 flex items-start gap-2 text-xs text-muted-foreground">
+          <Info :size="15" class="mt-0.5 shrink-0" aria-hidden="true" /><span>{{
+            discard
+              ? 'O descarte reduz o estoque. Reservas e saldo disponível serão conferidos ao registrar.'
+              : 'Esta entrada atualiza o estoque e não gera uma despesa no financeiro.'
+          }}</span>
+        </p>
+        <div class="mf-form-actions !mt-0">
+          <FormResultLink :to="formDestination('/modofacil/produtos')" class="mf-button"
+            >Produtos</FormResultLink
+          >
+          <button
+            :class="
+              discard
+                ? '!border-red-600 !bg-red-600 !text-white hover:!bg-red-700'
+                : 'mf-primary !border-primary !bg-primary !text-primary-foreground'
+            "
           >
             {{ busy ? 'Registrando…' : discard ? 'Confirmar descarte' : 'Confirmar reposição' }}
           </button>
         </div>
       </fieldset>
     </form>
-    <p class="mf-muted text-sm text-muted-foreground">
-      Esta operação não cria uma despesa financeira extra. Reposição em lote e correção auditada de
-      contagem ainda estão em adaptação.
-    </p>
   </PageFrame>
 </template>

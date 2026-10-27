@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormSelect from './FormSelect.vue'
 import { Input } from '@/components/ui/input'
 
 import { ref, computed } from 'vue'
@@ -34,10 +35,12 @@ function add(row: Row) {
 <template>
   <div class="mf-stack grid gap-4">
     <label
-      >O que deseja incluir?<select v-model="kind">
-        <option value="PRODUTO">Produto / variante</option>
-        <option value="SERVICO">Serviço</option>
-      </select></label
+      >O que deseja incluir?<FormSelect
+        v-model="kind"
+        :options="[
+          { value: 'PRODUTO', label: 'Produto / variante' },
+          { value: 'SERVICO', label: 'Serviço' },
+        ]" /></label
     ><ItemSearch :key="kind" :kind="kind" @select="add" />
     <ul class="mf-list m-0 grid list-none gap-3 p-0">
       <li
@@ -51,6 +54,7 @@ function add(row: Row) {
         </div>
         <label
           >Quantidade<Input
+            placeholder="Ex.: 1"
             v-model.number="item.quantidade"
             type="number"
             min="1"
@@ -58,6 +62,7 @@ function add(row: Row) {
             required /></label
         ><label
           >Preço unitário<Input
+            placeholder="Ex.: 1"
             v-model.number="item.preco"
             :readonly="item.tipo === 'COMBO'"
             type="number"

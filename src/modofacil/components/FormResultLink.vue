@@ -17,10 +17,11 @@ async function navigate() {
   <button
     v-if="entry && workspace"
     type="button"
+    class="mf-button"
     :disabled="workspace.busy.value"
     @click="navigate"
   >
     <slot />
   </button>
-  <RouterLink v-else :to="to"><slot /></RouterLink>
+  <RouterLink v-else :to="to" class="mf-button"><slot /></RouterLink>
 </template>

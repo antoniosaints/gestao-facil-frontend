@@ -8,6 +8,7 @@ const labels: Record<string, string> = {
   ATIVO: 'Ativo',
   INATIVO: 'Inativo',
   PAGO: 'Pago',
+  EFETIVADO: 'Efetivado',
   PAGA: 'Paga',
   FATURADO: 'Faturada',
   FATURADA: 'Faturada',
@@ -15,6 +16,8 @@ const labels: Record<string, string> = {
   CONCLUIDO: 'Concluído',
   CONCLUIDA: 'Concluída',
   PENDENTE: 'Pendente',
+  PARCIAL: 'Parcial',
+  IGNORADO: 'Ignorado',
   ABERTA: 'Aberta',
   ABERTO: 'Aberto',
   APROVADA: 'Aprovada',
@@ -39,6 +42,7 @@ const tone = computed(() => {
       'TRUE',
       'ATIVO',
       'PAGO',
+      'EFETIVADO',
       'PAGA',
       'FATURADO',
       'FATURADA',
@@ -64,7 +68,7 @@ const tone = computed(() => {
     ].includes(code.value)
   )
     return 'bg-red-500/15 text-red-700 dark:text-red-300'
-  if (['PENDENTE', 'ABERTA', 'ABERTO', 'ORCAMENTO', 'SAIDA'].includes(code.value))
+  if (['PENDENTE', 'PARCIAL', 'ABERTA', 'ABERTO', 'ORCAMENTO', 'SAIDA'].includes(code.value))
     return 'bg-orange-500/15 text-orange-700 dark:text-orange-300'
   return 'bg-blue-500/10 text-blue-700 dark:text-blue-300'
 })

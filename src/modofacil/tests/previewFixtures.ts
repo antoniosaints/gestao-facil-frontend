@@ -44,6 +44,7 @@ export const previewCases = [
   ['Pessoas', '/modofacil/pessoas'],
   ['Nova pessoa', '/modofacil/pessoas/nova'],
   ['Detalhes da pessoa', '/modofacil/pessoas/1'],
+  ['Editar nome e contato', '/modofacil/pessoas/1/editar'],
   ['Dados da pessoa', '/modofacil/pessoas/1/avancado'],
   ['Configurações', '/modofacil/configuracoes'],
   ['Relatórios', '/modofacil/relatorios'],
@@ -54,6 +55,7 @@ export const previewCases = [
 export const product: any = {
   id: 11,
   nome: 'Café especial — dados de exemplo',
+  imagem: new URL('./assets/product-example.svg', import.meta.url).href,
   categoria: 'Mercearia',
   categoriaId: 2,
   variantePadraoId: 73,
@@ -93,6 +95,7 @@ export const products = [
     categoria,
     preco,
     estoqueTotal,
+    imagem: null,
   })),
 ]
 export const people = [
@@ -101,6 +104,7 @@ export const people = [
   ['Pedro Santos', 'pedro@exemplo.test', '(45) 99999-0003', 'Foz do Iguaçu', 'INATIVO'],
   ['Ana Costa', 'ana@exemplo.test', '(41) 99999-0004', 'Curitiba', 'ATIVO'],
   ['Carlos Lima', 'carlos@exemplo.test', '(43) 99999-0005', 'Londrina', 'ATIVO'],
+  ['Distribuidora Exemplo', 'fornecedor@exemplo.test', '(43) 99999-0006', 'Londrina', 'ATIVO'],
 ].map(([nome, email, telefone, cidade, status], i) => ({
   id: i + 1,
   nome,
@@ -109,10 +113,16 @@ export const people = [
   cidade,
   estado: 'PR',
   status,
-  tipo: 'CLIENTE',
+  tipo: i === 5 ? 'FORNECEDOR' : 'CLIENTE',
   endereco: 'Rua de exemplo',
   numero: '100',
   observacaos: 'Cadastro de demonstração.',
+  whastapp: telefone,
+  documento: '',
+  bairro: 'Centro',
+  cep: '86000000',
+  createdAt: '2026-09-01T09:00:00',
+  updatedAt: '2026-10-27T10:00:00',
 }))
 export const services = [
   {
@@ -121,6 +131,20 @@ export const services = [
     descricao: 'Instalação do equipamento e teste da conexão.',
     preco: 120,
     status: true,
+  },
+  {
+    id: 5,
+    nome: 'Manutenção preventiva',
+    descricao: 'Inspeção, limpeza e revisão dos equipamentos para manter a operação em dia.',
+    preco: 85,
+    status: true,
+  },
+  {
+    id: 6,
+    nome: 'Visita técnica',
+    descricao: 'Atendimento no local para diagnóstico e orientação.',
+    preco: 50,
+    status: false,
   },
 ]
 const items = [
@@ -135,12 +159,40 @@ export const sales = [12, 13].map((id) => ({
   data: today() + 'T12:00:00',
   cliente: people[0],
   clienteId: 1,
+  vendedor: { nome: 'Equipe de vendas' },
+  garantia: 90,
   valor: 420,
   desconto: 0,
   observacoes: 'Venda de demonstração.',
   ItensVendas: items,
-  PagamentoVendas: id === 13 ? { metodo: 'PIX', status: 'PAGO', detalhes: [] } : null,
-  LancamentoFinanceiro: [],
+  PagamentoVendas:
+    id === 13
+      ? {
+          metodo: 'OUTRO',
+          valor: 420,
+          status: 'EFETIVADO',
+          data: today() + 'T12:00:00',
+          detalhes: [
+            { metodo: 'PIX', valor: 210 },
+            { metodo: 'CREDIARIO', valor: 210 },
+          ],
+        }
+      : null,
+  LancamentoFinanceiro:
+    id === 13
+      ? [
+          {
+            id: 5,
+            descricao: 'Venda parcelada',
+            valorTotal: 420,
+            status: 'PARCIAL',
+            parcelas: [
+              { id: 8, valor: 210, pago: true },
+              { id: 9, valor: 210, pago: false },
+            ],
+          },
+        ]
+      : [],
   ComboSaidas: [],
 }))
 export const orders = [15, 16].map((id) => ({
@@ -156,8 +208,36 @@ export const orders = [15, 16].map((id) => ({
   desconto: 0,
   garantia: 90,
   ItensOrdensServico: items,
+  createdAt: today() + 'T08:30:00',
+  updatedAt: today() + 'T10:00:00',
+  CobrancasFinanceiras:
+    id === 16
+      ? [
+          {
+            id: 23,
+            Uid: 'COB_OS_0016',
+            valor: 420,
+            status: 'EFETIVADO',
+            tipo: 'PIX',
+            dataVencimento: today() + 'T12:00:00',
+          },
+        ]
+      : [],
   MensagensInteracoesOrdemServico: [
-    { id: 1, Autor: { nome: 'Equipe' }, mensagem: 'Equipamento recebido para avaliação.' },
+    {
+      id: 1,
+      tipo: 'ABERTURA',
+      data: today() + 'T08:30:00',
+      Autor: { nome: 'Equipe' },
+      mensagem: 'Equipamento recebido para avaliação.',
+    },
+    {
+      id: 2,
+      tipo: 'MENSAGEM',
+      data: today() + 'T10:00:00',
+      Autor: { nome: 'Equipe técnica' },
+      mensagem: 'Configuração revisada. Aguardando os testes finais de conexão.',
+    },
   ],
 }))
 export const accounts = [
@@ -170,10 +250,15 @@ export const categories = [
 ]
 export const finance: any = {
   id: 5,
+  Uid: 'FIN_QA_005',
   descricao: 'Instalação de equipamentos',
   tipo: 'RECEITA',
-  status: 'PENDENTE',
+  status: 'PARCIAL',
   valorTotal: 420,
+  valorBruto: 450,
+  desconto: 30,
+  valorEntrada: 0,
+  createdAt: today() + 'T12:00:00',
   contasFinanceiroId: 2,
   categoriaId: 3,
   clienteId: 1,
@@ -196,6 +281,8 @@ export const finance: any = {
       numero: 2,
       valor: 210,
       pago: true,
+      valorPago: 210,
+      formaPagamento: 'PIX',
       vencimento: today() + 'T12:00:00',
       dataPagamento: today() + 'T12:00:00',
       ContaFinanceira: accounts[0],

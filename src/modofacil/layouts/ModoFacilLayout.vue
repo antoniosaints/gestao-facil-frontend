@@ -16,7 +16,6 @@ import {
   X,
   Search,
   ChevronDown,
-  ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
   BarChart3,
@@ -34,6 +33,9 @@ import { usePreferredDark } from '@vueuse/core'
 import ModalWorkspace from '../components/ModalWorkspace.vue'
 import ModalAction from '../components/ModalAction.vue'
 import { createModalWorkspace, modalWorkspaceKey } from '../application/modalWorkspace'
+import { Input } from '@/components/ui/input'
+import NavigationViewport from '../components/NavigationViewport.vue'
+import { useMenuLoading } from '../application/useMenuLoading'
 import ListLoading from '../components/ListLoading.vue'
 import Feedback from '../components/Feedback.vue'
 import ConfirmationDialog from '../components/ConfirmationDialog.vue'
@@ -43,6 +45,7 @@ import { entrarNaConta, sairDaConta } from '@/pluguins/socket'
 
 provide(formThemeClassesKey, darkPaletteClasses)
 
+const { pendingPath, onNavigate } = useMenuLoading()
 const ui = useUiStore(),
   route = useRoute()
 const workspace =
@@ -93,6 +96,12 @@ watch(
     }
   },
 )
+watch(pendingPath, (path) => {
+  if (path) {
+    mobileOpen.value = false
+    searchOpen.value = false
+  }
+})
 const navigation = ref<HTMLElement | null>(null)
 const mobileToggle = ref<HTMLButtonElement | null>(null)
 const onResize = () => {
@@ -108,7 +117,9 @@ watch(mobileOpen, async (open) => {
 })
 function trapNavigation(event: KeyboardEvent) {
   if (!mobileOpen.value || desktop.value) return
-  const controls = navigation.value?.querySelectorAll<HTMLElement>('a[href], button')
+  const controls = Array.from(
+    navigation.value?.querySelectorAll<HTMLElement>('a[href], button') || [],
+  ).filter((control) => control.getClientRects().length && !control.hasAttribute('disabled'))
   if (!controls?.length) return
   const first = controls[0],
     last = controls[controls.length - 1]
@@ -177,13 +188,64 @@ const links = computed(() =>
   ].filter((link) => hasPermission(ui.usuarioLogged, link.level)),
 )
 const active = (path: string) =>
-  path === '/modofacil'
-    ? route.path === path
-    : path.includes('/estoque/')
-      ? route.path.startsWith('/modofacil/estoque')
-      : route.path.startsWith(path)
-const currentPage = computed(
-  () => links.value.find((link) => active(link.path))?.label || 'Modo Fácil',
+  path === '/modofacil/vendas' && route.path === '/modofacil/caixa'
+    ? true
+    : path === '/modofacil'
+      ? route.path === path
+      : path.includes('/estoque/')
+        ? route.path.startsWith('/modofacil/estoque')
+        : route.path.startsWith(path)
+const currentPage = computed(() =>
+  route.path === '/modofacil/caixa'
+    ? 'Caixa'
+    : links.value.find((link) => active(link.path))?.label || 'Modo Fácil',
+)
+const expandedGroups = ref<Record<string, boolean>>({
+  cadastros: true,
+  operacao: true,
+  sistema: true,
+})
+const navigationGroups = computed(() =>
+  [
+    { id: 'inicio', label: '', icon: Home, paths: ['/modofacil'] },
+    {
+      id: 'cadastros',
+      label: 'Cadastros',
+      icon: Users,
+      paths: ['/modofacil/pessoas', '/modofacil/produtos', '/modofacil/servicos'],
+    },
+    {
+      id: 'operacao',
+      label: 'Operação',
+      icon: Boxes,
+      paths: [
+        '/modofacil/vendas',
+        '/modofacil/estoque/movimentacoes',
+        '/modofacil/financeiro',
+        '/modofacil/relatorios',
+      ],
+    },
+    {
+      id: 'sistema',
+      label: 'Sistema',
+      icon: Settings,
+      paths: ['/modofacil/recursos', '/modofacil/configuracoes'],
+    },
+  ]
+    .map((group) => ({
+      ...group,
+      links: group.paths.flatMap((path) => links.value.filter((link) => link.path === path)),
+    }))
+    .filter((group) => group.links.length),
+)
+watch(
+  () => route.path,
+  () => {
+    const group = navigationGroups.value.find((group) =>
+      group.links.some((link) => active(link.path)),
+    )
+    if (group?.label) expandedGroups.value[group.id] = true
+  },
 )
 const searchLinks = computed(() =>
   links.value.filter((link) =>
@@ -201,7 +263,7 @@ function closeSearch(event: FocusEvent) {
 }
 </script>
 <template>
-  <div class="modo-facil min-h-dvh dark:bg-black lg:flex" :class="surfaceClasses">
+  <div class="modo-facil min-h-dvh lg:flex" :class="surfaceClasses" @click.capture="onNavigate">
     <ConfirmationDialog
       v-if="confirmation"
       :key="confirmationVersion"
@@ -225,76 +287,122 @@ function closeSearch(event: FocusEvent) {
       ref="navigation"
       :inert="!desktop && !mobileOpen"
       @keydown.tab="trapNavigation"
-      class="fixed inset-y-0 left-0 z-50 flex flex-col bg-[#1c2736] dark:bg-sidebar dark:border-r dark:border-border p-3 text-white shadow-lg transition-[width,transform] duration-200 lg:sticky lg:top-0 lg:h-dvh lg:shrink-0 lg:translate-x-0"
+      class="mf-sidebar fixed inset-y-0 left-0 z-50 flex flex-col px-4 py-5 transition-[width,transform] duration-200 motion-reduce:transition-none lg:sticky lg:top-0 lg:h-dvh lg:shrink-0 lg:translate-x-0"
       :class="[
-        collapsed ? 'lg:w-[76px]' : 'lg:w-[232px]',
-        mobileOpen ? 'w-[260px] translate-x-0' : 'w-[260px] -translate-x-full',
+        collapsed ? 'lg:w-[80px]' : 'lg:w-[288px]',
+        mobileOpen
+          ? 'w-[min(288px,calc(100vw-2rem))] translate-x-0'
+          : 'w-[min(288px,calc(100vw-2rem))] -translate-x-full',
       ]"
       aria-label="Menu principal"
       @keydown.esc="mobileOpen = false"
     >
-      <div class="mb-6 flex h-12 shrink-0 items-center gap-2 px-2">
+      <div
+        class="mb-7 flex h-12 shrink-0 items-center gap-2 px-2"
+        :class="collapsed ? 'lg:px-0' : ''"
+      >
         <RouterLink
           to="/modofacil"
-          class="flex items-center gap-3 !text-white"
+          class="flex min-w-0 items-center gap-3 !text-foreground"
           aria-label="Gestão Fácil ERP, início"
         >
           <span
-            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[6px] bg-white/5 text-lg font-bold tracking-tight"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[6px] bg-primary text-lg font-bold tracking-tight text-primary-foreground shadow-sm"
             >GF</span
           >
           <span
-            class="whitespace-nowrap text-sm font-medium"
+            class="min-w-0 text-sm font-semibold leading-tight"
             :class="collapsed && !mobileOpen ? 'lg:hidden' : ''"
-            >Gestão Fácil ERP</span
+            >Gestão Fácil ERP<small class="mt-1 whitespace-nowrap !text-[11px]"
+              >Sua rotina mais simples</small
+            ></span
           >
         </RouterLink>
         <button
           type="button"
-          class="ml-auto !min-h-9 !border-0 !bg-transparent !p-1 !text-slate-300 lg:!hidden"
+          class="ml-auto !min-h-9 !border-0 !bg-transparent !p-1 lg:!hidden"
           aria-label="Fechar menu"
           @click.prevent="mobileOpen = false"
         >
           <X :size="20" />
         </button>
       </div>
-      <nav class="grid gap-1 overflow-y-auto" aria-label="Navegação principal">
-        <component
-          v-for="link in links"
-          :is="link.form ? ModalAction : RouterLink"
-          :key="link.path"
-          v-bind="
-            link.form ? { form: link.form, params: { operacao: 'reposicao' } } : { to: link.path }
-          "
-          class="group flex min-h-11 items-center !justify-start gap-3 rounded-[6px] !border-0 px-3 py-2.5 text-left text-sm transition-colors"
-          :class="
-            active(link.path)
-              ? '!bg-blue-600 !text-white shadow-sm'
-              : '!bg-transparent !text-slate-300 hover:!bg-white/5 hover:!text-white'
-          "
-          :aria-current="active(link.path) ? 'page' : undefined"
-          :title="collapsed ? link.label : undefined"
-        >
-          <component
-            :is="link.icon"
-            :size="18"
-            :stroke-width="1.7"
-            class="shrink-0"
-            aria-hidden="true"
-          />
-          <span :class="collapsed && !mobileOpen ? 'lg:sr-only' : ''">{{ link.label }}</span>
-          <ChevronRight
-            v-if="['Vendas', 'Mais recursos'].includes(link.label)"
-            :size="14"
-            class="ml-auto text-slate-400"
-            :class="collapsed && !mobileOpen ? 'lg:hidden' : ''"
-            aria-hidden="true"
-          />
-        </component>
+      <nav class="min-h-0 flex-1 space-y-2 overflow-y-auto pb-5" aria-label="Navegação principal">
+        <div v-for="group in navigationGroups" :key="group.id">
+          <button
+            v-if="group.label"
+            type="button"
+            class="mf-nav-group mb-1 flex w-full !justify-start gap-3 !border-0 !px-3 !py-2.5 text-left"
+            :class="collapsed && !mobileOpen ? 'lg:!hidden' : ''"
+            :aria-expanded="expandedGroups[group.id]"
+            :aria-controls="`mf-group-${group.id}`"
+            :data-active="group.links.some((link) => active(link.path))"
+            @click="expandedGroups[group.id] = !expandedGroups[group.id]"
+          >
+            <component :is="group.icon" :size="17" :stroke-width="1.7" aria-hidden="true" />
+            {{ group.label }}
+            <ChevronDown
+              :size="14"
+              class="ml-auto transition-transform"
+              :class="expandedGroups[group.id] ? 'rotate-180' : ''"
+              aria-hidden="true"
+            />
+          </button>
+          <div
+            :id="`mf-group-${group.id}`"
+            v-show="!group.label || expandedGroups[group.id] || (collapsed && desktop)"
+            class="grid gap-1"
+          >
+            <component
+              v-for="link in group.links"
+              :is="link.form ? ModalAction : RouterLink"
+              :key="link.path"
+              v-bind="
+                link.form
+                  ? { form: link.form, params: { operacao: 'reposicao' } }
+                  : { to: link.path }
+              "
+              class="mf-nav-link group flex min-h-11 items-center !justify-start gap-3 !border-0 px-3 py-2 text-left text-sm transition-colors lg:min-h-10"
+              :class="[
+                group.label && !(collapsed && desktop) ? 'ml-4 border-l border-border !pl-5' : '',
+                collapsed && !mobileOpen ? 'lg:!justify-center lg:!px-0' : '',
+              ]"
+              :aria-current="active(link.path) ? 'page' : undefined"
+              :title="collapsed ? link.label : undefined"
+            >
+              <component
+                :is="link.icon"
+                :size="18"
+                :stroke-width="1.7"
+                class="shrink-0"
+                aria-hidden="true"
+              />
+              <span :class="collapsed && !mobileOpen ? 'lg:sr-only' : ''">{{ link.label }}</span>
+            </component>
+          </div>
+        </div>
       </nav>
-      <div class="mt-auto border-t border-white/10 pt-4" :class="collapsed ? 'lg:text-center' : ''">
+      <div
+        class="mt-auto shrink-0 border-t border-border pt-4"
+        :class="collapsed ? 'lg:text-center' : ''"
+      >
         <div
-          class="flex items-center gap-2 px-3 text-xs text-slate-400"
+          class="mb-3 flex min-w-0 items-center gap-3 px-2"
+          :class="collapsed ? 'lg:justify-center lg:px-0' : ''"
+        >
+          <span
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-foreground"
+            >{{ initials }}</span
+          >
+          <div class="min-w-0" :class="collapsed && !mobileOpen ? 'lg:hidden' : ''">
+            <p class="!mb-0 truncate !text-xs font-medium text-foreground">{{ userName }}</p>
+            <small class="mt-1 truncate !text-[11px]">{{
+              ui.contaInfo.nomeFantasia || ui.contaInfo.nome || 'Sua empresa'
+            }}</small>
+          </div>
+        </div>
+        <div
+          class="flex items-center gap-2 px-2 text-xs text-muted-foreground"
           :class="collapsed ? 'lg:justify-center lg:px-0' : ''"
         >
           <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
@@ -304,7 +412,7 @@ function closeSearch(event: FocusEvent) {
     </aside>
     <div class="min-w-0 flex-1" :inert="mobileOpen && !desktop">
       <header
-        class="sticky top-0 z-30 flex h-[68px] items-center gap-4 border-b border-border bg-card px-4 sm:px-6"
+        class="mf-topbar sticky top-0 z-30 flex h-[65px] items-center gap-2 border-b border-border px-4 sm:gap-3 sm:px-6 lg:px-8"
       >
         <button
           type="button"
@@ -327,19 +435,46 @@ function closeSearch(event: FocusEvent) {
         >
           <component :is="collapsed ? PanelLeftOpen : PanelLeftClose" :size="19" />
         </button>
-        <div class="relative min-w-0 flex-1 sm:max-w-lg" @focusout="closeSearch">
+        <div class="min-w-0 mr-auto">
+          <p
+            class="!mb-0 whitespace-nowrap !text-[10px] font-semibold uppercase leading-4 tracking-[0.18em] text-muted-foreground"
+          >
+            Modo Fácil
+          </p>
+          <p class="!mb-0 truncate !text-base font-semibold leading-tight sm:!text-lg">
+            {{ currentPage }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="!h-10 !w-10 !border-0 !bg-transparent !p-2 md:!hidden"
+          aria-label="Abrir busca"
+          :aria-expanded="searchOpen"
+          @click="searchOpen = !searchOpen"
+        >
+          <Search :size="18" />
+        </button>
+        <div
+          class="relative hidden min-w-0 flex-1 rounded-md bg-background md:block md:max-w-sm md:bg-transparent"
+          :class="
+            searchOpen
+              ? '!absolute inset-x-4 top-[73px] !block md:!relative md:inset-auto md:top-auto'
+              : ''
+          "
+          @focusout="closeSearch"
+        >
           <label for="mf-global-search" class="sr-only">Buscar páginas ou registros</label>
           <Search
             :size="16"
             class="pointer-events-none absolute left-3 top-3 text-muted-foreground"
             aria-hidden="true"
           />
-          <input
+          <Input
             id="mf-global-search"
             v-model="search"
             type="search"
             placeholder="Buscar páginas ou registros..."
-            class="!bg-muted/50 !pl-9 placeholder:text-muted-foreground"
+            class="!pl-9 placeholder:text-muted-foreground"
             autocomplete="off"
             :aria-expanded="searchOpen"
             aria-controls="mf-search-results"
@@ -392,27 +527,27 @@ function closeSearch(event: FocusEvent) {
         </div>
         <button
           type="button"
-          class="!h-10 !w-10 shrink-0 !p-2"
+          class="!h-10 !w-10 shrink-0 !border-0 !bg-transparent !p-2"
           :aria-label="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'"
           :title="isDark ? 'Tema claro' : 'Tema escuro'"
           @click="toggleTheme"
         >
           <component :is="isDark ? Sun : Moon" :size="18" />
         </button>
-        <span class="ml-auto hidden text-xs text-muted-foreground xl:block">{{ currentPage }}</span>
         <details class="relative ml-auto shrink-0 sm:ml-0">
           <summary
             class="flex cursor-pointer list-none items-center gap-2 rounded-[6px] p-1 [&::-webkit-details-marker]:hidden"
             aria-label="Menu da conta"
           >
             <span
-              class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-[11px] font-semibold text-white"
+              class="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-[11px] font-semibold text-foreground"
               >{{ initials }}</span
             >
-            <span class="hidden max-w-36 truncate text-xs font-medium sm:block">{{
-              userName
-            }}</span>
-            <ChevronDown :size="14" class="text-muted-foreground" aria-hidden="true" />
+            <ChevronDown
+              :size="14"
+              class="hidden text-muted-foreground sm:block"
+              aria-hidden="true"
+            />
           </summary>
           <div
             class="absolute right-0 top-12 w-60 rounded-[8px] border border-border bg-card p-4 shadow-lg"
@@ -435,53 +570,60 @@ function closeSearch(event: FocusEvent) {
         </details>
       </header>
       <main
+        :aria-busy="!!pendingPath"
         id="mf-content"
         tabindex="-1"
-        class="mx-auto w-full max-w-[1600px] p-4 outline-none sm:p-6 lg:p-7"
+        class="mx-auto w-full max-w-[1600px] px-4 py-6 outline-none sm:px-6 lg:px-8"
       >
-        <p
-          v-if="experience.changed"
-          class="mb-4 rounded-[6px] border border-amber-500/30 bg-amber-500/10 p-4 text-amber-800 dark:text-amber-300"
-          role="status"
+        <NavigationViewport
+          :loading="!!pendingPath"
+          :collapsed="collapsed"
+          :label="`Carregando ${links.find((link) => link.path === pendingPath)?.label || 'página'}…`"
         >
-          A experiência da conta mudou. Termine ou cancele a operação atual; a preferência será
-          aplicada na próxima navegação.
-        </p>
-        <Feedback
-          v-if="route.path !== '/modofacil/configuracoes'"
-          :error="experience.error"
-          @retry="refreshExperience"
-        />
-        <ModalWorkspace
-          v-if="route.path === '/modofacil/configuracoes' || entered"
-          :key="experience.sessionVersion"
-        />
-        <section
-          v-else-if="!experience.configuration"
-          class="rounded-lg border border-border bg-card p-4 sm:p-5"
-        >
-          <template v-if="experience.loading || !experience.error">
-            <h1 class="sr-only">Carregando sua área de trabalho</h1>
-            <ListLoading label="Preparando sua área de trabalho…" />
-          </template>
-          <div v-else class="py-6 text-center">
-            <h1 class="!text-lg">Não foi possível abrir sua área de trabalho</h1>
-            <p class="text-muted-foreground">
-              Tente carregar novamente para continuar de onde parou.
-            </p>
-            <button
-              type="button"
-              class="!border-blue-600 !bg-blue-600 !text-white"
-              @click="refreshExperience"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        </section>
-        <section v-else class="rounded-lg border border-border bg-card p-6">
-          <h1 class="!text-lg">A experiência da conta foi atualizada</h1>
-          <RouterLink to="/">Continuar para o início</RouterLink>
-        </section>
+          <p
+            v-if="experience.changed"
+            class="mb-4 rounded-[6px] border border-amber-500/30 bg-amber-500/10 p-4 text-amber-800 dark:text-amber-300"
+            role="status"
+          >
+            A experiência da conta mudou. Termine ou cancele a operação atual; a preferência será
+            aplicada na próxima navegação.
+          </p>
+          <Feedback
+            v-if="route.path !== '/modofacil/configuracoes'"
+            :error="experience.error"
+            @retry="refreshExperience"
+          />
+          <ModalWorkspace
+            v-if="route.path === '/modofacil/configuracoes' || entered"
+            :key="experience.sessionVersion"
+          />
+          <section
+            v-else-if="!experience.configuration"
+            class="rounded-lg border border-border bg-card p-4 sm:p-5"
+          >
+            <template v-if="experience.loading || !experience.error">
+              <h1 class="sr-only">Carregando sua área de trabalho</h1>
+              <ListLoading label="Preparando sua área de trabalho…" />
+            </template>
+            <div v-else class="py-6 text-center">
+              <h1 class="!text-lg">Não foi possível abrir sua área de trabalho</h1>
+              <p class="text-muted-foreground">
+                Tente carregar novamente para continuar de onde parou.
+              </p>
+              <button
+                type="button"
+                class="!border-blue-600 !bg-blue-600 !text-white"
+                @click="refreshExperience"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          </section>
+          <section v-else class="rounded-lg border border-border bg-card p-6">
+            <h1 class="!text-lg">A experiência da conta foi atualizada</h1>
+            <RouterLink to="/" class="mf-button">Continuar para o início</RouterLink>
+          </section>
+        </NavigationViewport>
       </main>
     </div>
   </div>

@@ -1,20 +1,34 @@
 <script setup lang="ts">
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCaption,
+} from '@/components/ui/table'
 import ListLoading from './ListLoading.vue'
 import { Inbox } from 'lucide-vue-next'
 import type { Row } from '../adapters/domain'
-defineProps<{
-  rows: Row[]
-  columns: { key: string; label: string; right?: boolean }[]
-  caption: string
-  loading?: boolean
-  failed?: boolean
-  empty?: string
-}>()
+withDefaults(
+  defineProps<{
+    rows: Row[]
+    columns: { key: string; label: string; right?: boolean }[]
+    caption: string
+    loading?: boolean
+    failed?: boolean
+    empty?: string
+    minWidth?: number
+    mobileLayout?: 'cards' | 'table'
+  }>(),
+  { minWidth: 640, mobileLayout: 'cards' },
+)
 </script>
 <template>
   <div
     :aria-busy="loading"
-    class="relative min-w-0 [&_td_button]:!min-h-7 [&_td_button]:!h-7 [&_td_button]:!px-2 [&_td_a]:!min-h-7 [&_td_a]:!py-1 [&_td_small]:!inline [&_td_small]:ml-1.5 [&_td_small]:!text-[10px] [&_td_small]:leading-none"
+    class="relative min-w-0 [&_td_button]:!min-h-8 [&_td_button]:!px-2.5 [&_td_a]:!min-h-8 [&_td_a]:!py-1 [&_td_small]:mt-0.5 [&_td_small]:!text-xs"
   >
     <ListLoading v-if="loading && !rows.length" :columns="columns.length" />
     <div
@@ -26,51 +40,51 @@ defineProps<{
       <span class="sr-only">Atualizando registros…</span>
     </div>
     <div
-      v-show="!loading || rows.length"
-      class="hidden overflow-x-auto rounded-[6px] border border-border md:block"
+      v-show="rows.length"
+      class="overflow-x-auto rounded-lg border border-border bg-card"
+      :class="mobileLayout === 'cards' ? 'hidden md:block' : ''"
     >
-      <table class="w-full min-w-[640px] border-collapse text-left text-xs">
-        <caption class="sr-only">
-          {{
-            caption
-          }}
-        </caption>
-        <thead class="bg-muted/50 text-muted-foreground">
-          <tr>
-            <th
+      <Table class="text-left text-sm" :style="{ minWidth: `${minWidth}px` }">
+        <TableCaption class="sr-only">
+          {{ caption }}
+        </TableCaption>
+        <TableHeader class="bg-muted/50 text-muted-foreground">
+          <TableRow>
+            <TableHead
               v-for="column in columns"
               :key="column.key"
               scope="col"
-              class="px-3 py-2 font-medium"
+              class="h-12 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em]"
               :class="column.right ? 'text-right' : ''"
             >
               {{ column.label }}
-            </th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-border">
-          <tr v-for="row in rows" :key="row.id" class="hover:bg-muted/70">
-            <td
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody class="[&_tr:last-child]:border-0">
+          <TableRow v-for="(row, index) in rows" :key="row.id ?? index" class="hover:bg-muted/50">
+            <TableCell
               v-for="column in columns"
               :key="column.key"
-              class="max-w-sm break-words px-3 py-1 leading-snug text-foreground/90"
+              class="max-w-sm break-words px-4 py-3 leading-snug text-foreground/90"
               :class="column.right ? 'text-right' : ''"
             >
               <slot :name="column.key" :row="row">{{ row[column.key] ?? '—' }}</slot>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
     <ul
-      v-show="!loading || rows.length"
+      v-if="mobileLayout === 'cards'"
+      v-show="rows.length"
       class="grid list-none gap-2 md:hidden"
       :aria-label="caption"
     >
       <li
-        v-for="row in rows"
-        :key="row.id"
-        class="grid min-w-0 grid-cols-2 gap-x-3 gap-y-1.5 rounded-[6px] border border-border bg-card p-3"
+        v-for="(row, index) in rows"
+        :key="row.id ?? index"
+        class="grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-border bg-card p-4"
       >
         <div
           v-for="column in columns"

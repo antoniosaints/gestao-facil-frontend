@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import { useLookupOptions } from '../adapters/lookups'
+import FormSwitch from './FormSwitch.vue'
+import FormSelect from './FormSelect.vue'
 import { Input } from '@/components/ui/input'
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import ModalDialog from './ModalDialog.vue'
 import ReviewPanel from './ReviewPanel.vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { hasPermission } from '@/hooks/authorize'
-import { api, type Row } from '../adapters/domain'
 import { today, errorMessage, money } from '../application/format'
 import { preparePayments, type PaymentDraft } from '../application/payments'
 import { useFlow } from '../application/useFlow'
@@ -32,10 +34,7 @@ const ui = useUiStore(),
   cancelCharge = ref(false),
   category = ref<number | null>(null),
   account = ref<number | null>(null),
-  categories = ref<Row[]>([]),
-  accounts = ref<Row[]>([]),
   error = ref(''),
-  loading = ref(false),
   review = ref(false)
 const dirty = ref(false)
 useFlow(
@@ -46,20 +45,8 @@ const automatic = computed(() =>
   props.kind === 'OS' ? ui.osLancamentoAutomatico : ui.vendaLancamentoAutomatico,
 )
 const canFinance = computed(() => hasPermission(ui.usuarioLogged, 3))
-onMounted(async () => {
-  if (!canFinance.value) return
-  loading.value = true
-  try {
-    ;[categories.value, accounts.value] = await Promise.all([
-      api.read('/modofacil/financeiro/categorias'),
-      api.read('/modofacil/financeiro/contas'),
-    ])
-  } catch (e) {
-    error.value = errorMessage(e)
-  } finally {
-    loading.value = false
-  }
-})
+const { load: loadAccounts, rows: accounts } = useLookupOptions('finance-accounts')
+const { load: loadCategories, rows: categories } = useLookupOptions('finance-categories')
 function payload() {
   const payment = preparePayments(
     props.total,
@@ -121,10 +108,14 @@ function confirm() {
       @submit.prevent="review ? confirm() : next()"
       @input="dirty = true"
     >
-      <p v-if="loading" role="status">Carregando destinos financeiros…</p>
-      <fieldset :disabled="busy || uncertain || loading" class="mf-stack grid gap-4">
+      <fieldset :disabled="busy || uncertain" class="mf-stack grid gap-4">
         <section v-if="!review" class="mf-stack grid gap-4">
-          <label>Data do recebimento<Input v-model="date" type="date" required /></label
+          <label
+            >Data do recebimento<Input
+              placeholder="dd/mm/aaaa"
+              v-model="date"
+              type="date"
+              required /></label
           ><PaymentComposer
             :total="total"
             :allow-credit="false"
@@ -142,26 +133,22 @@ function confirm() {
           </p>
           <label
             v-else
-            class="mf-choice mb-3 !flex items-center gap-3 rounded-[6px] border border-border p-4 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-500/10"
-            ><input v-model="generate" type="checkbox" :disabled="!canFinance" />Gerar o lançamento
-            financeiro junto com o faturamento</label
+            class="mf-choice mb-3 !flex items-center gap-3 rounded-[6px] border border-border p-4 has-[[data-state=checked]]:border-blue-500 has-[[data-state=checked]]:bg-blue-500/10"
+            ><FormSwitch v-model="generate" :disabled="!canFinance" />Gerar o lançamento financeiro
+            junto com o faturamento</label
           >
           <div v-if="canFinance" class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
             <label
-              >Categoria financeira<select v-model="category">
-                <option :value="null">Usar padrão, quando permitido</option>
-                <option v-for="row in categories" :key="row.id" :value="row.id">
-                  {{ row.nome }}
-                </option>
-              </select></label
+              >Categoria financeira<FormSelect
+                v-model="category"
+                :load-options="loadCategories"
+                :options="[{ value: null, label: 'Usar padrão, quando permitido' }]" /></label
             ><label
-              >Conta financeira<select v-model="account">
-                <option :value="null">Usar padrão da conta</option>
-                <option v-for="row in accounts" :key="row.id" :value="row.id">
-                  {{ row.nome }}
-                </option>
-              </select></label
-            >
+              >Conta financeira<FormSelect
+                v-model="account"
+                :load-options="loadAccounts"
+                :options="[{ value: null, label: 'Usar padrão da conta' }]"
+            /></label>
           </div>
           <p
             v-else-if="kind === 'OS'"
@@ -171,9 +158,9 @@ function confirm() {
             depende da fronteira de configuração operacional.
           </p>
           <label
-            class="mf-choice mb-3 !flex items-center gap-3 rounded-[6px] border border-border p-4 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-500/10"
-            ><input v-model="cancelCharge" type="checkbox" />Cancelar cobranças externas pendentes
-            após registrar este recebimento</label
+            class="mf-choice mb-3 !flex items-center gap-3 rounded-[6px] border border-border p-4 has-[[data-state=checked]]:border-blue-500 has-[[data-state=checked]]:bg-blue-500/10"
+            ><FormSwitch v-model="cancelCharge" />Cancelar cobranças externas pendentes após
+            registrar este recebimento</label
           >
         </section>
         <ReviewPanel v-else title="Confira o recebimento"
@@ -206,7 +193,7 @@ function confirm() {
             recebimento.
           </p>
         </ReviewPanel>
-        <div class="mf-actions my-4 flex flex-wrap items-end gap-3">
+        <div class="mf-form-actions mf-actions my-4 flex flex-wrap items-end gap-3">
           <button type="button" @click="review ? (review = false) : emit('cancel')">Voltar</button
           ><button
             class="mf-primary !border-blue-600 !bg-blue-600 !text-white hover:!border-blue-700 hover:!bg-blue-700"

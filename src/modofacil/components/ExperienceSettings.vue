@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { configurationApi } from '../adapters/configuration'
 import { experience, refreshExperience } from '../application/experience'
 import { errorMessage } from '../application/format'
+import { useFeedbackToasts } from '../application/notifications'
 import {
   Card,
   CardContent,
@@ -35,6 +36,10 @@ const selected = ref<'NORMAL' | 'FACIL'>('NORMAL')
 const busy = ref(false)
 const error = ref('')
 const message = ref('')
+useFeedbackToasts(
+  () => error.value || experience.error,
+  () => message.value,
+)
 async function load() {
   await refreshExperience()
   if (experience.configuration) selected.value = experience.configuration.modo
@@ -135,7 +140,7 @@ async function save() {
             <label
               v-for="option in options"
               :key="option.value"
-              class="relative !space-y-0 flex cursor-pointer items-start gap-3 rounded-md border p-5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-offset-2"
+              class="relative !space-y-0 !flex cursor-pointer items-start gap-3 rounded-md border p-5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-offset-2"
               :class="
                 inheritTheme
                   ? [

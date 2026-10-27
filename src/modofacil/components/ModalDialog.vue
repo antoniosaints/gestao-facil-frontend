@@ -4,6 +4,7 @@ import { AlertCircle, X } from 'lucide-vue-next'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { darkPaletteClasses, surfaceClasses } from '../application/ui'
 import { formThemeClassesKey } from '@/components/formulario/form-theme'
+import { useFeedbackToasts } from '../application/notifications'
 provide(formThemeClassesKey, darkPaletteClasses)
 const props = defineProps<{
   title: string
@@ -16,6 +17,7 @@ const props = defineProps<{
   inactive?: boolean
 }>()
 const emit = defineEmits<{ close: [] }>()
+useFeedbackToasts(() => props.error)
 const alert = ref<HTMLElement | null>(null)
 watch(
   () => props.error,
@@ -33,13 +35,14 @@ function close(open: boolean) {
 <template>
   <ModalView
     mobile-variant="dialog"
+    ignore-toast-interactions
     :open="true"
     :title="title"
     :description="description"
     :size="size === 'sm' ? 'sm' : size === 'lg' ? '3xl' : 'xl'"
     :content-class="`${surfaceClasses} modo-facil-dialog [&>button]:hidden !bg-card text-foreground max-h-[92dvh] !gap-0 overflow-hidden max-md:!mt-0 max-md:!left-0 max-md:!top-auto max-md:!bottom-0 max-md:!translate-x-0 max-md:!translate-y-0 max-md:!w-full max-md:!max-w-none md:w-[calc(100%-2rem)] rounded-t-xl md:rounded-lg ${busy ? '[&>button]:pointer-events-none [&>button]:opacity-40' : ''}`"
-    header-class="[&>div]:!pr-0 border-b border-border px-4 py-4 sm:px-5 [&_h2]:!text-base [&_h2]:!font-semibold"
-    body-class="min-h-0 min-w-0 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5 [&_.mf-actions]:sticky [&_.mf-actions]:bottom-0 [&_.mf-actions]:z-10 [&_.mf-actions]:bg-card [&_.mf-actions]:py-2"
+    header-class="[&>div]:!pr-0 border-b border-border px-4 py-5 sm:px-5 [&_h2]:!text-lg [&_h2]:!font-semibold [&_p]:mt-2 [&_p]:!mb-0"
+    body-class="min-h-0 min-w-0 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5 [&_.mf-form-actions]:sticky [&_.mf-form-actions]:bottom-0 [&_.mf-form-actions]:z-10 [&_.mf-form-actions]:bg-card [&_.mf-form-actions]:py-2"
     @update:open="close"
   >
     <template #header-actions>

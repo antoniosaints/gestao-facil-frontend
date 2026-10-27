@@ -1,20 +1,23 @@
 <script setup lang="ts">
+import FormSelect from './FormSelect.vue'
 import { Input } from '@/components/ui/input'
-
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { hasPermission } from '@/hooks/authorize'
-import { api } from '../adapters/domain'
+import { api, type Row } from '../adapters/domain'
 import { money, dateLabel, errorMessage } from '../application/format'
 import Feedback from './Feedback.vue'
-const props = defineProps<{ personId: number }>(),
-  ui = useUiStore(),
-  tab = ref('vendas'),
+import RecordsTable from './RecordsTable.vue'
+import StatusBadge from './StatusBadge.vue'
+import PageControls from './PageControls.vue'
+const props = defineProps<{ personId: number; initialTab?: string }>()
+const ui = useUiStore(),
+  tab = ref(props.initialTab || 'vendas'),
   search = ref(''),
   page = ref(1),
   loading = ref(false),
   error = ref(''),
-  result = ref<any>(null)
+  result = ref<Row | null>(null)
 const tabs = computed(() =>
   [
     { value: 'vendas', label: 'Vendas', level: 2 },
@@ -23,102 +26,129 @@ const tabs = computed(() =>
     { value: 'cobrancas', label: 'Cobranças', level: 3 },
   ].filter((t) => hasPermission(ui.usuarioLogged, t.level)),
 )
+let generation = 0
 async function load(reset = false) {
   if (reset) page.value = 1
+  const request = ++generation
   loading.value = true
   error.value = ''
+  result.value = null
   try {
     if (!tabs.value.some((t) => t.value === tab.value))
       throw new Error('Sem permissão para este histórico.')
-    result.value = await api.read(`/modofacil/pessoas/${props.personId}/historico`, {
+    const data = await api.read(`/modofacil/pessoas/${props.personId}/historico`, {
       tab: tab.value,
       page: page.value,
       limit: 10,
       search: search.value,
     })
+    if (!Array.isArray(data?.items) || !data?.meta)
+      throw new Error('Não foi possível consultar o histórico.')
+    if (request === generation) result.value = data
   } catch (e) {
-    error.value = errorMessage(e)
+    if (request === generation) error.value = errorMessage(e)
   } finally {
-    loading.value = false
+    if (request === generation) loading.value = false
   }
 }
+function target(row: Row) {
+  return tab.value === 'vendas'
+    ? `/modofacil/vendas/${row.id}`
+    : tab.value === 'ordens'
+      ? `/modofacil/servicos/ordens/${row.id}`
+      : tab.value === 'lancamentos'
+        ? `/modofacil/financeiro/lancamentos/${row.id}`
+        : null
+}
+function amount(row: Row) {
+  if (tab.value !== 'ordens') return row.valorTotal ?? row.valor
+  if (!Array.isArray(row.ItensOrdensServico)) return null
+  return (
+    (row.ItensOrdensServico.reduce(
+      (sum: number, item: Row) =>
+        sum + Math.round(Number(item.valor) * Number(item.quantidade) * 100),
+      0,
+    ) -
+      Math.round(Number(row.desconto || 0) * 100)) /
+    100
+  )
+}
+watch(tab, () => {
+  search.value = ''
+  void load(true)
+})
+onMounted(() => load())
+onBeforeUnmount(() => generation++)
 </script>
 <template>
   <section
-    class="mf-card min-w-0 rounded-[8px] border border-border bg-card p-5 mf-stack grid gap-4"
+    class="min-w-0 space-y-4 rounded-lg border border-border bg-card p-4 sm:p-5"
+    aria-labelledby="person-history-title"
   >
-    <h2>Histórico desta pessoa</h2>
-    <div class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
-      <label
-        >O que deseja consultar?<select v-model="tab" @change="result = null">
-          <option v-for="t in tabs" :key="t.value" :value="t.value">{{ t.label }}</option>
-        </select></label
-      ><label
-        >Buscar no histórico<Input
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 id="person-history-title" class="!mb-0">Histórico desta pessoa</h2>
+      <small>{{
+        result ? `${result.meta.total} registro(s)` : 'Vendas, serviços e financeiro vinculados'
+      }}</small>
+    </div>
+    <form class="flex flex-wrap items-end gap-3" @submit.prevent="load(true)">
+      <label class="min-w-0 w-full sm:w-52"
+        ><span class="sr-only">O que deseja consultar?</span
+        ><FormSelect
+          v-model="tab"
+          aria-label="O que deseja consultar?"
+          class="!mt-0"
+          :options="tabs.map((t) => ({ value: t.value, label: t.label }))"
+      /></label>
+      <label class="min-w-0 flex-1 basis-full sm:basis-0"
+        ><span class="sr-only">Buscar no histórico</span
+        ><Input
           v-model="search"
           type="search"
-          @keydown.enter.prevent="load(true)"
+          placeholder="Buscar por descrição ou código"
+          class="!mt-0"
       /></label>
-    </div>
-    <button type="button" :disabled="loading" @click="load(true)">Consultar histórico</button
-    ><Feedback :loading="loading" :error="error" @retry="load()" /><template v-if="result"
-      ><ul class="mf-list m-0 grid list-none gap-3 p-0">
-        <li
-          v-for="row in result.items"
-          :key="row.id"
-          class="mf-row flex flex-wrap items-center justify-between gap-4 break-words rounded-[6px] border border-border p-4 [&>div]:min-w-0 min-w-0 bg-card"
-        >
-          <div>
-            <RouterLink v-if="tab === 'vendas'" :to="`/modofacil/vendas/${row.id}`">{{
-              row.Uid
-            }}</RouterLink
-            ><RouterLink
-              v-else-if="tab === 'ordens'"
-              :to="`/modofacil/servicos/ordens/${row.id}`"
-              >{{ row.Uid }}</RouterLink
-            ><RouterLink
-              v-else-if="tab === 'lancamentos'"
-              :to="`/modofacil/financeiro/lancamentos/${row.id}`"
-              >{{ row.descricao || row.Uid }}</RouterLink
-            ><strong v-else>{{ row.Uid }}</strong>
-            <p>
-              {{ row.status }} ·
-              {{ dateLabel(row.data || row.dataLancamento || row.dataVencimento) }}
-            </p>
-          </div>
-          <span>{{ money(row.valorTotal ?? row.valor) }}</span>
-        </li>
-      </ul>
-      <p v-if="!result.items.length">Nenhum registro encontrado.</p>
-      <nav
-        class="mf-actions my-4 flex flex-wrap items-end gap-3"
-        aria-label="Paginação do histórico"
-      >
-        <button
-          type="button"
-          :disabled="page <= 1 || loading"
-          @click="
-            () => {
-              page--
-              load()
-            }
-          "
-        >
-          Anterior</button
-        ><span>{{ page }} / {{ result.meta.totalPages }} · {{ result.meta.total }} registros</span
-        ><button
-          type="button"
-          :disabled="page >= result.meta.totalPages || loading"
-          @click="
-            () => {
-              page++
-              load()
-            }
-          "
-        >
-          Próxima
-        </button>
-      </nav></template
+      <button :disabled="loading">Consultar histórico</button>
+    </form>
+    <Feedback :error="error" @retry="load()" />
+    <RecordsTable
+      :rows="result?.items || []"
+      :loading="loading"
+      :failed="!!error"
+      caption="Histórico de operações desta pessoa"
+      empty="Nenhum registro vinculado encontrado."
+      :columns="[
+        { key: 'code', label: 'Registro' },
+        { key: 'date', label: 'Data' },
+        { key: 'status', label: 'Situação' },
+        { key: 'amount', label: 'Valor', right: true },
+      ]"
     >
+      <template #code="{ row }"
+        ><RouterLink v-if="target(row)" :to="target(row)!" class="!inline !min-h-0 !p-0"
+          ><strong>{{ row.descricao || row.Uid || `#${row.id}` }}</strong></RouterLink
+        ><strong v-else>{{ row.Uid || `#${row.id}` }}</strong></template
+      >
+      <template #date="{ row }">{{
+        dateLabel(row.data || row.dataLancamento || row.dataVencimento)
+      }}</template>
+      <template #status="{ row }"><StatusBadge :value="row.status" /></template>
+      <template #amount="{ row }"
+        ><strong>{{ money(amount(row)) }}</strong></template
+      >
+    </RecordsTable>
+    <PageControls
+      v-if="result"
+      :page="page"
+      :pages="result.meta.totalPages"
+      :total="result.meta.total"
+      :loading="loading"
+      @change="
+        (value) => {
+          page = value
+          load()
+        }
+      "
+    />
   </section>
 </template>

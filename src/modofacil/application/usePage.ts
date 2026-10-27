@@ -1,4 +1,5 @@
-import { inject, onBeforeUnmount, ref, watch } from 'vue'
+import { inject, provide, onBeforeUnmount, ref, watch } from 'vue'
+import { deletionScopeKey } from './deletionScope'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import { api, type Row } from '../adapters/domain'
 import { errorMessage } from './format'
@@ -16,6 +17,7 @@ export function usePage(
   filters: () => Record<string, unknown> = () => ({}),
   onInvalidate?: () => void | Promise<void>,
 ) {
+  provide(deletionScopeKey, new Map())
   const workspace = inject(modalWorkspaceKey, undefined)
   const route = useRoute(),
     router = useRouter(),
@@ -82,5 +84,12 @@ export function usePage(
   onBeforeUnmount(() => {
     generation++
   })
-  return { rows, total, pages, page, search, loading, error, load }
+  async function reloadAfterDelete() {
+    await load()
+    if (!error.value && page.value > pages.value) {
+      page.value = pages.value
+      await load()
+    }
+  }
+  return { rows, total, pages, page, search, loading, error, load, reloadAfterDelete }
 }

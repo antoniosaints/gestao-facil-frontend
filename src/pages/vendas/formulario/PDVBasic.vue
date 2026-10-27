@@ -387,7 +387,7 @@
             </div>
             <div v-else class="grid grid-cols-8 md:grid-cols-8 gap-2">
               <div class="col-span-6">
-                <Select v-model="paymentMethod" @update:model-value="selecionarPagamento">
+                <Select :model-value="paymentMethod" @update:model-value="selecionarPagamento">
                   <SelectTrigger>
                     <SelectValue placeholder="Pagamento" />
                   </SelectTrigger>
@@ -1931,7 +1931,16 @@ function removerUltimoItem() {
   toast.info('Último item removido do cupom')
 }
 
-function selecionarPagamento(method: PaymentMethod) {
+function selecionarPagamento(method: unknown) {
+  if (
+    method !== 'PIX' &&
+    method !== 'DINHEIRO' &&
+    method !== 'CARTAO' &&
+    method !== 'CREDIARIO' &&
+    method !== 'BOLETO'
+  ) {
+    return
+  }
   paymentMethod.value = method
   pagamentos.value = []
   if (method !== 'DINHEIRO') receivedAmount.value = null

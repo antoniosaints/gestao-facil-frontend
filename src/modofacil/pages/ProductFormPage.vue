@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormSelect from '../components/FormSelect.vue'
 import FormResultLink from '../components/FormResultLink.vue'
 import FormBack from '../components/FormBack.vue'
 import { Textarea } from '@/components/ui/textarea'
@@ -30,9 +31,10 @@ const form = reactive({
 const categoryLabel = ref(''),
   step = ref(1),
   error = ref(''),
+  loadError = ref(''),
   message = ref(''),
   busy = ref(false),
-  loading = ref(false),
+  loading = ref(editing),
   dirty = ref(false),
   file = ref<File | null>(null),
   saved = ref<SavedProduct | null>(null),
@@ -57,7 +59,7 @@ const readonly = computed(() => !!saved.value)
 useFlow(dirty, busy)
 async function load() {
   loading.value = true
-  error.value = ''
+  loadError.value = ''
   try {
     if (editing) {
       const base = await products.get(Number(route.params.produtoBaseId))
@@ -96,7 +98,7 @@ async function load() {
         }
       : null
   } catch (e) {
-    error.value = errorMessage(e)
+    loadError.value = errorMessage(e)
   } finally {
     loading.value = false
   }
@@ -144,6 +146,7 @@ async function upload() {
   if (!saved.value || !file.value) return
   busy.value = true
   error.value = ''
+  message.value = ''
   try {
     await products.photo(saved.value.varianteId, file.value)
     file.value = null
@@ -156,6 +159,7 @@ async function upload() {
   }
 }
 async function save() {
+  if (busy.value || saved.value || loadError.value) return
   busy.value = true
   error.value = ''
   try {
@@ -210,9 +214,9 @@ async function save() {
     </div>
     <Feedback
       :loading="loading"
-      :error="error"
+      :error="loadError || error"
       :message="message"
-      @retry="saved && file ? upload() : (error = '')"
+      @retry="loadError ? load() : saved && file ? upload() : (error = '')"
     />
     <ol
       class="mf-steps grid grid-cols-3 border-b border-border p-0 [&>li]:min-w-0 [&>li]:break-words [&>li]:border-b-2 [&>li]:border-transparent [&>li]:px-2 [&>li]:py-3 [&>li]:text-center [&>li]:text-[11px] [&>li]:text-muted-foreground sm:[&>li]:text-sm [&>[aria-current]]:border-blue-600 [&>[aria-current]]:font-medium [&>[aria-current]]:text-blue-600 dark:[&>[aria-current]]:text-blue-300"
@@ -229,12 +233,13 @@ async function save() {
       class="mf-card min-w-0 rounded-[8px] border border-border bg-card p-5 mf-stack grid gap-4"
       @submit.prevent="step < 3 ? next() : save()"
       @input="dirty = true"
-      v-if="!loading && !saved"
+      v-if="!loading && !loadError && !saved"
     >
       <fieldset :disabled="busy || readonly" class="mf-stack grid gap-4">
         <div v-show="step === 1" class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
           <label
             >Nome<Input
+              placeholder="Ex.: Café especial 500 g"
               v-model="form.nome"
               minlength="2"
               maxlength="191"
@@ -244,12 +249,10 @@ async function save() {
             :initial-label="categoryLabel"
             @update:model-value="dirty = true"
           /><label
-            >Unidade<select v-model="form.unidade">
-              <option v-for="[value, label] in units" :key="value" :value="value">
-                {{ label }}
-              </option>
-            </select></label
-          >
+            >Unidade<FormSelect
+              v-model="form.unidade"
+              :options="[...units.map(([value, label]) => ({ value: value, label: label }))]"
+          /></label>
         </div>
         <div v-show="step === 2" class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
           <label
@@ -266,6 +269,7 @@ async function save() {
             /><small>Deixe vazio se ainda não conhece o custo.</small></label
           ><label
             >Estoque atual<Input
+              placeholder="Ex.: 10,500"
               v-model="form.estoque"
               inputmode="decimal"
               :readonly="editing"
@@ -275,9 +279,11 @@ async function save() {
                 : 'Quantidade inicial, até 3 casas decimais.'
             }}</small></label
           ><label
-            >Estoque mínimo<Input v-model="form.minimo" inputmode="decimal" /><small
-              >Avise quando chegar a esta quantidade.</small
-            ></label
+            >Estoque mínimo<Input
+              placeholder="Ex.: 5"
+              v-model="form.minimo"
+              inputmode="decimal"
+            /><small>Avise quando chegar a esta quantidade.</small></label
           >
           <p
             v-if="editing && variantInfo"
@@ -290,10 +296,13 @@ async function save() {
           </p>
         </div>
         <div v-show="step === 3" class="mf-stack grid gap-4">
-          <label>Descrição<Textarea v-model="form.descricao" /></label
+          <label
+            >Descrição<Textarea
+              placeholder="Descreva o produto e suas características"
+              v-model="form.descricao" /></label
           ><label
             >Foto
-            <input
+            <Input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               @change="selectPhoto"
@@ -323,7 +332,7 @@ async function save() {
           </ReviewPanel>
         </div>
       </fieldset>
-      <div class="mf-actions my-4 flex flex-wrap items-end gap-3">
+      <div class="mf-form-actions mf-actions my-4 flex flex-wrap items-end gap-3">
         <button
           v-if="step > 1"
           type="button"

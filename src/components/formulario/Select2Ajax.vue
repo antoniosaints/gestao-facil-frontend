@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, nextTick, getCurrentInstance } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick, getCurrentInstance } from 'vue'
 import http from '@/utils/axios'
 import { X } from 'lucide-vue-next'
 import {
@@ -28,9 +28,10 @@ const props = withDefaults(
     allowClear?: boolean
     disabled?: boolean
     required?: boolean
+    usePlaceholderAsLabel?: boolean
     params?: { key: string; value: unknown }[]
   }>(),
-  { allowClear: false, required: false, placeholder: 'Selecione…' },
+  { allowClear: false, required: false, placeholder: 'Selecione…', usePlaceholderAsLabel: true },
 )
 const emit = defineEmits<{
   'update:modelValue': [value: string | number | null]
@@ -44,9 +45,11 @@ const selectedId = ref<string | number | null>(props.modelValue ?? null)
 const selectedItem = ref<SelectAjaxOption | null>(null)
 const search = ref(''),
   loading = ref(false),
-  error = ref(''),
+  listError = ref(''),
+  selectionError = ref(''),
   page = ref(1),
   hasMore = ref(false)
+const error = computed(() => listError.value || selectionError.value)
 const highlightedIndex = ref(-1)
 const instanceUid = getCurrentInstance()?.uid ?? 0
 let timeout: ReturnType<typeof setTimeout> | undefined
@@ -55,26 +58,36 @@ let request = 0,
   selectionRequest = 0
 
 async function options(query: SelectAjaxQuery): Promise<SelectAjaxResult> {
-  if (props.loadOptions) return props.loadOptions(query)
-  if (!props.url) return { results: [] }
-  const parameters = new URLSearchParams()
-  if (query.id != null) parameters.set('id', String(query.id))
-  else parameters.set('search', query.search)
-  props.params?.forEach(({ key, value }) => parameters.set(key, String(value)))
-  const connector = props.url.includes('?') ? '&' : '?'
-  const { data } = await http.get(`${props.url}${connector}${parameters}`)
-  return { results: data.results ?? [] }
+  let result: SelectAjaxResult
+  if (props.loadOptions) result = await props.loadOptions(query)
+  else {
+    if (!props.url) return { results: [] }
+    const parameters = new URLSearchParams()
+    if (query.id != null) parameters.set('id', String(query.id))
+    else {
+      parameters.set('search', query.search)
+      parameters.set('page', String(query.page))
+    }
+    props.params?.forEach(({ key, value }) => parameters.set(key, String(value)))
+    const connector = props.url.includes('?') ? '&' : '?'
+    const { data } = await http.get(`${props.url}${connector}${parameters}`)
+    result = data
+  }
+  if (!Array.isArray(result?.results)) throw new Error('Resposta inválida do seletor.')
+  return result
 }
+const sameId = (a: unknown, b: unknown) => a != null && b != null && String(a) === String(b)
 function clearSelection() {
   selectionRequest++
   selectedId.value = null
   selectedItem.value = null
   label.value = ''
+  selectionError.value = ''
 }
 async function fetchItems(more = false) {
   const token = ++request
   loading.value = true
-  error.value = ''
+  listError.value = ''
   const nextPage = more ? page.value + 1 : 1
   try {
     const result = await options({ search: search.value, page: nextPage })
@@ -89,9 +102,15 @@ async function fetchItems(more = false) {
       : result.results
     hasMore.value = !!result.hasMore
     page.value = nextPage
+    const selected = items.value.find((item) => sameId(item.id, selectedId.value))
+    if (selected) {
+      selectedItem.value = selected
+      label.value = selected.label
+      selectionError.value = ''
+    }
     highlightedIndex.value = items.value.findIndex((item) => !item.disabled)
   } catch {
-    if (token === request) error.value = 'Não foi possível carregar as opções. Tente novamente.'
+    if (token === request) listError.value = 'Não foi possível carregar as opções. Tente novamente.'
   } finally {
     if (token === request) loading.value = false
   }
@@ -101,6 +120,7 @@ function selectItem(item: SelectAjaxOption) {
   selectedItem.value = item
   selectedId.value = item.id
   label.value = item.label
+  selectionError.value = ''
   search.value = ''
   isOpen.value = false
   emit('select', item)
@@ -131,34 +151,45 @@ function onSearchKeydown(event: KeyboardEvent) {
     event.preventDefault()
     const item = items.value[highlightedIndex.value]
     if (item) selectItem(item)
+  } else if (event.key === 'Escape') {
+    event.preventDefault()
+    isOpen.value = false
   }
 }
 function changeSelection(value: unknown) {
   const item = items.value.find((item) => String(item.id) === String(value))
   if (item) selectItem(item)
 }
-watch(
-  () => props.modelValue,
-  async (id) => {
-    const token = ++selectionRequest
-    selectedId.value = id ?? null
-    if (id == null || id === '') {
-      clearSelection()
+async function loadSelection(id: string | number | null | undefined, force = false) {
+  const token = ++selectionRequest
+  selectedId.value = id ?? null
+  if (id == null || id === '') {
+    clearSelection()
+    return
+  }
+  if (!force && sameId(selectedItem.value?.id, id)) return
+  selectedItem.value = null
+  label.value = ''
+  selectionError.value = ''
+  try {
+    const item =
+      (!force && items.value.find((item) => sameId(item.id, id))) ||
+      (await options({ search: '', page: 1, id })).results.find((item) => sameId(item.id, id))
+    if (token !== selectionRequest) return
+    if (!item) {
+      selectionError.value = 'A opção selecionada não está disponível. Escolha outra.'
       return
     }
-    if (selectedItem.value?.id === id) return
-    try {
-      const item =
-        items.value.find((item) => item.id === id) ??
-        (await options({ search: '', page: 1, id })).results[0]
-      if (token !== selectionRequest || !item) return
-      selectedItem.value = item
-      label.value = item.label
-      if (!items.value.some((current) => current.id === item.id)) items.value.push(item)
-    } catch {
-      if (token === selectionRequest) error.value = 'Não foi possível carregar a seleção.'
-    }
-  },
+    selectedItem.value = item
+    label.value = item.label
+  } catch {
+    if (token === selectionRequest && !sameId(selectedItem.value?.id, id))
+      selectionError.value = 'Não foi possível carregar a seleção.'
+  }
+}
+watch(
+  () => props.modelValue,
+  (id) => loadSelection(id),
   { immediate: true },
 )
 watch(selectedId, (value) => emit('update:modelValue', value ?? null))
@@ -166,6 +197,11 @@ watch(search, () => {
   if (timeout) clearTimeout(timeout)
   // Invalidate in-flight results immediately when the search changes.
   request++
+  items.value = []
+  hasMore.value = false
+  highlightedIndex.value = -1
+  listError.value = ''
+  loading.value = true
   timeout = setTimeout(() => fetchItems(), 300)
 })
 function focusSearchField() {
@@ -184,20 +220,29 @@ function open() {
   isOpen.value = true
 }
 onMounted(() => fetchItems())
+async function refresh() {
+  clearTimeout(timeout)
+  request++
+  items.value = []
+  await Promise.all([fetchItems(), loadSelection(props.modelValue, true)])
+}
+watch([() => props.url, () => JSON.stringify(props.params), () => props.loadOptions], () =>
+  refresh(),
+)
 onBeforeUnmount(() => {
   request++
   selectionRequest++
   clearTimeout(timeout)
   clearTimeout(focusTimeout)
 })
-defineExpose({ open, focus: open })
+defineExpose({ open, focus: open, refresh })
 </script>
 
 <template>
   <div class="grid min-w-0 w-full gap-1">
     <div class="flex min-w-0 w-full items-center gap-2">
       <Select
-        :model-value="selectedId ?? undefined"
+        :model-value="selectedId ?? ''"
         v-model:open="isOpen"
         :disabled="disabled"
         :required="required"
@@ -205,7 +250,9 @@ defineExpose({ open, focus: open })
       >
         <SelectTrigger
           class="min-w-0 flex-1 bg-card text-left text-base sm:text-sm"
-          :aria-label="placeholder"
+          :aria-label="
+            ($attrs['aria-label'] as string) || (usePlaceholderAsLabel ? placeholder : undefined)
+          "
         >
           <SelectValue :placeholder="placeholder">
             <span class="block truncate">{{ selectedItem?.label || label || placeholder }}</span>
@@ -223,6 +270,14 @@ defineExpose({ open, focus: open })
             />
           </div>
           <SelectGroup class="max-h-[min(15rem,40dvh)] overflow-y-auto">
+            <SelectItem
+              v-if="selectedItem && !items.some((item) => item.id === selectedItem!.id)"
+              :value="selectedItem.id"
+              disabled
+              aria-hidden="true"
+              class="hidden"
+              >{{ selectedItem.label }}</SelectItem
+            >
             <div
               v-if="loading && !items.length"
               class="p-2 text-sm text-muted-foreground"
@@ -262,7 +317,7 @@ defineExpose({ open, focus: open })
           </div>
           <div v-if="error" class="p-2 text-sm">
             <p role="alert" class="text-destructive">{{ error }}</p>
-            <Button type="button" variant="outline" size="sm" @click.stop="fetchItems()"
+            <Button type="button" variant="outline" size="sm" @click.stop="refresh()"
               >Tentar novamente</Button
             >
           </div>

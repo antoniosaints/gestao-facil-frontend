@@ -71,6 +71,11 @@ export const api = {
     markDataChanged(path)
     return data.data ?? data
   },
+  async remove(path: string) {
+    const { data } = await http.delete(path)
+    markDataChanged(path)
+    return data?.data ?? data
+  },
 }
 export interface BasicProduct {
   nome: string
@@ -145,12 +150,13 @@ export const LancamentosRepository = {
     api.post(`/modofacil/financeiro/parcelas/${id}/pagar`, body),
 }
 export const ServicoRepository = {
-  saveOrUpdate: (body: Servicos) =>
+  saveOrUpdate: (body: Omit<Servicos, 'descricao'> & { descricao?: string | null }) =>
     api.post('/modofacil/servicos', {
       ...(body.id ? { id: body.id } : {}),
       nome: body.nome,
       preco: body.preco,
       descricao: body.descricao,
+      ...(typeof body.status === 'boolean' ? { status: body.status } : {}),
     }),
 }
 export const OrdensServicoRepository = {

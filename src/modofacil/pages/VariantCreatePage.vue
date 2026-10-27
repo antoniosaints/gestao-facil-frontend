@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormSelect from '../components/FormSelect.vue'
 import FormResultLink from '../components/FormResultLink.vue'
 import FormBack from '../components/FormBack.vue'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,7 @@ import { decimal, errorMessage } from '../application/format'
 import { useFlow } from '../application/useFlow'
 import { useDomainMutation } from '../application/useDomainMutation'
 import Feedback from '../components/Feedback.vue'
+import { notifySuccess } from '../application/notifications'
 const route = useFormContext(),
   baseId = Number(route.params.produtoBaseId),
   baseName = ref(''),
@@ -27,6 +29,7 @@ const route = useFormContext(),
   dirty = ref(false),
   review = ref(false),
   validation = ref(''),
+  loadError = ref(''),
   saved = ref<any>(null),
   photo = ref<File | null>(null),
   photoBusy = ref(false),
@@ -35,13 +38,15 @@ const route = useFormContext(),
   key = crypto.randomUUID()
 const { busy, error, message, uncertain, run } = useDomainMutation()
 useFlow(dirty, busy)
-onMounted(async () => {
+async function load() {
+  loadError.value = ''
   try {
     baseName.value = (await products.get(baseId)).nome
   } catch (e) {
-    validation.value = errorMessage(e)
+    loadError.value = errorMessage(e)
   }
-})
+}
+onMounted(load)
 function payload() {
   if (!form.nomeVariante.trim()) throw new Error('Informe o nome da variante.')
   return {
@@ -102,6 +107,7 @@ async function upload() {
     await products.photo(saved.value.varianteId, photo.value)
     photo.value = null
     photoDone.value = true
+    notifySuccess('Foto da variante salva.')
   } catch (e) {
     photoError.value = 'Variante salva; a foto não foi enviada. ' + errorMessage(e)
   } finally {
@@ -121,9 +127,9 @@ async function upload() {
     >
 
     <Feedback
-      :error="validation || error || photoError"
+      :error="loadError || validation || error || photoError"
       :message="message"
-      @retry="saved && photo ? upload() : (validation = '')"
+      @retry="loadError ? load() : saved && photo ? upload() : (validation = '')"
     />
     <form
       v-if="!saved"
@@ -143,25 +149,39 @@ async function upload() {
               maxlength="191"
               placeholder="Ex.: Azul / tamanho M" /></label
           ><label
-            >Unidade<select v-model="form.unidade">
-              <option
-                v-for="unit in ['un', 'kg', 'l', 'm', 'g', 'cm', 'mm', 'mg', 'ml', 'cx']"
-                :key="unit"
-              >
-                {{ unit }}
-              </option>
-            </select></label
-          ><label>Preço de venda<Input v-model="form.preco" inputmode="decimal" required /></label
+            >Unidade<FormSelect
+              v-model="form.unidade"
+              :options="[
+                ...['un', 'kg', 'l', 'm', 'g', 'cm', 'mm', 'mg', 'ml', 'cx'].map((unit) => ({
+                  value: unit,
+                  label: unit,
+                })),
+              ]" /></label
+          ><label
+            >Preço de venda<Input
+              placeholder="0,00"
+              v-model="form.preco"
+              inputmode="decimal"
+              required /></label
           ><label
             >Preço de compra<Input
               v-model="form.precoCompra"
               inputmode="decimal"
               placeholder="Não informado" /></label
           ><label
-            >Estoque inicial<Input v-model="form.estoque" inputmode="decimal" required /></label
-          ><label>Estoque mínimo<Input v-model="form.minimo" inputmode="decimal" required /></label
+            >Estoque inicial<Input
+              placeholder="Ex.: 10,500"
+              v-model="form.estoque"
+              inputmode="decimal"
+              required /></label
+          ><label
+            >Estoque mínimo<Input
+              placeholder="Ex.: 5"
+              v-model="form.minimo"
+              inputmode="decimal"
+              required /></label
           ><label class="mf-full col-span-full"
-            >Foto opcional<input
+            >Foto opcional<Input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               @change="choose" /></label
@@ -179,7 +199,7 @@ async function upload() {
           </p>
         </ReviewPanel>
         <div
-          class="mf-actions col-span-full flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
+          class="mf-form-actions mf-actions col-span-full flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
         >
           <button v-if="review" type="button" @click="review = false">Voltar</button
           ><button

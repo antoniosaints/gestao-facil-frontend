@@ -7,8 +7,48 @@ export interface FieldDefinition {
   nullable?: boolean
   numeric?: boolean
   options?: Array<[string, string]>
+  lookup?: import('../adapters/lookups').LookupKind
   group?: string
   hint?: string
+  placeholder?: string
+}
+const fieldPlaceholders: Record<string, string> = {
+  nomeVariante: 'Ex.: Azul / tamanho M',
+  codigo: 'Ex.: SKU-001',
+  codigoProduto: 'Informe o código fiscal do produto',
+  ncm: 'Código NCM com 8 dígitos',
+  cest: 'Código CEST com 7 dígitos',
+  cfop: 'Código CFOP com 4 dígitos',
+  ean: 'Informe o código de barras',
+  tipoItem: 'Informe o código do tipo de item',
+  icmsCsosn: 'Informe o código CSOSN',
+  icmsCst: 'Informe o código CST do ICMS',
+  pisCst: 'Informe o código CST do PIS',
+  cofinsCst: 'Informe o código CST da COFINS',
+  icmsModBcSt: 'Informe a modalidade da base de cálculo',
+  icmsDesoneradoMotivo: 'Informe o motivo da desoneração',
+  ipiCst: 'Informe o código CST do IPI',
+  ipiCodigoEnquadramento: 'Informe o código de enquadramento do IPI',
+  documento: 'CPF ou CNPJ, somente números',
+  ie: 'Informe a inscrição estadual',
+  im: 'Informe a inscrição municipal',
+  municipio: 'Informe o código IBGE do município',
+  cep: '00000-000',
+  endereco: 'Ex.: Rua das Flores',
+  numero: 'Ex.: 123',
+  bairro: 'Ex.: Centro',
+  cidade: 'Ex.: Curitiba',
+  estado: 'Ex.: PR',
+  observacaos: 'Registre observações sobre o cadastro',
+}
+export function fieldPlaceholder(field: FieldDefinition): string {
+  if (field.placeholder) return field.placeholder
+  if (fieldPlaceholders[field.key]) return fieldPlaceholders[field.key]!
+  if (field.type === 'number') {
+    const scale = field.scale ?? 2
+    return scale > 0 ? `0,${'0'.repeat(scale)}` : '0'
+  }
+  return `Informe ${field.label.toLocaleLowerCase('pt-BR')}`
 }
 const text = (key: string, label: string, group = 'Fiscal'): FieldDefinition => ({
   key,

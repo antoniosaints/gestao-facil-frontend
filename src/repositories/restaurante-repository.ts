@@ -1,6 +1,5 @@
 import http from '@/utils/axios'
 import type { ThemeCustomization } from '@/types/schemas'
-import type { ThemeCustomization } from '@/types/schemas'
 
 export type RestaurantePapel =
   | 'GESTOR'
@@ -563,6 +562,14 @@ export interface RestauranteCatalogoItem {
   grupos: Array<{ grupoId: number; Grupo: RestauranteGrupoOpcao }>
 }
 
+// The public endpoint projects product data without its ID or variant name.
+export type RestaurantePublicMenuItem = Omit<RestauranteCatalogoItem, 'Produto'> & {
+  Produto?: Pick<
+    RestauranteProdutoDisponivel,
+    'nome' | 'preco' | 'estoque' | 'imagem' | 'ProdutoBase'
+  > | null
+}
+
 export interface RestauranteCatalogoPayload {
   modoCadastro: 'VINCULAR' | 'AVULSO' | 'CRIAR_PRODUTO'
   produtoId?: number | null
@@ -751,7 +758,7 @@ export class RestauranteRepository {
         temaPersonalizado?: Partial<ThemeCustomization> | null
         fidelidades?: RestauranteFidelidadePublica[]
       }
-      itens: any[]
+      itens: RestaurantePublicMenuItem[]
     }
   }
 

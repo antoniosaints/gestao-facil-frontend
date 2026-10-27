@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { Input } from '@/components/ui/input'
+import PersonFields from '../components/PersonFields.vue'
+import { emptyPerson, personPayload } from '../application/personForm'
 import { api, type Row } from '../adapters/domain'
 import { useFormContext } from '../application/modalWorkspace'
 import { useDomainMutation } from '../application/useDomainMutation'
@@ -16,7 +17,8 @@ const record = ref<Row | null>(null),
   loadError = ref(''),
   dirty = ref(false),
   done = ref(false)
-const form = reactive({ nome: '', telefone: '', email: '', whastapp: '' })
+const form = reactive(emptyPerson())
+const validation = ref('')
 const { busy, error, message, uncertain, run } = useDomainMutation()
 useFlow(dirty, busy)
 async function load() {
@@ -24,8 +26,9 @@ async function load() {
   loadError.value = ''
   try {
     record.value = await api.read(`/modofacil/pessoas/${id}`)
+    if (!record.value?.id) throw new Error('Pessoa não encontrada.')
     for (const key of Object.keys(form) as (keyof typeof form)[])
-      form[key] = record.value![key] || ''
+      form[key] = record.value![key] ?? emptyPerson()[key]
   } catch (e) {
     record.value = null
     loadError.value = errorMessage(e)
@@ -36,15 +39,18 @@ async function load() {
 onMounted(load)
 async function save() {
   if (!record.value) return
-  const body: Record<string, string | null> = {}
-  for (const key of Object.keys(form) as (keyof typeof form)[]) {
-    const value = form[key].trim() || null
-    if (value !== (record.value[key] || null)) body[key] = value
+  validation.value = ''
+  let body
+  try {
+    body = personPayload(form, record.value)
+  } catch (e) {
+    validation.value = errorMessage(e)
+    return
   }
   if (Object.keys(body).length) {
     const result = await run(
       () => api.patch(`/modofacil/pessoas/${id}/basico`, body),
-      'Nome e contato atualizados.',
+      'Cadastro da pessoa atualizado.',
     )
     if (!result) return
   }
@@ -54,27 +60,34 @@ async function save() {
 </script>
 <template>
   <PageFrame compact>
-    <Feedback :loading="loading" :error="loadError || error" :message="message" @retry="load" />
-    <form v-if="record && !done" class="grid gap-4" @submit.prevent="save" @input="dirty = true">
+    <Feedback
+      :loading="loading"
+      :error="loadError || validation || error"
+      :message="message"
+      @retry="load"
+    />
+    <form
+      v-if="record && !loading && !done"
+      class="grid gap-4"
+      @submit.prevent="save"
+      @input="dirty = true"
+    >
       <fieldset class="grid grid-cols-1 gap-4 md:grid-cols-2" :disabled="busy || uncertain">
-        <label>Nome<Input v-model="form.nome" required minlength="2" maxlength="191" /></label>
-        <label>Telefone<Input v-model="form.telefone" type="tel" maxlength="191" /></label>
-        <label>E-mail<Input v-model="form.email" type="email" maxlength="191" /></label>
-        <label>WhatsApp<Input v-model="form.whastapp" type="tel" maxlength="191" /></label>
+        <PersonFields :form="form" editing @change="dirty = true" />
       </fieldset>
       <div
-        class="mf-actions flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
+        class="mf-form-actions mf-actions flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
       >
         <FormBack to="/modofacil/pessoas" :disabled="busy">Cancelar</FormBack>
         <button :disabled="busy || uncertain" class="!border-blue-600 !bg-blue-600 !text-white">
-          {{ busy ? 'Salvando…' : 'Salvar nome e contato' }}
+          {{ busy ? 'Salvando…' : 'Salvar alterações' }}
         </button>
       </div>
     </form>
     <SuccessPanel
       v-if="done"
-      title="Nome e contato atualizados"
-      description="Documento, endereço, tipo e status preservados."
+      title="Pessoa atualizada"
+      description="As alterações do cadastro foram salvas."
       to="/modofacil/pessoas"
       label="Concluir"
     />

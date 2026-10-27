@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
+import { routeLocationKey } from 'vue-router'
 
 vi.mock('@/utils/axios', () => ({
   default: {
@@ -38,6 +39,12 @@ vi.mock('@/utils/axios', () => ({
 // Um único pinia para o arquivo todo: `columnDef.ts` resolve a store no escopo do módulo
 // (uma vez), então trocar de pinia por teste faria a store da coluna e a do teste divergirem.
 setActivePinia(createPinia())
+const wrappers: ReturnType<typeof mount>[] = []
+beforeAll(async () => {
+  await import('@/components/tabela/DataTable.vue')
+  await import('@/pages/produtos/partials/columnDef')
+}, 20000)
+afterEach(() => wrappers.splice(0).forEach((wrapper) => wrapper.unmount()))
 
 async function mountTable(which: 'produtos' | 'variantes') {
   const DataTable = (await import('@/components/tabela/DataTable.vue')).default
@@ -48,9 +55,13 @@ async function mountTable(which: 'produtos' | 'variantes') {
 
   const wrapper = mount(DataTable, {
     props: { columns, api: '/produtos', filters: store.filters },
-    global: { stubs: { RouterLink: true } },
+    global: {
+      stubs: { RouterLink: true },
+      provide: { [routeLocationKey as symbol]: { path: '/produtos' } },
+    },
   })
-  await new Promise((r) => setTimeout(r, 50))
+  wrappers.push(wrapper)
+  await flushPromises()
   await nextTick()
   return { wrapper, store }
 }
@@ -60,6 +71,7 @@ const rowBoxes = (w: any) => w.findAll('[role="checkbox"]').slice(1)
 
 describe.each(['produtos', 'variantes'] as const)('tabela de %s', (which) => {
   beforeEach(async () => {
+    localStorage.clear()
     const { useProdutoStore } = await import('@/stores/produtos/useProduto')
     useProdutoStore().resetSelectedIds()
   })

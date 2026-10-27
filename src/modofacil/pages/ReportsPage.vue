@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import FormSelect from '../components/FormSelect.vue'
 import { Input } from '@/components/ui/input'
 
 import PageHeader from '../components/PageHeader.vue'
 import PageFrame from '../components/PageFrame.vue'
+import RecordsTable from '../components/RecordsTable.vue'
+import StatusBadge from '../components/StatusBadge.vue'
 import { ref, computed } from 'vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { hasPermission } from '@/hooks/authorize'
@@ -81,20 +84,23 @@ async function download() {
     >
       <div class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
         <label
-          >Pergunta<select v-model="kind" @change="result = null">
-            <option v-for="o in options" :key="o.code" :value="o.code">{{ o.label }}</option>
-          </select></label
+          >Pergunta<FormSelect
+            v-model="kind"
+            @update:model-value="result = null"
+            :options="[...options.map((o) => ({ value: o.code, label: o.label }))]" /></label
         ><template v-if="kind !== 'produtos'"
-          ><label>De<Input v-model="start" type="date" required /></label
-          ><label>Até<Input v-model="end" type="date" required /></label
+          ><label>De<Input placeholder="dd/mm/aaaa" v-model="start" type="date" required /></label
+          ><label>Até<Input placeholder="dd/mm/aaaa" v-model="end" type="date" required /></label
         ></template>
       </div>
-      <button
-        :disabled="loading || !options.length"
-        class="mf-primary !border-blue-600 !bg-blue-600 !text-white hover:!border-blue-700 hover:!bg-blue-700"
-      >
-        Consultar relatório
-      </button>
+      <div class="mf-form-actions mf-actions">
+        <button
+          :disabled="loading || !options.length"
+          class="mf-primary !border-blue-600 !bg-blue-600 !text-white hover:!border-blue-700 hover:!bg-blue-700"
+        >
+          Consultar relatório
+        </button>
+      </div>
     </form>
     <Feedback :loading="loading" :error="error" @retry="load" />
     <section
@@ -111,30 +117,41 @@ async function download() {
           {{ money(result.kpis.ticketMedio.atual) }}
         </p>
         <h2>Produtos mais vendidos</h2>
-        <ol>
-          <li v-for="(item, i) in result.topProdutos" :key="i">
-            {{ item.nome }} · {{ quantity(item.quantidade) }} ·
-            {{ money(item.valor ?? item.total) }}
-          </li>
-        </ol>
-        <RouterLink :to="{ path: '/modofacil/vendas', query: { inicio: start, fim: end } }"
+        <RecordsTable
+          :rows="result.topProdutos || []"
+          caption="Produtos mais vendidos"
+          :columns="[
+            { key: 'name', label: 'Produto' },
+            { key: 'quantity', label: 'Quantidade', right: true },
+            { key: 'value', label: 'Total', right: true },
+          ]"
+        >
+          <template #name="{ row }">{{ row.nome }}</template
+          ><template #quantity="{ row }">{{ quantity(row.quantidade) }}</template
+          ><template #value="{ row }">{{ money(row.valor ?? row.total) }}</template>
+        </RecordsTable>
+        <RouterLink
+          class="mf-button"
+          :to="{ path: '/modofacil/vendas', query: { inicio: start, fim: end } }"
           >Conferir vendas do período</RouterLink
         ></template
       ><template v-else-if="kind === 'produtos'"
         ><h2>{{ result.total }} produtos precisam de reposição</h2>
-        <ul class="mf-list m-0 grid list-none gap-3 p-0">
-          <li
-            v-for="row in result.rows"
-            :key="row.id"
-            class="mf-row flex flex-wrap items-center justify-between gap-4 break-words rounded-[6px] border border-border p-4 [&>div]:min-w-0 min-w-0 bg-card"
-          >
-            <RouterLink :to="`/modofacil/produtos/${row.id}`">{{ row.nome }}</RouterLink
-            ><span
-              >Estoque {{ quantity(row.estoqueTotal) }} · Mínimo {{ quantity(row.minimo) }}</span
-            >
-          </li>
-        </ul>
-        <RouterLink to="/modofacil/produtos?estoqueBaixo=SIM"
+        <RecordsTable
+          :rows="result.rows || []"
+          caption="Produtos com estoque baixo"
+          :columns="[
+            { key: 'name', label: 'Produto' },
+            { key: 'stock', label: 'Estoque', right: true },
+            { key: 'min', label: 'Mínimo', right: true },
+          ]"
+        >
+          <template #name="{ row }"
+            ><RouterLink :to="`/modofacil/produtos/${row.id}`">{{ row.nome }}</RouterLink></template
+          ><template #stock="{ row }">{{ quantity(row.estoqueTotal) }}</template
+          ><template #min="{ row }">{{ quantity(row.minimo) }}</template>
+        </RecordsTable>
+        <RouterLink class="mf-button" to="/modofacil/produtos?estoqueBaixo=SIM"
           >Ver lista completa dos produtos com estoque baixo</RouterLink
         >
         <p>
@@ -152,29 +169,51 @@ async function download() {
           <dd>{{ money(result.resumo.resultado) }}</dd>
         </dl>
         <p>Resultado do demonstrativo; não é saldo bancário nem lucro líquido contábil.</p>
-        <ul>
-          <li v-for="group in result.grupos.receitas" :key="group.categoriaId">
-            Receita · {{ group.nome }}: {{ money(group.valor) }}
-          </li>
-          <li v-for="group in result.grupos.despesas" :key="group.categoriaId">
-            Despesa · {{ group.nome }}: {{ money(group.valor) }}
-          </li>
-        </ul></template
+        <RecordsTable
+          :rows="[
+            ...result.grupos.receitas.map((row: any) => ({
+              ...row,
+              id: `receita-${row.categoriaId}`,
+              tipo: 'Receita',
+            })),
+            ...result.grupos.despesas.map((row: any) => ({
+              ...row,
+              id: `despesa-${row.categoriaId}`,
+              tipo: 'Despesa',
+            })),
+          ]"
+          caption="Receitas e despesas por categoria"
+          :columns="[
+            { key: 'tipo', label: 'Tipo' },
+            { key: 'nome', label: 'Categoria' },
+            { key: 'value', label: 'Valor', right: true },
+          ]"
+          ><template #value="{ row }">{{ money(row.valor) }}</template></RecordsTable
+        ></template
       ><template v-else
         ><h2>Ordens de serviço no período</h2>
         <p>
           {{ result.kpis.quantidade.atual }} ordens · Faturado
           {{ money(result.kpis.faturado.atual) }}
         </p>
-        <ul>
-          <li v-for="row in result.distribuicaoStatus" :key="row.status">
-            {{ row.status }}: {{ row.total }}
-          </li>
-        </ul>
-        <RouterLink to="/modofacil/servicos/ordens">Conferir ordens</RouterLink></template
-      ><button v-if="kind !== 'servicos'" :disabled="loading" @click="download">
-        Baixar PDF {{ kind === 'produtos' ? 'do catálogo geral' : 'do período' }}
-      </button>
+        <RecordsTable
+          :rows="result.distribuicaoStatus || []"
+          caption="Ordens por situação"
+          :columns="[
+            { key: 'status', label: 'Situação' },
+            { key: 'total', label: 'Quantidade', right: true },
+          ]"
+          ><template #status="{ row }"><StatusBadge :value="row.status" /></template
+        ></RecordsTable>
+        <RouterLink class="mf-button" to="/modofacil/servicos/ordens"
+          >Conferir ordens</RouterLink
+        ></template
+      >
+      <div class="mf-form-actions mf-actions">
+        <button v-if="kind !== 'servicos'" :disabled="loading" @click="download">
+          Baixar PDF {{ kind === 'produtos' ? 'do catálogo geral' : 'do período' }}
+        </button>
+      </div>
     </section>
   </PageFrame>
 </template>

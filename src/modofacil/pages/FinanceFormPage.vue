@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { financialPaymentOptions } from '../application/payments'
+import { useLookupOptions } from '../adapters/lookups'
+import FormSwitch from '../components/FormSwitch.vue'
+import FormSection from '../components/FormSection.vue'
+import FormSelect from '../components/FormSelect.vue'
 import FormBack from '../components/FormBack.vue'
 import { useFormDestination } from '../application/formReturn'
 import { Input } from '@/components/ui/input'
@@ -7,7 +12,7 @@ import SuccessPanel from '../components/SuccessPanel.vue'
 import ReviewPanel from '../components/ReviewPanel.vue'
 import PageHeader from '../components/PageHeader.vue'
 import PageFrame from '../components/PageFrame.vue'
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useFormContext } from '../application/modalWorkspace'
 import { api, type Row } from '../adapters/domain'
 import { decimal, today, errorMessage, money } from '../application/format'
@@ -37,70 +42,76 @@ const route = useFormContext(),
   category = ref<number | null>(null),
   account = ref<number | null>(null),
   method = ref('PIX'),
-  categories = ref<Row[]>([]),
-  accounts = ref<Row[]>([]),
   busy = ref(false),
-  loading = ref(false),
   error = ref(''),
   message = ref(''),
   dirty = ref(false),
   done = ref(false),
   uncertain = ref(false),
   review = ref(false)
+const { load: loadAccounts, rows: accounts } = useLookupOptions('finance-accounts')
+const { load: loadCategories, rows: categories } = useLookupOptions('finance-categories')
 useFlow(dirty, busy)
-async function load() {
-  loading.value = true
-  error.value = ''
-  try {
-    ;[categories.value, accounts.value] = await Promise.all([
-      api.read('/modofacil/financeiro/categorias'),
-      api.read('/modofacil/financeiro/contas'),
-    ])
-  } catch (e) {
-    error.value = errorMessage(e)
-  } finally {
-    loading.value = false
+function payload() {
+  const amount = decimal(value.value)
+  if (amount <= 0) throw new Error('Informe um valor maior que zero.')
+  if (!description.value.trim()) throw new Error('Informe a descrição do lançamento.')
+  if (!date.value) throw new Error('Informe a data do lançamento.')
+  if (!account.value || !category.value)
+    throw new Error('Escolha a conta financeira e a categoria.')
+  if (mode.value === 'PARCELADO') {
+    if (!Number.isInteger(installments.value) || installments.value < 1 || installments.value > 360)
+      throw new Error('Informe de 1 a 360 parcelas.')
+    if (
+      period.value === 'PERSONALIZADO' &&
+      (!Number.isInteger(interval.value) || interval.value < 1)
+    )
+      throw new Error('Informe um intervalo de dias inteiro e maior que zero.')
+  }
+  return {
+    chaveOperacao: key,
+    descricao: description.value.trim(),
+    valorTotal: amount,
+    lancamentoEfetivado: mode.value === 'AVISTA' && paid.value,
+    tipo: type.value,
+    formaPagamento: method.value,
+    categoriaId: category.value,
+    contasFinanceiroId: account.value,
+    dataLancamento: new Date(date.value + 'T12:00:00').toISOString(),
+    clienteId: person.value?.id || null,
+    tipoLancamentoModo: mode.value,
+    ...(mode.value === 'PARCELADO'
+      ? {
+          parcelas: installments.value,
+          periodoParcelamento: period.value,
+          intervaloDiasPersonalizado: period.value === 'PERSONALIZADO' ? interval.value : null,
+          modoValorParcelamento: valueMode.value,
+          valorEntrada: decimal(entry.value),
+          dataEntrada: new Date(entryDate.value + 'T12:00:00').toISOString(),
+          desconto: decimal(discount.value),
+        }
+      : {}),
+    ...(mode.value === 'RECORRENTE' ? { recorrencia: recurrencePayload(recurrence.value) } : {}),
   }
 }
-onMounted(load)
+function next() {
+  error.value = ''
+  try {
+    payload()
+    review.value = true
+  } catch (e) {
+    error.value = errorMessage(e)
+  }
+}
 async function save() {
+  if (busy.value || uncertain.value || done.value) return
   busy.value = true
   error.value = ''
   let sent = false
   try {
-    const amount = decimal(value.value)
-    if (amount <= 0) throw new Error('Informe um valor maior que zero.')
-    if (!account.value || !category.value)
-      throw new Error('Escolha a conta financeira e a categoria.')
-    const recurring = mode.value === 'RECORRENTE' ? recurrencePayload(recurrence.value) : null
-    const entryValue = decimal(entry.value),
-      discountValue = decimal(discount.value)
+    const body = payload()
     sent = true
-    await api.post('/modofacil/financeiro/lancamentos', {
-      chaveOperacao: key,
-      descricao: description.value.trim(),
-      valorTotal: amount,
-      lancamentoEfetivado: mode.value === 'AVISTA' && paid.value,
-      tipo: type.value,
-      formaPagamento: method.value,
-      categoriaId: category.value,
-      contasFinanceiroId: account.value,
-      dataLancamento: new Date(date.value + 'T12:00:00').toISOString(),
-      clienteId: person.value?.id || null,
-      tipoLancamentoModo: mode.value,
-      ...(mode.value === 'PARCELADO'
-        ? {
-            parcelas: installments.value,
-            periodoParcelamento: period.value,
-            intervaloDiasPersonalizado: period.value === 'PERSONALIZADO' ? interval.value : null,
-            modoValorParcelamento: valueMode.value,
-            valorEntrada: entryValue,
-            dataEntrada: new Date(entryDate.value + 'T12:00:00').toISOString(),
-            desconto: discountValue,
-          }
-        : {}),
-      ...(mode.value === 'RECORRENTE' ? { recorrencia: recurring } : {}),
-    })
+    await api.post('/modofacil/financeiro/lancamentos', body)
     message.value = 'Lançamento registrado.'
     dirty.value = false
     done.value = true
@@ -132,11 +143,11 @@ const formDestination = useFormDestination()
       Use para operações independentes. Vendas e OS faturadas já podem gerar financeiro
       automaticamente; consulte o vínculo antes de criar outro registro.
     </p>
-    <Feedback :error="error" :loading="loading" :message="message" @retry="error = ''" />
+    <Feedback :error="error" :message="message" @retry="error = ''" />
     <form
       v-if="!done"
       class="mf-card min-w-0 rounded-[8px] border border-border bg-card p-5 mf-stack grid gap-4"
-      @submit.prevent="review ? save() : (review = true)"
+      @submit.prevent="review ? save() : next()"
       @input="dirty = true"
     >
       <fieldset
@@ -144,104 +155,139 @@ const formDestination = useFormDestination()
         class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2"
         v-show="!review"
       >
-        <label
-          >Como será o lançamento?<select v-model="mode">
-            <option value="AVISTA">Uma parcela</option>
-            <option value="PARCELADO">Parcelado</option>
-            <option value="RECORRENTE">Recorrente</option>
-          </select></label
-        ><label>Descrição<Input v-model="description" required /></label
-        ><label
-          >{{
-            mode === 'PARCELADO' && valueMode === 'FIXO_PARCELA'
-              ? 'Valor de cada parcela'
-              : 'Valor'
-          }}<Input v-model="value" inputmode="decimal" required /></label
-        ><label>Data de lançamento / vencimento<Input v-model="date" type="date" required /></label
-        ><label
-          >Categoria<select v-model="category" required>
-            <option :value="null" disabled>Escolha uma categoria</option>
-            <option v-for="row in categories" :key="row.id" :value="row.id">{{ row.nome }}</option>
-          </select></label
-        ><label
-          >Conta financeira<select v-model="account" required>
-            <option :value="null" disabled>Escolha a conta</option>
-            <option v-for="row in accounts" :key="row.id" :value="row.id">{{ row.nome }}</option>
-          </select></label
-        ><label
-          >Forma de pagamento<select v-model="method">
-            <option
-              v-for="item in [
-                'PIX',
-                'DINHEIRO',
-                'DEBITO',
-                'CREDITO',
-                'BOLETO',
-                'TRANSFERENCIA',
-                'CHEQUE',
-              ]"
-              :key="item"
-            >
-              {{ item }}
-            </option>
-          </select></label
+        <FormSection
+          title="Dados do lançamento"
+          description="Identifique a operação, o valor e o vencimento."
         >
-        <section
+          <label
+            >Como será o lançamento?<FormSelect
+              v-model="mode"
+              :options="[
+                { value: 'AVISTA', label: 'Uma parcela' },
+                { value: 'PARCELADO', label: 'Parcelado' },
+                { value: 'RECORRENTE', label: 'Recorrente' },
+              ]" /></label
+          ><label
+            >Descrição<Input
+              :placeholder="
+                type === 'RECEITA'
+                  ? 'Ex.: Recebimento de serviço'
+                  : 'Ex.: Aluguel do estabelecimento'
+              "
+              v-model="description"
+              required /></label
+          ><label
+            >{{
+              mode === 'PARCELADO' && valueMode === 'FIXO_PARCELA'
+                ? 'Valor de cada parcela'
+                : 'Valor'
+            }}<Input placeholder="0,00" v-model="value" inputmode="decimal" required /></label
+          ><label
+            >Data de lançamento / vencimento<Input
+              placeholder="dd/mm/aaaa"
+              v-model="date"
+              type="date"
+              required /></label
+        ></FormSection>
+        <FormSection
+          title="Organização financeira"
+          description="Escolha onde registrar e como classificar esta operação."
+        >
+          <label
+            >Categoria<FormSelect
+              v-model="category"
+              required
+              :load-options="loadCategories"
+              placeholder="Escolha uma categoria" /></label
+          ><label
+            >Conta financeira<FormSelect
+              v-model="account"
+              required
+              :load-options="loadAccounts"
+              placeholder="Escolha a conta" /></label
+          ><label
+            >Forma de pagamento<FormSelect v-model="method" :options="financialPaymentOptions"
+          /></label>
+        </FormSection>
+        <FormSection
           v-if="mode === 'PARCELADO'"
-          class="mf-full col-span-full mf-grid grid grid-cols-1 gap-4 md:grid-cols-2"
+          title="Parcelamento"
+          description="Defina as parcelas, o intervalo e os valores de entrada."
         >
           <label
             >Quantidade de parcelas<Input
+              placeholder="Ex.: 3"
               v-model.number="installments"
               type="number"
               min="1"
               max="360"
               required /></label
           ><label
-            >O valor informado é<select v-model="valueMode">
-              <option value="TOTAL">Total a distribuir</option>
-              <option value="FIXO_PARCELA">Valor fixo de cada parcela</option>
-            </select></label
+            >O valor informado é<FormSelect
+              v-model="valueMode"
+              :options="[
+                { value: 'TOTAL', label: 'Total a distribuir' },
+                { value: 'FIXO_PARCELA', label: 'Valor fixo de cada parcela' },
+              ]" /></label
           ><label
-            >Intervalo<select v-model="period">
-              <option
-                v-for="p in ['MENSAL', 'SEMANAL', 'DIARIO', 'QUINZENAL', 'PERSONALIZADO']"
-                :key="p"
-              >
-                {{ p }}
-              </option>
-            </select></label
+            >Intervalo<FormSelect
+              v-model="period"
+              :options="[
+                ...['MENSAL', 'SEMANAL', 'DIARIO', 'QUINZENAL', 'PERSONALIZADO'].map((p) => ({
+                  value: p,
+                  label: p,
+                })),
+              ]" /></label
           ><label v-if="period === 'PERSONALIZADO'"
             >Dias de intervalo<Input
+              placeholder="Ex.: 30"
               v-model.number="interval"
               type="number"
               min="1"
               required /></label
-          ><label>Entrada<Input v-model="entry" inputmode="decimal" required /></label
-          ><label>Data da entrada<Input v-model="entryDate" type="date" required /></label
-          ><label>Desconto<Input v-model="discount" inputmode="decimal" required /></label>
+          ><label
+            >Entrada<Input placeholder="0,00" v-model="entry" inputmode="decimal" required /></label
+          ><label
+            >Data da entrada<Input
+              placeholder="dd/mm/aaaa"
+              v-model="entryDate"
+              type="date"
+              required /></label
+          ><label
+            >Desconto<Input placeholder="0,00" v-model="discount" inputmode="decimal" required
+          /></label>
           <p>
             Parcelas e arredondamento são calculados pelo domínio. A entrada pode registrar
             recebimento na mesma operação.
           </p>
-        </section>
-        <RecurrenceFields
+        </FormSection>
+        <FormSection
           v-if="mode === 'RECORRENTE'"
-          class="mf-full col-span-full"
-          v-model="recurrence"
-        />
-        <section class="mf-full col-span-full">
-          <h2>Pessoa vinculada (opcional)</h2>
-          <p v-if="person">
-            {{ person.nome }} <button type="button" @click="person = null">Remover vínculo</button>
-          </p>
-          <ItemSearch kind="PESSOA" @select="person = $event" />
-        </section>
+          title="Recorrência"
+          description="Defina a frequência e as regras das próximas ocorrências."
+        >
+          <RecurrenceFields
+            v-if="mode === 'RECORRENTE'"
+            class="mf-full col-span-full"
+            v-model="recurrence"
+          />
+        </FormSection>
+        <FormSection
+          title="Pessoa vinculada"
+          description="Opcional. Selecione o cliente ou fornecedor relacionado."
+        >
+          <div class="col-span-full">
+            <p v-if="person">
+              {{ person.nome }}
+              <button type="button" @click="person = null">Remover vínculo</button>
+            </p>
+            <ItemSearch kind="PESSOA" @select="person = $event" />
+          </div>
+        </FormSection>
         <label
           v-if="mode === 'AVISTA'"
-          class="mf-choice mb-3 !flex items-center gap-3 rounded-[6px] border border-border p-4 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-500/10"
-          ><input v-model="paid" type="checkbox" />Já
-          {{ type === 'RECEITA' ? 'recebi' : 'paguei' }}</label
+          class="mf-choice mb-3 !flex items-center gap-3 rounded-[6px] border border-border p-4 has-[[data-state=checked]]:border-blue-500 has-[[data-state=checked]]:bg-blue-500/10"
+          ><FormSwitch v-model="paid" />Já {{ type === 'RECEITA' ? 'recebi' : 'paguei' }}</label
         >
         <p v-if="paid && mode === 'AVISTA'" class="mf-muted text-sm text-muted-foreground">
           O pagamento será registrado na mesma data do lançamento. Para outra data, registre
@@ -268,18 +314,15 @@ const formDestination = useFormDestination()
           {{ categories.find((a) => a.id === category)?.nome }}
         </p>
       </ReviewPanel>
-      <div class="mf-actions my-4 flex flex-wrap items-end gap-3">
+      <div class="mf-form-actions mf-actions my-4 flex flex-wrap items-end gap-3">
         <button type="button" v-if="review" @click="review = false">Voltar</button
         ><button
           class="mf-primary !border-blue-600 !bg-blue-600 !text-white hover:!border-blue-700 hover:!bg-blue-700"
-          :disabled="busy || uncertain || !accounts.length || !categories.length"
+          :disabled="busy || uncertain"
         >
           {{ busy ? 'Registrando…' : review ? 'Confirmar lançamento' : 'Conferir' }}
         </button>
       </div>
-      <p v-if="!loading && (!accounts.length || !categories.length)" role="alert">
-        Peça ao administrador para cadastrar conta financeira e categoria antes de registrar.
-      </p>
     </form>
     <SuccessPanel
       v-if="done"

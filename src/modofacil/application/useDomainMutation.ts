@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { errorMessage } from './format'
+import { notifySuccess, notifyError } from './notifications'
 /** Mutations are never retried here, including after a potentially committed 5xx. */
 export function useDomainMutation() {
   const busy = ref(false),
@@ -17,6 +18,7 @@ export function useDomainMutation() {
     try {
       const value = await operation()
       message.value = success
+      notifySuccess(success)
       return { value }
     } catch (e) {
       error.value = errorMessage(e)
@@ -26,6 +28,7 @@ export function useDomainMutation() {
         error.value +=
           ' O resultado pode ter sido registrado. Consulte o registro e o histórico antes de iniciar outra ação.'
       }
+      notifyError(error.value, uncertain.value)
       return null
     } finally {
       busy.value = false

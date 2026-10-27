@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormSelect from '../components/FormSelect.vue'
 import { Input } from '@/components/ui/input'
 
 import { Search } from 'lucide-vue-next'
@@ -39,13 +40,15 @@ onMounted(() => load())
             type="search"
             placeholder="Nome ou código" /></label
         ><label
-          >Operação<select v-model="type">
-            <option value="">Todas</option>
-            <option value="ENTRADA">Entrada</option>
-            <option value="SAIDA">Saída</option>
-            <option value="DESCARTE">Descarte</option>
-            <option value="TRANSFERENCIA">Transferência</option>
-          </select></label
+          >Operação<FormSelect
+            v-model="type"
+            :options="[
+              { value: '', label: 'Todas' },
+              { value: 'ENTRADA', label: 'Entrada' },
+              { value: 'SAIDA', label: 'Saída' },
+              { value: 'DESCARTE', label: 'Descarte' },
+              { value: 'TRANSFERENCIA', label: 'Transferência' },
+            ]" /></label
         ><button :disabled="loading"><Search :size="15" />Aplicar filtros</button>
       </form>
       <Feedback :error="error" @retry="load()" />

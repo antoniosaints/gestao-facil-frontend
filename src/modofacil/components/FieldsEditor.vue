@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import FormSelect from './FormSelect.vue'
+import FormSwitch from './FormSwitch.vue'
+import { useLookupOptions } from '../adapters/lookups'
 import { Input } from '@/components/ui/input'
 
 import ReviewPanel from './ReviewPanel.vue'
 import { ref, reactive, computed, watch } from 'vue'
-import { changedFields, type FieldDefinition } from '../application/fields'
+import { changedFields, fieldPlaceholder, type FieldDefinition } from '../application/fields'
 import { errorMessage } from '../application/format'
 import { useFlow } from '../application/useFlow'
+import { useFeedbackToasts } from '../application/notifications'
 const props = defineProps<{
     fields: FieldDefinition[]
     initial: Record<string, unknown>
@@ -18,6 +22,7 @@ const draft = reactive<Record<string, any>>({}),
   dirty = ref(false),
   review = ref<Record<string, unknown> | null>(null),
   error = ref('')
+useFeedbackToasts(error)
 useFlow(
   dirty,
   computed(() => !!props.busy),
@@ -33,6 +38,11 @@ watch(
   { immediate: true },
 )
 const groups = computed(() => [...new Set(props.fields.map((f) => f.group || 'Informações'))])
+const lookupLoaders = {
+  'finance-accounts': useLookupOptions('finance-accounts').load,
+  'finance-categories': useLookupOptions('finance-categories').load,
+  'product-categories': useLookupOptions('product-categories').load,
+}
 function next() {
   error.value = ''
   try {
@@ -69,17 +79,40 @@ function next() {
             <label
               v-for="field in fields.filter((f) => (f.group || 'Informações') === group)"
               :key="field.key"
+              :class="
+                field.type === 'boolean' && field.nullable === false
+                  ? 'mf-choice !flex items-center justify-between gap-4 rounded-md border border-border p-3 !space-y-0'
+                  : ''
+              "
               >{{ field.label
-              }}<select v-if="field.type === 'boolean'" v-model="draft[field.key]">
-                <option value="">Não informado</option>
-                <option value="true">Sim</option>
-                <option value="false">Não</option></select
-              ><select v-else-if="field.type === 'select'" v-model="draft[field.key]">
-                <option value="">Não informado</option>
-                <option v-for="[code, label] in field.options" :key="code" :value="code">
-                  {{ label }}
-                </option></select
-              ><Input
+              }}<FormSwitch
+                v-if="field.type === 'boolean' && field.nullable === false"
+                :model-value="draft[field.key] === 'true'"
+                @update:model-value="draft[field.key] = String($event)"
+              /><FormSelect
+                v-else-if="field.type === 'boolean'"
+                v-model="draft[field.key]"
+                :options="[
+                  { value: '', label: 'Não informado' },
+                  { value: 'true', label: 'Sim' },
+                  { value: 'false', label: 'Não' },
+                ]"
+              /><FormSelect
+                v-else-if="field.lookup"
+                :model-value="draft[field.key] === '' ? null : Number(draft[field.key])"
+                :load-options="lookupLoaders[field.lookup]"
+                :options="field.nullable === false ? [] : [{ value: null, label: 'Não informado' }]"
+                :required="field.nullable === false"
+                @update:model-value="draft[field.key] = $event == null ? '' : String($event)"
+              /><FormSelect
+                v-else-if="field.type === 'select'"
+                v-model="draft[field.key]"
+                :options="[
+                  { value: '', label: 'Não informado' },
+                  ...(field.options || []).map(([code, label]) => ({ value: code, label: label })),
+                ]"
+              /><Input
+                :placeholder="fieldPlaceholder(field)"
                 v-else
                 v-model="draft[field.key]"
                 :inputmode="field.type === 'number' ? 'decimal' : undefined"
@@ -113,7 +146,7 @@ function next() {
           >
         </dl>
       </ReviewPanel>
-      <div class="mf-actions my-4 flex flex-wrap items-end gap-3">
+      <div class="mf-form-actions mf-actions my-4 flex flex-wrap items-end gap-3">
         <button v-if="review" type="button" @click="review = null">Voltar</button
         ><button
           class="mf-primary !border-blue-600 !bg-blue-600 !text-white hover:!border-blue-700 hover:!bg-blue-700"

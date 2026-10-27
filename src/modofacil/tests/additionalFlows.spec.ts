@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   orderReverse: vi.fn(),
   context: vi.fn(),
   serviceSave: vi.fn(),
+  servicePatch: vi.fn(),
   ui: {
     usuarioLogged: { id: 1, permissao: 'admin' },
     vendaLancamentoAutomatico: false,
@@ -23,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('@/stores/ui/uiStore', () => ({ useUiStore: () => mocks.ui }))
 vi.mock('../adapters/domain', () => ({
-  api: { read: mocks.read },
+  api: { read: mocks.read, patch: mocks.servicePatch },
   VendaRepository: {
     create: mocks.saleCreate,
     finalizarVendaPdv: mocks.finalize,
@@ -43,6 +44,7 @@ import SaleFormPage from '../pages/SaleFormPage.vue'
 import SaleDetailPage from '../pages/SaleDetailPage.vue'
 import FinanceDetailPage from '../pages/FinanceDetailPage.vue'
 import OrderDetailPage from '../pages/OrderDetailPage.vue'
+import FormSelect from '../components/FormSelect.vue'
 import ServiceFormPage from '../pages/ServiceFormPage.vue'
 const wrappers: any[] = []
 async function page(component: any, path: string, pattern: string) {
@@ -93,7 +95,7 @@ const select = (w: any, label: string) =>
   w
     .findAll('label')
     .find((l: any) => l.text().trim().startsWith(label))!
-    .find('select')
+    .findComponent(FormSelect)
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.context.mockResolvedValue({
@@ -109,36 +111,44 @@ beforeEach(() => {
   mocks.pay.mockResolvedValue({})
   mocks.partReverse.mockResolvedValue({})
   mocks.serviceSave.mockResolvedValue({})
+  mocks.servicePatch.mockResolvedValue({})
   mocks.read.mockImplementation(async (path: string) =>
-    path.includes('/contas')
-      ? [{ id: 2, nome: 'Conta exemplo' }]
-      : path.includes('/categorias')
-        ? [{ id: 3, nome: 'Categoria exemplo' }]
-        : path.includes('/financeiro/lancamentos/')
-          ? {
-              id: 5,
-              descricao: 'Conta de exemplo',
-              valorTotal: 100,
-              contasFinanceiroId: 2,
-              parcelas: [{ id: 8, numero: 1, valor: 100, pago: false }],
-            }
-          : path.includes('/servicos/')
+    path.endsWith('/opcoes')
+      ? {
+          results: path.includes('/contas')
+            ? [{ id: 2, label: 'Conta exemplo' }]
+            : [{ id: 3, label: 'Categoria exemplo' }],
+          hasMore: false,
+        }
+      : path.includes('/contas')
+        ? [{ id: 2, nome: 'Conta exemplo' }]
+        : path.includes('/categorias')
+          ? [{ id: 3, nome: 'Categoria exemplo' }]
+          : path.includes('/financeiro/lancamentos/')
             ? {
-                id: 6,
-                nome: 'Serviço existente',
-                preco: 50,
-                descricao: 'Descrição',
-                status: false,
-                ncm: 'preservar',
+                id: 5,
+                descricao: 'Conta de exemplo',
+                valorTotal: 100,
+                contasFinanceiroId: 2,
+                parcelas: [{ id: 8, numero: 1, valor: 100, pago: false }],
               }
-            : {
-                id: 12,
-                Uid: 'VEN_EX',
-                valor: 100,
-                faturado: true,
-                status: 'FATURADO',
-                ItensVendas: [],
-              },
+            : path.includes('/servicos/')
+              ? {
+                  id: 6,
+                  nome: 'Serviço existente',
+                  preco: 50,
+                  descricao: 'Descrição',
+                  status: false,
+                  ncm: 'preservar',
+                }
+              : {
+                  id: 12,
+                  Uid: 'VEN_EX',
+                  valor: 100,
+                  faturado: true,
+                  status: 'FATURADO',
+                  ItensVendas: [],
+                },
   )
   mocks.orderGet.mockResolvedValue({
     id: 15,
@@ -158,7 +168,7 @@ describe('venda própria', () => {
   }
   it('divide o pagamento e faz uma única mutação de domínio', async () => {
     const w = await prepare()
-    await input(w, 'Dividir em mais').setValue(true)
+    await w.get('[role=switch]').trigger('click')
     await input(w, 'Valor 1').setValue('40,00')
     await input(w, 'Valor 2').setValue('60,00')
     await button(w, 'Continuar').trigger('click')
@@ -179,7 +189,7 @@ describe('venda própria', () => {
   })
   it('impede soma divergente sem travar correção do formulário', async () => {
     const w = await prepare()
-    await input(w, 'Dividir em mais').setValue(true)
+    await w.get('[role=switch]').trigger('click')
     await input(w, 'Valor 1').setValue('40')
     await input(w, 'Valor 2').setValue('50')
     await button(w, 'Continuar').trigger('click')
@@ -192,7 +202,8 @@ describe('venda própria', () => {
   it('salva orçamento pela operação própria sem concluir venda em caixa', async () => {
     const w = await prepare()
     await button(w, 'Voltar').trigger('click')
-    await select(w, 'O que deseja registrar?').setValue('ORCAMENTO')
+    select(w, 'O que deseja registrar?').vm.$emit('update:modelValue', 'ORCAMENTO')
+    await flushPromises()
     await button(w, 'Continuar').trigger('click')
     await button(w, 'Continuar').trigger('click')
     expect(w.text()).toContain('saída dos produtos no estoque')
@@ -293,8 +304,10 @@ describe('pagamento e estornos', () => {
     await button(w, 'Registrar recebimento e faturar').trigger('click')
     await flushPromises()
     expect(w.get('[role=dialog]').text()).not.toContain('Dividir em mais de uma forma')
-    await select(w, 'Categoria financeira').setValue('3')
-    await select(w, 'Conta financeira').setValue('2')
+    select(w, 'Categoria financeira').vm.$emit('update:modelValue', 3)
+    await flushPromises()
+    select(w, 'Conta financeira').vm.$emit('update:modelValue', 2)
+    await flushPromises()
     await w.get('[role=dialog]').get('form').trigger('submit')
     await w.get('[role=dialog]').get('form').trigger('submit')
     await flushPromises()
@@ -326,7 +339,7 @@ describe('pagamento e estornos', () => {
     await flushPromises()
     expect(mocks.orderReverse).toHaveBeenCalledExactlyOnceWith(15)
   })
-  it('edita um serviço com ID explícito pelo formulário próprio', async () => {
+  it('edita somente os campos alterados do serviço sem reativá-lo nem modificar o fiscal', async () => {
     const w = await page(
       ServiceFormPage,
       '/modofacil/servicos/6/editar',
@@ -335,9 +348,10 @@ describe('pagamento e estornos', () => {
     await input(w, 'Nome').setValue('Reparo guiado')
     await w.find('form').trigger('submit')
     await flushPromises()
-    expect(mocks.serviceSave).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 6, nome: 'Reparo guiado', preco: 50 }),
-    )
+    expect(mocks.servicePatch).toHaveBeenCalledExactlyOnceWith('/modofacil/servicos/6/basico', {
+      nome: 'Reparo guiado',
+    })
+    expect(mocks.serviceSave).not.toHaveBeenCalled()
     expect(w.text()).toContain('Serviço salvo')
   })
 })

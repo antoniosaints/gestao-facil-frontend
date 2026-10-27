@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useLookupOptions } from '../adapters/lookups'
+import FormSelect from '../components/FormSelect.vue'
 import FormBack from '../components/FormBack.vue'
 import { useFormDestination } from '../application/formReturn'
 import { Input } from '@/components/ui/input'
@@ -7,15 +9,14 @@ import SuccessPanel from '../components/SuccessPanel.vue'
 import ReviewPanel from '../components/ReviewPanel.vue'
 import PageHeader from '../components/PageHeader.vue'
 import PageFrame from '../components/PageFrame.vue'
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { api, type Row } from '../adapters/domain'
+import { api } from '../adapters/domain'
 import { today, decimal, money, errorMessage } from '../application/format'
 import { useDomainMutation } from '../application/useDomainMutation'
 import { useFlow } from '../application/useFlow'
 import Feedback from '../components/Feedback.vue'
 const ui = useUiStore(),
-  accounts = ref<Row[]>([]),
   mode = ref('GERAR_FINANCEIRO'),
   origin = ref<number | null>(null),
   destination = ref<number | null>(null),
@@ -32,19 +33,10 @@ const ui = useUiStore(),
   loading = ref(false),
   validation = ref(''),
   done = ref(false)
+const { load: loadAccounts, rows: accounts } = useLookupOptions('finance-accounts')
 const { busy, error, message, uncertain, run } = useDomainMutation()
 const allowed = computed(() => ui.financeiroFlags.permitirTransferenciaContaFinanceira !== false)
 useFlow(computed(() => !done.value && (!!origin.value || !!destination.value || !!value.value)))
-onMounted(async () => {
-  loading.value = true
-  try {
-    accounts.value = await api.read('/modofacil/financeiro/contas')
-  } catch (e) {
-    validation.value = errorMessage(e)
-  } finally {
-    loading.value = false
-  }
-})
 function filters() {
   return {
     status: status.value,
@@ -142,40 +134,57 @@ const formDestination = useFormDestination()
       >
         <template v-if="!review"
           ><label
-            >Operação<select v-model="mode">
-              <option value="GERAR_FINANCEIRO">
-                Transferir um valor, gerando os vínculos financeiros
-              </option>
-              <option value="MOVER_LANCAMENTOS">Mover vínculos de lançamentos existentes</option>
-            </select></label
+            >Operação<FormSelect
+              v-model="mode"
+              :options="[
+                {
+                  value: 'GERAR_FINANCEIRO',
+                  label: 'Transferir um valor, gerando os vínculos financeiros',
+                },
+                { value: 'MOVER_LANCAMENTOS', label: 'Mover vínculos de lançamentos existentes' },
+              ]" /></label
           ><label
-            >Conta de origem<select v-model="origin" required>
-              <option :value="null" disabled>Escolha</option>
-              <option v-for="row in accounts" :key="row.id" :value="row.id">{{ row.nome }}</option>
-            </select></label
+            >Conta de origem<FormSelect
+              v-model="origin"
+              required
+              :load-options="loadAccounts"
+              placeholder="Escolha" /></label
           ><label
-            >Conta de destino<select v-model="destination" required>
-              <option :value="null" disabled>Escolha</option>
-              <option v-for="row in accounts" :key="row.id" :value="row.id">{{ row.nome }}</option>
-            </select></label
+            >Conta de destino<FormSelect
+              v-model="destination"
+              required
+              :load-options="loadAccounts"
+              placeholder="Escolha" /></label
           ><template v-if="mode === 'GERAR_FINANCEIRO'"
-            ><label>Valor<Input v-model="value" inputmode="decimal" required /></label
-            ><label>Data<Input v-model="date" type="date" required /></label
-            ><label>Descrição<Input v-model="description" required /></label></template
+            ><label
+              >Valor<Input placeholder="0,00" v-model="value" inputmode="decimal" required /></label
+            ><label
+              >Data<Input placeholder="dd/mm/aaaa" v-model="date" type="date" required /></label
+            ><label
+              >Descrição<Input
+                placeholder="Ex.: Transferência para a conta principal"
+                v-model="description"
+                required /></label></template
           ><template v-else
-            ><label>Vencimentos de<Input v-model="start" type="date" /></label
-            ><label>Até<Input v-model="end" type="date" /></label
             ><label
-              >Situação<select v-model="status">
-                <option v-for="s in ['TODOS', 'PAGO', 'PENDENTE', 'ATRASADO']" :key="s">
-                  {{ s }}
-                </option>
-              </select></label
+              >Vencimentos de<Input placeholder="dd/mm/aaaa" v-model="start" type="date" /></label
+            ><label>Até<Input placeholder="dd/mm/aaaa" v-model="end" type="date" /></label
             ><label
-              >Tipo<select v-model="type">
-                <option v-for="t in ['TODOS', 'RECEITA', 'DESPESA']" :key="t">{{ t }}</option>
-              </select></label
-            ><label>Busca<Input v-model="search" /></label></template
+              >Situação<FormSelect
+                v-model="status"
+                :options="[
+                  ...['TODOS', 'PAGO', 'PENDENTE', 'ATRASADO'].map((s) => ({ value: s, label: s })),
+                ]" /></label
+            ><label
+              >Tipo<FormSelect
+                v-model="type"
+                :options="[
+                  ...['TODOS', 'RECEITA', 'DESPESA'].map((t) => ({ value: t, label: t })),
+                ]" /></label
+            ><label
+              >Busca<Input
+                placeholder="Buscar por descrição ou código do lançamento"
+                v-model="search" /></label></template
         ></template>
         <ReviewPanel v-else>
           <template #title>Confira a transferência</template>
@@ -199,7 +208,7 @@ const formDestination = useFormDestination()
           </p>
         </ReviewPanel>
         <div
-          class="mf-actions col-span-full flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
+          class="mf-form-actions mf-actions col-span-full flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
         >
           <button type="button" v-if="review" @click="review = false">Voltar</button
           ><button

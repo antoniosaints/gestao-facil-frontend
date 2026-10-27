@@ -2,13 +2,16 @@
 import type { Row } from '../adapters/domain'
 import { money, quantity } from '../application/format'
 import RecordsTable from './RecordsTable.vue'
-defineProps<{ items: Row[] }>()
+withDefaults(defineProps<{ items: Row[]; caption?: string; empty?: string }>(), {
+  caption: 'Itens da operação',
+  empty: 'Esta operação não possui itens.',
+})
 </script>
 <template>
   <RecordsTable
     :rows="items"
-    caption="Itens da operação"
-    empty="Esta operação não possui itens."
+    :caption="caption"
+    :empty="empty"
     :columns="[
       { key: 'name', label: 'Item' },
       { key: 'quantity', label: 'Quantidade', right: true },

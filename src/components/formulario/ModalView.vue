@@ -29,7 +29,7 @@ import { allocateModalLayer, modalLayerKey } from "./modal-layer";
 const isOpen = defineModel<boolean>("open", { default: false })
 
 // Propriedades fixas do componente
-const { size, themeStyle, desktopVariant, mobileVariant } = defineProps<{
+const { size, themeStyle, desktopVariant, mobileVariant, ignoreToastInteractions } = defineProps<{
     icon?: LucideIcon
     title: string
     description?: string,
@@ -38,11 +38,20 @@ const { size, themeStyle, desktopVariant, mobileVariant } = defineProps<{
     desktopVariant?: 'dialog' | 'sheet'
     /** Keeps slotted form state mounted when crossing the mobile breakpoint. */
     mobileVariant?: 'drawer' | 'dialog'
+    /** Toasts live outside the dialog portal and must not dismiss its form. */
+    ignoreToastInteractions?: boolean
     contentClass?: string
     headerClass?: string
     bodyClass?: string
     bodyKey?: string | number
 }>()
+
+function onInteractOutside(event: { detail: { originalEvent: Event }; preventDefault: () => void }) {
+    const target = event.detail.originalEvent.target
+    if (ignoreToastInteractions && target instanceof Element && target.closest('.mf-toast')) {
+        event.preventDefault()
+    }
+}
 
 const sizeClasses: Record<string, string> = {
     sm: 'max-w-sm',
@@ -115,6 +124,7 @@ const contentStyle = computed(() => ({
         <!-- Desktop: modal central -->
         <Dialog v-else-if="isDesktop || mobileVariant === 'dialog'" v-model:open="isOpen">
             <DialogContent class="p-0 max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
+                @interact-outside="onInteractOutside"
                 :overlay-style="overlayStyle" :content-style="contentStyle"
                 :class="[sizeModal, 'mx-auto', contentClass]">
                 <DialogHeader :class="headerClass || 'p-6 pb-0'">

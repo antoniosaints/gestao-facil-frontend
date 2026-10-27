@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormSelect from '../components/FormSelect.vue'
 import FormResultLink from '../components/FormResultLink.vue'
 import FormBack from '../components/FormBack.vue'
 import { useFormDestination } from '../application/formReturn'
@@ -30,13 +31,15 @@ const route = useFormContext(),
   result = ref<any>(null),
   loading = ref(false),
   validation = ref(''),
+  loadError = ref(''),
   dirty = ref(false),
   existing = ref<Row[]>([])
 const { busy, error, message, uncertain, run } = useDomainMutation()
 useFlow(dirty, busy)
 const allowed = computed(() => ui.canCreateCharge !== false)
-onMounted(async () => {
+async function load() {
   loading.value = true
+  loadError.value = ''
   try {
     if (!['venda', 'os', 'parcela'].includes(kind) || !id)
       throw new Error('Abra uma venda, OS ou parcela para escolher a origem.')
@@ -63,7 +66,7 @@ onMounted(async () => {
         throw new Error('A origem deve estar pendente e ativa.')
       value.value = String(
         kind === 'venda'
-          ? record.value.valorTotal
+          ? record.value.valor
           : record.value.ItensOrdensServico.reduce(
               (s: number, i: Row) => s + Number(i.valor) * i.quantidade,
               0,
@@ -72,12 +75,13 @@ onMounted(async () => {
     }
     client.value = record.value.clienteId || undefined
   } catch (e) {
-    validation.value = errorMessage(e)
+    loadError.value = errorMessage(e)
     record.value = null
   } finally {
     loading.value = false
   }
-})
+}
+onMounted(load)
 function body() {
   if (!allowed.value) throw new Error('Criação de cobrança desabilitada nesta conta.')
   if (existing.value.some((c) => ['PENDENTE', 'ATRASADO'].includes(c.status)))
@@ -134,9 +138,9 @@ const formDestination = useFormDestination()
 
     <Feedback
       :loading="loading"
-      :error="validation || error"
+      :error="loadError || validation || error"
       :message="message"
-      @retry="validation = ''"
+      @retry="loadError ? load() : (validation = '')"
     />
     <p
       v-if="!allowed"
@@ -156,12 +160,19 @@ const formDestination = useFormDestination()
       <fieldset class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2" :disabled="busy || uncertain">
         <template v-if="!review"
           ><label
-            >Tipo<select v-model="type">
-              <option>PIX</option>
-              <option>BOLETO</option>
-              <option value="LINK">Link de pagamento</option>
-            </select></label
-          ><label>Valor da cobrança<Input v-model="value" inputmode="decimal" required /></label
+            >Tipo<FormSelect
+              v-model="type"
+              :options="[
+                { value: 'PIX', label: 'PIX' },
+                { value: 'BOLETO', label: 'BOLETO' },
+                { value: 'LINK', label: 'Link de pagamento' },
+              ]" /></label
+          ><label
+            >Valor da cobrança<Input
+              placeholder="0,00"
+              v-model="value"
+              inputmode="decimal"
+              required /></label
         ></template>
         <ReviewPanel v-else>
           <template #title>Confira antes de enviar ao Mercado Pago</template>
@@ -175,7 +186,7 @@ const formDestination = useFormDestination()
           </p>
         </ReviewPanel>
         <div
-          class="mf-actions col-span-full flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
+          class="mf-form-actions mf-actions col-span-full flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
         >
           <button v-if="review" type="button" @click="review = false">Voltar</button
           ><button
@@ -193,12 +204,16 @@ const formDestination = useFormDestination()
       <h2>Cobrança criada</h2>
       <a
         v-if="result.paymentLink && /^https?:\/\//.test(result.paymentLink)"
+        class="mf-button"
         :href="result.paymentLink"
         target="_blank"
         rel="noopener noreferrer"
         >Abrir link de pagamento</a
       ><label v-if="result.pixCopiaCola"
-        >PIX copia e cola<Textarea readonly :value="result.pixCopiaCola" /></label
+        >PIX copia e cola<Textarea
+          placeholder="O código PIX aparecerá aqui"
+          readonly
+          :model-value="result.pixCopiaCola" /></label
       ><FormResultLink :to="formDestination('/modofacil/financeiro/cobrancas')"
         >Conferir situação da cobrança</FormResultLink
       >

@@ -22,11 +22,11 @@ export function decimal(value: string | number, precision = 2): number {
 }
 export const errorMessage = (error: unknown) => {
   const e = error as {
-    response?: { status?: number; data?: { message?: string } }
+    response?: { status?: number; data?: { message?: string; erro?: string } }
     message?: string
   }
   if (e.response?.status === 404) {
-    const message = e.response.data?.message
+    const message = e.response.data?.message || e.response.data?.erro
     return message &&
       !/^Request failed with status code|Cannot (GET|POST|PATCH|PUT|DELETE)/.test(message)
       ? message
@@ -36,6 +36,7 @@ export const errorMessage = (error: unknown) => {
     ? e.response?.data?.message ||
         'Outro usuário alterou este registro. Recarregue e confira os dados antes de salvar.'
     : e.response?.data?.message ||
+        e.response?.data?.erro ||
         e.message ||
         'Não foi possível completar. Confira sua conexão e tente novamente.'
 }

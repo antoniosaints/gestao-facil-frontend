@@ -17,7 +17,12 @@ const load: SelectAjaxLoader = async ({ search, page }) => {
       : props.kind === 'SERVICO'
         ? '/modofacil/servicos'
         : '/produtos'
-  const result = await api.page(path, { search, page, listingMode: 'variante' })
+  const result = await api.page(path, {
+    search,
+    page,
+    ...(props.kind === 'PESSOA' ? { tipo: props.personType } : {}),
+    ...(props.kind !== 'PESSOA' && props.kind !== 'SERVICO' ? { listingMode: 'variante' } : {}),
+  })
   return {
     results: result.rows.map((row) => ({
       id: row.id,
@@ -41,6 +46,7 @@ async function choose(item: SelectAjaxOption) {
 <template>
   <div class="my-3 min-w-0">
     <Select2Ajax
+      :key="`${kind || 'PRODUTO'}:${personType || ''}`"
       v-model="selected"
       :load-options="load"
       :placeholder="

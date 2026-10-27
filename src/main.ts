@@ -6,6 +6,7 @@ import './utils/worker'
 import './utils/theme'
 import Toast, { POSITION } from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
+import { createToastContainer } from './utils/toastContainer'
 
 import App from './App.vue'
 import router from './router'
@@ -17,6 +18,7 @@ import '@vuepic/vue-datepicker/dist/main.css'
 const app = createApp(App)
 
 app.use(Toast, {
+  container: createToastContainer,
   position: POSITION.TOP_RIGHT,
   transition: 'Vue-Toastification__fade',
   timeout: 1500,

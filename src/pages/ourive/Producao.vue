@@ -151,7 +151,7 @@ const orderStatusLabel = (status: string) =>
       RECUSADA: 'Recusada',
       CANCELADA: 'Cancelada',
     }) as Record<string, string>
-  )[status] || status.replaceAll('_', ' ').toLocaleLowerCase('pt-BR')
+  )[status] || status.replace(/_/g, ' ').toLocaleLowerCase('pt-BR')
 const usersFor = (ids: number[]) =>
   ids?.map((id) => team.value.find((member) => member.id === id)?.nome || `#${id}`).join(', ') ||
   'Sem responsável'

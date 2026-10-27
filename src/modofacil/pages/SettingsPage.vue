@@ -3,7 +3,6 @@ import PageHeader from '../components/PageHeader.vue'
 import PageFrame from '../components/PageFrame.vue'
 import { ref, computed } from 'vue'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { api, type Row } from '../adapters/domain'
 import { createOperationalSettingsApi } from '../adapters/operationalSettings'
 import type { FieldDefinition } from '../application/fields'
 import { useDomainMutation } from '../application/useDomainMutation'
@@ -14,8 +13,6 @@ import Feedback from '../components/Feedback.vue'
 const ui = useUiStore(),
   tab = ref('experiencia'),
   record = ref<Record<string, unknown> | null>(null),
-  accounts = ref<Row[]>([]),
-  categories = ref<Row[]>([]),
   loading = ref(false),
   loadError = ref('')
 const { busy, error, message, uncertain, run } = useDomainMutation()
@@ -34,7 +31,7 @@ const fields = computed<FieldDefinition[]>(() => {
     group,
     type: 'select',
     numeric: true,
-    options: accounts.value.map((a) => [String(a.id), a.nome || String(a.id)]),
+    lookup: 'finance-accounts',
   })
   const category = (key: string, label: string, group: string): FieldDefinition => ({
     key,
@@ -42,7 +39,7 @@ const fields = computed<FieldDefinition[]>(() => {
     group,
     type: 'select',
     numeric: true,
-    options: categories.value.map((a) => [String(a.id), a.nome || String(a.id)]),
+    lookup: 'finance-categories',
   })
   return [
     account('contaFinanceiraPadraoId', 'Conta financeira padrão', 'Dinheiro'),
@@ -80,11 +77,7 @@ async function load() {
   loading.value = true
   loadError.value = ''
   try {
-    ;[record.value, accounts.value, categories.value] = await Promise.all([
-      settingsApi.get(),
-      api.read('/modofacil/financeiro/contas'),
-      api.read('/modofacil/financeiro/categorias'),
-    ])
+    record.value = await settingsApi.get()
   } catch (e) {
     record.value = null
     loadError.value = errorMessage(e)
@@ -116,9 +109,27 @@ async function save(body: Record<string, unknown>) {
       class="mf-actions my-4 flex flex-wrap items-end gap-3"
       aria-label="Assuntos de configuração"
     >
-      <button @click="tab = 'experiencia'">Experiência</button
-      ><button @click="load">Vendas, dinheiro, OS e avisos</button
-      ><button @click="tab = 'empresa'">Empresa</button
+      <button
+        type="button"
+        :aria-pressed="tab === 'experiencia'"
+        :class="tab === 'experiencia' ? '!border-blue-600 !bg-blue-600 !text-white' : ''"
+        @click="tab = 'experiencia'"
+      >
+        Experiência</button
+      ><button
+        type="button"
+        :aria-pressed="tab === 'operacao'"
+        :class="tab === 'operacao' ? '!border-blue-600 !bg-blue-600 !text-white' : ''"
+        @click="load"
+      >
+        Vendas, dinheiro, OS e avisos</button
+      ><button
+        type="button"
+        :aria-pressed="tab === 'empresa'"
+        :class="tab === 'empresa' ? '!border-blue-600 !bg-blue-600 !text-white' : ''"
+        @click="tab = 'empresa'"
+      >
+        Empresa</button
       ><RouterLink to="/administracao/usuarios">Equipe na interface completa</RouterLink>
     </nav>
     <ExperienceSettings v-if="tab === 'experiencia'" />
@@ -143,7 +154,9 @@ async function save(body: Record<string, unknown>) {
         Atualização cadastral da empresa permanece na configuração completa; não há fronteira de
         edição restrita publicada para esses dados.
       </p>
-      <RouterLink to="/configuracoes">Abrir configuração completa da empresa</RouterLink>
+      <RouterLink to="/configuracoes" class="mf-button"
+        >Abrir configuração completa da empresa</RouterLink
+      >
     </section>
     <template v-else
       ><Feedback

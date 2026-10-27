@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormSelect from '../components/FormSelect.vue'
 import FormBack from '../components/FormBack.vue'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -227,15 +228,27 @@ async function reload() {
           <section v-if="step === 1" class="mf-stack grid gap-4">
             <div class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
               <label
-                >Situação<select v-model="form.status">
-                  <option v-for="status in statuses" :key="status">{{ status }}</option>
-                </select></label
-              ><label>Data<Input v-model="form.data" type="date" /></label
+                >Situação<FormSelect
+                  v-model="form.status"
+                  :options="[
+                    ...statuses.map((status) => ({ value: status, label: status })),
+                  ]" /></label
+              ><label>Data<Input placeholder="dd/mm/aaaa" v-model="form.data" type="date" /></label
               ><label
                 >{{ os ? 'Descrição interna' : 'Observações'
-                }}<Textarea v-model="form.notes" /></label
-              ><label v-if="os">Necessidade do cliente<Textarea v-model="form.need" /></label
-              ><label>Garantia em dias<Input v-model="form.garantia" inputmode="numeric" /></label>
+                }}<Textarea
+                  placeholder="Informe observações sobre a operação"
+                  v-model="form.notes" /></label
+              ><label v-if="os"
+                >Necessidade do cliente<Textarea
+                  placeholder="Descreva a solicitação do cliente"
+                  v-model="form.need" /></label
+              ><label
+                >Garantia em dias<Input
+                  placeholder="Ex.: 90"
+                  v-model="form.garantia"
+                  inputmode="numeric"
+              /></label>
             </div>
             <p>Cliente: {{ personName }}</p>
             <ItemSearch
@@ -263,7 +276,7 @@ async function reload() {
           </section>
           <section v-if="step === 2" class="mf-stack grid gap-4">
             <ItemComposer v-model="items" /><label
-              >Desconto total<Input v-model="form.desconto" inputmode="decimal"
+              >Desconto total<Input placeholder="0,00" v-model="form.desconto" inputmode="decimal"
             /></label>
           </section>
           <ReviewPanel v-if="step === 3">
@@ -293,7 +306,7 @@ async function reload() {
               por gateway. Os movimentos de estoque existentes são preservados conforme o domínio.
             </p>
           </ReviewPanel>
-          <div class="mf-actions my-4 flex flex-wrap items-end gap-3">
+          <div class="mf-form-actions mf-actions my-4 flex flex-wrap items-end gap-3">
             <button v-if="step > 1" @click="step--">Voltar</button
             ><button
               v-if="step < 3"

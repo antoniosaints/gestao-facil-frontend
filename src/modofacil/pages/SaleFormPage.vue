@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormSelect from '../components/FormSelect.vue'
 import FormResultLink from '../components/FormResultLink.vue'
 import FormBack from '../components/FormBack.vue'
 import { useFormDestination } from '../application/formReturn'
@@ -207,10 +208,12 @@ const formDestination = useFormDestination()
       <fieldset :disabled="busy || uncertain" class="mf-stack grid gap-4">
         <template v-if="step === 1"
           ><label
-            >O que deseja registrar?<select v-model="kind">
-              <option value="VENDA">Venda com pagamento</option>
-              <option value="ORCAMENTO">Orçamento</option>
-            </select></label
+            >O que deseja registrar?<FormSelect
+              v-model="kind"
+              :options="[
+                { value: 'VENDA', label: 'Venda com pagamento' },
+                { value: 'ORCAMENTO', label: 'Orçamento' },
+              ]" /></label
           ><ItemComposer v-model="items"
         /></template>
         <section v-if="step === 2" class="mf-stack grid gap-4">
@@ -225,10 +228,17 @@ const formDestination = useFormDestination()
             "
           /><button v-if="client" type="button" @click="client = null">Remover cliente</button>
           <div class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
-            <label>Data<Input v-model="date" type="date" required /></label
-            ><label>Desconto total<Input v-model="discount" inputmode="decimal" /></label
+            <label>Data<Input placeholder="dd/mm/aaaa" v-model="date" type="date" required /></label
+            ><label
+              >Desconto total<Input
+                placeholder="0,00"
+                v-model="discount"
+                inputmode="decimal" /></label
             ><label v-if="kind === 'ORCAMENTO'" class="mf-full col-span-full"
-              >Condições / observações<Textarea v-model="notes" />
+              >Condições / observações<Textarea
+                placeholder="Informe condições de pagamento ou observações da venda"
+                v-model="notes"
+              />
             </label>
           </div>
           <PaymentComposer
@@ -245,12 +255,15 @@ const formDestination = useFormDestination()
           >
             <label
               >Parcelas do crediário<Input
+                placeholder="Ex.: 3"
                 v-model.number="installments"
                 type="number"
                 min="1"
                 max="36"
                 step="1" /></label
-            ><label>Primeiro vencimento<Input v-model="due" type="date" /></label>
+            ><label
+              >Primeiro vencimento<Input placeholder="dd/mm/aaaa" v-model="due" type="date"
+            /></label>
           </div>
         </section>
         <ReviewPanel v-if="step === 3">
@@ -298,7 +311,7 @@ const formDestination = useFormDestination()
             com pagamento pendente. Não significa recebimento. Confira esse efeito antes de salvar.
           </p>
         </ReviewPanel>
-        <div class="mf-actions my-4 flex flex-wrap items-end gap-3">
+        <div class="mf-form-actions mf-actions my-4 flex flex-wrap items-end gap-3">
           <button v-if="step > 1" type="button" @click="step--">Voltar</button
           ><button
             v-if="step < 3"

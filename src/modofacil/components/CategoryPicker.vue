@@ -4,10 +4,11 @@ import { Plus } from 'lucide-vue-next'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import type { SelectAjaxLoader } from '@/components/formulario/select-ajax'
 import { api } from '../adapters/domain'
+import { useLookupOptions } from '../adapters/lookups'
 import { errorMessage } from '../application/format'
 import ModalDialog from './ModalDialog.vue'
+import { notifySuccess } from '../application/notifications'
 const selected = defineModel<number | null>({ required: true })
 const props = defineProps<{ initialLabel?: string }>()
 const label = ref(props.initialLabel || ''),
@@ -16,20 +17,7 @@ const label = ref(props.initialLabel || ''),
   name = ref(''),
   error = ref('')
 const revision = ref(0)
-const load: SelectAjaxLoader = async ({ search, page, id }) => {
-  if (id != null && label.value) return { results: [{ id, label: label.value }] }
-  const result = await api.page('/modofacil/produtos/categorias', {
-    search,
-    page,
-    ...(id != null ? { id } : {}),
-  })
-  return {
-    results: result.rows
-      .filter((row) => id == null || row.id === Number(id))
-      .map((row) => ({ id: row.id, label: row.nome || `#${row.id}` })),
-    hasMore: page < result.pages,
-  }
-}
+const categoryOptions = useLookupOptions('product-categories')
 async function create() {
   if (busy.value || !name.value.trim()) return
   busy.value = true
@@ -41,6 +29,7 @@ async function create() {
     name.value = ''
     revision.value++
     creating.value = false
+    notifySuccess('Categoria cadastrada.')
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -49,14 +38,14 @@ async function create() {
 }
 </script>
 <template>
-  <div class="grid min-w-0 gap-1.5">
-    <span class="text-xs font-medium">Categoria</span>
+  <div class="grid min-w-0 gap-2">
+    <span class="text-sm font-medium">Categoria</span>
     <div class="flex min-w-0 items-start gap-1">
       <Select2Ajax
         :key="revision"
         :model-value="selected"
         v-model:label="label"
-        :load-options="load"
+        :load-options="categoryOptions.load"
         placeholder="Selecionar categoria"
         allow-clear
         @update:model-value="selected = $event == null ? null : Number($event)"
@@ -65,7 +54,7 @@ async function create() {
         type="button"
         variant="outline"
         size="icon"
-        class="shrink-0"
+        class="!h-10 !w-10 shrink-0"
         aria-label="Criar categoria sem sair"
         @click="creating = true"
         ><Plus :size="16"
@@ -81,9 +70,14 @@ async function create() {
     >
       <form class="grid gap-4" @submit.prevent="create">
         <label
-          >Nome da categoria<Input v-model="name" required maxlength="100" :disabled="busy"
+          >Nome da categoria<Input
+            placeholder="Ex.: Bebidas"
+            v-model="name"
+            required
+            maxlength="100"
+            :disabled="busy"
         /></label>
-        <div class="flex justify-end gap-2">
+        <div class="mf-form-actions mf-actions">
           <Button type="button" variant="outline" :disabled="busy" @click="creating = false"
             >Cancelar</Button
           ><Button type="submit" :disabled="busy || !name.trim()">{{

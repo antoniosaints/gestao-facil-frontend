@@ -133,10 +133,18 @@ const formDestination = useFormDestination()
               <strong>{{ item.nome }} · {{ item.unidade }}</strong
               ><label
                 >Quantidade {{ i + 1
-                }}<Input v-model="item.quantidade" inputmode="decimal" required /></label
+                }}<Input
+                  placeholder="Ex.: 10,500"
+                  v-model="item.quantidade"
+                  inputmode="decimal"
+                  required /></label
               ><label
                 >Custo unitário {{ i + 1
-                }}<Input v-model="item.custo" inputmode="decimal" required /></label
+                }}<Input
+                  placeholder="0,00"
+                  v-model="item.custo"
+                  inputmode="decimal"
+                  required /></label
               ><button type="button" @click="items.splice(i, 1)">Remover {{ item.nome }}</button>
             </li>
           </ul>
@@ -156,10 +164,21 @@ const formDestination = useFormDestination()
               Remover fornecedor
             </button>
             <div class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
-              <label>Data de entrada<Input v-model="date" type="date" required /></label
-              ><label>Nota fiscal<Input v-model="note" maxlength="191" /></label
-              ><label>Frete<Input v-model="freight" inputmode="decimal" /></label
-              ><label>Desconto<Input v-model="discount" inputmode="decimal" /></label>
+              <label
+                >Data de entrada<Input
+                  placeholder="dd/mm/aaaa"
+                  v-model="date"
+                  type="date"
+                  required /></label
+              ><label
+                >Nota fiscal<Input
+                  placeholder="Ex.: NF 12345"
+                  v-model="note"
+                  maxlength="191" /></label
+              ><label>Frete<Input placeholder="0,00" v-model="freight" inputmode="decimal" /></label
+              ><label
+                >Desconto<Input placeholder="0,00" v-model="discount" inputmode="decimal"
+              /></label>
             </div></details
         ></template>
         <ReviewPanel v-else>
@@ -184,7 +203,7 @@ const formDestination = useFormDestination()
             despesa financeira adicional é criada pela tela.
           </p>
         </ReviewPanel>
-        <div class="mf-actions my-4 flex flex-wrap items-end gap-3">
+        <div class="mf-form-actions mf-actions my-4 flex flex-wrap items-end gap-3">
           <button v-if="review" type="button" @click="review = false">Voltar</button
           ><button
             class="mf-primary !border-blue-600 !bg-blue-600 !text-white hover:!border-blue-700 hover:!bg-blue-700"

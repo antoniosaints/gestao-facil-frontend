@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import PersonFields from '../components/PersonFields.vue'
+import { emptyPerson, personPayload } from '../application/personForm'
 import FormResultLink from '../components/FormResultLink.vue'
 import FormBack from '../components/FormBack.vue'
 import { useFormDestination } from '../application/formReturn'
-import { Input } from '@/components/ui/input'
 
 import { reactive, ref } from 'vue'
 import PageFrame from '../components/PageFrame.vue'
@@ -13,13 +14,9 @@ import { api } from '../adapters/domain'
 import { errorMessage } from '../application/format'
 import { useFlow } from '../application/useFlow'
 import Feedback from '../components/Feedback.vue'
+import { notifySuccess } from '../application/notifications'
 const route = useFormContext()
-const form = reactive({
-    nome: '',
-    tipo: route.query.tipo === 'FORNECEDOR' ? 'FORNECEDOR' : 'CLIENTE',
-    telefone: '',
-    email: '',
-  }),
+const form = reactive(emptyPerson(route.query.tipo === 'FORNECEDOR' ? 'FORNECEDOR' : 'CLIENTE')),
   dirty = ref(false),
   busy = ref(false),
   error = ref(''),
@@ -27,20 +24,22 @@ const form = reactive({
   uncertain = ref(false)
 useFlow(dirty, busy)
 async function save() {
+  if (busy.value || uncertain.value || id.value) return
   busy.value = true
   error.value = ''
+  let sent = false
   try {
-    const result = await api.post('/modofacil/pessoas', {
-      nome: form.nome.trim(),
-      tipo: form.tipo,
-      telefone: form.telefone || null,
-      email: form.email || null,
-    })
+    const body = personPayload(form)
+    sent = true
+    const result = await api.post('/modofacil/pessoas', body)
+    if (!result?.id)
+      throw new Error('Não foi possível confirmar o cadastro. Confira a lista de pessoas.')
     id.value = result.id
     dirty.value = false
+    notifySuccess('Pessoa cadastrada.')
   } catch (e) {
     error.value = errorMessage(e)
-    if (!(e as any).response) {
+    if (sent && (!(e as any).response || (e as any).response.status >= 500)) {
       uncertain.value = true
       error.value += ' Confira Pessoas antes de repetir; o cadastro pode ter sido criado.'
     }
@@ -62,41 +61,10 @@ const formDestination = useFormDestination()
     <Feedback :error="error" @retry="error = ''" />
     <form v-if="!id" @submit.prevent="save" @input="dirty = true">
       <fieldset class="grid grid-cols-1 gap-4 sm:grid-cols-2" :disabled="busy || uncertain">
-        <label
-          >Nome completo <span class="text-red-500">*</span
-          ><Input
-            v-model="form.nome"
-            required
-            autocomplete="name"
-            placeholder="Nome do cliente ou fornecedor"
-        /></label>
-        <label
-          >Tipo de cadastro<select v-model="form.tipo">
-            <option value="CLIENTE">Cliente</option>
-            <option value="FORNECEDOR">Fornecedor</option>
-          </select></label
-        >
-        <label
-          >E-mail<Input
-            v-model="form.email"
-            type="email"
-            autocomplete="email"
-            placeholder="nome@email.com"
-        /></label>
-        <label
-          >Telefone<Input
-            v-model="form.telefone"
-            type="tel"
-            autocomplete="tel"
-            placeholder="(00) 00000-0000"
-        /></label>
-        <p class="col-span-full rounded-[6px] bg-muted/50 p-3 !text-xs text-muted-foreground">
-          Documento e endereço podem ser consultados nos cadastros existentes. Inclusão e edição
-          desses dados ainda estão em adaptação.
-        </p>
+        <PersonFields :form="form" @change="dirty = true" />
       </fieldset>
       <div
-        class="mf-actions mt-4 flex flex-col-reverse gap-2 border-t border-border pt-3 sm:flex-row sm:justify-end"
+        class="mf-form-actions mf-actions mt-4 flex flex-col-reverse gap-2 border-t border-border pt-3 sm:flex-row sm:justify-end"
       >
         <FormBack :to="formDestination('/modofacil/pessoas')" class="mf-button !bg-muted/50"
           >Cancelar</FormBack

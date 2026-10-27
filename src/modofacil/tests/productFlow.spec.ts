@@ -4,13 +4,14 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router'
 import { h } from 'vue'
 const domain = vi.hoisted(() => ({
   page: vi.fn(),
+  read: vi.fn(),
   create: vi.fn(),
   photo: vi.fn(),
   get: vi.fn(),
   variants: vi.fn(),
   update: vi.fn(),
 }))
-vi.mock('../adapters/domain', () => ({ api: { page: domain.page }, products: domain }))
+vi.mock('../adapters/domain', () => ({ api: { page: domain.page, read: domain.read }, products: domain }))
 import ProductFormPage from '../pages/ProductFormPage.vue'
 const wrappers: any[] = []
 async function form(path = '/modofacil/produtos/novo') {
@@ -51,6 +52,7 @@ async function fill(w: any) {
 }
 beforeEach(() => {
   vi.clearAllMocks()
+  domain.read.mockResolvedValue({ results: [], hasMore: false })
   domain.page.mockResolvedValue({ rows: [], total: 0, pages: 1 })
   domain.create.mockResolvedValue({ produtoBaseId: 11, varianteId: 73, produto: {} })
   domain.photo.mockResolvedValue({})

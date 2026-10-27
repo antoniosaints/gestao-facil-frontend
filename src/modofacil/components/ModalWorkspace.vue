@@ -54,7 +54,11 @@ watch(
   <ModalDialog
     v-for="(entry, index) in entries"
     :key="entry.id"
-    :title="forms[entry.target.form].title"
+    :title="
+      entry.target.form === 'financeiro-parcela' && !entry.target.params?.parcelaId
+        ? 'Adicionar parcela'
+        : forms[entry.target.form].title
+    "
     size="lg"
     :busy="workspace.busy.value"
     :inactive="index !== entries.length - 1"

@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useLookupOptions } from '../adapters/lookups'
+import FormSelect from '../components/FormSelect.vue'
 import { Input } from '@/components/ui/input'
 
 import ModalDialog from '../components/ModalDialog.vue'
 import PageHeader from '../components/PageHeader.vue'
 import PageFrame from '../components/PageFrame.vue'
+import RecordsTable from '../components/RecordsTable.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { hasPermission } from '@/hooks/authorize'
@@ -16,7 +19,6 @@ const editorOpen = ref(false)
 const ui = useUiStore(),
   tab = ref<'contas' | 'categorias'>('contas'),
   rows = ref<Row[]>([]),
-  categories = ref<Row[]>([]),
   name = ref(''),
   balance = ref('0'),
   color = ref('#12617b'),
@@ -26,6 +28,9 @@ const ui = useUiStore(),
   loadError = ref(''),
   validation = ref(''),
   review = ref(false)
+const { load: loadCategories, rows: categories } = useLookupOptions('finance-categories', () => ({
+  excludeId: editId.value || undefined,
+}))
 const { busy, error, message, uncertain, run } = useDomainMutation()
 const canManage = computed(() => tab.value === 'categorias' || hasPermission(ui.usuarioLogged, 4))
 useFlow(computed(() => !!name.value))
@@ -33,10 +38,7 @@ async function load() {
   loading.value = true
   loadError.value = ''
   try {
-    ;[rows.value, categories.value] = await Promise.all([
-      api.read(`/modofacil/financeiro/${tab.value}`),
-      api.read('/modofacil/financeiro/categorias'),
-    ])
+    rows.value = await api.read(`/modofacil/financeiro/${tab.value}`)
   } catch (e) {
     loadError.value = errorMessage(e)
   } finally {
@@ -63,7 +65,7 @@ function edit(row: Row) {
   reset()
   editId.value = row.id
   name.value = row.nome || ''
-  parent.value = row.categoriaPai ?? null
+  parent.value = row.parentId ?? row.categoriaPai ?? null
   color.value = row.corDestaque || '#12617b'
 }
 onMounted(load)
@@ -148,21 +150,27 @@ async function save() {
       :message="message"
       @retry="load"
     />
-    <ul class="mf-list m-0 grid list-none gap-3 p-0">
-      <li
-        v-for="row in rows"
-        :key="row.id"
-        class="mf-row flex flex-wrap items-center justify-between gap-4 break-words rounded-[6px] border border-border p-4 [&>div]:min-w-0 min-w-0 bg-card"
+    <RecordsTable
+      :rows="rows"
+      :loading="loading"
+      :failed="!!loadError"
+      :caption="tab === 'contas' ? 'Contas financeiras' : 'Categorias financeiras'"
+      :columns="[
+        { key: 'name', label: tab === 'contas' ? 'Conta financeira' : 'Categoria' },
+        ...(tab === 'contas' ? [{ key: 'balance', label: 'Saldo inicial', right: true }] : []),
+        { key: 'actions', label: 'Ações', right: true },
+      ]"
+    >
+      <template #name="{ row }"
+        ><strong>{{ row.nome }}</strong></template
       >
-        <div>
-          <strong>{{ row.nome }}</strong
-          ><small v-if="tab === 'contas'">Saldo inicial {{ money(row.saldoInicial) }}</small>
-        </div>
-        <button v-if="canManage" :disabled="busy || uncertain" @click="edit(row)">
+      <template #balance="{ row }">{{ money(row.saldoInicial) }}</template>
+      <template #actions="{ row }"
+        ><button v-if="canManage" :disabled="busy || uncertain" @click="edit(row)">
           Editar {{ row.nome }}
-        </button>
-      </li>
-    </ul>
+        </button></template
+      >
+    </RecordsTable>
     <button
       v-if="canManage"
       type="button"
@@ -193,25 +201,27 @@ async function save() {
           :disabled="busy || uncertain"
         >
           <template v-if="!review"
-            ><label>Nome<Input v-model="name" required maxlength="191" /></label
+            ><label
+              >Nome<Input
+                :placeholder="tab === 'contas' ? 'Ex.: Conta principal' : 'Ex.: Despesas fixas'"
+                v-model="name"
+                required
+                maxlength="191" /></label
             ><template v-if="tab === 'contas'"
               ><label v-if="!editId"
-                >Saldo inicial<Input v-model="balance" inputmode="decimal" required /></label
+                >Saldo inicial<Input
+                  placeholder="0,00"
+                  v-model="balance"
+                  inputmode="decimal"
+                  required /></label
               ><label>Cor de identificação<Input v-model="color" type="color" /></label>
               <p v-if="editId">O saldo inicial não é alterado por esta edição.</p></template
             ><label v-else
-              >Categoria superior<select v-model="parent">
-                <option :value="null">Sem categoria superior</option>
-                <option
-                  v-for="row in categories.filter((c) => c.id !== editId)"
-                  :key="row.id"
-                  :value="row.id"
-                >
-                  {{ row.nome }}
-                </option>
-              </select></label
-            ></template
-          >
+              >Categoria superior<FormSelect
+                v-model="parent"
+                :load-options="loadCategories"
+                :options="[{ value: null, label: 'Sem categoria superior' }]" /></label
+          ></template>
           <section v-else class="mf-full col-span-full">
             <p>
               {{ name }} ·
@@ -229,7 +239,7 @@ async function save() {
             </p>
           </section>
           <div
-            class="mf-actions col-span-full flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
+            class="mf-form-actions mf-actions col-span-full flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"
           >
             <button type="button" @click="review ? (review = false) : reset()">
               Voltar / limpar</button

@@ -20,7 +20,7 @@ const Form = defineAsyncComponent({
 </script>
 <template>
   <div
-    class="[&_.mf-page]:!space-y-3 [&_.mf-head]:hidden [&_.mf-page_h1]:hidden [&_.mf-page>header]:hidden [&_.mf-page>section>header]:hidden [&_.mf-page>h1]:hidden [&_.mf-page>a:first-child]:hidden [&_.mf-page>form]:!p-0 [&_.mf-page>form]:!border-0 [&_.mf-page>section]:!border-0 [&_.mf-page>section]:!p-0"
+    class="[&_.mf-form-actions]:justify-end [&_.mf-form-actions]:border-t [&_.mf-form-actions]:border-border [&_.mf-form-actions]:!pt-4 [&_.mf-form-actions]:!pb-1 [&_.mf-page]:!space-y-5 [&_.mf-head]:hidden [&_.mf-page_h1]:hidden [&_.mf-page>header]:hidden [&_.mf-page>section>header]:hidden [&_.mf-page>h1]:hidden [&_.mf-page>a:first-child]:hidden [&_.mf-page>form]:!p-0 [&_.mf-page>form]:!border-0 [&_.mf-page>section]:!border-0 [&_.mf-page>section]:!p-0"
   >
     <component :is="Form" />
   </div>

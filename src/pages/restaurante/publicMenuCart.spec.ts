@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { calculateMenuItemUnitPrice, updateMenuGroupSelection } from './publicMenuCart'
 
 const item: Parameters<typeof calculateMenuItemUnitPrice>[0] = {
+  preco: 25,
   Produto: { preco: 30 },
   regraPrecoSabores: 'MAIOR_PRECO',
   grupos: [
@@ -34,6 +35,10 @@ describe('calculateMenuItemUnitPrice', () => {
 
   it('usa a média dos sabores quando essa for a regra do item', () => {
     expect(calculateMenuItemUnitPrice({ ...item, regraPrecoSabores: 'MEDIA_PROPORCIONAL' }, [1, 2, 3])).toBe(40.5)
+  })
+
+  it('usa o preço próprio em item avulso sem produto vinculado', () => {
+    expect(calculateMenuItemUnitPrice({ ...item, Produto: null }, [1, 2, 3])).toBe(37)
   })
 })
 

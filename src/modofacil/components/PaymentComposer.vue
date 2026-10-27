@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import FormSwitch from './FormSwitch.vue'
+import FormSelect from './FormSelect.vue'
 import { Input } from '@/components/ui/input'
 
 import { computed } from 'vue'
@@ -6,7 +8,7 @@ import { money } from '../application/format'
 import { paymentMethods, type PaymentDraft } from '../application/payments'
 const props = withDefaults(
   defineProps<{ total: number; allowCredit?: boolean; allowCompound?: boolean }>(),
-  { allowCompound: true },
+  { allowCredit: true, allowCompound: true },
 )
 const compound = defineModel<boolean>('compound', { required: true }),
   method = defineModel<string>('method', { required: true }),
@@ -23,15 +25,19 @@ const allocated = computed(() =>
   <section class="mf-stack grid gap-4">
     <label
       v-if="allowCompound !== false"
-      class="mf-choice mb-3 !flex items-center gap-3 rounded-[6px] border border-border p-4 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-500/10"
-      ><input v-model="compound" type="checkbox" />Dividir em mais de uma forma de pagamento</label
+      class="mf-choice mb-3 !flex items-center gap-3 rounded-[6px] border border-border p-4 has-[[data-state=checked]]:border-blue-500 has-[[data-state=checked]]:bg-blue-500/10"
+      ><FormSwitch v-model="compound" />Dividir em mais de uma forma de pagamento</label
     ><template v-if="!compound || allowCompound === false"
       ><label
-        >Forma de pagamento<select v-model="method">
-          <option v-for="[code, label] in methods" :key="code" :value="code">{{ label }}</option>
-        </select></label
+        >Forma de pagamento<FormSelect
+          v-model="method"
+          :options="[...methods.map(([code, label]) => ({ value: code, label: label }))]" /></label
       ><label v-if="method === 'DINHEIRO'"
-        >Valor recebido em dinheiro<Input v-model="received" inputmode="decimal" /><small
+        >Valor recebido em dinheiro<Input
+          placeholder="0,00"
+          v-model="received"
+          inputmode="decimal"
+        /><small
           >Troco: {{ money(Math.max(0, Number(received.replace(',', '.')) - total)) }}</small
         ></label
       ></template
@@ -44,12 +50,14 @@ const allocated = computed(() =>
         >
           <label
             >Forma {{ index + 1
-            }}<select v-model="payment.metodo">
-              <option v-for="[code, label] in methods" :key="code" :value="code">
-                {{ label }}
-              </option>
-            </select></label
-          ><label>Valor {{ index + 1 }}<Input v-model="payment.valor" inputmode="decimal" /></label
+            }}<FormSelect
+              v-model="payment.metodo"
+              :options="[
+                ...methods.map(([code, label]) => ({ value: code, label: label })),
+              ]" /></label
+          ><label
+            >Valor {{ index + 1
+            }}<Input placeholder="0,00" v-model="payment.valor" inputmode="decimal" /></label
           ><button
             type="button"
             class="sm:col-span-2 !text-red-600 dark:!text-red-300"

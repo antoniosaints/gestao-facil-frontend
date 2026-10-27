@@ -60,12 +60,19 @@ function next() {
   step.value++
 }
 async function save() {
+  if (busy.value || uncertain.value || done.value) return
   busy.value = true
   error.value = ''
   let sent = false
   try {
     validateItems(items.value)
     if (!client.value || !items.value.length) throw new Error('Confira cliente e itens.')
+    const desconto = decimal(discount.value)
+    const subtotal = items.value.reduce((sum, item) => sum + item.quantidade * item.preco, 0)
+    if (desconto > subtotal) throw new Error('O desconto não pode ser maior que o total dos itens.')
+    if (!date.value) throw new Error('Informe a data de abertura.')
+    if (!Number.isInteger(warranty.value) || warranty.value < 0)
+      throw new Error('Informe a garantia em dias inteiros, a partir de zero.')
     sent = true
     await OrdensServicoRepository.save({
       data: date.value,
@@ -74,7 +81,7 @@ async function save() {
       descricao: description.value,
       descricaoCliente: need.value,
       status: 'ABERTA',
-      desconto: decimal(discount.value),
+      desconto,
       garantia: warranty.value,
       itens: items.value.map((i) => ({
         id: i.id,
@@ -88,7 +95,7 @@ async function save() {
     dirty.value = false
   } catch (e) {
     error.value = errorMessage(e)
-    if (sent && !(e as any).response) {
+    if (sent && (!(e as any).response || (e as any).response.status >= 500)) {
       uncertain.value = true
       error.value += ' Confira as ordens antes de repetir o envio.'
     }
@@ -142,8 +149,15 @@ const formDestination = useFormDestination()
               dirty = true
             }
           "
-        /><label>O que o cliente precisa?<Textarea v-model="need" /></label
-        ><label>Descrição interna<Textarea v-model="description" /></label>
+        /><label
+          >O que o cliente precisa?<Textarea
+            placeholder="Descreva a solicitação do cliente"
+            v-model="need" /></label
+        ><label
+          >Descrição interna<Textarea
+            placeholder="Registre informações internas da ordem de serviço"
+            v-model="description"
+        /></label>
       </section>
       <ItemComposer v-if="step === 2" v-model="items" />
       <ReviewPanel v-if="step === 3" title="Confira a ordem de serviço">
@@ -155,10 +169,16 @@ const formDestination = useFormDestination()
           </li>
         </ul>
         <div class="mf-grid grid grid-cols-1 gap-4 md:grid-cols-2">
-          <label>Data de abertura<Input v-model="date" type="date" /></label
-          ><label>Desconto<Input v-model="discount" inputmode="decimal" /></label
+          <label
+            >Data de abertura<Input placeholder="dd/mm/aaaa" v-model="date" type="date" /></label
+          ><label>Desconto<Input placeholder="0,00" v-model="discount" inputmode="decimal" /></label
           ><label
-            >Garantia em dias<Input v-model.number="warranty" type="number" min="0" step="1"
+            >Garantia em dias<Input
+              placeholder="Ex.: 90"
+              v-model.number="warranty"
+              type="number"
+              min="0"
+              step="1"
           /></label>
         </div>
         <p class="mf-value break-words text-2xl font-bold tracking-tight text-foreground">
@@ -171,7 +191,7 @@ const formDestination = useFormDestination()
           cobrança e financeiro seguem os contratos do atendimento.
         </p>
       </ReviewPanel>
-      <div class="mf-actions my-4 flex flex-wrap items-end gap-3">
+      <div class="mf-form-actions mf-actions my-4 flex flex-wrap items-end gap-3">
         <button v-if="step > 1" :disabled="busy" @click="step--">Voltar</button
         ><button
           v-if="step < 3"

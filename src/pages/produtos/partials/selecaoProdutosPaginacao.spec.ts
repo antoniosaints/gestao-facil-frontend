@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, it, expect, beforeAll, vi } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
+import { routeLocationKey } from 'vue-router'
 
 let page = 1
 const pages: Record<number, any[]> = {
@@ -26,6 +27,11 @@ vi.mock('@/utils/axios', () => ({
 }))
 
 setActivePinia(createPinia())
+beforeAll(async () => {
+  localStorage.clear()
+  await import('@/components/tabela/DataTable.vue')
+  await import('@/pages/produtos/partials/columnDef')
+}, 20000)
 
 describe('cabeçalho ao trocar de página', () => {
   it('não fica marcado quando a nova página tem linhas não selecionadas', async () => {
@@ -37,9 +43,12 @@ describe('cabeçalho ao trocar de página', () => {
 
     const wrapper = mount(DataTable, {
       props: { columns: columnsProdutos, api: '/produtos', filters: store.filters },
-      global: { stubs: { RouterLink: true } },
+      global: {
+        stubs: { RouterLink: true },
+        provide: { [routeLocationKey as symbol]: { path: '/produtos' } },
+      },
     })
-    await new Promise((r) => setTimeout(r, 50))
+    await flushPromises()
     await nextTick()
 
     // seleciona tudo na página 1
@@ -51,10 +60,11 @@ describe('cabeçalho ao trocar de página', () => {
     // vai para a página 2 (ids 3 e 4, nenhum selecionado)
     const proximo = wrapper.findAll('button').find((b) => b.text().includes('Próximo'))!
     await proximo.trigger('click')
-    await new Promise((r) => setTimeout(r, 50))
+    await flushPromises()
     await nextTick()
 
     expect(wrapper.find('tbody').text()).toContain('c3')
     expect(wrapper.findAll('[role="checkbox"]')[0].attributes('data-state')).toBe('unchecked')
+    wrapper.unmount()
   })
 })
