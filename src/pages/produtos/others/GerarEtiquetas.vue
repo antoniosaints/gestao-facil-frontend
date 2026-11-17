@@ -29,7 +29,7 @@
                     </div>
                     <div class="md:col-span-4 space-y-1.5">
                         <Label for="posInicial">Iniciar na etiqueta nº</Label>
-                        <Input id="posInicial" v-model.number="posicaoInicial" type="number" min="1" :max="perPage"
+                        <Input placeholder="0" id="posInicial" v-model.number="posicaoInicial" type="number" min="1" :max="perPage"
                             class="bg-card" />
                     </div>
                 </div>

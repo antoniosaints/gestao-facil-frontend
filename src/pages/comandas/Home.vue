@@ -24,7 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -626,7 +626,7 @@ onMounted(loadComandas)
 
             <div class="md:col-span-2">
               <label class="mb-1 block text-xs font-medium">Quantidade</label>
-              <Input v-model.number="item.quantidade" type="number" min="1" step="1" />
+              <Input placeholder="1" v-model.number="item.quantidade" type="number" min="1" step="1" />
             </div>
 
             <div class="md:col-span-2">
@@ -768,7 +768,7 @@ onMounted(loadComandas)
         </div>
         <div class="md:col-span-6">
           <label class="mb-1 block text-sm font-medium">Quantidade</label>
-          <Input v-model.number="store.itemForm.quantidade" type="number" min="1" step="1" />
+          <Input placeholder="1" v-model.number="store.itemForm.quantidade" type="number" min="1" step="1" />
         </div>
         <div class="md:col-span-6">
           <label class="mb-1 block text-sm font-medium">Valor unitario</label>

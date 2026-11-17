@@ -520,11 +520,11 @@ function prettyJson(value?: string | null) {
           <div class="space-y-3">
             <div class="space-y-1.5">
               <Label>Nome</Label>
-              <Input v-model="editForm.nome" />
+              <Input placeholder="Nome da conexão" v-model="editForm.nome" />
             </div>
             <div class="space-y-1.5">
               <Label>Instance ID</Label>
-              <Input v-model="editForm.instanceId" />
+              <Input placeholder="Identificador da instância" v-model="editForm.instanceId" />
             </div>
             <div class="space-y-1.5">
               <Label>Novo token</Label>
@@ -594,7 +594,7 @@ function prettyJson(value?: string | null) {
             class="grid gap-1.5 md:grid-cols-[150px_1fr] md:items-center"
           >
             <Label class="text-xs">{{ callback.label }}</Label>
-            <Input v-model="webhookUrls[callback.key]" class="font-mono text-xs" />
+            <Input placeholder="https://seu-sistema.com/webhook" v-model="webhookUrls[callback.key]" class="font-mono text-xs" />
           </div>
           <Button
             size="sm"

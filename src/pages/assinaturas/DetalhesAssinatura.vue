@@ -28,7 +28,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -761,7 +761,7 @@ onMounted(() => {
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="space-y-2">
             <Label>Quantidade</Label>
-            <Input v-model.number="itemForm.quantidade" type="number" min="1" />
+            <Input placeholder="1" v-model.number="itemForm.quantidade" type="number" min="1" />
           </div>
           <div class="space-y-2">
             <Label>Valor unitário</Label>

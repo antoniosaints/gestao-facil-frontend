@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
@@ -151,7 +151,7 @@ async function submit() {
       <div class="grid grid-cols-12 gap-3">
         <div :class="colValor">
           <label class="mb-1 block text-sm font-medium">Valor de cada ocorrência *</label>
-          <Input v-model="form.valorParcela" v-maska="moneyMaskOptions" type="text" placeholder="0,00" />
+          <Input inputmode="decimal" v-model="form.valorParcela" v-maska="moneyMaskOptions" type="text" placeholder="0,00" />
           <p v-if="erros.valorParcela" class="text-sm text-red-600">{{ erros.valorParcela }}</p>
         </div>
 

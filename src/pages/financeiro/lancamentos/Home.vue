@@ -48,7 +48,7 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { Input } from '@/components/ui/input'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import {
   Select,
   SelectContent,

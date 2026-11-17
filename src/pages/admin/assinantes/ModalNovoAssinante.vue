@@ -21,7 +21,7 @@
                 </div>
                 <div class="grid gap-1">
                     <Label for="novoAssinanteTelefone">Telefone<span class="text-danger">*</span></Label>
-                    <Input id="novoAssinanteTelefone" v-model="form.telefone" placeholder="(00) 00000-0000" />
+                    <Input type="tel" inputmode="tel" v-maska="phoneMaskOptions" id="novoAssinanteTelefone" v-model="form.telefone" placeholder="(00) 00000-0000" />
                 </div>
                 <div class="grid gap-1">
                     <Label for="novoAssinanteTipo">Tipo</Label>
@@ -29,7 +29,7 @@
                 </div>
                 <div class="grid gap-1">
                     <Label for="novoAssinanteFuncionarios">Funcionários</Label>
-                    <Input id="novoAssinanteFuncionarios" v-model.number="form.funcionarios" type="number" min="1" />
+                    <Input placeholder="Ex.: 5" id="novoAssinanteFuncionarios" v-model.number="form.funcionarios" type="number" min="1" />
                 </div>
                 <div class="grid gap-1">
                     <Label for="novoAssinanteValor">Valor do plano (R$)</Label>
@@ -37,7 +37,7 @@
                 </div>
                 <div class="grid gap-1">
                     <Label for="novoAssinanteDias">Dias até o 1º vencimento</Label>
-                    <Input id="novoAssinanteDias" v-model.number="form.diasTeste" type="number" min="0" max="365" />
+                    <Input placeholder="Ex.: 30" id="novoAssinanteDias" v-model.number="form.diasTeste" type="number" min="0" max="365" />
                 </div>
             </div>
 
@@ -61,8 +61,8 @@ import { UserPlus } from 'lucide-vue-next'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { moneyMaskOptions, phoneMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { Label } from '@/components/ui/label'
 import { ContaRepository, type CreateAssinanteAdminPayload } from '@/repositories/conta-repository'
 import { formatToNumberValue } from '@/utils/formatters'

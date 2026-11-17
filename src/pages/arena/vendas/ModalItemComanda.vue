@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { NumberField, NumberFieldContent, NumberFieldDecrement, NumberFieldIncrement, NumberFieldInput } from '@/components/ui/number-field'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
@@ -166,7 +166,7 @@ async function submit() {
           <NumberField v-model="store.itemForm.quantidade" :min="1" :max="maxQuantidade">
             <NumberFieldContent>
               <NumberFieldDecrement />
-              <NumberFieldInput :disabled="!canEditQuantity" />
+              <NumberFieldInput placeholder="1" :disabled="!canEditQuantity" />
               <NumberFieldIncrement />
             </NumberFieldContent>
           </NumberField>

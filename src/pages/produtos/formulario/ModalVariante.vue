@@ -24,7 +24,7 @@ import { Switch } from '@/components/ui/switch'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
 import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { formatToNumberValue } from '@/utils/formatters'
 import {
   Calculator,
@@ -364,7 +364,7 @@ async function submit() {
               <Calculator class="mr-1.5 h-3.5 w-3.5" /> Calcular preço
             </Button>
           </div>
-          <Input
+          <Input inputmode="decimal"
             v-model="store.varianteForm.preco"
             v-maska="moneyMaskOptions"
             icon-label="R$"
@@ -382,11 +382,12 @@ async function submit() {
           <label class="mb-1.5 block text-sm font-medium text-foreground">
             Estoque <span class="text-red-500">*</span>
           </label>
-          <Input
+          <Input placeholder="0"
             v-model="store.varianteForm.estoque"
             :iconLabel="unidadeSelecionada"
             :iconLabelTitle="`Unidade: ${unidadeSelecionada}`"
             type="number"
+              step="0.001"
             min="0"
             :disabled="!controlaEstoqueAtivo"
             :class="[
@@ -402,11 +403,12 @@ async function submit() {
           <label class="mb-1.5 block text-sm font-medium text-foreground">
             Estoque mínimo <span class="text-red-500">*</span>
           </label>
-          <Input
+          <Input placeholder="0"
             v-model="store.varianteForm.minimo"
             :iconLabel="unidadeSelecionada"
             :iconLabelTitle="`Unidade: ${unidadeSelecionada}`"
             type="number"
+              step="0.001"
             min="0"
             :disabled="!controlaEstoqueAtivo"
             :class="[
@@ -424,7 +426,7 @@ async function submit() {
         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
           <div class="md:col-span-4">
             <label class="mb-1.5 block text-sm font-medium text-foreground">Preço de compra</label>
-            <Input
+            <Input inputmode="decimal"
               v-model="store.varianteForm.precoCompra"
               v-maska="moneyMaskOptions"
               icon-label="R$"
@@ -440,7 +442,7 @@ async function submit() {
               Preço promocional
               <Tag class="h-3.5 w-3.5 text-red-500" />
             </label>
-            <Input
+            <Input inputmode="decimal"
               v-model="store.varianteForm.precoPromocional"
               v-maska="moneyMaskOptions"
               icon-label="R$"

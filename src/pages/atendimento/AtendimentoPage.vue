@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { phoneMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
@@ -1015,7 +1017,7 @@ async function sendContact() {
     contactDialog.sending = true
     await WhatsAppRepository.sendContact(selectedConversation.value.id, {
       contactName: contactDialog.contactName.trim(),
-      contactPhone: contactDialog.contactPhone.trim(),
+      contactPhone: contactDialog.contactPhone.replace(/\D/g, ''),
       contactBusinessDescription: contactDialog.contactBusinessDescription.trim() || undefined,
       quotedMessageId: replyingTo.value?.externalMessageId || undefined,
     })
@@ -2073,7 +2075,7 @@ onMounted(async () => {
           </div>
           <div class="space-y-1">
             <Label class="text-xs">Legenda (opcional)</Label>
-            <Input v-model="mediaLink.caption" :disabled="mediaLink.sending" />
+            <Input placeholder="Adicione uma legenda à mídia" v-model="mediaLink.caption" :disabled="mediaLink.sending" />
           </div>
         </div>
 
@@ -2168,7 +2170,7 @@ onMounted(async () => {
                 :key="item.id"
                 type="button"
                 class="flex w-full items-center gap-2 border-b px-2.5 py-2 text-left last:border-b-0 hover:bg-muted"
-                :class="{ 'bg-muted': contactDialog.contactPhone === item.telefone }"
+                :class="{ 'bg-muted': contactDialog.contactPhone.replace(/\D/g, '') === item.telefone.replace(/\D/g, '') }"
                 @click="pickSystemContact(item)"
               >
                 <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
@@ -2193,7 +2195,7 @@ onMounted(async () => {
           </div>
           <div class="space-y-1">
             <Label class="text-xs">Telefone</Label>
-            <Input v-model="contactDialog.contactPhone" placeholder="Ex.: 5599999999999" :disabled="contactDialog.sending" />
+            <Input type="tel" inputmode="tel" v-maska="phoneMaskOptions" v-model="contactDialog.contactPhone" placeholder="Ex.: +55 (11) 99999-9999" :disabled="contactDialog.sending" />
           </div>
           <div class="space-y-1">
             <Label class="text-xs">Descrição (opcional)</Label>

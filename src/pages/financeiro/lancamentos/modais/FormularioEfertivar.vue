@@ -18,7 +18,7 @@ import { computed, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 
 const store = useLancamentosStore()
 const toast = useToast()

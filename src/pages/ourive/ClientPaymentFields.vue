@@ -10,7 +10,7 @@ import {
 import { moneyMaskOptions } from '@/lib/imaska'
 import { MetodoPagamento } from '@/types/schemas'
 import { formatPaymentMethodLabel } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 
 const amount = defineModel<string>('amount', { required: true })
 const method = defineModel<MetodoPagamento>('method')

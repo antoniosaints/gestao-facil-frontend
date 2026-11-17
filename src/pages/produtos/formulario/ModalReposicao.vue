@@ -4,7 +4,7 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { vMaska } from "maska/vue"
+import { vMaska } from "@/lib/maska"
 import { moneyMaskOptions } from '@/lib/imaska'
 import { ProdutoVarianteRepository } from '@/repositories/produto-repository'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
@@ -71,7 +71,7 @@ async function submit() {
                 <!-- Custo -->
                 <div class="md:col-span-6">
                     <label class="block text-sm font-medium mb-1">Custo unitário (R$)</label>
-                    <Input type="text" v-maska="moneyMaskOptions" v-model="formulario.custo" placeholder="Ex: 12.50" />
+                    <Input inputmode="decimal" type="text" v-maska="moneyMaskOptions" v-model="formulario.custo" placeholder="Ex: 12.50" />
                 </div>
 
                 <!-- Cliente / Fornecedor -->
@@ -93,14 +93,14 @@ async function submit() {
                 <!-- Desconto -->
                 <div class="md:col-span-6">
                     <label class="block text-sm font-medium mb-1">Desconto total (R$)</label>
-                    <Input type="text" v-maska="moneyMaskOptions" v-model="formulario.desconto"
+                    <Input inputmode="decimal" type="text" v-maska="moneyMaskOptions" v-model="formulario.desconto"
                         placeholder="Ex: 5.00" />
                 </div>
 
                 <!-- Frete -->
                 <div class="md:col-span-6">
                     <label class="block text-sm font-medium mb-1">Frete total (R$)</label>
-                    <Input type="text" v-maska="moneyMaskOptions" v-model="formulario.frete" placeholder="Ex: 10.00" />
+                    <Input inputmode="decimal" type="text" v-maska="moneyMaskOptions" v-model="formulario.frete" placeholder="Ex: 10.00" />
                 </div>
 
                 <!-- Nota Fiscal -->

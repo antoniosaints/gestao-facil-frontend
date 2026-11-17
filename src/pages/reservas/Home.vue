@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { phoneMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { computed, h, onMounted, reactive, ref, watch } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { useToast } from 'vue-toastification'
@@ -446,7 +448,7 @@ onMounted(load)
           </div>
           <div class="space-y-1.5"><Label for="reserva-inicio">Data e horário</Label><Input id="reserva-inicio" v-model="form.startAt" name="inicio" type="datetime-local" required /></div>
           <div class="space-y-1.5"><Label for="reserva-cliente">Nome do cliente</Label><Input id="reserva-cliente" v-model="form.name" name="cliente" autocomplete="name" placeholder="Ex.: Maria da Silva…" required /></div>
-          <div class="space-y-1.5"><Label for="reserva-telefone">Telefone</Label><Input id="reserva-telefone" v-model="form.phone" name="telefone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ex.: (11) 99999-9999…" required /></div>
+          <div class="space-y-1.5"><Label for="reserva-telefone">Telefone</Label><Input v-maska="phoneMaskOptions" id="reserva-telefone" v-model="form.phone" name="telefone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000" required /></div>
           <div class="sm:col-span-2 space-y-1.5"><Label for="reserva-email">E-mail</Label><Input id="reserva-email" v-model="form.email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" placeholder="Ex.: cliente@empresa.com…" /></div>
           <div class="sm:col-span-2 space-y-1.5"><Label for="reserva-observacoes">Observações</Label><Textarea id="reserva-observacoes" v-model="form.notes" name="observacoes" autocomplete="off" placeholder="Ex.: cliente prefere atendimento em sala silenciosa…" /></div>
           <div class="flex justify-end gap-2 sm:col-span-2"><Button type="button" variant="outline" @click="createOpen = false">Cancelar</Button><Button type="submit" :disabled="loading"><LoaderCircle v-if="loading" class="mr-2 h-4 w-4 animate-spin" />Criar reserva</Button></div>

@@ -9,7 +9,7 @@ import { moneyMaskOptions } from '@/lib/imaska';
 import { ArenaQuadrasRepository } from '@/repositories/quadras-repository';
 import { useQuadraStore } from '@/stores/arena/quadraStore';
 import { MapPinned } from 'lucide-vue-next';
-import { vMaska } from 'maska/vue';
+import { vMaska } from '@/lib/maska';
 import { POSITION, TYPE, useToast } from 'vue-toastification';
 
 const toast = useToast()
@@ -51,7 +51,7 @@ async function submit() {
                 </div>
                 <div class="w-full gap-2 flex flex-col">
                     <Label for="precoHora">Preço por hora</Label>
-                    <Input id="precoHora" v-maska="moneyMaskOptions" v-model="store.form.precoHora" required
+                    <Input inputmode="decimal" id="precoHora" v-maska="moneyMaskOptions" v-model="store.form.precoHora" required
                         placeholder="R$ 0,00" />
                 </div>
                 <div class="w-full gap-2 flex flex-col">

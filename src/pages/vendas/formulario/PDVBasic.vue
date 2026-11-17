@@ -552,7 +552,7 @@
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div class="space-y-1">
             <label class="text-sm font-medium">Quantidade de parcelas</label>
-            <Input v-model.number="crediarioParcelas" type="number" min="1" max="36" />
+            <Input placeholder="Ex.: 3" v-model.number="crediarioParcelas" type="number" min="1" max="36" />
           </div>
           <div class="space-y-1">
             <label class="text-sm font-medium">Data da primeira parcela</label>
@@ -1207,7 +1207,7 @@ import type {
 } from '@/types/schemas'
 import { formatCurrencyBR, formatPaymentMethodLabel, formatToNumberValue } from '@/utils/formatters'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import router from '@/router'
 import { useConfirm } from '@/composables/useConfirm'

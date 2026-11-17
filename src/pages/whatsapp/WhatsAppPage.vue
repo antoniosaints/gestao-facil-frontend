@@ -311,7 +311,7 @@
                   Copiar
                 </Button>
               </div>
-              <Input v-model="webhookUrls[callback.key]" class="font-mono text-xs" />
+              <Input placeholder="https://seu-sistema.com/webhook" v-model="webhookUrls[callback.key]" class="font-mono text-xs" />
             </div>
           </div>
 
@@ -605,11 +605,11 @@
         <div class="grid gap-4">
           <div class="space-y-1">
             <Label>Nome</Label>
-            <Input v-model="editInstanceForm.nome" />
+            <Input placeholder="Nome da conexão" v-model="editInstanceForm.nome" />
           </div>
           <div class="space-y-1">
             <Label>Instance ID</Label>
-            <Input v-model="editInstanceForm.instanceId" />
+            <Input placeholder="Identificador da instância" v-model="editInstanceForm.instanceId" />
           </div>
           <div class="space-y-1">
             <Label>Novo token</Label>

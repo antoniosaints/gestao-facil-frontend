@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { endOfDay, endOfMonth, format, startOfDay, startOfMonth } from 'date-fns'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'

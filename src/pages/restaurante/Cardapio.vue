@@ -728,11 +728,11 @@ onMounted(load)
             </div>
           <div class="space-y-2 sm:col-span-1">
             <Label for="order">Ordem</Label>
-            <Input id="order" v-model.number="itemForm.ordem" type="number" />
+            <Input placeholder="0" id="order" v-model.number="itemForm.ordem" type="number" />
           </div>
           <div v-if="itemForm.modoCadastro !== 'VINCULAR'" class="space-y-2">
             <Label for="catalog-price">Preço (R$)</Label>
-            <Input id="catalog-price" v-model.number="itemForm.preco" type="number" min="0" step="0.01" />
+            <Input placeholder="0,00" id="catalog-price" v-model.number="itemForm.preco" type="number" min="0" step="0.01" />
           </div>
           <div class="space-y-2 sm:col-span-2">
             <Label for="description">Descrição</Label>
@@ -803,14 +803,14 @@ onMounted(load)
             <Label>Tipo</Label>
             <Select v-model="groupForm.tipo"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="COMPLEMENTO">Complemento</SelectItem><SelectItem value="SABOR">Sabor</SelectItem></SelectContent></Select>
           </div>
-          <div class="space-y-2"><Label>Mínimo</Label><Input v-model.number="groupForm.minimo" type="number" min="0" /></div>
-          <div class="space-y-2"><Label>Máximo</Label><Input v-model.number="groupForm.maximo" type="number" min="1" /></div>
+          <div class="space-y-2"><Label>Mínimo</Label><Input placeholder="0" v-model.number="groupForm.minimo" type="number" min="0" /></div>
+          <div class="space-y-2"><Label>Máximo</Label><Input placeholder="0" v-model.number="groupForm.maximo" type="number" min="1" /></div>
           <div class="flex items-center justify-between rounded-lg border p-4 sm:col-span-2"><div><Label>Grupo ativo</Label><p class="text-xs text-muted-foreground">Grupos inativos não aparecem no cardápio público.</p></div><Switch v-model="groupForm.ativo" /></div>
           <div class="space-y-3 sm:col-span-2">
             <div class="flex items-center justify-between"><Label>Opções</Label><Button size="sm" variant="outline" @click="addOption"><Plus class="mr-2 h-4 w-4" />Adicionar opção</Button></div>
             <div v-for="(option, index) in groupForm.opcoes" :key="index" class="grid gap-3 rounded-xl border p-3 sm:grid-cols-[1fr_170px_1fr_auto] sm:items-end">
-              <div class="space-y-1"><Label :for="`option-${index}`">Nome</Label><Input :id="`option-${index}`" v-model="option.nome" /></div>
-              <div class="space-y-1"><Label>Acréscimo (R$)</Label><Input v-model.number="option.precoAdicional" type="number" min="0" step="0.01" /></div>
+              <div class="space-y-1"><Label :for="`option-${index}`">Nome</Label><Input placeholder="Nome da opção" :id="`option-${index}`" v-model="option.nome" /></div>
+              <div class="space-y-1"><Label>Acréscimo (R$)</Label><Input placeholder="0,00" v-model.number="option.precoAdicional" type="number" min="0" step="0.01" /></div>
               <div class="space-y-1">
                 <Label>Produto para estoque</Label>
                 <Select :model-value="option.produtoId ? String(option.produtoId) : 'NONE'" @update:model-value="option.produtoId = $event === 'NONE' ? null : Number($event)">

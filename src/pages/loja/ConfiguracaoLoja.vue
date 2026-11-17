@@ -3,9 +3,9 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { moneyMaskOptions } from '@/lib/imaska'
+import { moneyMaskOptions, phoneMaskOptions, cnpjMaskOptions } from '@/lib/imaska'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
@@ -350,14 +350,14 @@ onMounted(carregar)
                     <Label class="text-xs text-muted-foreground">Primária</Label>
                     <div class="flex items-center gap-2">
                       <input v-model="config.corPrimaria" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" />
-                      <Input v-model="config.corPrimaria" class="h-9" />
+                      <Input placeholder="Ex.: #7C3AED" v-model="config.corPrimaria" class="h-9" />
                     </div>
                   </div>
                   <div class="space-y-1">
                     <Label class="text-xs text-muted-foreground">Secundária</Label>
                     <div class="flex items-center gap-2">
                       <input v-model="config.corSecundaria" type="color" class="h-9 w-11 shrink-0 cursor-pointer rounded border bg-transparent" />
-                      <Input v-model="config.corSecundaria" class="h-9" />
+                      <Input placeholder="Ex.: #F5F3FF" v-model="config.corSecundaria" class="h-9" />
                     </div>
                   </div>
                 </div>
@@ -616,10 +616,10 @@ onMounted(carregar)
                 <Textarea :model-value="config.themeConfig?.company?.about || ''" rows="3" placeholder="Uma breve descrição da sua empresa." @update:model-value="updateCompany('about', String($event))" />
               </div>
               <div class="grid gap-3 sm:grid-cols-2">
-                <div class="space-y-1"><Label class="text-xs text-muted-foreground">Telefone</Label><Input :model-value="config.themeConfig?.company?.phone || ''" placeholder="(00) 0000-0000" @update:model-value="updateCompany('phone', String($event))" /></div>
-                <div class="space-y-1"><Label class="text-xs text-muted-foreground">WhatsApp</Label><Input :model-value="config.themeConfig?.company?.whatsapp || ''" placeholder="Ex.: 5599999999999" @update:model-value="updateCompany('whatsapp', String($event))" /></div>
+                <div class="space-y-1"><Label class="text-xs text-muted-foreground">Telefone</Label><Input type="tel" inputmode="tel" v-maska="phoneMaskOptions" :model-value="config.themeConfig?.company?.phone || ''" placeholder="(00) 00000-0000" @update:model-value="updateCompany('phone', String($event))" /></div>
+                <div class="space-y-1"><Label class="text-xs text-muted-foreground">WhatsApp</Label><Input type="tel" inputmode="tel" v-maska="phoneMaskOptions" :model-value="config.themeConfig?.company?.whatsapp || ''" placeholder="Ex.: +55 (11) 99999-9999" @update:model-value="updateCompany('whatsapp', String($event))" /></div>
                 <div class="space-y-1"><Label class="text-xs text-muted-foreground">E-mail</Label><Input :model-value="config.themeConfig?.company?.email || ''" type="email" placeholder="contato@sualoja.com" @update:model-value="updateCompany('email', String($event))" /></div>
-                <div class="space-y-1"><Label class="text-xs text-muted-foreground">CNPJ</Label><Input :model-value="config.themeConfig?.company?.cnpj || ''" placeholder="00.000.000/0000-00" @update:model-value="updateCompany('cnpj', String($event))" /></div>
+                <div class="space-y-1"><Label class="text-xs text-muted-foreground">CNPJ</Label><Input inputmode="text" v-maska="cnpjMaskOptions" :model-value="config.themeConfig?.company?.cnpj || ''" placeholder="00.000.000/0000-00" @update:model-value="updateCompany('cnpj', String($event))" /></div>
                 <div class="space-y-1 sm:col-span-2"><Label class="text-xs text-muted-foreground">Endereço</Label><Input :model-value="config.themeConfig?.company?.address || ''" placeholder="Rua, número, bairro, cidade/UF" @update:model-value="updateCompany('address', String($event))" /></div>
                 <div class="space-y-1 sm:col-span-2"><Label class="text-xs text-muted-foreground">Horário de atendimento</Label><Input :model-value="config.themeConfig?.company?.hours || ''" placeholder="Ex.: Seg a Sex, 8h às 18h" @update:model-value="updateCompany('hours', String($event))" /></div>
                 <div class="space-y-1"><Label class="text-xs text-muted-foreground">Instagram</Label><Input :model-value="config.themeConfig?.company?.instagram || ''" placeholder="@sualoja" @update:model-value="updateCompany('instagram', String($event))" /></div>

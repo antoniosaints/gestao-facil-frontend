@@ -149,7 +149,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { cepMaskOptions, phoneMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { type Contas } from '@/types/schemas'
 import http from '@/utils/axios'
 import { HashGenerator } from '@/utils/generators'

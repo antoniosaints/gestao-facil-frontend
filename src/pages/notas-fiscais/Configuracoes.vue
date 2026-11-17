@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { NotasFiscaisRepository, type FiscalConfig, type MunicipioIbge } from '@/repositories/notas-fiscais-repository'
 import { cepMaskOptions, cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import FiscalSetupGuide from './FiscalSetupGuide.vue'
 import GeranetCities from './GeranetCities.vue'
 
@@ -185,7 +185,7 @@ onMounted(load)
           <CardContent class="space-y-4">
             <div class="grid gap-4 sm:grid-cols-[110px_1fr_auto]"><div class="space-y-1.5"><Label for="uf">UF</Label><Input id="uf" v-model="config.uf" maxlength="2" class="uppercase" placeholder="MA" /></div><div class="space-y-1.5"><Label for="buscar-municipio">Consultar IBGE</Label><Input id="buscar-municipio" v-model="municipalitySearch" placeholder="Ex.: São Mateus" @keyup.enter="searchMunicipality" /></div><Button class="mt-auto" variant="outline" :disabled="searchingMunicipio" @click="searchMunicipality"><LoaderCircle v-if="searchingMunicipio" class="animate-spin" /><Search v-else />Buscar</Button></div>
             <div v-if="municipalities.length" class="max-h-44 overflow-y-auto rounded-lg border p-1"><button v-for="item in municipalities" :key="item.codigoIbge" type="button" class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-accent" @click="selectMunicipality(item)"><span>{{ item.nome }} — {{ item.uf }}</span><span class="font-mono text-xs text-muted-foreground">{{ item.codigoIbge }}</span></button></div>
-            <div class="grid gap-4 sm:grid-cols-2"><div class="space-y-1.5"><Label for="municipio">Município</Label><Input id="municipio" v-model="config.municipioNome" placeholder="Ex.: São Mateus do Maranhão" /></div><div class="space-y-1.5"><Label for="codigo-ibge">Código IBGE</Label><Input id="codigo-ibge" v-model="config.codigoMunicipioIbge" inputmode="numeric" placeholder="Ex.: 2111508" /></div></div>
+            <div class="grid gap-4 sm:grid-cols-2"><div class="space-y-1.5"><Label for="municipio">Município</Label><Input id="municipio" v-model="config.municipioNome" placeholder="Ex.: São Mateus do Maranhão" /></div><div class="space-y-1.5"><Label for="codigo-ibge">Código IBGE</Label><Input v-maska="'#######'" id="codigo-ibge" v-model="config.codigoMunicipioIbge" inputmode="numeric" placeholder="Ex.: 2111508" /></div></div>
           </CardContent>
         </Card>
       </div>
@@ -207,7 +207,7 @@ onMounted(load)
         <Card id="fiscal-nfse">
           <CardHeader><CardTitle class="flex items-center gap-2"><Cog class="size-5 text-primary" />Parâmetros da NFS-e</CardTitle><CardDescription>Na Geranet, item da lista, código nacional e tributação municipal são códigos diferentes.</CardDescription></CardHeader>
           <CardContent class="grid gap-4 sm:grid-cols-2">
-            <div class="space-y-1.5"><Label for="serie-rps">Série RPS</Label><Input id="serie-rps" v-model.number="config.serieRps" type="number" min="1" /></div><div class="space-y-1.5"><Label for="codigo-servico">Item da lista de serviços</Label><Input id="codigo-servico" v-model="config.codigoServicoPadrao" inputmode="numeric" placeholder="Ex.: 01.07 — conforme prefeitura" /></div>
+            <div class="space-y-1.5"><Label for="serie-rps">Série RPS</Label><Input placeholder="Ex.: 1" id="serie-rps" v-model.number="config.serieRps" type="number" min="1" /></div><div class="space-y-1.5"><Label for="codigo-servico">Item da lista de serviços</Label><Input id="codigo-servico" v-model="config.codigoServicoPadrao" inputmode="numeric" placeholder="Ex.: 01.07 — conforme prefeitura" /></div>
             <div class="space-y-1.5"><Label for="codigo-servico-nacional">Código nacional</Label><Input id="codigo-servico-nacional" v-model="config.nfse.codigoServicoNacional" inputmode="numeric" placeholder="Ex.: 010701" /></div><div class="space-y-1.5"><Label for="codigo-tributacao-municipio">Tributação municipal</Label><Input id="codigo-tributacao-municipio" v-model="config.nfse.codigoTributacaoMunicipio" placeholder="Conforme prefeitura" /></div>
             <div class="space-y-1.5"><Label for="codigo-cnae-nfse">CNAE</Label><Input id="codigo-cnae-nfse" v-model="config.nfse.codigoCnae" inputmode="numeric" placeholder="Opcional" /></div><div class="space-y-1.5"><Label for="data-opcao-simples">Opção pelo Simples</Label><Input id="data-opcao-simples" v-model="config.nfse.dataOpcaoSimples" type="date" /></div>
             <div class="space-y-1.5"><Label for="regime-especial-nfse">Regime especial NFS-e</Label><Input id="regime-especial-nfse" v-model="config.nfse.regimeEspecialTributacao" maxlength="2" placeholder="1 - conforme município" /></div>
@@ -244,7 +244,7 @@ onMounted(load)
       <Card v-if="config.nfeHabilitado || config.nfceHabilitado" id="fiscal-nfe">
         <CardHeader><CardTitle class="flex items-center gap-2"><FileKey2 class="size-5 text-primary" />Parâmetros de produtos</CardTitle><CardDescription>Estes parâmetros são compartilhados por NF-e e NFC-e. A série e o CSC da NFC-e ficam na aba própria.</CardDescription></CardHeader>
         <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="space-y-1.5"><Label for="serie-nfe">Série NF-e</Label><Input id="serie-nfe" v-model.number="config.serieNfe" type="number" min="1" /></div>
+          <div class="space-y-1.5"><Label for="serie-nfe">Série NF-e</Label><Input placeholder="Ex.: 1" id="serie-nfe" v-model.number="config.serieNfe" type="number" min="1" /></div>
           <div class="space-y-1.5 sm:col-span-2"><Label for="natureza-operacao">Natureza da operação</Label><Input id="natureza-operacao" v-model="config.nfe.naturezaOperacao" placeholder="Ex.: Venda de mercadoria" /></div>
           <div class="space-y-1.5"><Label for="tipo-atividade">Tipo de atividade</Label><Select v-model="config.nfe.tipoAtividade"><SelectTrigger id="tipo-atividade"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">Comércio</SelectItem><SelectItem value="2">Serviço</SelectItem><SelectItem value="3">Comércio e serviço</SelectItem><SelectItem value="4">Indústria e comércio</SelectItem><SelectItem value="5">Indústria, comércio e serviço</SelectItem></SelectContent></Select></div>
           <div class="space-y-1.5"><Label for="presenca">Presença</Label><Select v-model="config.nfe.indicadorPresenca"><SelectTrigger id="presenca"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">Presencial</SelectItem><SelectItem value="2">Internet</SelectItem><SelectItem value="3">Teleatendimento</SelectItem><SelectItem value="4">Entrega</SelectItem><SelectItem value="5">Fora do estabelecimento</SelectItem><SelectItem value="9">Outros</SelectItem></SelectContent></Select></div>
@@ -254,7 +254,7 @@ onMounted(load)
       </Card>
       <Card v-if="config.nfeHabilitado || config.nfceHabilitado">
         <CardHeader><CardTitle>Responsável técnico e CSRT</CardTitle><CardDescription>Preencha apenas quando a SEFAZ da UF exigir. O CSRT é cifrado e não volta pela API.</CardDescription></CardHeader>
-        <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><div class="space-y-1.5"><Label>CNPJ</Label><Input v-model="config.responsavelTecnico.cnpj" inputmode="numeric" /></div><div class="space-y-1.5"><Label>Contato</Label><Input v-model="config.responsavelTecnico.contato" /></div><div class="space-y-1.5"><Label>E-mail</Label><Input v-model="config.responsavelTecnico.email" type="email" /></div><div class="space-y-1.5"><Label>Telefone</Label><Input v-model="config.responsavelTecnico.telefone" inputmode="tel" /></div><div class="space-y-1.5"><Label>ID CSRT</Label><Input v-model="config.responsavelTecnico.csrtId" /></div><div class="space-y-1.5"><Label>CSRT</Label><Input v-model="responsavelTecnicoCsrt" type="password" :placeholder="config.responsavelTecnico.csrtConfigurado ? 'Configurado — informe para substituir' : 'Token fornecido pela SEFAZ'" /></div></CardContent>
+        <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><div class="space-y-1.5"><Label>CNPJ</Label><Input v-maska="cpfCnpjMaskOptions" placeholder="00.000.000/0000-00" v-model="config.responsavelTecnico.cnpj" inputmode="numeric" /></div><div class="space-y-1.5"><Label>Contato</Label><Input placeholder="Nome do responsável técnico" v-model="config.responsavelTecnico.contato" /></div><div class="space-y-1.5"><Label>E-mail</Label><Input placeholder="nome@email.com" v-model="config.responsavelTecnico.email" type="email" /></div><div class="space-y-1.5"><Label>Telefone</Label><Input type="tel" v-maska="phoneMaskOptions" placeholder="(00) 00000-0000" v-model="config.responsavelTecnico.telefone" inputmode="tel" /></div><div class="space-y-1.5"><Label>ID CSRT</Label><Input placeholder="Ex.: 01" v-model="config.responsavelTecnico.csrtId" /></div><div class="space-y-1.5"><Label>CSRT</Label><Input v-model="responsavelTecnicoCsrt" type="password" :placeholder="config.responsavelTecnico.csrtConfigurado ? 'Configurado — informe para substituir' : 'Token fornecido pela SEFAZ'" /></div></CardContent>
       </Card>
       </TabsContent>
 
@@ -263,8 +263,8 @@ onMounted(load)
       <Card id="fiscal-nfce" class="border-primary/20">
         <CardHeader><CardTitle>Parâmetros NFC-e</CardTitle><CardDescription>O CSC é protegido e seu token não volta pela API após salvar.</CardDescription></CardHeader>
         <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div class="space-y-1.5"><Label for="serie-nfce">Série NFC-e</Label><Input id="serie-nfce" v-model.number="config.serieNfce" type="number" min="1" :disabled="!config.nfceHabilitado" /></div>
-          <div class="space-y-1.5"><Label for="csc-id">CSC ID</Label><Input id="csc-id" v-model="config.nfce.cscId" :disabled="!config.nfceHabilitado" /></div>
+          <div class="space-y-1.5"><Label for="serie-nfce">Série NFC-e</Label><Input placeholder="Ex.: 1" id="serie-nfce" v-model.number="config.serieNfce" type="number" min="1" :disabled="!config.nfceHabilitado" /></div>
+          <div class="space-y-1.5"><Label for="csc-id">CSC ID</Label><Input placeholder="Ex.: 000001" id="csc-id" v-model="config.nfce.cscId" :disabled="!config.nfceHabilitado" /></div>
           <div class="space-y-1.5"><Label for="csc-token">CSC token</Label><Input id="csc-token" v-model="nfceCscToken" :disabled="!config.nfceHabilitado" type="password" autocomplete="new-password" :placeholder="config.nfce.cscConfigurado ? 'Configurado — informe para substituir' : 'Token fornecido pela SEFAZ'" /></div>
         </CardContent>
       </Card>

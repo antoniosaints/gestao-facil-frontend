@@ -34,7 +34,7 @@ import {
   Tag,
 } from 'lucide-vue-next'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { formatToNumberValue } from '@/utils/formatters'
 import ModalCategoriaProduto from './ModalCategoriaProduto.vue'
 import CalculadoraPrecificacao from './CalculadoraPrecificacao.vue'
@@ -389,7 +389,7 @@ async function submit() {
                 <Calculator class="h-3 w-3" /> Calcular preço
               </Button>
             </div>
-            <Input
+            <Input inputmode="decimal"
               v-model="store.form.preco"
               v-maska="moneyMaskOptions"
               icon-label="R$"
@@ -410,7 +410,7 @@ async function submit() {
                 >* <span class="text-xs" v-if="estoqueReadonly">Não editável.</span></span
               >
             </label>
-            <Input
+            <Input placeholder="0"
               v-model="store.form.estoque"
               :iconLabel="unidadeSelecionada"
               :iconLabelTitle="`Unidade: ${unidadeSelecionada}`"
@@ -421,6 +421,7 @@ async function submit() {
                 errors.estoque && 'border-danger',
               ]"
               type="number"
+              step="0.001"
               min="0"
               @update:model-value="clearError('estoque')"
             />
@@ -431,11 +432,12 @@ async function submit() {
             <label class="mb-1.5 block text-sm font-medium text-foreground">
               Estoque mínimo <span class="text-red-500">*</span>
             </label>
-            <Input
+            <Input placeholder="0"
               v-model="store.form.minimo"
               :iconLabel="unidadeSelecionada"
               :iconLabelTitle="`Unidade: ${unidadeSelecionada}`"
               type="number"
+              step="0.001"
               min="0"
               :disabled="!controlaEstoqueAtivo"
               :class="[
@@ -459,7 +461,7 @@ async function submit() {
               <label class="mb-1.5 block text-sm font-medium text-foreground"
                 >Preço de compra</label
               >
-              <Input
+              <Input inputmode="decimal"
                 v-model="store.form.precoCompra"
                 v-maska="moneyMaskOptions"
                 icon-label="R$"
@@ -476,7 +478,7 @@ async function submit() {
                 Preço promocional
                 <Tag class="h-3.5 w-3.5 text-red-500" />
               </label>
-              <Input
+              <Input inputmode="decimal"
                 v-model="store.form.precoPromocional"
                 v-maska="moneyMaskOptions"
                 icon-label="R$"

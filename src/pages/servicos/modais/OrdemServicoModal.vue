@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ProdutoVarianteRepository } from "@/repositories/produto-repository";
 import { computed, onMounted, ref, watch } from "vue";
 import { POSITION, useToast } from "vue-toastification";
-import { vMaska } from "maska/vue"
+import { vMaska } from "@/lib/maska"
 import { moneyMaskOptions } from "@/lib/imaska";
 import { FilePlus, HandCoins, PackagePlus, Trash } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
@@ -349,7 +349,7 @@ onMounted(() => {
             :min="0">
             <NumberFieldContent>
               <NumberFieldDecrement />
-              <NumberFieldInput />
+              <NumberFieldInput placeholder="Ex.: 30" />
               <NumberFieldIncrement />
             </NumberFieldContent>
           </NumberField>
@@ -374,7 +374,7 @@ onMounted(() => {
         </div>
         <div class="col-span-6 md:col-span-2">
           <label for="input_desconto_venda_formulario" class="block text-sm mb-1">Valor desconto</label>
-          <Input v-model="(store.form.desconto as number)" type="text" id="input_desconto_venda_formulario"
+          <Input inputmode="decimal" v-model="(store.form.desconto as number)" type="text" id="input_desconto_venda_formulario"
             name="desconto" v-maska="moneyMaskOptions"
             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
             placeholder="Ex: 1,99" />
@@ -451,7 +451,7 @@ onMounted(() => {
             id="quantidade_carrinho_adicionar" :default-value="1" :min="1" :max="maxQuantidadeAdd">
             <NumberFieldContent>
               <NumberFieldDecrement />
-              <NumberFieldInput />
+              <NumberFieldInput placeholder="1" />
               <NumberFieldIncrement />
             </NumberFieldContent>
           </NumberField>
@@ -459,7 +459,7 @@ onMounted(() => {
 
         <div class="col-span-6 md:col-span-2">
           <label class="block text-sm mb-1">Preço <span class="text-red-500">*</span></label>
-          <Input v-model="(addItemForm.preco as number)" :disabled="!ableAdd" type="text" placeholder="R$ 0,00"
+          <Input inputmode="decimal" v-model="(addItemForm.preco as number)" :disabled="!ableAdd" type="text" placeholder="R$ 0,00"
             v-maska="moneyMaskOptions" id="input_preco_venda_formulario"
             class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
         </div>

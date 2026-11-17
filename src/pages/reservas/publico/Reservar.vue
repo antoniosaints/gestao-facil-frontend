@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { phoneMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
@@ -402,7 +404,7 @@ watch([selectedDate, selectedResourceId], () => {
                 </div>
                 <div>
                   <Label for="cliente-whatsapp">WhatsApp</Label>
-                  <Input id="cliente-whatsapp" v-model="form.phone" name="telefone" type="tel" inputmode="tel" autocomplete="tel" class="mt-1 h-11 rounded-xl" placeholder="Ex.: (11) 99999-9999…" />
+                  <Input v-maska="phoneMaskOptions" id="cliente-whatsapp" v-model="form.phone" name="telefone" type="tel" inputmode="tel" autocomplete="tel" class="mt-1 h-11 rounded-xl" placeholder="(00) 00000-0000" />
                 </div>
                 <div>
                   <Label for="cliente-email">E-mail</Label>

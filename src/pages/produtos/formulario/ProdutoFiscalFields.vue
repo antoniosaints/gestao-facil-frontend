@@ -6,15 +6,15 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">NCM</label>
-        <Input v-model="form.ncm" type="text" placeholder="Ex: 6109.10.00" class="bg-background dark:bg-background/60" />
+        <Input inputmode="numeric" v-maska="'########'" v-model="form.ncm" type="text" placeholder="Ex.: 61091000" class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">CEST</label>
-        <Input v-model="form.cest" type="text" placeholder="Ex: 28.038.00" class="bg-background dark:bg-background/60" />
+        <Input inputmode="numeric" v-maska="'#######'" v-model="form.cest" type="text" placeholder="Ex.: 2803800" class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">CFOP</label>
-        <Input v-model="form.cfop" type="text" placeholder="Ex: 5102" class="bg-background dark:bg-background/60" />
+        <Input inputmode="numeric" v-maska="'####'" v-model="form.cfop" type="text" placeholder="Ex: 5102" class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Código fiscal</label>
@@ -23,11 +23,11 @@
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">GTIN/EAN</label>
-        <Input v-model="form.ean" type="text" inputmode="numeric" placeholder="Sem GTIN, deixe vazio" class="bg-background dark:bg-background/60" />
+        <Input v-maska="'##############'" v-model="form.ean" type="text" inputmode="numeric" placeholder="Sem GTIN, deixe vazio" class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Tipo do item</label>
-        <Input v-model="form.tipoItem" type="text" maxlength="2" placeholder="00" class="bg-background dark:bg-background/60" />
+        <Input inputmode="numeric" v-maska="'##'" v-model="form.tipoItem" type="text" maxlength="2" placeholder="00" class="bg-background dark:bg-background/60" />
       </div>
 
       <div class="md:col-span-12">
@@ -51,11 +51,11 @@
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">CSOSN ICMS</label>
-        <Input v-model="form.icmsCsosn" type="text" maxlength="3" placeholder="Ex.: 102 (Simples/MEI)" class="bg-background dark:bg-background/60" />
+        <Input inputmode="numeric" v-maska="'###'" v-model="form.icmsCsosn" type="text" maxlength="3" placeholder="Ex.: 102 (Simples/MEI)" class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">CST ICMS</label>
-        <Input v-model="form.icmsCst" type="text" maxlength="3" placeholder="Ex.: 00 (regime normal)" class="bg-background dark:bg-background/60" />
+        <Input inputmode="numeric" v-maska="'###'" v-model="form.icmsCst" type="text" maxlength="3" placeholder="Ex.: 00 (regime normal)" class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota IPI (%)</label>
@@ -63,19 +63,19 @@
           class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-12 mt-2 border-t pt-4"><p class="text-sm font-semibold">ICMS-ST, crédito e desoneração</p><p class="text-xs text-muted-foreground">A Geranet recebe ICMS-ST por MVA (modalidade 4). Crédito, desoneração, IPI, FCP e DIFAL ficam registrados na matriz fiscal e dependem do contrato específico da Geranet para envio.</p></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Modalidade BC-ST</label><Input v-model="form.icmsModBcSt" maxlength="1" placeholder="Ex.: 4" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">MVA-ST (%)</label><Input v-model="form.icmsMva" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Redução BC-ST (%)</label><Input v-model="form.icmsReducaoBcSt" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota ICMS-ST (%)</label><Input v-model="form.icmsAliquotaSt" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">FCP próprio (%)</label><Input v-model="form.fcpAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">FCP-ST (%)</label><Input v-model="form.fcpStAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Crédito Simples (%)</label><Input v-model="form.icmsCreditoAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Valor desonerado</label><Input v-model="form.icmsDesoneradoValor" type="number" min="0" step="0.01" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Motivo desoneração</label><Input v-model="form.icmsDesoneradoMotivo" maxlength="2" placeholder="Ex.: 3" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">CST IPI</label><Input v-model="form.ipiCst" maxlength="2" placeholder="Ex.: 99" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Enquadramento IPI</label><Input v-model="form.ipiCodigoEnquadramento" maxlength="3" placeholder="Ex.: 999" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">DIFAL interna (%)</label><Input v-model="form.difalAliquotaInterna" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
-      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">FCP DIFAL (%)</label><Input v-model="form.difalFcpAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Modalidade BC-ST</label><Input inputmode="numeric" v-maska="'#'" v-model="form.icmsModBcSt" maxlength="1" placeholder="Ex.: 4" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">MVA-ST (%)</label><Input placeholder="0,0000" v-model="form.icmsMva" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Redução BC-ST (%)</label><Input placeholder="0,0000" v-model="form.icmsReducaoBcSt" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota ICMS-ST (%)</label><Input placeholder="0,0000" v-model="form.icmsAliquotaSt" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">FCP próprio (%)</label><Input placeholder="0,0000" v-model="form.fcpAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">FCP-ST (%)</label><Input placeholder="0,0000" v-model="form.fcpStAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Crédito Simples (%)</label><Input placeholder="0,0000" v-model="form.icmsCreditoAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Valor desonerado</label><Input placeholder="0,00" v-model="form.icmsDesoneradoValor" type="number" min="0" step="0.01" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Motivo desoneração</label><Input inputmode="numeric" v-maska="'##'" v-model="form.icmsDesoneradoMotivo" maxlength="2" placeholder="Ex.: 3" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">CST IPI</label><Input inputmode="numeric" v-maska="'##'" v-model="form.ipiCst" maxlength="2" placeholder="Ex.: 99" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">Enquadramento IPI</label><Input inputmode="numeric" v-maska="'###'" v-model="form.ipiCodigoEnquadramento" maxlength="3" placeholder="Ex.: 999" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">DIFAL interna (%)</label><Input placeholder="0,0000" v-model="form.difalAliquotaInterna" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
+      <div class="md:col-span-3"><label class="mb-1.5 block text-sm font-medium text-foreground">FCP DIFAL (%)</label><Input placeholder="0,0000" v-model="form.difalFcpAliquota" type="number" min="0" step="0.0001" class="bg-background dark:bg-background/60" /></div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota PIS (%)</label>
         <Input v-model="form.aliquotaPis" type="number" min="0" step="0.01" placeholder="0,00"
@@ -83,7 +83,7 @@
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">CST PIS</label>
-        <Input v-model="form.pisCst" type="text" maxlength="2" placeholder="Ex.: 08" class="bg-background dark:bg-background/60" />
+        <Input inputmode="numeric" v-maska="'##'" v-model="form.pisCst" type="text" maxlength="2" placeholder="Ex.: 08" class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota COFINS (%)</label>
@@ -92,7 +92,7 @@
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">CST COFINS</label>
-        <Input v-model="form.cofinsCst" type="text" maxlength="2" placeholder="Ex.: 08" class="bg-background dark:bg-background/60" />
+        <Input inputmode="numeric" v-maska="'##'" v-model="form.cofinsCst" type="text" maxlength="2" placeholder="Ex.: 08" class="bg-background dark:bg-background/60" />
       </div>
       <div class="md:col-span-3">
         <label class="mb-1.5 block text-sm font-medium text-foreground">Alíquota ISS (%)</label>
@@ -104,6 +104,7 @@
 </template>
 
 <script setup lang="ts">
+import { vMaska } from '@/lib/maska'
 import { ref } from 'vue'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'

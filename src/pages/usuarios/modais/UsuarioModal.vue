@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { phoneMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import ModalView from '@/components/formulario/ModalView.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,7 +56,7 @@ async function submit() {
                 </div>
                 <div class="w-full gap-2 flex flex-col">
                     <Label for="telefone">Telefone</Label>
-                    <Input id="telefone" v-model="store.form.telefone" placeholder="Telefone" />
+                    <Input type="tel" inputmode="tel" v-maska="phoneMaskOptions" id="telefone" v-model="store.form.telefone" placeholder="(00) 00000-0000" />
                 </div>
                 <div class="w-full gap-2 flex flex-col">
                     <Label for="endereco">Endereço</Label>

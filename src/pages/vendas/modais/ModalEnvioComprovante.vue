@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { phoneMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { computed, ref, watch } from 'vue'
 import { Link2, MessageCircleMore, Send } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
@@ -139,7 +141,7 @@ async function enviarComprovanteViaApi() {
           <label for="whatsapp-comprovante" class="text-xs font-medium text-foreground">
             WhatsApp para envio
           </label>
-          <Input id="whatsapp-comprovante" v-model="numeroPreview" type="tel" inputmode="tel"
+          <Input v-maska="phoneMaskOptions" id="whatsapp-comprovante" v-model="numeroPreview" type="tel" inputmode="tel"
             autocomplete="tel" maxlength="20" placeholder="(00) 00000-0000"
             :aria-invalid="Boolean(numeroPreview) && !numeroEnvioValido" />
           <div class="flex items-center justify-between gap-2">

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { vMaska } from '@/lib/maska'
 import { computed } from 'vue'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -61,7 +62,7 @@ function toggleIbs(enabled: boolean) {
     </div>
     <div v-if="simples" class="space-y-1.5">
       <Label for="nfse-total-simples">Percentual total de tributos do Simples (%)</Label
-      ><Input
+      ><Input placeholder="0,00"
         id="nfse-total-simples"
         :model-value="form.percentualTributosSimplesNacional ?? undefined"
         @update:model-value="
@@ -80,7 +81,7 @@ function toggleIbs(enabled: boolean) {
     </div>
     <div v-if="config?.nfse?.issRetido === '1'" class="space-y-1.5">
       <Label for="nfse-iss-retido">Valor do ISS retido</Label
-      ><Input
+      ><Input placeholder="0,00"
         id="nfse-iss-retido"
         :model-value="form.valorIssRetido ?? undefined"
         @update:model-value="form.valorIssRetido = $event === '' ? null : Number($event)"
@@ -99,7 +100,7 @@ function toggleIbs(enabled: boolean) {
     <div class="mt-4 grid gap-4 sm:grid-cols-2">
       <div class="space-y-1.5">
         <Label for="nfse-classificacao">Classificação tributária</Label
-        ><Input
+        ><Input placeholder="Código de classificação tributária"
           id="nfse-classificacao"
           v-model="form.codigoClassificacaoTributaria"
           maxlength="16"
@@ -108,7 +109,7 @@ function toggleIbs(enabled: boolean) {
       </div>
       <div class="space-y-1.5">
         <Label for="nfse-nbs">Código NBS</Label
-        ><Input id="nfse-nbs" v-model="form.codigoNbs" maxlength="16" :disabled="disabled" />
+        ><Input placeholder="Código NBS do serviço" id="nfse-nbs" v-model="form.codigoNbs" maxlength="16" :disabled="disabled" />
         <p class="text-xs text-muted-foreground">
           Preencha quando exigido e aceito pelo município.
         </p>
@@ -125,7 +126,7 @@ function toggleIbs(enabled: boolean) {
       </div>
       <div class="space-y-1.5">
         <Label for="nfse-incidencia">Município de incidência do ISS (IBGE)</Label
-        ><Input
+        ><Input v-maska="'#######'" placeholder="Ex.: 3550308"
           id="nfse-incidencia"
           v-model="form.municipioIncidencia"
           maxlength="7"
@@ -163,7 +164,7 @@ function toggleIbs(enabled: boolean) {
     <div v-if="form.ibscbs" class="mt-4 grid gap-4 sm:grid-cols-2">
       <div v-for="field in ibsFields" :key="field.key" class="space-y-1.5">
         <Label :for="`nfse-ibs-${field.key}`">{{ field.label }}</Label
-        ><Input
+        ><Input :placeholder="field.label"
           :id="`nfse-ibs-${field.key}`"
           v-model="form.ibscbs[field.key]"
           :maxlength="field.maxlength"
@@ -211,7 +212,7 @@ function toggleIbs(enabled: boolean) {
       </div>
       <div v-for="field in ibsRates" :key="field.key" class="space-y-1.5">
         <Label :for="`nfse-ibs-${field.key}`">{{ field.label }} (%)</Label
-        ><Input
+        ><Input placeholder="0,0000"
           :id="`nfse-ibs-${field.key}`"
           v-model.number="form.ibscbs[field.key].aliquota"
           type="number"
@@ -221,7 +222,7 @@ function toggleIbs(enabled: boolean) {
           required
           :disabled="disabled"
         /><Label :for="`nfse-ibs-reducao-${field.key}`">Redução da alíquota (%)</Label
-        ><Input
+        ><Input placeholder="0,0000"
           :id="`nfse-ibs-reducao-${field.key}`"
           v-model.number="form.ibscbs[field.key].reducaoAliquota"
           type="number"

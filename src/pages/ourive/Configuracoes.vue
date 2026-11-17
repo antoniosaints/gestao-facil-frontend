@@ -287,7 +287,7 @@ import { OuriveRepository } from '@/repositories/ourive-repository'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 const toast = useToast()
 const saving = ref(false)
 const quickModalOpen = ref(false)

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input'
 import { preciseMoneyMaskOptions } from '@/lib/imaska'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { Label } from '@/components/ui/label'
 import {
   Activity,
@@ -515,7 +515,7 @@ onMounted(load)
             <div class="grid gap-3 sm:grid-cols-2">
               <div class="space-y-1">
                 <Label>Quantidade de tokens</Label>
-                <Input v-model.number="tokensCalculadora" type="number" min="0" step="1" />
+                <Input placeholder="Ex.: 1000000" v-model.number="tokensCalculadora" type="number" min="0" step="1" />
               </div>
               <div class="space-y-1">
                 <div class="flex items-center justify-between gap-2 pt-2">

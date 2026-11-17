@@ -195,7 +195,7 @@ import { Input } from '@/components/ui/input'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { OuriveRepository } from '@/repositories/ourive-repository'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 
 const toast = useToast()
 const tab = ref<'repasses' | 'historico' | 'prolabore'>('repasses')

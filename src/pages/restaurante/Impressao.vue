@@ -637,7 +637,7 @@ onMounted(() => loadData())
                       <SelectItem value="80mm">80 mm</SelectItem>
                     </SelectContent>
                   </Select></div>
-                <div class="space-y-1.5"><Label :for="`copies-${point.id}`">Vias</Label><Input
+                <div class="space-y-1.5"><Label :for="`copies-${point.id}`">Vias</Label><Input placeholder="0"
                     :id="`copies-${point.id}`" :disabled="!canConfigure" :model-value="ruleDrafts[point.id].vias"
                     type="number" min="1" max="5"
                     @update:model-value="updateRuleDraft(point.id, { vias: Number($event) })" /></div>
@@ -725,7 +725,7 @@ onMounted(() => loadData())
                   </div>
                   <div class="grid gap-1">
                     <div class="flex h-5 items-center"><Label :for="`extra-copies-${point.id}-${index}`">Vias</Label>
-                    </div><Input :id="`extra-copies-${point.id}-${index}`" class="w-full" :disabled="!canConfigure"
+                    </div><Input placeholder="0" :id="`extra-copies-${point.id}-${index}`" class="w-full" :disabled="!canConfigure"
                       :model-value="destination.vias" type="number" min="1" max="5"
                       @update:model-value="updateAdditionalDestination(point.id, index, { vias: Number($event) })" />
                   </div>

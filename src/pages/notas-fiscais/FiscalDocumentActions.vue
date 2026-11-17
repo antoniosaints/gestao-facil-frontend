@@ -271,7 +271,7 @@ async function cancel() {
     <form class="space-y-4 px-4 pb-4" @submit.prevent="cancel">
       <div v-if="document.tipo === 'NFSE'" class="space-y-2">
         <Label :for="`cancel-code-${document.id}`">Código de cancelamento</Label
-        ><Input
+        ><Input placeholder="Código fornecido pelo município"
           :id="`cancel-code-${document.id}`"
           v-model="cancellationCode"
           inputmode="numeric"
@@ -286,7 +286,7 @@ async function cancel() {
       </div>
       <div class="space-y-2">
         <Label :for="`cancel-reason-${document.id}`">Justificativa</Label
-        ><Textarea
+        ><Textarea placeholder="Descreva o motivo desta operação"
           :id="`cancel-reason-${document.id}`"
           v-model="reason"
           minlength="15"

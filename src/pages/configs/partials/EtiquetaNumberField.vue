@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-1.5">
     <Label :for="id" class="text-xs">{{ label }}</Label>
-    <Input :id="id" type="number" :step="step" :min="min" inputmode="decimal" class="bg-card h-9"
+    <Input placeholder="0" :id="id" type="number" :step="step" :min="min" inputmode="decimal" class="bg-card h-9"
       :model-value="modelValue ?? ''" @update:model-value="onInput" />
   </div>
 </template>

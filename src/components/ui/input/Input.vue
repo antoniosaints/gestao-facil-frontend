@@ -2,6 +2,7 @@
 import { type Component, type HTMLAttributes, useAttrs } from 'vue'
 import { useVModel } from '@vueuse/core'
 import { cn } from '@/lib/utils'
+import { resolveInputMode } from '@/lib/inputMode'
 
 defineOptions({ inheritAttrs: false })
 
@@ -36,12 +37,14 @@ const inputClass =
     v-if="!props.iconLabel"
     v-model="modelValue"
     v-bind="attrs"
+    :inputmode="resolveInputMode(attrs)"
     :class="cn(inputClass, props.class)"
   />
   <div v-else class="relative w-full">
     <input
       v-model="modelValue"
       v-bind="attrs"
+      :inputmode="resolveInputMode(attrs)"
       :class="cn(inputClass, props.iconLabelPosition === 'left' ? 'pl-12' : 'pr-12', props.class)"
     />
     <span

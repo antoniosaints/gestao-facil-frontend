@@ -410,7 +410,7 @@ onMounted(loadData)
                 <p class="mt-1 text-[11px] text-muted-foreground">Após receber uma mensagem do cliente, o agente aguardará este tempo antes de consultar a IA e responder.</p>
               </div>
               <div class="relative">
-                <Input id="agent-delay" v-model.number="form.delaySegundos" type="number" min="0" max="120" step="1" class="pr-9" />
+                <Input placeholder="Ex.: 3" id="agent-delay" v-model.number="form.delaySegundos" type="number" min="0" max="120" step="1" class="pr-9" />
                 <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground">seg</span>
               </div>
             </div>

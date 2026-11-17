@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Copy, ExternalLink, Receipt } from 'lucide-vue-next'
@@ -110,7 +110,7 @@ async function submit() {
           <EmptyDescription>O link foi gerado. Voce pode copiar ou abrir em uma nova guia.</EmptyDescription>
         </EmptyHeader>
         <EmptyContent class="space-y-3">
-          <Input v-model="store.checkoutForm.linkPayment" class="text-xs" />
+          <Input placeholder="O link de pagamento aparecerá aqui" v-model="store.checkoutForm.linkPayment" class="text-xs" />
           <div class="flex justify-end gap-2">
             <Button type="button" class="text-white" @click="copiarLink">
               <Copy class="h-4 w-4" />

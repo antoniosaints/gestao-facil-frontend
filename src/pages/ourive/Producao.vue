@@ -31,7 +31,7 @@ import { OuriveRepository, type OuriveCapability } from '@/repositories/ourive-r
 import { useUiStore } from '@/stores/ui/uiStore'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 
 const router = useRouter()
 const toast = useToast()

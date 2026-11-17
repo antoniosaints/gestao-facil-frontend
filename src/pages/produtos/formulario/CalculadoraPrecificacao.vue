@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Calculator, CircleDollarSign, Plus, Trash2, TrendingUp } from 'lucide-vue-next'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -175,7 +175,7 @@ function aplicarPreco() {
           </p>
         </div>
         <div class="relative">
-          <Input
+          <Input placeholder="Ex.: 30"
             v-model.number="lucroPercentual"
             type="number"
             inputmode="decimal"

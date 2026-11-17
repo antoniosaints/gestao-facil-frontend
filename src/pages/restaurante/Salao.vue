@@ -432,13 +432,13 @@ onMounted(() => carregar())
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="space-y-2">
             <Label>Pessoas</Label
-            ><Input v-model.number="abertura.pessoas" type="number" min="1" max="99" />
+            ><Input placeholder="Ex.: 2" v-model.number="abertura.pessoas" type="number" min="1" max="99" />
           </div>
           <div class="space-y-2">
-            <Label>Cliente (opcional)</Label><Input v-model="abertura.clienteNome" />
+            <Label>Cliente (opcional)</Label><Input placeholder="Nome do cliente" v-model="abertura.clienteNome" />
           </div>
           <div class="space-y-2 sm:col-span-2">
-            <Label>Observação</Label><Textarea v-model="abertura.observacao" />
+            <Label>Observação</Label><Textarea placeholder="Informações sobre o atendimento" v-model="abertura.observacao" />
           </div>
         </div>
         <DialogFooter

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import ModalView from '@/components/formulario/ModalView.vue';
-import { vMaska } from "maska/vue"
+import { vMaska } from "@/lib/maska"
 import { moneyMaskOptions } from "@/lib/imaska";
 import { useVendasStore } from '@/stores/vendas/useVenda';
 import { Input } from '@/components/ui/input';
@@ -58,7 +58,7 @@ function definirValorProporcionalVenda() {
             <div class="bg-background dark:bg-background-dark rounded-md w-full h-full">
                 <div class="grid w-full items-center gap-1.5">
                     <Label for="valorProposto">Valor proposto</Label>
-                    <Input v-model="(propostaPreco as string)" id="valorProposto" v-maska="moneyMaskOptions" type="text"
+                    <Input inputmode="decimal" v-model="(propostaPreco as string)" id="valorProposto" v-maska="moneyMaskOptions" type="text"
                         placeholder="R$ 0,00" />
                 </div>
             </div>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { phoneMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import {
   Camera as CameraIcon,
@@ -407,7 +409,7 @@ async function saveProfile() {
 
                 <div class="space-y-2">
                   <Label for="telefone">Telefone</Label>
-                  <Input id="telefone" v-model="usuarioProfile.telefone" placeholder="Ex.: (11) 99999-1234" />
+                  <Input type="tel" inputmode="tel" v-maska="phoneMaskOptions" id="telefone" v-model="usuarioProfile.telefone" placeholder="(00) 00000-0000" />
                 </div>
 
                 <div class="space-y-2 md:col-span-2">

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { phoneMaskOptions, cepMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -127,9 +129,9 @@ function close() { emit('update:open', false) }
             <section class="space-y-3">
               <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Seus dados</h3>
               <div class="grid gap-3 sm:grid-cols-2">
-                <div><Label class="text-xs">Nome*</Label><Input v-model="checkout.customer.name" class="mt-1" /></div>
-                <div><Label class="text-xs">Telefone*</Label><Input v-model="checkout.customer.phone" class="mt-1" /></div>
-                <div class="sm:col-span-2"><Label class="text-xs">E-mail</Label><Input v-model="checkout.customer.email" type="email" class="mt-1" /></div>
+                <div><Label for="store-checkout-name" class="text-xs">Nome*</Label><Input id="store-checkout-name" placeholder="Seu nome completo" v-model="checkout.customer.name" class="mt-1" /></div>
+                <div><Label for="store-checkout-phone" class="text-xs">Telefone*</Label><Input id="store-checkout-phone" type="tel" inputmode="tel" v-maska="phoneMaskOptions" placeholder="(00) 00000-0000" v-model="checkout.customer.phone" class="mt-1" /></div>
+                <div class="sm:col-span-2"><Label for="store-checkout-email" class="text-xs">E-mail</Label><Input id="store-checkout-email" placeholder="nome@email.com" v-model="checkout.customer.email" type="email" class="mt-1" /></div>
               </div>
             </section>
 
@@ -140,12 +142,12 @@ function close() { emit('update:open', false) }
                 <label v-if="store.capabilities.localDelivery" class="choice" :class="{ active: checkout.deliveryType === 'ENTREGA_LOCAL' }"><input v-model="checkout.deliveryType" type="radio" value="ENTREGA_LOCAL" class="accent-[var(--shop-primary)]" /> Entrega local</label>
               </div>
               <div v-if="checkout.deliveryType === 'ENTREGA_LOCAL'" class="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-3">
-                <div><Label class="text-xs">CEP</Label><Input v-model="checkout.customer.postalCode" class="mt-1" /></div>
-                <div class="sm:col-span-2"><Label class="text-xs">Endereço</Label><Input v-model="checkout.customer.address" class="mt-1" /></div>
-                <div><Label class="text-xs">Número</Label><Input v-model="checkout.customer.number" class="mt-1" /></div>
-                <div><Label class="text-xs">Bairro</Label><Input v-model="checkout.customer.district" class="mt-1" /></div>
-                <div><Label class="text-xs">Cidade</Label><Input v-model="checkout.customer.city" class="mt-1" /></div>
-                <div><Label class="text-xs">UF</Label><Input v-model="checkout.customer.state" maxlength="2" class="mt-1" /></div>
+                <div><Label for="store-checkout-postalCode" class="text-xs">CEP</Label><Input id="store-checkout-postalCode" inputmode="numeric" v-maska="cepMaskOptions" placeholder="00000-000" v-model="checkout.customer.postalCode" class="mt-1" /></div>
+                <div class="sm:col-span-2"><Label for="store-checkout-address" class="text-xs">Endereço</Label><Input id="store-checkout-address" placeholder="Rua ou avenida" v-model="checkout.customer.address" class="mt-1" /></div>
+                <div><Label for="store-checkout-number" class="text-xs">Número</Label><Input id="store-checkout-number" placeholder="Ex.: 120 ou S/N" v-model="checkout.customer.number" class="mt-1" /></div>
+                <div><Label for="store-checkout-district" class="text-xs">Bairro</Label><Input id="store-checkout-district" placeholder="Nome do bairro" v-model="checkout.customer.district" class="mt-1" /></div>
+                <div><Label for="store-checkout-city" class="text-xs">Cidade</Label><Input id="store-checkout-city" placeholder="Nome da cidade" v-model="checkout.customer.city" class="mt-1" /></div>
+                <div><Label for="store-checkout-state" class="text-xs">UF</Label><Input id="store-checkout-state" placeholder="Ex.: SP" v-model="checkout.customer.state" maxlength="2" class="mt-1" /></div>
               </div>
             </section>
 

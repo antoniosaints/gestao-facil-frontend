@@ -24,7 +24,7 @@
 
         <div v-else-if="resultado" class="grid gap-2">
           <label class="text-xs font-medium text-muted-foreground">Resultado (editável)</label>
-          <Textarea v-model="resultado" rows="6" class="bg-background dark:bg-background/60" />
+          <Textarea placeholder="O texto sugerido aparecerá aqui" v-model="resultado" rows="6" class="bg-background dark:bg-background/60" />
         </div>
 
         <p v-else class="py-4 text-center text-sm text-muted-foreground">

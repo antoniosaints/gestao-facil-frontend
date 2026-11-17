@@ -80,7 +80,7 @@
               </div>
               <div class="space-y-2 md:col-span-2">
                 <Label>Subtítulo</Label>
-                <Textarea v-model="config.hero.subtitle" class="min-h-24" maxlength="500" />
+                <Textarea placeholder="Apresente o principal benefício do sistema" v-model="config.hero.subtitle" class="min-h-24" maxlength="500" />
               </div>
               <div class="space-y-2">
                 <Label>Valor mensal do plano</Label>
@@ -88,11 +88,11 @@
               </div>
               <div class="space-y-2">
                 <Label>Dias grátis</Label>
-                <Input v-model.number="config.hero.trialDays" type="number" min="0" step="1" />
+                <Input placeholder="Ex.: 7" v-model.number="config.hero.trialDays" type="number" min="0" step="1" />
               </div>
               <div class="space-y-2 md:col-span-2">
                 <Label>Texto alternativo da imagem</Label>
-                <Input v-model="config.hero.imageAlt" maxlength="180" />
+                <Input placeholder="Descreva o conteúdo da imagem" v-model="config.hero.imageAlt" maxlength="180" />
               </div>
               <div class="space-y-2 md:col-span-2">
                 <Label>URL/referência da imagem</Label>
@@ -118,8 +118,8 @@
               </div>
               <div class="mt-4 grid grid-cols-2 gap-3">
                 <div v-for="(stat, index) in config.hero.stats" :key="index" class="rounded-xl border bg-card p-3">
-                  <Input v-model="stat.value" class="h-8 text-sm font-semibold" maxlength="30" />
-                  <Input v-model="stat.label" class="mt-2 h-8 text-xs" maxlength="60" />
+                  <Input placeholder="Ex.: 1.000+" v-model="stat.value" class="h-8 text-sm font-semibold" maxlength="30" />
+                  <Input placeholder="Ex.: empresas atendidas" v-model="stat.label" class="mt-2 h-8 text-xs" maxlength="60" />
                   <Button variant="ghost" size="sm" class="mt-2 h-7 px-2 text-destructive" @click="removeStat(index)">
                     Remover
                   </Button>
@@ -151,7 +151,7 @@
                 <div class="grid gap-3 md:grid-cols-[1fr_150px]">
                   <div class="space-y-2">
                     <Label>Título</Label>
-                    <Input v-model="feature.title" maxlength="100" />
+                    <Input placeholder="Título da funcionalidade" v-model="feature.title" maxlength="100" />
                   </div>
                   <div class="space-y-2">
                     <Label>Ícone</Label>
@@ -161,7 +161,7 @@
                   </div>
                   <div class="space-y-2 md:col-span-2">
                     <Label>Descrição</Label>
-                    <Textarea v-model="feature.description" maxlength="400" />
+                    <Textarea placeholder="Descreva o benefício desta funcionalidade" v-model="feature.description" maxlength="400" />
                   </div>
                 </div>
               </div>
@@ -192,11 +192,11 @@
                 <div class="grid gap-3 md:grid-cols-2">
                   <div class="space-y-2">
                     <Label>Nome</Label>
-                    <Input v-model="app.title" maxlength="100" />
+                    <Input placeholder="Nome do aplicativo" v-model="app.title" maxlength="100" />
                   </div>
                   <div class="space-y-2">
                     <Label>Categoria</Label>
-                    <Input v-model="app.category" maxlength="80" />
+                    <Input placeholder="Ex.: Vendas" v-model="app.category" maxlength="80" />
                   </div>
                   <div class="space-y-2">
                     <Label>Valor mensal</Label>
@@ -210,7 +210,7 @@
                   </div>
                   <div class="space-y-2 md:col-span-2">
                     <Label>Descrição</Label>
-                    <Textarea v-model="app.description" maxlength="400" />
+                    <Textarea placeholder="Descreva o aplicativo" v-model="app.description" maxlength="400" />
                   </div>
                 </div>
               </div>
@@ -247,11 +247,11 @@
               <div class="space-y-3">
                 <div class="space-y-2">
                   <Label>Pergunta</Label>
-                  <Input v-model="faq.q" maxlength="180" />
+                  <Input placeholder="Escreva a pergunta frequente" v-model="faq.q" maxlength="180" />
                 </div>
                 <div class="space-y-2">
                   <Label>Resposta</Label>
-                  <Textarea v-model="faq.a" class="min-h-24" maxlength="700" />
+                  <Textarea placeholder="Escreva a resposta" v-model="faq.a" class="min-h-24" maxlength="700" />
                 </div>
               </div>
             </div>
@@ -279,7 +279,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'

@@ -23,8 +23,8 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { moneyMaskOptions, phoneMaskOptions, cpfCnpjMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -396,11 +396,11 @@ async function submit() {
               </div>
               <div class="space-y-1">
                 <Label>Telefone</Label>
-                <Input v-model="dados.telefone" placeholder="Opcional" />
+                <Input type="tel" inputmode="tel" v-maska="phoneMaskOptions" v-model="dados.telefone" placeholder="(00) 00000-0000" />
               </div>
               <div class="space-y-1 md:col-span-2">
                 <Label>Documento (CPF/CNPJ)</Label>
-                <Input v-model="dados.documento" placeholder="Opcional" />
+                <Input inputmode="numeric" v-maska="cpfCnpjMaskOptions" v-model="dados.documento" placeholder="CPF ou CNPJ" />
               </div>
             </div>
           </CardContent>

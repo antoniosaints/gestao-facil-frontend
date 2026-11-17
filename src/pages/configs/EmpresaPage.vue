@@ -106,7 +106,7 @@
                             </div>
                             <div class="space-y-2">
                                 <Label for="cnpj">CNPJ/CPF *</Label>
-                                <Input id="cnpj" v-maska="cpfCnpjMaskOptions" v-model="form.documento" required
+                                <Input inputmode="numeric" id="cnpj" v-maska="cpfCnpjMaskOptions" v-model="form.documento" required
                                     placeholder="00.000.000/0001-00" />
                             </div>
                             <div class="space-y-2">
@@ -142,7 +142,7 @@
                         <div class="grid md:grid-cols-2 gap-4">
                             <div class="space-y-2">
                                 <Label for="telefone">Telefone</Label>
-                                <Input id="telefone" v-maska="phoneMaskOptions" placeholder="(00) 0000-0000"
+                                <Input inputmode="tel" id="telefone" v-maska="phoneMaskOptions" placeholder="(00) 0000-0000"
                                     v-model="form.telefone" />
                             </div>
                             <div class="space-y-2">
@@ -167,7 +167,7 @@
                             </div>
                             <div class="space-y-2">
                                 <Label for="cep">CEP</Label>
-                                <Input id="cep" placeholder="CEP" v-model="form.cep" />
+                                <Input inputmode="numeric" v-maska="cepMaskOptions" id="cep" placeholder="00000-000" v-model="form.cep" />
                             </div>
                         </div>
                     </section>
@@ -196,8 +196,8 @@ import { Separator } from '@/components/ui/separator'
 import { ContaRepository, type UpdateConta } from '@/repositories/conta-repository'
 import { useToast } from 'vue-toastification'
 import { Building, Camera, CircleCheck, CircleSlash, FileDigit, LoaderIcon, Phone, ShieldCheck, ShieldX } from 'lucide-vue-next'
-import { vMaska } from 'maska/vue'
-import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
+import { cpfCnpjMaskOptions, phoneMaskOptions, cepMaskOptions } from '@/lib/imaska'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { formatCurrencyBR, formatDateToPtBR, getLettersName } from '@/utils/formatters'

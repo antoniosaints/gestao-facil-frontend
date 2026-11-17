@@ -14,7 +14,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { computed, ref, watch } from 'vue'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { moneyMaskOptions } from '@/lib/imaska'
 import type { ClientesFornecedores, FormularioLancamento } from '@/types/schemas'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
@@ -651,7 +651,7 @@ watch(
               <label for="valorTotalLancamento" class="mb-1 block text-sm font-medium">{{
                 valorInputLabel
               }}</label>
-              <Input
+              <Input inputmode="decimal"
                 id="valorTotalLancamento"
                 v-model="store.form.valorTotal"
                 v-maska="moneyMaskOptions"
@@ -672,7 +672,7 @@ watch(
                   {{ isRecorrente ? '(indisponível em recorrentes)' : '(indisponível com valor fixo)' }}
                 </span>
               </label>
-              <Input
+              <Input inputmode="decimal"
                 id="descontoFormularioLancamento"
                 v-model="store.form.desconto"
                 :disabled="descontoDesabilitado"
@@ -933,7 +933,7 @@ watch(
                 <label for="valorEntradaLancamento" class="mb-1 block text-sm font-medium"
                   >Valor Entrada</label
                 >
-                <Input
+                <Input inputmode="decimal"
                   id="valorEntradaLancamento"
                   v-model="store.form.valorEntrada"
                   :required="params.hasEntrada"

@@ -137,7 +137,7 @@ import { Input } from '@/components/ui/input'
 import { OuriveRepository } from '@/repositories/ourive-repository'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 
 const router = useRouter()
 const toast = useToast()

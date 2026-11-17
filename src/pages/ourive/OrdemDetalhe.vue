@@ -1563,7 +1563,7 @@ import { moneyMaskOptions } from '@/lib/imaska'
 import { formatCurrencyBR, formatPaymentMethodLabel, formatToNumberValue } from '@/utils/formatters'
 import { MetodoPagamento } from '@/types/schemas'
 import ClientPaymentFields from './ClientPaymentFields.vue'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { hasPermission } from '@/hooks/authorize'
 const route = useRoute()
 const router = useRouter()

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { phoneMaskOptions, cpfCnpjMaskOptions, cepMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import FormSection from './FormSection.vue'
@@ -51,7 +53,7 @@ const states =
         autocomplete="email"
     /></label>
     <label
-      >Telefone<Input
+      >Telefone<Input inputmode="tel" v-maska="phoneMaskOptions"
         v-model="form.telefone"
         placeholder="(00) 00000-0000"
         type="tel"
@@ -59,7 +61,7 @@ const states =
         autocomplete="tel"
     /></label>
     <label
-      >WhatsApp<Input
+      >WhatsApp<Input inputmode="tel" v-maska="phoneMaskOptions"
         v-model="form.whastapp"
         placeholder="(00) 00000-0000"
         type="tel"
@@ -73,14 +75,14 @@ const states =
     </summary>
     <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
       <label
-        >CPF ou CNPJ<Input
+        >CPF ou CNPJ<Input v-maska="cpfCnpjMaskOptions"
           v-model="form.documento"
-          placeholder="CPF ou CNPJ, somente números"
+          placeholder="CPF ou CNPJ"
           inputmode="numeric"
           maxlength="18"
       /></label>
       <label
-        >CEP<Input
+        >CEP<Input v-maska="cepMaskOptions"
           v-model="form.cep"
           placeholder="00000-000"
           inputmode="numeric"
@@ -130,7 +132,7 @@ const states =
           @update:model-value="emit('change')"
       /></label>
       <label
-        >Código do município<Input
+        >Código do município<Input v-maska="'#######'"
           v-model="form.municipio"
           placeholder="Código IBGE do município"
           inputmode="numeric"

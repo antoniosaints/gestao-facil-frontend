@@ -87,7 +87,7 @@ import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue'
 import CobrancaRapidaModal from '../inadimplencia/CobrancaRapidaModal.vue'
 import ExportarCobrancaPdf from './modais/ExportarCobrancaPdf.vue'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 
 type ParcelaDetalhe = ParcelaFinanceiro & {
   ContaFinanceira?: ContasFinanceiro | null
@@ -1616,7 +1616,7 @@ watch(() => store.filters.update, loadLancamento)
         </div>
         <div>
           <Label>Valor</Label>
-          <Input
+          <Input inputmode="decimal"
             v-model="novaParcela.valor"
             type="text"
             required

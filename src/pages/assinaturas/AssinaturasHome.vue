@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -737,7 +737,7 @@ async function save() {
                 </div>
                 <div>
                   <Label class="mb-1.5 block text-sm font-medium">Quantidade</Label>
-                  <Input v-model="item.quantidade" class="bg-background dark:bg-background/60" type="number" min="1"
+                  <Input placeholder="1" v-model="item.quantidade" class="bg-background dark:bg-background/60" type="number" min="1"
                     step="1" />
                 </div>
                 <div class="xl:col-span-2">

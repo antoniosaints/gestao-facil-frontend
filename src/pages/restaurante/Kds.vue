@@ -536,7 +536,7 @@ onBeforeUnmount(() => {
             <Label>Nome</Label><Input v-model="form.nome" placeholder="Ex.: Cozinha" />
           </div>
           <div class="space-y-2">
-            <Label>Ordem</Label><Input v-model.number="form.ordem" type="number" />
+            <Label>Ordem</Label><Input placeholder="0" v-model.number="form.ordem" type="number" />
           </div>
           <div class="flex items-center justify-between rounded-lg border p-3 sm:col-span-2">
             <div>

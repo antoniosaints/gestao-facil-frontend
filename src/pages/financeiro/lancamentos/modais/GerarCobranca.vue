@@ -8,7 +8,7 @@ import { moneyMaskOptions } from '@/lib/imaska'
 import { CircleAlert, Copy, ExternalLink, FilePlus, Loader2, Receipt } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
-import { vMaska } from "maska/vue"
+import { vMaska } from "@/lib/maska"
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
@@ -159,7 +159,7 @@ watch(
                         <label class="block text-sm font-medium mb-1">
                             Valor da cobrança *
                         </label>
-                        <Input v-model="storeCobranca.form.valor" v-maska="moneyMaskOptions" type="text"
+                        <Input inputmode="decimal" v-model="storeCobranca.form.valor" v-maska="moneyMaskOptions" type="text"
                             placeholder="R$ 0,00" />
                     </div>
                     <div class="md:col-span-12"
@@ -224,7 +224,7 @@ watch(
                             </EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
-                            <Input v-model="linkPayment" class="text-xs" />
+                            <Input placeholder="O link de pagamento aparecerá aqui" v-model="linkPayment" class="text-xs" />
                             <div class="flex gap-2">
                                 <Button @click="copiarLink" variant="default" class="text-white">
                                     <Copy />

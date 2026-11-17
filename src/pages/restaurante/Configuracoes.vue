@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { cepMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
@@ -864,7 +866,7 @@ onMounted(async () => {
           </CardContent>
           <CardContent v-else class="grid gap-5 sm:grid-cols-2">
             <div class="space-y-2">
-              <Label for="nome">Nome público</Label><Input id="nome" v-model="form.nomePublico"
+              <Label for="nome">Nome público</Label><Input placeholder="Nome exibido aos clientes" id="nome" v-model="form.nomePublico"
                 :aria-invalid="!nomeValido" />
               <p v-if="!nomeValido" class="text-xs text-destructive">
                 Informe pelo menos dois caracteres.
@@ -911,7 +913,7 @@ onMounted(async () => {
               </p>
             </div>
             <div class="space-y-2">
-              <Label for="minimo">Pedido mínimo (R$)</Label><Input :icon-label="'R$'" :icon-label-position="'left'" id="minimo" v-model.number="form.pedidoMinimo"
+              <Label for="minimo">Pedido mínimo (R$)</Label><Input placeholder="0,00" :icon-label="'R$'" :icon-label-position="'left'" id="minimo" v-model.number="form.pedidoMinimo"
                 type="number" min="0" step="0.01" />
             </div>
             <div class="space-y-2">
@@ -927,15 +929,15 @@ onMounted(async () => {
               </Select>
             </div>
             <div v-if="form.modoFrete === 'FIXO'" class="space-y-2">
-              <Label for="taxa">Taxa fixa de delivery (R$)</Label><Input :icon-label="CreditCard" :icon-label-position="'left'" id="taxa" v-model.number="form.taxaFixa"
+              <Label for="taxa">Taxa fixa de delivery (R$)</Label><Input placeholder="0,00" :icon-label="CreditCard" :icon-label-position="'left'" id="taxa" v-model.number="form.taxaFixa"
                 type="number" min="0" step="0.01" />
             </div>
             <div v-if="form.modoFrete === 'FIXO'" class="space-y-2">
-              <Label for="gratis">Frete grátis acima de (R$)</Label><Input :icon-label="Truck" :icon-label-position="'left'" id="gratis" v-model="freteGratis"
+              <Label for="gratis">Frete grátis acima de (R$)</Label><Input placeholder="Sem limite mínimo" :icon-label="Truck" :icon-label-position="'left'" id="gratis" v-model="freteGratis"
                 type="number" min="0" step="0.01" />
             </div>
             <div v-else class="space-y-2 sm:col-span-2">
-              <Label for="contingencia">Taxa de contingência (R$)</Label><Input :icon-label="'R$'" :icon-label-position="'left'" id="contingencia" v-model="contingencia"
+              <Label for="contingencia">Taxa de contingência (R$)</Label><Input placeholder="0,00" :icon-label="'R$'" :icon-label-position="'left'" id="contingencia" v-model="contingencia"
                 type="number" min="0" step="0.01" />
               <p class="text-xs text-muted-foreground">
                 Deixe vazio para recusar endereços fora das zonas.
@@ -1139,7 +1141,7 @@ onMounted(async () => {
             <Label>Nome</Label><Input v-model="zoneForm.nome" placeholder="Ex.: Centro" />
           </div>
           <div class="space-y-2">
-            <Label>Cidade</Label><Input :model-value="zoneForm.cidade ?? ''"
+            <Label>Cidade</Label><Input placeholder="Nome da cidade" :model-value="zoneForm.cidade ?? ''"
               @update:model-value="zoneForm.cidade = String($event) || null" />
           </div>
           <div class="space-y-2 sm:col-span-2">
@@ -1147,28 +1149,28 @@ onMounted(async () => {
             <p class="text-xs text-muted-foreground">Separe os bairros por vírgula.</p>
           </div>
           <div class="space-y-2">
-            <Label>CEP inicial</Label><Input :model-value="zoneForm.cepInicial ?? ''" placeholder="00000000"
+            <Label>CEP inicial</Label><Input inputmode="numeric" v-maska="cepMaskOptions" :model-value="zoneForm.cepInicial ?? ''" placeholder="00000-000"
               @update:model-value="zoneForm.cepInicial = String($event) || null" />
           </div>
           <div class="space-y-2">
-            <Label>CEP final</Label><Input :model-value="zoneForm.cepFinal ?? ''" placeholder="99999999"
+            <Label>CEP final</Label><Input inputmode="numeric" v-maska="cepMaskOptions" :model-value="zoneForm.cepFinal ?? ''" placeholder="99999-999"
               @update:model-value="zoneForm.cepFinal = String($event) || null" />
           </div>
           <div class="space-y-2">
-            <Label>Taxa (R$)</Label><Input v-model.number="zoneForm.taxa" type="number" min="0" step="0.01" />
+            <Label>Taxa (R$)</Label><Input placeholder="0,00" v-model.number="zoneForm.taxa" type="number" min="0" step="0.01" />
           </div>
           <div class="space-y-2">
-            <Label>Pedido mínimo (R$)</Label><Input v-model.number="zoneForm.pedidoMinimo" type="number" min="0"
+            <Label>Pedido mínimo (R$)</Label><Input placeholder="0,00" v-model.number="zoneForm.pedidoMinimo" type="number" min="0"
               step="0.01" />
           </div>
           <div class="space-y-2">
-            <Label>Frete grátis acima de (R$)</Label><Input :model-value="zoneForm.freteGratisAcima ?? ''" type="number"
+            <Label>Frete grátis acima de (R$)</Label><Input placeholder="Sem limite mínimo" :model-value="zoneForm.freteGratisAcima ?? ''" type="number"
               min="0" step="0.01" @update:model-value="
                 zoneForm.freteGratisAcima = $event === '' ? null : Number($event)
                 " />
           </div>
           <div class="space-y-2">
-            <Label>Prioridade</Label><Input v-model.number="zoneForm.prioridade" type="number" />
+            <Label>Prioridade</Label><Input placeholder="0" v-model.number="zoneForm.prioridade" type="number" />
           </div>
           <div class="flex items-center justify-between rounded-lg border p-4 sm:col-span-2">
             <div>

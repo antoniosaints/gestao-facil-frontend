@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { isAxiosError } from 'axios'
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { cpfCnpjMaskOptions, phoneMaskOptions } from '@/lib/imaska'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -421,7 +421,7 @@ onUnmounted(() => {
                 :key="field.key"
                 class="block space-y-2"
                 ><span class="text-sm font-medium">{{ field.label }}</span
-                ><Input
+                ><Input :placeholder="field.key === 'firstName' ? 'Seu nome' : 'Seu sobrenome'"
                   :id="field.key"
                   v-model="store.form[field.key as 'firstName' | 'lastName']"
                   :autocomplete="field.autocomplete"
@@ -437,7 +437,7 @@ onUnmounted(() => {
             </div>
             <label class="block space-y-2"
               ><span class="text-sm font-medium">E-mail</span
-              ><Input
+              ><Input placeholder="nome@email.com"
                 id="email"
                 v-model="store.form.email"
                 type="email"
@@ -450,7 +450,7 @@ onUnmounted(() => {
             >
             <label class="block space-y-2"
               ><span class="text-sm font-medium">Telefone / WhatsApp</span
-              ><Input
+              ><Input inputmode="tel" placeholder="(00) 00000-0000"
                 id="phone"
                 v-model="store.form.phone"
                 v-maska="phoneMaskOptions"
@@ -464,7 +464,7 @@ onUnmounted(() => {
             >
             <label class="block space-y-2"
               ><span class="text-sm font-medium">Senha</span
-              ><Input
+              ><Input placeholder="Crie sua senha"
                 id="password"
                 v-model="store.form.password"
                 type="password"
@@ -482,13 +482,13 @@ onUnmounted(() => {
             >
             <label class="block space-y-2"
               ><span class="text-sm font-medium">Código de indicação (opcional)</span
-              ><Input id="indicacao" v-model="store.form.indicacao" class="uppercase"
+              ><Input placeholder="Código de indicação, se houver" id="indicacao" v-model="store.form.indicacao" class="uppercase"
             /></label>
           </div>
           <div v-else-if="step === 2" class="space-y-5">
             <label class="block space-y-2"
               ><span class="text-sm font-medium">Nome do empreendimento</span
-              ><Input
+              ><Input placeholder="Nome da sua empresa"
                 id="storeName"
                 v-model="store.form.storeName"
                 autocomplete="organization"
@@ -548,7 +548,7 @@ onUnmounted(() => {
             </div>
             <label class="block space-y-2"
               ><span class="text-sm font-medium">CPF ou CNPJ (opcional)</span
-              ><Input
+              ><Input placeholder="00.000.000/0000-00"
                 id="cnpj"
                 v-model="store.form.cnpj"
                 v-maska="cpfCnpjMaskOptions"

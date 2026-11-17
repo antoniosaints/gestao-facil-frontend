@@ -256,8 +256,8 @@ onMounted(load)
 
     <ModalView v-model:open="modalOpen" :title="editingId ? 'Editar informativo' : 'Novo informativo'" description="O conteúdo aparece de forma discreta no status dos serviços." size="2xl" :icon="Megaphone">
       <form class="space-y-4 px-4" @submit.prevent="save">
-        <div class="grid gap-4 md:grid-cols-2"><div class="space-y-1.5"><Label for="inf-titulo">Título</Label><Input id="inf-titulo" v-model="form.titulo" maxlength="120" required /></div><div class="space-y-1.5"><Label for="inf-integracao">Integração/área</Label><Input id="inf-integracao" v-model="form.integracao" maxlength="60" placeholder="WhatsApp" required /></div></div>
-        <div class="space-y-1.5"><Label for="inf-mensagem">Mensagem</Label><Textarea id="inf-mensagem" v-model="form.mensagem" rows="5" maxlength="2000" required /><p class="text-xs text-muted-foreground">Texto simples, sem HTML. Seja objetivo e informe o impacto real.</p></div>
+        <div class="grid gap-4 md:grid-cols-2"><div class="space-y-1.5"><Label for="inf-titulo">Título</Label><Input placeholder="Título do informativo" id="inf-titulo" v-model="form.titulo" maxlength="120" required /></div><div class="space-y-1.5"><Label for="inf-integracao">Integração/área</Label><Input id="inf-integracao" v-model="form.integracao" maxlength="60" placeholder="WhatsApp" required /></div></div>
+        <div class="space-y-1.5"><Label for="inf-mensagem">Mensagem</Label><Textarea placeholder="Escreva a mensagem do informativo" id="inf-mensagem" v-model="form.mensagem" rows="5" maxlength="2000" required /><p class="text-xs text-muted-foreground">Texto simples, sem HTML. Seja objetivo e informe o impacto real.</p></div>
         <div class="rounded-xl border border-blue-500/25 bg-blue-500/5 p-3">
           <div class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Prévia no cliente · {{ form.integracao || 'Sistema' }}</div>
           <div class="mt-1 text-sm font-semibold">{{ form.titulo || 'Título do informativo' }}</div>

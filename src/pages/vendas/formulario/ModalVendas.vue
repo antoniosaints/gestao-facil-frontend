@@ -11,7 +11,7 @@ import type { ClientesFornecedores, FormularioVenda } from "@/types/schemas";
 import http from "@/utils/axios";
 import { computed, onMounted, ref, watch } from "vue";
 import { POSITION, useToast } from "vue-toastification";
-import { vMaska } from "maska/vue"
+import { vMaska } from "@/lib/maska"
 import { moneyMaskOptions } from "@/lib/imaska";
 import { HandCoins, Trash } from "lucide-vue-next";
 import Calendarpicker from "@/components/formulario/calendarpicker.vue";
@@ -372,7 +372,7 @@ watch(() => store.openModal, (open) => {
                         :default-value="0" :min="0">
                         <NumberFieldContent>
                             <NumberFieldDecrement />
-                            <NumberFieldInput />
+                            <NumberFieldInput placeholder="Ex.: 30" />
                             <NumberFieldIncrement />
                         </NumberFieldContent>
                     </NumberField>
@@ -397,7 +397,7 @@ watch(() => store.openModal, (open) => {
                 </div>
                 <div class="col-span-6 md:col-span-2">
                     <label for="input_desconto_venda_formulario" class="block text-sm mb-1">Desconto</label>
-                    <Input v-model="(store.form.desconto as string)" type="text" id="input_desconto_venda_formulario"
+                    <Input inputmode="decimal" v-model="(store.form.desconto as string)" type="text" id="input_desconto_venda_formulario"
                         name="desconto" v-maska="moneyMaskOptions"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark"
                         placeholder="Ex: 1,99" />
@@ -426,7 +426,7 @@ watch(() => store.openModal, (open) => {
                     <template v-if="paymentMethod === 'CREDIARIO'">
                         <div class="col-span-6 md:col-span-4">
                             <label class="block text-sm mb-1">Parcelas <span class="text-red-500">*</span></label>
-                            <Input v-model.number="crediarioParcelas" type="number" min="1" max="36"
+                            <Input placeholder="Ex.: 3" v-model.number="crediarioParcelas" type="number" min="1" max="36"
                                 class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
                         </div>
                         <div class="col-span-6 md:col-span-4">
@@ -499,7 +499,7 @@ watch(() => store.openModal, (open) => {
                         id="quantidade_carrinho_adicionar" :default-value="1" :min="1" :max="maxQuantidadeAdd">
                         <NumberFieldContent>
                             <NumberFieldDecrement />
-                            <NumberFieldInput />
+                            <NumberFieldInput placeholder="1" />
                             <NumberFieldIncrement />
                         </NumberFieldContent>
                     </NumberField>
@@ -507,7 +507,7 @@ watch(() => store.openModal, (open) => {
 
                 <div class="col-span-8 md:col-span-2">
                     <label class="block text-sm mb-1">Preço <span class="text-red-500">*</span></label>
-                    <Input v-model="(addItemForm.preco as number)" :disabled="!ableAdd" type="text"
+                    <Input inputmode="decimal" v-model="(addItemForm.preco as number)" :disabled="!ableAdd" type="text"
                         placeholder="R$ 0,00" v-maska="moneyMaskOptions" id="input_preco_venda_formulario"
                         class="w-full p-2 rounded-md border bg-card dark:bg-card-dark border-border dark:border-border-dark" />
                 </div>

@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ServicoRepository } from '@/repositories/servico-repository';
 import { useServicoStore } from '@/stores/servicos/useServicos';
 import { useToast } from 'vue-toastification';
-import { vMaska } from 'maska/vue';
+import { vMaska } from '@/lib/maska';
 import { moneyMaskOptions } from '@/lib/imaska';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,7 @@ async function submit() {
                 </div>
                 <div class="w-full gap-2 flex flex-col">
                     <Label for="preco">Preço</Label>
-                    <Input id="preco" type="text" v-maska="moneyMaskOptions" v-model="store.form.preco"
+                    <Input inputmode="decimal" id="preco" type="text" v-maska="moneyMaskOptions" v-model="store.form.preco"
                         placeholder="Preço" />
                 </div>
                 <div class="w-full gap-2 flex flex-col">

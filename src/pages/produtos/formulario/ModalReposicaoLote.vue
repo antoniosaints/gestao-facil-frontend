@@ -4,7 +4,7 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { moneyMaskOptions } from '@/lib/imaska'
 import { ProdutoRepository } from '@/repositories/produto-repository'
 import { formatToNumberValue, formatCurrencyBR } from '@/utils/formatters'
@@ -170,11 +170,11 @@ async function submit() {
         </div>
         <div class="md:col-span-6">
           <label class="mb-1 block text-sm font-medium">Frete total (R$)</label>
-          <Input type="text" v-maska="moneyMaskOptions" v-model="cabecalho.frete" placeholder="Ex: 10,00" />
+          <Input inputmode="decimal" type="text" v-maska="moneyMaskOptions" v-model="cabecalho.frete" placeholder="Ex: 10,00" />
         </div>
         <div class="md:col-span-6">
           <label class="mb-1 block text-sm font-medium">Desconto total (R$)</label>
-          <Input type="text" v-maska="moneyMaskOptions" v-model="cabecalho.desconto" placeholder="Ex: 5,00" />
+          <Input inputmode="decimal" type="text" v-maska="moneyMaskOptions" v-model="cabecalho.desconto" placeholder="Ex: 5,00" />
         </div>
       </div>
 
@@ -209,7 +209,7 @@ async function submit() {
             </div>
             <div class="md:col-span-3">
               <label class="mb-1 block text-xs font-medium text-muted-foreground">Valor unitário (R$)</label>
-              <Input type="text" v-maska="moneyMaskOptions" v-model="item.custo" placeholder="Ex: 12,50" />
+              <Input inputmode="decimal" type="text" v-maska="moneyMaskOptions" v-model="item.custo" placeholder="Ex: 12,50" />
             </div>
             <div class="flex md:col-span-1 md:justify-center">
               <Button

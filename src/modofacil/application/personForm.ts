@@ -19,13 +19,20 @@ export const emptyPerson = (type = 'CLIENTE') => ({
   observacaos: '',
 })
 export type PersonForm = ReturnType<typeof emptyPerson>
+function comparablePersonValue(key: keyof PersonForm, value: string | null) {
+  return ['documento', 'cep', 'telefone', 'whastapp'].includes(key)
+    ? value?.replace(/\D/g, '') || null
+    : value
+}
 export function personPayload(form: PersonForm, initial?: Row) {
   const body: Record<string, string | null> = {}
   const defaults = emptyPerson()
   for (const key of Object.keys(form) as (keyof PersonForm)[]) {
     const value = form[key].trim() || null
     const previous = initial ? String(initial[key] ?? defaults[key]).trim() || null : null
-    if (!initial || value !== previous) body[key] = value
+    if (!initial || comparablePersonValue(key, value) !== comparablePersonValue(key, previous)) {
+      body[key] = ['telefone', 'whastapp'].includes(key) ? comparablePersonValue(key, value) : value
+    }
   }
   if (!form.nome.trim() || form.nome.trim().length < 2)
     throw new Error('Informe um nome com pelo menos 2 caracteres.')

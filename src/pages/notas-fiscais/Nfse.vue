@@ -208,7 +208,7 @@ async function emit() {
         </div>
         <div class="space-y-1.5">
           <Label for="nfse-valor">Valor do serviço</Label>
-          <Input
+          <Input placeholder="0,00"
             id="nfse-valor"
             v-model.number="form.valorTotal"
             type="number"
@@ -219,7 +219,7 @@ async function emit() {
         </div>
         <div class="space-y-1.5">
           <Label for="nfse-codigo-servico">Código de serviço</Label>
-          <Input
+          <Input placeholder="Código do serviço no município"
             id="nfse-codigo-servico"
             v-model="form.codigoServico"
             inputmode="numeric"

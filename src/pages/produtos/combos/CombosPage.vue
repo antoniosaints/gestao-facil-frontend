@@ -12,7 +12,7 @@ import { ComboRepository, type Combo, type ComboComponentType, type ComboPayload
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { formatToNumberValue } from '@/utils/formatters'
 import { Boxes, ChevronDown, Layers3, PackagePlus, Pencil, Plus, RefreshCw, Search, Trash2, Wrench, X } from 'lucide-vue-next'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 
@@ -337,7 +337,7 @@ onMounted(load)
               <label class="grid gap-1 text-xs">{{ item.tipo === 'PRODUTO' ? 'Variante' : 'Serviço' }}
                 <Select2Ajax v-model="item.id" v-model:label="item.label" :url="item.tipo === 'PRODUTO' ? '/produtos/select2' : '/servicos/select2'" :allow-clear="true" />
               </label>
-              <label class="grid gap-1 text-xs">Quantidade <Input v-model.number="item.quantidade" type="number" min="1" step="1" /></label>
+              <label class="grid gap-1 text-xs">Quantidade <Input placeholder="1" v-model.number="item.quantidade" type="number" min="1" step="1" /></label>
               <Button type="button" variant="ghost" size="icon" title="Remover" :disabled="components.length === 1" @click="components.splice(index, 1)"><X class="h-4 w-4" /></Button>
             </div>
           </div>

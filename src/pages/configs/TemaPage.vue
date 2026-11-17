@@ -106,7 +106,7 @@
                       :aria-label="field.label"
                       @input="aplicarPreview"
                     />
-                    <input
+                    <input placeholder="#000000"
                       v-model="form[field.key]"
                       type="text"
                       maxlength="7"

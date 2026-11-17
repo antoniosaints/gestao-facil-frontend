@@ -69,7 +69,7 @@ function downloadXml(record: NfseConsultRecord) {
     <form class="grid gap-3 sm:grid-cols-2" @submit.prevent="search()">
       <div class="space-y-1.5">
         <Label for="nfse-nsu">Último NSU</Label
-        ><Input
+        ><Input placeholder="Ex.: 0"
           id="nfse-nsu"
           v-model="lastNsu"
           inputmode="numeric"
@@ -80,7 +80,7 @@ function downloadXml(record: NfseConsultRecord) {
       </div>
       <div class="space-y-1.5">
         <Label for="nfse-query-key">Chave nacional da NFS-e (opcional)</Label
-        ><Input
+        ><Input placeholder="Informe a chave nacional da NFS-e"
           id="nfse-query-key"
           v-model="key"
           inputmode="numeric"

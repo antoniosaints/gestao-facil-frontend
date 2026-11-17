@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, ref, watch } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { allocateModalLayer, modalLayerKey } from '@/components/formulario/modal-layer'
@@ -949,7 +949,7 @@ watch(mesasSheetAberto, (aberto) => {
 
         <div class="grid gap-3 border-t pt-4 sm:grid-cols-[7.5rem_1fr]">
           <label class="space-y-1.5 text-xs font-medium text-muted-foreground">
-            <span>Quantidade</span><Input v-model.number="quantidade" type="number" min="1" />
+            <span>Quantidade</span><Input placeholder="1" v-model.number="quantidade" type="number" min="1" />
           </label>
           <label class="space-y-1.5 text-xs font-medium text-muted-foreground">
             <span>Observação do item</span

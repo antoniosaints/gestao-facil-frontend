@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { phoneMaskOptions } from "@/lib/imaska"
-import { vMaska } from "maska/vue"
+import { vMaska } from "@/lib/maska"
 import { Switch } from "@/components/ui/switch"
 import { useStorefrontLightTheme } from '@/composables/useStorefrontLightTheme'
 import { getThemePalette, hexToHslValue, normalizeThemeCustomization } from '@/utils/themeCustomization'
@@ -641,7 +641,7 @@ const novaReserva = () => {
         </div>
         <div>
           <Label for="phone">Telefone <span class="text-red-500">*</span></Label>
-          <Input id="phone" v-model="dadosReserva.telefoneCliente" v-maska="phoneMaskOptions" placeholder="Telefone" />
+          <Input inputmode="tel" id="phone" v-model="dadosReserva.telefoneCliente" v-maska="phoneMaskOptions" placeholder="Telefone" />
         </div>
         <div>
           <Label for="email">E-mail</Label>

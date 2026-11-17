@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { cepMaskOptions, phoneMaskOptions } from '@/lib/imaska'
+import { vMaska } from '@/lib/maska'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useStoreToast } from '@/composables/useStoreToast'
@@ -140,7 +142,7 @@ watch(mode, async (currentMode) => {
           </div>
           <form class="mt-3 grid gap-2 sm:grid-cols-2" @submit.prevent="saveAddress">
             <Input v-model="address.recipient" placeholder="Destinatário" required />
-            <Input v-model="address.postalCode" placeholder="CEP" required />
+            <Input inputmode="numeric" v-maska="cepMaskOptions" v-model="address.postalCode" placeholder="00000-000" required />
             <Input v-model="address.address" class="sm:col-span-2" placeholder="Endereço" required />
             <Input v-model="address.number" placeholder="Número" required />
             <Input v-model="address.district" placeholder="Bairro" required />
@@ -194,11 +196,11 @@ watch(mode, async (currentMode) => {
           </div>
 
           <form v-else class="space-y-4" @submit.prevent="submit">
-            <div v-if="mode === 'register'"><Label class="text-xs font-medium">Nome completo</Label><Input v-model="form.name" class="mt-1 h-11 rounded-xl" required /></div>
-            <div v-if="mode === 'register'"><Label class="text-xs font-medium">Telefone</Label><Input v-model="form.phone" class="mt-1 h-11 rounded-xl" placeholder="(00) 00000-0000" /></div>
-            <div v-if="['login','register','forgot'].includes(mode)"><Label class="text-xs font-medium">E-mail</Label><Input v-model="form.email" type="email" class="mt-1 h-11 rounded-xl" required /></div>
-            <div v-if="['login','register','reset'].includes(mode)"><Label class="text-xs font-medium">Senha</Label><Input v-model="form.password" type="password" minlength="8" class="mt-1 h-11 rounded-xl" required /></div>
-            <div v-if="mode === 'register'"><Label class="text-xs font-medium">Confirmar senha</Label><Input v-model="form.confirm" type="password" class="mt-1 h-11 rounded-xl" required /></div>
+            <div v-if="mode === 'register'"><Label class="text-xs font-medium">Nome completo</Label><Input placeholder="Seu nome completo" v-model="form.name" class="mt-1 h-11 rounded-xl" required /></div>
+            <div v-if="mode === 'register'"><Label class="text-xs font-medium">Telefone</Label><Input type="tel" inputmode="tel" v-maska="phoneMaskOptions" v-model="form.phone" class="mt-1 h-11 rounded-xl" placeholder="(00) 00000-0000" /></div>
+            <div v-if="['login','register','forgot'].includes(mode)"><Label class="text-xs font-medium">E-mail</Label><Input placeholder="nome@email.com" v-model="form.email" type="email" class="mt-1 h-11 rounded-xl" required /></div>
+            <div v-if="['login','register','reset'].includes(mode)"><Label class="text-xs font-medium">Senha</Label><Input placeholder="Digite sua senha" v-model="form.password" type="password" minlength="8" class="mt-1 h-11 rounded-xl" required /></div>
+            <div v-if="mode === 'register'"><Label class="text-xs font-medium">Confirmar senha</Label><Input placeholder="Repita sua senha" v-model="form.confirm" type="password" class="mt-1 h-11 rounded-xl" required /></div>
 
             <RouterLink v-if="mode === 'login'" :to="`/lojas/${slug}/esqueci-senha`" class="block text-right text-sm font-semibold text-[var(--shop-primary)] hover:underline">Esqueci a senha</RouterLink>
 

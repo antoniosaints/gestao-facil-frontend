@@ -10,7 +10,7 @@ import { moneyMaskOptions } from '@/lib/imaska'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { formatToNumberValue } from '@/utils/formatters'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -62,7 +62,7 @@ async function registrarAlteracao() {
       </label>
       <div>
         <Label>Valor</Label>
-        <Input
+        <Input inputmode="decimal"
           type="text"
           required
           v-model="(store.formParcela.valor as string)"

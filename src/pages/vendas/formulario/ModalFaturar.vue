@@ -22,7 +22,7 @@ import { MetodoPagamento } from '@/types/schemas'
 import { Input } from '@/components/ui/input'
 import { formatCurrencyBR, formatToNumberValue } from '@/utils/formatters'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from 'maska/vue'
+import { vMaska } from '@/lib/maska'
 
 const store = useVendasStore()
 const uiStore = useUiStore()

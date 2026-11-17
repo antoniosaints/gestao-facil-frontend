@@ -14,7 +14,10 @@
     "test:unit": "vitest",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "audit:inputs": "node scripts/audit-inputs.mjs --check",
+    "qa:inputs": "vite --config vite.input-qa.config.ts",
+    "qa:inputs:persistence": "vite --config vite.input-persistence-qa.config.ts"
   },
   "dependencies": {
     "@tanstack/vue-table": "^8.21.3",
