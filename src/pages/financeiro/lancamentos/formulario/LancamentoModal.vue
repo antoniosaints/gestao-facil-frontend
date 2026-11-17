@@ -456,14 +456,16 @@ watch(
 </script>
 
 <template>
-  <ModalView v-model:open="modalOpen" :title="title" :description="description" :size="isEditMode ? '2xl' : '4xl'">
+  <ModalView v-model:open="modalOpen" :title="title" :description="description" :size="isEditMode ? '2xl' : '4xl'"
+    content-class="max-h-[92dvh]" body-class="grid min-h-0 gap-4 overflow-y-auto px-2 py-4">
     <template v-if="!isEditMode" #header-actions>
       <label
         for="ignorarLancamentoCalculos"
         class="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium dark:bg-card-dark"
       >
-        <Switch id="ignorarLancamentoCalculos" v-model="store.form.ignorado" :disabled="salvando" />
-        <span class="whitespace-nowrap">Ignorar nos cálculos</span>
+        <Switch id="ignorarLancamentoCalculos" v-model="store.form.ignorado" :disabled="salvando" aria-label="Ignorar nos cálculos" />
+        <span class="whitespace-nowrap sm:hidden">Ignorar</span>
+        <span class="hidden whitespace-nowrap sm:inline">Ignorar nos cálculos</span>
       </label>
     </template>
     <form class="space-y-4 px-4" @submit.prevent="submit">
@@ -631,8 +633,8 @@ watch(
               <label for="tipoLancamentoFinanceiro" class="mb-1 block text-sm font-medium"
                 >Tipo/Natureza *</label
               >
-              <div v-if="criarContrapartida" class="flex h-9 items-center gap-2 rounded-md border bg-muted/20 px-3 text-sm">
-                <ArrowLeftRight class="size-4" aria-hidden="true" /> Receita + despesa
+              <div v-if="criarContrapartida" class="flex min-h-9 items-center gap-2 rounded-md border bg-muted/20 px-3 py-1.5 text-xs md:text-sm">
+                <ArrowLeftRight class="size-4 shrink-0" aria-hidden="true" /> Receita + despesa
               </div>
               <Select v-else disabled v-model="store.form.tipo" required>
                 <SelectTrigger>
@@ -737,7 +739,7 @@ watch(
                     <label class="relative inline-flex cursor-pointer items-center">
                       <Switch id="lancamentoEfetivadoTotal" v-model="params.lancamentoEfetivado" />
                       <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                        >{{ criarContrapartida ? 'Efetivar os dois' : 'Efetivado' }}</span
+                        >{{ criarContrapartida ? 'Efetivar ambos' : 'Efetivado' }}</span
                       >
                     </label>
                   </div>
