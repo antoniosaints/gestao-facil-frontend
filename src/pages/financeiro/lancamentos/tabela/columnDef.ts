@@ -1,9 +1,8 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { render } from '@/lib/utils'
 import type { CategoriaFinanceiro, LancamentoFinanceiro, ParcelaFinanceiro } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
-  ArrowUpDown,
   ArrowUpRightSquare,
   BadgeCheck,
   Calendar,
@@ -79,14 +78,7 @@ export const columnsLancamentos: ColumnDef<
   {
     accessorKey: 'descricao',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Descrição', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Descrição' }),
 cell: ({ row }) =>
   render(
     RouterLink,
@@ -163,14 +155,7 @@ cell: ({ row }) =>
   {
     accessorKey: 'tipo',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Tipo', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Tipo' }),
     cell: ({ row }) => {
       return render(BadgeCell, {
         label: row.getValue('tipo') as string,
@@ -183,14 +168,7 @@ cell: ({ row }) =>
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-    ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       let status = row.original.status as string
       const parcelas = row.original.parcelas.filter((p) => p.numero !== 0)
@@ -238,17 +216,7 @@ cell: ({ row }) =>
   {
     accessorKey: 'valorTotal',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => [
-          store.exibirValorParcelasAtuais ? 'Pendente/Total' : 'Valor',
-          render(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
-        ],
-    ),
+      render(DataTableColumnHeader, { column, title: store.exibirValorParcelasAtuais ? 'Pendente/Total' : 'Valor' }),
     cell: ({ row }) => {
       const { temParcelasEmAberto, valorPendente, valorTotal } = getResumoValorLancamento(
         row.original.parcelas,
@@ -284,14 +252,7 @@ cell: ({ row }) =>
   {
     id: 'vencimento',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Vencimento', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Vencimento' }),
     cell: ({ row }) => {
       const { vencimento } = getDatasTabelaLancamento(row.original.parcelas)
       return render(BadgeCell, {
@@ -320,14 +281,7 @@ cell: ({ row }) =>
     accessorKey: 'categoriaId',
     enableColumnFilter: false,
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Categoria', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Categoria' }),
     cell: ({ row }) => {
       return render(BadgeCell, {
         label: row.original.categoria.nome,

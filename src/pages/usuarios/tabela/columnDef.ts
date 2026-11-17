@@ -1,9 +1,8 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { render } from '@/lib/utils'
 import type { Usuarios } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
-  ArrowUpDown,
   Ban,
   BellOff,
   BellRing,
@@ -19,14 +18,7 @@ export const columnsUsuarios: ColumnDef<Usuarios>[] = [
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       const tipo = row.original.status == 'ATIVO' ? CircleCheck : Ban
       const color = row.original.status == 'ATIVO' ? 'green' : 'red'
@@ -41,26 +33,12 @@ export const columnsUsuarios: ColumnDef<Usuarios>[] = [
   {
     accessorKey: 'nome',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Nome', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Nome' }),
   },
   {
     accessorKey: 'permissao',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Permissão', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Permissão' }),
     cell: ({ row }) => {
       let color: any = 'gray'
       switch (row.original.permissao) {
@@ -89,27 +67,13 @@ export const columnsUsuarios: ColumnDef<Usuarios>[] = [
   {
     accessorKey: 'email',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['E-mail', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'E-mail' }),
     cell: ({ row }) => render('div', { class: 'text-left' }, row.original.email || '-'),
   },
   {
     accessorKey: 'pushReceiver',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Push', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Push' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: row.original.pushReceiver ? 'Sim' : 'Nao',
@@ -120,14 +84,7 @@ export const columnsUsuarios: ColumnDef<Usuarios>[] = [
   {
     accessorKey: 'emailReceiver',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['E-mail', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'E-mail' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: row.original.emailReceiver ? 'Sim' : 'Nao',

@@ -1,10 +1,10 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
 import type { AssinaturaClienteListItem } from '@/repositories/assinatura-repository'
 import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, CalendarClock, CircleDollarSign, FilePenLineIcon, UserRound } from 'lucide-vue-next'
+import { CalendarClock, CircleDollarSign, FilePenLineIcon, UserRound } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import AssinaturasActions from './AssinaturasActions.vue'
 import { getPeriodicidadeLabel, getStatusAssinaturaMeta } from '../shared'
@@ -27,26 +27,12 @@ export const columnsAssinaturas: ColumnDef<AssinaturaClienteListItem>[] = [
   {
     accessorKey: 'nomeContrato',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Contrato', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Contrato' }),
   },
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: getStatusAssinaturaMeta(row.original.status).label,
@@ -95,14 +81,7 @@ export const columnsAssinaturas: ColumnDef<AssinaturaClienteListItem>[] = [
   {
     accessorKey: 'proximaCobranca',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Próxima cobrança', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Próxima cobrança' }),
     cell: ({ row }) => render('div', {}, formatDateToPtBR(row.original.proximaCobranca)),
   },
   {

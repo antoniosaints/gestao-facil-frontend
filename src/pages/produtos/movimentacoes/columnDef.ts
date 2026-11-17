@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -7,7 +7,6 @@ import { h } from 'vue'
 import {
   ArrowDownToLine,
   ArrowLeftRight,
-  ArrowUpDown,
   ArrowUpFromLine,
   CalendarClock,
   FileText,
@@ -48,15 +47,7 @@ const STATUS_META: Record<string, { color: any; label: string }> = {
 
 function sortHeader(label: string) {
   return ({ column }: any) =>
-    render(
-      Button,
-      {
-        variant: 'ghost',
-        class: 'px-2',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      },
-      () => [label, render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-    )
+    render(DataTableColumnHeader, { column, title: label, class: 'px-2' })
 }
 
 export const columnsMovimentacoes: ColumnDef<Movimentacao>[] = [

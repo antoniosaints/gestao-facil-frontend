@@ -1,19 +1,15 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
 import type { ContaFinanceiraDetalheMovimentacao } from '@/types/schemas'
 import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
-import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowDownLeft, ArrowUpDown, ArrowUpRight, CalendarDays, CheckCircle2, Clock3 } from 'lucide-vue-next'
+import type { Column, ColumnDef } from '@tanstack/vue-table'
+import { ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, Clock3 } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 
 function sortableHeader(label: string) {
-  return ({ column }: { column: { toggleSorting: (descending: boolean) => void; getIsSorted: () => false | 'asc' | 'desc' } }) =>
-    render(
-      Button,
-      { variant: 'ghost', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc') },
-      () => [label, render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-    )
+  return ({ column }: { column: Column<ContaFinanceiraDetalheMovimentacao> }) =>
+    render(DataTableColumnHeader, { column, title: label })
 }
 
 export const columnsMovimentacoesConta: ColumnDef<ContaFinanceiraDetalheMovimentacao>[] = [

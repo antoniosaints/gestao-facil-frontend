@@ -1,11 +1,11 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
 import { useProdutoStore } from '@/stores/produtos/useProduto'
 import type { ProdutoCategoria } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Tags } from 'lucide-vue-next'
+import { Tags } from 'lucide-vue-next'
 import Actions from './Actions.vue'
 
 const store = useProdutoStore()
@@ -47,14 +47,7 @@ export const columnsCategoriasProduto: ColumnDef<ProdutoCategoria>[] = [
   {
     accessorKey: 'Uid',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'ID' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: `${row.original.Uid || `#${row.original.id}`}`,
@@ -66,26 +59,12 @@ export const columnsCategoriasProduto: ColumnDef<ProdutoCategoria>[] = [
   {
     accessorKey: 'nome',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Categoria', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Categoria' }),
   },
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: `${row.original.status || 'ATIVO'}`,

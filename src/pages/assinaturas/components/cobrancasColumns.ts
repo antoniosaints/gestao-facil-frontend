@@ -1,3 +1,4 @@
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { Button } from '@/components/ui/button'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
@@ -5,7 +6,6 @@ import type { AssinaturaCicloListItem } from '@/repositories/assinatura-reposito
 import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
-  ArrowUpDown,
   CalendarClock,
   CircleDollarSign,
   ExternalLink,
@@ -20,14 +20,7 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
   {
     accessorKey: 'referencia',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Referência', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Referência' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: row.original.referencia,
@@ -39,14 +32,7 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       const status = getStatusCicloMeta(row.original.status)
       const color =
@@ -83,14 +69,7 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
   {
     accessorKey: 'valorCobrado',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Valor' }),
     cell: ({ row }) =>
       render('div', { class: 'space-y-0' }, [
         render('div', { class: 'font-medium text-md -m-1 pl-1 text-foreground' }, formatCurrencyBR(row.original.valorCobrado)),
@@ -128,14 +107,7 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
   {
     accessorKey: 'createdAt',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Criada em', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Criada em' }),
     cell: ({ row }) => render('div', {}, formatDateToPtBR(row.original.createdAt, true)),
   },
   {

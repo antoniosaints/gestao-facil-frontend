@@ -1,11 +1,10 @@
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
-import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { RelatoBug, RelatoBugSeveridade, RelatoBugStatus } from '@/repositories/bug-repository'
 import { formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
-  ArrowUpDown,
   Bug,
   CircleCheck,
   CircleDot,
@@ -51,14 +50,7 @@ export const columnsBugs: ColumnDef<RelatoBug>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'ID' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: `#${row.original.id}`,
@@ -106,14 +98,7 @@ export const columnsBugs: ColumnDef<RelatoBug>[] = [
   {
     accessorKey: 'severidade',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Gravidade', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Gravidade' }),
     cell: ({ row }) => {
       const badge = getSeveridadeBadge(row.original.severidade)
       return render(BadgeCell, {
@@ -128,14 +113,7 @@ export const columnsBugs: ColumnDef<RelatoBug>[] = [
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       const badge = getStatusBadge(row.original.status)
       return render(BadgeCell, {
@@ -149,14 +127,7 @@ export const columnsBugs: ColumnDef<RelatoBug>[] = [
   {
     accessorKey: 'createdAt',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Recebido', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Recebido' }),
     cell: ({ row }) =>
       render(
         'div',

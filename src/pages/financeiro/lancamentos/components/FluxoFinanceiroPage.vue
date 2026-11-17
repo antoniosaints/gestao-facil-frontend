@@ -77,6 +77,8 @@ import ClientesModal from '@/pages/clientes/modais/ClientesModal.vue'
 import FinanceiroCalendario from './FinanceiroCalendario.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import CobrancaRapidaModal from '../../inadimplencia/CobrancaRapidaModal.vue'
+import ParcelaDetalhesModal from './ParcelaDetalhesModal.vue'
+import type { ParcelaAcompanhamento as LancamentoDia } from './parcelaAcompanhamento'
 
 type FiltroTipo = 'TODOS' | 'RECEITA' | 'DESPESA'
 type FiltroStatus = 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO'
@@ -85,28 +87,6 @@ type Preset = 'all' | 'today' | 'dueToday'
 type CarregarLancamentosOptions = {
   preserveScroll?: boolean
   silent?: boolean
-}
-
-type LancamentoDia = {
-  id: number
-  uid: string
-  parcelaId: number
-  numero: number
-  totalParcelas: number
-  descricao: string
-  categoria: string
-  cliente: string | null
-  conta: string | null
-  contaFinanceiraId: number | null
-  valor: number
-  tipo: 'RECEITA' | 'DESPESA'
-  status: 'PAGO' | 'PENDENTE' | 'ATRASADO'
-  pago: boolean
-  vencimento: string | Date
-  dataPagamento: string | Date | null
-  formaPagamento: string | null
-  cobrancaLink: string | null
-  ignorado: boolean
 }
 
 type DiaLancamento = {
@@ -1235,204 +1215,20 @@ onMounted(async () => {
       </div>
     </ModalView>
 
-    <ModalView
+    <ParcelaDetalhesModal
+      v-if="eventoSelecionado"
       v-model:open="openModalEvento"
-      :title="eventoSelecionado?.descricao || 'Resumo da parcela'"
-      size="lg"
-    >
-      <div v-if="eventoSelecionado" class="space-y-4 p-4 -mt-6">
-        <div class="flex flex-wrap gap-2 -mb-2">
-          <span
-            class="border border-dashed border-muted shadow-none px-2 rounded-sm text-sm"
-            :class="
-              eventoSelecionado.tipo === 'DESPESA'
-                ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
-                : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-            "
-          >
-            {{ eventoSelecionado.tipo === 'DESPESA' ? 'Despesa' : 'Receita' }}
-          </span>
-          <span
-            class="border border-dashed border-muted shadow-none px-2 rounded-sm text-sm"
-            :class="
-              eventoSelecionado.status === 'PAGO'
-                ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                : eventoSelecionado.status === 'ATRASADO'
-                  ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
-                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-            "
-          >
-            {{ eventoSelecionado.status }}
-          </span>
-          <Badge v-if="eventoSelecionado.cobrancaLink" variant="outline">Cobrança disponível</Badge>
-          <Badge v-if="eventoSelecionado.ignorado" variant="outline" class="gap-1 text-muted-foreground">
-            <EyeOff class="h-3 w-3" /> Ignorado nos cálculos
-          </Badge>
-        </div>
-
-        <!-- Valor em destaque -->
-        <div
-          class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/20 p-4"
-        >
-          <div>
-            <p class="text-xs uppercase tracking-wide text-muted-foreground">Valor da parcela</p>
-            <p
-              class="text-2xl font-bold"
-              :class="[
-                eventoSelecionado.tipo === 'DESPESA' ? 'text-rose-600' : 'text-emerald-600',
-                eventoSelecionado.ignorado && 'line-through opacity-70',
-              ]"
-            >
-              {{ eventoSelecionado.tipo === 'DESPESA' ? '-' : '+'
-              }}{{ formatCurrencyBR(eventoSelecionado.valor) }}
-            </p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-medium text-foreground">
-              {{
-                eventoSelecionado.numero === 0
-                  ? 'Entrada'
-                  : `Parcela ${eventoSelecionado.numero} de ${eventoSelecionado.totalParcelas}`
-              }}
-            </p>
-            <p class="text-xs text-muted-foreground">{{ eventoSelecionado.uid }}</p>
-          </div>
-        </div>
-
-        <!-- Informações -->
-        <div class="grid gap-2 sm:grid-cols-2">
-          <div class="flex items-start gap-2 rounded-lg border p-3">
-            <CalendarDays class="mt-0.5 h-4 w-4 flex-none text-muted-foreground" />
-            <div class="min-w-0">
-              <p class="text-xs uppercase tracking-wide text-muted-foreground">Vencimento</p>
-              <p class="text-sm font-medium text-foreground">
-                {{ format(new Date(eventoSelecionado.vencimento), 'dd/MM/yyyy', { locale: ptBR }) }}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-start gap-2 rounded-lg border p-3">
-            <FileText class="mt-0.5 h-4 w-4 flex-none text-muted-foreground" />
-            <div class="min-w-0">
-              <p class="text-xs uppercase tracking-wide text-muted-foreground">Categoria</p>
-              <p class="truncate text-sm text-foreground">
-                {{ eventoSelecionado.categoria || 'Não informado' }}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-start gap-2 rounded-lg border p-3">
-            <Wallet class="mt-0.5 h-4 w-4 flex-none text-muted-foreground" />
-            <div class="min-w-0">
-              <p class="text-xs uppercase tracking-wide text-muted-foreground">Conta / contato</p>
-              <p class="truncate text-sm text-foreground">
-                {{
-                  [eventoSelecionado.conta, eventoSelecionado.cliente]
-                    .filter(Boolean)
-                    .join(' • ') || 'Não informado'
-                }}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-start gap-2 rounded-lg border p-3">
-            <HandCoins class="mt-0.5 h-4 w-4 flex-none text-muted-foreground" />
-            <div class="min-w-0">
-              <p class="text-xs uppercase tracking-wide text-muted-foreground">Pagamento</p>
-              <p class="text-sm text-foreground">
-                <span v-if="eventoSelecionado.dataPagamento">
-                  {{
-                    format(new Date(eventoSelecionado.dataPagamento), 'dd/MM/yyyy', {
-                      locale: ptBR,
-                    })
-                  }}
-                </span>
-                <span v-else>Pendente</span>
-                <span v-if="eventoSelecionado.formaPagamento">
-                  • {{ eventoSelecionado.formaPagamento }}</span
-                >
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="space-y-2 border-t pt-3">
-          <!-- Ações principais -->
-          <div class="flex flex-wrap gap-2">
-            <Button
-              v-if="!eventoSelecionado.pago"
-              class="min-w-[9rem] flex-1"
-              @click="handleEfetivarFromModal(eventoSelecionado)"
-            >
-              <CheckCircle2 class="h-4 w-4" />
-              {{ eventoSelecionado.tipo === 'DESPESA' ? 'Pagar' : 'Receber' }}
-            </Button>
-            <Button
-              v-else
-              class="min-w-[9rem] flex-1 bg-warning text-white hover:bg-warning/80"
-              @click="estornarParcela(eventoSelecionado.parcelaId)"
-            >
-              <Undo2 class="h-4 w-4" /> Estornar
-            </Button>
-            <Button
-              v-if="
-                uiStore.canCreateCharge &&
-                !eventoSelecionado.pago &&
-                eventoSelecionado.tipo === 'RECEITA' &&
-                !eventoSelecionado.cobrancaLink
-              "
-              class="min-w-[9rem] flex-1 bg-success text-white hover:bg-success/80"
-              @click="handleGerarCobrancaFromModal(eventoSelecionado)"
-            >
-              <CircleDollarSign class="h-4 w-4" /> Gerar cobrança
-            </Button>
-            <Button
-              v-if="props.mode === 'receitas' && !eventoSelecionado.pago"
-              variant="outline"
-              class="min-w-[9rem] flex-1"
-              @click="abrirCobrancaRapida(eventoSelecionado)"
-            >
-              <Send class="h-4 w-4" /> Enviar pelo WhatsApp
-            </Button>
-            <Button
-              v-if="eventoSelecionado.cobrancaLink"
-              variant="outline"
-              class="min-w-[9rem] flex-1"
-              @click="openLinkCobranca(eventoSelecionado.cobrancaLink)"
-            >
-              <ExternalLink class="h-4 w-4" /> Abrir cobrança
-            </Button>
-            <Button
-              variant="outline"
-              class="min-w-[9rem] flex-1"
-              @click="atualizarIgnoradoParcelaDoAcompanhamento(eventoSelecionado, !eventoSelecionado.ignorado)"
-            >
-              <EyeOff class="h-4 w-4" /> {{ eventoSelecionado.ignorado ? 'Reativar nos cálculos' : 'Ignorar nos cálculos' }}
-            </Button>
-          </div>
-          <!-- Ações secundárias -->
-          <div class="flex flex-wrap gap-2">
-            <RouterLink
-              :to="`/financeiro/detalhes?id=${eventoSelecionado.id}`"
-              class="min-w-[8rem] flex-1"
-            >
-              <Button variant="outline" class="w-full" @click="openModalEvento = false">
-                <Info class="h-4 w-4" /> Gerenciar
-              </Button>
-            </RouterLink>
-            <Button
-              variant="outline"
-              class="min-w-[8rem] flex-1"
-              @click="handleEditarFromModal(eventoSelecionado)"
-            >
-              <PenLine class="h-4 w-4" /> Editar
-            </Button>
-            <RouterLink to="/financeiro/contas" class="min-w-[8rem] flex-1">
-              <Button variant="outline" class="w-full" @click="openModalEvento = false">
-                <Wallet class="h-4 w-4" /> Contas
-              </Button>
-            </RouterLink>
-          </div>
-        </div>
-      </div>
-    </ModalView>
+      :parcela="eventoSelecionado"
+      :pode-gerar-cobranca="uiStore.canCreateCharge"
+      :pode-enviar-whatsapp="props.mode === 'receitas'"
+      @efetivar="handleEfetivarFromModal"
+      @estornar="estornarParcela"
+      @editar="handleEditarFromModal"
+      @gerar-cobranca="handleGerarCobrancaFromModal"
+      @abrir-cobranca="openLinkCobranca"
+      @enviar-whatsapp="abrirCobrancaRapida"
+      @ignorar="atualizarIgnoradoParcelaDoAcompanhamento"
+    />
 
     <ModalView v-model:open="openModalFiltros" title="Filtros do fluxo financeiro" size="lg" desktop-variant="sheet">
       <div class="grid gap-4 p-4 md:grid-cols-2">

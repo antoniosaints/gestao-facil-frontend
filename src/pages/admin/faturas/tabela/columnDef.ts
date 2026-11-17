@@ -1,11 +1,10 @@
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
-import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { FaturaContaAdmin } from '@/repositories/conta-repository'
 import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
-  ArrowUpDown,
   CalendarClock,
   CircleCheck,
   CircleDollarSign,
@@ -26,14 +25,7 @@ export const columnsFaturasAdmin: ColumnDef<FaturaContaAdmin>[] = [
   {
     accessorKey: 'Uid',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Fatura', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Fatura' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: row.original.Uid,
@@ -45,14 +37,7 @@ export const columnsFaturasAdmin: ColumnDef<FaturaContaAdmin>[] = [
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       const badge = getStatusBadge(row.original.status)
       return render(BadgeCell, {
@@ -76,14 +61,7 @@ export const columnsFaturasAdmin: ColumnDef<FaturaContaAdmin>[] = [
   {
     accessorKey: 'vencimento',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Vencimento', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Vencimento' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: formatDateToPtBR(row.original.vencimento),
@@ -95,14 +73,7 @@ export const columnsFaturasAdmin: ColumnDef<FaturaContaAdmin>[] = [
   {
     accessorKey: 'valor',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Valor' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: formatCurrencyBR(row.original.valor),

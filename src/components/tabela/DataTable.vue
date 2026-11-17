@@ -71,6 +71,7 @@
                              depende das linhas (o checkbox "selecionar tudo") fica preso ao primeiro render,
                              quando os dados ainda não chegaram. -->
                         <TableHead v-for="(header, i) in headerGroup.headers" :key="`${header.id}-${rowsKey}`"
+                            :aria-sort="header.column.getIsSorted() === 'asc' ? 'ascending' : header.column.getIsSorted() === 'desc' ? 'descending' : undefined"
                             :class="[
                                 i === headerGroup.headers.length - 1
                                     ? 'sticky right-0 bg-gray-100 dark:bg-gray-800 z-10'
@@ -198,7 +199,8 @@ const {
 } = useServerTable(props.api, props.columns, props.filters ?? {}, stateKey);
 
 // Identifica as linhas atualmente exibidas; ver o comentário no <TableHead> do cabeçalho.
-const rowsKey = computed(() => data.value.map((row: any) => row?.id).join(','))
+// A ordem das mesmas linhas não deve remontar o botão e perder o foco do menu.
+const rowsKey = computed(() => data.value.map((row: any) => String(row?.id)).sort().join(','))
 
 let refreshTimer: ReturnType<typeof setInterval> | undefined
 function stopAutoRefresh() {

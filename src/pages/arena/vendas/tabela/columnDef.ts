@@ -1,3 +1,4 @@
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
@@ -6,7 +7,6 @@ import type { ComandaVenda } from '@/types/schemas'
 import { formatCurrencyBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
-  ArrowUpDown,
   BanknoteArrowDown,
   CalendarDays,
   CircleDollarSign,
@@ -60,14 +60,7 @@ export const columnsComandas: ColumnDef<ComandaVenda>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Comanda', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Comanda' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: `#${row.original.id}`,
@@ -80,14 +73,7 @@ export const columnsComandas: ColumnDef<ComandaVenda>[] = [
   {
     accessorKey: 'clienteNome',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Identificação', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Identificação' }),
     cell: ({ row }) =>
       render('div', { class: 'min-w-[220px]' }, [
         render('div', { class: 'font-medium text-foreground' }, row.original.clienteNome || '-'),
@@ -101,14 +87,7 @@ export const columnsComandas: ColumnDef<ComandaVenda>[] = [
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       const config = getStatusConfig(row.original.status)
       return render(BadgeCell, {
@@ -157,14 +136,7 @@ export const columnsComandas: ColumnDef<ComandaVenda>[] = [
   {
     accessorKey: 'abertura',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Abertura', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Abertura' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: new Date(row.original.abertura).toLocaleDateString('pt-BR'),

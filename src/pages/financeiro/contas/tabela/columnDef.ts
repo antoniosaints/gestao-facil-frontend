@@ -1,8 +1,8 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { render } from '@/lib/utils'
 import type { ContasFinanceiro } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Wallet } from 'lucide-vue-next'
+import { Wallet } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from './Actions.vue'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -12,14 +12,7 @@ export const columnsContasFinanceiras: ColumnDef<ContasFinanceiro>[] = [
   {
     accessorKey: 'nome',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Conta', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Conta' }),
     cell: ({ row }) =>
       render('div', { class: 'flex items-center gap-3 min-w-[220px]' }, [
         render(
@@ -51,14 +44,7 @@ export const columnsContasFinanceiras: ColumnDef<ContasFinanceiro>[] = [
   {
     accessorKey: 'saldoInicial',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Saldo inicial', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Saldo inicial' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: formatCurrencyBR(Number(row.original.saldoInicial || 0)),
@@ -69,14 +55,7 @@ export const columnsContasFinanceiras: ColumnDef<ContasFinanceiro>[] = [
   {
     accessorKey: 'saldoAtual',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Saldo atual', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Saldo atual' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: formatCurrencyBR(Number(row.original.saldoAtual || 0)),

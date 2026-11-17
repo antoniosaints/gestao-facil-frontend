@@ -1,14 +1,28 @@
 <template>
-  <div v-if="uso" class="flex shrink-0 items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-2.5 py-1.5"
-    :title="tooltip">
-    <Sparkles class="h-4 w-4 shrink-0 text-primary" />
-    <div class="min-w-[92px]">
-      <div class="flex items-center justify-between gap-2 whitespace-nowrap text-[11px] leading-tight">
-        <span class="text-muted-foreground">IA restante</span>
+  <div
+    v-if="uso"
+    class="flex shrink-0 items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-2.5 py-1.5"
+    :title="tooltip"
+  >
+    <Sparkles class="h-4 w-4 shrink-0 text-primary" :class="{ 'hidden sm:block': dense }" />
+    <div :class="dense ? 'sm:min-w-[92px]' : 'min-w-[92px]'">
+      <div
+        class="flex items-center justify-between gap-2 whitespace-nowrap text-[11px] leading-tight"
+      >
+        <span class="text-muted-foreground" :class="{ 'sr-only sm:not-sr-only': dense }"
+          >IA restante</span
+        >
         <span class="font-semibold" :class="corTexto">{{ rotuloRestante }}</span>
       </div>
-      <div v-if="uso.limite != null" class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div class="h-full rounded-full transition-all" :class="corBarra" :style="{ width: pctUsado + '%' }" />
+      <div
+        v-if="uso.limite != null"
+        class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted"
+      >
+        <div
+          class="h-full rounded-full transition-all"
+          :class="corBarra"
+          :style="{ width: pctUsado + '%' }"
+        />
       </div>
     </div>
   </div>
@@ -18,6 +32,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { Sparkles } from 'lucide-vue-next'
 import { IaRepository, type IaMeuUso } from '@/repositories/ia-repository'
+
+defineProps<{ dense?: boolean }>()
 
 const uso = ref<IaMeuUso | null>(null)
 
@@ -53,7 +69,10 @@ const corBarra = computed(() => {
 const tooltip = computed(() => {
   if (!uso.value) return ''
   const usado = `Usado: ${full.format(uso.value.totalTokens)} tokens`
-  const limite = uso.value.limite == null ? 'Limite: ilimitado' : `Limite: ${full.format(uso.value.limite)} tokens`
+  const limite =
+    uso.value.limite == null
+      ? 'Limite: ilimitado'
+      : `Limite: ${full.format(uso.value.limite)} tokens`
   return `${usado} • ${limite} (mês atual)`
 })
 

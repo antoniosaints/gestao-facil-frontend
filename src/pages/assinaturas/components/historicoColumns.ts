@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
 import { formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, History, UserRound } from 'lucide-vue-next'
+import { History, UserRound } from 'lucide-vue-next'
 
 export interface HistoricoAssinaturaListItem {
   id: number
@@ -58,14 +58,7 @@ export const columnsHistoricoAssinatura: ColumnDef<HistoricoAssinaturaListItem>[
   {
     accessorKey: 'createdAt',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Data', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Data' }),
     cell: ({ row }) => render('div', {}, formatDateToPtBR(row.original.createdAt, true)),
   },
 ]

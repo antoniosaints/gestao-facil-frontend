@@ -166,6 +166,7 @@ export function useServerTable<T>(
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     manualSorting: true,
+    enableMultiSort: false,
     pageCount: totalPages.value,
     onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
     onColumnVisibilityChange: (updaterOrValue) => valueUpdater(updaterOrValue, columnVisibility),

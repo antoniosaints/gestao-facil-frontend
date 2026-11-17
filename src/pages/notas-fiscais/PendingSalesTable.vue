@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
+
 import { h } from 'vue'
 import type { Column, ColumnDef, Table } from '@tanstack/vue-table'
-import { ArrowUpDown, Send } from 'lucide-vue-next'
+import { Send } from 'lucide-vue-next'
 import DataTable from '@/components/tabela/DataTable.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
@@ -18,11 +20,7 @@ const props = defineProps<{
 const emit = defineEmits<{ emitSales: [ids: number[]] }>()
 
 function sortHeader(label: string, column: Column<UninvoicedSale>) {
-  return h(
-    Button,
-    { variant: 'ghost', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc') },
-    () => [label, h(ArrowUpDown, { class: 'ml-2 size-4' })],
-  )
+  return h(DataTableColumnHeader, { column, title: label })
 }
 
 const columns: ColumnDef<UninvoicedSale>[] = [

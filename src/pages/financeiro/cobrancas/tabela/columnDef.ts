@@ -1,9 +1,8 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { render } from '@/lib/utils'
 import type { CobrancaFinanceira } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
-  ArrowUpDown,
   Ban,
   Calendar,
   CircleCheck,
@@ -21,14 +20,7 @@ export const columnsCobrancas: ColumnDef<CobrancaFinanceira>[] = [
   {
     accessorKey: 'idCobranca',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'ID' }),
     cell: ({ row }) => {
       return render(BadgeCell, {
         label: row.original.idCobranca,
@@ -41,14 +33,7 @@ export const columnsCobrancas: ColumnDef<CobrancaFinanceira>[] = [
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       let icon = Loader
       let color: 'yellow' | 'green' | 'red' | 'blue' | 'gray' = 'gray'
@@ -81,14 +66,7 @@ export const columnsCobrancas: ColumnDef<CobrancaFinanceira>[] = [
   {
     accessorKey: 'observacao',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Observação', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Observação' }),
     cell: ({ row }) => {
       let observacao = row.original.observacao
       let Icon = HandCoins
@@ -112,14 +90,7 @@ export const columnsCobrancas: ColumnDef<CobrancaFinanceira>[] = [
   {
     accessorKey: 'dataVencimento',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Vencimento', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Vencimento' }),
     cell: ({ row }) => {
       return render(BadgeCell, {
         label: row.original.dataVencimento
@@ -134,14 +105,7 @@ export const columnsCobrancas: ColumnDef<CobrancaFinanceira>[] = [
   {
     accessorKey: 'valor',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Valor' }),
     cell: ({ row }) => {
       return render(BadgeCell, {
         label: formatCurrencyBR((row.original.valor as number) || 0),
@@ -153,14 +117,7 @@ export const columnsCobrancas: ColumnDef<CobrancaFinanceira>[] = [
   {
     accessorKey: 'gateway',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Gateway', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Gateway' }),
     cell: ({ row }) => {
       return render(BadgeCell, {
         label: row.original.gateway,

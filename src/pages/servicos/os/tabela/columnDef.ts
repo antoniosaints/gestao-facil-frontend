@@ -1,9 +1,8 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { render } from '@/lib/utils'
 import type { ItensOrdensServico, OrdensServico, Servicos } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
-  ArrowUpDown,
   BadgeCheck,
   Ban,
   BanknoteArrowDown,
@@ -77,14 +76,7 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
   {
     accessorKey: 'Uid',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       return render(BadgeCell, {
         onClick: () => {
@@ -101,14 +93,7 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       let color:
         | 'cyan'
@@ -157,14 +142,7 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
   {
     accessorKey: 'descricao',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Descrição', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Descrição' }),
     cell: ({ row }) => {
       return render(
         'div',
@@ -176,14 +154,7 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
   {
     accessorKey: 'clienteId',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Cliente', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Cliente' }),
     cell: ({ row }) => {
       return render('div', {}, row.original.Cliente?.nome || '-')
     },
@@ -191,14 +162,7 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
   {
     accessorKey: 'data',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Data', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Data' }),
     cell: ({ row }) => {
       return render(BadgeCell, {
         label: formatDate(row.original.data, 'dd/MM/yyyy'),
@@ -211,14 +175,7 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
   {
     accessorKey: 'preco',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Valor' }),
     cell: ({ row }) => {
       return render(BadgeCell, {
         label: formatCurrencyBR(

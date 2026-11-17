@@ -1,10 +1,11 @@
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { Button } from '@/components/ui/button'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
 import type { AssinaturaComodatoListItem } from '@/repositories/assinatura-repository'
 import { formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Package, ReceiptText, UserRound } from 'lucide-vue-next'
+import { Package, ReceiptText, UserRound } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import { getStatusComodatoMeta } from '../shared'
 
@@ -24,14 +25,7 @@ export const columnsComodatosAssinatura: ColumnDef<AssinaturaComodatoListItem>[]
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       const status = getStatusComodatoMeta(row.original.status)
       const color =
@@ -70,39 +64,18 @@ export const columnsComodatosAssinatura: ColumnDef<AssinaturaComodatoListItem>[]
   {
     accessorKey: 'quantidade',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Quantidade', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Quantidade' }),
   },
   {
     accessorKey: 'dataEntrega',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Entrega', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Entrega' }),
     cell: ({ row }) => render('div', {}, formatDateToPtBR(row.original.dataEntrega)),
   },
   {
     accessorKey: 'dataDevolucao',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Devolução', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Devolução' }),
     cell: ({ row }) => render('div', {}, row.original.dataDevolucao ? formatDateToPtBR(row.original.dataDevolucao) : '-'),
   },
   {

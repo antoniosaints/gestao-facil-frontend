@@ -137,6 +137,10 @@ export class LancamentosRepository {
   static async save(data: Omit<FormularioLancamento, 'id'>) {
     await http.post(`/lancamentos`, data)
   }
+  static async saveComContrapartida(data: Omit<FormularioLancamento, 'id'> & { chaveOperacao: string }) {
+    const response = await http.post('/lancamentos/receita-despesa', data)
+    return response.data
+  }
   static async salvarRecorrencia(
     lancamentoId: number,
     data: RecorrenciaConfig & { valorParcela?: number | string | null },

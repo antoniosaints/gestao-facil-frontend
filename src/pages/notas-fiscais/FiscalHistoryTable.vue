@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
+
 import { h, reactive, ref, watch } from 'vue'
 import type { Column, ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Eye, FileText, RefreshCw } from 'lucide-vue-next'
+import { Eye, FileText, RefreshCw } from 'lucide-vue-next'
 import DataTable from '@/components/tabela/DataTable.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -49,11 +51,7 @@ function documentChanged() {
   emit('changed')
 }
 function sortHeader(label: string, column: Column<FiscalDocument>) {
-  return h(
-    Button,
-    { variant: 'ghost', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc') },
-    () => [label, h(ArrowUpDown, { class: 'ml-2 size-4' })],
-  )
+  return h(DataTableColumnHeader, { column, title: label })
 }
 const columns: ColumnDef<FiscalDocument>[] = [
   {

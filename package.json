@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "qa:core-ia:ui": "vite --config vite.core-ia-qa.config.ts",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",

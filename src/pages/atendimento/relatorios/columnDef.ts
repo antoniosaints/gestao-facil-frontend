@@ -1,10 +1,10 @@
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
-import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { CicloStatusAtendimento, LinhaRelatorioAtendimento } from '@/repositories/whatsapp-repository'
 import { formatDuracaoMs } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Headset, User } from 'lucide-vue-next'
+import { Headset, User } from 'lucide-vue-next'
 
 function formatDataHora(valor: string | null) {
   if (!valor) return '—'
@@ -26,14 +26,7 @@ const STATUS_LABEL: Record<CicloStatusAtendimento, { label: string; color: Badge
 
 function sortableHeader(label: string) {
   return ({ column }: { column: any }) =>
-    render(
-      Button,
-      {
-        variant: 'ghost',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      },
-      () => [label, render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-    )
+    render(DataTableColumnHeader, { column, title: label })
 }
 
 export const columnsRelatorioAtendimentos: ColumnDef<LinhaRelatorioAtendimento>[] = [

@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
+
 import { computed, h, reactive, ref, watch } from 'vue'
 import { format } from 'date-fns'
 import type { Column, ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Eye, FileBarChart2, Funnel, RefreshCw, X } from 'lucide-vue-next'
+import { Eye, FileBarChart2, Funnel, RefreshCw, X } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from '@/components/tabela/DataTable.vue'
@@ -46,7 +48,7 @@ function canRetry(document: FiscalDocument) {
 }
 
 function sortHeader(label: string, column: Column<FiscalDocument>) {
-  return h(Button, { variant: 'ghost', size: 'sm', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc') }, () => [label, h(ArrowUpDown, { class: 'ml-1 size-3.5' })])
+  return h(DataTableColumnHeader, { column, title: label })
 }
 
 watch(filterOpen, (open) => {

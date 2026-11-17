@@ -23,7 +23,7 @@ import { formatCurrencyBR, formatDateToPtBR, formatToNumberValue } from '@/utils
 import { useClientesStore } from '@/stores/clientes/useClientes'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { IaRepository, isIaQuotaError } from '@/repositories/ia-repository'
-import { LoaderCircle, Repeat, Sparkles } from 'lucide-vue-next'
+import { ArrowLeftRight, LoaderCircle, Repeat, Sparkles } from 'lucide-vue-next'
 import FormularioContas from '../modais/FormularioContas.vue'
 import FormularioCategorias from '../modais/FormularioCategorias.vue'
 
@@ -104,14 +104,23 @@ const params = ref<{
 })
 
 const isEditMode = computed(() => Boolean(store.form.id))
+const criarContrapartida = ref(false)
+const salvando = ref(false)
+let tentativaPar: { assinatura: string; chave: string } | null = null
+const modalOpen = computed({
+  get: () => store.openModal,
+  set: (open: boolean) => { if (!salvando.value) store.openModal = open },
+})
+watch(isEditMode, (editing) => { if (editing) { criarContrapartida.value = false; tentativaPar = null } })
 const isRecorrente = computed(() => params.value.metodo === 'RECORRENTE')
 const recorrencia = computed(() => store.form.recorrencia!)
 const podeNotificarCliente = computed(
-  () => store.form.tipo === 'RECEITA' && Boolean(store.form.clienteId),
+  () => (store.form.tipo === 'RECEITA' || criarContrapartida.value) && Boolean(store.form.clienteId),
 )
 
 const title = computed(() => {
   if (isEditMode.value) return 'Editar lançamento'
+  if (criarContrapartida.value) return 'Lançar receita e despesa'
   const tipo = store.form.tipo === 'RECEITA' ? 'receita' : 'despesa'
   if (params.value.metodo === 'PARCELADO') return `Lançamento parcelado (${tipo})`
   if (params.value.metodo === 'RECORRENTE') return `Lançamento recorrente (${tipo})`
@@ -121,7 +130,9 @@ const title = computed(() => {
 const description = computed(() =>
   isEditMode.value
     ? 'Edite as informações do lançamento'
-    : 'Preencha os campos abaixo',
+    : criarContrapartida.value
+      ? 'Crie os dois lançamentos com os mesmos dados. Alterações e baixas posteriores são individuais.'
+      : 'Preencha os campos abaixo',
 )
 
 const valorInputLabel = computed(() => {
@@ -314,12 +325,19 @@ async function submitFormulario() {
     tipoLancamentoModo: 'AVISTA' | 'PARCELADO' | 'RECORRENTE'
   }
 
-  await LancamentosRepository.save(data)
+  const lancouPar = criarContrapartida.value
+  if (lancouPar) {
+    const assinatura = JSON.stringify(data)
+    if (tentativaPar?.assinatura !== assinatura) tentativaPar = { assinatura, chave: crypto.randomUUID() }
+    await LancamentosRepository.saveComContrapartida({ ...data, chaveOperacao: tentativaPar.chave })
+  } else {
+    await LancamentosRepository.save(data)
+  }
   store.openModal = false
   store.updateTable()
   store.reset({ preserveBatchFields: true, preserveDate: true })
   params.value = { metodo: 'AVISTA', lancamentoEfetivado: false, hasEntrada: false }
-  toast.success('Lançamento cadastrado com sucesso')
+  toast.success(lancouPar ? 'Receita e despesa cadastradas com sucesso' : 'Lançamento cadastrado com sucesso')
 }
 
 const validar = () => {
@@ -372,14 +390,18 @@ const validar = () => {
 const formularioValido = computed(() => Object.keys(erros.value).length === 0)
 
 const submit = async () => {
+  if (salvando.value) return
   validar()
   if (!formularioValido.value) return
 
   try {
+    salvando.value = true
     await submitFormulario()
   } catch (error: any) {
     console.log(error)
     toast.error(error?.response?.data?.message || 'Erro ao salvar o lançamento!')
+  } finally {
+    salvando.value = false
   }
 }
 
@@ -424,6 +446,8 @@ watch(
   () => store.openModal,
   (open) => {
     if (!open) {
+      criarContrapartida.value = false
+      tentativaPar = null
       erros.value = {}
       params.value = { metodo: 'AVISTA', lancamentoEfetivado: false, hasEntrada: false }
     }
@@ -432,17 +456,18 @@ watch(
 </script>
 
 <template>
-  <ModalView v-model:open="store.openModal" :title="title" :description="description" :size="isEditMode ? '2xl' : '4xl'">
+  <ModalView v-model:open="modalOpen" :title="title" :description="description" :size="isEditMode ? '2xl' : '4xl'">
     <template v-if="!isEditMode" #header-actions>
       <label
         for="ignorarLancamentoCalculos"
         class="flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium dark:bg-card-dark"
       >
-        <Switch id="ignorarLancamentoCalculos" v-model="store.form.ignorado" />
+        <Switch id="ignorarLancamentoCalculos" v-model="store.form.ignorado" :disabled="salvando" />
         <span class="whitespace-nowrap">Ignorar nos cálculos</span>
       </label>
     </template>
     <form class="space-y-4 px-4" @submit.prevent="submit">
+      <fieldset :disabled="salvando" class="min-w-0 space-y-4">
       <template v-if="isEditMode">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div
@@ -562,6 +587,16 @@ watch(
       </template>
 
       <template v-else>
+        <label for="criarReceitaDespesa" class="flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-4">
+          <ArrowLeftRight class="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-medium">Criar receita e despesa juntas</span>
+            <span class="mt-1 block text-xs leading-relaxed text-muted-foreground">
+              Use para empréstimos ou repasses: os dois registros terão o mesmo valor, datas, cliente, conta e categoria.
+            </span>
+          </span>
+          <Switch id="criarReceitaDespesa" v-model="criarContrapartida" class="shrink-0" aria-label="Criar receita e despesa juntas" />
+        </label>
         <div class="grid grid-cols-1 gap-3">
           <div class="grid grid-cols-12 gap-3">
             <div class="col-span-12 md:col-span-8">
@@ -596,7 +631,10 @@ watch(
               <label for="tipoLancamentoFinanceiro" class="mb-1 block text-sm font-medium"
                 >Tipo/Natureza *</label
               >
-              <Select disabled v-model="store.form.tipo" required>
+              <div v-if="criarContrapartida" class="flex h-9 items-center gap-2 rounded-md border bg-muted/20 px-3 text-sm">
+                <ArrowLeftRight class="size-4" aria-hidden="true" /> Receita + despesa
+              </div>
+              <Select v-else disabled v-model="store.form.tipo" required>
                 <SelectTrigger>
                   <SelectValue placeholder="Natureza" />
                 </SelectTrigger>
@@ -699,7 +737,7 @@ watch(
                     <label class="relative inline-flex cursor-pointer items-center">
                       <Switch id="lancamentoEfetivadoTotal" v-model="params.lancamentoEfetivado" />
                       <span class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                        >Efetivado</span
+                        >{{ criarContrapartida ? 'Efetivar os dois' : 'Efetivado' }}</span
                       >
                     </label>
                   </div>
@@ -942,7 +980,7 @@ watch(
 
             <div class="col-span-6">
               <label for="clienteIdLancamento" class="mb-1 block text-sm font-medium">
-                {{ store.form.tipo === 'RECEITA' ? 'Cliente' : 'Fornecedor' }}
+                {{ criarContrapartida ? 'Cliente / fornecedor' : store.form.tipo === 'RECEITA' ? 'Cliente' : 'Fornecedor' }}
                 <a @click="abrirCadastroClienteLancamento" class="cursor-pointer px-2 text-blue-500"
                   >+ Novo</a
                 >
@@ -1000,9 +1038,15 @@ watch(
           </div>
 
           <div class="flex flex-col rounded-md border bg-gray-50 px-4 py-2 dark:bg-gray-900">
-            <span class="text-muted-foreground">Resumo do lançamento</span>
+            <span class="text-muted-foreground">{{ criarContrapartida ? 'Resumo dos dois lançamentos' : 'Resumo do lançamento' }}</span>
+            <div v-if="criarContrapartida" class="my-2 grid gap-1 text-sm">
+              <span class="font-medium text-emerald-700 dark:text-emerald-400">Receita: +{{ formatCurrencyBR(totalResumo) }}</span>
+              <span class="font-medium text-rose-700 dark:text-rose-400">Despesa: −{{ formatCurrencyBR(totalResumo) }}</span>
+              <span class="text-xs text-muted-foreground">Variação de saldo: R$ 0,00 quando os dois forem efetivados na mesma conta.</span>
+              <span v-if="isRecorrente" class="text-xs text-muted-foreground">Cada registro terá sua própria recorrência; as baixas e gerações futuras serão independentes.</span>
+            </div>
             <span class="text-sm">
-              {{ isRecorrente ? 'Total gerado agora' : 'Total previsto' }}:
+              {{ criarContrapartida ? (isRecorrente ? 'Total gerado por lançamento' : 'Valor de cada lançamento') : isRecorrente ? 'Total gerado agora' : 'Total previsto' }}:
               {{ formatCurrencyBR(totalResumo) }}
             </span>
 
@@ -1084,12 +1128,14 @@ watch(
           </label>
         </div>
         <div class="flex justify-end gap-2">
-          <Button type="button" variant="secondary" @click="store.openModal = false">Fechar</Button>
-          <Button class="text-white" type="submit">{{
-            isEditMode ? 'Salvar alterações' : 'Registrar'
-          }}</Button>
+          <Button type="button" variant="secondary" :disabled="salvando" @click="store.openModal = false">Fechar</Button>
+          <Button class="gap-2 text-white" type="submit" :disabled="salvando">
+            <LoaderCircle v-if="salvando" class="size-4 animate-spin" aria-hidden="true" />
+            {{ salvando ? 'Registrando…' : isEditMode ? 'Salvar alterações' : criarContrapartida ? 'Registrar receita e despesa' : 'Registrar' }}
+          </Button>
         </div>
       </div>
+      </fieldset>
     </form>
   </ModalView>
 </template>

@@ -1,11 +1,10 @@
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
-import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { ContaAssinanteAdmin } from '@/repositories/conta-repository'
 import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
-  ArrowUpDown,
   CalendarClock,
   CircleOff,
   CreditCard,
@@ -69,14 +68,7 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'ID' }),
     cell: ({ row }) =>
       render('div', { class: 'flex items-center gap-1.5' }, [
         render(BadgeCell, {
@@ -101,14 +93,7 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
   {
     accessorKey: 'nome',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Assinante', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Assinante' }),
     cell: ({ row }) =>
       render('div', { class: 'leading-tight max-w-[240px]' }, [
         render(
@@ -126,14 +111,7 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Conta', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Conta' }),
     cell: ({ row }) => {
       const badge = getStatusBadge(row.original.status)
       return render(BadgeCell, {
@@ -160,14 +138,7 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
   {
     accessorKey: 'vencimento',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Vencimento', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Vencimento' }),
     cell: ({ row }) =>
       render(
         'div',
@@ -178,14 +149,7 @@ export const columnsAssinantesAdmin: ColumnDef<ContaAssinanteAdmin>[] = [
   {
     accessorKey: 'valor',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Plano', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Plano' }),
     cell: ({ row }) =>
       render(
         'div',

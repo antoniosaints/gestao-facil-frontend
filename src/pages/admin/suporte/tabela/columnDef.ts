@@ -1,10 +1,10 @@
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
-import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { AcessoSuporteLog } from '@/repositories/conta-repository'
 import { formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Ban, CircleCheck, LifeBuoy, Radio, UserRound } from 'lucide-vue-next'
+import { Ban, CircleCheck, LifeBuoy, Radio, UserRound } from 'lucide-vue-next'
 import Actions from './Actions.vue'
 
 export function getSituacaoBadge(data: AcessoSuporteLog) {
@@ -23,14 +23,7 @@ export const columnsAcessosSuporte: ColumnDef<AcessoSuporteLog>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'ID' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: row.original.Uid,

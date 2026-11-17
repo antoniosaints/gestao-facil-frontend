@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
@@ -6,7 +6,7 @@ import { useProdutoStore } from '@/stores/produtos/useProduto'
 import type { ProdutoBase, ProdutoVariante } from '@/types/schemas'
 import { formatCurrencyBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Boxes, Package, ScanQrCode, Tags } from 'lucide-vue-next'
+import { Boxes, Package, ScanQrCode, Tags } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import Actions from './Actions.vue'
 import ActionsVariante from './ActionsVariante.vue'
@@ -77,14 +77,7 @@ export const columnsProdutos: ColumnDef<ProdutoBase>[] = [
   {
     accessorKey: 'Uid',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'ID' }),
     cell: ({ row }) =>
       render(RouterLink, { to: `/produtos/detalhes?id=${row.original.id}` }, () =>
         render(BadgeCell, {
@@ -98,14 +91,7 @@ export const columnsProdutos: ColumnDef<ProdutoBase>[] = [
   {
     accessorKey: 'nome',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Produto base', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Produto base' }),
   },
   {
     accessorKey: 'categoria',
@@ -201,14 +187,7 @@ export const columnsVariantes: ColumnDef<ProdutoVarianteRow>[] = [
   {
     accessorKey: 'Uid',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'ID' }),
     cell: ({ row }) =>
       // render(BadgeCell, {
       //   label: row.getValue('Uid') as string,
@@ -228,14 +207,7 @@ export const columnsVariantes: ColumnDef<ProdutoVarianteRow>[] = [
   {
     accessorKey: 'produtoBaseNome',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Produto', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Produto' }),
     cell: ({ row }) =>
       render(RouterLink, { to: `/produtos/detalhes?id=${row.original.produtoBaseId}&varianteId=${row.original.id}` }, () => {
         const base = row.original.produtoBaseNome || row.original.nome
@@ -257,14 +229,7 @@ export const columnsVariantes: ColumnDef<ProdutoVarianteRow>[] = [
   {
     accessorKey: 'estoque',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Estoque', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Estoque' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: `${formatStock(row.original.estoque)} ${row.original.unidade || 'un'}`,
@@ -275,14 +240,7 @@ export const columnsVariantes: ColumnDef<ProdutoVarianteRow>[] = [
   {
     accessorKey: 'preco',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Preço', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Preço' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: formatCurrencyBR(Number(row.original.preco || 0)),

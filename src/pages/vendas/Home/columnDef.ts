@@ -1,10 +1,10 @@
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeInfo from '@/components/tabela/BadgeInfo.vue'
 import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { Vendas } from '@/types/schemas'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
-  ArrowUpDown,
   BadgeCheck,
   BanknoteArrowDown,
   CalendarArrowDown,
@@ -53,14 +53,7 @@ const allColumnsVendas: ColumnDef<Vendas>[] = [
   {
     accessorKey: 'Uid',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['ID', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'ID' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: row.original.Uid as string,
@@ -74,14 +67,7 @@ const allColumnsVendas: ColumnDef<Vendas>[] = [
   {
     accessorKey: 'valor',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Valor', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Valor' }),
     cell: ({ row }) => {
       const valor = formatCurrencyBR(row.original.valor)
       const color = row.original.status === 'FATURADO' ? 'green' : 'gray'
@@ -95,14 +81,7 @@ const allColumnsVendas: ColumnDef<Vendas>[] = [
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
       let color:
         | 'cyan'
@@ -164,14 +143,7 @@ const allColumnsVendas: ColumnDef<Vendas>[] = [
   {
     accessorKey: 'data',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Data', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Data' }),
     cell: ({ row }) => {
       const formattedDate = new Date(row.original.data).toLocaleDateString('pt-BR')
       return render(

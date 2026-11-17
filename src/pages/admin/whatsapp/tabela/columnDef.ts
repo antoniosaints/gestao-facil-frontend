@@ -1,11 +1,10 @@
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
-import { Button } from '@/components/ui/button'
 import { render } from '@/lib/utils'
 import type { AdminWhatsAppInstance } from '@/repositories/whatsapp-repository'
 import type { ColumnDef } from '@tanstack/vue-table'
 import {
   AlertTriangle,
-  ArrowUpDown,
   Building2,
   CheckCircle2,
   Clock3,
@@ -33,14 +32,7 @@ function statusBadge(status: AdminWhatsAppInstance['status']) {
 const sortableHeader =
   (label: string) =>
   ({ column }: any) =>
-    render(
-      Button,
-      {
-        variant: 'ghost',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      },
-      () => [label, render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-    )
+    render(DataTableColumnHeader, { column, title: label })
 
 export const columnsAdminWhatsApp: ColumnDef<AdminWhatsAppInstance>[] = [
   {

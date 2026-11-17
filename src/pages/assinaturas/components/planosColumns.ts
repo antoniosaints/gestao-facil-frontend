@@ -1,10 +1,10 @@
-import { Button } from '@/components/ui/button'
+import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
 import type { PlanoAssinaturaListItem } from '@/repositories/assinatura-repository'
 import { formatCurrencyBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ArrowUpDown, Layers3, Package, Repeat, Wallet } from 'lucide-vue-next'
+import { Layers3, Package, Repeat, Wallet } from 'lucide-vue-next'
 import PlanosActions from './PlanosActions.vue'
 import { getPeriodicidadeLabel, getStatusPlanoMeta } from '../shared'
 
@@ -24,26 +24,12 @@ export const columnsPlanosAssinatura: ColumnDef<PlanoAssinaturaListItem>[] = [
   {
     accessorKey: 'nome',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Plano', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Plano' }),
   },
   {
     accessorKey: 'status',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Status', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: getStatusPlanoMeta(row.original.status).label,
@@ -55,27 +41,13 @@ export const columnsPlanosAssinatura: ColumnDef<PlanoAssinaturaListItem>[] = [
   {
     accessorKey: 'periodicidadePadrao',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Periodicidade', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Periodicidade' }),
     cell: ({ row }) => render('div', {}, getPeriodicidadeLabel(row.original.periodicidadePadrao)),
   },
   {
     accessorKey: 'valorBase',
     header: ({ column }) =>
-      render(
-        Button,
-        {
-          variant: 'ghost',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-        },
-        () => ['Valor base', render(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
-      ),
+      render(DataTableColumnHeader, { column, title: 'Valor base' }),
     cell: ({ row }) =>
       render(BadgeCell, {
         label: formatCurrencyBR(row.original.valorBase),
