@@ -73,8 +73,14 @@ const description = computed(() => {
 
 watch(
   [modalOpen, selectedInstance],
-  ([open, instance]) => {
+  ([open, instance], [wasOpen]) => {
     if (!open || !instance) return
+    if (wasOpen && current.value?.id === instance.id) {
+      // A sincronização atualiza selectedInstance sem iniciar outra consulta no modal.
+      // Preserve o resultado e os formulários enquanto a mesma instância estiver aberta.
+      current.value = { ...instance, Conta: { ...instance.Conta } }
+      return
+    }
     current.value = { ...instance, Conta: { ...instance.Conta } }
     Object.assign(editForm, {
       nome: instance.nome,
@@ -207,9 +213,11 @@ async function runAction(action: 'qrCode' | 'restart' | 'disconnect' | 'status' 
     const result = await WhatsAppRepository.adminInstanceAction(current.value.id, action)
     actionResult.value = JSON.stringify(result, null, 2)
     qrCodeImage.value = action === 'qrCode' ? extractQrCodeImage(result) : ''
-    actionTone.value = action === 'disconnect' ? 'warning' : 'success'
-    actionSummary.value =
-      action === 'qrCode'
+    const deviceUnavailable = action === 'device' && result?.result?.available === false
+    actionTone.value = action === 'disconnect' || deviceUnavailable ? 'warning' : 'success'
+    actionSummary.value = deviceUnavailable
+      ? result.result.message
+      : action === 'qrCode'
         ? 'QR Code gerado para conexão.'
         : action === 'restart'
           ? 'Reinício enviado para a W-API.'
@@ -221,7 +229,8 @@ async function runAction(action: 'qrCode' | 'restart' | 'disconnect' | 'status' 
     const synced = await WhatsAppRepository.syncAdminInstance(current.value.id)
     mergeCurrent(synced)
     triggerRefresh()
-    toast.success(actionSummary.value)
+    if (deviceUnavailable) toast.warning(actionSummary.value)
+    else toast.success(actionSummary.value)
   } catch (error: any) {
     actionTone.value = 'danger'
     actionSummary.value = errorMessage(error, 'Erro ao executar a ação.')

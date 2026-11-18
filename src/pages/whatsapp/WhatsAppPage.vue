@@ -163,6 +163,19 @@
                   <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'status')" class="h-4 w-4 animate-spin" />
                   <Wifi v-else class="h-4 w-4" />
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-8"
+                  aria-label="Consultar aparelho"
+                  :aria-busy="isInstanceActionLoading(instance.id, 'device')"
+                  :disabled="isAnyInstanceActionLoading(instance.id)"
+                  @click="runInstanceAction(instance, 'device')"
+                >
+                  <LoaderIcon v-if="isInstanceActionLoading(instance.id, 'device')" class="mr-1.5 h-4 w-4 animate-spin" />
+                  <Smartphone v-else class="mr-1.5 h-4 w-4" />
+                  Aparelho
+                </Button>
                 <Button variant="outline" size="icon" class="h-8 w-8" v-tooltip="'Configurar webhook'" :disabled="loadingWebhookConfig || isAnyInstanceActionLoading(instance.id)" @click="openWebhookModal(instance)">
                   <LoaderIcon v-if="loadingWebhookConfig && webhookInstance?.id === instance.id" class="h-4 w-4 animate-spin" />
                   <Webhook v-else class="h-4 w-4" />
@@ -1300,7 +1313,7 @@ const actionLabels: Record<string, string> = {
   qrCode: 'QR Code',
   pairingCode: 'Código de pareamento',
   status: 'Status',
-  device: 'Device',
+  device: 'Aparelho',
   restart: 'Reiniciar',
   disconnect: 'Desconectar',
   setupWebhooks: 'Webhooks',
@@ -1369,6 +1382,14 @@ function buildInstanceActionFeedback(action: InstanceActionName, result: any, ha
       tone: 'info' as InstanceActionTone,
       summary: 'Reinicio enviado para a W-API.',
       detail: 'Aguarde alguns instantes e consulte o status novamente.',
+    }
+  }
+
+  if (action === 'device' && result?.result?.available === false) {
+    return {
+      tone: 'warning' as InstanceActionTone,
+      summary: 'Dados do aparelho indisponíveis.',
+      detail: result.result.message,
     }
   }
 
