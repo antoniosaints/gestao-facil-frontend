@@ -2,6 +2,7 @@ import axios, { AxiosError } from 'axios'
 import { useAuthStore } from '@/stores/login/useAuthStore'
 import { useToast } from 'vue-toastification'
 import { exitSupport, isSupportActive } from '@/utils/supportSession'
+import { promptAppAccess } from '@/composables/useAppAccessPrompt'
 
 const toast = useToast()
 
@@ -40,6 +41,9 @@ http.interceptors.response.use(
     const originalRequest = error.config as any
 
     const msg = (error.response?.data as any)?.message || 'Erro inesperado na requisição'
+    // Falta de permissão continua com seu tratamento próprio. Só pré-requisitos
+    // conhecidos de apps abrem o caminho de ativação/configuração no ERP privado.
+    if (localStorage.getItem('gestao_facil:token') && error.response) promptAppAccess(error.response.data)
     console.error(msg)
     // O backend devolve 403 para JWT inválido/expirado. Isso é uma falha de
     // autenticação (e não uma falta de permissão), portanto segue o mesmo fluxo

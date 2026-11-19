@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { moneyMaskOptions } from '@/lib/imaska'
-import { CircleAlert, Copy, ExternalLink, FilePlus, Loader2, Receipt } from 'lucide-vue-next'
+import { Copy, ExternalLink, FilePlus, Loader2, Receipt } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { vMaska } from "@/lib/maska"
@@ -18,7 +18,8 @@ import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import { addHours, isBefore } from 'date-fns'
 import { Textarea } from '@/components/ui/textarea'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { ContaRepository } from '@/repositories/conta-repository'
+import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
+import { useMercadoPagoAccess } from '@/composables/useMercadoPagoAccess'
 
 const storeCobranca = useCobrancasFinanceirasStore()
 const storeClientes = useClientesStore()
@@ -26,24 +27,11 @@ const uiStore = useUiStore()
 const toast = useToast()
 const submitText = ref('Gerar cobrança')
 const linkPayment = ref('')
-const mercadoPagoAtivo = ref(false)
-const verificandoMercadoPago = ref(false)
-
+const { ready: mercadoPagoAtivo, loading: verificandoMercadoPago, failed: acessoFalhou, refresh: atualizarAcesso } = useMercadoPagoAccess()
 async function carregarStatusMercadoPago() {
-    verificandoMercadoPago.value = true
-    mercadoPagoAtivo.value = false
     storeCobranca.form.gateway = undefined
-
-    try {
-        const status = await ContaRepository.statusMercadoPago()
-        mercadoPagoAtivo.value = status.modo !== 'NENHUM'
-        if (mercadoPagoAtivo.value) storeCobranca.form.gateway = 'mercadopago'
-    } catch (error) {
-        console.error(error)
-        toast.error('Não foi possível verificar a integração com o Mercado Pago.')
-    } finally {
-        verificandoMercadoPago.value = false
-    }
+    await atualizarAcesso()
+    if (mercadoPagoAtivo.value) storeCobranca.form.gateway = 'mercadopago'
 }
 
 async function gerarCobrancaLancamento() {
@@ -142,11 +130,11 @@ watch(
                             class="flex h-10 items-center rounded-md border bg-muted/30 px-3 text-sm font-medium">
                             Mercado Pago
                         </div>
-                        <div v-else
-                            class="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
-                            <CircleAlert class="mt-0.5 h-4 w-4 shrink-0" />
-                            Conecte o Mercado Pago em Apps para gerar cobranças.
+                        <div v-else-if="acessoFalhou" role="alert" class="space-y-2 text-sm">
+                            <p>Não foi possível verificar o Mercado Pago.</p>
+                            <Button variant="outline" @click="carregarStatusMercadoPago">Tentar novamente</Button>
                         </div>
+                        <AppRequirementNotice v-else app="mercado-pago" :configured="false" @navigate="storeCobranca.openModal = false" />
                     </div>
                     <div class="md:col-span-6">
                         <label class="block text-sm font-medium mb-1">

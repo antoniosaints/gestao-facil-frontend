@@ -1,12 +1,12 @@
 import type { ClientesFornecedores } from '@/types/schemas'
 import http from '@/utils/axios'
 
-export type ClienteWhatsappPayload =
+export type ClienteWhatsappPayload = { instanciaId?: number } & (
   | { tipo: 'COBRANCA'; cobrancaId: number }
   | { tipo: 'MENSAGEM'; mensagem: string }
   | { tipo: 'LANCAMENTO'; lancamentoId: number }
   | { tipo: 'ORCAMENTO_VENDA'; vendaId: number }
-  | { tipo: 'COMPROVANTE_VENDA'; vendaId: number; telefone?: string }
+  | { tipo: 'COMPROVANTE_VENDA'; vendaId: number; telefone?: string })
 
 export type ClienteDetalhesTab = 'cobrancas' | 'lancamentos' | 'vendas' | 'ordens'
 

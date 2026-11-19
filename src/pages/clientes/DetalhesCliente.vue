@@ -10,15 +10,13 @@
 
     <div v-else class="space-y-6">
       <Card class="overflow-hidden rounded-md">
-        <!-- Faixa de destaque no topo do cartão -->
-        <div class="h-1 bg-gradient-to-r from-primary via-primary to-primary"></div>
         <CardHeader class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div class="flex items-start gap-4">
+          <div class="flex min-w-0 items-start gap-4">
             <Avatar class="h-16 w-16 shrink-0 ring-2 ring-primary/90">
               <AvatarFallback class="text-lg font-bold text-foreground">{{ initials(stats?.cliente?.nome) }}</AvatarFallback>
             </Avatar>
             <div class="min-w-0">
-              <CardTitle class="text-2xl font-bold leading-tight">{{ stats?.cliente?.nome }}</CardTitle>
+              <CardTitle class="break-words text-2xl font-semibold leading-tight">{{ stats?.cliente?.nome }}</CardTitle>
               <div class="mt-2 flex flex-wrap items-center gap-2">
                 <Badge variant="secondary" class="uppercase">{{ stats?.cliente?.tipo }}</Badge>
                 <Badge
@@ -30,6 +28,7 @@
                   {{ clienteStatus }}
                 </Badge>
               </div>
+              <p class="mt-1 text-xs text-muted-foreground">{{ stats?.cliente?.Uid || `Cliente #${clienteId}` }}</p>
               <div class="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Phone class="h-3.5 w-3.5 shrink-0" />
                 <span class="truncate">{{ contatoPrincipal || 'Sem telefone cadastrado' }}</span>
@@ -108,6 +107,9 @@
                 </Card>
               </div>
               <div class="grid gap-3 rounded-xl border bg-muted/20 p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                <div><p class="text-xs text-muted-foreground">Documento</p><p class="mt-1 break-words font-medium">{{ stats?.cliente?.documento || 'Não informado' }}</p></div>
+                <div><p class="text-xs text-muted-foreground">E-mail</p><p class="mt-1 break-all font-medium">{{ stats?.cliente?.email || 'Não informado' }}</p></div>
+                <div><p class="text-xs text-muted-foreground">Cidade / UF</p><p class="mt-1 font-medium">{{ [stats?.cliente?.cidade, stats?.cliente?.estado].filter(Boolean).join(' / ') || 'Não informado' }}</p></div>
                 <div><p class="text-xs text-muted-foreground">Tipo de cadastro</p><p class="mt-1 font-medium">{{ stats?.cliente?.tipo || '-' }}</p></div>
                 <div><p class="text-xs text-muted-foreground">Telefone / WhatsApp</p><p class="mt-1 font-medium">{{ contatoPrincipal || 'Não informado' }}</p></div>
                 <div><p class="text-xs text-muted-foreground">Situação</p><p class="mt-1 font-medium">{{ clienteStatus }}</p></div>
@@ -115,105 +117,52 @@
             </TabsContent>
 
             <template v-if="displayTab !== 'resumo'">
-          <div class="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_210px_210px_auto]">
-            <div class="relative">
-              <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                v-model="filters.search"
-                class="h-10 pl-9"
-                placeholder="Buscar na aba atual"
-                @keyup.enter="applyFilters"
-              />
-            </div>
-            <Calendarpicker v-model="filters.inicio" :required="false" placeholder="Data inicial" :teleport="true" />
-            <Calendarpicker v-model="filters.fim" :required="false" placeholder="Data final" :teleport="true" />
-            <div class="flex gap-2">
-              <Button type="button" variant="outline" class="flex-1" @click="clearFilters">Limpar</Button>
-              <Button type="button" class="flex-1 text-white" @click="applyFilters">
-                <Filter class="h-4 w-4" />
-                Filtrar
-              </Button>
-            </div>
-          </div>
-
-            <TabsContent value="cobrancas" class="mt-4">
-              <TabState :loading="operationalLoading" :empty="!operational.cobrancas.length" empty-label="Nenhuma cobrança vinculada.">
-                <div class="overflow-x-auto rounded-lg border">
-                  <table class="w-full min-w-[680px] text-sm"><thead class="bg-muted/50 text-left text-xs font-medium text-muted-foreground"><tr><th class="px-4 py-3">Cobrança</th><th class="px-4 py-3">Vencimento</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Valor</th><th class="w-14 px-3 py-3"><span class="sr-only">Ações</span></th></tr></thead><tbody class="divide-y">
-                    <tr v-for="cobranca in operational.cobrancas" :key="cobranca.id" class="transition-colors hover:bg-muted/35"><td class="px-4 py-3 font-medium">{{ cobranca.Uid || cobranca.idCobranca }}</td><td class="px-4 py-3 text-muted-foreground">{{ formatDate(cobranca.dataVencimento) }}</td><td class="px-4 py-3"><Badge variant="outline">{{ cobranca.status }}</Badge></td><td class="px-4 py-3 text-right font-semibold tabular-nums">{{ formatCurrency(cobranca.valor) }}</td><td class="px-3 py-2"><Button type="button" variant="ghost" size="icon" title="Enviar lembrete desta cobrança" @click="openQuickSend({ tipo: 'COBRANCA', cobrancaId: cobranca.id }, `a cobrança ${cobranca.Uid || cobranca.idCobranca} de ${formatCurrency(cobranca.valor)}`)"><Send class="h-4 w-4" /></Button></td></tr>
-                  </tbody></table>
+              <div class="mt-5 flex flex-col gap-3 rounded-lg border bg-muted/15 p-3 sm:flex-row sm:items-end">
+                <div class="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
+                  <div class="space-y-1.5"><Label>Data inicial</Label><Calendarpicker v-model="filters.inicio" :required="false" placeholder="Data inicial" :teleport="true" /></div>
+                  <div class="space-y-1.5"><Label>Data final</Label><Calendarpicker v-model="filters.fim" :required="false" placeholder="Data final" :teleport="true" /></div>
                 </div>
-              </TabState>
-            </TabsContent>
-
-            <TabsContent value="lancamentos" class="mt-4">
-              <TabState :loading="operationalLoading" :empty="!operational.lancamentos.length" empty-label="Nenhum lançamento vinculado.">
-                <div class="overflow-x-auto rounded-lg border">
-                  <table class="w-full min-w-[760px] text-sm"><thead class="bg-muted/50 text-left text-xs font-medium text-muted-foreground"><tr><th class="px-4 py-3">Descrição</th><th class="px-4 py-3">Código</th><th class="px-4 py-3">Data</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Valor</th><th class="w-14 px-3 py-3"><span class="sr-only">Ações</span></th></tr></thead><tbody class="divide-y">
-                    <tr v-for="lancamento in operational.lancamentos" :key="lancamento.id" class="transition-colors hover:bg-muted/35"><td class="px-4 py-3 font-medium">{{ lancamento.descricao }}</td><td class="px-4 py-3 text-xs text-muted-foreground">{{ lancamento.Uid }}</td><td class="px-4 py-3 text-muted-foreground">{{ formatDate(lancamento.dataLancamento) }}</td><td class="px-4 py-3"><Badge variant="outline">{{ lancamento.status }}</Badge></td><td class="px-4 py-3 text-right font-semibold tabular-nums">{{ formatCurrency(lancamento.valorTotal) }}</td><td class="px-3 py-2"><div class="flex justify-end gap-1"><Button type="button" variant="outline" size="icon" title="Abrir lançamento" @click="openLancamento(lancamento.id)"><ExternalLink class="h-4 w-4" /></Button><Button v-if="lancamento.tipo === 'RECEITA' && lancamento.status !== 'PAGO'" type="button" variant="outline" size="icon" title="Enviar pendência deste lançamento" @click="openQuickSend({ tipo: 'LANCAMENTO', lancamentoId: lancamento.id }, `a pendência do lançamento ${lancamento.descricao} de ${formatCurrency(lancamento.valorTotal)}`)"><Send class="h-4 w-4" /></Button></div></td></tr>
-                  </tbody></table>
+                <div class="flex gap-2">
+                  <Button type="button" variant="outline" @click="clearFilters">Limpar</Button>
+                  <Button type="button" class="gap-2 text-white" @click="applyFilters"><Filter class="h-4 w-4" />Aplicar período</Button>
                 </div>
-              </TabState>
-            </TabsContent>
-
-            <TabsContent value="vendas" class="mt-4">
-              <TabState :loading="operationalLoading" :empty="!operational.vendas.length" empty-label="Nenhuma venda vinculada.">
-                <div class="overflow-x-auto rounded-lg border">
-                  <table class="w-full min-w-[760px] text-sm"><thead class="bg-muted/50 text-left text-xs font-medium text-muted-foreground"><tr><th class="px-4 py-3">Venda</th><th class="px-4 py-3">Data</th><th class="px-4 py-3 text-center">Itens</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Total</th><th class="px-3 py-3 text-right">Documentos</th></tr></thead><tbody class="divide-y">
-                    <tr v-for="venda in operational.vendas" :key="venda.id" class="transition-colors hover:bg-muted/35"><td class="px-4 py-3 font-medium">{{ venda.Uid }}</td><td class="px-4 py-3 text-muted-foreground">{{ formatDate(venda.data) }}</td><td class="px-4 py-3 text-center tabular-nums">{{ venda.ItensVendas?.length || 0 }}</td><td class="px-4 py-3"><Badge variant="outline">{{ venda.status }}</Badge></td><td class="px-4 py-3 text-right font-semibold tabular-nums">{{ formatCurrency(totalVenda(venda)) }}</td><td class="px-3 py-2"><div class="flex justify-end gap-1"><Button type="button" variant="ghost" size="sm" @click="openReminderModal('ORCAMENTO_VENDA', undefined, venda.id)">Orçamento</Button><Button type="button" variant="ghost" size="sm" @click="openReminderModal('COMPROVANTE_VENDA', undefined, venda.id)">Comprovante</Button></div></td></tr>
-                  </tbody></table>
-                </div>
-              </TabState>
-            </TabsContent>
-
-            <TabsContent value="ordens" class="mt-4">
-              <TabState :loading="operationalLoading" :empty="!operational.ordens.length" empty-label="Nenhuma OS vinculada.">
-                <div class="overflow-x-auto rounded-lg border">
-                  <table class="w-full min-w-[620px] text-sm"><thead class="bg-muted/50 text-left text-xs font-medium text-muted-foreground"><tr><th class="px-4 py-3">Ordem de serviço</th><th class="px-4 py-3">Data</th><th class="px-4 py-3 text-center">Itens</th><th class="px-4 py-3">Status</th></tr></thead><tbody class="divide-y">
-                    <tr v-for="ordem in operational.ordens" :key="ordem.id" class="transition-colors hover:bg-muted/35"><td class="px-4 py-3 font-medium">{{ ordem.Uid }}</td><td class="px-4 py-3 text-muted-foreground">{{ formatDate(ordem.data) }}</td><td class="px-4 py-3 text-center tabular-nums">{{ ordem.ItensOrdensServico?.length || 0 }}</td><td class="px-4 py-3"><Badge variant="outline">{{ ordem.status }}</Badge></td></tr>
-                  </tbody></table>
-                </div>
-              </TabState>
-            </TabsContent>
-
-          <div class="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <span class="text-xs text-muted-foreground">
-              {{ activeMeta.total }} registro(s) · página {{ activeMeta.page }} de {{ activeMeta.totalPages }}
-            </span>
-            <div class="flex justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" :disabled="activeMeta.page <= 1 || operationalLoading" @click="changePage(activeMeta.page - 1)">
-                <ChevronLeft class="h-4 w-4" />
-                Anterior
-              </Button>
-              <Button type="button" variant="outline" size="sm" :disabled="activeMeta.page >= activeMeta.totalPages || operationalLoading" @click="changePage(activeMeta.page + 1)">
-                Próxima
-                <ChevronRight class="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+              </div>
+              <div class="mt-4 min-w-0">
+                <DataTable
+                  :key="`${clienteId}:${displayTab}`"
+                  :columns="detailsColumns"
+                  :api="`/clientes/${clienteId}/detalhes-operacionais`"
+                  :filters="tableFilters"
+                  :state-key="`cliente:${clienteId}:${displayTab}`"
+                  :clear-search-token="clearSearchToken"
+                  :empty-title="emptyLabels[displayTab]"
+                  empty-description="Altere a busca ou o período para conferir outros registros deste cliente."
+                  search-placeholder="Buscar nesta listagem"
+                />
+              </div>
             </template>
           </Tabs>
         </CardContent>
       </Card>
     </div>
 
-    <ModalView v-model:open="reminderOpen" title="Enviar lembrete" description="Envie mensagens para o WhatsApp do cliente." size="lg">
-      <form class="space-y-4 px-4" @submit.prevent="sendReminder">
+    <ModalView v-model:open="reminderOpen" title="Enviar mensagem ao cliente" description="Escolha o conteúdo, confira o destinatário e selecione a instância de envio." size="lg">
+      <form class="space-y-5 px-2 pb-4 sm:px-4" @submit.prevent="sendReminder">
         <div class="grid gap-2">
           <label class="text-sm font-medium">Tipo de envio</label>
-          <Select v-model="reminderForm.tipo"><SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger><SelectContent><SelectItem value="COBRANCA">Lembrete de cobrança</SelectItem><SelectItem value="LANCAMENTO">Pendência de lançamento</SelectItem><SelectItem value="MENSAGEM">Mensagem avulsa</SelectItem><SelectItem value="ORCAMENTO_VENDA">Orçamento de venda</SelectItem><SelectItem value="COMPROVANTE_VENDA">Comprovante de venda</SelectItem></SelectContent></Select>
+          <Select v-model="reminderForm.tipo"><SelectTrigger aria-label="Tipo de envio"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger><SelectContent><SelectItem value="COBRANCA">Lembrete de cobrança</SelectItem><SelectItem value="LANCAMENTO">Pendência de lançamento</SelectItem><SelectItem value="MENSAGEM">Mensagem avulsa</SelectItem><SelectItem value="ORCAMENTO_VENDA">Orçamento de venda</SelectItem><SelectItem value="COMPROVANTE_VENDA">Comprovante de venda</SelectItem></SelectContent></Select>
         </div>
 
         <p v-if="reminderOptionsLoading" class="text-xs text-muted-foreground">Carregando registros do cliente...</p>
 
         <div v-if="reminderForm.tipo === 'COBRANCA'" class="grid gap-2">
           <label class="text-sm font-medium">Cobrança</label>
-          <Select :model-value="reminderForm.cobrancaId?.toString()" @update:model-value="reminderForm.cobrancaId = $event ? Number($event) : null"><SelectTrigger><SelectValue placeholder="Selecione uma cobrança" /></SelectTrigger><SelectContent><SelectItem v-for="cobranca in reminderOptions.cobrancas" :key="cobranca.id" :value="String(cobranca.id)">{{ cobranca.Uid || cobranca.idCobranca }} - {{ formatCurrency(cobranca.valor) }}</SelectItem></SelectContent></Select>
+          <Select :model-value="reminderForm.cobrancaId?.toString()" @update:model-value="reminderForm.cobrancaId = $event ? Number($event) : null"><SelectTrigger aria-label="Cobrança"><SelectValue placeholder="Selecione uma cobrança" /></SelectTrigger><SelectContent><SelectItem v-for="cobranca in reminderOptions.cobrancas" :key="cobranca.id" :value="String(cobranca.id)">{{ cobranca.Uid || cobranca.idCobranca }} - {{ formatCurrency(cobranca.valor) }}</SelectItem></SelectContent></Select>
         </div>
 
         <div v-if="reminderForm.tipo === 'LANCAMENTO'" class="grid gap-2">
           <label class="text-sm font-medium">Lançamento (receitas pendentes)</label>
-          <Select :model-value="reminderForm.lancamentoId?.toString()" @update:model-value="reminderForm.lancamentoId = $event ? Number($event) : null"><SelectTrigger><SelectValue placeholder="Selecione um lançamento" /></SelectTrigger><SelectContent><SelectItem v-for="lancamento in reminderOptions.lancamentos" :key="lancamento.id" :value="String(lancamento.id)">{{ lancamento.descricao }} - {{ formatCurrency(lancamento.valorTotal) }}</SelectItem></SelectContent></Select>
+          <Select :model-value="reminderForm.lancamentoId?.toString()" @update:model-value="reminderForm.lancamentoId = $event ? Number($event) : null"><SelectTrigger aria-label="Lançamento"><SelectValue placeholder="Selecione um lançamento" /></SelectTrigger><SelectContent><SelectItem v-for="lancamento in reminderOptions.lancamentos" :key="lancamento.id" :value="String(lancamento.id)">{{ lancamento.descricao }} - {{ formatCurrency(lancamento.valorTotal) }}</SelectItem></SelectContent></Select>
           <p v-if="!reminderOptionsLoading && !reminderOptions.lancamentos.length" class="text-xs text-muted-foreground">
             Nenhuma receita pendente encontrada para este cliente.
           </p>
@@ -221,7 +170,7 @@
 
         <div v-if="['ORCAMENTO_VENDA', 'COMPROVANTE_VENDA'].includes(reminderForm.tipo)" class="grid gap-2">
           <label class="text-sm font-medium">Venda</label>
-          <Select :model-value="reminderForm.vendaId?.toString()" @update:model-value="reminderForm.vendaId = $event ? Number($event) : null"><SelectTrigger><SelectValue placeholder="Selecione uma venda" /></SelectTrigger><SelectContent><SelectItem v-for="venda in reminderOptions.vendas" :key="venda.id" :value="String(venda.id)">{{ venda.Uid }} - {{ formatCurrency(totalVenda(venda)) }}</SelectItem></SelectContent></Select>
+          <Select :model-value="reminderForm.vendaId?.toString()" @update:model-value="reminderForm.vendaId = $event ? Number($event) : null"><SelectTrigger aria-label="Venda"><SelectValue placeholder="Selecione uma venda" /></SelectTrigger><SelectContent><SelectItem v-for="venda in reminderOptions.vendas" :key="venda.id" :value="String(venda.id)">{{ venda.Uid }} - {{ formatCurrency(totalVenda(venda)) }}</SelectItem></SelectContent></Select>
         </div>
 
         <div v-if="reminderForm.tipo === 'MENSAGEM'" class="grid gap-2">
@@ -233,9 +182,11 @@
           Destino: {{ contatoPrincipal || 'cliente sem telefone/WhatsApp cadastrado' }}
         </div>
 
-        <div class="flex justify-end gap-2">
-          <Button type="button" variant="outline" @click="reminderOpen = false">Cancelar</Button>
-          <Button type="submit" class="text-white" :disabled="sendingReminder">
+        <WhatsAppInstanceSelect v-model="reminderForm.instanciaId" :instances="senderInstances" :module-active="whatsappActive" :loading="whatsappContextLoading" :disabled="sendingReminder" @refresh="refreshWhatsAppInstances" />
+        <p v-if="!contatoPrincipal" class="text-sm text-destructive" role="alert">Adicione um telefone ao cadastro do cliente antes de enviar.</p>
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" :disabled="sendingReminder" @click="reminderOpen = false">Cancelar</Button>
+          <Button type="submit" class="text-white" :disabled="!canSendReminder">
             <Send class="h-4 w-4" />
             Enviar
           </Button>
@@ -243,15 +194,17 @@
       </form>
     </ModalView>
 
-    <ModalView v-model:open="quickSend.open" title="Enviar via WhatsApp" description="Confirme o envio para o WhatsApp do cliente." size="md">
-      <div class="space-y-4 px-4 pb-4">
+    <ModalView v-model:open="quickSend.open" title="Confirmar envio por WhatsApp" description="Confira os dados e a instância antes de enviar." size="lg">
+      <div class="space-y-5 px-2 pb-4 sm:px-4">
         <div class="rounded-md border bg-muted/30 p-3 text-sm">
           Enviar {{ quickSend.resumo }} para
           <strong>{{ contatoPrincipal || 'cliente sem telefone cadastrado' }}</strong>?
         </div>
-        <div class="flex justify-end gap-2">
+        <WhatsAppInstanceSelect v-model="quickSend.instanciaId" :instances="senderInstances" :module-active="whatsappActive" :loading="whatsappContextLoading" :disabled="quickSend.sending" @refresh="refreshWhatsAppInstances" />
+        <p v-if="!contatoPrincipal" class="text-sm text-destructive" role="alert">Adicione um telefone ao cadastro do cliente antes de enviar.</p>
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="outline" :disabled="quickSend.sending" @click="quickSend.open = false">Cancelar</Button>
-          <Button type="button" class="text-white" :disabled="quickSend.sending" @click="confirmQuickSend">
+          <Button type="button" class="text-white" :disabled="!canQuickSend" @click="confirmQuickSend">
             <Send class="h-4 w-4" />
             {{ quickSend.sending ? 'Enviando...' : 'Confirmar envio' }}
           </Button>
@@ -285,7 +238,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import {
@@ -303,7 +256,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import {
@@ -315,12 +267,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import ModalView from '@/components/formulario/ModalView.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
+import DataTable from '@/components/tabela/DataTable.vue'
+import { Label } from '@/components/ui/label'
+import WhatsAppInstanceSelect from './partials/WhatsAppInstanceSelect.vue'
+import { clienteDetailsColumns } from './partials/detailsColumns'
 import { formatCurrencyBR as formatCurrency, formatDateToPtBR } from '@/utils/formatters'
 import {
   AlertCircle as AlertCircleIcon,
   ChevronLeft,
-  ChevronRight,
-  ExternalLink,
   Filter,
   Headset,
   MessageCircleMore,
@@ -331,7 +285,6 @@ import {
   PowerOff,
   Receipt,
   RefreshCcw,
-  Search,
   Send,
   ShoppingCart as ShoppingCartIcon,
   Trash2,
@@ -343,25 +296,6 @@ import {
 
 type ReminderType = ClienteWhatsappPayload['tipo']
 
-const TabState = defineComponent({
-  props: {
-    loading: { type: Boolean, required: true },
-    empty: { type: Boolean, required: true },
-    emptyLabel: { type: String, required: true },
-  },
-  setup(props, { slots }) {
-    return () => {
-      if (props.loading) {
-        return h('div', { class: 'py-8 text-center text-sm text-muted-foreground' }, 'Carregando registros...')
-      }
-      if (props.empty) {
-        return h('div', { class: 'py-8 text-center text-sm text-muted-foreground' }, props.emptyLabel)
-      }
-      return slots.default?.()
-    }
-  },
-})
-
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -369,7 +303,6 @@ const confirm = useConfirm()
 const storeCliente = useClientesStore()
 const storeUi = useUiStore()
 const loading = ref(true)
-const operationalLoading = ref(true)
 const sendingReminder = ref(false)
 const clienteActionLoading = ref(false)
 const error = ref('')
@@ -377,31 +310,30 @@ const stats = ref<any>(null)
 const activeTab = ref<ClienteDetalhesTab>('cobrancas')
 const displayTab = ref<'resumo' | ClienteDetalhesTab>('resumo')
 const reminderOpen = ref(false)
-const operational = ref<Record<ClienteDetalhesTab, any[]>>({
-  cobrancas: [],
-  lancamentos: [],
-  vendas: [],
-  ordens: [],
-})
-const tabMeta = ref<Record<ClienteDetalhesTab, { total: number; page: number; limit: number; totalPages: number }>>({
-  cobrancas: { total: 0, page: 1, limit: 10, totalPages: 1 },
-  lancamentos: { total: 0, page: 1, limit: 10, totalPages: 1 },
-  vendas: { total: 0, page: 1, limit: 10, totalPages: 1 },
-  ordens: { total: 0, page: 1, limit: 10, totalPages: 1 },
-})
+const tableVersion = ref(0)
+const clearSearchToken = ref(0)
+const whatsappContextLoading = ref(false)
+const appliedPeriod = reactive({ inicio: null as string | null, fim: null as string | null })
+const emptyLabels = { cobrancas: 'Nenhuma cobrança encontrada', lancamentos: 'Nenhum lançamento encontrado', vendas: 'Nenhuma venda encontrada', ordens: 'Nenhuma ordem de serviço encontrada' }
+const tableFilters = computed(() => ({ tab: displayTab.value, ...appliedPeriod, update: tableVersion.value }))
+const detailsColumns = computed(() => clienteDetailsColumns(activeTab.value, {
+  send: openQuickSend,
+  openEntry: openLancamento,
+}))
 const filters = ref({
-  search: '',
   inicio: null as Date | null,
   fim: null as Date | null,
 })
 const reminderForm = ref<{
   tipo: ReminderType
+  instanciaId: number | null
   cobrancaId: number | null
   vendaId: number | null
   lancamentoId: number | null
   mensagem: string
 }>({
   tipo: 'COBRANCA',
+  instanciaId: null,
   cobrancaId: null,
   vendaId: null,
   lancamentoId: null,
@@ -418,17 +350,19 @@ const quickSend = ref<{
   sending: boolean
   payload: ClienteWhatsappPayload | null
   resumo: string
+  instanciaId: number | null
 }>({
   open: false,
   sending: false,
   payload: null,
   resumo: '',
+  instanciaId: null,
 })
 
 const clienteId = computed(() => Number(route.params.id))
 const contatoPrincipal = computed(() => stats.value?.cliente?.whastapp || stats.value?.cliente?.telefone || '')
 const podeIniciarAtendimento = computed(
-  () => storeUi.hasActiveModule('atendimento') && Boolean(contatoPrincipal.value),
+  () => Boolean(contatoPrincipal.value),
 )
 
 function iniciarAtendimento() {
@@ -440,7 +374,21 @@ function iniciarAtendimento() {
 }
 const clienteStatus = computed(() => stats.value?.cliente?.status || 'ATIVO')
 const isClienteAtivo = computed(() => clienteStatus.value === 'ATIVO')
-const activeMeta = computed(() => tabMeta.value[activeTab.value])
+const whatsappActive = computed(() => stats.value?.whatsapp?.ativo ?? storeUi.hasActiveModule('whatsapp'))
+const senderInstances = computed<Array<{ id: number; nome: string; status: string; numeroConectado?: string }>>(() => stats.value?.whatsapp?.instancias || [])
+const hasConnectedSender = (id: number | null) => whatsappActive.value && senderInstances.value.some(instance => instance.id === id && instance.status === 'CONECTADA')
+const canSendReminder = computed(() => Boolean(contatoPrincipal.value) && hasConnectedSender(reminderForm.value.instanciaId) && !sendingReminder.value && !whatsappContextLoading.value)
+const canQuickSend = computed(() => Boolean(contatoPrincipal.value) && hasConnectedSender(quickSend.value.instanciaId) && !quickSend.value.sending && !whatsappContextLoading.value)
+function defaultSender() {
+  const connected = senderInstances.value.filter(instance => instance.status === 'CONECTADA')
+  return connected.find(instance => instance.id === stats.value?.whatsapp?.instanciaPadraoId)?.id ?? (connected.length === 1 ? connected[0].id : null)
+}
+async function refreshWhatsAppInstances() {
+  whatsappContextLoading.value = true
+  try { await reloadClienteStats() }
+  catch { toast.error('Não foi possível atualizar as instâncias. Tente novamente.') }
+  finally { whatsappContextLoading.value = false }
+}
 const summaryCards = computed(() => [
   {
     title: stats.value?.cliente?.tipo === 'FORNECEDOR' ? 'Total comprado' : 'Total em vendas',
@@ -558,42 +506,25 @@ async function excluirCliente() {
   }
 }
 
-async function loadOperationalDetails(page = activeMeta.value.page) {
-  operationalLoading.value = true
-  try {
-    const response = await ClienteRepository.getDetalhesOperacionais(clienteId.value, {
-      tab: activeTab.value,
-      search: filters.value.search,
-      page,
-      limit: activeMeta.value.limit,
-      inicio: toDateTime(filters.value.inicio),
-      fim: toDateTime(filters.value.fim, true),
-    })
-    operational.value[activeTab.value] = response.items || []
-    tabMeta.value[activeTab.value] = response.meta || { total: 0, page, limit: 10, totalPages: 1 }
-  } catch (e) {
-    console.error(e)
-    toast.error('Falha ao carregar detalhes operacionais')
-  } finally {
-    operationalLoading.value = false
-  }
-}
-
 function applyFilters() {
-  loadOperationalDetails(1)
+  if (filters.value.inicio && filters.value.fim && new Date(filters.value.inicio) > new Date(filters.value.fim)) {
+    toast.warning('A data inicial deve ser anterior à data final.')
+    return
+  }
+  appliedPeriod.inicio = toDateTime(filters.value.inicio)
+  appliedPeriod.fim = toDateTime(filters.value.fim, true)
+  tableVersion.value++
 }
-
 function clearFilters() {
-  filters.value = { search: '', inicio: null, fim: null }
-  loadOperationalDetails(1)
+  filters.value = { inicio: null, fim: null }
+  appliedPeriod.inicio = null
+  appliedPeriod.fim = null
+  clearSearchToken.value++
+  tableVersion.value++
 }
-
-function changePage(page: number) {
-  loadOperationalDetails(page)
-}
-
 async function refreshClienteDetalhes() {
-  await Promise.all([reloadClienteStats(), loadOperationalDetails(activeMeta.value.page)])
+  await reloadClienteStats()
+  tableVersion.value++
 }
 
 async function loadReminderOptions() {
@@ -639,6 +570,7 @@ function openReminderModal(
 ) {
   reminderForm.value = {
     tipo,
+    instanciaId: defaultSender(),
     cobrancaId: cobrancaId ?? null,
     vendaId: vendaId ?? null,
     lancamentoId: lancamentoId ?? null,
@@ -649,16 +581,16 @@ function openReminderModal(
 }
 
 function openQuickSend(payload: ClienteWhatsappPayload, resumo: string) {
-  quickSend.value = { open: true, sending: false, payload, resumo }
+  quickSend.value = { open: true, sending: false, payload, resumo, instanciaId: defaultSender() }
 }
 
 async function confirmQuickSend() {
-  if (!quickSend.value.payload) return
+  if (!quickSend.value.payload || !canQuickSend.value) return
 
   try {
     quickSend.value.sending = true
-    await ClienteRepository.enviarWhatsapp(clienteId.value, quickSend.value.payload)
-    toast.success('Mensagem enviada pelo WhatsApp')
+    await ClienteRepository.enviarWhatsapp(clienteId.value, { ...quickSend.value.payload, instanciaId: quickSend.value.instanciaId! })
+    toast.success('Mensagem enviada pela instância selecionada')
     quickSend.value.open = false
   } catch (e: any) {
     toast.error(e?.response?.data?.message || 'Erro ao enviar mensagem')
@@ -705,12 +637,12 @@ function buildReminderPayload(): ClienteWhatsappPayload | null {
 
 async function sendReminder() {
   const payload = buildReminderPayload()
-  if (!payload) return
+  if (!payload || !canSendReminder.value) return
 
   try {
     sendingReminder.value = true
-    await ClienteRepository.enviarWhatsapp(clienteId.value, payload)
-    toast.success('Mensagem enviada pelo WhatsApp')
+    await ClienteRepository.enviarWhatsapp(clienteId.value, { ...payload, instanciaId: reminderForm.value.instanciaId! })
+    toast.success('Mensagem enviada pela instância selecionada')
     reminderOpen.value = false
   } catch (e: any) {
     toast.error(e?.response?.data?.message || 'Erro ao enviar mensagem')
@@ -718,10 +650,6 @@ async function sendReminder() {
     sendingReminder.value = false
   }
 }
-
-watch(activeTab, () => {
-  loadOperationalDetails(1)
-})
 
 watch(displayTab, (tab) => {
   if (tab === 'resumo') return
@@ -743,7 +671,6 @@ onMounted(async () => {
     if (!clienteId.value) throw new Error('ID invalido')
     storeUi.loadAppModules().catch(() => undefined)
     await reloadClienteStats()
-    await loadOperationalDetails(1)
   } catch (e: any) {
     console.error(e)
     error.value = 'Falha ao carregar estatisticas'

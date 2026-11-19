@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
+import { gatewayAppCode } from '@/utils/appAccess'
 import { computed, reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useToast } from 'vue-toastification'
@@ -678,6 +680,7 @@ async function save() {
                   </SelectItem>
                 </SelectContent>
               </Select>
+              <AppRequirementNotice v-if="gatewayAppCode(form.gateway)" :app="gatewayAppCode(form.gateway)!" class="mt-3" />
             </div>
             <div class="md:col-span-6">
               <Label class="mb-1.5 block text-sm font-medium">Tipo de pagamento</Label>

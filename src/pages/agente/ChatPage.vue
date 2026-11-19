@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, useId, watch, type ComponentPublicInstance } from 'vue'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Alert } from '@/components/ui/alert'
 import {
   Bot,
   Settings,
@@ -60,7 +67,11 @@ const {
 } = audio
 const preparingImage = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
-const composer = ref<HTMLTextAreaElement | null>(null)
+const composer = ref<ComponentPublicInstance | null>(null)
+const widgetPreferenceId = `core-chat-widget-${useId()}`
+function focusComposer() {
+  ;(composer.value?.$el as HTMLTextAreaElement | undefined)?.focus()
+}
 const imageInput = ref<HTMLInputElement | null>(null)
 const audioInput = ref<HTMLInputElement | null>(null)
 const usageIndicator = ref<{ refresh: () => void } | null>(null)
@@ -117,7 +128,7 @@ const shortcuts = [
 function fill(text: string) {
   if (blocked.value) return
   draft.value = text
-  nextTick(() => composer.value?.focus())
+  nextTick(focusComposer)
 }
 async function scroll() {
   await nextTick()
@@ -167,7 +178,7 @@ async function sendMessage() {
   audio.remove()
   const success = await send(text, image, attachment, image?.dataUrl)
   if (success) usageIndicator.value?.refresh()
-  if (!pending.value) nextTick(() => composer.value?.focus())
+  if (!pending.value) nextTick(focusComposer)
 }
 async function decision(action: CoreIaAction, value: 'confirm' | 'cancel') {
   await decide(action, value)
@@ -177,7 +188,7 @@ async function revise(action: CoreIaAction) {
   await decide(action, 'cancel')
   if (action.state === 'done') {
     draft.value = revisionDraft(action)
-    nextTick(() => composer.value?.focus())
+    nextTick(focusComposer)
   }
 }
 async function copy(text: string) {
@@ -266,74 +277,79 @@ function onKeydown(event: KeyboardEvent) {
 </script>
 
 <template>
-  <section
+  <Card
+    role="region"
     :class="[
-      'core-chat flex min-h-0 flex-col overflow-hidden bg-background text-foreground',
-      embedded ? 'h-full' : 'h-[calc(100dvh-6rem)] -m-4 md:h-[calc(100dvh-5.3rem)]',
+      'core-chat flex min-h-0 min-w-0 flex-col overflow-hidden',
+      embedded ? 'h-full rounded-none border-0 shadow-none' : 'h-[calc(100dvh-9rem)] min-h-[32rem]',
     ]"
     aria-label="Assistente Core IA"
   >
-    <header class="flex shrink-0 items-center justify-between gap-2 border-b bg-card px-4 py-3">
-      <div class="flex min-w-0 items-center gap-3">
-        <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-foreground"
+    <header class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b p-4 sm:px-6">
+      <div class="min-w-0">
+        <h1
+          class="flex items-center gap-2 font-semibold"
+          :class="embedded ? 'text-base' : 'text-xl sm:text-2xl'"
         >
-          <Bot :size="22" aria-hidden="true" />
-        </div>
-        <div class="min-w-0">
-          <h1 class="whitespace-nowrap font-semibold">Core IA</h1>
-          <p class="truncate text-xs text-muted-foreground">Seu negócio em uma conversa</p>
-        </div>
+          <Bot class="size-5 shrink-0 text-primary" aria-hidden="true" />CORE IA
+        </h1>
+        <p class="mt-1 text-sm text-muted-foreground">Assistente de gestão</p>
       </div>
-      <div class="flex shrink-0 items-center gap-1">
+      <div class="flex shrink-0 flex-wrap items-center gap-2">
         <IaUsageIndicator v-if="!embedded" ref="usageIndicator" dense />
-        <button
+        <Button
           v-if="messages.length"
-          class="icon-btn"
+          type="button"
+          variant="outline"
+          size="icon"
+          class="h-11 w-11"
           aria-label="Nova conversa"
           title="Nova conversa"
           :disabled="blocked"
           @click="newChat"
-        >
-          <Trash2 :size="18" />
-        </button>
-        <RouterLink
-          v-if="embedded"
-          to="/chat/ia"
-          class="icon-btn"
-          aria-label="Abrir chat completo"
-          title="Abrir chat completo"
-          @click="emit('close')"
-          ><ArrowUpRight :size="19"
-        /></RouterLink>
-        <details v-else class="relative">
-          <summary class="icon-btn list-none cursor-pointer" aria-label="Preferências do chat">
-            <Settings :size="19" />
-          </summary>
-          <div
-            class="absolute right-0 z-20 mt-2 w-64 rounded-xl border bg-popover p-4 text-popover-foreground shadow-lg"
-          >
-            <label class="flex cursor-pointer items-start gap-3 text-sm"
-              ><input
-                v-model="habilitado"
-                type="checkbox"
-                class="mt-1 h-4 w-4 accent-primary"
-              /><span
-                >Assistente flutuante<span class="mt-1 block text-xs text-muted-foreground"
+          ><Trash2 aria-hidden="true"
+        /></Button>
+        <Button v-if="embedded" as-child variant="outline" size="icon" class="h-11 w-11"
+          ><RouterLink
+            to="/chat/ia"
+            aria-label="Abrir chat completo"
+            title="Abrir chat completo"
+            @click="emit('close')"
+            ><ArrowUpRight aria-hidden="true" /></RouterLink
+        ></Button>
+        <Popover v-else>
+          <PopoverTrigger as-child
+            ><Button
+              type="button"
+              variant="outline"
+              size="icon"
+              class="h-11 w-11"
+              aria-label="Preferências do chat"
+              title="Preferências do chat"
+              ><Settings aria-hidden="true" /></Button
+          ></PopoverTrigger>
+          <PopoverContent align="end" class="w-72">
+            <div class="flex items-start justify-between gap-4">
+              <Label :for="widgetPreferenceId" class="space-y-1 leading-normal"
+                ><span class="block font-medium">Assistente flutuante</span
+                ><span class="block text-xs font-normal text-muted-foreground"
                   >Acesse esta conversa em outras telas.</span
-                ></span
-              ></label
-            >
-          </div>
-        </details>
-        <button
+                ></Label
+              >
+              <Switch :id="widgetPreferenceId" v-model="habilitado" />
+            </div>
+          </PopoverContent>
+        </Popover>
+        <Button
           v-if="embedded"
-          class="icon-btn"
+          type="button"
+          variant="outline"
+          size="icon"
+          class="h-11 w-11"
           aria-label="Fechar assistente"
           @click="emit('close')"
-        >
-          <X :size="20" />
-        </button>
+          ><X aria-hidden="true"
+        /></Button>
       </div>
     </header>
 
@@ -345,20 +361,22 @@ function onKeydown(event: KeyboardEvent) {
       aria-live="polite"
       :aria-busy="busy"
     >
-      <div class="mx-auto w-full max-w-3xl p-4 md:p-6">
-        <div v-if="!messages.length" class="py-5" :class="embedded ? '' : 'md:py-12'">
-          <h2 class="text-xl font-semibold tracking-tight md:text-2xl">
-            {{ greeting ? `Olá, ${greeting}.` : 'Olá.' }} O que vamos organizar?
+      <div class="mx-auto w-full max-w-4xl p-4 md:p-6">
+        <div v-if="!messages.length" class="py-3" :class="embedded ? '' : 'md:py-5'">
+          <h2 class="text-lg font-semibold">
+            {{ greeting ? `Olá, ${greeting}.` : 'Olá.' }} Como posso ajudar?
           </h2>
           <p class="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
             Consulte seu negócio ou peça um cadastro por texto, imagem ou áudio. Você revisa os
             dados antes de confirmar.
           </p>
           <div class="mt-6 grid gap-2" :class="embedded ? 'grid-cols-1' : 'sm:grid-cols-2'">
-            <button
+            <Button
               v-for="shortcut in shortcuts"
               :key="shortcut.title"
-              class="flex items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:border-primary/50 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              type="button"
+              variant="outline"
+              class="h-auto min-h-16 justify-start gap-3 whitespace-normal p-3 text-left"
               @click="fill(shortcut.text)"
             >
               <component
@@ -372,14 +390,16 @@ function onKeydown(event: KeyboardEvent) {
                   shortcut.hint
                 }}</span></span
               >
-            </button>
+            </Button>
           </div>
-          <button
-            class="mt-4 min-h-11 text-sm text-foreground underline underline-offset-4 hover:underline"
+          <Button
+            type="button"
+            variant="link"
+            class="mt-3 min-h-11 px-0 text-foreground"
             @click="fill('Como o Core IA pode me ajudar?')"
           >
             Conhecer as possibilidades
-          </button>
+          </Button>
         </div>
 
         <article
@@ -393,11 +413,11 @@ function onKeydown(event: KeyboardEvent) {
             message.isUser ? 'Você' : 'Core IA'
           }}</span>
           <div
-            class="min-w-0 max-w-full rounded-2xl px-4 py-3"
+            class="min-w-0 max-w-full rounded-lg px-4 py-3"
             :class="
               message.isUser
-                ? 'max-w-[90%] rounded-tr-sm bg-primary text-primary-foreground'
-                : 'w-full rounded-tl-sm border bg-card'
+                ? 'max-w-[90%] rounded-tr-md bg-primary text-primary-foreground'
+                : 'w-full rounded-tl-md border bg-card'
             "
           >
             <img
@@ -424,10 +444,10 @@ function onKeydown(event: KeyboardEvent) {
             <div
               v-for="action in message.actions"
               :key="action.id"
-              class="mt-4 overflow-hidden rounded-xl border border-primary/30 bg-background"
+              class="mt-4 overflow-hidden rounded-lg border bg-card"
               :data-action-id="action.id"
             >
-              <div class="border-b bg-primary/5 px-3 py-3">
+              <div class="border-b bg-muted/40 px-3 py-3">
                 <h3 tabindex="-1" class="text-sm font-semibold focus-visible:outline-none">
                   {{ action.title }}
                 </h3>
@@ -448,19 +468,24 @@ function onKeydown(event: KeyboardEvent) {
                 </div>
               </dl>
               <div v-if="action.state !== 'done'" class="flex flex-wrap gap-2 border-t p-3">
-                <button
-                  class="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                <Button
+                  class="min-h-11 text-white"
                   :disabled="busy"
                   @click="decision(action, 'confirm')"
                 >
                   <Check :size="17" />Confirmar cadastro
-                </button>
-                <button class="secondary-btn" :disabled="busy" @click="revise(action)">
+                </Button>
+                <Button variant="outline" class="min-h-11" :disabled="busy" @click="revise(action)">
                   Corrigir
-                </button>
-                <button class="secondary-btn" :disabled="busy" @click="decision(action, 'cancel')">
+                </Button>
+                <Button
+                  variant="outline"
+                  class="min-h-11"
+                  :disabled="busy"
+                  @click="decision(action, 'cancel')"
+                >
                   Cancelar
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -474,14 +499,16 @@ function onKeydown(event: KeyboardEvent) {
               </ul>
             </details>
             <span v-else />
-            <button
-              class="icon-btn"
+            <Button
+              variant="ghost"
+              size="icon"
+              class="h-11 w-11 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground"
               aria-label="Copiar resposta"
               title="Copiar resposta"
               @click="copy(message.text)"
             >
               <Copy :size="15" />
-            </button>
+            </Button>
           </div>
         </article>
         <div
@@ -500,21 +527,19 @@ function onKeydown(event: KeyboardEvent) {
     <footer
       class="shrink-0 border-t bg-card px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:px-4"
     >
-      <div class="mx-auto max-w-3xl space-y-2">
-        <div
-          v-if="error"
-          class="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm"
-          role="alert"
-        >
+      <div class="mx-auto max-w-4xl space-y-2">
+        <Alert v-if="error" variant="destructive" class="text-sm">
           <p>{{ error }}</p>
-          <button
-            class="mt-2 inline-flex min-h-9 items-center gap-2 font-medium underline"
+          <Button
+            type="button"
+            variant="outline"
+            class="mt-2 min-h-11"
             :disabled="busy"
             @click="retryLast"
           >
             <RotateCcw :size="15" />Tentar novamente
-          </button>
-        </div>
+          </Button>
+        </Alert>
         <p v-if="pending" class="text-xs text-muted-foreground">
           Revise o cadastro acima. Use Corrigir para ajustar os dados ou Cancelar para continuar
           conversando.
@@ -525,16 +550,28 @@ function onKeydown(event: KeyboardEvent) {
             alt="Imagem selecionada"
             class="h-12 w-12 rounded object-cover"
           /><span class="min-w-0 flex-1 truncate text-sm">{{ selectedImage.name }}</span
-          ><button class="icon-btn" aria-label="Remover imagem" @click="selectedImage = null">
+          ><Button
+            variant="ghost"
+            size="icon"
+            class="h-11 w-11 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground"
+            aria-label="Remover imagem"
+            @click="selectedImage = null"
+          >
             <X :size="18" />
-          </button>
+          </Button>
         </div>
         <div v-if="selectedAudio" class="rounded-lg border p-2">
           <div class="flex items-center justify-between gap-2">
             <span class="min-w-0 truncate text-sm">{{ selectedAudio.name }}</span
-            ><button class="icon-btn" aria-label="Remover áudio" @click="audio.remove">
+            ><Button
+              variant="ghost"
+              size="icon"
+              class="h-11 w-11 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label="Remover áudio"
+              @click="audio.remove"
+            >
               <X :size="18" />
-            </button>
+            </Button>
           </div>
           <audio
             :src="selectedAudio.url"
@@ -546,7 +583,7 @@ function onKeydown(event: KeyboardEvent) {
         </div>
         <div
           v-if="recording || requesting"
-          class="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-2"
+          class="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-2"
           role="status"
         >
           <Mic :size="18" class="text-destructive" aria-hidden="true" /><span
@@ -557,19 +594,16 @@ function onKeydown(event: KeyboardEvent) {
                 : `Gravando ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} / 1:30`
             }}</span
           >
-          <button class="secondary-btn" @click="audio.cancel">Descartar</button
-          ><button v-if="recording" class="secondary-btn" @click="audio.stop">
+          <Button variant="outline" class="min-h-11" @click="audio.cancel">Descartar</Button
+          ><Button v-if="recording" variant="outline" class="min-h-11" @click="audio.stop">
             <Square :size="14" />Concluir
-          </button>
+          </Button>
         </div>
-        <form
-          class="rounded-xl border bg-background focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15"
-          @submit.prevent="sendMessage"
-        >
+        <form class="space-y-2" @submit.prevent="sendMessage">
           <label :for="embedded ? 'core-message-widget' : 'core-message'" class="sr-only"
             >Mensagem para o Core IA</label
           >
-          <textarea
+          <Textarea
             :id="embedded ? 'core-message-widget' : 'core-message'"
             ref="composer"
             v-model="draft"
@@ -578,59 +612,65 @@ function onKeydown(event: KeyboardEvent) {
             aria-label="Mensagem para o Core IA"
             :disabled="blocked"
             placeholder="Descreva o que você precisa…"
-            class="block max-h-32 min-h-16 w-full resize-y rounded-t-xl bg-transparent px-3 pt-3 text-base leading-relaxed outline-none disabled:opacity-60 md:text-sm"
+            class="max-h-32 min-h-20 resize-y text-base leading-relaxed md:text-sm"
             @keydown="onKeydown"
           />
-          <div class="flex items-center justify-between gap-1 p-1.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-1">
-              <button
+              <Button
                 type="button"
-                class="icon-btn"
+                variant="ghost"
+                size="icon"
+                class="h-11 w-11 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground"
                 title="Anexar imagem"
                 aria-label="Anexar imagem"
                 :disabled="blocked"
                 @click="imageInput?.click()"
               >
                 <ImagePlus :size="19" />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                class="icon-btn"
+                variant="ghost"
+                size="icon"
+                class="h-11 w-11 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground"
                 title="Anexar áudio (até 8 MB)"
                 aria-label="Anexar áudio"
                 :disabled="blocked"
                 @click="audioInput?.click()"
               >
                 <Paperclip :size="19" />
-              </button>
-              <button
+              </Button>
+              <Button
                 v-if="supported"
                 type="button"
-                class="icon-btn"
+                variant="ghost"
+                size="icon"
+                class="h-11 w-11 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground"
                 title="Gravar mensagem de voz"
                 aria-label="Gravar mensagem de voz"
                 :disabled="blocked"
                 @click="startRecording"
               >
                 <Mic :size="19" />
-              </button>
+              </Button>
               <span v-if="preparingImage || preparingAudio" class="text-xs text-muted-foreground">{{
                 preparingAudio ? 'Preparando áudio…' : 'Preparando imagem…'
               }}</span>
             </div>
-            <button
+            <Button
               type="submit"
-              class="flex h-11 min-w-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+              class="h-11 min-w-11 text-white"
               aria-label="Enviar mensagem"
               :disabled="!canSend"
             >
               <SendHorizontal :size="18" /><span v-if="!embedded" class="hidden sm:inline"
                 >Enviar</span
               >
-            </button>
+            </Button>
           </div>
         </form>
-        <p class="text-center text-[11px] leading-relaxed text-muted-foreground">
+        <p class="text-center text-xs leading-relaxed text-muted-foreground">
           {{
             embedded
               ? 'Áudio, imagem ou texto. Você confirma cada cadastro.'
@@ -655,16 +695,10 @@ function onKeydown(event: KeyboardEvent) {
         />
       </div>
     </footer>
-  </section>
+  </Card>
 </template>
 
 <style scoped>
-.icon-btn {
-  @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40;
-}
-.secondary-btn {
-  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border bg-background px-3 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40;
-}
 .message-content {
   overflow-wrap: anywhere;
 }

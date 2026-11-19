@@ -7,6 +7,8 @@ import { useUiStore } from './stores/ui/uiStore'
 import Admin from './layouts/Admin.vue'
 import { env } from './utils/dotenv'
 import Arena from './layouts/Arena.vue'
+import AppAccessDialog from './components/apps/AppAccessDialog.vue'
+import AppAccessReturn from './components/apps/AppAccessReturn.vue'
 
 const store = useUiStore()
 const route = useRoute()
@@ -30,6 +32,7 @@ const disableRouteTransition = computed(() => route.path.startsWith('/lojas/'))
 
 <template>
   <component :is="layout">
+    <AppAccessReturn />
     <router-view v-slot="{ Component }">
       <component v-if="disableRouteTransition" :is="Component" />
       <transition v-else :name="store.isMobile ? 'fade' : 'slide'" mode="out-in">
@@ -37,6 +40,7 @@ const disableRouteTransition = computed(() => route.path.startsWith('/lojas/'))
       </transition>
     </router-view>
   </component>
+  <AppAccessDialog />
 </template>
 
 <style scoped>

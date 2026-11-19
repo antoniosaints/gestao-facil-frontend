@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
+import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
+import { useMercadoPagoAccess } from '@/composables/useMercadoPagoAccess'
 import { addHours, isBefore } from 'date-fns'
 import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
@@ -28,6 +30,8 @@ import { useClientesStore } from '@/stores/clientes/useClientes'
 const store = useComandaStore()
 const storeClientes = useClientesStore()
 const toast = useToast()
+const { ready: mercadoPagoReady, loading: mercadoPagoLoading, failed: mercadoPagoFailed, refresh: refreshMercadoPago } = useMercadoPagoAccess()
+watch(() => store.openCheckoutModal, open => { if (open) void refreshMercadoPago() }, { immediate: true })
 
 const quantidadeSelecionada = computed(() => store.checkoutForm.itemIds.length)
 
@@ -42,6 +46,7 @@ function abrirLink() {
 
 async function submit() {
   try {
+    if (store.checkoutForm.gateway === 'mercadopago' && !mercadoPagoReady.value) return
     if (!store.selectedComanda?.id) {
       toast.error('Comanda nao encontrada.')
       return
@@ -157,6 +162,11 @@ async function submit() {
           </Select>
         </div>
 
+        <div v-if="store.checkoutForm.gateway === 'mercadopago'" class="md:col-span-2">
+          <p v-if="mercadoPagoLoading" role="status" class="text-sm">Verificando Mercado Pago…</p>
+          <div v-else-if="mercadoPagoFailed" role="alert" class="space-y-2 text-sm"><p>Não foi possível verificar a integração.</p><Button type="button" variant="outline" @click="refreshMercadoPago">Tentar novamente</Button></div>
+          <AppRequirementNotice v-else app="mercado-pago" :configured="mercadoPagoReady" @navigate="store.openCheckoutModal = false" />
+        </div>
         <div v-if="store.checkoutForm.gateway === 'mercadopago'">
           <label class="mb-1 block text-sm font-medium">Tipo de cobranca</label>
           <Select v-model="store.checkoutForm.tipoCobranca">
@@ -194,7 +204,7 @@ async function submit() {
 
         <div class="flex justify-end gap-2 md:col-span-2">
           <Button type="button" variant="secondary" @click="store.openCheckoutModal = false">Fechar</Button>
-          <Button :disabled="store.checkoutForm.loading" class="bg-primary text-white hover:bg-primary/90">
+          <Button :disabled="store.checkoutForm.loading || (store.checkoutForm.gateway === 'mercadopago' && !mercadoPagoReady)" class="bg-primary text-white hover:bg-primary/90">
             {{ store.checkoutForm.loading ? 'Gerando...' : 'Gerar cobranca' }}
           </Button>
         </div>

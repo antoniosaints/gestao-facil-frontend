@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
+import { gatewayAppCode } from '@/utils/appAccess'
 import { computed, reactive, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import {
@@ -305,6 +307,7 @@ watch(
                   </SelectItem>
                 </SelectContent>
               </Select>
+              <AppRequirementNotice v-if="gatewayAppCode(form.gatewayPadrao)" :app="gatewayAppCode(form.gatewayPadrao)!" class="mt-3" />
             </div>
             <div class="md:col-span-3">
               <Label class="mb-1.5 block text-sm font-medium">Tipo de pagamento</Label>

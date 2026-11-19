@@ -7,6 +7,7 @@ import { useUiStore } from '@/stores/ui/uiStore'
 import { isSupportActive } from '@/utils/supportSession'
 import type { RestauranteCapability } from '@/repositories/restaurante-repository'
 import type { OuriveCapability } from '@/repositories/ourive-repository'
+import { safeAppReturnPath } from '@/utils/appAccess'
 
 export const useControlRouter = async () => {
   try {
@@ -122,9 +123,10 @@ export async function handleRouteGuard(to: typed, from: typed) {
       await storeUi.loadAppModules()
 
       const requiredModules = Array.isArray(to.meta.modulo) ? to.meta.modulo : [to.meta.modulo]
+      const recovery = { name: 'apps-acesso', query: { apps: requiredModules.join(','), retorno: safeAppReturnPath(to.fullPath || to.path) } }
+      if (!storeUi.appModulesLoaded) return recovery
       if (requiredModules.some((moduleCode) => !storeUi.hasActiveModule(String(moduleCode)))) {
-        toast.info('Este app não está ativo na sua mensalidade.')
-        return { name: 'loja-home' }
+        return recovery
       }
       // Atendimento também respeita a configuração de menu da conta. Sem isso,
       // a URL direta ainda carregaria a tela mesmo com o menu oculto.
@@ -138,7 +140,7 @@ export async function handleRouteGuard(to: typed, from: typed) {
       }
     } catch (error) {
       toast.error('Não foi possível validar o acesso ao app adicional.')
-      return { name: 'loja-home' }
+      return { name: 'apps-acesso', query: { apps: Array.isArray(to.meta.modulo) ? to.meta.modulo.join(',') : String(to.meta.modulo), retorno: safeAppReturnPath(to.fullPath || to.path) } }
     }
   }
 

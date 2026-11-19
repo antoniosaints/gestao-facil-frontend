@@ -22,6 +22,12 @@ type RouteInterface = RouteRecordRaw & RouteMeta
 const routes: RouteInterface[] = [
   ...modoFacilRoutes,
   {
+    path: '/apps/acesso',
+    name: 'apps-acesso',
+    component: () => import('@/pages/store/AppAccessPage.vue'),
+    meta: { layout: 'main' },
+  },
+  {
     path: '/',
     name: 'home',
     component: () => import('@/pages/navegacao/NavigationHome.vue'),

@@ -391,7 +391,7 @@
         </div>
 
         <div
-          v-if="!logsLoading && logs.length && !logsTipo && logsReceivedCount === 0"
+          v-if="!logsLoading && !logsError && logs.length && !logsTipo && logsReceivedCount === 0"
           class="flex items-start gap-2 rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-400"
         >
           <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0" />
@@ -402,6 +402,9 @@
         </div>
 
         <div class="-mr-2 flex-1 space-y-2 overflow-y-auto pr-2">
+          <Alert v-if="logsError" variant="destructive">
+            <AlertDescription>{{ logsError }} Use Atualizar para tentar novamente.</AlertDescription>
+          </Alert>
           <div v-for="event in logs" :key="event.id" class="rounded-lg border">
             <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left" @click="toggleLogPayload(event.id)">
               <span
@@ -423,7 +426,7 @@
               <div class="mb-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
                 <span>{{ webhookStatusLabel(event.status) }} · {{ event.tentativas }} tentativa(s)</span>
                 <Button
-                  v-if="event.status === 'FALHOU'"
+                  v-if="event.status === 'FALHOU' && canRetryWebhookLogs"
                   size="sm"
                   variant="outline"
                   class="h-7"
@@ -441,7 +444,7 @@
           <div v-if="logsLoading && !logs.length" class="flex items-center justify-center py-8 text-sm text-muted-foreground">
             <LoaderIcon class="mr-2 h-4 w-4 animate-spin" /> Carregando eventos...
           </div>
-          <div v-else-if="!logs.length" class="py-8 text-center text-sm text-muted-foreground">
+          <div v-else-if="!logs.length && !logsError" class="py-8 text-center text-sm text-muted-foreground">
             Nenhum evento de webhook registrado ainda.
           </div>
         </div>
@@ -833,6 +836,7 @@ import {
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   DropdownMenu,
@@ -928,6 +932,8 @@ const logsModalOpen = ref(false)
 const logsInstance = ref<WhatsAppInstance | null>(null)
 const logs = ref<WhatsAppWebhookEvent[]>([])
 const logsLoading = ref(false)
+const logsError = ref('')
+const canRetryWebhookLogs = computed(() => atendimentoAtivo.value && (!Array.isArray(storeUi.visibleMenuKeys) || storeUi.visibleMenuKeys.includes('atendimento')))
 const logsTipo = ref<string>('')
 const logsStatus = ref<string>('')
 const retryingLogId = ref<number | null>(null)
@@ -1554,14 +1560,16 @@ async function loadLogs() {
   if (!logsInstance.value) return
   try {
     logsLoading.value = true
+    logsError.value = ''
     logs.value = await WhatsAppRepository.listInstanceWebhookEvents(logsInstance.value.id, {
       take: 50,
       tipo: logsTipo.value || undefined,
       status: logsStatus.value || undefined,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
-    toast.error('Não foi possível carregar os logs de webhook.')
+    logsError.value = error?.response?.data?.message || error?.response?.data?.error?.message || 'Não foi possível carregar os logs de webhook.'
+    toast.error(logsError.value)
     logs.value = []
   } finally {
     logsLoading.value = false
@@ -1573,6 +1581,7 @@ function openLogsModal(instance: WhatsAppInstance) {
   logsTipo.value = ''
   logsStatus.value = ''
   expandedLogId.value = null
+  logsError.value = ''
   logs.value = []
   logsModalOpen.value = true
   loadLogs()

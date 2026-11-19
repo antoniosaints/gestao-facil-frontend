@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { hasPermission } from '@/hooks/authorize'
+import { appAccessCatalog, appConfigurationLocation, safeAppReturnPath } from '@/utils/appAccess'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -63,6 +65,14 @@ const confirm = useConfirm()
 const route = useRoute()
 const router = useRouter()
 const storeUi = useUiStore()
+const returnTo = computed(() => safeAppReturnPath(route.query.retorno))
+const selectedAccess = computed(() => moduloSelecionado.value ? appAccessCatalog[moduloSelecionado.value.codigo] : undefined)
+const canConfigureSelected = computed(() => {
+  if (!selectedAccess.value?.configuration) return false
+  if (moduloSelecionado.value?.codigo === 'ourives') return storeUi.hasOuriveCapability('CONFIGURAR')
+  if (moduloSelecionado.value?.codigo === 'restaurante-delivery') return storeUi.hasRestaurantCapability('CONFIGURACOES_GERENCIAR')
+  return !selectedAccess.value.permission || hasPermission(storeUi.usuarioLogged, selectedAccess.value.permission)
+})
 
 const CONFIG_APP_CODES = ['mercado-pago', 'abacatepay'] as const
 
@@ -671,6 +681,12 @@ function tratarRetornoOAuth() {
 onMounted(async () => {
   tratarRetornoOAuth()
   await carregarModulos()
+  const requestedApp = modulos.value.find(modulo => modulo.codigo === route.query.app)
+  if (requestedApp) abrirDetalhes(requestedApp)
+})
+watch(() => route.query.app, code => {
+  const requestedApp = modulos.value.find(modulo => modulo.codigo === code)
+  if (requestedApp) abrirDetalhes(requestedApp)
 })
 </script>
 
@@ -905,7 +921,7 @@ onMounted(async () => {
     </div>
 
     <Dialog :open="isDialogOpen" @update:open="isDialogOpen = $event">
-      <DialogContent class="sm:max-w-[620px]">
+      <DialogContent class="max-h-[90dvh] overflow-y-auto sm:max-w-[620px]">
         <DialogHeader v-if="moduloSelecionado">
           <div class="mb-2 flex items-center gap-3">
             <div class="rounded-lg bg-primary/10 p-2 text-primary">
@@ -923,6 +939,19 @@ onMounted(async () => {
             {{ moduloSelecionado.detalhes || moduloSelecionado.descricao }}
           </DialogDescription>
         </DialogHeader>
+
+        <section v-if="moduloSelecionado?.ativo && selectedAccess && !selectedIsConfigApp" class="space-y-3 rounded-xl border bg-muted/20 p-4">
+          <h3 class="font-medium">{{ selectedAccess.configuration ? 'Configuração do app' : 'App pronto para acessar' }}</h3>
+          <p v-if="selectedAccess.setup" class="text-sm text-muted-foreground">{{ selectedAccess.setup }}</p>
+          <div class="flex flex-wrap gap-2">
+            <Button v-if="canConfigureSelected" as-child variant="outline" class="min-h-11"><RouterLink :to="appConfigurationLocation(selectedAccess.configuration!, returnTo)">Configurar {{ selectedAccess.name }}</RouterLink></Button>
+            <Button as-child class="min-h-11 text-white"><RouterLink :to="selectedAccess.open">Abrir {{ selectedAccess.name }}</RouterLink></Button>
+          </div>
+        </section>
+        <section v-if="moduloSelecionado?.ativo && returnTo" class="flex flex-col gap-3 rounded-xl border p-4">
+          <p class="text-sm text-muted-foreground">Depois de concluir a configuração, retome o recurso que você tentou acessar.</p>
+          <Button as-child variant="outline" class="min-h-11"><RouterLink :to="returnTo">Voltar para o recurso</RouterLink></Button>
+        </section>
 
         <div v-if="moduloSelecionado && selectedIsConfigApp" class="space-y-4">
           <div class="rounded-xl border-2 border-dashed border-primary/20 bg-muted/40 p-4">

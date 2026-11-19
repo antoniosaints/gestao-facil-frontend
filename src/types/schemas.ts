@@ -576,6 +576,11 @@ export interface UpdateParametrosConta {
   whatsappNotificacoesAtivo?: boolean | null
   whatsappNotificacoesInstanciaId?: number | null
   whatsappEventoNovaVenda?: boolean | null
+  whatsappEventoVendaConcluida?: boolean | null
+  whatsappEventoEstoqueBaixo?: boolean | null
+  whatsappEventoProdutoAlterado?: boolean | null
+  whatsappEventoSangria?: boolean | null
+  whatsappEventoVencimentoFinanceiro?: boolean | null
   whatsappEventoNovaOs?: boolean | null
   whatsappEventoNovoLancamento?: boolean | null
   whatsappEventoNovoCliente?: boolean | null

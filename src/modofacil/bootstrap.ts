@@ -14,6 +14,8 @@ export function registerModoFacilPolicy(router: Router) {
       to.path === '/assinatura' ||
       to.path.startsWith('/assinatura/') ||
       to.path === '/vendas/pdv' ||
+      to.path === '/apps/acesso' ||
+      to.path === '/loja' ||
       to.path === '/configuracoes'
     )
       return true

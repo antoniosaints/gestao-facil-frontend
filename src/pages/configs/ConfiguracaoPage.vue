@@ -17,6 +17,7 @@
                 >
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
+                    <TabsTrigger v-if="hasWhatsAppModule" value="whatsapp">WhatsApp</TabsTrigger>
                     <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i>
                         Impressão
                     </TabsTrigger>
@@ -49,7 +50,7 @@
 
             <TabsContent value="notificacoes">
                 <Card class="rounded-t-none bg-background">
-                    <form @submit.prevent="submit(formularioNotificacoes)">
+                    <form @submit.prevent="submitGeneralNotifications">
                         <CardHeader>
                             <CardTitle class="font-normal flex items-center gap-2">
                                 <Bell class="w-5 h-5 text-primary" /> Notificações
@@ -112,8 +113,29 @@
                                         v-model="formularioNotificacoes.financeiroVencimentosNotificacoesAtivo" />
                                 </label>
                             </div>
-                            <template v-if="hasWhatsAppModule">
-                                <Separator />
+                            <section v-if="!hasWhatsAppModule" class="flex flex-col gap-4 rounded-lg border border-dashed bg-muted/20 p-5 sm:flex-row sm:items-center sm:justify-between">
+                                <div><h3 class="font-medium">Notificações por WhatsApp</h3><p class="mt-1 text-sm text-muted-foreground">Ative o app para escolher a instância e os eventos enviados à equipe.</p></div>
+                                <Button type="button" as-child class="shrink-0 text-white"><RouterLink :to="{ name: 'loja-home', query: { app: 'whatsapp' } }">Ativar app WhatsApp</RouterLink></Button>
+                            </section>
+                        </CardContent>
+                        <CardFooter class="justify-end">
+                            <Button :disabled="loading" class="ml-2 text-white" type="submit">
+                                <CircleCheck v-if="!loading" />
+                                <LoaderIcon v-if="loading" class="animate-spin" />
+                                {{ loading ? 'Salvando...' : 'Salvar' }}
+                            </Button>
+                        </CardFooter>
+                    </form>
+                </Card>
+            </TabsContent>
+
+            <TabsContent v-if="hasWhatsAppModule" value="whatsapp">
+                <Card class="rounded-t-none bg-background">
+                    <form @submit.prevent="submitWhatsAppNotifications">
+                        <CardHeader><CardTitle class="font-normal">Notificações por WhatsApp</CardTitle><CardDescription>Escolha os avisos da operação enviados aos administradores e gerentes. Os envios manuais aos clientes continuam independentes destas preferências.</CardDescription></CardHeader>
+                        <CardContent class="space-y-5">
+                            <div class="space-y-5">
+
                                 <div class="space-y-4">
                                     <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                                         <div>
@@ -129,10 +151,7 @@
                                         </Button>
                                     </div>
 
-                                    <div v-if="!whatsappInstances.length"
-                                        class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                                        Cadastre uma instância de WhatsApp antes de ativar notificações por WhatsApp.
-                                    </div>
+                                    <AppRequirementNotice v-if="!loadingWhatsappInstances && !whatsappInstances.length" app="whatsapp" :configured="false" />
 
                                     <div class="grid gap-3 md:grid-cols-2">
                                         <label for="whatsappNotificacoesAtivo"
@@ -177,15 +196,9 @@
                                         </label>
                                     </div>
                                 </div>
-                            </template>
+                            </div>
                         </CardContent>
-                        <CardFooter class="justify-end">
-                            <Button :disabled="notificationSubmitDisabled" class="ml-2 text-white" type="submit">
-                                <CircleCheck v-if="!loading" />
-                                <LoaderIcon v-if="loading" class="animate-spin" />
-                                {{ loading ? 'Salvando...' : 'Salvar' }}
-                            </Button>
-                        </CardFooter>
+                        <CardFooter class="justify-end"><Button :disabled="notificationSubmitDisabled" type="submit" class="text-white">{{ loading ? 'Salvando…' : 'Salvar notificações WhatsApp' }}</Button></CardFooter>
                     </form>
                 </Card>
             </TabsContent>
@@ -590,6 +603,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
+import { RouterLink, useRoute } from 'vue-router'
+import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
 import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import FormularioCategorias from '@/pages/financeiro/lancamentos/modais/FormularioCategorias.vue'
@@ -617,7 +632,8 @@ import {
     type MainMenuVisibilityKey,
 } from '@/layouts/options'
 
-const tab = ref<'empresa' | 'notificacoes' | 'impressao' | 'vendas' | 'experiencia' | 'aparencia' | 'financeiro' | 'menus'>('empresa')
+const tab = ref<'whatsapp' | 'empresa' | 'notificacoes' | 'impressao' | 'vendas' | 'experiencia' | 'aparencia' | 'financeiro' | 'menus'>('empresa')
+const route = useRoute()
 const toast = useToast()
 const storeUi = useUiStore()
 const loading = ref(false)
@@ -641,8 +657,13 @@ const whatsappNotificationEvents = [
     {
         field: 'whatsappEventoNovaVenda',
         label: 'Nova venda',
-        description: 'Aviso quando uma venda for criada ou finalizada no PDV.',
+        description: 'Aviso quando uma venda for criada no sistema.',
     },
+    { field: 'whatsappEventoVendaConcluida', label: 'Venda concluída no PDV', description: 'Aviso quando a venda for finalizada no ponto de venda.' },
+    { field: 'whatsappEventoEstoqueBaixo', label: 'Estoque baixo', description: 'Produtos no estoque mínimo ou abaixo após uma movimentação.' },
+    { field: 'whatsappEventoProdutoAlterado', label: 'Alterações de produtos', description: 'Cadastro, edição, exclusão, reposição e descarte de produtos.' },
+    { field: 'whatsappEventoSangria', label: 'Sangria de caixa', description: 'Aviso quando houver retirada de valores do caixa PDV.' },
+    { field: 'whatsappEventoVencimentoFinanceiro', label: 'Vencimentos financeiros', description: 'Avisos de vencimento para administradores e root, conforme o agendamento financeiro.' },
     {
         field: 'whatsappEventoNovaOs',
         label: 'Nova OS',
@@ -688,6 +709,11 @@ const formularioNotificacoes = reactive<UpdateParametrosConta>({
     whatsappNotificacoesAtivo: false,
     whatsappNotificacoesInstanciaId: null,
     whatsappEventoNovaVenda: true,
+    whatsappEventoVendaConcluida: true,
+    whatsappEventoEstoqueBaixo: false,
+    whatsappEventoProdutoAlterado: false,
+    whatsappEventoSangria: false,
+    whatsappEventoVencimentoFinanceiro: true,
     whatsappEventoNovaOs: true,
     whatsappEventoNovoLancamento: true,
     whatsappEventoNovoCliente: true,
@@ -813,6 +839,16 @@ function toggleSubmenu(subKey: string, visible: boolean) {
     formularioMenus.menusVisiveis = Array.from(selected)
 }
 
+function submitGeneralNotifications() {
+    const { eventoEstoqueBaixo, eventoProdutoAlterado, eventoVendaConcluida, eventoSangria, emailAvisos, financeiroVencimentosNotificacoesAtivo } = formularioNotificacoes
+    return submit({ eventoEstoqueBaixo, eventoProdutoAlterado, eventoVendaConcluida, eventoSangria, emailAvisos, financeiroVencimentosNotificacoesAtivo })
+}
+function submitWhatsAppNotifications() {
+    if (!hasWhatsAppModule.value) return
+    const events = Object.fromEntries(whatsappNotificationEvents.map(event => [event.field, formularioNotificacoes[event.field]]))
+    return submit({ ...events, whatsappNotificacoesAtivo: formularioNotificacoes.whatsappNotificacoesAtivo, whatsappNotificacoesInstanciaId: formularioNotificacoes.whatsappNotificacoesInstanciaId })
+}
+
 async function submit(data: UpdateParametrosConta) {
     try {
         loading.value = true
@@ -859,6 +895,11 @@ async function getParametros() {
                 whatsappNotificacoesAtivo: response.data.whatsappNotificacoesAtivo ?? false,
                 whatsappNotificacoesInstanciaId: response.data.whatsappNotificacoesInstanciaId ?? null,
                 whatsappEventoNovaVenda: response.data.whatsappEventoNovaVenda ?? true,
+                whatsappEventoVendaConcluida: response.data.whatsappEventoVendaConcluida ?? true,
+                whatsappEventoEstoqueBaixo: response.data.whatsappEventoEstoqueBaixo ?? false,
+                whatsappEventoProdutoAlterado: response.data.whatsappEventoProdutoAlterado ?? false,
+                whatsappEventoSangria: response.data.whatsappEventoSangria ?? false,
+                whatsappEventoVencimentoFinanceiro: response.data.whatsappEventoVencimentoFinanceiro ?? true,
                 whatsappEventoNovaOs: response.data.whatsappEventoNovaOs ?? true,
                 whatsappEventoNovoLancamento: response.data.whatsappEventoNovoLancamento ?? true,
                 whatsappEventoNovoCliente: response.data.whatsappEventoNovoCliente ?? true,
@@ -899,6 +940,7 @@ async function getParametros() {
 
 onMounted(async () => {
     await storeUi.loadAppModules()
+    if (route.query.tab === 'whatsapp' && hasWhatsAppModule.value) tab.value = 'whatsapp'
     await Promise.all([
         getParametros(),
         loadWhatsappInstances(),

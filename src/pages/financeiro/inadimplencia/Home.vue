@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
+import { promptAppAccess } from '@/composables/useAppAccessPrompt'
 import { computed, onMounted, ref, watch } from 'vue'
 import {
   AlarmClock,
@@ -281,6 +283,10 @@ async function removerOverride() {
 }
 
 function abrirCobrancaRapida(item: InadimplenciaItem) {
+  if (!uiStore.hasActiveModule('whatsapp')) {
+    promptAppAccess({ error: { code: 'whatsapp_module_inactive' } })
+    return
+  }
   cobrancaRapidaItem.value = item
   cobrancaRapidaOpen.value = true
 }
@@ -306,6 +312,7 @@ onMounted(load)
 
 <template>
   <div class="space-y-5">
+    <AppRequirementNotice app="whatsapp" />
     <!-- Cabeçalho -->
     <div class="flex flex-col justify-between gap-2 md:flex-row md:items-center">
       <div>

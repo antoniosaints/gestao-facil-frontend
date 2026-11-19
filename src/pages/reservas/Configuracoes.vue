@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { ContaRepository } from '@/repositories/conta-repository'
+import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { ReservationsRepository, type ReservationResource, type ReservationService, type PaymentPolicy } from '@/repositories/reservas-gerais-repository'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
@@ -18,9 +21,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { ChevronDown, ChevronUp, ExternalLink, MessageCircle, Palette, Save, Settings2, Trash2, WalletCards, Wrench } from 'lucide-vue-next'
 import { FONT_OPTIONS } from '@/utils/themeCustomization'
 
+const ui = useUiStore()
 const toast = useToast()
 const confirm = useConfirm()
 const saving = ref(false)
+const whatsappReady = ref<boolean | undefined>(undefined)
 const config = reactive<any>({})
 const resources = ref<ReservationResource[]>([])
 const configured = ref<ReservationService[]>([])
@@ -65,6 +70,14 @@ function moveSection(key: string, direction: number) {
   config.secoes = current
 }
 
+async function loadWhatsAppAccess() {
+  try {
+    await ui.loadAppModules()
+    if (!ui.hasActiveModule('whatsapp')) return
+    const [parameters, instances] = await Promise.all([ContaRepository.getParametros(), ContaRepository.listarInstanciasWhatsappNotificacao()])
+    whatsappReady.value = instances.some(instance => instance.id === parameters.data?.whatsappNotificacoesInstanciaId && instance.status === 'CONECTADA')
+  } catch { whatsappReady.value = undefined }
+}
 async function load() {
   const [current, resourceList, configuredList] = await Promise.all([
     ReservationsRepository.getConfig(), ReservationsRepository.listResources(),
@@ -161,7 +174,7 @@ function toggleResource(id: number) {
   serviceForm.resourceIds = serviceForm.resourceIds.includes(id)
     ? serviceForm.resourceIds.filter((value) => value !== id) : [...serviceForm.resourceIds, id]
 }
-onMounted(load)
+onMounted(() => { void load(); void loadWhatsAppAccess() })
 </script>
 
 <template>
@@ -341,7 +354,9 @@ onMounted(load)
         </div>
       </TabsContent>
 
-      <TabsContent value="messages">
+      <TabsContent value="messages" class="space-y-4">
+        <AppRequirementNotice app="whatsapp" :configured="whatsappReady" :configuration-to="{ name: 'configuracoes-home', query: { tab: 'whatsapp' } }" configure-message="Os avisos das reservas usam a instância principal das notificações. Selecione uma instância conectada antes de ativar os envios." />
+        <fieldset :disabled="!ui.hasActiveModule('whatsapp')" class="min-w-0 border-0 p-0">
         <div class="grid gap-4 lg:grid-cols-2">
           <Card v-for="item in messageEvents" :key="item.key">
             <CardHeader>
@@ -354,6 +369,7 @@ onMounted(load)
             </CardContent>
           </Card>
         </div>
+        </fieldset>
       </TabsContent>
 
       <TabsContent value="finance">

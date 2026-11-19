@@ -14,6 +14,31 @@ beforeEach(() => {
 })
 
 describe('handleRouteGuard', () => {
+  it.each(['whatsapp', 'core-ia', 'atendimento', 'loja-virtual', 'combos', 'assinaturas', 'arena', 'reservas', 'restaurante-delivery', 'notas-fiscais', 'ourives'])('orienta a ativar %s antes de abrir a rota protegida', async app => {
+    localStorage.setItem('gestao_facil:token', 'token-test')
+    const store = useUiStore()
+    vi.spyOn(store, 'getDataUsuario').mockImplementation(async () => {
+      store.usuarioLogged = { permissao: 'root' } as any
+      store.contaInfo = { vencimento: new Date(Date.now() + 86_400_000) } as any
+    })
+    vi.spyOn(store, 'loadAppModules').mockImplementation(async () => { store.appModulesLoaded = true; return {} })
+    const result = await handleRouteGuard({ name: 'protegida', path: '/recurso', fullPath: '/recurso?item=1', meta: { modulo: app } } as any, { path: '/', name: 'home' } as any)
+    expect(result).toEqual({ name: 'apps-acesso', query: { apps: app, retorno: '/recurso?item=1' } })
+  })
+  it('libera a rota somente quando todos os apps exigidos estão ativos', async () => {
+    localStorage.setItem('gestao_facil:token', 'token-test')
+    const store = useUiStore()
+    vi.spyOn(store, 'getDataUsuario').mockImplementation(async () => {
+      store.usuarioLogged = { permissao: 'root' } as any
+      store.contaInfo = { vencimento: new Date(Date.now() + 86_400_000) } as any
+    })
+    vi.spyOn(store, 'loadAppModules').mockImplementation(async () => { store.appModulesLoaded = true; return store.appModules })
+    const route = { name: 'agentes', path: '/atendimento/agentes', meta: { modulo: ['atendimento', 'core-ia'] } } as any
+    store.appModules = { atendimento: true, 'core-ia': false }
+    expect(await handleRouteGuard(route, { path: '/', name: 'home' } as any)).toMatchObject({ name: 'apps-acesso' })
+    store.appModules['core-ia'] = true
+    expect(await handleRouteGuard(route, { path: '/', name: 'home' } as any)).toBe(true)
+  })
   it('não carrega a sessão do ERP em rotas públicas da loja', async () => {
     const store = useUiStore()
     const getDataUsuario = vi.spyOn(store, 'getDataUsuario')

@@ -2,6 +2,7 @@
 import { cepMaskOptions } from '@/lib/imaska'
 import { vMaska } from '@/lib/maska'
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useUiStore } from '@/stores/ui/uiStore'
@@ -394,7 +395,7 @@ async function carregar() {
 }
 
 const mercadoPagoConfigurado = computed(
-  () => Boolean(mercadoPagoStatus.value?.conectado || mercadoPagoStatus.value?.possuiChaveManual),
+  () => storeUi.hasActiveModule('mercado-pago') && Boolean(mercadoPagoStatus.value?.conectado || mercadoPagoStatus.value?.possuiChaveManual),
 )
 
 function alterarPagamentoOnline(ativar: boolean) {
@@ -766,6 +767,7 @@ onMounted(async () => {
         <Card v-if="loading">
           <CardContent class="flex justify-center p-10">
             <LoaderCircle class="h-6 w-6 animate-spin" />
+            </fieldset>
           </CardContent>
         </Card>
         <Card v-else>
@@ -777,6 +779,8 @@ onMounted(async () => {
               enviadas quando o módulo WhatsApp estiver ativo e o pedido tiver telefone.</CardDescription>
           </CardHeader>
           <CardContent class="space-y-4">
+            <AppRequirementNotice app="whatsapp" :configured="whatsappInstances.some(instance => instance.id === form.whatsappNotificacoesInstanciaId && instance.status === 'CONECTADA')" />
+            <fieldset :disabled="!storeUi.hasActiveModule('whatsapp')" class="min-w-0 space-y-4 border-0 p-0">
             <div class="rounded-xl border p-4">
               <Label for="restaurant-whatsapp-instance">Instância responsável pelo envio</Label>
               <p class="mt-1 text-xs text-muted-foreground">Esta escolha vale apenas para as mensagens de acompanhamento do Restaurante.</p>
@@ -976,6 +980,7 @@ onMounted(async () => {
               </div>
               <Switch v-model="form.deliveryAtivo" />
             </div>
+            <AppRequirementNotice app="mercado-pago" :configured="mercadoPagoConfigurado" class="sm:col-span-2" />
             <div class="flex items-center justify-between rounded-lg border p-4">
               <div>
                 <div class="flex items-center gap-2">
@@ -984,7 +989,7 @@ onMounted(async () => {
                 </div>
                 <p class="text-xs text-muted-foreground">Pix pelo Mercado Pago.</p>
               </div>
-              <Switch :model-value="form.pagamentoOnlineAtivo" @update:model-value="alterarPagamentoOnline" />
+              <Switch :disabled="!storeUi.hasActiveModule('mercado-pago')" :model-value="form.pagamentoOnlineAtivo" @update:model-value="alterarPagamentoOnline" />
             </div>
             <div class="flex items-center justify-between rounded-lg border p-4">
               <div>

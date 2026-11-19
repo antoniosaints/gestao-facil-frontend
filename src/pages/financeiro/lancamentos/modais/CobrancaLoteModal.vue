@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
-import { CircleAlert, FilePlus, Loader2 } from 'lucide-vue-next'
+import { FilePlus, Loader2 } from 'lucide-vue-next'
 
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
-import { ContaRepository } from '@/repositories/conta-repository'
+import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
+import { useMercadoPagoAccess } from '@/composables/useMercadoPagoAccess'
 import { formatCurrencyBR } from '@/utils/formatters'
 
 type ParcelaCobranca = { id: number; valor: number }
@@ -30,24 +31,11 @@ const gateway = ref<'mercadopago' | undefined>(undefined)
 const tipo = ref<'PIX' | 'BOLETO' | 'LINK'>('PIX')
 const processando = ref(false)
 const progresso = ref(0)
-const mercadoPagoAtivo = ref(false)
-const verificandoMercadoPago = ref(false)
-
+const { ready: mercadoPagoAtivo, loading: verificandoMercadoPago, failed: acessoFalhou, refresh: atualizarAcesso } = useMercadoPagoAccess()
 async function carregarStatusMercadoPago() {
-  verificandoMercadoPago.value = true
-  mercadoPagoAtivo.value = false
   gateway.value = undefined
-
-  try {
-    const status = await ContaRepository.statusMercadoPago()
-    mercadoPagoAtivo.value = status.modo !== 'NENHUM'
-    if (mercadoPagoAtivo.value) gateway.value = 'mercadopago'
-  } catch (error) {
-    console.error(error)
-    toast.error('Não foi possível verificar a integração com o Mercado Pago.')
-  } finally {
-    verificandoMercadoPago.value = false
-  }
+  await atualizarAcesso()
+  if (mercadoPagoAtivo.value) gateway.value = 'mercadopago'
 }
 
 const valorTotal = computed(() => props.parcelas.reduce((acc, parcela) => acc + Number(parcela.valor || 0), 0))
@@ -153,11 +141,11 @@ async function gerar() {
           class="mt-1 flex h-10 items-center rounded-md border bg-muted/30 px-3 text-sm font-medium">
           Mercado Pago
         </div>
-        <div v-else
-          class="mt-1 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
-          <CircleAlert class="mt-0.5 h-4 w-4 shrink-0" />
-          Conecte o Mercado Pago em Apps para gerar cobranças.
+        <div v-else-if="acessoFalhou" role="alert" class="space-y-2 text-sm">
+          <p>Não foi possível verificar o Mercado Pago.</p>
+          <Button variant="outline" @click="carregarStatusMercadoPago">Tentar novamente</Button>
         </div>
+        <AppRequirementNotice v-else app="mercado-pago" :configured="false" @navigate="emit('update:open', false)" />
       </div>
 
       <div v-show="mercadoPagoAtivo">
