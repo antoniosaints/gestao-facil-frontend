@@ -513,17 +513,18 @@ function getCategoriaNomeById(id: string) {
 }
 
 function buildDiaWithFilteredLancamentos(dia: DiaLancamento, lancamentos: LancamentoDia[]) {
-  const entradasPrevistas = lancamentos
-    .filter((item) => item.tipo === 'RECEITA' && !item.ignorado)
+  const considerados = lancamentos.filter((item) => !item.ignorado && !item.contaIgnoradaNosCalculos)
+  const entradasPrevistas = considerados
+    .filter((item) => item.tipo === 'RECEITA')
     .reduce((acc, item) => acc + Number(item.valor || 0), 0)
-  const saidasPrevistas = lancamentos
-    .filter((item) => item.tipo === 'DESPESA' && !item.ignorado)
+  const saidasPrevistas = considerados
+    .filter((item) => item.tipo === 'DESPESA')
     .reduce((acc, item) => acc + Number(item.valor || 0), 0)
-  const entradasRealizadas = lancamentos
-    .filter((item) => item.tipo === 'RECEITA' && item.pago && !item.ignorado)
+  const entradasRealizadas = considerados
+    .filter((item) => item.tipo === 'RECEITA' && item.pago)
     .reduce((acc, item) => acc + Number(item.valor || 0), 0)
-  const saidasRealizadas = lancamentos
-    .filter((item) => item.tipo === 'DESPESA' && item.pago && !item.ignorado)
+  const saidasRealizadas = considerados
+    .filter((item) => item.tipo === 'DESPESA' && item.pago)
     .reduce((acc, item) => acc + Number(item.valor || 0), 0)
 
   return {
@@ -643,8 +644,14 @@ const eventosCalendario = computed<CalendarEvent[]>(() =>
       valor: Number(item.valor || 0),
       tipo: item.tipo,
       status: item.status,
-      ignorado: item.ignorado,
-      subtitulo: [item.categoria, item.conta, item.cliente, item.ignorado ? 'Ignorado nos cálculos' : null]
+      ignorado: item.ignorado || item.contaIgnoradaNosCalculos,
+      subtitulo: [
+        item.categoria,
+        item.conta,
+        item.cliente,
+        item.ignorado ? 'Ignorado nos cálculos' : null,
+        item.contaIgnoradaNosCalculos ? 'Conta fora dos cálculos gerais' : null,
+      ]
         .filter(Boolean)
         .join(' • '),
       payload: item,
@@ -892,8 +899,8 @@ onMounted(async () => {
                         <p class="truncate text-xs text-muted-foreground flex gap-1 items-center">
                           {{ item.categoria }}<span v-if="item.conta"> • {{ item.conta }} </span
                           ><span v-if="item.cliente"> • {{ item.cliente }}</span>
-                          <span v-if="item.ignorado" variant="outline" class="gap-1 flex items-center rounded-sm border w-max border-dashed px-2 py-0 text-[10px] text-muted-foreground">
-                          <EyeOff class="h-3 w-3" /> Ignorado
+                          <span v-if="item.ignorado || item.contaIgnoradaNosCalculos" class="gap-1 flex items-center rounded-sm border w-max border-dashed px-2 py-0 text-[10px] text-muted-foreground">
+                          <EyeOff class="h-3 w-3" /> {{ item.ignorado ? 'Ignorado' : 'Conta fora dos cálculos' }}
                         </span>
                         </p>
                         <p class="truncate text-[11px] text-muted-foreground">
@@ -921,7 +928,7 @@ onMounted(async () => {
                             item.tipo === 'DESPESA'
                               ? 'text-rose-600 dark:text-rose-400'
                               : 'text-emerald-600 dark:text-emerald-400',
-                            item.ignorado && 'line-through opacity-70',
+                            (item.ignorado || item.contaIgnoradaNosCalculos) && 'line-through opacity-70',
                           ]"
                           class="text-md font-semibold px-2 rounded-md"
                         >

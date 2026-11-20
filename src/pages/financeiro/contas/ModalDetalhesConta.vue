@@ -142,6 +142,10 @@ watch(
         </Button>
       </div>
 
+      <p v-if="props.conta?.ignorarNosCalculos" class="text-sm text-muted-foreground">
+        Conta fora dos cálculos gerais.
+      </p>
+
       <div v-if="resumo" class="grid grid-cols-1 gap-3 md:grid-cols-4 xl:grid-cols-6">
         <div class="rounded-2xl border border-border bg-card p-4">
           <div class="flex items-center gap-2 text-xs text-muted-foreground"><Wallet class="h-4 w-4" /> Saldo atual</div>

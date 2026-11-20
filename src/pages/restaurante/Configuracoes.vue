@@ -767,7 +767,6 @@ onMounted(async () => {
         <Card v-if="loading">
           <CardContent class="flex justify-center p-10">
             <LoaderCircle class="h-6 w-6 animate-spin" />
-            </fieldset>
           </CardContent>
         </Card>
         <Card v-else>
@@ -846,6 +845,7 @@ onMounted(async () => {
                 <Save v-else class="mr-2 h-4 w-4" />Salvar mensagens
               </Button>
             </div>
+            </fieldset>
           </CardContent>
         </Card>
       </TabsContent>

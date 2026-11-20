@@ -37,6 +37,9 @@ export const columnsContasFinanceiras: ColumnDef<ContasFinanceiro>[] = [
         ),
         render('div', { class: 'min-w-0' }, [
           render('div', { class: 'font-medium truncate' }, row.original.nome),
+          ...(row.original.ignorarNosCalculos
+            ? [render('div', { class: 'text-xs text-muted-foreground' }, 'Fora dos cálculos gerais')]
+            : []),
           render('div', { class: 'text-xs text-muted-foreground truncate' }, row.original.Uid || `#${row.original.id}`),
         ]),
       ]),

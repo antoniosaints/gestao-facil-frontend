@@ -81,6 +81,7 @@ type DashboardFinanceiroResponse = {
       icone: string | null
       corDestaque: string | null
       saldoInicial: number
+      ignorarNosCalculos?: boolean
       saldoAtual: number
       saldoPrevisto: number
       pendenteReceber: number
@@ -721,6 +722,7 @@ onMounted(async () => {
               <div>
                 <p class="break-words font-semibold text-foreground">{{ conta.conta }}</p>
                 <p class="text-xs text-muted-foreground">Saldo inicial {{ formatCurrencyBR(conta.saldoInicial) }}</p>
+                <p v-if="conta.ignorarNosCalculos" class="text-xs text-muted-foreground">Fora dos cálculos gerais</p>
               </div>
             </div>
             <div class="flex flex-wrap items-start justify-end gap-2 sm:max-w-[50%] sm:justify-end">
@@ -732,6 +734,9 @@ onMounted(async () => {
                 id: conta.contaId,
                 nome: conta.conta,
                 saldoInicial: conta.saldoInicial,
+                ignorarNosCalculos: conta.ignorarNosCalculos,
+                icone: conta.icone,
+                corDestaque: conta.corDestaque,
                 saldoAtual: conta.saldoAtual,
               }" />
             </div>

@@ -747,6 +747,7 @@ export interface ContasFinanceiro {
   corDestaque?: string | null
   saldoInicial: number | string
   saldoAtual?: number | string
+  ignorarNosCalculos?: boolean
 }
 
 export type FiltroStatusFinanceiro = 'TODOS' | 'PAGO' | 'PENDENTE' | 'ATRASADO' | 'PARCIAL'

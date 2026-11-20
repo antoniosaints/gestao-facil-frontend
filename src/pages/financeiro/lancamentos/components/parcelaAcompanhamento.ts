@@ -18,4 +18,5 @@ export type ParcelaAcompanhamento = {
   formaPagamento: string | null
   cobrancaLink: string | null
   ignorado: boolean
+  contaIgnoradaNosCalculos?: boolean
 }

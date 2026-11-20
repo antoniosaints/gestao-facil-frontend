@@ -6,8 +6,7 @@ import { useToast } from 'vue-toastification'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { moneyMaskOptions } from '@/lib/imaska'
-import { vMaska } from '@/lib/maska'
+import { Switch } from '@/components/ui/switch'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import type { ContasFinanceiro } from '@/types/schemas'
 import { formatToNumberValue } from '@/utils/formatters'
@@ -35,6 +34,7 @@ const form = ref({
   id: undefined as number | undefined,
   nome: '',
   saldoInicial: '',
+  ignorarNosCalculos: false,
   corDestaque: '#2563EB',
   icone: null as string | null,
 })
@@ -69,7 +69,8 @@ function resetForm() {
   form.value = {
     id: props.conta?.id,
     nome: props.conta?.nome ?? '',
-    saldoInicial: String(props.conta?.saldoInicial ?? 0),
+    saldoInicial: String(props.conta?.saldoInicial ?? 0).replace(".", ","),
+    ignorarNosCalculos: props.conta?.ignorarNosCalculos ?? false,
     corDestaque: props.conta?.corDestaque || '#2563EB',
     icone: props.conta?.icone || null,
   }
@@ -151,10 +152,17 @@ async function submit() {
     }
 
     saving.value = true
+    const saldoInicial = formatToNumberValue(form.value.saldoInicial)
+    const saldoOriginal = formatToNumberValue(props.conta?.saldoInicial ?? 0)
+    const ignorarNosCalculos = form.value.ignorarNosCalculos
+    const novaConta = form.value.id === undefined
     const response = await LancamentosRepository.criarConta({
       id: form.value.id,
       nome: form.value.nome.trim(),
-      saldoInicial: formatToNumberValue(form.value.saldoInicial || 0),
+      ...(novaConta || saldoInicial !== saldoOriginal ? { saldoInicial } : {}),
+      ...(novaConta || ignorarNosCalculos !== (props.conta?.ignorarNosCalculos ?? false)
+        ? { ignorarNosCalculos }
+        : {}),
       corDestaque: form.value.corDestaque || null,
       removeIcon: removePersistedIcon.value,
     })
@@ -226,10 +234,25 @@ onBeforeUnmount(() => {
             </div>
 
             <div>
-              <label class="mb-1 block text-sm font-medium">Saldo inicial</label>
-              <Input v-model="form.saldoInicial" v-maska="moneyMaskOptions" type="text" inputmode="decimal" placeholder="0,00" />
+              <label for="saldoInicialConta" class="mb-1 block text-sm font-medium">Saldo inicial</label>
+              <Input id="saldoInicialConta" v-model="form.saldoInicial" type="text" inputmode="decimal" placeholder="0,00" />
               <p class="mt-1 text-xs text-muted-foreground">Usado como ponto de partida dos saldos da conta financeira.</p>
             </div>
+
+            <label for="ignorarContaNosCalculos" class="flex items-start gap-3 rounded-lg border border-border px-3 py-2">
+              <Switch
+                id="ignorarContaNosCalculos"
+                v-model="form.ignorarNosCalculos"
+                :disabled="saving"
+                aria-describedby="ignorarContaNosCalculosDescricao"
+              />
+              <span>
+                <span class="block text-sm font-medium">Ignorar nos cálculos gerais</span>
+                <span id="ignorarContaNosCalculosDescricao" class="block text-xs text-muted-foreground">
+                  A conta mantém o saldo próprio e continua disponível para receitas e despesas.
+                </span>
+              </span>
+            </label>
 
             <div>
               <label class="mb-1 flex items-center gap-2 text-sm font-medium">

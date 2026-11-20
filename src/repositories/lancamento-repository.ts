@@ -248,6 +248,7 @@ export class LancamentosRepository {
     data: Pick<ContasFinanceiro, 'nome'> & {
       id?: number
       saldoInicial?: number
+      ignorarNosCalculos?: boolean
       corDestaque?: string | null
       removeIcon?: boolean
     },

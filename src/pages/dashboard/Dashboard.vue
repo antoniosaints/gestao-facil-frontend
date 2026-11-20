@@ -120,6 +120,7 @@ type FinanceiroDashboardResumo = {
       conta: string
       icone: string | null
       corDestaque: string | null
+      ignorarNosCalculos?: boolean
       saldoAtual: number
       saldoPrevisto: number
       pendenteReceber: number
@@ -1270,7 +1271,24 @@ onMounted(async () => {
             <p v-if="!contasFinanceirasResumo.length" class="py-6 text-center text-sm text-muted-foreground">Nenhuma conta financeira encontrada.</p>
             <div v-else class="grid gap-3 md:grid-cols-2">
               <RouterLink v-for="conta in contasFinanceirasResumo" :key="conta.contaId" to="/financeiro/contas" class="rounded-xl border border-border/70 p-3 transition hover:bg-muted/50">
-                <div class="flex items-start justify-between gap-3"><div class="flex min-w-0 items-center gap-2"><span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/30" :style="{ borderColor: conta.corDestaque || undefined }"><img v-if="conta.icone" :src="resolveFileUrl(conta.icone, { fallback: '/imgs/logo.png' })" alt="" class="h-full w-full object-cover" /><Landmark v-else class="h-4 w-4 text-muted-foreground" /></span><p class="truncate font-medium text-foreground">{{ conta.conta }}</p></div><div class="shrink-0 text-right"><p class="text-[11px] text-muted-foreground">Previsto</p><p class="text-sm font-semibold" :class="conta.saldoPrevisto >= 0 ? 'text-emerald-600' : 'text-rose-600'">{{ formatCurrencyBR(conta.saldoPrevisto) }}</p></div></div>
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex min-w-0 items-center gap-2">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/30" :style="{ borderColor: conta.corDestaque || undefined }">
+                      <img v-if="conta.icone" :src="resolveFileUrl(conta.icone, { fallback: '/imgs/logo.png' })" alt="" class="h-full w-full object-cover" />
+                      <Landmark v-else class="h-4 w-4 text-muted-foreground" />
+                    </span>
+                    <div class="min-w-0">
+                      <p class="truncate font-medium text-foreground">{{ conta.conta }}</p>
+                      <p v-if="conta.ignorarNosCalculos" class="text-xs text-muted-foreground">Fora dos cálculos gerais</p>
+                    </div>
+                  </div>
+                  <div class="shrink-0 text-right">
+                    <p class="text-[11px] text-muted-foreground">Previsto</p>
+                    <p class="text-sm font-semibold" :class="conta.saldoPrevisto >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+                      {{ formatCurrencyBR(conta.saldoPrevisto) }}
+                    </p>
+                  </div>
+                </div>
                 <div class="mt-3 grid grid-cols-3 gap-2 text-xs"><div><p class="text-muted-foreground">Atual</p><p class="mt-1 font-medium text-foreground">{{ formatCurrencyBR(conta.saldoAtual) }}</p></div><div><p class="text-muted-foreground">A receber</p><p class="mt-1 font-medium text-amber-600">{{ formatCurrencyBR(conta.pendenteReceber) }}</p></div><div><p class="text-muted-foreground">A pagar</p><p class="mt-1 font-medium text-orange-600">{{ formatCurrencyBR(conta.pendentePagar) }}</p></div></div>
               </RouterLink>
             </div>

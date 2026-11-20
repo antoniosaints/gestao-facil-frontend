@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useLookupOptions } from '../adapters/lookups'
 import FormSelect from '../components/FormSelect.vue'
+import FormSwitch from '../components/FormSwitch.vue'
 import { Input } from '@/components/ui/input'
 
 import ModalDialog from '../components/ModalDialog.vue'
@@ -22,6 +23,7 @@ const ui = useUiStore(),
   name = ref(''),
   balance = ref('0'),
   color = ref('#12617b'),
+  ignorarNosCalculos = ref(false),
   parent = ref<number | null>(null),
   editId = ref<number | null>(null),
   loading = ref(false),
@@ -56,6 +58,7 @@ function closeEditor() {
 function reset() {
   name.value = ''
   balance.value = '0'
+  ignorarNosCalculos.value = false
   parent.value = null
   editId.value = null
   review.value = false
@@ -67,6 +70,7 @@ function edit(row: Row) {
   name.value = row.nome || ''
   parent.value = row.parentId ?? row.categoriaPai ?? null
   color.value = row.corDestaque || '#12617b'
+  ignorarNosCalculos.value = Boolean(row.ignorarNosCalculos)
 }
 onMounted(load)
 async function save() {
@@ -85,12 +89,14 @@ async function save() {
               api.patch(`/modofacil/financeiro/contas/${editId.value}`, {
                 nome: name.value.trim(),
                 corDestaque: color.value,
+                ignorarNosCalculos: ignorarNosCalculos.value,
               })
           : () =>
               api.post('/modofacil/financeiro/contas', {
                 nome: name.value.trim(),
                 saldoInicial: initialBalance,
                 corDestaque: color.value,
+                ignorarNosCalculos: ignorarNosCalculos.value,
               })
         : () =>
             api.post('/modofacil/financeiro/categorias', {
@@ -157,14 +163,15 @@ async function save() {
       :caption="tab === 'contas' ? 'Contas financeiras' : 'Categorias financeiras'"
       :columns="[
         { key: 'name', label: tab === 'contas' ? 'Conta financeira' : 'Categoria' },
-        ...(tab === 'contas' ? [{ key: 'balance', label: 'Saldo inicial', right: true }] : []),
+        ...(tab === 'contas' ? [{ key: 'balance', label: 'Saldo atual', right: true }] : []),
         { key: 'actions', label: 'Ações', right: true },
       ]"
     >
-      <template #name="{ row }"
-        ><strong>{{ row.nome }}</strong></template
-      >
-      <template #balance="{ row }">{{ money(row.saldoInicial) }}</template>
+      <template #name="{ row }">
+        <strong>{{ row.nome }}</strong>
+        <small v-if="row.ignorarNosCalculos" class="block text-muted-foreground">Fora dos cálculos gerais</small>
+      </template>
+      <template #balance="{ row }">{{ money(row.saldoAtual ?? row.saldoInicial) }}</template>
       <template #actions="{ row }"
         ><button v-if="canManage" :disabled="busy || uncertain" @click="edit(row)">
           Editar {{ row.nome }}
@@ -215,6 +222,12 @@ async function save() {
                   inputmode="decimal"
                   required /></label
               ><label>Cor de identificação<Input v-model="color" type="color" /></label>
+              <label class="col-span-full">
+                <FormSwitch v-model="ignorarNosCalculos" /> Ignorar nos cálculos gerais
+                <small class="block text-muted-foreground">
+                  A conta mantém o saldo próprio e continua disponível para receitas e despesas.
+                </small>
+              </label>
               <p v-if="editId">O saldo inicial não é alterado por esta edição.</p></template
             ><label v-else
               >Categoria superior<FormSelect
@@ -233,10 +246,10 @@ async function save() {
                   : `Categoria superior: ${parent || 'nenhuma'}`
               }}
             </p>
-            <p>
-              Somente os dados deste cadastro são alterados. A hierarquia será validada pelo
-              servidor.
+            <p v-if="tab === 'contas'">
+              {{ ignorarNosCalculos ? 'Conta fora dos cálculos gerais.' : 'Conta incluída nos cálculos gerais.' }}
             </p>
+            <p v-else>O servidor valida a hierarquia da categoria.</p>
           </section>
           <div
             class="mf-form-actions mf-actions col-span-full flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end"

@@ -796,13 +796,17 @@ describe('caixa, cadastros e configurações', () => {
     await button(w, kind === 'contas' ? 'Nova conta financeira' : 'Nova categoria').trigger('click')
     await flushPromises()
     await field(w, 'Nome').setValue('Cadastro de teste')
-    if (kind === 'categorias') await choose(w, 'Categoria superior', 3)
+    if (kind === 'categorias') {
+      await choose(w, 'Categoria superior', 3)
+    } else {
+      await w.get('[role="switch"]').trigger('click')
+    }
     await reviewSave(w)
     expect(http.post).toHaveBeenCalledExactlyOnceWith(
       `/modofacil/financeiro/${kind}`,
       expect.objectContaining(
         kind === 'contas'
-          ? { nome: 'Cadastro de teste', saldoInicial: 0 }
+          ? { nome: 'Cadastro de teste', saldoInicial: 0, ignorarNosCalculos: true }
           : { nome: 'Cadastro de teste', categoriaPai: 3 },
       ),
     )

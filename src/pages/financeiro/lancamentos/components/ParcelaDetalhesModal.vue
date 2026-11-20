@@ -160,14 +160,18 @@ const referencia = computed(() =>
       </section>
 
       <div
-        v-if="parcela.ignorado"
+        v-if="parcela.ignorado || parcela.contaIgnoradaNosCalculos"
         class="flex items-start gap-2.5 rounded-lg border bg-muted/20 p-3 text-sm"
       >
         <EyeOff class="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <div>
-          <p class="font-medium">Ignorado nos cálculos</p>
+          <p class="font-medium">
+            {{ parcela.ignorado ? 'Ignorado nos cálculos' : 'Conta fora dos cálculos gerais' }}
+          </p>
           <p class="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-            Esta parcela não participa dos totais e saldos.
+            {{ parcela.ignorado
+              ? 'Esta parcela fica fora dos totais e saldos.'
+              : 'Esta parcela compõe o saldo da conta quando paga e fica fora dos totais gerais.' }}
           </p>
         </div>
       </div>

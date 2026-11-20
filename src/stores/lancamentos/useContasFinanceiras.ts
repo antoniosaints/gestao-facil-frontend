@@ -24,6 +24,7 @@ export const useContasFinanceirasStore = defineStore('contasFinanceirasStore', (
       icone: conta.icone ?? null,
       corDestaque: conta.corDestaque ?? null,
       saldoInicial: conta.saldoInicial ?? 0,
+      ignorarNosCalculos: conta.ignorarNosCalculos,
     }
     openModal.value = true
   }
@@ -36,6 +37,7 @@ export const useContasFinanceirasStore = defineStore('contasFinanceirasStore', (
       icone: conta.icone ?? null,
       corDestaque: conta.corDestaque ?? null,
       saldoInicial: conta.saldoInicial ?? 0,
+      ignorarNosCalculos: conta.ignorarNosCalculos,
     }
     openDetailsModal.value = true
   }

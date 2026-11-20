@@ -57,6 +57,7 @@ async function loadContas() {
       corDestaque: item.corDestaque ?? null,
       saldoInicial: item.saldoInicial ?? 0,
       saldoAtual: item.saldoAtual ?? item.saldoInicial ?? 0,
+      ignorarNosCalculos: item.ignorarNosCalculos,
     }))
   } catch (error) {
     console.log(error)
@@ -193,7 +194,9 @@ onMounted(loadContas)
                 <div class="text-xs text-muted-foreground">Saldo inicial: {{ formatCurrencyBR(Number(item.saldoInicial || 0)) }}</div>
               </div>
             </div>
-            <div class="text-xs text-muted-foreground">Conta</div>
+            <div v-if="item.ignorarNosCalculos" class="text-right text-xs text-muted-foreground">
+              Fora dos cálculos gerais
+            </div>
           </div>
           <div class="mt-3 text-sm font-semibold" :class="Number(item.saldoAtual || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
             Saldo atual: {{ formatCurrencyBR(Number(item.saldoAtual || 0)) }}

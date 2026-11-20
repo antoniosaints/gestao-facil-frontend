@@ -175,6 +175,32 @@ describe('FluxoFinanceiroPage', () => {
     expect(wrapper.find('[data-testid="quick-summary"]').exists()).toBe(false)
   })
 
+  it('identifica a conta fora dos cálculos e mantém os dados da parcela acessíveis', async () => {
+    repositoryMock.getLancamentosMensais.mockResolvedValueOnce({
+      data: {
+        dias: [{
+          dia: '2026-06-18T03:00:00.000Z',
+          entradasPrevistas: 0,
+          saidasPrevistas: 0,
+          entradasRealizadas: 0,
+          saidasRealizadas: 0,
+          saldoRealizado: 0,
+          saldoPrevisto: 0,
+          lancamentos: [{ ...lancamentoDia, contaIgnoradaNosCalculos: true }],
+        }],
+        resumo: { ...resumo, receitasPrevistas: 0, pendenteReceber: 0 },
+      },
+    })
+
+    const wrapper = await mountPage()
+    const row = wrapper.get('[data-testid="lancamento-row-501"]')
+    expect(row.text()).toContain('Conta fora dos cálculos')
+    await row.trigger('click')
+    const details = wrapper.get('[data-testid="quick-summary"]')
+    expect(details.text()).toContain('Esta parcela compõe o saldo da conta quando paga')
+    expect(details.text()).toContain('Mensalidade cliente')
+  })
+
   it('mantém parcelas ignoradas visíveis e identificadas', async () => {
     repositoryMock.getLancamentosMensais.mockResolvedValueOnce({
       data: {
