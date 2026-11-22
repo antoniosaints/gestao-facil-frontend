@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { Card, CardContent } from "@/components/ui/card"
+import AjudaIndicador from "@/components/dashboard/AjudaIndicador.vue"
+import CabecalhoCartaoPainel from "@/components/dashboard/CabecalhoCartaoPainel.vue"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
 import ModalView from "@/components/formulario/ModalView.vue"
 import LineChart from "@/components/graficos/LineChart.vue"
@@ -125,10 +127,46 @@ const cards = computed(() => {
   const k = painel.value?.kpis
   if (!k) return []
   return [
-    { titulo: "Receita vendida", valor: formatCurrencyBR(k.receita.atual), delta: k.receita.delta, comparar: true, detalhe: "vs. período anterior", icone: CircleDollarSign, cor: "emerald" },
-    { titulo: "Lucro realizado", valor: formatCurrencyBR(k.lucro.atual), delta: k.lucro.delta, comparar: true, detalhe: "receita menos custo médio aplicado", icone: TrendingUp, cor: "blue" },
-    { titulo: "Ticket médio", valor: formatCurrencyBR(k.ticketMedio.atual), delta: k.ticketMedio.delta, comparar: true, detalhe: "vs. período anterior", icone: ReceiptText, cor: "violet" },
-    { titulo: "Itens vendidos", valor: String(k.itensVendidos.atual), delta: k.itensVendidos.delta, comparar: true, detalhe: "unidades no período", icone: ShoppingBag, cor: "sky" },
+    {
+      titulo: "Receita vendida",
+      ajuda: "Soma dos valores das vendas faturadas ou finalizadas no período. A variação compara com o período anterior de mesma duração.",
+      valor: formatCurrencyBR(k.receita.atual),
+      delta: k.receita.delta,
+      comparar: true,
+      detalhe: "vs. período anterior",
+      icone: CircleDollarSign,
+      cor: "emerald",
+    },
+    {
+      titulo: "Lucro realizado",
+      ajuda: "Valor de venda dos itens menos o custo médio aplicado às unidades vendidas no período. A variação compara com o período anterior de mesma duração.",
+      valor: formatCurrencyBR(k.lucro.atual),
+      delta: k.lucro.delta,
+      comparar: true,
+      detalhe: "receita menos custo médio aplicado",
+      icone: TrendingUp,
+      cor: "blue",
+    },
+    {
+      titulo: "Ticket médio",
+      ajuda: "Receita vendida dividida pela quantidade de vendas faturadas ou finalizadas no período. A variação compara com o período anterior de mesma duração.",
+      valor: formatCurrencyBR(k.ticketMedio.atual),
+      delta: k.ticketMedio.delta,
+      comparar: true,
+      detalhe: "vs. período anterior",
+      icone: ReceiptText,
+      cor: "violet",
+    },
+    {
+      titulo: "Itens vendidos",
+      ajuda: "Soma das quantidades dos itens nas vendas faturadas ou finalizadas no período. A variação compara com o período anterior de mesma duração.",
+      valor: String(k.itensVendidos.atual),
+      delta: k.itensVendidos.delta,
+      comparar: true,
+      detalhe: "unidades no período",
+      icone: ShoppingBag,
+      cor: "sky",
+    },
   ]
 })
 
@@ -223,52 +261,71 @@ onMounted(carregar)
         <CardContent class="p-4">
           <div class="flex items-center justify-between">
             <div class="rounded-lg p-2" :class="corMap[kpi.cor]">
-              <component :is="kpi.icone" class="h-5 w-5" />
+              <component :is="kpi.icone" class="h-5 w-5" aria-hidden="true" />
             </div>
-            <span v-if="kpi.comparar" class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+            <AjudaIndicador :titulo="kpi.titulo" :texto="kpi.ajuda" class="-my-1 -mr-2" />
+          </div>
+          <p class="mt-3 text-sm text-muted-foreground">{{ kpi.titulo }}</p>
+          <p class="break-words text-2xl font-bold tracking-tight text-foreground">{{ kpi.valor }}</p>
+          <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span v-if="kpi.comparar" class="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
               :class="deltaInfo(kpi.delta).cls">
               <component :is="deltaInfo(kpi.delta).icon" class="h-3 w-3" />
               {{ deltaInfo(kpi.delta).label }}
             </span>
+            <p class="text-xs text-muted-foreground">{{ kpi.detalhe }}</p>
           </div>
-          <p class="mt-3 text-sm text-muted-foreground">{{ kpi.titulo }}</p>
-          <p class="text-2xl font-bold tracking-tight text-foreground">{{ kpi.valor }}</p>
-          <p class="mt-0.5 text-xs text-muted-foreground truncate">{{ kpi.detalhe }}</p>
         </CardContent>
       </Card>
     </section>
 
     <!-- Faixa secundária (catálogo / estoque) -->
     <section v-if="!loading && painel" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="rounded-lg bg-emerald-500/10 p-2 text-emerald-600"><Warehouse class="h-5 w-5" /></div>
+      <div class="grid min-w-0 content-start gap-1 rounded-xl border border-border bg-card p-4">
+        <div class="flex items-center justify-between">
+          <div class="rounded-lg bg-emerald-500/10 p-2 text-emerald-600"><Warehouse class="h-5 w-5" aria-hidden="true" /></div>
+          <AjudaIndicador titulo="Valor em estoque"
+            texto="Soma do saldo atual de cada variante multiplicado pelo seu custo médio ponderado de reposição. Na falta desse histórico, entra o preço de compra cadastrado." class="-my-1 -mr-2" />
+        </div>
         <div class="min-w-0">
           <p class="text-xs text-muted-foreground">Valor em estoque</p>
-          <p class="text-lg font-bold truncate">{{ formatCurrencyBR(painel.kpis.valorEstoque.atual) }}</p>
-          <p class="text-xs text-muted-foreground">média das reposições concluídas</p>
+          <p class="text-lg font-bold break-words">{{ formatCurrencyBR(painel.kpis.valorEstoque.atual) }}</p>
+          <p class="text-xs text-muted-foreground">saldo atual × custo médio</p>
         </div>
       </div>
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="rounded-lg bg-amber-500/10 p-2 text-amber-600"><AlertTriangle class="h-5 w-5" /></div>
+      <div class="grid min-w-0 content-start gap-1 rounded-xl border border-border bg-card p-4">
+        <div class="flex items-center justify-between">
+          <div class="rounded-lg bg-amber-500/10 p-2 text-amber-600"><AlertTriangle class="h-5 w-5" aria-hidden="true" /></div>
+          <AjudaIndicador titulo="Alertas de estoque"
+            texto="Quantidade de variantes com controle de estoque cujo saldo atual chegou ao mínimo ou ficou abaixo dele. O card separa saldos baixos de saldos zerados ou negativos." class="-my-1 -mr-2" />
+        </div>
         <div class="min-w-0">
           <p class="text-xs text-muted-foreground">Alertas de estoque</p>
           <p class="text-lg font-bold">{{ painel.kpis.estoqueBaixo.atual + painel.kpis.semEstoque.atual }}</p>
           <p class="text-xs text-muted-foreground">{{ painel.kpis.estoqueBaixo.atual }} baixo · {{ painel.kpis.semEstoque.atual }} sem estoque</p>
         </div>
       </div>
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="rounded-lg bg-blue-500/10 p-2 text-blue-600"><Boxes class="h-5 w-5" /></div>
+      <div class="grid min-w-0 content-start gap-1 rounded-xl border border-border bg-card p-4">
+        <div class="flex items-center justify-between">
+          <div class="rounded-lg bg-blue-500/10 p-2 text-blue-600"><Boxes class="h-5 w-5" aria-hidden="true" /></div>
+          <AjudaIndicador titulo="Catálogo"
+            texto="Quantidade atual de produtos base, variantes e categorias cadastradas. Esses totais representam o catálogo atual, independentemente do filtro de datas." class="-my-1 -mr-2" />
+        </div>
         <div class="min-w-0">
           <p class="text-xs text-muted-foreground">Catálogo</p>
           <p class="text-lg font-bold">{{ painel.kpis.totalProdutosBase }} <span class="text-xs font-normal text-muted-foreground">base</span></p>
           <p class="text-xs text-muted-foreground">{{ painel.kpis.totalVariantes }} variantes · {{ painel.kpis.totalCategorias }} categorias</p>
         </div>
       </div>
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="rounded-lg bg-indigo-500/10 p-2 text-indigo-600"><HandCoins class="h-5 w-5" /></div>
+      <div class="grid min-w-0 content-start gap-1 rounded-xl border border-border bg-card p-4">
+        <div class="flex items-center justify-between">
+          <div class="rounded-lg bg-indigo-500/10 p-2 text-indigo-600"><HandCoins class="h-5 w-5" aria-hidden="true" /></div>
+          <AjudaIndicador titulo="Custo de reposições"
+            texto="Custo total das entradas de estoque concluídas no período, somando o valor dos itens e o frete e deduzindo os descontos." class="-my-1 -mr-2" />
+        </div>
         <div class="min-w-0">
           <p class="text-xs text-muted-foreground">Custo de reposições</p>
-          <p class="text-lg font-bold truncate">{{ formatCurrencyBR(painel.kpis.custoReposicoes.atual) }}</p>
+          <p class="text-lg font-bold break-words">{{ formatCurrencyBR(painel.kpis.custoReposicoes.atual) }}</p>
           <p class="text-xs text-muted-foreground">entradas concluídas</p>
         </div>
       </div>
@@ -277,18 +334,14 @@ onMounted(carregar)
     <!-- Curva de receita + categorias -->
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <div class="rounded-xl border border-border bg-card p-4 xl:col-span-2">
-        <div class="mb-4 flex items-center gap-2">
-          <TrendingUp class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Curva de receita</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Curva de receita" :icone="TrendingUp"
+          texto="Soma dos valores das vendas faturadas ou finalizadas ao longo do período. Em intervalos de até 92 dias, o gráfico agrupa por dia. Acima disso, agrupa por mês." />
         <Skeleton v-if="loading" class="h-72 w-full rounded-lg" />
         <div v-else class="h-72"><LineChart :data="serieChart" :options="lineOptions" /></div>
       </div>
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <Tags class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Catálogo por categoria</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Catálogo por categoria" :icone="Tags"
+          texto="Distribuição dos produtos base cadastrados por categoria. O gráfico agrupa as categorias menores em Outras quando necessário e mostra a composição atual do catálogo." />
         <Skeleton v-if="loading" class="h-72 w-full rounded-lg" />
         <div v-else-if="temCategorias" class="h-56"><PieChart :data="categoriasChart" :options="doughnutOptions" /></div>
         <div v-else class="flex h-56 items-center justify-center text-sm text-muted-foreground">Sem categorias cadastradas</div>
@@ -304,10 +357,8 @@ onMounted(carregar)
     <!-- Saúde do estoque + estoque crítico + mais repostos -->
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <PackageOpen class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Saúde do estoque</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Saúde do estoque" :icone="PackageOpen"
+          texto="Distribuição das variantes conforme o saldo atual e o controle de estoque. Mostra as que estão saudáveis, com estoque baixo, sem estoque ou sem controle." />
         <Skeleton v-if="loading" class="h-60 w-full rounded-lg" />
         <template v-else-if="temSaude">
           <div class="h-44"><PieChart :data="saudeChart" :options="doughnutOptions" /></div>
@@ -322,10 +373,8 @@ onMounted(carregar)
       </div>
 
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <AlertTriangle class="h-5 w-5 text-amber-500" />
-          <h3 class="font-semibold">Estoque crítico</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Estoque crítico" :icone="AlertTriangle" classe-icone="text-amber-500"
+          texto="Até oito variantes com controle de estoque e saldo atual no mínimo ou abaixo dele, ordenadas do menor para o maior saldo." />
         <Skeleton v-if="loading" class="h-60 w-full rounded-lg" />
         <template v-else>
           <div v-if="!painel?.estoqueCritico.length" class="flex h-52 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -347,10 +396,8 @@ onMounted(carregar)
       </div>
 
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <RefreshCw class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Mais repostos</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Mais repostos" :icone="RefreshCw"
+          texto="Até seis variantes com maior quantidade de unidades repostas em entradas de estoque concluídas no período selecionado." />
         <Skeleton v-if="loading" class="h-60 w-full rounded-lg" />
         <template v-else>
           <div v-if="!painel?.maisRepostos.length" class="flex h-52 items-center justify-center text-sm text-muted-foreground">Sem reposições no período</div>
@@ -372,10 +419,8 @@ onMounted(carregar)
     <!-- Rankings receita / lucro -->
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <div class="rounded-xl border border-border bg-card p-4 xl:col-span-2">
-        <div class="mb-4 flex items-center gap-2">
-          <Package class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Top produtos por receita</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Top produtos por receita" :icone="Package"
+          texto="Até oito produtos ou variantes com maior valor vendido. O ranking soma o valor unitário multiplicado pela quantidade de cada item no período." />
         <Skeleton v-if="loading" class="h-64 w-full rounded-lg" />
         <template v-else>
           <div v-if="!painel?.topReceita.length" class="flex h-40 items-center justify-center text-sm text-muted-foreground">Sem vendas no período</div>
@@ -400,10 +445,8 @@ onMounted(carregar)
       </div>
 
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <Coins class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Maior lucro</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Maior lucro" :icone="Coins"
+          texto="Até seis produtos ou variantes com maior lucro no período. O ranking deduz o custo médio aplicado às unidades vendidas do valor de venda dos itens." />
         <Skeleton v-if="loading" class="h-64 w-full rounded-lg" />
         <template v-else>
           <div v-if="!painel?.topLucro.length" class="flex h-40 items-center justify-center text-sm text-muted-foreground">Sem dados de lucro</div>

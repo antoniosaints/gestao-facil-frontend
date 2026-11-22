@@ -102,7 +102,7 @@ vi.mock('vue-toastification', () => ({ useToast: () => ({ info: vi.fn(), warning
 async function montarDashboard() {
   const Dashboard = (await import('./Dashboard.vue')).default
   const wrapper = mount(Dashboard, {
-    global: { stubs: { RouterLink: { template: '<a><slot /></a>' }, Badge: true, BarChart: true, LineChart: true, Calendarpicker: true, MobileBottomBar: true, ModalView: { template: '<div><slot /></div>' } } },
+    global: { directives: { tooltip: {} }, stubs: { RouterLink: { template: '<a><slot /></a>' }, Badge: true, BarChart: true, LineChart: true, Calendarpicker: true, MobileBottomBar: true, ModalView: { template: '<div><slot /></div>' } } },
   })
   await new Promise((r) => setTimeout(r, 30))
   await nextTick()
@@ -170,6 +170,21 @@ describe('Dashboard — módulos ativos', () => {
 
   // Os atalhos de período de vendas/produtos agora existem aqui: clicar deve refazer a busca
   // com o novo intervalo, não só pintar o botão.
+  it('oferece ajuda nos widgets e mantém o botão fora do link do KPI', async () => {
+    const wrapper = await montarDashboard()
+    const cards = wrapper.findAll('.dashboard-widget')
+    expect(cards.length).toBeGreaterThan(0)
+    for (const card of cards) {
+      expect(card.find('button[aria-label^="Entenda "]').exists()).toBe(true)
+    }
+    const ajuda = wrapper.get('button[aria-label="Entenda Saldo financeiro"]')
+    expect(ajuda.element.closest('a')).toBeNull()
+    expect(ajuda.attributes('aria-expanded')).toBe('false')
+    await ajuda.trigger('click')
+    expect(ajuda.attributes('aria-expanded')).toBe('true')
+    wrapper.unmount()
+  })
+
   it('refaz a busca ao trocar o preset de período', async () => {
     const wrapper = await montarDashboard()
     const antes = chamadas.filter((c) => c === 'dashboard.resumo').length

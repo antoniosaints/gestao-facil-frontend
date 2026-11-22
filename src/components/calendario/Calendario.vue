@@ -33,11 +33,14 @@ const emit = defineEmits<{
 <template>
     <Card class="shadow-md rounded-lg bg-background">
         <CardHeader class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-            <CardTitle class="text-lg font-normal flex items-center">
-                <div class="flex flex-col">
+            <CardTitle class="text-lg font-normal flex items-center"
+                :class="$slots['ajuda-titulo'] && 'w-full min-w-0 gap-2 sm:w-auto'">
+                <slot name="icone-titulo" />
+                <div class="flex flex-col" :class="$slots['ajuda-titulo'] && 'min-w-0 flex-1'">
                     <h1>{{ title }}</h1>
                     <span v-if="description" class="text-sm text-muted-foreground">{{ description }}</span>
                 </div>
+                <slot name="ajuda-titulo" />
             </CardTitle>
             <Select v-model="visualizacao">
                 <SelectTrigger class="w-full sm:w-[160px]">

@@ -15,6 +15,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BadgePlus,
+  CalendarDays,
   CalendarRange,
   CheckCircle2,
   CircleDollarSign,
@@ -32,6 +33,8 @@ import {
 } from 'lucide-vue-next'
 import Calendario from '@/components/calendario/Calendario.vue'
 import type { CalendarEvent } from '@/components/calendario/types'
+import AjudaIndicador from '@/components/dashboard/AjudaIndicador.vue'
+import CabecalhoCartaoPainel from '@/components/dashboard/CabecalhoCartaoPainel.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import LineChart from '@/components/graficos/LineChart.vue'
@@ -106,6 +109,7 @@ const cards = computed(() => {
   return [
     {
       titulo: 'Valor das ordens',
+      ajuda: 'Soma do valor dos itens das ordens do período, após os descontos. Entram as ordens abertas, em andamento, em orçamento, aprovadas e faturadas.',
       valor: formatCurrencyBR(kpis.valorOrdens.atual),
       delta: kpis.valorOrdens.delta,
       detalhe: 'ordens válidas no período',
@@ -114,6 +118,7 @@ const cards = computed(() => {
     },
     {
       titulo: 'Total faturado',
+      ajuda: 'Soma do valor dos itens, após os descontos, das ordens do período que estão com status Faturada.',
       valor: formatCurrencyBR(kpis.faturado.atual),
       delta: kpis.faturado.delta,
       detalhe: 'ordens efetivadas',
@@ -122,6 +127,7 @@ const cards = computed(() => {
     },
     {
       titulo: 'Ticket médio',
+      ajuda: 'Valor das ordens dividido pela quantidade de ordens válidas do período. As ordens canceladas ficam fora do valor e da contagem.',
       valor: formatCurrencyBR(kpis.ticketMedio.atual),
       delta: kpis.ticketMedio.delta,
       detalhe: 'valor médio por OS',
@@ -130,6 +136,7 @@ const cards = computed(() => {
     },
     {
       titulo: 'Ordens registradas',
+      ajuda: 'Quantidade de ordens do período com status Aberta, Em orçamento, Aprovada, Em andamento ou Faturada.',
       valor: String(kpis.quantidade.atual),
       delta: kpis.quantidade.delta,
       detalhe: 'desconsiderando canceladas',
@@ -327,47 +334,68 @@ onMounted(() => {
       <Card v-for="card in cards" :key="card.titulo" class="rounded-xl transition hover:shadow-md">
         <CardContent class="p-4">
           <div class="flex items-center justify-between">
-            <span class="rounded-lg p-2" :class="card.color"><component :is="card.icon" class="h-5 w-5" /></span>
-            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" :class="deltaInfo(card.delta).class">
+            <span class="rounded-lg p-2" :class="card.color">
+              <component :is="card.icon" class="h-5 w-5" aria-hidden="true" />
+            </span>
+            <AjudaIndicador :titulo="card.titulo" :texto="card.ajuda" class="-my-1 -mr-2" />
+          </div>
+          <p class="mt-3 text-sm text-muted-foreground">{{ card.titulo }}</p>
+          <p class="break-words text-2xl font-bold tracking-tight">{{ card.valor }}</p>
+          <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span class="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" :class="deltaInfo(card.delta).class">
               <component :is="deltaInfo(card.delta).icon" class="h-3 w-3" />
               {{ deltaInfo(card.delta).label }}
             </span>
+            <p class="text-xs text-muted-foreground">{{ card.detalhe }} · vs. anterior</p>
           </div>
-          <p class="mt-3 text-sm text-muted-foreground">{{ card.titulo }}</p>
-          <p class="text-2xl font-bold tracking-tight">{{ card.valor }}</p>
-          <p class="mt-0.5 truncate text-xs text-muted-foreground">{{ card.detalhe }} · vs. anterior</p>
         </CardContent>
       </Card>
     </section>
 
     <section v-if="!loading && painel" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <div class="flex items-center gap-3 rounded-xl border bg-card p-4">
-        <span class="rounded-lg bg-cyan-500/10 p-2 text-cyan-600"><Clock3 class="h-5 w-5" /></span>
-        <div>
+      <div class="grid min-w-0 content-start gap-1 rounded-xl border bg-card p-4">
+        <div class="flex items-center justify-between">
+          <span class="rounded-lg bg-cyan-500/10 p-2 text-cyan-600"><Clock3 class="h-5 w-5" aria-hidden="true" /></span>
+          <AjudaIndicador titulo="Fila operacional"
+            texto="Quantidade de ordens abertas ou em andamento no período selecionado." class="-my-1 -mr-2" />
+        </div>
+        <div class="min-w-0">
           <p class="text-xs text-muted-foreground">Fila operacional</p>
           <p class="text-lg font-bold">{{ painel.operacao.abertas + painel.operacao.emAndamento }}</p>
           <p class="text-xs text-muted-foreground">{{ painel.operacao.abertas }} abertas · {{ painel.operacao.emAndamento }} em execução</p>
         </div>
       </div>
-      <div class="flex items-center gap-3 rounded-xl border bg-card p-4">
-        <span class="rounded-lg bg-emerald-500/10 p-2 text-emerald-600"><CheckCircle2 class="h-5 w-5" /></span>
-        <div>
+      <div class="grid min-w-0 content-start gap-1 rounded-xl border bg-card p-4">
+        <div class="flex items-center justify-between">
+          <span class="rounded-lg bg-emerald-500/10 p-2 text-emerald-600"><CheckCircle2 class="h-5 w-5" aria-hidden="true" /></span>
+          <AjudaIndicador titulo="Taxa de faturamento"
+            texto="Percentual das ordens registradas no período que estão faturadas. A base é a quantidade de ordens válidas, excluindo as canceladas." class="-my-1 -mr-2" />
+        </div>
+        <div class="min-w-0">
           <p class="text-xs text-muted-foreground">Taxa de faturamento</p>
           <p class="text-lg font-bold">{{ painel.operacao.taxaFaturamento.toFixed(1) }}%</p>
           <p class="text-xs text-muted-foreground">{{ painel.operacao.faturadas }} OS faturadas</p>
         </div>
       </div>
-      <div class="flex items-center gap-3 rounded-xl border bg-card p-4">
-        <span class="rounded-lg bg-violet-500/10 p-2 text-violet-600"><UsersRound class="h-5 w-5" /></span>
-        <div>
+      <div class="grid min-w-0 content-start gap-1 rounded-xl border bg-card p-4">
+        <div class="flex items-center justify-between">
+          <span class="rounded-lg bg-violet-500/10 p-2 text-violet-600"><UsersRound class="h-5 w-5" aria-hidden="true" /></span>
+          <AjudaIndicador titulo="Clientes atendidos"
+            texto="Quantidade de clientes diferentes vinculados às ordens válidas do período, incluindo ordens que ainda estão abertas ou em orçamento." class="-my-1 -mr-2" />
+        </div>
+        <div class="min-w-0">
           <p class="text-xs text-muted-foreground">Clientes atendidos</p>
           <p class="text-lg font-bold">{{ painel.operacao.clientesAtendidos }}</p>
           <p class="text-xs text-muted-foreground">clientes únicos no período</p>
         </div>
       </div>
-      <div class="flex items-center gap-3 rounded-xl border bg-card p-4">
-        <span class="rounded-lg bg-blue-500/10 p-2 text-blue-600"><Wrench class="h-5 w-5" /></span>
-        <div>
+      <div class="grid min-w-0 content-start gap-1 rounded-xl border bg-card p-4">
+        <div class="flex items-center justify-between">
+          <span class="rounded-lg bg-blue-500/10 p-2 text-blue-600"><Wrench class="h-5 w-5" aria-hidden="true" /></span>
+          <AjudaIndicador titulo="Catálogo de serviços"
+            texto="Quantidade atual de serviços ativos no catálogo. Os totais abaixo mostram quantas ordens do período estão em orçamento ou aprovadas." class="-my-1 -mr-2" />
+        </div>
+        <div class="min-w-0">
           <p class="text-xs text-muted-foreground">Catálogo de serviços</p>
           <p class="text-lg font-bold">{{ painel.operacao.servicosAtivos }}</p>
           <p class="text-xs text-muted-foreground">{{ painel.operacao.orcamentos }} orçamentos · {{ painel.operacao.aprovadas }} aprovadas</p>
@@ -377,10 +405,8 @@ onMounted(() => {
 
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <div class="rounded-xl border bg-card p-4 xl:col-span-2">
-        <div class="mb-4 flex items-center gap-2">
-          <TrendingUp class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Evolução das ordens</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Evolução das ordens" :icone="TrendingUp"
+          texto="Compara, por data da ordem, o valor das ordens válidas com a parcela desse valor já faturada. Ambas as séries consideram descontos." />
         <Skeleton v-if="loading" class="h-72 w-full rounded-lg" />
         <div v-else-if="painel?.serie.length" class="h-72">
           <LineChart :data="lineData" :options="lineOptions" />
@@ -389,10 +415,8 @@ onMounted(() => {
       </div>
 
       <div class="rounded-xl border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <ClipboardList class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Distribuição por status</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Distribuição por status" :icone="ClipboardList"
+          texto="Quantidade de ordens do período em cada status, incluindo as canceladas." />
         <Skeleton v-if="loading" class="h-72 w-full rounded-lg" />
         <template v-else-if="hasStatus">
           <div class="h-52"><PieChart :data="statusData" :options="pieOptions" /></div>
@@ -409,10 +433,8 @@ onMounted(() => {
 
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <div class="rounded-xl border bg-card p-4 xl:col-span-2">
-        <div class="mb-4 flex items-center gap-2">
-          <Clock3 class="h-5 w-5 text-amber-500" />
-          <h3 class="font-semibold">Ordens que pedem atenção</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Ordens que pedem atenção" :icone="Clock3" classe-icone="text-amber-500"
+          texto="Até seis ordens abertas, em orçamento, aprovadas ou em andamento no período. A lista começa pelas mais antigas." />
         <Skeleton v-if="loading" class="h-64 w-full rounded-lg" />
         <div v-else-if="!painel?.pendentes.length" class="flex h-48 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
           <CheckCircle2 class="h-9 w-9 opacity-40" />
@@ -440,10 +462,8 @@ onMounted(() => {
       </div>
 
       <div class="rounded-xl border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <Wrench class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Top serviços</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Top serviços" :icone="Wrench"
+          texto="Até cinco serviços com maior valor em itens das ordens válidas do período. O ranking calcula o valor unitário vezes a quantidade, antes dos descontos da ordem." />
         <Skeleton v-if="loading" class="h-64 w-full rounded-lg" />
         <div v-else-if="!painel?.topServicos.length" class="flex h-48 items-center justify-center text-sm text-muted-foreground">Sem serviços no período</div>
         <ul v-else class="space-y-3">
@@ -468,10 +488,8 @@ onMounted(() => {
 
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <div class="rounded-xl border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <UserRoundCheck class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Equipe em destaque</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Equipe em destaque" :icone="UserRoundCheck"
+          texto="Até cinco operadores com maior valor nas ordens válidas do período. O ranking usa o total das ordens após os descontos." />
         <Skeleton v-if="loading" class="h-56 w-full rounded-lg" />
         <div v-else-if="!painel?.topOperadores.length" class="flex h-44 items-center justify-center text-sm text-muted-foreground">Sem técnicos no período</div>
         <ul v-else class="space-y-3">
@@ -494,7 +512,15 @@ onMounted(() => {
           :description="loadingCalendar ? 'Atualizando agenda…' : 'Clique em uma ordem para abrir os detalhes'"
           @event-click="abrirEvento"
           @create-event="abrirCriacao"
-        />
+        >
+          <template #icone-titulo>
+            <CalendarDays class="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+          </template>
+          <template #ajuda-titulo>
+            <AjudaIndicador titulo="Calendário de serviços"
+              texto="Mostra as ordens na data da agenda. Use a navegação do calendário para mudar o período e selecione uma ordem para abrir seus detalhes. O filtro de datas do painel é independente." />
+          </template>
+        </Calendario>
       </div>
     </section>
 

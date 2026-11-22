@@ -2,8 +2,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { endOfMonth, startOfMonth, startOfDay, endOfDay, subDays, subMonths } from 'date-fns'
 import {
+  Activity,
   AlertTriangle,
+  CalendarClock,
   CalendarDays,
+  ChartBar,
   CalendarRange,
   CircleCheckBig,
   Filter,
@@ -25,6 +28,8 @@ import { useToast } from 'vue-toastification'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import BarChart from '@/components/graficos/BarChart.vue'
 import LineChart from '@/components/graficos/LineChart.vue'
+import AjudaIndicador from '@/components/dashboard/AjudaIndicador.vue'
+import { ajudaFinanceira } from '@/components/dashboard/ajudaFinanceira'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -363,6 +368,7 @@ const saldoAtualAndPrevistoConcatebed = computed(() => {
 const indicadores = computed(() => [
   {
     titulo: 'Saldo atual / Previsto',
+    ajuda: ajudaFinanceira.saldoAtualPrevisto,
     valor: saldoAtualAndPrevistoConcatebed.value,
     detalhe: 'Saldo realizado e previsto com base no filtro.',
     icone: Wallet,
@@ -370,6 +376,7 @@ const indicadores = computed(() => [
   },
   {
     titulo: 'Receitas realizadas',
+    ajuda: ajudaFinanceira.receitas,
     valor: formatCurrencyBR(cards.value.receitasRealizadas || 0),
     detalhe: `Previstas: ${formatCurrencyBR(cards.value.receitasPrevistas)}`,
     icone: TrendingUp,
@@ -377,6 +384,7 @@ const indicadores = computed(() => [
   },
   {
     titulo: 'Despesas realizadas',
+    ajuda: ajudaFinanceira.despesas,
     valor: formatCurrencyBR(cards.value.despesasRealizadas || 0),
     detalhe: `Previstas: ${formatCurrencyBR(cards.value.despesasPrevistas)}`,
     icone: TrendingDown,
@@ -384,6 +392,7 @@ const indicadores = computed(() => [
   },
   {
     titulo: 'A receber pendente',
+    ajuda: ajudaFinanceira.receber,
     valor: formatCurrencyBR(cards.value.aReceberPendente || 0),
     detalhe: 'Receitas ainda abertas no período.',
     icone: CalendarDays,
@@ -391,6 +400,7 @@ const indicadores = computed(() => [
   },
   {
     titulo: 'A pagar pendente',
+    ajuda: ajudaFinanceira.pagar,
     valor: formatCurrencyBR(cards.value.aPagarPendente || 0),
     detalhe: 'Despesas ainda abertas no período.',
     icone: HandCoins,
@@ -398,6 +408,7 @@ const indicadores = computed(() => [
   },
   {
     titulo: 'Assinaturas no período',
+    ajuda: ajudaFinanceira.assinaturas,
     valor: formatCurrencyBR(assinaturasPagarResumo.value.totalPrevistoPeriodo || 0),
     detalhe: `${assinaturasPagarResumo.value.vencidas.length} vencida(s) • ${assinaturasPagarResumo.value.proximas.length} próxima(s)`,
     icone: CalendarDays,
@@ -405,6 +416,7 @@ const indicadores = computed(() => [
   },
   {
     titulo: 'Atrasado para receber',
+    ajuda: ajudaFinanceira.atrasadoReceber,
     valor: formatCurrencyBR(cards.value.atrasadoReceber || 0),
     detalhe: 'Receitas vencidas e sem baixa financeira.',
     icone: AlertTriangle,
@@ -412,6 +424,7 @@ const indicadores = computed(() => [
   },
   {
     titulo: 'Atrasado para pagar',
+    ajuda: ajudaFinanceira.atrasadoPagar,
     valor: formatCurrencyBR(cards.value.atrasadoPagar || 0),
     detalhe: 'Despesas vencidas e ainda não pagas.',
     icone: AlertTriangle,
@@ -572,12 +585,15 @@ onMounted(async () => {
     <section v-else class="grid w-full min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       <Card v-for="item in indicadores" :key="item.titulo" class="w-full min-w-0 rounded-xl shadow transition">
         <CardHeader class="px-4 py-3 pb-2 sm:px-6">
-          <CardTitle class="flex min-w-0 flex-row items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <div class="rounded-md p-2 shrink-0" :class="item.colorClass">
-              <component :is="item.icone" class="h-4 w-4" />
-            </div>
-            <span class="truncate">{{ item.titulo }}</span>
-          </CardTitle>
+          <div class="flex items-center justify-between gap-2">
+            <CardTitle class="flex min-w-0 items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <span class="shrink-0 rounded-md p-2" :class="item.colorClass">
+                <component :is="item.icone" class="size-4" aria-hidden="true" />
+              </span>
+              <span class="min-w-0 break-words">{{ item.titulo }}</span>
+            </CardTitle>
+            <AjudaIndicador :titulo="item.titulo" :texto="item.ajuda" class="-mr-2" />
+          </div>
         </CardHeader>
         <CardContent class="space-y-1 px-4 pb-3 sm:px-6">
           <p class="break-words text-base font-semibold text-gray-700 dark:text-gray-200 md:text-lg">
@@ -591,7 +607,13 @@ onMounted(async () => {
     <div class="grid w-full min-w-0 gap-4 xl:grid-cols-[1.4fr_1fr]">
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
         <CardHeader class="min-w-0 max-w-full">
-          <CardTitle class="text-lg">Evolução do saldo</CardTitle>
+          <div class="flex items-start justify-between gap-2">
+            <CardTitle class="flex min-w-0 items-center gap-2 text-lg">
+              <TrendingUp class="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+              <span class="min-w-0 break-words">Evolução do saldo</span>
+            </CardTitle>
+            <AjudaIndicador titulo="Evolução do saldo" :texto="ajudaFinanceira.evolucao" class="-my-2 -mr-2" />
+          </div>
           <CardDescription class="truncate"
             :title="'Comparação entre o saldo realizado acumulado e a projeção prevista para o período filtrado.'">
             Comparação entre o saldo realizado acumulado e a projeção prevista para o período filtrado.
@@ -606,7 +628,13 @@ onMounted(async () => {
 
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
         <CardHeader class="min-w-0 max-w-full">
-          <CardTitle class="text-lg">Saúde financeira do período</CardTitle>
+          <div class="flex items-start justify-between gap-2">
+            <CardTitle class="flex min-w-0 items-center gap-2 text-lg">
+              <Activity class="size-5 shrink-0 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+              <span class="min-w-0 break-words">Saúde financeira do período</span>
+            </CardTitle>
+            <AjudaIndicador titulo="Saúde financeira do período" :texto="ajudaFinanceira.situacao" class="-my-2 -mr-2" />
+          </div>
           <CardDescription class="truncate"
             :title="'Valores consolidados por situação financeira para ajudar a priorizar cobranças e pagamentos.'">
             Valores consolidados por situação financeira para ajudar a priorizar cobranças e pagamentos.
@@ -623,7 +651,13 @@ onMounted(async () => {
     <div class="grid w-full min-w-0 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
         <CardHeader class="min-w-0 max-w-full">
-          <CardTitle class="text-lg">Categorias com maior impacto</CardTitle>
+          <div class="flex items-start justify-between gap-2">
+            <CardTitle class="flex min-w-0 items-center gap-2 text-lg">
+              <ChartBar class="size-5 shrink-0 text-violet-600 dark:text-violet-400" aria-hidden="true" />
+              <span class="min-w-0 break-words">Categorias com maior impacto</span>
+            </CardTitle>
+            <AjudaIndicador titulo="Categorias com maior impacto" :texto="ajudaFinanceira.categorias" class="-my-2 -mr-2" />
+          </div>
           <CardDescription class="truncate"
             :title="'Receitas e despesas previstas agrupadas por categoria no período selecionado.'">
             Receitas e despesas previstas agrupadas por categoria no período selecionado.
@@ -638,7 +672,13 @@ onMounted(async () => {
 
       <Card class="w-full min-w-0 overflow-hidden shadow-sm">
         <CardHeader class="min-w-0 max-w-full">
-          <CardTitle class="text-lg">Assinaturas a pagar</CardTitle>
+          <div class="flex items-start justify-between gap-2">
+            <CardTitle class="flex min-w-0 items-center gap-2 text-lg">
+              <CalendarClock class="size-5 shrink-0 text-violet-600 dark:text-violet-400" aria-hidden="true" />
+              <span class="min-w-0 break-words">Assinaturas a pagar</span>
+            </CardTitle>
+            <AjudaIndicador titulo="Assinaturas a pagar" :texto="ajudaFinanceira.assinaturas" class="-my-2 -mr-2" />
+          </div>
           <CardDescription class="truncate"
             :title="'Próximos vencimentos e assinaturas já atrasadas dentro do contexto financeiro filtrado.'">
             Próximos vencimentos e assinaturas já atrasadas dentro do contexto financeiro filtrado.
@@ -697,7 +737,13 @@ onMounted(async () => {
 
     <Card class="w-full min-w-0 overflow-hidden shadow-sm">
       <CardHeader class="min-w-0 max-w-full">
-        <CardTitle class="text-lg">Resumo por conta financeira</CardTitle>
+        <div class="flex items-start justify-between gap-2">
+          <CardTitle class="flex min-w-0 items-center gap-2 text-lg">
+            <Landmark class="size-5 shrink-0 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+            <span class="min-w-0 break-words">Resumo por conta financeira</span>
+          </CardTitle>
+          <AjudaIndicador titulo="Resumo por conta financeira" :texto="ajudaFinanceira.contas" class="-my-2 -mr-2" />
+        </div>
         <CardDescription class="truncate"
           :title="'Saldo atual, saldo previsto e pendências separadas por conta financeira.'">
           Saldo atual, saldo previsto e pendências separadas por conta financeira.
@@ -738,6 +784,7 @@ onMounted(async () => {
                 corDestaque: conta.corDestaque,
                 saldoAtual: conta.saldoAtual,
               }" />
+              <AjudaIndicador :titulo="'Resumo de ' + conta.conta" :texto="ajudaFinanceira.contaIndividual" class="-my-1 -mr-1" />
             </div>
           </div>
 

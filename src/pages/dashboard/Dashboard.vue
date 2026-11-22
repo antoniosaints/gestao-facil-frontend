@@ -44,6 +44,7 @@ import LineChart from '@/components/graficos/LineChart.vue'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import AutoGrid from '@/components/layout/AutoGrid.vue'
+import AjudaIndicador from '@/components/dashboard/AjudaIndicador.vue'
 import { intervaloDoPreset, PERIODO_PRESETS, type PeriodoPresetKey } from '@/components/layout/periodoPresets'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import { Button } from '@/components/ui/button'
@@ -68,6 +69,7 @@ import { formatCurrencyBR, formatDuracaoMs, formatToCapitalize, formatToNumberVa
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { IaRepository, isIaQuotaError } from '@/repositories/ia-repository'
 import { renderMarkdown } from '@/utils/simpleMarkdown'
+import { ajudaDashboard } from './ajudaIndicadores'
 
 // Todo bloco da dashboard declara a que módulo pertence, e some junto com ele. Sem isso a
 // dashboard mostrava catálogo, estoque e serviços mesmo para contas com esses menus ocultos.
@@ -294,7 +296,7 @@ const todosKpis = computed<KpiCard[]>(() => {
       modulo: 'financeiro',
       titulo: 'Saldo financeiro',
       valor: uiStore.permissoes.financeiro.painel ? (financeiro?.saldo || 'R$ 0,00') : EyeClosed,
-      detalhe: uiStore.permissoes.financeiro.painel ? `Receitas ${financeiro?.receitas || 'R$ 0,00'} • Despesas ${financeiro?.despesas || 'R$ 0,00'}` : 'Sem acesso à essa informação.',
+      detalhe: uiStore.permissoes.financeiro.painel ? `Histórico • Receitas ${financeiro?.receitas || 'R$ 0,00'} • Despesas ${financeiro?.despesas || 'R$ 0,00'}` : 'Sem acesso à essa informação.',
       icone: Wallet,
       colorClass: 'text-emerald-600 bg-emerald-500/10',
       link: '/financeiro/painel',
@@ -509,7 +511,7 @@ const todosSummaryBlocks = computed<SummaryBlock[]>(() => {
     {
       modulo: 'financeiro',
       titulo: 'Financeiro',
-      descricao: 'Receitas, despesas e saldo consolidado.',
+      descricao: 'Receitas, despesas e saldo do histórico.',
       icone: Wallet,
       link: '/financeiro/painel',
       metrics: [
@@ -1192,14 +1194,20 @@ onMounted(async () => {
             <EyeOff class="h-4 w-4" />
           </button>
         </div>
+        <AjudaIndicador
+          v-else-if="ajudaDashboard[widget.id]"
+          :titulo="widget.titulo"
+          :texto="ajudaDashboard[widget.id]!"
+          class="absolute right-2 top-2 z-[1]"
+        />
         <RouterLink v-if="widget.kind === 'kpi'" :to="widget.item.link || '/'" class="block h-full">
           <Card class="h-full rounded-2xl border-border/70 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
-            <CardHeader class="py-3">
+            <CardHeader class="py-3 pr-14">
               <CardTitle class="flex items-center gap-3 text-sm text-foreground">
                 <span class="rounded-xl p-2" :class="widget.item.colorClass">
                   <component :is="widget.item.icone" class="h-4 w-4" />
                 </span>
-                <span>{{ widget.item.titulo }}</span>
+                <span class="min-w-0 break-words">{{ widget.item.titulo }}</span>
               </CardTitle>
             </CardHeader>
             <CardContent class="space-y-1 pb-3">
@@ -1213,7 +1221,7 @@ onMounted(async () => {
         </RouterLink>
 
         <section v-else-if="widget.kind === 'metas'" class="h-full rounded-2xl border border-border/70 bg-card p-3 shadow-sm">
-          <div class="mb-2 flex items-center justify-between gap-3">
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-3 pr-10">
             <div>
               <p class="flex items-center gap-2 text-sm font-medium text-foreground"><Target class="h-4 w-4" /> Metas em andamento</p>
               <p class="text-xs text-muted-foreground">Acompanhamento discreto do período atual.</p>
@@ -1234,17 +1242,17 @@ onMounted(async () => {
         </section>
 
         <Card v-else-if="widget.kind === 'alerts'" class="h-full border-border/70 bg-card shadow-sm">
-          <CardHeader><CardTitle class="flex items-center gap-2 text-lg"><AlertTriangle class="h-5 w-5 text-amber-600" />Centro de alertas</CardTitle><CardDescription>Prioridades operacionais para revisão rápida.</CardDescription></CardHeader>
+          <CardHeader class="pr-14"><CardTitle class="flex items-center gap-2 text-lg"><AlertTriangle class="h-5 w-5 text-amber-600" />Centro de alertas</CardTitle><CardDescription>Prioridades operacionais para revisão rápida.</CardDescription></CardHeader>
           <CardContent><AutoGrid :items="alerts" :max="2" :min="260" :gap="12" v-slot="{ item: alert }"><div class="h-full rounded-xl border px-4 py-2" :class="getAlertClasses(alert.tone)"><div class="flex items-start justify-between gap-3"><div><p class="font-medium text-foreground">{{ alert.titulo }}</p><p class="mt-1 text-sm text-muted-foreground">{{ alert.descricao }}</p></div><AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /></div><RouterLink v-if="alert.link" :to="alert.link" class="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary dark:text-blue-500">{{ alert.cta || 'Abrir' }}<ChevronRight class="h-4 w-4" /></RouterLink></div></AutoGrid></CardContent>
         </Card>
 
         <Card v-else-if="widget.kind === 'trend'" class="h-full border-border/70 bg-card shadow-sm">
-          <CardHeader><CardTitle class="flex items-center gap-2 text-lg"><TrendingUp class="h-5 w-5 text-green-600" />Tendência comercial</CardTitle><CardDescription>{{ dashboardResumo?.data?.percentageByLastMonth >= 0 ? 'Crescimento' : 'Queda' }} frente ao mês anterior.</CardDescription></CardHeader>
+          <CardHeader class="pr-14"><CardTitle class="flex items-center gap-2 text-lg"><TrendingUp class="h-5 w-5 text-green-600" />Tendência comercial</CardTitle><CardDescription>{{ dashboardResumo?.data?.percentageByLastMonth >= 0 ? 'Crescimento' : 'Queda' }} frente ao mês anterior.</CardDescription></CardHeader>
           <CardContent class="flex flex-col gap-2"><div><p class="text-3xl font-semibold text-foreground">{{ dashboardResumo?.data?.percentageByLastMonth?.toFixed?.(1) || 0 }}%</p><p class="text-sm text-muted-foreground">Comparação do faturamento com o mês anterior.</p></div><div class="space-y-2 rounded-xl border border-border/70 bg-muted/10 p-3"><div class="flex items-center justify-between text-sm"><span class="text-muted-foreground">Vendas totais</span><span class="font-medium text-foreground">{{ vendasResumo?.totalVendas || 0 }}</span></div><div class="flex items-center justify-between text-sm"><span class="text-muted-foreground">Vendas em aberto</span><span class="font-medium text-foreground">{{ vendasResumo?.totalAberto || 0 }}</span></div><div class="flex items-center justify-between text-sm"><span class="text-muted-foreground">Orçamentos</span><span class="font-medium text-foreground">{{ vendasResumo?.totalOrcamento || 0 }}</span></div></div><RouterLink to="/vendas/dashboard"><Button variant="outline" class="w-full">Abrir painel de vendas</Button></RouterLink></CardContent>
         </Card>
 
         <Card v-else-if="widget.kind === 'financial-subscriptions'" class="h-full border-border/70 bg-card shadow-sm">
-          <CardHeader>
+          <CardHeader class="pr-14">
             <CardTitle class="flex items-center gap-2 text-lg"><CalendarClock class="h-5 w-5 text-violet-600" />Assinaturas a pagar</CardTitle>
             <CardDescription>Próximos vencimentos e assinaturas atrasadas.</CardDescription>
           </CardHeader>
@@ -1263,14 +1271,14 @@ onMounted(async () => {
         </Card>
 
         <Card v-else-if="widget.kind === 'financial-accounts'" class="h-full border-border/70 bg-card shadow-sm">
-          <CardHeader>
+          <CardHeader class="pr-14">
             <CardTitle class="flex items-center gap-2 text-lg"><Landmark class="h-5 w-5 text-sky-600" />Resumo por conta financeira</CardTitle>
             <CardDescription>Saldo atual, previsto e pendências de cada conta.</CardDescription>
           </CardHeader>
           <CardContent>
             <p v-if="!contasFinanceirasResumo.length" class="py-6 text-center text-sm text-muted-foreground">Nenhuma conta financeira encontrada.</p>
-            <div v-else class="grid gap-3 md:grid-cols-2">
-              <RouterLink v-for="conta in contasFinanceirasResumo" :key="conta.contaId" :to="{ name: 'financeiro-conta-detalhes', params: { id: conta.contaId } }" class="rounded-xl border border-border/70 p-3 transition hover:bg-muted/50">
+            <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <RouterLink v-for="conta in contasFinanceirasResumo" :key="conta.contaId" :to="{ name: 'financeiro-conta-detalhes', params: { id: conta.contaId } }" class="min-w-0 rounded-xl border border-border/70 p-3 transition hover:bg-muted/50">
                 <div class="flex items-start justify-between gap-3">
                   <div class="flex min-w-0 items-center gap-2">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/30" :style="{ borderColor: conta.corDestaque || undefined }">
@@ -1296,12 +1304,12 @@ onMounted(async () => {
         </Card>
 
         <Card v-else-if="widget.kind === 'summary'" class="h-full border-border/70 bg-card shadow-sm">
-          <CardHeader><CardTitle class="flex items-center gap-2 text-base"><component :is="widget.item.icone" class="h-5 w-5 text-primary" />{{ widget.item.titulo }}</CardTitle><CardDescription>{{ widget.item.descricao }}</CardDescription></CardHeader>
+          <CardHeader class="pr-14"><CardTitle class="flex items-center gap-2 text-base"><component :is="widget.item.icone" class="h-5 w-5 text-primary" />{{ widget.item.titulo }}</CardTitle><CardDescription>{{ widget.item.descricao }}</CardDescription></CardHeader>
           <CardContent class="space-y-3"><div v-for="metric in widget.item.metrics" :key="metric.label" class="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/10 px-3 py-2 text-sm"><span class="text-muted-foreground">{{ metric.label }}</span><component v-if="typeof metric.value !== 'string'" :is="metric.value" class="h-5 w-5" /><span v-else class="font-medium text-foreground">{{ metric.value }}</span></div><RouterLink :to="widget.item.link"><Button variant="outline" class="mt-1 w-full">Ver mais</Button></RouterLink></CardContent>
         </Card>
 
         <Card v-else-if="widget.kind === 'chart'" class="h-full border-border/70 bg-card shadow-sm">
-          <CardHeader><CardTitle class="flex items-center gap-2 text-lg"><component :is="widget.item.icone" class="h-5 w-5" :class="widget.item.iconClass" />{{ widget.item.titulo }}</CardTitle><CardDescription>{{ widget.item.descricao }}</CardDescription></CardHeader>
+          <CardHeader class="pr-14"><CardTitle class="flex items-center gap-2 text-lg"><component :is="widget.item.icone" class="h-5 w-5" :class="widget.item.iconClass" />{{ widget.item.titulo }}</CardTitle><CardDescription>{{ widget.item.descricao }}</CardDescription></CardHeader>
           <CardContent><div v-if="widget.item.tipo === 'ranking'"><div v-if="!widget.item.data.length" class="flex h-72 items-center justify-center text-sm text-muted-foreground">Sem itens vendidos no período.</div><ul v-else class="space-y-3"><li v-for="(item, i) in widget.item.data" :key="i" class="space-y-1"><div class="flex items-center justify-between gap-2 text-sm"><span class="flex min-w-0 items-center gap-2"><span class="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">{{ mapperIndex(i) }}</span><span class="truncate font-medium" :title="item.nome">{{ item.nome }}</span></span><span class="shrink-0 text-xs text-muted-foreground">{{ item.qtd }} un</span></div><div class="h-1.5 w-full overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary" :style="{ width: `${item.pct}%` }" /></div></li></ul></div><div v-else class="h-72"><LineChart v-if="widget.item.tipo === 'line'" :data="widget.item.data" :options="widget.item.options" /><BarChart v-else :data="widget.item.data" :options="widget.item.options" /></div></CardContent>
         </Card>
       </div>

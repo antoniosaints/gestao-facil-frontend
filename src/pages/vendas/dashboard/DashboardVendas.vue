@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { Card, CardContent } from "@/components/ui/card"
+import AjudaIndicador from "@/components/dashboard/AjudaIndicador.vue"
+import CabecalhoCartaoPainel from "@/components/dashboard/CabecalhoCartaoPainel.vue"
 import Calendarpicker from "@/components/formulario/calendarpicker.vue"
 import ModalView from "@/components/formulario/ModalView.vue"
 import BarChart from "@/components/graficos/BarChart.vue"
@@ -158,10 +160,45 @@ const cards = computed(() => {
   const k = painel.value?.kpis
   if (!k) return []
   return [
-    { titulo: "Faturamento", valor: formatCurrencyBR(k.faturamento.atual), delta: k.faturamento.delta, comparar: true, detalhe: "vs. período anterior", icone: CircleDollarSign, cor: "emerald" },
-    { titulo: "Vendas concluídas", valor: String(k.vendas.atual), delta: k.vendas.delta, comparar: true, detalhe: `${k.totalVendas} venda(s) no total`, icone: ShoppingCart, cor: "blue" },
-    { titulo: "Ticket médio", valor: formatCurrencyBR(k.ticketMedio.atual), delta: k.ticketMedio.delta, comparar: true, detalhe: "vs. período anterior", icone: ReceiptText, cor: "violet" },
-    { titulo: "Descontos concedidos", valor: formatCurrencyBR(k.descontos.atual), comparar: false, detalhe: "no período selecionado", icone: BadgePercent, cor: "amber" },
+    {
+      titulo: "Faturamento",
+      ajuda: "Soma dos valores das vendas faturadas ou finalizadas no período selecionado. A variação compara com o período anterior de mesma duração.",
+      valor: formatCurrencyBR(k.faturamento.atual),
+      delta: k.faturamento.delta,
+      comparar: true,
+      detalhe: "vs. período anterior",
+      icone: CircleDollarSign,
+      cor: "emerald",
+    },
+    {
+      titulo: "Vendas concluídas",
+      ajuda: "Quantidade de vendas faturadas ou finalizadas no período. A variação compara com o período anterior de mesma duração.",
+      valor: String(k.vendas.atual),
+      delta: k.vendas.delta,
+      comparar: true,
+      detalhe: `${k.totalVendas} venda(s) no total`,
+      icone: ShoppingCart,
+      cor: "blue",
+    },
+    {
+      titulo: "Ticket médio",
+      ajuda: "Faturamento dividido pela quantidade de vendas faturadas ou finalizadas no período. A variação compara com o período anterior de mesma duração.",
+      valor: formatCurrencyBR(k.ticketMedio.atual),
+      delta: k.ticketMedio.delta,
+      comparar: true,
+      detalhe: "vs. período anterior",
+      icone: ReceiptText,
+      cor: "violet",
+    },
+    {
+      titulo: "Descontos concedidos",
+      ajuda: "Soma dos descontos registrados em todas as vendas do período selecionado, considerando todos os status.",
+      valor: formatCurrencyBR(k.descontos.atual),
+      comparar: false,
+      detalhe: "no período selecionado",
+      icone: BadgePercent,
+      cor: "amber",
+    },
   ]
 })
 
@@ -270,64 +307,69 @@ onMounted(carregar)
         <CardContent class="p-4">
           <div class="flex items-center justify-between">
             <div class="rounded-lg p-2" :class="corMap[kpi.cor].chip">
-              <component :is="kpi.icone" class="h-5 w-5" />
+              <component :is="kpi.icone" class="h-5 w-5" aria-hidden="true" />
             </div>
-            <span v-if="kpi.comparar" class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+            <AjudaIndicador :titulo="kpi.titulo" :texto="kpi.ajuda" class="-my-1 -mr-2" />
+          </div>
+          <p class="mt-3 text-sm text-muted-foreground">{{ kpi.titulo }}</p>
+          <p class="break-words text-2xl font-bold tracking-tight text-foreground">{{ kpi.valor }}</p>
+          <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span v-if="kpi.comparar" class="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
               :class="deltaInfo(kpi.delta).cls">
               <component :is="deltaInfo(kpi.delta).icon" class="h-3 w-3" />
               {{ deltaInfo(kpi.delta).label }}
             </span>
+            <p class="text-xs text-muted-foreground">{{ kpi.detalhe }}</p>
           </div>
-          <p class="mt-3 text-sm text-muted-foreground">{{ kpi.titulo }}</p>
-          <p class="text-2xl font-bold tracking-tight text-foreground">{{ kpi.valor }}</p>
-          <p class="mt-0.5 text-xs text-muted-foreground truncate">{{ kpi.detalhe }}</p>
         </CardContent>
       </Card>
     </section>
 
     <!-- Faixa secundária -->
     <section v-if="!loading && painel" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="rounded-lg bg-sky-500/10 p-2 text-sky-600"><Clock3 class="h-5 w-5" /></div>
-        <div>
+      <div class="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
+        <div class="shrink-0 rounded-lg bg-sky-500/10 p-2 text-sky-600"><Clock3 class="h-5 w-5" aria-hidden="true" /></div>
+        <div class="min-w-0 flex-1">
           <p class="text-xs text-muted-foreground">Em aberto</p>
-          <p class="text-lg font-bold">{{ formatCurrencyBR(painel.kpis.emAberto.valor) }}</p>
+          <p class="break-words text-lg font-bold">{{ formatCurrencyBR(painel.kpis.emAberto.valor) }}</p>
           <p class="text-xs text-muted-foreground">{{ painel.kpis.emAberto.qtd }} venda(s) aguardando</p>
         </div>
+        <AjudaIndicador titulo="Em aberto"
+          texto="Valor e quantidade das vendas com status Pendente ou Em andamento no período selecionado." class="-my-2 -mr-2" />
       </div>
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="rounded-lg bg-rose-500/10 p-2 text-rose-600"><FileText class="h-5 w-5" /></div>
-        <div>
+      <div class="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
+        <div class="shrink-0 rounded-lg bg-rose-500/10 p-2 text-rose-600"><FileText class="h-5 w-5" aria-hidden="true" /></div>
+        <div class="min-w-0 flex-1">
           <p class="text-xs text-muted-foreground">Orçamentos</p>
-          <p class="text-lg font-bold">{{ formatCurrencyBR(painel.kpis.orcamento.valor) }}</p>
+          <p class="break-words text-lg font-bold">{{ formatCurrencyBR(painel.kpis.orcamento.valor) }}</p>
           <p class="text-xs text-muted-foreground">{{ painel.kpis.orcamento.qtd }} orçamento(s) ativos</p>
         </div>
+        <AjudaIndicador titulo="Orçamentos"
+          texto="Valor e quantidade dos registros com status Orçamento no período selecionado." class="-my-2 -mr-2" />
       </div>
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="rounded-lg bg-emerald-500/10 p-2 text-emerald-600"><ShoppingCart class="h-5 w-5" /></div>
-        <div>
+      <div class="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
+        <div class="shrink-0 rounded-lg bg-emerald-500/10 p-2 text-emerald-600"><ShoppingCart class="h-5 w-5" aria-hidden="true" /></div>
+        <div class="min-w-0 flex-1">
           <p class="text-xs text-muted-foreground">Total de vendas</p>
           <p class="text-lg font-bold">{{ painel.kpis.totalVendas }}</p>
           <p class="text-xs text-muted-foreground">registros no período</p>
         </div>
+        <AjudaIndicador titulo="Total de vendas"
+          texto="Quantidade de vendas registradas no período, incluindo os registros em aberto, os orçamentos e os demais status." class="-my-2 -mr-2" />
       </div>
     </section>
 
     <!-- Curva + pagamento -->
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <div class="rounded-xl border border-border bg-card p-4 xl:col-span-2">
-        <div class="mb-4 flex items-center gap-2">
-          <TrendingUp class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Curva de faturamento</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Curva de faturamento" :icone="TrendingUp"
+          texto="Soma dos valores das vendas faturadas ou finalizadas ao longo do período. Em intervalos de até 92 dias, o gráfico agrupa por dia. Acima disso, agrupa por mês." />
         <Skeleton v-if="loading" class="h-72 w-full rounded-lg" />
         <div v-else class="h-72"><LineChart :data="serieChart" :options="lineOptions" /></div>
       </div>
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <CreditCard class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Formas de pagamento</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Formas de pagamento" :icone="CreditCard"
+          texto="Distribuição dos valores de pagamentos efetivados nas vendas do período. Quando há mais de uma forma de pagamento na venda, cada parte aparece na forma correspondente." />
         <Skeleton v-if="loading" class="h-72 w-full rounded-lg" />
         <div v-else-if="temPagamento" class="h-56"><PieChart :data="pagamentoChart" :options="doughnutOptions" /></div>
         <div v-else class="flex h-56 items-center justify-center text-sm text-muted-foreground">Sem pagamentos no período</div>
@@ -343,26 +385,20 @@ onMounted(carregar)
     <!-- Dia da semana + hora + status -->
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <CalendarRange class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Por dia da semana</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Por dia da semana" :icone="CalendarRange"
+          texto="Soma dos valores das vendas faturadas ou finalizadas no período, agrupadas pelo dia da semana em que a venda foi registrada." />
         <Skeleton v-if="loading" class="h-60 w-full rounded-lg" />
         <div v-else class="h-60"><BarChart :data="semanaChart" :options="barOptions" /></div>
       </div>
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <Clock3 class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Por horário</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Por horário" :icone="Clock3"
+          texto="Soma dos valores das vendas faturadas ou finalizadas no período, agrupadas pela hora em que a venda foi registrada." />
         <Skeleton v-if="loading" class="h-60 w-full rounded-lg" />
         <div v-else class="h-60"><BarChart :data="horaChart" :options="barOptions" /></div>
       </div>
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <FileText class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Vendas por status</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Vendas por status" :icone="FileText"
+          texto="Quantidade de vendas do período em cada status, incluindo vendas em aberto e orçamentos." />
         <Skeleton v-if="loading" class="h-60 w-full rounded-lg" />
         <div v-else-if="temStatus" class="h-44"><PieChart :data="statusChart" :options="statusOptions" /></div>
         <div v-else class="flex h-44 items-center justify-center text-sm text-muted-foreground">Sem vendas no período</div>
@@ -379,10 +415,8 @@ onMounted(carregar)
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <!-- Top produtos -->
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <Package class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Top produtos</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Top produtos" :icone="Package"
+          texto="Até oito produtos ou variantes com maior valor vendido. O total de cada item vem do valor unitário multiplicado pela quantidade nas vendas faturadas ou finalizadas." />
         <Skeleton v-if="loading" class="h-64 w-full rounded-lg" />
         <template v-else>
           <div v-if="!painel?.topProdutos.length" class="flex h-40 items-center justify-center text-sm text-muted-foreground">Sem itens vendidos</div>
@@ -408,10 +442,8 @@ onMounted(carregar)
 
       <!-- Top clientes -->
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <Users class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Top clientes</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Top clientes" :icone="Users"
+          texto="Até seis clientes com maior valor em vendas faturadas ou finalizadas no período. As vendas sem cliente cadastrado ficam agrupadas em Sem cliente." />
         <Skeleton v-if="loading" class="h-64 w-full rounded-lg" />
         <template v-else>
           <div v-if="!painel?.topClientes.length" class="flex h-40 items-center justify-center text-sm text-muted-foreground">Sem clientes no período</div>
@@ -433,10 +465,8 @@ onMounted(carregar)
 
       <!-- Top vendedores -->
       <div class="rounded-xl border border-border bg-card p-4">
-        <div class="mb-4 flex items-center gap-2">
-          <Tag class="h-5 w-5 text-primary" />
-          <h3 class="font-semibold">Top vendedores</h3>
-        </div>
+        <CabecalhoCartaoPainel titulo="Top vendedores" :icone="Tag"
+          texto="Até seis vendedores com maior valor em vendas faturadas ou finalizadas no período. O ranking considera as vendas com vendedor vinculado." />
         <Skeleton v-if="loading" class="h-64 w-full rounded-lg" />
         <template v-else>
           <div v-if="!painel?.topVendedores.length" class="flex h-40 items-center justify-center text-center text-sm text-muted-foreground">
