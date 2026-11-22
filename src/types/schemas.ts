@@ -798,12 +798,7 @@ export interface ContaFinanceiraTransferPreviewResponse {
 }
 
 export interface ContaFinanceiraDetalhesResponse {
-  conta: {
-    id: number
-    Uid?: string
-    nome: string
-    saldoInicial: number
-  }
+  conta: ContasFinanceiro & { id: number; saldoInicial: number }
   periodo: {
     inicio?: Date | string | null
     fim?: Date | string | null

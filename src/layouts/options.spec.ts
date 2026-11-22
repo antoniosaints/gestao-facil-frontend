@@ -239,6 +239,19 @@ describe('filterSidebarMenuByVisibility', () => {
     },
   ]
 
+  it('exibe o catálogo financeiro e aplica a visibilidade configurada ao submenu', () => {
+    const sidebar = sidebarMenuOptions(permissoes(4))
+    const financeiro = sidebar.find((item) => item.key === 'financeiro')
+    expect(financeiro?.children).toContainEqual(expect.objectContaining({
+      key: 'financeiro:contas',
+      nome: 'Contas financeiras',
+      link: '/financeiro/contas',
+    }))
+    const filtro = filterSidebarMenuByVisibility(sidebar, ['financeiro'], false, ['financeiro:contas'])
+    expect(filtro.find((item) => item.key === 'financeiro')?.children)
+      .not.toContainEqual(expect.objectContaining({ key: 'financeiro:contas' }))
+  })
+
   it('keeps all submenus when no submenu is hidden', () => {
     const [vendas] = filterSidebarMenuByVisibility(menuComSubmenus, null, false, [])
     expect(vendas.children?.map((child) => child.nome)).toEqual(['Painel', 'Vendas', 'Caixas'])

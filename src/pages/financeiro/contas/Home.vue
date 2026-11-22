@@ -7,12 +7,10 @@ import {
   RefreshCcw,
   RotateCw,
   Search,
-  Trash,
   Wallet,
   X,
 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
-import { useConfirm } from '@/composables/useConfirm'
 import { LancamentosRepository } from '@/repositories/lancamento-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
@@ -22,7 +20,8 @@ import ModalView from '@/components/formulario/ModalView.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
 import type { ContasFinanceiro } from '@/types/schemas'
 import ModalConta from './ModalConta.vue'
-import ModalDetalhesConta from './ModalDetalhesConta.vue'
+import ContaActions from './tabela/Actions.vue'
+import { RouterLink } from 'vue-router'
 import Tabela from './tabela/Tabela.vue'
 import { useContasFinanceirasStore } from '@/stores/lancamentos/useContasFinanceiras'
 import { useSocketEvent } from '@/composables/useSocketEvent'
@@ -64,24 +63,6 @@ async function loadContas() {
     toast.error('Erro ao carregar as contas')
   } finally {
     loading.value = false
-  }
-}
-
-async function removeConta(item: ContasFinanceiro) {
-  try {
-    const confirmed = await useConfirm().confirm({
-      title: 'Excluir conta',
-      message: `Tem certeza que deseja excluir a conta "${item.nome}"?`,
-    })
-
-    if (!confirmed || !item.id) return
-
-    await LancamentosRepository.deletarConta(item.id)
-    toast.success('Conta excluída com sucesso!')
-    store.updateTable()
-  } catch (error) {
-    console.log(error)
-    toast.error('Erro ao excluir a conta')
   }
 }
 
@@ -203,30 +184,12 @@ onMounted(loadContas)
           </div>
           <div class="text-xs text-muted-foreground">Use os detalhes para acompanhar entradas, saídas e pendências da conta.</div>
           <div class="mt-3 flex items-center justify-between gap-2">
-            <button
-              v-if="uiStore.permissoes.financeiro.visualizar"
-              @click="store.openDetails(item)"
-              class="rounded-md border border-border px-3 py-1.5 text-sm text-foreground"
-            >
-              Detalhes
-            </button>
-            <div class="flex items-center gap-2">
-              <button
-                v-if="uiStore.permissoes.financeiro.editar"
-                @click="store.openUpdate(item)"
-                class="rounded-md bg-slate-200 px-3 py-1.5 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-              >
-                Editar
-              </button>
-              <button
-                v-if="uiStore.permissoes.financeiro.excluir"
-                @click="removeConta(item)"
-                class="inline-flex items-center gap-1 rounded-md bg-red-200 px-3 py-1.5 text-sm text-red-900 dark:bg-red-800 dark:text-red-100"
-              >
-                <Trash class="h-4 w-4" />
-                Excluir
-              </button>
-            </div>
+            <Button v-if="item.id && uiStore.permissoes.financeiro.visualizar" as-child size="sm" variant="outline">
+              <RouterLink :to="{ name: 'financeiro-conta-detalhes', params: { id: item.id } }">
+                Detalhes
+              </RouterLink>
+            </Button>
+            <ContaActions :data="item" />
           </div>
         </article>
       </div>
@@ -283,7 +246,7 @@ onMounted(loadContas)
       </button>
     </MobileBottomBar>
 
-    <ModalConta v-model:open="store.openModal" :conta="store.selectedConta" @saved="handleSaved" />
-    <ModalDetalhesConta v-model:open="store.openDetailsModal" :conta="store.selectedContaDetalhes" />
+    <ModalConta v-model:open="store.openModal" :conta="store.selectedConta"
+      :somente-calculos="store.somenteCalculos" @saved="handleSaved" />
   </div>
 </template>

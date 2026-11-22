@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Menu } from 'lucide-vue-next'
+import { EyeOff, Menu } from 'lucide-vue-next'
+import { RouterLink } from 'vue-router'
 import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import {
@@ -57,9 +58,15 @@ async function deletar(id: number) {
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
-      <DropdownMenuItem v-if="uiStore.permissoes.financeiro.visualizar" @click="store.openDetails(props.data)">
-        <i class="fa-regular fa-eye mr-1"></i>
-        Detalhes
+      <DropdownMenuItem v-if="props.data.id && uiStore.permissoes.financeiro.visualizar" as-child>
+        <RouterLink :to="{ name: 'financeiro-conta-detalhes', params: { id: props.data.id } }">
+          <i class="fa-regular fa-eye mr-1"></i>
+          Detalhes
+        </RouterLink>
+      </DropdownMenuItem>
+      <DropdownMenuItem v-if="props.data.id && store.suporteAtivo" @select="store.openUpdate(props.data, true)">
+        <EyeOff class="mr-1 h-4 w-4" />
+        Cálculos gerais
       </DropdownMenuItem>
       <DropdownMenuItem v-if="uiStore.permissoes.financeiro.editar" @click="openTransferModal = true">
         <i class="fa-solid fa-right-left mr-1"></i>

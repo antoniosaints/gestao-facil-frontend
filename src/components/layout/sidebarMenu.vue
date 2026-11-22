@@ -35,7 +35,9 @@
                     <router-link v-for="(child, i) in item.children" :key="i" :to="child.link || 'javascript:void(0)'"
                         v-show="child.show !== false" :class="[
                             'flex items-center p-2 text-gray-200 dark:text-gray-300 pl-4 hover:bg-sidebar/80 cursor-pointer rounded-xl',
-                            route.path === child.link && 'bg-black/25'
+                            (route.path === child.link ||
+                                (child.key === 'financeiro:contas' && route.name === 'financeiro-conta-detalhes')) &&
+                            'bg-black/25'
                         ]">
                         <i v-if="typeof child.icone === 'string'"
                             :class="[child.icone, 'mr-2', 'text-sidebar-foreground/80']"></i>

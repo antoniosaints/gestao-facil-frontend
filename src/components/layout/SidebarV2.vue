@@ -18,6 +18,8 @@ const openDropdowns = ref<string[]>([])
 const menu = computed(() => props.menu.filter((item) => item.show !== false))
 
 function isActive(item: SidebarMenuType | Omit<SidebarMenuType, 'children'>) {
+  if (item.key === 'financeiro:contas' && route.name === 'financeiro-conta-detalhes') return true
+
   // Cada item filho precisa representar apenas a sua rota. Usar prefixo aqui
   // fazia `/atendimento` (Chat) também ficar ativo em `/atendimento/painel`.
   const currentPath = route.path === '/' ? '/' : route.path.replace(/\/+$/, '')

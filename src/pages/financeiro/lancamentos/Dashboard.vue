@@ -52,7 +52,6 @@ import { useSocketEvent } from '@/composables/useSocketEvent'
 import { useContasFinanceirasStore } from '@/stores/lancamentos/useContasFinanceiras'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import ModalConta from '@/pages/financeiro/contas/ModalConta.vue'
-import ModalDetalhesConta from '@/pages/financeiro/contas/ModalDetalhesConta.vue'
 import ContaActions from '@/pages/financeiro/contas/tabela/Actions.vue'
 import FormularioEfertivar from './modais/FormularioEfertivar.vue'
 
@@ -730,7 +729,7 @@ onMounted(async () => {
                 :class="conta.saldoPrevisto >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'">
                 Previsto {{ formatCurrencyBR(conta.saldoPrevisto) }}
               </span>
-              <ContaActions v-if="uiStore.permissoes.financeiro.visualizar" :data="{
+              <ContaActions v-if="uiStore.permissoes.financeiro.visualizar || contasFinanceirasStore.suporteAtivo" :data="{
                 id: conta.contaId,
                 nome: conta.conta,
                 saldoInicial: conta.saldoInicial,
@@ -874,9 +873,7 @@ onMounted(async () => {
     </ModalView>
 
     <ModalConta v-model:open="contasFinanceirasStore.openModal" :conta="contasFinanceirasStore.selectedConta"
-      @saved="handleContaSaved" />
-    <ModalDetalhesConta v-model:open="contasFinanceirasStore.openDetailsModal"
-      :conta="contasFinanceirasStore.selectedContaDetalhes" />
+      :somente-calculos="contasFinanceirasStore.somenteCalculos" @saved="handleContaSaved" />
 
     <AlertDialog :open="assinaturaActionOpen" @update:open="assinaturaActionOpen = $event">
       <AlertDialogContent>

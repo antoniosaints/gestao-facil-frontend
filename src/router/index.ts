@@ -856,6 +856,15 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'contas/:id',
+        name: 'financeiro-conta-detalhes',
+        component: () => import('@/pages/financeiro/contas/Detalhes.vue'),
+        meta: {
+          layout: 'main',
+          permissao: 3,
+        },
+      },
+      {
         path: 'detalhes',
         name: 'lancamentos-financeiro-detalhes',
         component: () => import('@/pages/financeiro/lancamentos/Detalhes.vue'),

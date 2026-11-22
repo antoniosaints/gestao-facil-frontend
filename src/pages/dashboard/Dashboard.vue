@@ -1270,7 +1270,7 @@ onMounted(async () => {
           <CardContent>
             <p v-if="!contasFinanceirasResumo.length" class="py-6 text-center text-sm text-muted-foreground">Nenhuma conta financeira encontrada.</p>
             <div v-else class="grid gap-3 md:grid-cols-2">
-              <RouterLink v-for="conta in contasFinanceirasResumo" :key="conta.contaId" to="/financeiro/contas" class="rounded-xl border border-border/70 p-3 transition hover:bg-muted/50">
+              <RouterLink v-for="conta in contasFinanceirasResumo" :key="conta.contaId" :to="{ name: 'financeiro-conta-detalhes', params: { id: conta.contaId } }" class="rounded-xl border border-border/70 p-3 transition hover:bg-muted/50">
                 <div class="flex items-start justify-between gap-3">
                   <div class="flex min-w-0 items-center gap-2">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/30" :style="{ borderColor: conta.corDestaque || undefined }">

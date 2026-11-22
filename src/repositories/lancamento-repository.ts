@@ -257,6 +257,11 @@ export class LancamentosRepository {
     return response.data
   }
 
+  static async atualizarCalculosContaFinanceira(id: number, ignorarNosCalculos: boolean) {
+    const response = await http.patch('/lancamentos/contas/' + id + '/calculos-gerais', { ignorarNosCalculos })
+    return response.data
+  }
+
   static async uploadContaFinanceiraIcon(id: number, file: File) {
     const data = new FormData()
     data.append('accountIcon', file)
