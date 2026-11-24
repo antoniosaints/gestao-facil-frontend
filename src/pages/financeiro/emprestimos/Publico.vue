@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
+  Building2,
   CheckCircle2,
   CalendarDays,
   Clock3,
@@ -14,6 +15,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Timer,
+  UserRound,
   WalletCards,
 } from 'lucide-vue-next'
 import { vMaska } from 'maska/vue'
@@ -26,11 +28,23 @@ import {
   mensagemLinkPublico,
   type EmprestimoPublico,
 } from '@/repositories/emprestimo-repository'
+import { resolveFileUrl } from '@/utils/fileUrl'
 import { dataCurta, dia, moeda, percentual, resumoAjustes } from './format'
 
 const route = useRoute()
 const token = computed(() => new URLSearchParams(route.hash.slice(1)).get('token') ?? '')
 const dados = ref<EmprestimoPublico>()
+const logoComErro = ref('')
+const empresa = computed(() => dados.value?.estabelecimento?.trim() ?? '')
+const logoEmpresa = computed(() => resolveFileUrl(dados.value?.logoEmpresa, { fallback: '' }))
+const iniciaisEmpresa = computed(() =>
+  empresa.value
+    .split(/\s+/, 2)
+    .map((palavra) => Array.from(palavra)[0])
+    .join('')
+    .toLocaleUpperCase('pt-BR'),
+)
+const primeiroNome = computed(() => dados.value?.cliente?.nome.trim().split(/\s+/, 1)[0])
 const selecionadas = ref<number[]>([])
 const metodo = ref<'PIX_MANUAL' | 'MERCADO_PAGO'>()
 const email = ref('')
@@ -163,6 +177,7 @@ watch(
   token,
   () => {
     dados.value = undefined
+    logoComErro.value = ''
     selecionadas.value = []
     metodo.value = undefined
     email.value = ''
@@ -307,16 +322,30 @@ async function copiar() {
       >
         <div class="flex min-w-0 items-center gap-3 sm:gap-6">
           <div class="flex min-w-0 items-center gap-2.5">
-            <img
-              src="/imgs/logo.png"
-              alt=""
-              width="42"
-              height="42"
-              class="size-9 shrink-0 rounded-xl sm:size-11"
-            />
+            <div
+              aria-hidden="true"
+              class="grid size-9 shrink-0 place-items-center rounded-xl border border-blue-100 bg-blue-50 text-sm font-bold text-primary sm:size-11"
+            >
+              <img
+                v-if="logoEmpresa && logoComErro !== logoEmpresa"
+                :src="logoEmpresa"
+                alt=""
+                width="44"
+                height="44"
+                referrerpolicy="no-referrer"
+                class="size-full rounded-[inherit] bg-white object-contain"
+                @error="logoComErro = logoEmpresa"
+              />
+              <span v-else-if="iniciaisEmpresa">{{ iniciaisEmpresa }}</span>
+              <Building2 v-else class="size-5" />
+            </div>
             <div class="min-w-0 leading-tight">
-              <p class="text-sm font-bold tracking-tight sm:text-xl">Gestão Fácil</p>
-              <p class="text-xs font-medium text-muted-foreground sm:text-sm">Empréstimos</p>
+              <p class="break-words text-sm font-bold tracking-tight sm:text-xl">
+                {{ empresa || 'Empréstimos' }}
+              </p>
+              <p v-if="empresa" class="text-xs font-medium text-muted-foreground sm:text-sm">
+                Empréstimos
+              </p>
             </div>
           </div>
           <span aria-hidden="true" class="hidden h-8 w-px bg-border md:block" />
@@ -335,7 +364,7 @@ async function copiar() {
           <div
             class="public-card absolute right-0 z-20 mt-2 w-64 max-w-[calc(100vw-2rem)] p-4 text-sm"
           >
-            <p class="font-semibold">{{ dados?.estabelecimento || 'Ajuda com o empréstimo' }}</p>
+            <p class="font-semibold">{{ empresa || 'Ajuda com o empréstimo' }}</p>
             <p class="mt-1 text-muted-foreground">
               Entre em contato pelo mesmo canal em que você recebeu este link.
             </p>
@@ -380,11 +409,11 @@ async function copiar() {
           <div class="contents lg:block lg:min-w-0 lg:space-y-5">
             <div class="order-1 min-w-0 space-y-5 lg:order-none">
               <div class="space-y-1">
-                <h1 class="text-2xl font-bold leading-tight tracking-tight sm:text-4xl">
-                  Acompanhe seu empréstimo
+                <h1 class="break-words text-2xl font-bold leading-tight tracking-tight sm:text-4xl">
+                  {{ primeiroNome ? `Olá, ${primeiroNome}!` : 'Acompanhe seu empréstimo' }}
                 </h1>
                 <p class="text-sm text-muted-foreground sm:text-base">
-                  {{ dados.estabelecimento }}
+                  Consulte suas parcelas, vencimentos e pagamentos.
                 </p>
               </div>
 
@@ -939,6 +968,37 @@ async function copiar() {
             </div>
 
             <div class="order-4 space-y-4 lg:order-none">
+              <section
+                v-if="dados.cliente?.nome"
+                aria-labelledby="dados-cliente"
+                class="public-card p-4 sm:p-5"
+              >
+                <h2
+                  id="dados-cliente"
+                  class="flex items-center gap-2 text-base font-bold tracking-tight sm:text-lg"
+                >
+                  <UserRound class="size-5 text-primary" aria-hidden="true" /> Dados do cliente
+                </h2>
+                <dl class="mt-3 divide-y text-sm">
+                  <div class="contract-row">
+                    <dt>Nome</dt>
+                    <dd>{{ dados.cliente.nome }}</dd>
+                  </div>
+                  <div v-if="dados.cliente.documento" class="contract-row">
+                    <dt>{{ dados.cliente.documento.tipo }}</dt>
+                    <dd>{{ dados.cliente.documento.mascarado }}</dd>
+                  </div>
+                  <div v-if="dados.cliente.emailMascarado" class="contract-row">
+                    <dt>E-mail</dt>
+                    <dd>{{ dados.cliente.emailMascarado }}</dd>
+                  </div>
+                  <div v-if="dados.cliente.telefoneMascarado" class="contract-row">
+                    <dt>Telefone</dt>
+                    <dd>{{ dados.cliente.telefoneMascarado }}</dd>
+                  </div>
+                </dl>
+              </section>
+
               <section aria-labelledby="resumo-contrato" class="public-card p-4 sm:p-5">
                 <h2
                   id="resumo-contrato"

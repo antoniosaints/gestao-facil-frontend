@@ -125,6 +125,13 @@ export interface Baixa {
 type MetodoPublico = 'PIX_MANUAL' | 'MERCADO_PAGO'
 export interface EmprestimoPublico {
   estabelecimento: string
+  logoEmpresa?: string | null
+  cliente?: {
+    nome: string
+    documento: { tipo: 'CPF' | 'CNPJ'; mascarado: string } | null
+    emailMascarado: string | null
+    telefoneMascarado: string | null
+  } | null
   referencia?: string
   dataContratacao?: string
   principalCentavos: number
