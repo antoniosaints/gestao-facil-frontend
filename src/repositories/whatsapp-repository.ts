@@ -537,7 +537,7 @@ export class WhatsAppRepository {
   }
 
   static async sendMessage(conversaId: number, payload: { tipo?: 'text' | 'image' | 'audio' | 'video' | 'document'; conteudo?: string; mediaUrl?: string; caption?: string; fileName?: string; extension?: string; quotedMessageId?: string }) {
-    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens`, payload)
+    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens`, payload, { showAppAccessPrompt: true })
     return data.data as WhatsAppMessage
   }
 
@@ -547,7 +547,7 @@ export class WhatsAppRepository {
     conversaId: number,
     payload: { latitude: number | string; longitude: number | string; name: string; address: string; quotedMessageId?: string },
   ) {
-    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens/localizacao`, payload)
+    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens/localizacao`, payload, { showAppAccessPrompt: true })
     return data.data as WhatsAppMessage
   }
 
@@ -556,7 +556,7 @@ export class WhatsAppRepository {
     conversaId: number,
     payload: { contactName: string; contactPhone: string; contactBusinessDescription?: string; quotedMessageId?: string },
   ) {
-    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens/contato`, payload)
+    const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens/contato`, payload, { showAppAccessPrompt: true })
     return data.data as WhatsAppMessage
   }
 
@@ -569,6 +569,7 @@ export class WhatsAppRepository {
     if (options.quotedMessageId) form.append('quotedMessageId', options.quotedMessageId)
     const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens/imagem`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      showAppAccessPrompt: true,
     })
     return data.data as WhatsAppMessage
   }
@@ -581,6 +582,7 @@ export class WhatsAppRepository {
     if (options.quotedMessageId) form.append('quotedMessageId', options.quotedMessageId)
     const { data } = await http.post(`/whatsapp/conversas/${conversaId}/mensagens/audio`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      showAppAccessPrompt: true,
     })
     return data.data as WhatsAppMessage
   }

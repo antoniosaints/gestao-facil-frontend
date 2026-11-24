@@ -115,7 +115,7 @@ export class InadimplenciaRepository {
     const { data } = await http.post(`/lancamentos/inadimplencia/lancamento/${lancamentoId}/enviar-agora`, {
       mensagem: mensagem || undefined,
       parcelaId: parcelaId || undefined,
-    })
+    }, { showAppAccessPrompt: true })
     return data
   }
 

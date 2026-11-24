@@ -391,7 +391,7 @@ export class AssinaturaRepository {
   }
 
   static async gerarCobrancaGateway(cicloId: number) {
-    const { data } = await http.post(`/assinaturas/cobrancas/${cicloId}/gerar-gateway`)
+    const { data } = await http.post(`/assinaturas/cobrancas/${cicloId}/gerar-gateway`, undefined, { showAppAccessPrompt: true })
     return data
   }
 

@@ -7,7 +7,7 @@ import { useUiStore } from '@/stores/ui/uiStore'
 import { isSupportActive } from '@/utils/supportSession'
 import type { RestauranteCapability } from '@/repositories/restaurante-repository'
 import type { OuriveCapability } from '@/repositories/ourive-repository'
-import { safeAppReturnPath } from '@/utils/appAccess'
+import { isAppAvailable, safeAppReturnPath } from '@/utils/appAccess'
 
 export const useControlRouter = async () => {
   try {
@@ -111,6 +111,10 @@ export async function handleRouteGuard(to: typed, from: typed) {
     return { name: 'restaurante-entregador' }
   }
 
+  const modulo = to.meta?.modulo
+  const requiredModules = modulo ? [modulo].flat() : []
+  if (requiredModules.some((code) => !isAppAvailable(String(code)))) return home
+
   if (to.meta?.permissao) {
     if (!hasPermission(storeUi.usuarioLogged, Number(to.meta?.permissao))) {
       toast.info('Você não tem permissão para acessar essa rota!')
@@ -118,12 +122,10 @@ export async function handleRouteGuard(to: typed, from: typed) {
     }
   }
 
-  if (to.meta?.modulo) {
+  if (requiredModules.length) {
+    const recovery = { name: 'apps-acesso', query: { apps: requiredModules.join(','), retorno: safeAppReturnPath(to.fullPath || to.path) } }
     try {
       await storeUi.loadAppModules()
-
-      const requiredModules = Array.isArray(to.meta.modulo) ? to.meta.modulo : [to.meta.modulo]
-      const recovery = { name: 'apps-acesso', query: { apps: requiredModules.join(','), retorno: safeAppReturnPath(to.fullPath || to.path) } }
       if (!storeUi.appModulesLoaded) return recovery
       if (requiredModules.some((moduleCode) => !storeUi.hasActiveModule(String(moduleCode)))) {
         return recovery
@@ -140,7 +142,7 @@ export async function handleRouteGuard(to: typed, from: typed) {
       }
     } catch (error) {
       toast.error('Não foi possível validar o acesso ao app adicional.')
-      return { name: 'apps-acesso', query: { apps: Array.isArray(to.meta.modulo) ? to.meta.modulo.join(',') : String(to.meta.modulo), retorno: safeAppReturnPath(to.fullPath || to.path) } }
+      return recovery
     }
   }
 

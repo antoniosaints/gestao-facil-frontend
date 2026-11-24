@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { useAccountCreateStore } from '@/stores/login/useCreateAccount'
 import { ContaRepository, type CreateConta } from '@/repositories/conta-repository'
 import { OnboardingRepository } from '@/repositories/onboarding-repository'
+import { isAppAvailable } from '@/utils/appAccess'
 import {
   OPERATION_KEYS,
   type OnboardingConfig,
@@ -81,7 +82,10 @@ const menus = computed(() =>
       ...(preview.value?.menusSugeridos || []),
       ...selectedMenus.value,
     ]),
-  ].filter((key) => !key.includes(':')),
+  ].filter((key) => !key.includes(':') && isAppAvailable(key)),
+)
+const questions = computed(() =>
+  config.value?.questions.filter(({ key }) => key !== 'emiteNotas' || isAppAvailable('notas-fiscais')),
 )
 const fonts = computed(() =>
   (config.value?.fonts || FONT_OPTIONS)
@@ -89,11 +93,13 @@ const fonts = computed(() =>
     .filter((font) => FONT_OPTIONS.some((option) => option.value === font.value)),
 )
 const modules = computed(() =>
-  (preview.value?.modulos || []).map((module) => ({
-    ...module,
-    name:
-      config.value?.modules.find((item) => item.codigo === module.codigo)?.nome || module.codigo,
-  })),
+  (preview.value?.modulos || [])
+    .filter((module) => isAppAvailable(module.codigo))
+    .map((module) => ({
+      ...module,
+      name:
+        config.value?.modules.find((item) => item.codigo === module.codigo)?.nome || module.codigo,
+    })),
 )
 const selectedSummary = computed(() => modules.value.filter((module) => module.selecionado))
 const formatMoney = (value: number) =>
@@ -177,9 +183,9 @@ async function review(reset: boolean) {
   if (!alive) return
   preview.value = result
   selectedModules.value = result.modulos
-    .filter((module) => module.selecionado)
+    .filter((module) => module.selecionado && isAppAvailable(module.codigo))
     .map((module) => module.codigo)
-  selectedMenus.value = [...result.menusEfetivos]
+  selectedMenus.value = result.menusEfetivos.filter(isAppAvailable)
   reviewedAnswers.value = JSON.stringify(answers.value)
 }
 async function next() {
@@ -565,7 +571,7 @@ onUnmounted(() => {
               </p>
               <div class="grid gap-2 sm:grid-cols-2">
                 <label
-                  v-for="question in config.questions"
+                  v-for="question in questions"
                   :key="question.key"
                   class="flex min-h-16 cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5"
                   ><input

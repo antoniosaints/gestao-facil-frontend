@@ -1,5 +1,5 @@
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const toast = vi.hoisted(() => ({ info: vi.fn(), error: vi.fn() }))
 vi.mock('vue-toastification', () => ({ useToast: () => toast }))
@@ -12,9 +12,10 @@ beforeEach(() => {
   localStorage.clear()
   toast.info.mockClear()
 })
+afterEach(() => vi.unstubAllEnvs())
 
 describe('handleRouteGuard', () => {
-  it.each(['whatsapp', 'core-ia', 'atendimento', 'loja-virtual', 'combos', 'assinaturas', 'arena', 'reservas', 'restaurante-delivery', 'notas-fiscais', 'ourives'])('orienta a ativar %s antes de abrir a rota protegida', async app => {
+  it.each(['whatsapp', 'core-ia', 'atendimento', 'loja-virtual', 'combos', 'assinaturas', 'arena', 'reservas', 'restaurante-delivery', 'ourives'])('orienta a ativar %s antes de abrir a rota protegida', async app => {
     localStorage.setItem('gestao_facil:token', 'token-test')
     const store = useUiStore()
     vi.spyOn(store, 'getDataUsuario').mockImplementation(async () => {
@@ -24,6 +25,28 @@ describe('handleRouteGuard', () => {
     vi.spyOn(store, 'loadAppModules').mockImplementation(async () => { store.appModulesLoaded = true; return {} })
     const result = await handleRouteGuard({ name: 'protegida', path: '/recurso', fullPath: '/recurso?item=1', meta: { modulo: app } } as any, { path: '/', name: 'home' } as any)
     expect(result).toEqual({ name: 'apps-acesso', query: { apps: app, retorno: '/recurso?item=1' } })
+  })
+  it('redireciona o atalho fiscal desativado sem oferecer instalação', async () => {
+    vi.stubEnv('VITE_NOTAS_FISCAIS_ENABLED', 'false')
+    localStorage.setItem('gestao_facil:token', 'token-test')
+    const store = useUiStore()
+    store.appModules = { 'notas-fiscais': true }
+    vi.spyOn(store, 'getDataUsuario').mockImplementation(async () => {
+      store.usuarioLogged = { permissao: 'root' } as any
+      store.contaInfo = { vencimento: new Date(Date.now() + 86_400_000) } as any
+    })
+    const loadAppModules = vi.spyOn(store, 'loadAppModules')
+    const route = { name: 'notas-fiscais-painel', path: '/notas-fiscais/painel', meta: { modulo: 'notas-fiscais', permissao: 3 } } as any
+
+    expect(await handleRouteGuard(route, { path: '/', name: 'home' } as any)).toEqual({ name: 'home' })
+    expect(loadAppModules).not.toHaveBeenCalled()
+
+    vi.stubEnv('VITE_NOTAS_FISCAIS_ENABLED', 'true')
+    loadAppModules.mockImplementation(async () => {
+      store.appModulesLoaded = true
+      return store.appModules
+    })
+    expect(await handleRouteGuard(route, { path: '/', name: 'home' } as any)).toBe(true)
   })
   it('libera a rota somente quando todos os apps exigidos estão ativos', async () => {
     localStorage.setItem('gestao_facil:token', 'token-test')

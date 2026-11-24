@@ -57,7 +57,7 @@ export class ClienteRepository {
     return data.data
   }
   static async enviarWhatsapp(id: number, payload: ClienteWhatsappPayload) {
-    const { data } = await http.post(`/clientes/${id}/whatsapp/enviar`, payload)
+    const { data } = await http.post(`/clientes/${id}/whatsapp/enviar`, payload, { showAppAccessPrompt: true })
     return data.data
   }
   static async select2(search?: string) {

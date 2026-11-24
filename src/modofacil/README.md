@@ -31,7 +31,7 @@ Leituras dedicadas recebem um identificador aleatório por requisição para nã
 | MF-H   | Vendas reconhecidas, recebido, pendências, assinaturas previstas separadas, gráfico com alternativa textual, estoque baixo e OS; fontes condicionadas à permissão; período preservado no acesso aos detalhes de vendas/dinheiro                                           | Rankings; relatórios próprios; filtros adicionais; conciliação com massa isolada; validação semântica do saldo legado antes de exibi-lo                                                                |
 | MF-I   | Inventário explícito com status de contratação e de cobertura; páginas `/recursos/:modulo`                                                                                                                                                                                | Todas as jornadas setoriais permanecem pendentes; os cartões não são considerados implementação                                                                                                        |
 
-Inventário MF-I: restaurante-delivery, arena, reservas, ourives, assinaturas, loja-virtual, notas-fiscais, combos, atendimento, core-ia, whatsapp. Nenhum módulo é ativado, desativado ou cobrado por este módulo. CEO e páginas públicas ficam fora da experiência da conta.
+Inventário MF-I: restaurante-delivery, arena, reservas, ourives, assinaturas, loja-virtual, combos, atendimento, core-ia, whatsapp. Notas Fiscais entra no inventário apenas no frontend de homologação com `VITE_NOTAS_FISCAIS_ENABLED=true`. Nenhum módulo é ativado, desativado ou cobrado por este módulo. CEO e páginas públicas ficam fora da experiência da conta.
 
 ## Contratos conferidos
 

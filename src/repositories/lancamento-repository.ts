@@ -600,7 +600,7 @@ export class LancamentosRepository {
       gateway,
       clienteId,
       vinculo,
-    })
+    }, { showAppAccessPrompt: true })
     return data.data
   }
 }

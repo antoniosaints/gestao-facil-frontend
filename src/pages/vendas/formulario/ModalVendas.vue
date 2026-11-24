@@ -21,7 +21,7 @@ import { useUiStore } from "@/stores/ui/uiStore";
 import { hasPermission } from "@/hooks/authorize";
 import { formatCurrencyBR } from "@/utils/formatters";
 import { ComboRepository } from "@/repositories/combo-repository";
-import { NotasFiscaisRepository } from "@/repositories/notas-fiscais-repository";
+import { loadSaleFiscalConfig } from "../saleFiscalConfig";
 
 const description = ref('Preencha os campos abaixo')
 const toast = useToast()
@@ -303,13 +303,21 @@ const resumoCarrinho = computed(() => {
 clearCartVendas();
 onMounted(() => {
     store.form.vendedorId = storeUi.usuarioLogged.id || null
-    NotasFiscaisRepository.getConfig().then((config) => { fiscalTypes.value = { nfe: config.nfeHabilitado, nfce: config.nfceHabilitado } }).catch(() => null)
 })
 
-// Ao abrir o modal para uma nova venda, começa com o pagamento no padrão.
-watch(() => store.openModal, (open) => {
-    if (open && !store.form.id) resetPagamentoVenda()
-})
+watch(() => store.openModal, async (open, _, onCleanup) => {
+    if (!open || store.form.id) return
+    resetPagamentoVenda()
+    tipoDocumentoFiscal.value = 'NENHUM'
+    fiscalTypes.value = { nfe: false, nfce: false }
+
+    let closed = false
+    onCleanup(() => { closed = true })
+    const config = await loadSaleFiscalConfig()
+    if (config && !closed) {
+        fiscalTypes.value = { nfe: config.nfeHabilitado, nfce: config.nfceHabilitado }
+    }
+}, { immediate: true })
 </script>
 
 <template>

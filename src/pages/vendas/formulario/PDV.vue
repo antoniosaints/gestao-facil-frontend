@@ -207,7 +207,7 @@ import {
 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { ContaRepository } from '@/repositories/conta-repository'
-import { NotasFiscaisRepository } from '@/repositories/notas-fiscais-repository'
+import { loadSaleFiscalConfig } from '../saleFiscalConfig'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { useAuthStore } from '@/stores/login/useAuthStore'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -447,9 +447,9 @@ onMounted(async () => {
     const response = await ContaRepository.getParametros()
     modeloPdv.value = response.data?.modeloPdv === 'PRO' ? 'PRO' : 'BASICO'
     if (modeloPdv.value === 'PRO') {
-      await NotasFiscaisRepository.getConfig().then((config) => {
-        fiscalTypes.value = { nfe: config.emissaoNfePronta, nfce: config.emissaoNfcePronta }
-      }).catch(() => null)
+      void loadSaleFiscalConfig().then((config) => {
+        if (config) fiscalTypes.value = { nfe: config.emissaoNfePronta, nfce: config.emissaoNfcePronta }
+      })
       activateFullscreenPdv()
     } else {
       // O bloqueio de quiosque só existe no modo PRO. Limpa qualquer flag legada

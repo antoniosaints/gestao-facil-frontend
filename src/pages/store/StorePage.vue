@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { hasPermission } from '@/hooks/authorize'
-import { appAccessCatalog, appConfigurationLocation, safeAppReturnPath } from '@/utils/appAccess'
+import { appAccessCatalog, appConfigurationLocation, isAppAvailable, safeAppReturnPath } from '@/utils/appAccess'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -464,7 +464,7 @@ async function carregarModulos() {
       ContaRepository.statusMercadoPago().catch(() => null),
     ])
 
-    modulos.value = storeResponse.data
+    modulos.value = storeResponse.data.filter((modulo) => isAppAvailable(modulo.codigo))
     resumo.value = storeResponse.resumo
     applyParametros(parametrosResponse?.data)
     mercadoPagoStatus.value = mpStatusResponse

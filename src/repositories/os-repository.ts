@@ -116,7 +116,7 @@ export class OrdensServicoRepository {
     chargeId: number | null
     valor: number
   }> {
-    const { data } = await http.post(`/servicos/ordens/${id}/cobranca-pix`)
+    const { data } = await http.post(`/servicos/ordens/${id}/cobranca-pix`, undefined, { showAppAccessPrompt: true })
     return data.data
   }
   static async getAll() {

@@ -1,5 +1,7 @@
 # Vendas e PDV
 
+As opções de Notas Fiscais ficam ocultas por padrão na listagem desktop e mobile, nos detalhes da venda e nos PDVs Básico e PRO. No frontend de homologação, a consulta de configuração fiscal exige o app ativo e permissão de administrador. O formulário compartilhado com Arena consulta essa configuração ao abrir uma nova venda. O PDV carrega sua operação sem aguardar a consulta fiscal.
+
 O PDV Básico, o PDV PRO e o modal de faturamento permitem dividir o total de uma venda entre formas de pagamento. A soma precisa coincidir com o total da venda antes de finalizar.
 
 No detalhe da venda, as formas usadas no pagamento dividido aparecem explicitamente (por exemplo, `PIX + Dinheiro`), sem substituir essa informação por `Outro`.

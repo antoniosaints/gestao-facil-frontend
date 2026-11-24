@@ -11,6 +11,7 @@
 - `POST /contas/cadastro` mantém o payload legado e acrescenta `onboarding` com versão, respostas, seleções, tema e `catalogVersion` quando fornecido pela API. O campo é opcional em `CreateConta`, preservando outros consumidores legados.
 - `409 ONBOARDING_CATALOG_CHANGED` recarrega o catálogo e exige nova revisão; não reenvia automaticamente a criação. O token `catalogVersion` da prévia segue no cadastro para detectar alteração de preço/status entre as etapas.
 - Apps pagos são recomendações para contratação posterior. Apenas o backend decide quais gratuitos ativar. Nenhum endpoint de contratação/cobrança é chamado pelo wizard.
+- A pergunta, o app e o menu de Notas Fiscais aparecem apenas no frontend de homologação com `VITE_NOTAS_FISCAIS_ENABLED=true`.
 - Chaves de submenu com `:` continuam no payload conforme a política retornada pelo backend, mas não são apresentadas como menus selecionáveis: elas têm semântica de blacklist. Menus essenciais ficam bloqueados na revisão.
 
 `components/ThemePreview.vue` usa `getThemePalette` e `normalizeThemeCustomization` existentes. As cores e fontes são aplicadas somente ao elemento da prévia; não chama `applyThemeVariables`, não altera `uiStore` nem o tema global. Paletas vêm do catálogo; fontes são limitadas às já instaladas. Os dois modos aparecem lado a lado no desktop e em coluna no mobile, com conteúdo explicitamente ilustrativo.

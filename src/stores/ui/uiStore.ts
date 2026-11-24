@@ -5,6 +5,7 @@ import { StoreRepository } from '@/repositories/store-repository'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
 import type { Contas, EstiloCarregamento, Usuarios } from '@/types/schemas'
 import { hasPermission } from '@/hooks/authorize'
+import { isAppAvailable } from '@/utils/appAccess'
 import { setThemeCustomization } from '@/utils/theme'
 import {
   RestauranteRepository,
@@ -259,7 +260,7 @@ export const useUiStore = defineStore('uiStore', () => {
     try {
       const response = await StoreRepository.listar()
       appModules.value = response.data.reduce<Record<string, boolean>>((acc, item) => {
-        acc[item.codigo] = item.ativo
+        if (isAppAvailable(item.codigo)) acc[item.codigo] = item.ativo
         return acc
       }, {})
       appModulesLoaded.value = true

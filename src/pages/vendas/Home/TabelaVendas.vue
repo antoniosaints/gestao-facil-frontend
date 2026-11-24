@@ -7,8 +7,7 @@ import { getColumnsVendas } from './columnDef';
 import BulkActionsVendas from './BulkActionsVendas.vue';
 import { useVendasStore } from '@/stores/vendas/useVenda';
 import { useUiStore } from '@/stores/ui/uiStore';
-import { hasPermission } from '@/hooks/authorize';
-import { NotasFiscaisRepository } from '@/repositories/notas-fiscais-repository';
+import { loadSaleFiscalConfig } from '../saleFiscalConfig';
 const store = useVendasStore()
 const storeUi = useUiStore()
 const fiscalAtivo = computed(() => storeUi.hasActiveModule('notas-fiscais'))
@@ -16,12 +15,9 @@ const fiscalTypes = reactive({ nfe: false, nfce: false })
 
 async function carregarTiposFiscais() {
   Object.assign(fiscalTypes, { nfe: false, nfce: false })
-  if (!fiscalAtivo.value || !hasPermission(storeUi.usuarioLogged, 4)) return
-  try {
-    const config = await NotasFiscaisRepository.getConfig()
+  const config = await loadSaleFiscalConfig()
+  if (config && fiscalAtivo.value) {
     Object.assign(fiscalTypes, { nfe: config.nfeHabilitado, nfce: config.nfceHabilitado })
-  } catch {
-    Object.assign(fiscalTypes, { nfe: false, nfce: false })
   }
 }
 

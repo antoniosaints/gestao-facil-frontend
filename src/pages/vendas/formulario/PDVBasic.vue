@@ -1212,7 +1212,7 @@ import { resolveFileUrl } from '@/utils/fileUrl'
 import router from '@/router'
 import { useConfirm } from '@/composables/useConfirm'
 import { ComboRepository } from '@/repositories/combo-repository'
-import { NotasFiscaisRepository } from '@/repositories/notas-fiscais-repository'
+import { loadSaleFiscalConfig } from '../saleFiscalConfig'
 
 const {
   proMode = false,
@@ -2265,9 +2265,9 @@ defineExpose({
 onMounted(async () => {
   await caixaStore.loadContexto().catch(() => null)
   if (!fiscalTypesProp) {
-    await NotasFiscaisRepository.getConfig().then((config) => {
-      fiscalTypesLocal.value = { nfe: config.emissaoNfePronta, nfce: config.emissaoNfcePronta }
-    }).catch(() => null)
+    void loadSaleFiscalConfig().then((config) => {
+      if (config) fiscalTypesLocal.value = { nfe: config.emissaoNfePronta, nfce: config.emissaoNfcePronta }
+    })
   }
   await fetchProducts()
   cart.value = []

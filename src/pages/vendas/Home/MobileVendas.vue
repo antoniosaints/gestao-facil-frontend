@@ -171,7 +171,7 @@ import { deletarVenda, emitirNotaFiscalVenda, enviarComprovanteVenda, estornarVe
 import { useVendasStore } from "@/stores/vendas/useVenda";
 import { useUiStore } from "@/stores/ui/uiStore";
 import { hasPermission } from "@/hooks/authorize";
-import { NotasFiscaisRepository } from "@/repositories/notas-fiscais-repository";
+import { loadSaleFiscalConfig } from "../saleFiscalConfig";
 import ModalView from "@/components/formulario/ModalView.vue";
 import { Button } from "@/components/ui/button";
 import { BadgeCheck, BadgePlus, Eye, FileChartLine, PenLine, Send, ShoppingBasket, Trash, Undo2 } from "lucide-vue-next";
@@ -198,12 +198,9 @@ function podeEmitirNota(venda: Vendas) {
 
 async function carregarTiposFiscais() {
     fiscalTypes.value = { nfe: false, nfce: false }
-    if (!fiscalAtivo.value || !hasPermission(storeUi.usuarioLogged, 4)) return
-    try {
-        const config = await NotasFiscaisRepository.getConfig()
+    const config = await loadSaleFiscalConfig()
+    if (config && fiscalAtivo.value) {
         fiscalTypes.value = { nfe: config.nfeHabilitado, nfce: config.nfceHabilitado }
-    } catch {
-        fiscalTypes.value = { nfe: false, nfce: false }
     }
 }
 

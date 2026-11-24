@@ -1,5 +1,9 @@
 import type { RouteLocationRaw } from 'vue-router'
 
+export function isAppAvailable(code: string): boolean {
+  return code !== 'notas-fiscais' || import.meta.env.VITE_NOTAS_FISCAIS_ENABLED === 'true'
+}
+
 export const appAccessCatalog: Record<string, { name: string; setup?: string; configuration?: RouteLocationRaw; open: RouteLocationRaw; permission?: number }> = {
   'core-ia': { name: 'CORE IA', open: { name: 'ia' } },
   whatsapp: { name: 'WhatsApp', setup: 'Cadastre ou conecte uma instância para enviar mensagens.', configuration: { name: 'whatsapp' }, open: { name: 'whatsapp' }, permission: 5 },
@@ -19,7 +23,12 @@ export const appAccessCatalog: Record<string, { name: string; setup?: string; co
 
 export function requiredAppCodes(value: unknown): string[] {
   const values = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : []
-  return [...new Set(values.filter((code): code is string => typeof code === 'string' && Object.prototype.hasOwnProperty.call(appAccessCatalog, code)))]
+  const available = values.filter((code): code is string =>
+    typeof code === 'string' &&
+    isAppAvailable(code) &&
+    Object.prototype.hasOwnProperty.call(appAccessCatalog, code),
+  )
+  return [...new Set(available)]
 }
 
 /** Destino interno de retomada. Nunca permite URL externa nem o próprio fluxo de acesso. */
@@ -64,7 +73,11 @@ export function appAccessIssue(data: unknown): { app: string; kind: 'activation'
   const code = (data as { error?: { code?: string } } | null)?.error?.code
   if (!code) return null
   if (code === 'whatsapp_notification_instance_required') return { app: 'whatsapp', kind: 'configuration', configurationTo: { name: 'configuracoes-home', query: { tab: 'whatsapp' } } }
-  if (Object.prototype.hasOwnProperty.call(inactiveErrors, code)) return { app: inactiveErrors[code], kind: 'activation' as const }
-  if (Object.prototype.hasOwnProperty.call(configurationErrors, code)) return { app: configurationErrors[code], kind: 'configuration' as const }
+  if (Object.prototype.hasOwnProperty.call(inactiveErrors, code) && isAppAvailable(inactiveErrors[code])) {
+    return { app: inactiveErrors[code], kind: 'activation' }
+  }
+  if (Object.prototype.hasOwnProperty.call(configurationErrors, code) && isAppAvailable(configurationErrors[code])) {
+    return { app: configurationErrors[code], kind: 'configuration' }
+  }
   return null
 }

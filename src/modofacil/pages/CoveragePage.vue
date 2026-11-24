@@ -6,9 +6,13 @@ import { useRoute } from 'vue-router'
 import { specializedModules } from '../application/specialized'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { hasPermission } from '@/hooks/authorize'
+import { isAppAvailable } from '@/utils/appAccess'
 const ui = useUiStore(),
   route = useRoute()
-const current = computed(() => specializedModules[String(route.params.modulo)])
+const current = computed(() => {
+  const code = String(route.params.modulo)
+  return isAppAvailable(code) ? specializedModules[code] : undefined
+})
 const inventory = [
   ['restaurante-delivery', 'Restaurante'],
   ['arena', 'Arena / quadras'],
@@ -21,9 +25,11 @@ const inventory = [
   ['atendimento', 'Atendimento'],
   ['core-ia', 'Inteligência artificial'],
   ['whatsapp', 'WhatsApp'],
-]
+] as const
 const modules = computed(() =>
-  inventory.map(([code, label]) => ({ code, label, active: ui.hasActiveModule(code!) })),
+  inventory
+    .filter(([code]) => isAppAvailable(code))
+    .map(([code, label]) => ({ code, label, active: ui.hasActiveModule(code) })),
 )
 </script>
 <template>
