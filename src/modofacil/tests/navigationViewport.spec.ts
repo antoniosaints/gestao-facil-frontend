@@ -46,4 +46,25 @@ describe('área de carregamento de navegação', () => {
     expect(wrapper.get('[role=status]').classes()).toContain('lg:left-[80px]')
     wrapper.unmount()
   })
+  it('mostra o SVG animado dentro do conteúdo e preserva a página montada', async () => {
+    const wrapper = mount(NavigationViewport, {
+      props: { loading: false },
+      slots: { default: () => h(Draft) },
+    })
+    const input = wrapper.get('input')
+    await input.setValue('Rascunho preservado')
+
+    await wrapper.setProps({ animatedLoading: true })
+    const status = wrapper.get('[role=status]')
+    expect(status.classes()).toContain('absolute')
+    expect(status.get('svg').attributes('viewBox')).toBe('0 0 80 80')
+    expect(wrapper.get('[inert]').element.contains(input.element)).toBe(true)
+
+    await wrapper.setProps({ animatedLoading: false })
+    expect(wrapper.find('[role=status]').exists()).toBe(false)
+    expect(wrapper.find('[inert]').exists()).toBe(false)
+    expect(wrapper.get('input').element).toBe(input.element)
+    expect((input.element as HTMLInputElement).value).toBe('Rascunho preservado')
+    wrapper.unmount()
+  })
 })

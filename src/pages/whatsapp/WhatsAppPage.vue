@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto space-y-5 pb-24 md:pb-0">
+  <div class="space-y-5 pb-24 md:pb-0">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div>
         <h1 class="flex items-center gap-2 text-2xl font-bold tracking-tight">

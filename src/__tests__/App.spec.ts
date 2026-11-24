@@ -7,7 +7,8 @@ import App from '../App.vue'
 
 const routeMock = vi.hoisted(() => ({
   path: '/',
-  meta: { layout: 'default' },
+  meta: { layout: 'default', isPublic: false },
+  query: {},
 }))
 
 vi.mock('vue-router', async () => {
@@ -21,7 +22,7 @@ vi.mock('vue-router', async () => {
 describe('App', () => {
   it('mounts with the configured layout shell', () => {
     routeMock.path = '/'
-    routeMock.meta = { layout: 'default' }
+    routeMock.meta = { layout: 'default', isPublic: false }
 
     const wrapper = mount(App, {
       global: {
@@ -41,7 +42,7 @@ describe('App', () => {
 
   it('renderiza rotas publicas da loja sem a transicao global', () => {
     routeMock.path = '/lojas/minha-loja/login'
-    routeMock.meta = { layout: 'default' }
+    routeMock.meta = { layout: 'default', isPublic: true }
     const Page = defineComponent({ template: '<div data-testid="store-page" />' })
 
     const wrapper = mount(App, {

@@ -31,14 +31,14 @@
         <main id="container-main-app-sistema"
             class="min-h-0 flex-1 overflow-y-auto p-6 mt-0 text-gray-700 transition-all duration-300 ease-in-out dark:text-gray-300"
             :class="{ 'md:ml-64': store.openSidebar }">
-            <div class="max-w-7xl mx-auto" id="content">
+            <div class="mx-auto max-w-8xl" id="content">
                 <!-- O header é hidden md:flex, então no mobile o badge de suporte
                      não apareceria. Aqui ele cobre esse caso. -->
                 <div v-if="isSupportActive()" class="mb-4 flex justify-end md:hidden">
                     <SupportBadge />
                 </div>
                 <AlertTopbar />
-                <div v-if="store.loading || progress > 0"
+                <div v-if="!store.usaCarregamentoAnimado && (store.loading || progress > 0)"
                     class="absolute hidden md:block top-14 h-2 transition-all duration-100 ease-linear"
                     :style="{ width: progress + '%' }" :class="{
                         'bg-primary/50': env.VITE_MODE_SYSTEM === 'erp',
@@ -49,7 +49,7 @@
 
                 <slot v-if="!loading" />
                 <div v-else
-                    class="flex flex-col gap-4 max-w-7xl mx-auto items-center justify-center h-[calc(100vh-12rem)]">
+                    class="flex h-[calc(100vh-12rem)] flex-col items-center justify-center gap-4">
                     <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary dark:border-primary-dark">
                     </div>
                     <p class="ml-2 text-primary dark:text-primary-dark">Carregando informações do usuário...</p>

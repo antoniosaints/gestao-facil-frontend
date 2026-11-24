@@ -9,6 +9,8 @@ import { env } from './utils/dotenv'
 import Arena from './layouts/Arena.vue'
 import AppAccessDialog from './components/apps/AppAccessDialog.vue'
 import AppAccessReturn from './components/apps/AppAccessReturn.vue'
+import RouteLoadingViewport from './components/layout/RouteLoadingViewport.vue'
+import { isRouteLoading } from './router'
 
 const store = useUiStore()
 const route = useRoute()
@@ -27,18 +29,27 @@ const layout = computed(() => {
 })
 
 const disableRouteTransition = computed(() => route.path.startsWith('/lojas/'))
-
+const usesAnimatedRouteLoading = computed(
+  () => store.usaCarregamentoAnimado && !route.meta.isPublic && route.meta.layout !== 'admin',
+)
 </script>
 
 <template>
   <component :is="layout">
     <AppAccessReturn />
-    <router-view v-slot="{ Component }">
-      <component v-if="disableRouteTransition" :is="Component" />
-      <transition v-else :name="store.isMobile ? 'fade' : 'slide'" mode="out-in">
-        <component :is="Component" />
-      </transition>
-    </router-view>
+    <RouteLoadingViewport :loading="isRouteLoading && route.meta.layout !== 'default'">
+      <router-view v-slot="{ Component }">
+        <component v-if="disableRouteTransition" :is="Component" />
+        <transition
+          v-else
+          :name="store.isMobile ? 'fade' : 'slide'"
+          :css="!usesAnimatedRouteLoading"
+          :mode="usesAnimatedRouteLoading ? undefined : 'out-in'"
+        >
+          <component :is="Component" />
+        </transition>
+      </router-view>
+    </RouteLoadingViewport>
   </component>
   <AppAccessDialog />
 </template>

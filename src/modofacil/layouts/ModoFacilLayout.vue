@@ -42,12 +42,17 @@ import ConfirmationDialog from '../components/ConfirmationDialog.vue'
 import { confirmationKey, type ConfirmationOptions } from '../application/confirmation'
 import { useSocketEvent } from '@/composables/useSocketEvent'
 import { entrarNaConta, sairDaConta } from '@/pluguins/socket'
+import { isRouteLoading } from '@/router'
 
 provide(formThemeClassesKey, darkPaletteClasses)
 
 const { pendingPath, onNavigate } = useMenuLoading()
 const ui = useUiStore(),
   route = useRoute()
+const showAnimatedLoading = computed(
+  () => isRouteLoading.value || (ui.usaCarregamentoAnimado && !!pendingPath.value),
+)
+const showClassicLoading = computed(() => !!pendingPath.value && !showAnimatedLoading.value)
 const workspace =
   inject(modalWorkspaceKey, undefined) ||
   createModalWorkspace((level) => hasPermission(ui.usuarioLogged, level))
@@ -148,7 +153,9 @@ watch(
     searchOpen.value = false
   },
 )
-useSocketEvent('sessao:updated', () => refreshExperience())
+useSocketEvent('sessao:updated', async () => {
+  await Promise.all([refreshExperience(), ui.loadFinanceiroFlags()])
+})
 function onEscape(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     mobileOpen.value = false
@@ -570,13 +577,14 @@ function closeSearch(event: FocusEvent) {
         </details>
       </header>
       <main
-        :aria-busy="!!pendingPath"
+        :aria-busy="showClassicLoading"
         id="mf-content"
         tabindex="-1"
-        class="mx-auto w-full max-w-[1600px] px-4 py-6 outline-none sm:px-6 lg:px-8"
+        class="mx-auto w-full max-w-8xl px-4 py-6 outline-none sm:px-6 lg:px-8"
       >
         <NavigationViewport
-          :loading="!!pendingPath"
+          :loading="showClassicLoading"
+          :animated-loading="showAnimatedLoading"
           :collapsed="collapsed"
           :label="`Carregando ${links.find((link) => link.path === pendingPath)?.label || 'página'}…`"
         >

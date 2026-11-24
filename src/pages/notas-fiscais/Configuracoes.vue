@@ -132,7 +132,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl space-y-5 pb-10">
+  <div class="space-y-5 pb-10">
     <header class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div><h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Cog class="size-6 text-primary" />Configurações fiscais</h1><p class="mt-1 max-w-2xl text-sm text-muted-foreground">Configure o emissor, os documentos autorizados e as credenciais isoladas por conta.</p></div>
       <Button :disabled="saving || loading" @click="save"><LoaderCircle v-if="saving" class="animate-spin" /><Save v-else />Salvar dados</Button>

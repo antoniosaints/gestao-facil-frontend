@@ -49,7 +49,7 @@
         'md:ml-72': store.openSidebar && store.usaNavegacaoSideV2,
       }"
     >
-      <div class="mx-auto max-w-7xl" id="content">
+      <div class="mx-auto max-w-8xl" id="content">
         <AlertTopbar />
         <CardsNavigationHub
           v-if="store.usaNavegacaoPorCards && route.name === 'admin-home'"
@@ -58,7 +58,7 @@
           module-route-name="admin-navegacao-cards-modulo"
         />
         <slot v-else-if="!loading" />
-        <div v-else class="mx-auto flex h-[calc(100vh-12rem)] max-w-7xl flex-col items-center justify-center gap-4">
+        <div v-else class="flex h-[calc(100vh-12rem)] flex-col items-center justify-center gap-4">
           <div class="h-16 w-16 animate-spin rounded-full border-b-2 border-primary"></div>
           <p class="ml-2 text-primary">Carregando informações do usuário...</p>
         </div>

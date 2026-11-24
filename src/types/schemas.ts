@@ -540,9 +540,12 @@ export interface FormularioLancamento {
   /// Só no método RECORRENTE: configuração das ocorrências seguintes.
   recorrencia?: RecorrenciaConfig
 }
+export type EstiloCarregamento = 'ATUAL' | 'ANIMADO'
+
 export interface UpdateParametrosConta {
   modeloPdv?: 'BASICO' | 'PRO' | null
   estiloUi?: 'PADRAO' | 'CARDS' | 'SITE' | 'SIDEV2' | null
+  estiloCarregamento?: EstiloCarregamento
   temaPersonalizado?: ThemeCustomization | null
   AsaasApiKey?: string | null
   AsaasApiSecret?: string | null
@@ -550,6 +553,11 @@ export interface UpdateParametrosConta {
   eventoEstoqueBaixo?: boolean | null
   eventoProdutoAlterado?: boolean | null
   emailAvisos?: string | null
+  emailNotificacoesAtivo?: boolean
+  emailEventoEstoqueBaixo?: boolean
+  emailEventoVencimentoFinanceiro?: boolean
+  pushNotificacoesAtivo?: boolean
+  pushEventoVencimentoFinanceiro?: boolean
   eventoSangria?: boolean | null
   eventoVendaConcluida?: boolean | null
   permitirLancamentoRetroativo?: boolean | null

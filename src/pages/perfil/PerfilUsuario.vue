@@ -284,7 +284,7 @@ async function saveProfile() {
 </script>
 
 <template>
-  <div class="container mx-auto space-y-6 pb-24 md:pb-6">
+  <div class="space-y-6 pb-24 md:pb-6">
     <div class="flex items-start justify-between flex-col md:flex-row md:items-center">
       <div>
         <h1 class="text-2xl font-bold tracking-tight flex items-center gap-2">

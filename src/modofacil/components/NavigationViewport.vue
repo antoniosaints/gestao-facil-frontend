@@ -1,9 +1,16 @@
 <script setup lang="ts">
+import RouteLoadingViewport from '@/components/layout/RouteLoadingViewport.vue'
 import spinner from '../assets/infinite-spinner.svg'
 
-withDefaults(defineProps<{ loading: boolean; collapsed?: boolean; label?: string }>(), {
-  label: 'Carregando página…',
-})
+withDefaults(
+  defineProps<{
+    loading: boolean
+    animatedLoading?: boolean
+    collapsed?: boolean
+    label?: string
+  }>(),
+  { animatedLoading: false, label: 'Carregando página…' },
+)
 </script>
 <template>
   <div class="min-h-[calc(100dvh-65px-3rem)]">
@@ -43,7 +50,9 @@ withDefaults(defineProps<{ loading: boolean; collapsed?: boolean; label?: string
       :inert="loading ? true : undefined"
       :aria-hidden="loading ? true : undefined"
     >
-      <slot />
+      <RouteLoadingViewport :loading="animatedLoading">
+        <slot />
+      </RouteLoadingViewport>
     </div>
   </div>
 </template>

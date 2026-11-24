@@ -1,5 +1,5 @@
 <template>
-    <div class="container mx-auto space-y-6">
+    <div class="space-y-6">
         <div class="flex items-start justify-between flex-col md:flex-row md:items-center">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -17,7 +17,6 @@
                 >
                     <TabsTrigger value="empresa"><i class="fa-solid fa-building mr-2"></i> Empresa</TabsTrigger>
                     <TabsTrigger value="notificacoes"><i class="fa-solid fa-bell mr-2"></i> Notificações</TabsTrigger>
-                    <TabsTrigger v-if="hasWhatsAppModule" value="whatsapp">WhatsApp</TabsTrigger>
                     <TabsTrigger :disabled="storeUi.isMobile" value="impressao"><i class="fa-solid fa-print mr-2"></i>
                         Impressão
                     </TabsTrigger>
@@ -49,158 +48,7 @@
             </TabsContent>
 
             <TabsContent value="notificacoes">
-                <Card class="rounded-t-none bg-background">
-                    <form @submit.prevent="submitGeneralNotifications">
-                        <CardHeader>
-                            <CardTitle class="font-normal flex items-center gap-2">
-                                <Bell class="w-5 h-5 text-primary" /> Notificações
-                            </CardTitle>
-                            <CardDescription>Configure e-mails e push de eventos.</CardDescription>
-                        </CardHeader>
-                        <CardContent class="space-y-6">
-                            <div class="grid md:grid-cols-2 gap-3">
-                                <div class="space-y-2">
-                                    <Label for="emailNotif">E-mail para avisos</Label>
-                                    <Input id="emailNotif" v-model="(formularioNotificacoes.emailAvisos as string)"
-                                        type="email" placeholder="seu@email.com" />
-                                </div>
-                                <SubscribeNotification />
-                            </div>
-                            <Separator />
-                            <div class="grid gap-6">
-                                <div class="space-y-2">
-                                    <Label class="text-md">Eventos</Label>
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <label for="vendaConcluida"
-                                            class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
-                                            <span>Venda concluída <p class="text-xs text-muted-foreground">(Quando
-                                                    realizar uma venda)</p></span>
-                                            <Switch id="vendaConcluida"
-                                                v-model="formularioNotificacoes.eventoVendaConcluida" />
-                                        </label>
-                                        <label for="sangriaEvento"
-                                            class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
-                                            <span>Sangria registrada <p class="text-xs text-muted-foreground">(Retiradas
-                                                    de valor em caixa PDV)</p></span>
-                                            <Switch id="sangriaEvento" v-model="formularioNotificacoes.eventoSangria" />
-                                        </label>
-                                        <label for="estoqueBaixo"
-                                            class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
-                                            <span>Estoque baixo <p class="text-xs text-muted-foreground">(classificado
-                                                    em vermelho)</p></span>
-                                            <Switch id="estoqueBaixo"
-                                                v-model="formularioNotificacoes.eventoEstoqueBaixo" />
-                                        </label>
-                                        <label for="produtoEditadoReposicao"
-                                            class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
-                                            <span>Alteração de produto <p class="text-xs text-muted-foreground">
-                                                    (reposição, edição)</p></span>
-                                            <Switch id="produtoEditadoReposicao"
-                                                v-model="formularioNotificacoes.eventoProdutoAlterado" />
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <Separator />
-                            <div class="grid gap-3">
-                                <label for="financeiroVencimentosNotificacoesAtivo"
-                                    class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer">
-                                    <span>Alertas de vencimentos financeiros
-                                        <p class="text-xs text-muted-foreground">Avisos 3 dias antes, 1 dia antes, no
-                                            dia e 1 dia depois para itens marcados.</p>
-                                    </span>
-                                    <Switch id="financeiroVencimentosNotificacoesAtivo"
-                                        v-model="formularioNotificacoes.financeiroVencimentosNotificacoesAtivo" />
-                                </label>
-                            </div>
-                            <section v-if="!hasWhatsAppModule" class="flex flex-col gap-4 rounded-lg border border-dashed bg-muted/20 p-5 sm:flex-row sm:items-center sm:justify-between">
-                                <div><h3 class="font-medium">Notificações por WhatsApp</h3><p class="mt-1 text-sm text-muted-foreground">Ative o app para escolher a instância e os eventos enviados à equipe.</p></div>
-                                <Button type="button" as-child class="shrink-0 text-white"><RouterLink :to="{ name: 'loja-home', query: { app: 'whatsapp' } }">Ativar app WhatsApp</RouterLink></Button>
-                            </section>
-                        </CardContent>
-                        <CardFooter class="justify-end">
-                            <Button :disabled="loading" class="ml-2 text-white" type="submit">
-                                <CircleCheck v-if="!loading" />
-                                <LoaderIcon v-if="loading" class="animate-spin" />
-                                {{ loading ? 'Salvando...' : 'Salvar' }}
-                            </Button>
-                        </CardFooter>
-                    </form>
-                </Card>
-            </TabsContent>
-
-            <TabsContent v-if="hasWhatsAppModule" value="whatsapp">
-                <Card class="rounded-t-none bg-background">
-                    <form @submit.prevent="submitWhatsAppNotifications">
-                        <CardHeader><CardTitle class="font-normal">Notificações por WhatsApp</CardTitle><CardDescription>Escolha os avisos da operação enviados aos administradores e gerentes. Os envios manuais aos clientes continuam independentes destas preferências.</CardDescription></CardHeader>
-                        <CardContent class="space-y-5">
-                            <div class="space-y-5">
-
-                                <div class="space-y-4">
-                                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                                        <div>
-                                            <Label class="text-md">WhatsApp</Label>
-                                            <p class="text-sm text-muted-foreground">Envie notificações administrativas
-                                                usando a instância principal do módulo WhatsApp.</p>
-                                        </div>
-                                        <Button type="button" variant="outline" :disabled="loadingWhatsappInstances"
-                                            @click="loadWhatsappInstances">
-                                            <LoaderIcon v-if="loadingWhatsappInstances"
-                                                class="mr-2 h-4 w-4 animate-spin" />
-                                            Atualizar instâncias
-                                        </Button>
-                                    </div>
-
-                                    <AppRequirementNotice v-if="!loadingWhatsappInstances && !whatsappInstances.length" app="whatsapp" :configured="false" />
-
-                                    <div class="grid gap-3 md:grid-cols-2">
-                                        <label for="whatsappNotificacoesAtivo"
-                                            class="flex flex-col md:flex-row text-center md:text-left gap-2 md:gap-0 items-center justify-between bg-body/70 p-3 px-4 rounded-lg border cursor-pointer"
-                                            :class="!whatsappInstances.length ? 'opacity-70' : ''">
-                                            <span>Notificações por WhatsApp
-                                                <p class="text-xs text-muted-foreground">Usa a api do WhatsApp W-API
-                                                    para envio de notificações para admins.</p>
-                                            </span>
-                                            <Switch id="whatsappNotificacoesAtivo"
-                                                v-model="formularioNotificacoes.whatsappNotificacoesAtivo"
-                                                :disabled="!whatsappInstances.length" />
-                                        </label>
-
-                                        <div class="space-y-2 rounded-lg border bg-body/70 p-3 px-4">
-                                            <Label for="whatsappInstanciaPrincipal">Instância principal</Label>
-                                            <select id="whatsappInstanciaPrincipal"
-                                                v-model.number="formularioNotificacoes.whatsappNotificacoesInstanciaId"
-                                                class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                                                :disabled="!formularioNotificacoes.whatsappNotificacoesAtivo || !whatsappInstances.length">
-                                                <option :value="null">Selecionar instância...</option>
-                                                <option v-for="instance in whatsappInstances" :key="instance.id"
-                                                    :value="instance.id">
-                                                    {{ instance.nome }} - {{ instance.status }}
-                                                </option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                        <label v-for="event in whatsappNotificationEvents" :key="event.field"
-                                            :for="event.field"
-                                            class="flex min-h-24 flex-col justify-between rounded-lg border bg-body/70 p-3 px-4"
-                                            :class="!formularioNotificacoes.whatsappNotificacoesAtivo ? 'opacity-70' : ''">
-                                            <span>{{ event.label }}
-                                                <p class="text-xs text-muted-foreground">{{ event.description }}</p>
-                                            </span>
-                                            <div class="mt-3 flex justify-end">
-                                                <Switch :id="event.field" v-model="formularioNotificacoes[event.field]"
-                                                    :disabled="!formularioNotificacoes.whatsappNotificacoesAtivo" />
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                        <CardFooter class="justify-end"><Button :disabled="notificationSubmitDisabled" type="submit" class="text-white">{{ loading ? 'Salvando…' : 'Salvar notificações WhatsApp' }}</Button></CardFooter>
-                    </form>
-                </Card>
+                <NotificationSettings :focus-whats-app="route.query.tab === 'whatsapp'" />
             </TabsContent>
 
             <TabsContent value="impressao">
@@ -594,7 +442,7 @@
 
 <script setup lang="ts">
 import ExperienceSettings from '@/modofacil/components/ExperienceSettings.vue'
-import { computed, ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -603,14 +451,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from 'vue-toastification'
-import { RouterLink, useRoute } from 'vue-router'
-import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
-import SubscribeNotification from '@/components/layout/subscribeNotification.vue'
+import { useRoute } from 'vue-router'
+import NotificationSettings from './NotificationSettings.vue'
 import Select2Ajax from '@/components/formulario/Select2Ajax.vue'
 import FormularioCategorias from '@/pages/financeiro/lancamentos/modais/FormularioCategorias.vue'
 import FormularioContas from '@/pages/financeiro/lancamentos/modais/FormularioContas.vue'
 import EmpresaPage from '@/pages/configs/EmpresaPage.vue'
-import { Banknote, Bell, ChevronDown, CircleCheck, CircleDollarSign, Cog, DollarSign, Keyboard, LayoutGrid, ListChecks, LoaderIcon, Menu, Palette, Printer, ShoppingCart, Undo2, Wrench } from 'lucide-vue-next'
+import { Banknote, ChevronDown, CircleCheck, CircleDollarSign, Cog, DollarSign, Keyboard, LayoutGrid, ListChecks, LoaderIcon, Menu, Palette, Printer, ShoppingCart, Undo2, Wrench } from 'lucide-vue-next'
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -620,7 +467,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { UpdateParametrosConta } from '@/types/schemas'
-import { ContaRepository, type WhatsAppNotificationInstanceOption } from '@/repositories/conta-repository'
+import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore } from '@/stores/ui/uiStore'
 import ImpressaoPage from './ImpressaoPage.vue'
 import TemaPage from './TemaPage.vue'
@@ -632,96 +479,18 @@ import {
     type MainMenuVisibilityKey,
 } from '@/layouts/options'
 
-const tab = ref<'whatsapp' | 'empresa' | 'notificacoes' | 'impressao' | 'vendas' | 'experiencia' | 'aparencia' | 'financeiro' | 'menus'>('empresa')
+const tab = ref<'empresa' | 'notificacoes' | 'impressao' | 'vendas' | 'experiencia' | 'aparencia' | 'financeiro' | 'menus'>('empresa')
 const route = useRoute()
 const toast = useToast()
 const storeUi = useUiStore()
 const loading = ref(false)
-const loadingWhatsappInstances = ref(false)
-const whatsappInstances = ref<WhatsAppNotificationInstanceOption[]>([])
 const isRootUser = computed(() => storeUi.usuarioLogged.permissao === 'root')
-const hasWhatsAppModule = computed(() => storeUi.hasActiveModule('whatsapp'))
 const menuVisibilityOptions = computed(() => getMainMenuVisibilityOptions(storeUi.appModules))
-const notificationSubmitDisabled = computed(() => {
-    return Boolean(
-        loading.value ||
-        (
-            hasWhatsAppModule.value &&
-            formularioNotificacoes.whatsappNotificacoesAtivo &&
-            !formularioNotificacoes.whatsappNotificacoesInstanciaId
-        ),
-    )
-})
-
-const whatsappNotificationEvents = [
-    {
-        field: 'whatsappEventoNovaVenda',
-        label: 'Nova venda',
-        description: 'Aviso quando uma venda for criada no sistema.',
-    },
-    { field: 'whatsappEventoVendaConcluida', label: 'Venda concluída no PDV', description: 'Aviso quando a venda for finalizada no ponto de venda.' },
-    { field: 'whatsappEventoEstoqueBaixo', label: 'Estoque baixo', description: 'Produtos no estoque mínimo ou abaixo após uma movimentação.' },
-    { field: 'whatsappEventoProdutoAlterado', label: 'Alterações de produtos', description: 'Cadastro, edição, exclusão, reposição e descarte de produtos.' },
-    { field: 'whatsappEventoSangria', label: 'Sangria de caixa', description: 'Aviso quando houver retirada de valores do caixa PDV.' },
-    { field: 'whatsappEventoVencimentoFinanceiro', label: 'Vencimentos financeiros', description: 'Avisos de vencimento para administradores e root, conforme o agendamento financeiro.' },
-    {
-        field: 'whatsappEventoNovaOs',
-        label: 'Nova OS',
-        description: 'Aviso quando uma ordem de serviço for aberta.',
-    },
-    {
-        field: 'whatsappEventoNovoLancamento',
-        label: 'Novo lançamento',
-        description: 'Aviso quando um lançamento financeiro for criado.',
-    },
-    {
-        field: 'whatsappEventoNovoCliente',
-        label: 'Novo cliente',
-        description: 'Aviso quando um cliente for cadastrado.',
-    },
-    {
-        field: 'whatsappEventoComandaFaturada',
-        label: 'Comanda faturada',
-        description: 'Aviso quando uma comanda gerar cobrança/venda.',
-    },
-    {
-        field: 'whatsappEventoCaixaAberto',
-        label: 'Caixa aberto',
-        description: 'Aviso quando um caixa PDV for aberto.',
-    },
-    {
-        field: 'whatsappEventoCaixaFechado',
-        label: 'Caixa fechado',
-        description: 'Aviso quando um caixa PDV for fechado.',
-    },
-] as const
 
 function getDefaultVisibleMenuKeys() {
     return menuVisibilityOptions.value.map((menu) => menu.key)
 }
 
-const formularioNotificacoes = reactive<UpdateParametrosConta>({
-    eventoEstoqueBaixo: false,
-    eventoProdutoAlterado: true,
-    eventoVendaConcluida: false,
-    eventoSangria: false,
-    emailAvisos: '',
-    whatsappNotificacoesAtivo: false,
-    whatsappNotificacoesInstanciaId: null,
-    whatsappEventoNovaVenda: true,
-    whatsappEventoVendaConcluida: true,
-    whatsappEventoEstoqueBaixo: false,
-    whatsappEventoProdutoAlterado: false,
-    whatsappEventoSangria: false,
-    whatsappEventoVencimentoFinanceiro: true,
-    whatsappEventoNovaOs: true,
-    whatsappEventoNovoLancamento: true,
-    whatsappEventoNovoCliente: true,
-    whatsappEventoComandaFaturada: true,
-    whatsappEventoCaixaAberto: true,
-    whatsappEventoCaixaFechado: true,
-    financeiroVencimentosNotificacoesAtivo: true,
-})
 const formularioFinanceiro = reactive<UpdateParametrosConta>({
     chavePix: '',
     contaFinanceiraPadraoId: null,
@@ -839,16 +608,6 @@ function toggleSubmenu(subKey: string, visible: boolean) {
     formularioMenus.menusVisiveis = Array.from(selected)
 }
 
-function submitGeneralNotifications() {
-    const { eventoEstoqueBaixo, eventoProdutoAlterado, eventoVendaConcluida, eventoSangria, emailAvisos, financeiroVencimentosNotificacoesAtivo } = formularioNotificacoes
-    return submit({ eventoEstoqueBaixo, eventoProdutoAlterado, eventoVendaConcluida, eventoSangria, emailAvisos, financeiroVencimentosNotificacoesAtivo })
-}
-function submitWhatsAppNotifications() {
-    if (!hasWhatsAppModule.value) return
-    const events = Object.fromEntries(whatsappNotificationEvents.map(event => [event.field, formularioNotificacoes[event.field]]))
-    return submit({ ...events, whatsappNotificacoesAtivo: formularioNotificacoes.whatsappNotificacoesAtivo, whatsappNotificacoesInstanciaId: formularioNotificacoes.whatsappNotificacoesInstanciaId })
-}
-
 async function submit(data: UpdateParametrosConta) {
     try {
         loading.value = true
@@ -864,50 +623,10 @@ async function submit(data: UpdateParametrosConta) {
     }
 }
 
-async function loadWhatsappInstances() {
-    if (!hasWhatsAppModule.value) {
-        whatsappInstances.value = []
-        return
-    }
-
-    try {
-        loadingWhatsappInstances.value = true
-        whatsappInstances.value = await ContaRepository.listarInstanciasWhatsappNotificacao()
-    } catch (error) {
-        console.error(error)
-        whatsappInstances.value = []
-        toast.error('Erro ao buscar instâncias do WhatsApp')
-    } finally {
-        loadingWhatsappInstances.value = false
-    }
-}
-
 async function getParametros() {
     try {
         const response = await ContaRepository.getParametros()
         if (response.data != null) {
-            Object.assign(formularioNotificacoes, {
-                eventoEstoqueBaixo: response.data.eventoEstoqueBaixo,
-                eventoProdutoAlterado: response.data.eventoProdutoAlterado ?? true,
-                eventoVendaConcluida: response.data.eventoVendaConcluida,
-                eventoSangria: response.data.eventoSangria,
-                emailAvisos: response.data.emailAvisos,
-                whatsappNotificacoesAtivo: response.data.whatsappNotificacoesAtivo ?? false,
-                whatsappNotificacoesInstanciaId: response.data.whatsappNotificacoesInstanciaId ?? null,
-                whatsappEventoNovaVenda: response.data.whatsappEventoNovaVenda ?? true,
-                whatsappEventoVendaConcluida: response.data.whatsappEventoVendaConcluida ?? true,
-                whatsappEventoEstoqueBaixo: response.data.whatsappEventoEstoqueBaixo ?? false,
-                whatsappEventoProdutoAlterado: response.data.whatsappEventoProdutoAlterado ?? false,
-                whatsappEventoSangria: response.data.whatsappEventoSangria ?? false,
-                whatsappEventoVencimentoFinanceiro: response.data.whatsappEventoVencimentoFinanceiro ?? true,
-                whatsappEventoNovaOs: response.data.whatsappEventoNovaOs ?? true,
-                whatsappEventoNovoLancamento: response.data.whatsappEventoNovoLancamento ?? true,
-                whatsappEventoNovoCliente: response.data.whatsappEventoNovoCliente ?? true,
-                whatsappEventoComandaFaturada: response.data.whatsappEventoComandaFaturada ?? true,
-                whatsappEventoCaixaAberto: response.data.whatsappEventoCaixaAberto ?? true,
-                financeiroVencimentosNotificacoesAtivo: response.data.financeiroVencimentosNotificacoesAtivo ?? true,
-                whatsappEventoCaixaFechado: response.data.whatsappEventoCaixaFechado ?? true,
-            })
             Object.assign(formularioFinanceiro, {
                 chavePix: response.data.chavePix,
                 contaFinanceiraPadraoId: response.data.contaFinanceiraPadraoId ?? null,
@@ -938,13 +657,13 @@ async function getParametros() {
     }
 }
 
+watch(() => route.query.tab, (value) => {
+    if (value === 'aparencia') tab.value = 'aparencia'
+    if (value === 'notificacoes' || value === 'whatsapp') tab.value = 'notificacoes'
+}, { immediate: true })
+
 onMounted(async () => {
-    await storeUi.loadAppModules()
-    if (route.query.tab === 'whatsapp' && hasWhatsAppModule.value) tab.value = 'whatsapp'
-    await Promise.all([
-        getParametros(),
-        loadWhatsappInstances(),
-    ])
+    await Promise.all([storeUi.loadAppModules(), getParametros()])
 })
 </script>
 

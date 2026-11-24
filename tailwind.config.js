@@ -4,6 +4,9 @@ export default {
   darkMode: ['class'],
   theme: {
     extend: {
+      maxWidth: {
+        '8xl': '100rem',
+      },
       colors: {
         background: {
           DEFAULT: 'hsl(var(--background))',

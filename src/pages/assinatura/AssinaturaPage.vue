@@ -31,7 +31,7 @@ const selecionarPlano = (plano: string) => {
 </script>
 
 <template>
-    <div class="max-w-7xl mx-auto py-6">
+    <div class="py-6">
         <div class="max-w-xl mx-auto">
             <h2 class="text-2xl md:text-3xl font-bold text-center">Pague mensalmente sem complicações</h2>
             <p class="text-sm md:text-base text-center text-gray-500 mb-10">As cobranças são geradas no momento do

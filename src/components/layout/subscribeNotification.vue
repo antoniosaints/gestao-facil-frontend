@@ -2,6 +2,7 @@
 import http from "@/utils/axios"
 import { ref, onMounted } from "vue"
 import { useToast } from "vue-toastification"
+import { Button } from "@/components/ui/button"
 
 const toast = useToast()
 const isSubscribed = ref(false)
@@ -52,7 +53,7 @@ async function subscribeUserOnReceiverPush() {
         return toast.error("Seu navegador não suporta notificações push.")
     }
 
-    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+    if (!window.isSecureContext) {
         return toast.warning("Notificações push exigem HTTPS.")
     }
 
@@ -71,11 +72,10 @@ async function subscribeUserOnReceiverPush() {
 
         // Converte applicationServerKey
         const vapidKey = applicationServerKey
-        const convertedKey = urlBase64ToUint8Array(vapidKey)
-
-        if (!vapidKey || convertedKey.length === 0) {
+        if (!vapidKey) {
             return toast.error("Chave VAPID inválida ou ausente.")
         }
+        const convertedKey = urlBase64ToUint8Array(vapidKey)
 
         // Faz nova inscrição se necessário
         if (!subscription) {
@@ -140,22 +140,16 @@ function urlBase64ToUint8Array(base64String: string) {
 </script>
 
 <template>
-    <div class="flex flex-col gap-2 w-full">
-        <label>Receber notificações</label>
-        <div>
-            <button type="button" v-if="isSupported && !isSubscribed" @click="subscribeUserOnReceiverPush"
-                class="px-3 py-1 w-full rounded-md bg-blue-100 border-2 border-blue-500 text-blue-500 dark:bg-blue-900 dark:text-blue-200">
-                <i class="fa-solid fa-bell"></i> Inscrever para receber notificações
-            </button>
-
-            <button type="button" v-if="isSupported && isSubscribed" @click="unsubscribeUserToReceivePush"
-                class="px-3 py-1 w-full rounded-md bg-red-100 border-2 border-red-500 text-red-500 dark:bg-red-900 dark:text-red-200">
-                <i class="fa-solid fa-bell-slash"></i> Cancelar inscrição de notificações
-            </button>
-
-            <p v-if="!isSupported" class="text-gray-500">
-                Seu navegador não suporta notificações push.
-            </p>
-        </div>
+    <div class="space-y-2">
+        <p class="text-sm font-medium">Este navegador</p>
+        <Button v-if="isSupported && !isSubscribed" type="button" variant="outline" class="w-full"
+            @click="subscribeUserOnReceiverPush">
+            Inscrever este navegador
+        </Button>
+        <Button v-else-if="isSubscribed" type="button" variant="outline" class="w-full"
+            @click="unsubscribeUserToReceivePush">
+            Cancelar inscrição neste navegador
+        </Button>
+        <p v-else class="text-sm text-muted-foreground">Seu navegador não suporta notificações push.</p>
     </div>
 </template>

@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { StoreRepository } from '@/repositories/store-repository'
 import { UsuarioRepository } from '@/repositories/usuario-repository'
-import type { Contas, Usuarios } from '@/types/schemas'
+import type { Contas, EstiloCarregamento, Usuarios } from '@/types/schemas'
 import { hasPermission } from '@/hooks/authorize'
 import { setThemeCustomization } from '@/utils/theme'
 import {
@@ -86,6 +86,8 @@ export const useUiStore = defineStore('uiStore', () => {
   // no payload `menusVisiveis` as keys de topo são whitelist e as de submenu são blacklist.
   const hiddenSubmenuKeys = ref<string[]>([])
   const estiloUi = ref<UiNavigationStyle>('PADRAO')
+  const estiloCarregamento = ref<EstiloCarregamento>('ATUAL')
+  const usaCarregamentoAnimado = computed(() => estiloCarregamento.value === 'ANIMADO')
   const usaNavegacaoPorCards = computed(() => estiloUi.value === 'CARDS')
   const usaNavegacaoSite = computed(() => estiloUi.value === 'SITE')
   const usaNavegacaoSideV2 = computed(() => estiloUi.value === 'SIDEV2')
@@ -343,6 +345,7 @@ export const useUiStore = defineStore('uiStore', () => {
       estiloUi.value = ['CARDS', 'SITE', 'SIDEV2'].includes(estiloSalvo)
         ? (estiloSalvo as UiNavigationStyle)
         : 'PADRAO'
+      estiloCarregamento.value = response.data?.estiloCarregamento === 'ANIMADO' ? 'ANIMADO' : 'ATUAL'
       setThemeCustomization(response.data?.temaPersonalizado)
       tourConcluido.value = response.data?.tourOnboardingConcluido ?? false
       return financeiroFlags.value
@@ -359,6 +362,7 @@ export const useUiStore = defineStore('uiStore', () => {
       visibleMenuKeys.value = null
       hiddenSubmenuKeys.value = []
       estiloUi.value = 'PADRAO'
+      estiloCarregamento.value = 'ATUAL'
       setThemeCustomization(null)
       return financeiroFlags.value
     }
@@ -422,6 +426,8 @@ export const useUiStore = defineStore('uiStore', () => {
     visibleMenuKeys,
     hiddenSubmenuKeys,
     estiloUi,
+    estiloCarregamento,
+    usaCarregamentoAnimado,
     usaNavegacaoPorCards,
     usaNavegacaoSite,
     usaNavegacaoSideV2,

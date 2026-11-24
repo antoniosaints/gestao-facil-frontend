@@ -52,6 +52,16 @@ describe('carregamento ao mudar de menu', () => {
     expect(router.currentRoute.value.path).toBe('/modofacil')
     expect(wrapper.get('[role=status]').text()).toBe('')
   })
+  it('encerra o indicador quando a navegação redireciona de volta à página atual', async () => {
+    const { router, wrapper } = await open()
+    router.beforeEach((_to, from) => from.fullPath)
+
+    await wrapper.get('a').trigger('click', { button: 0 })
+    expect(wrapper.get('[role=status]').text()).toBe('/modofacil/pessoas')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/modofacil')
+    expect(wrapper.get('[role=status]').text()).toBe('')
+  })
   it('ignora a página atual e cliques para abrir em outra aba', async () => {
     const { wrapper } = await open()
     await wrapper.findAll('a')[1]!.trigger('click', { button: 0 })

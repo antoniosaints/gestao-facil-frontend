@@ -4,6 +4,8 @@ import { env } from '@/utils/dotenv'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import type { RestauranteCapability } from '@/repositories/restaurante-repository'
 import type { OuriveCapability } from '@/repositories/ourive-repository'
+import { useUiStore } from '@/stores/ui/uiStore'
+import { registerRouteLoading } from './routeLoading'
 
 type RouteMeta = {
   meta?: {
@@ -1280,6 +1282,7 @@ const router = createRouter({
   },
 })
 
+export const isRouteLoading = registerRouteLoading(router, () => useUiStore().usaCarregamentoAnimado)
 registerModoFacilPolicy(router)
 
 export default router

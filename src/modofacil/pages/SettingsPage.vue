@@ -130,7 +130,10 @@ async function save(body: Record<string, unknown>) {
         @click="tab = 'empresa'"
       >
         Empresa</button
-      ><RouterLink to="/administracao/usuarios">Equipe na interface completa</RouterLink>
+      >
+      <RouterLink to="/configuracoes?tab=aparencia">Aparência</RouterLink>
+      <RouterLink to="/configuracoes?tab=notificacoes">Notificações</RouterLink>
+      <RouterLink to="/administracao/usuarios">Equipe na interface completa</RouterLink>
     </nav>
     <ExperienceSettings v-if="tab === 'experiencia'" />
     <section

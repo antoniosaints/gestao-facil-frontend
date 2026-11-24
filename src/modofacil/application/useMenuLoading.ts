@@ -30,7 +30,13 @@ export function useMenuLoading() {
   }
   const removeBefore = router.beforeEach((to) => start(to.path))
   const removeAfter = router.afterEach((to, _from, failure) => {
-    if (!failure || to.path === pendingPath.value) pendingPath.value = ''
+    if (
+      !failure ||
+      to.path === pendingPath.value ||
+      to.redirectedFrom?.path === pendingPath.value
+    ) {
+      pendingPath.value = ''
+    }
   })
   const removeError = router.onError(() => {
     pendingPath.value = ''

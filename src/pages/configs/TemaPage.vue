@@ -126,6 +126,44 @@
 
         <Separator />
 
+        <fieldset class="space-y-3" :disabled="loading">
+          <legend class="font-medium">Carregamento entre páginas</legend>
+          <p class="text-sm text-muted-foreground">
+            Escolha o indicador usado ao trocar de página. A preferência vale para toda a conta.
+          </p>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label
+              v-for="option in loadingOptions"
+              :key="option.value"
+              class="flex cursor-pointer items-center gap-3 rounded-xl border bg-card p-3 focus-within:ring-2 focus-within:ring-ring"
+              :class="estiloCarregamento === option.value ? 'border-primary' : 'hover:bg-muted/40'"
+            >
+              <span
+                aria-hidden="true"
+                class="grid h-14 w-16 shrink-0 place-items-center rounded-lg bg-muted text-primary"
+              >
+                <AnimatedRouteLoader v-if="option.value === 'ANIMADO'" class="h-12 w-12" />
+                <span v-else class="h-1.5 w-9 overflow-hidden rounded-full bg-primary/15">
+                  <span class="block h-full w-3/5 rounded-full bg-primary/60" />
+                </span>
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm font-semibold">{{ option.title }}</span>
+                <span class="block text-sm text-muted-foreground">{{ option.description }}</span>
+              </span>
+              <input
+                v-model="estiloCarregamento"
+                :value="option.value"
+                type="radio"
+                name="estiloCarregamento"
+                class="h-4 w-4 shrink-0 accent-primary"
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        <Separator />
+
         <section class="space-y-4">
           <div>
             <h3 class="font-medium">Estilo da UI</h3>
@@ -422,9 +460,10 @@ import {
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import AnimatedRouteLoader from '@/components/layout/AnimatedRouteLoader.vue'
 import { ContaRepository } from '@/repositories/conta-repository'
 import { useUiStore, type UiNavigationStyle } from '@/stores/ui/uiStore'
-import type { ThemeCustomization } from '@/types/schemas'
+import type { EstiloCarregamento, ThemeCustomization } from '@/types/schemas'
 import { setThemeCustomization } from '@/utils/theme'
 import {
   DEFAULT_THEME_CUSTOMIZATION,
@@ -445,6 +484,12 @@ const previewModes: ThemeMode[] = ['light', 'dark']
 const savedTheme = ref<ThemeCustomization>({ ...DEFAULT_THEME_CUSTOMIZATION })
 const form = reactive<ThemeCustomization>({ ...DEFAULT_THEME_CUSTOMIZATION })
 const estiloUi = ref<UiNavigationStyle>('PADRAO')
+const savedLoadingStyle = ref(uiStore.estiloCarregamento)
+const estiloCarregamento = ref(savedLoadingStyle.value)
+const loadingOptions: { value: EstiloCarregamento; title: string; description: string }[] = [
+  { value: 'ATUAL', title: 'Atual', description: 'Usa o indicador atual de cada área.' },
+  { value: 'ANIMADO', title: 'SVG animado', description: 'Mostra um painel animado no centro da tela.' },
+]
 const navigationStyles: Array<{
   value: UiNavigationStyle
   title: string
@@ -618,19 +663,31 @@ function selecionarTamanhoFonte(tamanhoFonte: string) {
 
 function usarPadrao() {
   assignTheme(DEFAULT_THEME_CUSTOMIZATION)
+  estiloCarregamento.value = 'ATUAL'
 }
 
 function restaurarSalvo() {
   assignTheme(savedTheme.value)
+  estiloCarregamento.value = savedLoadingStyle.value
 }
 
 async function salvarTema() {
   try {
     loading.value = true
     const normalized = themeSnapshot.value
-    await ContaRepository.parametros({ temaPersonalizado: normalized, estiloUi: estiloUi.value })
+    const selectedLoadingStyle = estiloCarregamento.value
+    const loadingStyleChanged = selectedLoadingStyle !== savedLoadingStyle.value
+    await ContaRepository.parametros({
+      temaPersonalizado: normalized,
+      estiloUi: estiloUi.value,
+      ...(loadingStyleChanged ? { estiloCarregamento: selectedLoadingStyle } : {}),
+    })
     savedTheme.value = { ...normalized }
     uiStore.estiloUi = estiloUi.value
+    if (loadingStyleChanged) {
+      savedLoadingStyle.value = selectedLoadingStyle
+      uiStore.estiloCarregamento = selectedLoadingStyle
+    }
     setThemeCustomization(normalized)
     toast.success('Aparência salva com sucesso')
   } catch (error) {
@@ -650,6 +707,9 @@ onMounted(async () => {
     estiloUi.value = ['CARDS', 'SITE', 'SIDEV2'].includes(estiloSalvo)
       ? (estiloSalvo as UiNavigationStyle)
       : 'PADRAO'
+    const loadingStyle = response.data?.estiloCarregamento === 'ANIMADO' ? 'ANIMADO' : 'ATUAL'
+    if (estiloCarregamento.value === savedLoadingStyle.value) estiloCarregamento.value = loadingStyle
+    savedLoadingStyle.value = loadingStyle
     assignTheme(theme)
   } catch (error) {
     console.error(error)

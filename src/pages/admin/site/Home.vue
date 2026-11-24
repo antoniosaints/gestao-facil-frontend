@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-muted/30 p-4 md:p-6">
-    <div class="mx-auto max-w-7xl space-y-6">
+    <div class="space-y-6">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-primary">

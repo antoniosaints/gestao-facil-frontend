@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto max-w-7xl space-y-6 p-4 pb-24 md:pb-4">
+  <div class="space-y-6 p-4 pb-24 md:pb-4">
     <div v-if="loading" class="flex h-64 items-center justify-center">
       <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
     </div>

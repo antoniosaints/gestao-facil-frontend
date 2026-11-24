@@ -200,7 +200,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl space-y-5 pb-10">
+  <div class="space-y-5 pb-10">
     <header class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div><h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight"><FileCheck2 class="size-6 text-primary" />Testes de homologação</h1><p class="mt-1 max-w-3xl text-sm text-muted-foreground">Valide a conexão e envie documentos reais de teste para o ambiente de homologação do provedor. Cada envio usa os dados fiscais da sua conta.</p></div>
       <Button variant="outline" @click="router.push({ name: 'notas-fiscais-configuracoes' })"><Settings2 />Configurar emissor</Button>

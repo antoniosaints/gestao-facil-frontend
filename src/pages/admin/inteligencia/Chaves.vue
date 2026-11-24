@@ -123,7 +123,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="container mx-auto flex flex-col gap-4 py-4">
+  <div class="flex flex-col gap-4 py-4">
     <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3">
         <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">

@@ -117,7 +117,7 @@ watch(
 </script>
 
 <template>
-  <section class="mx-auto w-full max-w-[85rem] space-y-6 py-2 sm:py-4">
+  <section class="w-full space-y-6 py-2 sm:py-4">
     <header class="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex min-w-0 items-start gap-3">

@@ -706,7 +706,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="max-w-7xl space-y-2 pb-8 md:pb-0">
+  <div class="space-y-2 pb-8 md:pb-0">
     <div class="rounded-lg">
       <div
         class="flex flex-col gap-4 lg:flex-row lg:items-center justify-center lg:justify-between"
