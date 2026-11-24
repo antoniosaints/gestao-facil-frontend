@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { onMounted, ref, watch } from 'vue'
 import { Package, RefreshCcw, Search } from 'lucide-vue-next'
 import http from '@/utils/axios'
@@ -90,7 +91,7 @@ onMounted(() => loadMobile())
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="text-sm font-semibold dark:text-white">{{ row.produto?.nome || 'Produto sem vínculo' }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.assinatura.nomeContrato }} • {{ row.assinatura.cliente }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400"><EntityLink kind="assinatura" :record-id="row.assinatura.id" :label="row.assinatura.nomeContrato" /> • {{ row.assinatura.cliente }}</div>
           </div>
           <div class="text-xs" :class="getStatusComodatoMeta(row.status).className">
             {{ getStatusComodatoMeta(row.status).label }}

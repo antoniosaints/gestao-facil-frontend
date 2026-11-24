@@ -18,7 +18,7 @@
           <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{{ order.codigoRastreio }}</span
             ><span>·</span>
-            <span>{{ order.ordemServico?.Cliente?.nome || 'Cliente não informado' }}</span
+            <span><EntityLink kind="cliente" :record-id="order.ordemServico?.clienteId ?? order.ordemServico?.Cliente?.id" :label="order.ordemServico?.Cliente?.nome || 'Cliente não informado'" /></span
             ><span>·</span>
             <span>{{ order.ordemServico?.Cliente?.telefone || 'Sem telefone' }}</span>
             <Badge variant="outline" class="ml-1">
@@ -912,7 +912,7 @@
             Cliente <span class="text-xs font-normal text-muted-foreground">(opcional)</span>
             <Select2AjaxCreate
               v-model="editDraft.clienteId"
-              url="/clientes/select2"
+              url="/clientes/select2" linked-kind="cliente"
               create-url="/clientes"
               create-label="cliente"
               :create-defaults="{ status: 'ATIVO', tipo: 'CLIENTE' }"
@@ -1507,6 +1507,7 @@
 </template>
 
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'

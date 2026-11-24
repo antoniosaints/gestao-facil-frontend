@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DeleteRecord from '../components/DeleteRecord.vue'
 import ModalAction from '../components/ModalAction.vue'
 import OperationItems from '../components/OperationItems.vue'
@@ -19,7 +20,7 @@ import DetailMetrics from '../components/DetailMetrics.vue'
 import RecordsTable from '../components/RecordsTable.vue'
 import PageControls from '../components/PageControls.vue'
 import { Input } from '@/components/ui/input'
-import { Download, Pencil, Eye } from 'lucide-vue-next'
+import { Download, Pencil } from 'lucide-vue-next'
 import { financeSummary, paymentLabel } from '../application/financeDetail'
 import { saleItems, detailSearch } from '../application/detailRecords'
 const route = useRoute(),
@@ -192,11 +193,7 @@ async function reverse() {
           <div>
             <dt>Cliente</dt>
             <dd>
-              <RouterLink
-                v-if="sale.clienteId && sale.cliente?.nome"
-                :to="`/modofacil/pessoas/${sale.clienteId}`"
-                >{{ sale.cliente.nome }}</RouterLink
-              ><span v-else>{{ sale.cliente?.nome || 'Não informado' }}</span>
+              <EntityLink kind="cliente" :record-id="sale.clienteId ?? sale.cliente?.id" :label="sale.cliente?.nome || 'Não informado'" />
             </dd>
           </div>
           <div>
@@ -318,10 +315,9 @@ async function reverse() {
             { key: 'status', label: 'Situação' },
             { key: 'total', label: 'Total', right: true },
             { key: 'pending', label: 'Em aberto', right: true },
-            { key: 'actions', label: 'Ações', right: true },
           ]"
           ><template #name="{ row }"
-            ><strong>{{ row.descricao || row.Uid || `Lançamento #${row.id}` }}</strong
+            ><strong><EntityLink kind="lancamento" :record-id="row.id" :label="row.descricao || row.Uid || `Lançamento #${row.id}`" /></strong
             ><small v-if="row.parcelas">{{ row.parcelas.length }} parcela(s)</small></template
           ><template #status="{ row }"
             ><StatusBadge :value="row.status" /><StatusBadge
@@ -331,13 +327,6 @@ async function reverse() {
           ><template #pending="{ row }">{{
             Array.isArray(row.parcelas) ? money(financeSummary(row).pending) : 'Não informado'
           }}</template
-          ><template #actions="{ row }"
-            ><RouterLink
-              v-if="hasPermission(ui.usuarioLogged, 3)"
-              class="mf-button"
-              :to="`/modofacil/financeiro/lancamentos/${row.id}`"
-              ><Eye :size="14" />Ver detalhes</RouterLink
-            ><span v-else>Sem acesso ao financeiro</span></template
           ></RecordsTable
         >
         <p class="!mb-0 text-xs text-muted-foreground">

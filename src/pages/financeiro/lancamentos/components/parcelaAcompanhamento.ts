@@ -6,7 +6,9 @@ export type ParcelaAcompanhamento = {
   totalParcelas: number
   descricao: string
   categoria: string
+  categoriaId?: number | null
   cliente: string | null
+  clienteId?: number | null
   conta: string | null
   contaFinanceiraId: number | null
   valor: number

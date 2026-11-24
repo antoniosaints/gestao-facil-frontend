@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
@@ -26,7 +27,6 @@ import {
   Repeat,
   RotateCw,
   Send,
-  ShoppingCart,
   Tags,
   Trash2,
   Undo2,
@@ -62,7 +62,6 @@ import { useParcelasSelecao } from '@/composables/useParcelasSelecao'
 import { useLancamentosStore } from '@/stores/lancamentos/useLancamentos'
 import { useCobrancasFinanceirasStore } from '@/stores/lancamentos/useCobrancas'
 import { useUiStore } from '@/stores/ui/uiStore'
-import { useVendasStore } from '@/stores/vendas/useVenda'
 import { goBack } from '@/hooks/links'
 import router from '@/router'
 import type {
@@ -83,7 +82,6 @@ import CobrancaLoteModal from './modais/CobrancaLoteModal.vue'
 import ParcelasBulkBar from './components/ParcelasBulkBar.vue'
 import ModalParcela from './modais/ModalParcela.vue'
 import MobileBottomBar from '@/components/mobile/MobileBottomBar.vue'
-import DetalhesVenda from '@/pages/vendas/modais/DetalhesVenda.vue'
 import CobrancaRapidaModal from '../inadimplencia/CobrancaRapidaModal.vue'
 import ExportarCobrancaPdf from './modais/ExportarCobrancaPdf.vue'
 import { moneyMaskOptions } from '@/lib/imaska'
@@ -96,6 +94,8 @@ type ParcelaDetalhe = ParcelaFinanceiro & {
 type LancamentoDetalhe = LancamentoFinanceiro & {
   categoria?: CategoriaFinanceiro | null
   cliente?: ClientesFornecedores | null
+  venda?: { Uid: string } | null
+  emprestimoId?: number | null
   ContasFinanceiro?: ContasFinanceiro | null
   parcelas: ParcelaDetalhe[]
   createdAt?: string | Date
@@ -106,7 +106,6 @@ const toast = useToast()
 const store = useLancamentosStore()
 const storeCobranca = useCobrancasFinanceirasStore()
 const uiStore = useUiStore()
-const vendasStore = useVendasStore()
 
 const loading = ref(false)
 const salvandoParcela = ref(false)
@@ -148,11 +147,6 @@ async function loadLancamento() {
   } finally {
     loading.value = false
   }
-}
-
-async function abrirVendaVinculada() {
-  if (!lancamento.value?.vendaId) return
-  await vendasStore.openDetalhes(lancamento.value.vendaId)
 }
 
 async function abrirCobrancaRapida(parcela: ParcelaDetalhe) {
@@ -772,7 +766,8 @@ watch(() => store.filters.update, loadLancamento)
           <Badge class="border-0" :class="resumoStatus.classes">
             {{ resumoStatus.label }}
           </Badge>
-          <Badge v-if="lancamento?.vendaId" variant="outline">Automático</Badge>
+          <EntityLink v-if="lancamento?.vendaId" kind="venda" :record-id="lancamento.vendaId" :label="lancamento.venda?.Uid || `Venda #${lancamento.vendaId}`" class="text-xs font-medium" />
+          <EntityLink v-if="lancamento?.emprestimoId" kind="emprestimo" :record-id="lancamento.emprestimoId" :label="`Empréstimo #${lancamento.emprestimoId}`" class="text-xs font-medium" />
           <Badge v-if="recorrencia" variant="outline" class="gap-1">
             <Repeat class="h-3 w-3" /> Recorrente
           </Badge>
@@ -800,9 +795,6 @@ watch(() => store.filters.update, loadLancamento)
 
       <div class="hidden flex-wrap items-center gap-2 md:flex">
         <Button variant="outline" @click="goBack"> <ArrowLeft class="h-4 w-4" /> Voltar </Button>
-        <Button v-if="lancamento?.vendaId" variant="outline" @click="abrirVendaVinculada">
-          <ShoppingCart class="h-4 w-4" /> Detalhes da venda
-        </Button>
         <Button
           v-if="uiStore.canCreateCharge"
           class="bg-success text-white hover:bg-success/80"
@@ -944,21 +936,15 @@ watch(() => store.filters.update, loadLancamento)
               <div class="space-y-2 text-sm text-muted-foreground">
                 <p class="flex items-center gap-2">
                   <Tags class="h-4 w-4" /> Categoria:
-                  <span class="font-medium text-foreground">{{
-                    lancamento?.categoria?.nome || 'Não informada'
-                  }}</span>
+                  <EntityLink kind="categoria" :record-id="lancamento?.categoriaId" :label="lancamento?.categoria?.nome" class="font-medium" fallback="Não informada" />
                 </p>
                 <p class="flex items-center gap-2">
                   <Landmark class="h-4 w-4" /> Conta:
-                  <span class="font-medium text-foreground">{{
-                    lancamento?.ContasFinanceiro?.nome || 'Não informada'
-                  }}</span>
+                  <EntityLink kind="conta" :record-id="lancamento?.contasFinanceiroId" :label="lancamento?.ContasFinanceiro?.nome || 'Não informada'" class="font-medium" />
                 </p>
                 <p class="flex items-center gap-2">
                   <UserRound class="h-4 w-4" /> Cliente:
-                  <span class="font-medium text-foreground">{{
-                    lancamento?.cliente?.nome || 'Não informado'
-                  }}</span>
+                  <EntityLink kind="cliente" :record-id="lancamento?.clienteId" :label="lancamento?.cliente?.nome || 'Não informado'" class="font-medium" />
                 </p>
                 <p class="flex items-center gap-2">
                   <Wallet class="h-4 w-4" /> Forma de pagamento padrão:
@@ -1323,11 +1309,7 @@ watch(() => store.filters.update, loadLancamento)
                   <div class="flex items-center gap-1">
                     <p class="truncate text-xs text-muted-foreground">
                       Conta:
-                      {{
-                        parcela.ContaFinanceira?.nome ||
-                        lancamento?.ContasFinanceiro?.nome ||
-                        'Não informada'
-                      }}
+<EntityLink kind="conta" :record-id="parcela.contaFinanceira ?? lancamento?.contasFinanceiroId" :label="parcela.ContaFinanceira?.nome || lancamento?.ContasFinanceiro?.nome || 'Não informada'" />
                     </p>
                     -
                     <p class="truncate text-[11px] text-muted-foreground flex items-center">
@@ -1501,15 +1483,6 @@ watch(() => store.filters.update, loadLancamento)
         <span class="text-xs">Atualizar</span>
       </button>
       <button
-        v-if="lancamento?.vendaId"
-        type="button"
-        class="flex flex-col items-center text-gray-700 transition hover:text-primary dark:text-gray-300"
-        @click="abrirVendaVinculada"
-      >
-        <ShoppingCart class="h-5 w-5" />
-        <span class="text-xs">Venda</span>
-      </button>
-      <button
         type="button"
         class="flex flex-col items-center text-gray-700 transition hover:text-primary disabled:text-gray-300 dark:text-gray-300 dark:disabled:text-gray-600"
         :disabled="!lancamento?.id"
@@ -1584,7 +1557,6 @@ watch(() => store.filters.update, loadLancamento)
     <ExportarCobrancaPdf v-if="lancamento" v-model:open="exportPdfOpen" :lancamento="lancamento" />
     <LancamentoModal />
     <ClientesModal />
-    <DetalhesVenda :acoes-host="['cobranca']" />
     <CobrancaRapidaModal
       v-model:open="cobrancaRapidaOpen"
       :cliente="lancamento?.cliente?.nome"

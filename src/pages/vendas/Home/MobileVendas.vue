@@ -15,7 +15,7 @@
             <div v-for="venda in vendas" :key="venda.id"
                 class="rounded-2xl cursor-pointer border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
-                    <div class="text-sm font-semibold dark:text-white">{{ venda.Uid }}</div>
+                    <div class="text-sm font-semibold dark:text-white"><EntityLink kind="venda" :record-id="venda.id" :label="venda.Uid" /></div>
                     <div class="text-sm text-green-500 dark:text-green-400">R$ {{
                         Number(venda.valor).toFixed(2).replace('.', ',') }}</div>
                 </div>
@@ -163,6 +163,7 @@
 </template>
 
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { ref, onMounted, watch, inject, computed } from "vue";
 import http from "@/utils/axios";
 import type { Vendas } from "@/types/schemas";

@@ -58,6 +58,7 @@ const termo = computed(() => (props.busca || '').trim().toLowerCase())
 const buscando = computed(() => termo.value.length > 0)
 
 function combina(node: CategoriaArvoreNode) {
+  if (/^#\d+$/.test(termo.value)) return node.id === Number(termo.value.slice(1))
   return node.caminho.toLowerCase().includes(termo.value) || String(node.id).includes(termo.value)
 }
 

@@ -67,6 +67,7 @@ export interface RestaurantePedido {
   producaoStatus: string
   pagamentoStatus: string
   entregaStatus: RestauranteEntregaStatus
+  clienteId?: number | null
   clienteNomeSnapshot?: string | null
   clienteTelefone?: string | null
   clienteEmail?: string | null

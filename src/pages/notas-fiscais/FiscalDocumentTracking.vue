@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, nextTick, ref } from 'vue'
 import { Clock3, FilePlus2, Info, Paperclip, ScrollText } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -89,9 +90,7 @@ async function showLogs() {
             <div>
               <dt class="text-xs text-muted-foreground">Venda</dt>
               <dd class="mt-1 font-medium">
-                {{
-                  document.vendaUid || (document.vendaId ? `#${document.vendaId}` : 'Nota avulsa')
-                }}
+                <EntityLink kind="venda" :record-id="document.vendaId" :label="document.vendaUid || (document.vendaId ? `#${document.vendaId}` : 'Nota avulsa')" />
               </dd>
             </div>
             <div>

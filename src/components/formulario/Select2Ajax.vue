@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick, getCurrentInstance } from 'vue'
 import http from '@/utils/axios'
+import EntityLink from '@/components/navigation/EntityLink.vue'
+import type { LinkedRecordKind } from '@/components/navigation/linkedRecord'
 import { X } from 'lucide-vue-next'
 import {
   Select,
@@ -26,6 +28,7 @@ const props = withDefaults(
     url?: string
     loadOptions?: SelectAjaxLoader
     allowClear?: boolean
+    linkedKind?: LinkedRecordKind
     disabled?: boolean
     required?: boolean
     usePlaceholderAsLabel?: boolean
@@ -323,6 +326,15 @@ defineExpose({ open, focus: open, refresh })
           </div>
         </SelectContent>
       </Select>
+      <EntityLink
+        v-if="linkedKind && selectedId != null && (selectedItem?.label || label)"
+        :kind="linkedKind"
+        :record-id="selectedId"
+        :label="selectedItem?.label || label"
+        icon-only
+        new-tab
+        class="shrink-0 p-1"
+      />
       <Button
         v-if="allowClear && selectedId != null"
         type="button"

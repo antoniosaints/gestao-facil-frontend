@@ -1,24 +1,37 @@
 <script setup lang="ts">
+import { useRoute, useRouter } from 'vue-router'
+import { linkedRecordId } from '@/components/navigation/linkedRecord'
 import { Input } from '@/components/ui/input'
 
 import ModalDialog from '../components/ModalDialog.vue'
 import PageHeader from '../components/PageHeader.vue'
 import PageFrame from '../components/PageFrame.vue'
 import RecordsTable from '../components/RecordsTable.vue'
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { usePage } from '../application/usePage'
 import { api } from '../adapters/domain'
 import { errorMessage } from '../application/format'
 import Feedback from '../components/Feedback.vue'
 import PageControls from '../components/PageControls.vue'
+const route = useRoute()
+const router = useRouter()
 const { rows, page, pages, total, search, loading, error, load } = usePage(
   () => '/modofacil/produtos/categorias',
+  () => ({ categoria: linkedRecordId(route.query.categoria) }),
 )
 const creating = ref(false)
 const nome = ref(''),
   busy = ref(false),
   message = ref('')
-onMounted(() => load())
+watch(() => route.query.categoria, () => void load(), { immediate: true })
+
+async function buscar() {
+  if (route.query.categoria) {
+    await router.replace({ query: { ...route.query, categoria: undefined, page: '1' } })
+  } else {
+    await load(true)
+  }
+}
 async function save() {
   busy.value = true
   error.value = ''
@@ -75,7 +88,7 @@ async function save() {
         </fieldset>
       </form>
     </ModalDialog>
-    <form class="mf-actions my-4 flex flex-wrap items-end gap-3" @submit.prevent="load(true)">
+    <form class="mf-actions my-4 flex flex-wrap items-end gap-3" @submit.prevent="buscar">
       <label
         >Buscar categoria<Input
           placeholder="Buscar pelo nome da categoria"

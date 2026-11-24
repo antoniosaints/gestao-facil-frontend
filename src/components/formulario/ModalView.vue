@@ -107,8 +107,8 @@ const contentStyle = computed(() => ({
                                 <component v-if="icon" :is="icon" class="h-5 w-5 inline-flex" />
                                 <slot name="title">{{ title }}</slot>
                             </SheetTitle>
-                            <SheetDescription v-if="description">
-                                {{ description }}
+                            <SheetDescription v-if="description || $slots.description">
+                                <slot name="description">{{ description }}</slot>
                             </SheetDescription>
                         </div>
                         <slot name="header-actions" />
@@ -134,8 +134,8 @@ const contentStyle = computed(() => ({
                                 <component v-if="icon" :is="icon" class="h-5 w-5 inline-flex" />
                                 <slot name="title">{{ title }}</slot>
                             </DialogTitle>
-                            <DialogDescription v-if="description">
-                                {{ description }}
+                            <DialogDescription v-if="description || $slots.description">
+                                <slot name="description">{{ description }}</slot>
                             </DialogDescription>
                         </div>
                         <slot name="header-actions" />
@@ -155,8 +155,8 @@ const contentStyle = computed(() => ({
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <DrawerTitle><slot name="title">{{ title }}</slot></DrawerTitle>
-                            <DrawerDescription v-if="description">
-                                {{ description }}
+                            <DrawerDescription v-if="description || $slots.description">
+                                <slot name="description">{{ description }}</slot>
                             </DrawerDescription>
                         </div>
                         <slot name="header-actions" />

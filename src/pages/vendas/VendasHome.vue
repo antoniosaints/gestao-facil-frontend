@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLinkedRecordModal } from '@/composables/useLinkedRecordModal'
 import MobileVendas from '@/pages/vendas/Home/MobileVendas.vue';
 import TabelaVendas from './Home/TabelaVendas.vue';
 import ModalVendas from './formulario/ModalVendas.vue';
@@ -36,6 +37,12 @@ onMounted(() => {
 })
 
 provide('openModalFiltroVendas', openFilter);
+useLinkedRecordModal({
+  isOpen: () => store.openModalDetalhes,
+  show: store.openDetalhes,
+  close: () => store.fecharDetalhes?.(),
+  returnTo: () => ({ name: 'vendas-home' }),
+})
 </script>
 
 <template>

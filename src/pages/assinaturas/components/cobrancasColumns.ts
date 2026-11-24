@@ -1,3 +1,4 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { Button } from '@/components/ui/button'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
@@ -61,7 +62,7 @@ export const columnsCobrancasAssinatura: ColumnDef<AssinaturaCicloListItem>[] = 
     header: () => render('div', {}, 'Contrato / cliente'),
     cell: ({ row }) =>
       render('div', {}, [
-        render('div', { class: 'font-medium text-foreground' }, row.original.assinatura.nomeContrato),
+        render(EntityLink, { kind: 'assinatura', recordId: row.original.assinatura.id, label: row.original.assinatura.nomeContrato, class: 'font-medium' }),
         render('div', { class: 'text-xs text-muted-foreground' }, row.original.assinatura.cliente),
       ]),
     enableSorting: false,

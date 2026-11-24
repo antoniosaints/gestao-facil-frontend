@@ -215,6 +215,7 @@ export const MENU_SUBMENU_VISIBILITY_OPTIONS: Record<
     { key: 'financeiro:assinaturas-a-pagar', nome: 'Assinaturas' },
     { key: 'financeiro:inadimplencia', nome: 'Inadimplência' },
     { key: 'financeiro:cobrancas', nome: 'Cobranças' },
+    { key: 'financeiro:emprestimos', nome: 'Empréstimos' },
     { key: 'financeiro:demonstrativo', nome: 'Demonstrativo' },
     { key: 'financeiro:plano-de-contas', nome: 'Plano de contas' },
   ],
@@ -795,6 +796,13 @@ export const sidebarMenuOptions = (
           link: '/financeiro/cobrancas',
           icone: HandCoins,
           show: permissions.admin,
+          color: 'emerald',
+        },
+        {
+          key: 'financeiro:emprestimos',
+          nome: 'Empréstimos',
+          link: '/financeiro/emprestimos',
+          icone: WalletCards,
           color: 'emerald',
         },
         {

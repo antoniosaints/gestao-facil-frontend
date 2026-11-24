@@ -39,7 +39,7 @@
           </div>
         </div>
 
-        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cliente: {{ row.Cliente?.nome || '-' }}</div>
+        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cliente: <EntityLink kind="cliente" :record-id="row.clienteId ?? row.Cliente?.id" :label="row.Cliente?.nome || '-'" /></div>
         <div class="text-sm font-medium text-gray-700 dark:text-gray-100">
           {{ formatCurrencyBR(getTotal(row)) }}
         </div>
@@ -171,6 +171,7 @@
 </template>
 
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { onMounted, ref, watch } from 'vue'
 import http from '@/utils/axios'
 import type { ItensOrdensServico, OrdensServico } from '@/types/schemas'

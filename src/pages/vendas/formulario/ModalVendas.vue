@@ -320,7 +320,7 @@ watch(() => store.openModal, (open) => {
                 <div class="col-span-12 md:col-span-6">
                     <label class="block text-sm mb-1">Cliente</label>
                     <div class="flex items-center justify-center gap-2">
-                        <Select2Ajax v-model="store.form.clienteId" class="w-full" url="/clientes/select2"
+                        <Select2Ajax v-model="store.form.clienteId" class="w-full" url="/clientes/select2" linked-kind="cliente"
                             :allow-clear="true" />
                         <button type="button" @click="abrirCadastroClienteVenda"
                             class="bg-primary px-4 py-1.5 text-white rounded-md border border-border dark:border-border-dark flex justify-center items-center">+</button>

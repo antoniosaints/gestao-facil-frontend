@@ -1,3 +1,4 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { render } from '@/lib/utils'
 import type { ItensOrdensServico, OrdensServico, Servicos } from '@/types/schemas'
@@ -156,7 +157,7 @@ export const columnsServicos: ColumnDef<OrdemRecebida>[] = [
     header: ({ column }) =>
       render(DataTableColumnHeader, { column, title: 'Cliente' }),
     cell: ({ row }) => {
-      return render('div', {}, row.original.Cliente?.nome || '-')
+      return render(EntityLink, { kind: 'cliente', recordId: row.original.clienteId ?? row.original.Cliente?.id, label: row.original.Cliente?.nome })
     },
   },
   {

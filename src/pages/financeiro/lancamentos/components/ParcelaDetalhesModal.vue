@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import {
@@ -190,7 +191,7 @@ const referencia = computed(() =>
             <FileText class="size-4 shrink-0" aria-hidden="true" /> Categoria
           </dt>
           <dd class="break-words text-sm font-medium leading-relaxed">
-            {{ parcela.categoria || 'Não informada' }}
+            <EntityLink kind="categoria" :record-id="parcela.categoriaId" :label="parcela.categoria || 'Não informada'" />
           </dd>
         </div>
         <div class="min-w-0">
@@ -198,7 +199,7 @@ const referencia = computed(() =>
             <Wallet class="size-4 shrink-0" aria-hidden="true" /> Conta financeira
           </dt>
           <dd class="break-words text-sm font-medium leading-relaxed">
-            {{ parcela.conta || 'Não informada' }}
+            <EntityLink kind="conta" :record-id="parcela.contaFinanceiraId" :label="parcela.conta || 'Não informada'" />
           </dd>
         </div>
         <div class="min-w-0">
@@ -221,7 +222,7 @@ const referencia = computed(() =>
           <dt class="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
             <UserRound class="size-4 shrink-0" aria-hidden="true" /> Cliente / fornecedor
           </dt>
-          <dd class="break-words text-sm font-medium leading-relaxed">{{ parcela.cliente }}</dd>
+          <dd class="break-words text-sm font-medium leading-relaxed"><EntityLink kind="cliente" :record-id="parcela.clienteId" :label="parcela.cliente" /></dd>
         </div>
       </dl>
 

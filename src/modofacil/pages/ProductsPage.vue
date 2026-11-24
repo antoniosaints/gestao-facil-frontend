@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DeleteRecord from '../components/DeleteRecord.vue'
 import RecordStatusAction from '../components/RecordStatusAction.vue'
 import FormSelect from '../components/FormSelect.vue'
@@ -121,7 +122,7 @@ onMounted(() => load())
           ><strong>{{ row.nome }}</strong></RouterLink
         ><small>{{ row.codigo || row.Uid || `Produto #${row.id}` }}</small></template
       >
-      <template #category="{ row }">{{ row.categoria || 'Sem categoria' }}</template>
+      <template #category="{ row }"><EntityLink kind="categoriaProduto" :record-id="row.categoriaId" :label="row.categoria || 'Sem categoria'" /></template>
       <template #variants="{ row }">{{ row.totalVariantes ?? '—' }}</template>
       <template #price="{ row }"
         ><strong class="whitespace-nowrap">{{

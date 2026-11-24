@@ -556,7 +556,7 @@ async function save() {
               <Label for="assinaturaCliente" class="mb-1.5 block text-sm font-medium">
                 Cliente <span class="text-red-500">*</span>
               </Label>
-              <Select2Ajax id="assinaturaCliente" v-model="form.clienteId" url="/clientes/select2" class="w-full" />
+              <Select2Ajax id="assinaturaCliente" v-model="form.clienteId" url="/clientes/select2" linked-kind="cliente" class="w-full" />
             </div>
             <div class="md:col-span-4">
               <Label for="nomeContrato" class="mb-1.5 block text-sm font-medium">

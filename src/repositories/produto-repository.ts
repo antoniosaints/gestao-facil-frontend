@@ -592,11 +592,12 @@ export class ProdutoVarianteRepository {
 }
 
 export class ProdutoCategoriaRepository {
-  static async list() {
+  static async list(categoria?: number) {
     const { data } = await http.get(`/produtos/categorias`, {
       params: {
         page: 1,
         pageSize: 200,
+        categoria,
       },
     })
     return data

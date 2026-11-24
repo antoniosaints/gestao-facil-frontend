@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLinkedRecordModal } from '@/composables/useLinkedRecordModal'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { BadgePlus, FileDigit, RotateCw } from 'lucide-vue-next'
 import Tabela from './tabela/Tabela.vue'
@@ -13,6 +14,12 @@ import GerarCobranca from '@/pages/financeiro/lancamentos/modais/GerarCobranca.v
 
 const store = useOrdemServicoStore()
 const uiStore = useUiStore()
+useLinkedRecordModal({
+  isOpen: () => store.openModalDetalheOs,
+  show: store.openDetalhes,
+  close: store.fecharDetalhes,
+  returnTo: () => ({ name: 'servicos-ordens-servicos' }),
+})
 </script>
 
 <template>

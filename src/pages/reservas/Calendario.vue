@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from 'date-fns'
@@ -130,7 +131,7 @@ onMounted(load)
     <Dialog :open="!!selectedBooking" @update:open="!$event && (selectedBooking = null)">
       <DialogContent v-if="selectedBooking" class="max-w-xl">
         <DialogHeader>
-          <DialogTitle>{{ selectedBooking.nomeCliente }}</DialogTitle>
+          <DialogTitle><EntityLink kind="cliente" :record-id="selectedBooking.Cliente?.id" :label="selectedBooking.nomeCliente" /></DialogTitle>
         </DialogHeader>
 
         <div class="grid gap-3 sm:grid-cols-2">

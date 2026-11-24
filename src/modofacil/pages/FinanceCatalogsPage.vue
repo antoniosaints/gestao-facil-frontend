@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
+import { linkedRecordId } from '@/components/navigation/linkedRecord'
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { useLookupOptions } from '../adapters/lookups'
 import FormSelect from '../components/FormSelect.vue'
 import FormSwitch from '../components/FormSwitch.vue'
@@ -8,7 +11,7 @@ import ModalDialog from '../components/ModalDialog.vue'
 import PageHeader from '../components/PageHeader.vue'
 import PageFrame from '../components/PageFrame.vue'
 import RecordsTable from '../components/RecordsTable.vue'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useUiStore } from '@/stores/ui/uiStore'
 import { hasPermission } from '@/hooks/authorize'
 import { api, type Row } from '../adapters/domain'
@@ -16,6 +19,8 @@ import { decimal, money, errorMessage } from '../application/format'
 import { useDomainMutation } from '../application/useDomainMutation'
 import { useFlow } from '../application/useFlow'
 import Feedback from '../components/Feedback.vue'
+const route = useRoute()
+const categoriaSelecionada = ref<number | null>(null)
 const editorOpen = ref(false)
 const ui = useUiStore(),
   tab = ref<'contas' | 'categorias'>('contas'),
@@ -72,7 +77,15 @@ function edit(row: Row) {
   color.value = row.corDestaque || '#12617b'
   ignorarNosCalculos.value = Boolean(row.ignorarNosCalculos)
 }
-onMounted(load)
+watch(() => [route?.query.tab, route?.query.categoria] as const, ([alvo, id]) => {
+  tab.value = alvo === 'categorias' ? 'categorias' : 'contas'
+  categoriaSelecionada.value = linkedRecordId(id)
+  void load()
+}, { immediate: true })
+const visibleRows = computed(() => tab.value === 'categorias' && categoriaSelecionada.value
+  ? rows.value.filter((row) => row.id === categoriaSelecionada.value)
+  : rows.value)
+
 async function save() {
   validation.value = ''
   if (!canManage.value || !name.value.trim()) {
@@ -142,6 +155,7 @@ async function save() {
         @click="
           () => {
             tab = 'categorias'
+            categoriaSelecionada = null
             reset()
             load()
           }
@@ -157,7 +171,7 @@ async function save() {
       @retry="load"
     />
     <RecordsTable
-      :rows="rows"
+      :rows="visibleRows"
       :loading="loading"
       :failed="!!loadError"
       :caption="tab === 'contas' ? 'Contas financeiras' : 'Categorias financeiras'"
@@ -168,7 +182,7 @@ async function save() {
       ]"
     >
       <template #name="{ row }">
-        <strong>{{ row.nome }}</strong>
+        <strong><EntityLink v-if="tab === 'contas'" kind="conta" :record-id="row.id" :label="row.nome" /><template v-else>{{ row.nome }}</template></strong>
         <small v-if="row.ignorarNosCalculos" class="block text-muted-foreground">Fora dos cálculos gerais</small>
       </template>
       <template #balance="{ row }">{{ money(row.saldoAtual ?? row.saldoInicial) }}</template>

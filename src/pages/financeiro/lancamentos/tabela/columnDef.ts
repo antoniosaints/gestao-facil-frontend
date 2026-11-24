@@ -1,3 +1,4 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { render } from '@/lib/utils'
 import type { CategoriaFinanceiro, LancamentoFinanceiro, ParcelaFinanceiro } from '@/types/schemas'
@@ -8,7 +9,6 @@ import {
   Calendar,
   ClockAlert,
   EyeOff,
-  FlagTriangleRight,
   Loader,
   Tag,
   TrendingDown,
@@ -283,12 +283,7 @@ cell: ({ row }) =>
     header: ({ column }) =>
       render(DataTableColumnHeader, { column, title: 'Categoria' }),
     cell: ({ row }) => {
-      return render(BadgeCell, {
-        label: row.original.categoria.nome,
-        color: 'blue',
-        icon: FlagTriangleRight,
-        capitalize: false,
-      })
+      return render(EntityLink, { kind: 'categoria', recordId: row.original.categoriaId, label: row.original.categoria?.nome })
     },
   },
   {

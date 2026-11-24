@@ -1,4 +1,5 @@
 import http from '@/utils/axios'
+import { randomUUID } from '@/utils/uuid'
 export interface Configuration {
   modo: 'NORMAL' | 'FACIL'
   versao: number
@@ -19,7 +20,7 @@ function configuration(value: unknown): Configuration {
 export const configurationApi = {
   async get(): Promise<Configuration> {
     const { data } = await http.get('/modofacil/configuracao', {
-      params: { _mfRead: crypto.randomUUID() },
+      params: { _mfRead: randomUUID() },
     })
     return configuration(data.data ?? data)
   },

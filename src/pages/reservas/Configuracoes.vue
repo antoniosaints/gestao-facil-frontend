@@ -377,8 +377,8 @@ onMounted(() => { void load(); void loadWhatsAppAccess() })
           <CardHeader><CardTitle>Automação financeira</CardTitle><p class="text-sm text-muted-foreground">Defina onde as receitas das reservas serão registradas.</p></CardHeader>
           <CardContent class="grid gap-4 sm:grid-cols-2">
             <div class="flex items-center justify-between gap-4 rounded-lg border p-4 sm:col-span-2"><div><Label for="lancamento-automatico">Criar lançamento automaticamente</Label><p class="text-xs text-muted-foreground">A confirmação do pagamento gera a receita conforme a política do serviço.</p></div><Switch id="lancamento-automatico" v-model="config.lancamentoAutomatico" /></div>
-            <div class="space-y-1.5"><Label>Categoria financeira</Label><Select2Ajax v-model="config.categoriaFinanceiraId" url="/lancamentos/categorias/select2" :disabled="!config.lancamentoAutomatico" allow-clear placeholder="Busque a categoria…" /></div>
-            <div class="space-y-1.5"><Label>Conta financeira</Label><Select2Ajax v-model="config.contaFinanceiraId" url="/lancamentos/contas/select2" :disabled="!config.lancamentoAutomatico" allow-clear placeholder="Busque a conta…" /></div>
+            <div class="space-y-1.5"><Label>Categoria financeira</Label><Select2Ajax v-model="config.categoriaFinanceiraId" url="/lancamentos/categorias/select2" linked-kind="categoria" :disabled="!config.lancamentoAutomatico" allow-clear placeholder="Busque a categoria…" /></div>
+            <div class="space-y-1.5"><Label>Conta financeira</Label><Select2Ajax v-model="config.contaFinanceiraId" url="/lancamentos/contas/select2" linked-kind="conta" :disabled="!config.lancamentoAutomatico" allow-clear placeholder="Busque a conta…" /></div>
             <p class="sm:col-span-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">Pagamento integral cria receita quitada. Em sinal, o valor total é lançado e a entrada fica registrada, mantendo o saldo pendente.</p>
           </CardContent>
         </Card>

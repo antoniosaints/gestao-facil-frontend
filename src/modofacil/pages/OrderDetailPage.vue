@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import ModalAction from '../components/ModalAction.vue'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -264,11 +265,7 @@ async function reverse() {
           <div>
             <dt>Cliente</dt>
             <dd>
-              <RouterLink
-                v-if="order.clienteId && order.Cliente?.nome"
-                :to="`/modofacil/pessoas/${order.clienteId}`"
-                >{{ order.Cliente.nome }}</RouterLink
-              ><span v-else>{{ order.Cliente?.nome || 'Não informado' }}</span>
+              <EntityLink kind="cliente" :record-id="order.clienteId ?? order.Cliente?.id" :label="order.Cliente?.nome || 'Não informado'" />
             </dd>
           </div>
           <div>

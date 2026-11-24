@@ -89,6 +89,8 @@ async function open(component: Component, product = false) {
     history: createMemoryHistory(),
     routes: [
       { path: product ? '/modofacil/produtos/:produtoBaseId' : '/modofacil/vendas/:id', component },
+      { path: '/modofacil/pessoas/:id', name: 'modofacil-pessoa', meta: { permissao: 2 }, component: { template: '<div />' } },
+      { path: '/modofacil/financeiro/lancamentos/:id', name: 'modofacil-lancamento', meta: { permissao: 3 }, component: { template: '<div />' } },
       { path: '/:pathMatch(.*)*', component: { template: '<div />' } },
     ],
   })

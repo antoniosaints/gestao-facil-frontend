@@ -35,6 +35,10 @@ export default defineConfig({
       workbox: {
         runtimeCaching: [
           {
+            urlPattern: /\/api\/emprestimos(?:\/|$)/,
+            handler: 'NetworkOnly',
+          },
+          {
             urlPattern: new RegExp(`^${env.VITE_API_URL.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}`),
             handler: 'NetworkFirst',
             options: {

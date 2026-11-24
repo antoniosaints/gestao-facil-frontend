@@ -538,7 +538,7 @@ watch(
             <Select2Ajax
               id="clienteIdLancamentoEdicao"
               v-model="store.form.clienteId"
-              url="/clientes/select2"
+              url="/clientes/select2" linked-kind="cliente"
               allowClear
             />
           </div>
@@ -559,7 +559,7 @@ watch(
             <Select2Ajax
               id="categoriaIdLancamentoEdicao"
               v-model="store.form.categoriaId"
-              url="lancamentos/categorias/select2"
+              url="lancamentos/categorias/select2" linked-kind="categoria"
             />
             <p v-if="erros.categoriaId" class="text-sm text-red-600">{{ erros.categoriaId }}</p>
             <button v-if="categoriaIa.sugestao" type="button"
@@ -579,7 +579,7 @@ watch(
             <Select2Ajax
               id="contasFinanceiroIdEdicao"
               v-model="store.form.contasFinanceiroId"
-              url="lancamentos/contas/select2"
+              url="lancamentos/contas/select2" linked-kind="conta"
             />
             <p v-if="erros.contasFinanceiroId" class="text-sm text-red-600">
               {{ erros.contasFinanceiroId }}
@@ -990,7 +990,7 @@ watch(
               <Select2Ajax
                 id="clienteIdLancamento"
                 v-model="store.form.clienteId"
-                url="/clientes/select2"
+                url="/clientes/select2" linked-kind="cliente"
                 allowClear
               />
             </div>
@@ -1011,7 +1011,7 @@ watch(
               <Select2Ajax
                 id="categoriaIdLancamento"
                 v-model="store.form.categoriaId"
-                url="lancamentos/categorias/select2"
+                url="lancamentos/categorias/select2" linked-kind="categoria"
               />
               <p v-if="erros.categoriaId" class="text-sm text-red-600">{{ erros.categoriaId }}</p>
               <button v-if="categoriaIa.sugestao" type="button"
@@ -1031,7 +1031,7 @@ watch(
               <Select2Ajax
                 id="contasFinanceiroId"
                 v-model="store.form.contasFinanceiroId"
-                url="lancamentos/contas/select2"
+                url="lancamentos/contas/select2" linked-kind="conta"
               />
               <p v-if="erros.contasFinanceiroId" class="text-sm text-red-600">
                 {{ erros.contasFinanceiroId }}

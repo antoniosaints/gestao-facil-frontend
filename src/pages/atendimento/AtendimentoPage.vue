@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { phoneMaskOptions } from '@/lib/imaska'
 import { vMaska } from '@/lib/maska'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
@@ -1506,7 +1507,7 @@ onMounted(async () => {
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
-              <h2 class="truncate text-sm font-semibold">{{ conversationLabel(selectedConversation) }}</h2>
+              <h2 class="truncate text-sm font-semibold"><EntityLink kind="cliente" :record-id="selectedConversation.clienteId ?? selectedConversation.Cliente?.id" :label="conversationLabel(selectedConversation)" /></h2>
               <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium" :class="statusPillClass(selectedConversation.status)">
                 {{ statusLabel(selectedConversation.status) }}
               </span>
@@ -1589,7 +1590,7 @@ onMounted(async () => {
               <option v-for="customer in customerOptions" :key="customer.id" :value="customer.id">{{ customer.label }}</option>
             </select>
             <p v-if="selectedConversation.Cliente" class="flex items-center gap-1 text-xs text-green-600">
-              <UserPlus class="h-3.5 w-3.5" /> Vinculado: {{ selectedConversation.Cliente.nome }}
+              <UserPlus class="h-3.5 w-3.5" /> Vinculado: <EntityLink kind="cliente" :record-id="selectedConversation.clienteId ?? selectedConversation.Cliente.id" :label="selectedConversation.Cliente.nome" />
             </p>
           </div>
           <div class="space-y-1">

@@ -104,6 +104,12 @@ const routes: RouteInterface[] = [
     meta: { isPublic: true },
   },
   {
+    path: '/emprestimo',
+    name: 'emprestimo-publico',
+    component: () => import('@/pages/financeiro/emprestimos/Publico.vue'),
+    meta: { isPublic: true },
+  },
+  {
     path: '/reservar/:slug',
     name: 'reservas-publica',
     component: () => import('@/pages/reservas/publico/Reservar.vue'),
@@ -297,6 +303,12 @@ const routes: RouteInterface[] = [
           layout: 'main',
           permissao: 2,
         },
+      },
+      {
+        path: ':id',
+        name: 'vendas-detalhes',
+        component: () => import('@/pages/vendas/VendasHome.vue'),
+        meta: { layout: 'main', permissao: 2 },
       },
       {
         path: 'dashboard',
@@ -777,6 +789,12 @@ const routes: RouteInterface[] = [
         },
       },
       {
+        path: 'emprestimos',
+        name: 'financeiro-emprestimos',
+        component: () => import('@/pages/financeiro/emprestimos/Home.vue'),
+        meta: { layout: 'main', permissao: 3, title: 'Empréstimos' },
+      },
+      {
         path: 'acompanhamento',
         name: 'lancamentos-acompanhamento',
         component: () => import('@/pages/financeiro/lancamentos/AcompanhamentoMensal.vue'),
@@ -1067,6 +1085,12 @@ const routes: RouteInterface[] = [
           layout: 'main',
           permissao: 2,
         },
+      },
+      {
+        path: 'os/:id',
+        name: 'servicos-ordem-detalhes',
+        component: () => import('@/pages/servicos/os/Home.vue'),
+        meta: { layout: 'main', permissao: 2 },
       },
       {
         path: 'painel',

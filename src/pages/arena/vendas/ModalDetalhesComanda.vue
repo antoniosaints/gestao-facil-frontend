@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
@@ -314,7 +315,7 @@ function getComboComponents(itemId?: number) {
               </div>
               <div>
                 <div class="text-[11px] uppercase tracking-wide">Cliente vinculado</div>
-                <div class="font-medium text-foreground">{{ comanda.Cliente?.nome || 'Não informado' }}</div>
+                <div class="font-medium text-foreground"><EntityLink kind="cliente" :record-id="comanda.clienteId ?? comanda.Cliente?.id" :label="comanda.Cliente?.nome || 'Não informado'" /></div>
               </div>
             </div>
 

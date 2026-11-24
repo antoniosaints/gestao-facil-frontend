@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
@@ -460,7 +461,7 @@ onMounted(() => {
                     {{ detalhe.nomeContrato }}
                   </div>
                   <div class="text-sm text-muted-foreground">
-                    {{ detalhe.cliente?.nome || 'Cliente não informado' }} • {{ detalhe.plano?.nome || 'Sem plano base'
+                    <EntityLink kind="cliente" :record-id="detalhe.cliente?.id" :label="detalhe.cliente?.nome || 'Cliente não informado'" /> • {{ detalhe.plano?.nome || 'Sem plano base'
                     }}
                   </div>
                 </div>
@@ -510,7 +511,7 @@ onMounted(() => {
                     <div class="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground">
                       <Wallet class="h-4 w-4 text-primary" />
                       <span v-if="detalhe.contaFinanceira">
-                        {{ detalhe.contaFinanceira.nome }}
+                        <EntityLink kind="conta" :record-id="detalhe.contaFinanceira.id" :label="detalhe.contaFinanceira.nome" />
                         <span v-if="detalhe.categoria" class="font-normal text-muted-foreground"> • {{ detalhe.categoria.nome }}</span>
                       </span>
                       <span v-else class="font-normal text-muted-foreground">Padrão (primeira conta cadastrada)</span>

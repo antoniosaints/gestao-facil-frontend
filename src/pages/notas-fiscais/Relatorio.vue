@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 
 import { computed, h, reactive, ref, watch } from 'vue'
@@ -116,8 +117,8 @@ async function download(document: FiscalDocument, format: 'xml' | 'pdf') {
 const columns: ColumnDef<FiscalDocument>[] = [
   { accessorKey: 'criadoEm', header: ({ column }) => sortHeader('Criada em', column), cell: ({ row }) => h('span', { class: 'whitespace-nowrap text-xs' }, formatDate(row.original.criadoEm)) },
   { accessorKey: 'tipo', header: ({ column }) => sortHeader('Tipo', column), cell: ({ row }) => h('span', { class: 'font-semibold' }, typeLabels[row.original.tipo] || row.original.tipo) },
-  { accessorKey: 'numero', header: ({ column }) => sortHeader('Número', column), cell: ({ row }) => h('div', { class: 'min-w-28' }, [h('p', { class: 'font-medium' }, row.original.numero ? `${row.original.serie || 1}/${row.original.numero}` : row.original.rpsNumero ? `RPS ${row.original.rpsNumero}` : `#${row.original.id}`), h('p', { class: 'text-xs text-muted-foreground' }, row.original.vendaUid || (row.original.vendaId ? `Venda #${row.original.vendaId}` : 'Avulsa'))]) },
-  { id: 'cliente', header: 'Cliente / tomador', cell: ({ row }) => h('div', { class: 'min-w-36' }, [h('p', { class: 'font-medium' }, row.original.cliente?.nome || 'Consumidor final'), h('p', { class: 'text-xs text-muted-foreground' }, row.original.cliente?.documento || 'Sem documento')]) },
+  { accessorKey: 'numero', header: ({ column }) => sortHeader('Número', column), cell: ({ row }) => h('div', { class: 'min-w-28' }, [h('p', { class: 'font-medium' }, row.original.numero ? `${row.original.serie || 1}/${row.original.numero}` : row.original.rpsNumero ? `RPS ${row.original.rpsNumero}` : `#${row.original.id}`), h('p', { class: 'text-xs text-muted-foreground' }, [h(EntityLink, { kind: 'venda', recordId: row.original.vendaId, label: row.original.vendaUid || (row.original.vendaId ? `Venda #${row.original.vendaId}` : 'Avulsa') })])]) },
+  { id: 'cliente', header: 'Cliente / tomador', cell: ({ row }) => h('div', { class: 'min-w-36' }, [h(EntityLink, { kind: 'cliente', recordId: row.original.cliente?.id, label: row.original.cliente?.nome || 'Consumidor final', class: 'font-medium' }), h('p', { class: 'text-xs text-muted-foreground' }, row.original.cliente?.documento || 'Sem documento')]) },
   { accessorKey: 'status', header: ({ column }) => sortHeader('Status', column), cell: ({ row }) => h(FiscalStatusBadge, { status: row.original.status, error: row.original.erroMensagem }) },
   { accessorKey: 'valorTotal', header: ({ column }) => sortHeader('Valor', column), cell: ({ row }) => h('strong', { class: 'whitespace-nowrap' }, formatCurrencyBR(row.original.valorTotal)) },
   { id: 'ambiente', header: 'Ambiente', cell: ({ row }) => h('span', { class: 'text-xs' }, row.original.ambiente === 'HOMOLOGACAO' ? 'Homologação' : row.original.ambiente === 'PRODUCAO' ? 'Produção' : '—') },

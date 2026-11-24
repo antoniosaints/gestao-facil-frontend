@@ -141,6 +141,7 @@ async function open(
     history: createMemoryHistory(),
     routes: [
       { path: pattern, component },
+      { path: '/modofacil/vendas/:id', name: 'modofacil-venda', meta: { permissao: 2 }, component: { template: '<div />' } },
       { path: '/:pathMatch(.*)*', component: { template: '<div />' } },
     ],
   })

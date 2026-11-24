@@ -134,6 +134,7 @@ export interface ReservationsDashboard {
   topRecursos: Array<{ nome: string; reservas: number; receita: number }>
   proximas: Array<{
     id: number
+    clienteId?: number | null
     nomeCliente: string
     servicoNome: string
     recursoNome: string

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed } from 'vue'
 import {
   Ban,
@@ -619,7 +620,7 @@ const maiorQuantidadeProduto = computed(() =>
           <article v-for="venda in vendas" :key="venda.id" class="rounded-lg border bg-background p-3">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
-                <p class="truncate text-sm font-semibold">{{ venda.Uid || `#${venda.id}` }}</p>
+                <p class="truncate text-sm font-semibold"><EntityLink kind="venda" :record-id="venda.id" :label="venda.Uid || `#${venda.id}`" /></p>
                 <p class="text-xs text-muted-foreground">{{ formatarDataHora(venda.data) }}</p>
               </div>
               <span class="shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
@@ -640,10 +641,6 @@ const maiorQuantidadeProduto = computed(() =>
                 <strong class="tabular-nums">{{ formatCurrencyBR(venda.valor || 0) }}</strong>
               </div>
             </div>
-            <Button type="button" variant="outline" size="sm" class="mt-3 w-full" @click="emit('ver-venda', venda.id)">
-              <Eye class="h-4 w-4" />
-              Detalhes da venda
-            </Button>
           </article>
         </div>
 
@@ -661,7 +658,7 @@ const maiorQuantidadeProduto = computed(() =>
             </thead>
             <tbody>
               <tr v-for="venda in vendas" :key="venda.id" class="border-b last:border-b-0 hover:bg-muted/30">
-                <td class="px-3 py-1 font-medium">{{ venda.Uid || `#${venda.id}` }}</td>
+                <td class="px-3 py-1 font-medium"><EntityLink kind="venda" :record-id="venda.id" :label="venda.Uid || `#${venda.id}`" /></td>
                 <td class="px-3 py-1 text-muted-foreground">{{ formatarDataHora(venda.data) }}</td>
                 <td class="px-3 py-1">
                   <span class="rounded-full border px-2 py-0.5 text-[11px] font-semibold"

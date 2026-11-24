@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, ref, watch } from 'vue'
 import { addDays, format } from 'date-fns'
 import { useToast } from 'vue-toastification'
@@ -351,7 +352,7 @@ watch(
                 />
               </div>
               <p class="mt-0.5 truncate text-xs text-muted-foreground">
-                {{ ordem.Cliente?.nome || 'Cliente não informado' }} • aberta em {{ formatDateSafe(ordem.data) }}
+                <EntityLink kind="cliente" :record-id="ordem.clienteId ?? ordem.Cliente?.id" :label="ordem.Cliente?.nome || 'Cliente não informado'" /> • aberta em {{ formatDateSafe(ordem.data) }}
               </p>
             </div>
           </div>
@@ -404,7 +405,7 @@ watch(
             <UserRound class="mt-0.5 h-4 w-4 shrink-0 text-cyan-600" />
             <div class="min-w-0">
               <p class="text-[10px] uppercase tracking-wide text-muted-foreground">Cliente</p>
-              <p class="truncate text-xs font-semibold">{{ ordem.Cliente?.nome || 'Não informado' }}</p>
+              <p class="truncate text-xs font-semibold"><EntityLink kind="cliente" :record-id="ordem.clienteId ?? ordem.Cliente?.id" :label="ordem.Cliente?.nome || 'Não informado'" /></p>
               <p class="mt-0.5 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
                 <Phone class="h-3 w-3 shrink-0" />{{ ordem.Cliente?.telefone || 'Sem telefone' }}
               </p>

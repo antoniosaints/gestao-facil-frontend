@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import EntityLink from '@/components/navigation/EntityLink.vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 import { addDays } from 'date-fns'
 import { useToast } from 'vue-toastification'
 import {
@@ -9,7 +9,6 @@ import {
   CircleDollarSign,
   CircleX,
   Copy,
-  ExternalLink,
   FileClock,
   FileText,
   FlagTriangleRight,
@@ -87,11 +86,11 @@ function hostSuporta(acao: AcaoHost) {
 }
 
 const store = useVendasStore()
+onBeforeUnmount(() => store.fecharDetalhes?.())
 const storeCobranca = useCobrancasFinanceirasStore()
 const storeLancamentos = useLancamentosStore()
 const uiStore = useUiStore()
 const toast = useToast()
-const router = useRouter()
 
 const venda = computed(() => store.venda ?? null)
 const itens = computed(() => venda.value?.ItensVendas ?? [])
@@ -244,12 +243,6 @@ function abrirCobranca() {
   storeCobranca.openSave({ id: venda.value.id, tipo: 'venda', valor: total.value })
 }
 
-function abrirLancamentoFinanceiro(id?: number) {
-  if (!id) return
-  store.openModalDetalhes = false
-  router.push({ path: '/financeiro/detalhes', query: { id } })
-}
-
 function efetivarParcelaFinanceira(parcela: any, lancamento?: any) {
   if (!parcela?.id) return
   storeLancamentos.idMutation = Number(parcela.id)
@@ -378,7 +371,7 @@ watch(() => storeCobranca.filters.update, recarregar)
                 </button>
               </div>
               <p class="mt-0.5 truncate text-xs text-muted-foreground">
-                {{ venda.cliente?.nome || 'Cliente não informado' }} • {{ formatDate(venda.data) }}
+                <EntityLink kind="cliente" :record-id="venda.clienteId ?? venda.cliente?.id" :label="venda.cliente?.nome || 'Cliente não informado'" /> • {{ formatDate(venda.data) }}
               </p>
             </div>
           </div>
@@ -451,7 +444,7 @@ watch(() => storeCobranca.filters.update, recarregar)
             <div class="min-w-0">
               <p class="text-[10px] uppercase tracking-wide text-muted-foreground">Cliente</p>
               <p class="truncate text-xs font-semibold">
-                {{ venda.cliente?.nome || 'Não informado' }}
+                <EntityLink kind="cliente" :record-id="venda.clienteId ?? venda.cliente?.id" :label="venda.cliente?.nome || 'Não informado'" />
               </p>
               <p class="mt-0.5 truncate text-[11px] text-muted-foreground">
                 Vendedor: {{ venda.vendedor?.nome || 'Não informado' }}
@@ -573,7 +566,7 @@ watch(() => storeCobranca.filters.update, recarregar)
                 </div>
                 <div class="min-w-0">
                   <p class="truncate font-medium">
-                    {{ item.produto?.nome || item.servico?.nome || item.itemName || 'Item' }}
+                    <EntityLink kind="produto" :record-id="item.produto?.produtoBaseId" :label="item.produto?.nome || item.servico?.nome || item.itemName || 'Item'" :variant-id="item.produto?.id" />
                   </p>
                   <p class="text-xs tabular-nums text-muted-foreground">
                     {{ item.quantidade }} x {{ formatCurrencyBR(Number(item.valor || 0)) }}
@@ -696,24 +689,13 @@ watch(() => storeCobranca.filters.update, recarregar)
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
                   <p class="truncate text-sm font-medium">
-                    {{ lancamento.descricao || `Lançamento #${lancamento.id}` }}
+                    <EntityLink kind="lancamento" :record-id="lancamento.id" :label="lancamento.descricao || `Lançamento #${lancamento.id}`" />
                   </p>
                   <p class="text-xs font-semibold tabular-nums text-muted-foreground">
                     {{ formatCurrencyBR(Number(lancamento.valorTotal || 0)) }}
                   </p>
                 </div>
                 <div class="flex shrink-0 items-center gap-1 self-end sm:self-auto">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    class="h-8 gap-1 px-2"
-                    v-tooltip="'Abrir lançamento'"
-                    @click="abrirLancamentoFinanceiro(lancamento.id)"
-                  >
-                    <ExternalLink class="h-4 w-4" />
-                    <span class="sr-only">Abrir lançamento</span>
-                  </Button>
                   <Button
                     type="button"
                     size="icon"

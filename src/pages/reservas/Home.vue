@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { phoneMaskOptions } from '@/lib/imaska'
 import { vMaska } from '@/lib/maska'
 import { computed, h, onMounted, reactive, ref, watch } from 'vue'
@@ -89,7 +90,7 @@ function selectBooking(booking: ReservationBooking) {
 
 const columns: ColumnDef<ReservationBooking>[] = [
   { accessorKey: 'inicio', header: 'Horário', cell: ({ row }) => dateTime(row.original.inicio) },
-  { accessorKey: 'nomeCliente', header: 'Cliente' },
+  { accessorKey: 'nomeCliente', header: 'Cliente', cell: ({ row }) => h(EntityLink, { kind: 'cliente', recordId: row.original.Cliente?.id, label: row.original.nomeCliente }) },
   { accessorKey: 'servicoNome', header: 'Serviço' },
   { accessorKey: 'recursoNome', header: 'Recurso' },
   {
@@ -405,20 +406,18 @@ onMounted(load)
       <DataTable :columns="columns" api="/reservas" :filters="filters" />
     </div>
     <div class="space-y-3 md:hidden">
-      <button
+      <article
         v-for="booking in mobileBookings"
         :key="booking.id"
-        type="button"
-        class="block w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        @click="selectBooking(booking)"
+        class="relative w-full rounded-xl"
       >
         <Card class="transition-colors hover:border-primary/50">
           <CardContent class="p-4">
-            <div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="truncate font-semibold">{{ booking.nomeCliente }}</p><p class="truncate text-sm text-muted-foreground">{{ booking.servicoNome }} · {{ booking.recursoNome }}</p></div><Badge :variant="statusVariant[booking.status]">{{ statusLabel[booking.status] }}</Badge></div>
+            <div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="truncate font-semibold"><EntityLink kind="cliente" :record-id="booking.Cliente?.id" :label="booking.nomeCliente" class="relative z-10" /></p><button type="button" class="block max-w-full truncate text-left text-sm text-muted-foreground after:absolute after:inset-0 after:rounded-xl focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-ring" @click="selectBooking(booking)">{{ booking.servicoNome }} · {{ booking.recursoNome }}</button></div><Badge :variant="statusVariant[booking.status]">{{ statusLabel[booking.status] }}</Badge></div>
             <div class="mt-4 flex justify-between text-sm"><span>{{ dateTime(booking.inicio) }}</span><strong class="tabular-nums">{{ formatCurrencyBR(Number(booking.valorTotal)) }}</strong></div>
           </CardContent>
         </Card>
-      </button>
+      </article>
       <p v-if="!mobileBookings.length && !loading" class="py-16 text-center text-muted-foreground">Nenhuma reserva encontrada.</p>
     </div>
 
@@ -458,7 +457,7 @@ onMounted(load)
 
     <Dialog :open="!!selected" @update:open="!$event && (selected = null)">
       <DialogContent v-if="selected" class="max-w-2xl">
-        <DialogHeader><DialogTitle>{{ selected.servicoNome }} · {{ selected.nomeCliente }}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{{ selected.servicoNome }} · <EntityLink kind="cliente" :record-id="selected.Cliente?.id" :label="selected.nomeCliente" /></DialogTitle></DialogHeader>
         <div class="grid gap-3 sm:grid-cols-3"><div class="rounded-lg border p-3"><p class="text-xs text-muted-foreground">Horário</p><b>{{ dateTime(selected.inicio) }}</b></div><div class="rounded-lg border p-3"><p class="text-xs text-muted-foreground">Recurso</p><b>{{ selected.recursoNome }}</b></div><div class="rounded-lg border p-3"><p class="text-xs text-muted-foreground">Status</p><Badge :variant="statusVariant[selected.status]">{{ statusLabel[selected.status] }}</Badge></div></div>
         <div class="rounded-lg border p-4 text-sm"><p><b>Contato:</b> {{ selected.telefoneCliente }} · {{ selected.emailCliente || 'sem e-mail' }}</p><p><b>Pagamento:</b> {{ formatCurrencyBR(Number(selected.valorPago)) }} de {{ formatCurrencyBR(Number(selected.valorTotal)) }}</p><p v-if="selected.observacoes"><b>Observações:</b> {{ selected.observacoes }}</p></div>
         <div v-if="!selected.Cliente" class="rounded-lg border p-3">

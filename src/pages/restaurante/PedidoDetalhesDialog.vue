@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed } from 'vue'
 import ModalView from '@/components/formulario/ModalView.vue'
 import { Badge } from '@/components/ui/badge'
@@ -189,7 +190,7 @@ function editarItens() {
             </Button>
           </div>
           <p class="mt-3 font-medium">
-            {{ props.pedido.clienteNomeSnapshot || 'Cliente visitante' }}
+            <EntityLink kind="cliente" :record-id="props.pedido.clienteId" :label="props.pedido.clienteNomeSnapshot || 'Cliente visitante'" />
           </p>
           <p
             v-if="props.pedido.clienteTelefone"

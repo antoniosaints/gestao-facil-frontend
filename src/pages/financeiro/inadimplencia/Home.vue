@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
 import { promptAppAccess } from '@/composables/useAppAccessPrompt'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -417,7 +418,7 @@ onMounted(load)
               <Checkbox :model-value="selected.has(item.id)" @update:model-value="toggleUm(item.id)" />
             </td>
             <td class="px-3 py-2">
-              <div class="font-medium text-foreground">{{ item.cliente?.nome || 'Sem cliente' }}</div>
+              <div class="font-medium text-foreground"><EntityLink kind="cliente" :record-id="item.cliente?.id" :label="item.cliente?.nome || 'Sem cliente'" /></div>
               <div class="text-xs text-muted-foreground">{{ item.descricao }} · {{ item.Uid }}</div>
             </td>
             <td class="px-3 py-2 text-right">
@@ -493,7 +494,7 @@ onMounted(load)
       <article v-for="item in items" :key="item.id" class="rounded-xl border bg-card p-4">
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
-            <div class="truncate font-semibold text-foreground">{{ item.cliente?.nome || 'Sem cliente' }}</div>
+            <div class="truncate font-semibold text-foreground"><EntityLink kind="cliente" :record-id="item.cliente?.id" :label="item.cliente?.nome || 'Sem cliente'" /></div>
             <div class="truncate text-xs text-muted-foreground">{{ item.descricao }}</div>
           </div>
           <div class="text-right">

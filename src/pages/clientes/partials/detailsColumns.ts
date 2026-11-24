@@ -1,3 +1,4 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { h } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { ClienteDetalhesTab, ClienteWhatsappPayload } from '@/repositories/cliente-repository'
@@ -8,7 +9,6 @@ import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
 
 type Handlers = {
   send: (payload: ClienteWhatsappPayload, summary: string) => void
-  openEntry: (id: number) => void
 }
 const money = (value: unknown) => formatCurrencyBR(Number(value || 0))
 const date = (value: any) => value ? formatDateToPtBR(value) : '—'
@@ -28,17 +28,16 @@ export function clienteDetailsColumns(tab: ClienteDetalhesTab, handlers: Handler
     { id: 'acoes', header: 'Ações', enableSorting: false, cell: ({ row }) => action('Enviar lembrete', () => handlers.send({ tipo: 'COBRANCA', cobrancaId: row.original.id }, `a cobrança ${row.original.Uid || row.original.idCobranca} de ${money(row.original.valor)}`)) },
   ]
   if (tab === 'lancamentos') return [
-    column('descricao', 'Descrição'), column('Uid', 'Código'),
+    column('descricao', 'Descrição', row => h(EntityLink, { kind: 'lancamento', recordId: row.id, label: row.descricao })), column('Uid', 'Código'),
     column('dataLancamento', 'Data', row => date(row.dataLancamento)), status,
     column('valorTotal', 'Valor', row => money(row.valorTotal)),
     { id: 'acoes', header: 'Ações', enableSorting: false, cell: ({ row }) => h('div', { class: 'flex flex-wrap gap-2' }, [
-      action('Abrir', () => handlers.openEntry(row.original.id)),
       row.original.tipo === 'RECEITA' && row.original.status !== 'PAGO'
         ? action('Enviar pendência', () => handlers.send({ tipo: 'LANCAMENTO', lancamentoId: row.original.id }, `a pendência ${row.original.descricao} de ${money(row.original.valorTotal)}`)) : null,
     ]) },
   ]
   if (tab === 'vendas') return [
-    column('Uid', 'Venda'), column('data', 'Data', row => date(row.data)), status,
+    column('Uid', 'Venda', row => h(EntityLink, { kind: 'venda', recordId: row.id, label: row.Uid })), column('data', 'Data', row => date(row.data)), status,
     { ...column('itens', 'Itens', row => row.ItensVendas?.length || 0), enableSorting: false },
     { ...column('total', 'Total', row => money(Math.max(0, Number(row.valor || 0) - Number(row.desconto || 0)))), enableSorting: false },
     { id: 'acoes', header: 'Documentos', enableSorting: false, cell: ({ row }) => h('div', { class: 'flex flex-wrap gap-2' }, [
@@ -46,7 +45,7 @@ export function clienteDetailsColumns(tab: ClienteDetalhesTab, handlers: Handler
       action('Comprovante', () => handlers.send({ tipo: 'COMPROVANTE_VENDA', vendaId: row.original.id }, `o comprovante da venda ${row.original.Uid}`)),
     ]) },
   ]
-  return [column('Uid', 'Ordem de serviço'), column('data', 'Data', row => date(row.data)), status,
+  return [column('Uid', 'Ordem de serviço', row => h(EntityLink, { kind: 'ordem', recordId: row.id, label: row.Uid })), column('data', 'Data', row => date(row.data)), status,
     { ...column('itens', 'Itens', row => row.ItensOrdensServico?.length || 0), enableSorting: false },
   ]
 }

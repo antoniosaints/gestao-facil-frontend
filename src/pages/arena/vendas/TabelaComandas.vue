@@ -52,7 +52,7 @@
                 class="rounded-2xl border dark:border-border-dark bg-card dark:bg-card-dark p-4">
                 <div class="flex justify-between">
                     <div class="text-sm font-semibold dark:text-white">
-                        {{ row.clienteNome || row.Cliente?.nome || 'Sem cliente vinculado' }}
+                        <EntityLink kind="cliente" :record-id="row.Cliente?.id ?? row.clienteId" :label="row.clienteNome || row.Cliente?.nome || 'Sem cliente vinculado'" />
                     </div>
                     <div class="text-sm" :class="{
                         'text-yellow-600 dark:text-yellow-400': row.status === 'ABERTA',
@@ -143,6 +143,7 @@
 </template>
 
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { ref, onMounted, watch } from "vue";
 import http from "@/utils/axios";
 import type { ComandaVenda } from "@/types/schemas";

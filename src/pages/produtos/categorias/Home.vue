@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
+import { linkedRecordId } from '@/components/navigation/linkedRecord'
 import { onMounted, ref, watch, computed } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useConfirm } from '@/composables/useConfirm'
@@ -20,12 +22,15 @@ const store = useProdutoStore()
 const toast = useToast()
 const categorias = ref<ProdutoCategoria[]>([])
 const loading = ref(false)
+const route = useRoute()
 const search = ref('')
 const showSearchModal = ref(false)
+let consulta = 0
 
 const categoriasFiltradas = computed(() => {
   const term = search.value.trim().toLowerCase()
   if (!term) return categorias.value
+  if (/^#\d+$/.test(term)) return categorias.value.filter((categoria) => categoria.id === Number(term.slice(1)))
 
   return categorias.value.filter((categoria) =>
     [categoria.nome, categoria.Uid || '', categoria.status || ''].join(' ').toLowerCase().includes(term),
@@ -33,15 +38,23 @@ const categoriasFiltradas = computed(() => {
 })
 
 async function loadCategorias() {
+  const atual = ++consulta
+  const categoria = linkedRecordId(route.query.categoria)
   try {
     loading.value = true
     const response = await ProdutoCategoriaRepository.list()
-    categorias.value = response.data ?? []
+    const registros: ProdutoCategoria[] = response.data ?? []
+    if (categoria && !registros.some((item) => item.id === categoria)) {
+      const vinculo = await ProdutoCategoriaRepository.list(categoria)
+      registros.push(...(vinculo.data ?? []))
+    }
+    if (atual === consulta) categorias.value = registros
   } catch (error) {
+    if (atual !== consulta) return
     console.log(error)
     toast.error('Erro ao carregar categorias')
   } finally {
-    loading.value = false
+    if (atual === consulta) loading.value = false
   }
 }
 
@@ -89,10 +102,13 @@ watch(
   },
 )
 
-onMounted(() => {
-  store.resetSelectedCategoriaIds()
-  loadCategorias()
-})
+watch(() => route.query.categoria, (value) => {
+  const id = linkedRecordId(value)
+  search.value = id ? `#${id}` : ''
+  void loadCategorias()
+}, { immediate: true })
+
+onMounted(() => store.resetSelectedCategoriaIds())
 </script>
 
 <template>

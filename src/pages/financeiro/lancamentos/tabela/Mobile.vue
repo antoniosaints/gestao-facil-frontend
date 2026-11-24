@@ -22,7 +22,7 @@
           <div class="flex justify-between gap-3">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <div class="truncate text-sm font-semibold dark:text-white">{{ row.descricao }}</div>
+                <div class="truncate text-sm font-semibold dark:text-white"><EntityLink kind="lancamento" :record-id="row.id" :label="row.descricao" /></div>
                 <span v-if="row.ignorado || row.parcelas?.some((parcela) => parcela.ignorado)" class="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Ignorado</span>
               </div>
               <div v-if="row.origemSistema === 'ASSINATURA_PAGAR' && row.assinaturaPagar" class="mt-1 flex flex-wrap items-center gap-2 text-xs">
@@ -228,6 +228,7 @@
 </template>
 
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { ref, onMounted, watch } from 'vue'
 import http from '@/utils/axios'
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'

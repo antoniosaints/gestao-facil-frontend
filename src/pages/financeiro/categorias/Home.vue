@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
+import { linkedRecordId } from '@/components/navigation/linkedRecord'
 import { computed, onMounted, ref, watch } from 'vue'
 import { BadgePlus, RefreshCcw, RotateCw, Search, Tags, X } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
@@ -20,7 +22,12 @@ const toast = useToast()
 
 const arvore = ref<CategoriaArvoreNode[]>([])
 const loading = ref(false)
+const route = useRoute()
 const search = ref('')
+watch(() => route.query.categoria, (value) => {
+  const id = linkedRecordId(value)
+  search.value = id ? `#${id}` : ''
+}, { immediate: true })
 const showSearchModal = ref(false)
 
 /// Lista plana usada pelo modal para escolher a categoria pai.

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 
 import { h, reactive, ref, watch } from 'vue'
@@ -78,7 +79,7 @@ const columns: ColumnDef<FiscalDocument>[] = [
     header: 'Venda',
     enableSorting: false,
     cell: ({ row }) =>
-      row.original.vendaUid || (row.original.vendaId ? `#${row.original.vendaId}` : 'Avulsa'),
+      h(EntityLink, { kind: 'venda', recordId: row.original.vendaId, label: row.original.vendaUid || (row.original.vendaId ? `#${row.original.vendaId}` : 'Avulsa') }),
   },
   {
     id: 'cliente',
@@ -86,7 +87,7 @@ const columns: ColumnDef<FiscalDocument>[] = [
     enableSorting: false,
     cell: ({ row }) =>
       h('div', { class: 'min-w-36' }, [
-        h('p', { class: 'font-medium' }, row.original.cliente?.nome || 'Consumidor final'),
+        h(EntityLink, { kind: 'cliente', recordId: row.original.cliente?.id, label: row.original.cliente?.nome || 'Consumidor final', class: 'font-medium' }),
         h(
           'p',
           { class: 'text-xs text-muted-foreground' },

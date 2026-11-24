@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { onMounted, ref, watch } from 'vue'
 import { CalendarClock, PenLine, ReceiptText, RefreshCcw, Search, Trash2 } from 'lucide-vue-next'
 import http from '@/utils/axios'
@@ -137,7 +138,7 @@ onMounted(() => loadMobile())
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="text-sm font-semibold dark:text-white">{{ row.nomeContrato }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">{{ row.cliente?.nome || 'Cliente não informado' }} • {{ row.Uid }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400"><EntityLink kind="cliente" :record-id="row.cliente?.id" :label="row.cliente?.nome || 'Cliente não informado'" /> • {{ row.Uid }}</div>
           </div>
           <div class="text-xs" :class="row.status === 'ATIVA' ? 'text-green-500' : row.status === 'SUSPENSA' ? 'text-amber-500' : 'text-rose-500'">
             {{ getStatusAssinaturaMeta(row.status).label }}

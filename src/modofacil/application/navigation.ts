@@ -15,6 +15,8 @@ const equivalents: Record<string, string> = {
   'servicos-ordens-servicos': '/modofacil/servicos/ordens',
   'clientes-tabela': '/modofacil/pessoas',
   'lancamentos-financeiro': '/modofacil/financeiro',
+  'financeiro-contas': '/modofacil/financeiro/cadastros',
+  'financeiro-emprestimos': '/modofacil/financeiro/emprestimos',
   'financeiro-contas-receber': '/modofacil/financeiro',
   'financeiro-contas-pagar': '/modofacil/financeiro',
 }
@@ -40,6 +42,16 @@ export function experienceDestination(
   )
     return { name: 'home', replace: true }
   if (config.modo !== 'FACIL') return true
+  if (to.name === 'vendas-detalhes' || to.name === 'servicos-ordem-detalhes') {
+    const prefix = to.name === 'vendas-detalhes' ? 'vendas' : 'servicos/ordens'
+    return { path: `/modofacil/${prefix}/${to.params.id}`, query: to.query, replace: true }
+  }
+  if (to.name === 'produtos-categorias')
+    return { name: 'modofacil-categorias', query: to.query, replace: true }
+  if (to.name === 'financeiro-categorias')
+    return { name: 'modofacil-financeiro-cadastros', query: { ...to.query, tab: 'categorias' }, replace: true }
+  if (to.name === 'financeiro-conta-detalhes')
+    return { name: 'modofacil-financeiro-conta', params: to.params, query: to.query, replace: true }
   if (to.name === 'produtos-detalhes')
     return {
       path: `/modofacil/produtos/${to.params.id || to.query.id || ''}`,

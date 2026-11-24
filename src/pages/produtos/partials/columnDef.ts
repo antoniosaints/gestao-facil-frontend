@@ -1,3 +1,4 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
@@ -6,7 +7,7 @@ import { useProdutoStore } from '@/stores/produtos/useProduto'
 import type { ProdutoBase, ProdutoVariante } from '@/types/schemas'
 import { formatCurrencyBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { Boxes, Package, ScanQrCode, Tags } from 'lucide-vue-next'
+import { Boxes, Package, ScanQrCode } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import Actions from './Actions.vue'
 import ActionsVariante from './ActionsVariante.vue'
@@ -97,10 +98,10 @@ export const columnsProdutos: ColumnDef<ProdutoBase>[] = [
     accessorKey: 'categoria',
     header: () => render('div', {}, 'Categoria'),
     cell: ({ row }) =>
-      render(BadgeCell, {
-        label: `${row.original.categoria || 'Sem categoria'}`,
-        color: 'blue',
-        icon: Tags,
+      render(EntityLink, {
+        kind: 'categoriaProduto',
+        recordId: row.original.categoriaId,
+        label: row.original.categoria || 'Sem categoria',
       }),
     enableSorting: false,
   },
@@ -219,10 +220,10 @@ export const columnsVariantes: ColumnDef<ProdutoVarianteRow>[] = [
     accessorKey: 'categoria',
     header: () => render('div', {}, 'Categoria'),
     cell: ({ row }) =>
-      render(BadgeCell, {
-        label: `${row.original.categoria || 'Sem categoria'}`,
-        color: 'blue',
-        icon: Tags,
+      render(EntityLink, {
+        kind: 'categoriaProduto',
+        recordId: row.original.categoriaId,
+        label: row.original.categoria || 'Sem categoria',
       }),
     enableSorting: false,
   },

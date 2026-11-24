@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DeleteRecord from '../components/DeleteRecord.vue'
 import RecordStatusAction from '../components/RecordStatusAction.vue'
 import { deletionScopeKey } from '../application/deletionScope'
@@ -151,7 +152,7 @@ onMounted(load)
         <dl class="mf-info-grid">
           <div>
             <dt>Categoria</dt>
-            <dd>{{ base.Categoria?.nome || base.categoria || 'Não informada' }}</dd>
+            <dd><EntityLink kind="categoriaProduto" :record-id="base.categoriaId ?? base.Categoria?.id" :label="base.Categoria?.nome || base.categoria || 'Não informada'" /></dd>
           </div>
           <div>
             <dt>Identificação</dt>

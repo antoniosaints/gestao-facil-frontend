@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DeleteRecord from '../components/DeleteRecord.vue'
 import FormSelect from '../components/FormSelect.vue'
 import ModalAction from '../components/ModalAction.vue'
@@ -16,6 +17,7 @@ import {
   ShoppingCart,
   Wrench,
   Wallet,
+  WalletCards,
   ArrowLeftRight,
   Receipt,
   BarChart3,
@@ -305,6 +307,11 @@ onMounted(() => Promise.all([load(), loadSummary()]))
               ></DropdownMenuItem
             >
             <DropdownMenuItem as-child
+              ><RouterLink to="/modofacil/financeiro/emprestimos"
+                ><WalletCards :size="15" />Empréstimos</RouterLink
+              ></DropdownMenuItem
+            >
+            <DropdownMenuItem as-child
               ><RouterLink to="/modofacil/relatorios"
                 ><BarChart3 :size="15" />Relatórios</RouterLink
               ></DropdownMenuItem
@@ -401,9 +408,7 @@ onMounted(() => Promise.all([load(), loadSummary()]))
           }}</small></template
         ><template #type="{ row }"><StatusBadge :value="row.tipo" /></template
         ><template #category="{ row }"
-          ><span class="block max-w-28 truncate" :title="row.categoria?.nome">{{
-            row.categoria?.nome || '—'
-          }}</span></template
+          ><span class="block max-w-28 truncate" :title="row.categoria?.nome"><EntityLink kind="categoria" :record-id="row.categoriaId ?? row.categoria?.id" :label="row.categoria?.nome || '—'" /></span></template
         ><template #status="{ row }"><StatusBadge :value="row.status" /></template
         ><template #value="{ row }"
           ><strong class="whitespace-nowrap">{{

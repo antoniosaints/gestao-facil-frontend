@@ -1,3 +1,4 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { render } from '@/lib/utils'
 import type { ContasFinanceiro } from '@/types/schemas'
@@ -36,7 +37,7 @@ export const columnsContasFinanceiras: ColumnDef<ContasFinanceiro>[] = [
               }),
         ),
         render('div', { class: 'min-w-0' }, [
-          render('div', { class: 'font-medium truncate' }, row.original.nome),
+          render(EntityLink, { kind: 'conta', recordId: row.original.id, label: row.original.nome, class: 'font-medium' }),
           ...(row.original.ignorarNosCalculos
             ? [render('div', { class: 'text-xs text-muted-foreground' }, 'Fora dos cálculos gerais')]
             : []),

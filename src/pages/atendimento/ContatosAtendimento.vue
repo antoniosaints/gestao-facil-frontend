@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
@@ -218,7 +219,7 @@ onMounted(loadContacts)
 
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
-                <p class="truncate text-sm font-medium">{{ contactLabel(contact) }}</p>
+                <p class="truncate text-sm font-medium"><EntityLink kind="cliente" :record-id="contact.clienteId ?? contact.Cliente?.id" :label="contactLabel(contact)" /></p>
                 <Badge v-if="contact.Cliente" class="h-4 shrink-0 gap-1 bg-green-600 px-1.5 text-[10px] text-white">
                   <UserPlus class="h-3 w-3" /> Cliente
                 </Badge>

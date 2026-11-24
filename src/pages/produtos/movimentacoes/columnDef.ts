@@ -1,3 +1,4 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
@@ -25,6 +26,11 @@ type Movimentacao = {
   notaFiscal: string | null
   quantidade: number
   custo: number | string
+  produtoId?: number | null
+  produtoBaseId?: number | null
+  fornecedorId?: number | null
+  vendaId?: number | null
+  ordemId?: number | null
   produtoNome: string
   produtoCodigo: string | null
   fornecedor: string | null
@@ -83,7 +89,7 @@ export const columnsMovimentacoes: ColumnDef<Movimentacao>[] = [
     header: 'Produto',
     cell: ({ row }) =>
       h('div', { class: 'flex flex-col' }, [
-        h('span', { class: 'text-sm font-medium text-foreground' }, row.original.produtoNome),
+        h(EntityLink, { kind: 'produto', recordId: row.original.produtoBaseId, variantId: row.original.produtoId, label: row.original.produtoNome, class: 'text-sm font-medium' }),
         row.original.produtoCodigo
           ? h('span', { class: 'text-xs text-muted-foreground' }, `SKU: ${row.original.produtoCodigo}`)
           : null,
@@ -107,13 +113,15 @@ export const columnsMovimentacoes: ColumnDef<Movimentacao>[] = [
     accessorKey: 'fornecedor',
     header: 'Fornecedor / Cliente',
     cell: ({ row }) =>
-      h('span', { class: 'text-sm' }, row.original.fornecedor || '—'),
+      h(EntityLink, { kind: 'cliente', recordId: row.original.fornecedorId, label: row.original.fornecedor || '—', class: 'text-sm' }),
   },
   {
     accessorKey: 'origem',
     header: 'Origem',
     cell: ({ row }) =>
-      render(BadgeCell, { label: row.original.origem, color: 'cyan', icon: Truck, capitalize: false, size: 'sm' }),
+      row.original.vendaId || row.original.ordemId
+        ? h(EntityLink, { kind: row.original.vendaId ? 'venda' : 'ordem', recordId: row.original.vendaId ?? row.original.ordemId, label: row.original.origem })
+        : render(BadgeCell, { label: row.original.origem, color: 'cyan', icon: Truck, capitalize: false, size: 'sm' }),
   },
   {
     accessorKey: 'custo',

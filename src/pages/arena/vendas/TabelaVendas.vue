@@ -44,7 +44,7 @@
                 <div class="flex justify-between">
                     <div class="text-sm font-semibold dark:text-white flex items-center gap-1">
                         <Tag class="w-4" />
-                        {{ venda.cliente?.nome || 'SEM CLIENTE VINCULADO' }}
+                        <EntityLink kind="cliente" :record-id="venda.clienteId ?? venda.cliente?.id" :label="venda.cliente?.nome || 'SEM CLIENTE VINCULADO'" />
                     </div>
                     <div class="text-sm text-green-500 dark:text-green-400">
                         R$ {{ Number(venda.valor).toFixed(2).replace('.', ',') }}
@@ -150,6 +150,7 @@
 </template>
 
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { ref, onMounted, watch } from "vue";
 import http from "@/utils/axios";
 import type { Vendas } from "@/types/schemas";

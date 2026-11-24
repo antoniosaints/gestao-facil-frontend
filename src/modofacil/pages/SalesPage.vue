@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DeleteRecord from '../components/DeleteRecord.vue'
 import FormSelect from '../components/FormSelect.vue'
 import ModalAction from '../components/ModalAction.vue'
@@ -125,9 +126,7 @@ async function receipt(row: Row) {
             row.Uid || `Venda #${row.id}`
           }}</strong></template
         ><template #client="{ row }"
-          ><strong class="block max-w-40 truncate" :title="row.cliente?.nome">{{
-            row.cliente?.nome || 'Cliente não informado'
-          }}</strong></template
+          ><strong class="block max-w-40 truncate" :title="row.cliente?.nome"><EntityLink kind="cliente" :record-id="row.clienteId ?? row.cliente?.id" :label="row.cliente?.nome || 'Cliente não informado'" /></strong></template
         ><template #date="{ row }"
           ><span class="whitespace-nowrap">{{ dateLabel(row.data) }}</span></template
         ><template #status="{ row }"><StatusBadge :value="row.status" /></template

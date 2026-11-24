@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import FormSelect from '../components/FormSelect.vue'
 import ModalAction from '../components/ModalAction.vue'
 import { Input } from '@/components/ui/input'
@@ -115,9 +116,7 @@ async function pdf(row: Row) {
         ><template #code="{ row }"
           ><strong class="whitespace-nowrap">{{ row.Uid || `OS #${row.id}` }}</strong></template
         ><template #client="{ row }"
-          ><strong class="block max-w-48 truncate" :title="row.Cliente?.nome">{{
-            row.Cliente?.nome || 'Cliente não informado'
-          }}</strong
+          ><strong class="block max-w-48 truncate" :title="row.Cliente?.nome"><EntityLink kind="cliente" :record-id="row.clienteId ?? row.Cliente?.id" :label="row.Cliente?.nome || 'Cliente não informado'" /></strong
           ><small v-if="row.descricao" class="max-w-48 truncate" :title="row.descricao">{{
             row.descricao
           }}</small></template

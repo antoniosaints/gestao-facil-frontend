@@ -28,6 +28,12 @@ export const modoFacilRoutes: RouteRecordRaw[] = [
       page('caixa', 'caixa', () => import('./pages/CashPage.vue'), 2),
       page('financeiro', 'financeiro', () => import('./pages/FinancePage.vue'), 3),
       page(
+        'financeiro/contas/:id',
+        'financeiro-conta',
+        () => import('@/pages/financeiro/contas/Detalhes.vue'),
+        3,
+      ),
+      page(
         'financeiro/cadastros',
         'financeiro-cadastros',
         () => import('./pages/FinanceCatalogsPage.vue'),
@@ -37,6 +43,12 @@ export const modoFacilRoutes: RouteRecordRaw[] = [
         'financeiro/cobrancas',
         'financeiro-cobrancas',
         () => import('./pages/ChargesPage.vue'),
+        3,
+      ),
+      page(
+        'financeiro/emprestimos',
+        'financeiro-emprestimos',
+        () => import('@/pages/financeiro/emprestimos/Home.vue'),
         3,
       ),
       page(

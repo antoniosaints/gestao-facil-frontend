@@ -88,10 +88,10 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
 
     try {
       const response = await OrdensServicoRepository.getDetalhes(id)
-      ordemDetalhe.value = response
+      if (detalheId.value === id) ordemDetalhe.value = response
       return response
     } finally {
-      loadingDetalhe.value = false
+      if (detalheId.value === id) loadingDetalhe.value = false
     }
   }
 
@@ -110,6 +110,7 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
       openModalDetalheOs.value = true
       await loadDetalhes(id)
     } catch (error) {
+      if (detalheId.value !== id) return
       ordemDetalhe.value = undefined
       detalheId.value = null
       openModalDetalheOs.value = false
@@ -117,6 +118,12 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
       toast.error('Erro ao carregar os detalhes da OS.')
     }
   }
+  const fecharDetalhes = () => {
+    detalheId.value = null
+    loadingDetalhe.value = false
+    openModalDetalheOs.value = false
+  }
+
   const openUpdate = async (id: number) => {
     const response = await OrdensServicoRepository.get(id)
     if (response.status === 'FATURADA') {
@@ -185,6 +192,7 @@ export const useOrdemServicoStore = defineStore('ordemServicoStore', () => {
     openModalDetalheOs,
     loadingDetalhe,
     openDetalhes,
+    fecharDetalhes,
     reloadDetalhes,
     ordemDetalhe,
     idMutation,

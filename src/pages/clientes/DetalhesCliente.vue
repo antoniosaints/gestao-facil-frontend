@@ -318,7 +318,6 @@ const emptyLabels = { cobrancas: 'Nenhuma cobrança encontrada', lancamentos: 'N
 const tableFilters = computed(() => ({ tab: displayTab.value, ...appliedPeriod, update: tableVersion.value }))
 const detailsColumns = computed(() => clienteDetailsColumns(activeTab.value, {
   send: openQuickSend,
-  openEntry: openLancamento,
 }))
 const filters = ref({
   inicio: null as Date | null,
@@ -434,10 +433,6 @@ function formatDate(value?: string | Date | null) {
 
 function totalVenda(venda: any) {
   return Math.max(0, Number(venda?.valor || 0) - Number(venda?.desconto || 0))
-}
-
-function openLancamento(lancamentoId: number) {
-  router.push({ name: 'lancamentos-financeiro-detalhes', query: { id: String(lancamentoId) } })
 }
 
 function toDateTime(value: Date | string | null, endOfDay = false) {

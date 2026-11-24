@@ -1,3 +1,4 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { render } from '@/lib/utils'
 import type { CobrancaFinanceira } from '@/types/schemas'
@@ -6,11 +7,9 @@ import {
   Ban,
   Calendar,
   CircleCheck,
-  FileBox,
   HandCoins,
   Link2,
   Loader,
-  Tag,
 } from 'lucide-vue-next'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import Actions from './Actions.vue'
@@ -68,21 +67,20 @@ export const columnsCobrancas: ColumnDef<CobrancaFinanceira>[] = [
     header: ({ column }) =>
       render(DataTableColumnHeader, { column, title: 'Observação' }),
     cell: ({ row }) => {
-      let observacao = row.original.observacao
-      let Icon = HandCoins
+      const observacao = row.original.observacao
       if (row.original.lancamentoId) {
-        observacao = `Parcela financeira`
-      } else if (row.original.vendaId) {
-        observacao = `Venda: (${row.original.Venda?.Uid})`
-        Icon = Tag
-      } else if (row.original.ordemServicoId) {
-        observacao = `OS: ${row.original.Ordemservico?.Uid}`
-        Icon = FileBox
+        return render(EntityLink, { kind: 'lancamento', recordId: row.original.LancamentoParcela?.lancamentoId, label: 'Parcela financeira' })
+      }
+      if (row.original.vendaId) {
+        return render(EntityLink, { kind: 'venda', recordId: row.original.vendaId, label: row.original.Venda?.Uid || `Venda #${row.original.vendaId}` })
+      }
+      if (row.original.ordemServicoId) {
+        return render(EntityLink, { kind: 'ordem', recordId: row.original.ordemServicoId, label: row.original.Ordemservico?.Uid || `OS #${row.original.ordemServicoId}` })
       }
       return render(BadgeCell, {
         label: observacao as string,
         color: 'gray',
-        icon: Icon,
+        icon: HandCoins,
         capitalize: false,
       })
     },

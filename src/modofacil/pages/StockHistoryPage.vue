@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import FormSelect from '../components/FormSelect.vue'
 import { Input } from '@/components/ui/input'
 
@@ -66,11 +67,11 @@ onMounted(() => load())
           { key: 'origin', label: 'Origem / fornecedor' },
           { key: 'status', label: 'Status' },
         ]"
-        ><template #date="{ row }">{{ dateLabel(row.data) }}</template
+        ><template #produtoNome="{ row }"><EntityLink kind="produto" :record-id="row.produtoBaseId" :variant-id="row.produtoId" :label="row.produtoNome" /></template><template #date="{ row }">{{ dateLabel(row.data) }}</template
         ><template #operation="{ row }"><StatusBadge :value="row.tipo" /></template
         ><template #quantity="{ row }">{{ quantity(row.quantidade) }}</template
         ><template #origin="{ row }"
-          >{{ row.origem || '—' }}<small>{{ row.fornecedor || 'Sem fornecedor' }}</small></template
+          ><EntityLink :kind="row.vendaId ? 'venda' : 'ordem'" :record-id="row.vendaId ?? row.ordemId" :label="row.origem" /><small><EntityLink kind="cliente" :record-id="row.fornecedorId" :label="row.fornecedor || 'Sem fornecedor'" /></small></template
         ><template #status="{ row }"><StatusBadge :value="row.status" /></template></RecordsTable
       ><PageControls
         :page="page"

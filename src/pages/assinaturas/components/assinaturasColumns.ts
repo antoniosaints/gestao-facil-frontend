@@ -1,10 +1,11 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeCell from '@/components/tabela/BadgeCell.vue'
 import { render } from '@/lib/utils'
 import type { AssinaturaClienteListItem } from '@/repositories/assinatura-repository'
 import { formatCurrencyBR, formatDateToPtBR } from '@/utils/formatters'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { CalendarClock, CircleDollarSign, FilePenLineIcon, UserRound } from 'lucide-vue-next'
+import { CalendarClock, CircleDollarSign, FilePenLineIcon } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import AssinaturasActions from './AssinaturasActions.vue'
 import { getPeriodicidadeLabel, getStatusAssinaturaMeta } from '../shared'
@@ -52,12 +53,7 @@ export const columnsAssinaturas: ColumnDef<AssinaturaClienteListItem>[] = [
     accessorKey: 'cliente',
     header: () => render('div', {}, 'Cliente'),
     cell: ({ row }) =>
-      render(BadgeCell, {
-        label: row.original.cliente?.nome || 'Sem cliente',
-        color: 'blue',
-        icon: UserRound,
-        capitalize: false,
-      }),
+      render(EntityLink, { kind: 'cliente', recordId: row.original.cliente?.id, label: row.original.cliente?.nome || 'Sem cliente' }),
     enableSorting: false,
   },
   {

@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useElementBounding, useSessionStorage } from '@vueuse/core'
 import http from '@/utils/axios'
@@ -187,7 +188,7 @@ onUnmounted(() => {
           class="rounded-2xl border bg-card p-4 dark:border-border-dark dark:bg-card-dark"
         >
           <div class="flex items-start justify-between gap-3">
-            <h3 class="min-w-0 break-words text-sm font-semibold">{{ row.nome }}</h3>
+            <h3 class="min-w-0 break-words text-sm font-semibold"><EntityLink kind="cliente" :record-id="row.id" :label="row.nome" /></h3>
             <span
               class="shrink-0 text-xs"
               :class="

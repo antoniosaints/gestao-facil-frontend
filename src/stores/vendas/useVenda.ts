@@ -27,6 +27,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
   const openModalPropor = ref(false)
   const openModalFaturar = ref(false)
   const openModalDetalhes = ref(false)
+  let detalhesConsulta = 0
   const openModalNotaFiscal = ref(false)
   const notaFiscalId = ref<number | null>(null)
   const notaFiscalView = ref<'acompanhamento' | 'nota'>('nota')
@@ -93,19 +94,27 @@ export const useVendasStore = defineStore('vendasStore', () => {
     openModalComprovante.value = true
   }
   const openDetalhes = async (id: number) => {
+    const consulta = ++detalhesConsulta
     try {
       if (!id) {
         return toast.info('ID nao informado!')
       }
       const data = await VendaRepository.get(id)
+      if (consulta !== detalhesConsulta) return
       venda.value = data.data
       idMutation.value = id
       openModalDetalhes.value = true
     } catch (error) {
+      if (consulta !== detalhesConsulta) return
       toast.error('Erro ao buscar venda, tente novamente')
       idMutation.value = null
       console.log(error)
     }
+  }
+
+  const fecharDetalhes = () => {
+    detalhesConsulta += 1
+    openModalDetalhes.value = false
   }
 
   const openNotaFiscal = (id: number, view: 'acompanhamento' | 'nota' = 'nota') => {
@@ -211,6 +220,7 @@ export const useVendasStore = defineStore('vendasStore', () => {
     openSave,
     openComprovante,
     openDetalhes,
+    fecharDetalhes,
     venda,
     tipoDesconto,
     openUpdate,

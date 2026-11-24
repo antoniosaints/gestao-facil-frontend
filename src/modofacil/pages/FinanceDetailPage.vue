@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DeleteRecord from '../components/DeleteRecord.vue'
 import { financialPaymentOptions } from '../application/payments'
 import { useLookupOptions } from '../adapters/lookups'
@@ -273,20 +274,16 @@ async function reverse() {
         <dl class="mf-info-grid">
           <div>
             <dt>Conta financeira</dt>
-            <dd>{{ record.ContasFinanceiro?.nome || 'Não informada' }}</dd>
+            <dd><EntityLink kind="conta" :record-id="record.contasFinanceiroId" :label="record.ContasFinanceiro?.nome || 'Não informada'" /></dd>
           </div>
           <div>
             <dt>Categoria</dt>
-            <dd>{{ record.categoria?.nome || 'Não informada' }}</dd>
+            <dd><EntityLink kind="categoria" :record-id="record.categoriaId ?? record.categoria?.id" :label="record.categoria?.nome || 'Não informada'" /></dd>
           </div>
           <div>
             <dt>{{ record.tipo === 'DESPESA' ? 'Fornecedor / pessoa' : 'Cliente / pessoa' }}</dt>
             <dd>
-              <RouterLink
-                v-if="record.clienteId && record.cliente?.nome"
-                :to="`/modofacil/pessoas/${record.clienteId}`"
-                >{{ record.cliente.nome }}</RouterLink
-              ><span v-else>{{ record.cliente?.nome || 'Não vinculada' }}</span>
+              <EntityLink kind="cliente" :record-id="record.clienteId ?? record.cliente?.id" :label="record.cliente?.nome || 'Não vinculada'" />
             </dd>
           </div>
           <div>
@@ -325,17 +322,13 @@ async function reverse() {
           <div v-if="record.vendaId">
             <dt>Venda vinculada</dt>
             <dd>
-              <RouterLink :to="`/modofacil/vendas/${record.vendaId}`"
-                >Ver venda #{{ record.vendaId }}</RouterLink
-              >
+              <EntityLink kind="venda" :record-id="record.vendaId" :label="record.venda?.Uid || `Venda #${record.vendaId}`" />
             </dd>
           </div>
           <div v-if="record.ordemServicoId">
             <dt>Ordem de serviço vinculada</dt>
             <dd>
-              <RouterLink :to="`/modofacil/servicos/ordens/${record.ordemServicoId}`"
-                >Ver OS #{{ record.ordemServicoId }}</RouterLink
-              >
+              <EntityLink kind="ordem" :record-id="record.ordemServicoId" :label="`OS #${record.ordemServicoId}`" />
             </dd>
           </div>
           <div v-if="record.assinaturaPagar">
@@ -480,12 +473,7 @@ async function reverse() {
               ></template
             ><span v-else class="text-muted-foreground">Não registrado</span></template
           >
-          <template #account="{ row }">{{
-            row.ContaFinanceira?.nome ||
-            (row.contaFinanceira && row.contaFinanceira !== record.contasFinanceiroId
-              ? `Conta #${row.contaFinanceira}`
-              : record.ContasFinanceiro?.nome || 'Não informada')
-          }}</template>
+          <template #account="{ row }"><EntityLink kind="conta" :record-id="row.contaFinanceira ?? record.contasFinanceiroId" :label="row.ContaFinanceira?.nome || (row.contaFinanceira && row.contaFinanceira !== record.contasFinanceiroId ? `Conta #${row.contaFinanceira}` : record.ContasFinanceiro?.nome || 'Não informada')" /></template>
           <template #actions="{ row }">
             <div class="flex flex-wrap items-center gap-2 md:justify-end">
               <button

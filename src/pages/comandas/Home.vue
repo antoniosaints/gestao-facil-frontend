@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import {
   BadgePlus,
@@ -520,12 +521,12 @@ onMounted(loadComandas)
         <div class="md:col-span-3">
           <button type="button" class="text-left" @click="openDetalhes(comanda)">
             <div class="font-semibold text-foreground">#{{ comanda.Uid }}</div>
-            <div class="flex gap-1">
+          </button>
+          <div class="flex gap-1">
               <div class="text-xs text-muted-foreground">{{ formatDateToPtBR(comanda.abertura, true) }}</div>
               <div class="text-xs text-muted-foreground">|</div>
-              <div class="truncate text-xs text-muted-foreground">{{ getClienteLabel(comanda) }}</div>
-            </div>
-          </button>
+              <div class="truncate text-xs text-muted-foreground"><EntityLink kind="cliente" :record-id="comanda.clienteId" :label="getClienteLabel(comanda)" /></div>
+          </div>
         </div>
 
         <div class="md:col-span-2">
@@ -576,7 +577,7 @@ onMounted(loadComandas)
       <form class="space-y-4 px-4 pb-2" @submit.prevent="submitCreate">
         <div>
           <label class="mb-1 block text-sm font-medium">Cliente</label>
-          <Select2Ajax v-model="store.comandaForm.clienteId" url="/clientes/select2" :allow-clear="true" placeholder="Cliente opcional" />
+          <Select2Ajax v-model="store.comandaForm.clienteId" url="/clientes/select2" linked-kind="cliente" :allow-clear="true" placeholder="Cliente opcional" />
         </div>
 
         <div>
@@ -665,7 +666,7 @@ onMounted(loadComandas)
           </div>
           <div class="rounded-lg border border-border bg-card p-3">
             <div class="text-xs text-muted-foreground">Cliente</div>
-            <div class="truncate text-sm font-medium">{{ getClienteLabel(store.selectedComanda) }}</div>
+            <div class="truncate text-sm font-medium"><EntityLink kind="cliente" :record-id="store.selectedComanda.clienteId" :label="getClienteLabel(store.selectedComanda)" /></div>
           </div>
           <div class="rounded-lg border border-border bg-card p-3">
             <div class="text-xs text-muted-foreground">Itens</div>
@@ -856,11 +857,11 @@ onMounted(loadComandas)
         </div>
         <div v-show="store.faturarForm.lancarFinanceiro">
           <label class="mb-1 block text-sm font-medium">Conta financeira</label>
-          <Select2Ajax v-model="store.faturarForm.contaFinanceiraId" url="/lancamentos/contas/select2" :allow-clear="true" placeholder="Selecione a conta" />
+          <Select2Ajax v-model="store.faturarForm.contaFinanceiraId" url="/lancamentos/contas/select2" linked-kind="conta" :allow-clear="true" placeholder="Selecione a conta" />
         </div>
         <div v-show="store.faturarForm.lancarFinanceiro">
           <label class="mb-1 block text-sm font-medium">Categoria</label>
-          <Select2Ajax v-model="store.faturarForm.categoriaFinanceiraId" url="/lancamentos/categorias/select2" :allow-clear="true" placeholder="Selecione a categoria" />
+          <Select2Ajax v-model="store.faturarForm.categoriaFinanceiraId" url="/lancamentos/categorias/select2" linked-kind="categoria" :allow-clear="true" placeholder="Selecione a categoria" />
         </div>
         <div class="flex justify-end gap-2 md:col-span-2">
           <Button type="button" variant="secondary" @click="store.openFaturarModal = false">Fechar</Button>
@@ -873,11 +874,11 @@ onMounted(loadComandas)
       <form class="grid grid-cols-1 gap-4 px-4 pb-2 md:grid-cols-2" @submit.prevent="store.saveConfiguracao()">
         <div>
           <label class="mb-1 block text-sm font-medium">Conta padrao</label>
-          <Select2Ajax v-model="store.configuracaoForm.contaFinanceiraIdPadrao" url="/lancamentos/contas/select2" :allow-clear="true" placeholder="Selecione a conta" />
+          <Select2Ajax v-model="store.configuracaoForm.contaFinanceiraIdPadrao" url="/lancamentos/contas/select2" linked-kind="conta" :allow-clear="true" placeholder="Selecione a conta" />
         </div>
         <div>
           <label class="mb-1 block text-sm font-medium">Categoria padrao</label>
-          <Select2Ajax v-model="store.configuracaoForm.categoriaFinanceiraIdPadrao" url="/lancamentos/categorias/select2" :allow-clear="true" placeholder="Selecione a categoria" />
+          <Select2Ajax v-model="store.configuracaoForm.categoriaFinanceiraIdPadrao" url="/lancamentos/categorias/select2" linked-kind="categoria" :allow-clear="true" placeholder="Selecione a categoria" />
         </div>
         <div class="flex justify-end gap-2 md:col-span-2">
           <Button type="button" variant="secondary" @click="store.openConfiguracaoModal = false">Fechar</Button>

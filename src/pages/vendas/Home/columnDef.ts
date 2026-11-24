@@ -1,3 +1,4 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import BadgeInfo from '@/components/tabela/BadgeInfo.vue'
 import { Button } from '@/components/ui/button'
@@ -138,7 +139,7 @@ const allColumnsVendas: ColumnDef<Vendas>[] = [
     enableSorting: false,
     enableColumnFilter: false,
     header: () => render(Button, { variant: 'ghost', class: 'text-left' }, () => 'Cliente'),
-    cell: ({ row }) => render('div', { class: 'text-left' }, row.original.cliente?.nome || '-'),
+    cell: ({ row }) => render(EntityLink, { kind: 'cliente', recordId: row.original.clienteId ?? row.original.cliente?.id, label: row.original.cliente?.nome }),
   },
   {
     accessorKey: 'data',

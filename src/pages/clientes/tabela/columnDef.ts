@@ -1,3 +1,4 @@
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import DataTableColumnHeader from '@/components/tabela/DataTableColumnHeader.vue'
 import { render } from '@/lib/utils'
 import type { ClientesFornecedores } from '@/types/schemas'
@@ -51,6 +52,7 @@ export const columnsClientes: ColumnDef<ClientesFornecedores>[] = [
     accessorKey: 'nome',
     header: ({ column }) =>
       render(DataTableColumnHeader, { column, title: 'Nome' }),
+    cell: ({ row }) => render(EntityLink, { kind: 'cliente', recordId: row.original.id, label: row.original.nome }),
   },
   {
     accessorKey: 'documento',

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EntityLink from '@/components/navigation/EntityLink.vue'
 import { computed, onMounted, ref } from 'vue'
 import { endOfDay, endOfMonth, startOfDay, startOfMonth, subDays } from 'date-fns'
 import { useToast } from 'vue-toastification'
@@ -301,18 +302,17 @@ onMounted(() => carregar())
       <Card class="rounded-xl">
         <CardHeader><CardTitle class="text-base">Próximas reservas</CardTitle></CardHeader>
         <CardContent class="space-y-2">
-          <RouterLink
+          <article
             v-for="booking in dashboard.proximas.slice(0, 5)"
             :key="booking.id"
-            to="/reservas/lista"
-            class="block rounded-lg border border-border/70 bg-muted/10 p-3 transition hover:border-primary/40"
+            class="relative rounded-lg border border-border/70 bg-muted/10 p-3 transition hover:border-primary/40"
           >
             <div class="flex items-start justify-between gap-2">
-              <div class="min-w-0"><p class="truncate text-sm font-medium">{{ booking.nomeCliente }}</p><p class="truncate text-xs text-muted-foreground">{{ booking.servicoNome }} · {{ booking.recursoNome }}</p></div>
+              <div class="min-w-0"><p class="truncate text-sm font-medium"><EntityLink kind="cliente" :record-id="booking.clienteId" :label="booking.nomeCliente" class="relative z-10" /></p><p class="truncate text-xs text-muted-foreground">{{ booking.servicoNome }} · {{ booking.recursoNome }}</p></div>
               <Badge :variant="statusVariant[booking.status]">{{ statusLabel[booking.status] }}</Badge>
             </div>
-            <p class="mt-2 text-xs font-medium text-primary">{{ dateTime(booking.inicio) }}</p>
-          </RouterLink>
+            <RouterLink to="/reservas/lista" class="mt-2 block text-xs font-medium text-primary after:absolute after:inset-0 after:rounded-lg focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-ring">{{ dateTime(booking.inicio) }}</RouterLink>
+          </article>
           <p v-if="!dashboard.proximas.length" class="py-12 text-center text-sm text-muted-foreground">Nenhuma reserva nas próximas 24 horas.</p>
         </CardContent>
       </Card>
