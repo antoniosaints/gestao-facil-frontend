@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import EntityLink from '@/components/navigation/EntityLink.vue'
-import AppRequirementNotice from '@/components/apps/AppRequirementNotice.vue'
 import { promptAppAccess } from '@/composables/useAppAccessPrompt'
+import { hasPermission } from '@/hooks/authorize'
 import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import {
   AlarmClock,
   BellRing,
@@ -10,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  MessageCircle,
   RotateCw,
   Search,
   Send,
@@ -35,6 +37,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { appAccessCatalog, appActivationLocation } from '@/utils/appAccess'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { useUiStore } from '@/stores/ui/uiStore'
 import {
@@ -51,6 +54,15 @@ import CobrancaRapidaModal from './CobrancaRapidaModal.vue'
 
 const toast = useToast()
 const uiStore = useUiStore()
+const route = useRoute()
+const whatsapp = appAccessCatalog.whatsapp
+const whatsappAtivo = computed(() => uiStore.hasActiveModule('whatsapp'))
+const atalhoWhatsApp = computed(() => {
+  if (!whatsappAtivo.value) return appActivationLocation('whatsapp', route.fullPath)
+  if (uiStore.usuarioLogged && hasPermission(uiStore.usuarioLogged, whatsapp.permission ?? 2)) {
+    return whatsapp.open
+  }
+})
 
 const loading = ref(false)
 const items = ref<InadimplenciaItem[]>([])
@@ -284,7 +296,7 @@ async function removerOverride() {
 }
 
 function abrirCobrancaRapida(item: InadimplenciaItem) {
-  if (!uiStore.hasActiveModule('whatsapp')) {
+  if (!whatsappAtivo.value) {
     promptAppAccess({ error: { code: 'whatsapp_module_inactive' } })
     return
   }
@@ -313,7 +325,6 @@ onMounted(load)
 
 <template>
   <div class="space-y-5">
-    <AppRequirementNotice app="whatsapp" />
     <!-- Cabeçalho -->
     <div class="flex flex-col justify-between gap-2 md:flex-row md:items-center">
       <div>
@@ -325,9 +336,17 @@ onMounted(load)
           Controle quem tem valores a receber e configure os lembretes de cobrança ao cliente.
         </p>
       </div>
-      <Button variant="outline" v-tooltip="'Atualizar'" @click="load">
-        <RotateCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
-      </Button>
+      <div class="flex flex-wrap items-center gap-2">
+        <Button v-if="atalhoWhatsApp" variant="outline" as-child>
+          <RouterLink :to="atalhoWhatsApp">
+            <MessageCircle class="h-4 w-4" aria-hidden="true" />
+            {{ whatsappAtivo ? 'Abrir WhatsApp' : 'Configurar WhatsApp' }}
+          </RouterLink>
+        </Button>
+        <Button type="button" variant="outline" size="icon" aria-label="Atualizar tabela" v-tooltip="'Atualizar'" @click="load">
+          <RotateCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" aria-hidden="true" />
+        </Button>
+      </div>
     </div>
 
     <!-- KPIs -->

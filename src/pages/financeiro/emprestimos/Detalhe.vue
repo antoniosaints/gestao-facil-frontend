@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import {
   ArrowDown,
   ArrowDownToLine,
+  Calculator,
   CalendarClock,
   Check,
   CircleCheck,
@@ -18,6 +19,7 @@ import {
   ReceiptText,
   RefreshCw,
   Trash2,
+  UserRound,
   WalletCards,
 } from 'lucide-vue-next'
 import { parseISO } from 'date-fns'
@@ -47,6 +49,7 @@ import type { MetodoPagamentoFinanceiro } from '@/types/schemas'
 import { randomUUID } from '@/utils/uuid'
 import {
   dataCurta,
+  descreverAntecipacao,
   dia,
   diaDoCalendario,
   formas,
@@ -56,6 +59,7 @@ import {
   situacaoPorParcelas,
   situacoesEmprestimo,
 } from './format'
+import PrevisaoParcelas from './PrevisaoParcelas.vue'
 
 const props = defineProps<{ id?: number; podeExcluir?: boolean }>()
 const open = defineModel<boolean>('open', { required: true })
@@ -63,7 +67,11 @@ const emit = defineEmits<{ alterado: [] }>()
 const toast = useToast()
 const router = useRouter()
 const item = ref<EmprestimoDetalhe>()
+const regraAntecipacao = computed(() =>
+  item.value ? descreverAntecipacao(item.value, item.value.jurosBps > 0) : '',
+)
 const aba = ref('parcelas')
+const diasSimulacao = ref<number | string>(0)
 const formularioBaixa = ref<HTMLFormElement>()
 const lista = ref<number[]>([])
 const busy = ref(false)
@@ -145,11 +153,11 @@ let chave = ''
 let buscaDetalhe: AbortController | undefined
 
 function valorParcela(p: ParcelaEmprestimo) {
-  return (
-    p.recebidoCentavos ??
-    p.cotacao?.totalCentavos ??
-    p.principalCentavos + p.jurosCentavos - (p.descontoFixoCentavos ?? 0)
-  )
+  return p.recebidoCentavos ?? p.cotacao?.totalCentavos ?? valorNoVencimento(p)
+}
+
+function valorNoVencimento(p: ParcelaEmprestimo) {
+  return p.principalCentavos + p.jurosCentavos - (p.descontoFixoCentavos ?? 0)
 }
 
 function situacaoParcela(p: ParcelaEmprestimo) {
@@ -238,6 +246,7 @@ watch(
     buscaDetalhe?.abort()
     item.value = undefined
     aba.value = 'parcelas'
+    diasSimulacao.value = 0
     lista.value = []
     confirmarExclusao.value = false
     erroExclusao.value = ''
@@ -427,12 +436,17 @@ const revisaoGateway = new Set(['refunded', 'charged_back', 'partial_refund'])
     </template>
     <template #description>
       <span v-if="item" class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-        <EntityLink
-          kind="cliente"
-          :record-id="item.cliente.id"
-          :label="item.cliente.nome"
-          class="dark:text-blue-300"
-        />
+        <span class="inline-flex min-w-0 items-center gap-1.5">
+          <UserRound class="size-4 shrink-0" aria-hidden="true" />
+          <span class="sr-only">Cliente</span>
+          <EntityLink
+            kind="cliente"
+            :record-id="item.cliente.id"
+            :label="item.cliente.nome"
+            new-tab
+            class="font-semibold dark:text-blue-300"
+          />
+        </span>
         <BadgeCell v-bind="situacao" size="sm" :capitalize="false" />
       </span>
       <template v-else>Parcelas e pagamentos do empréstimo</template>
@@ -469,7 +483,7 @@ const revisaoGateway = new Set(['refunded', 'charged_back', 'partial_refund'])
               >
                 <WalletCards class="size-4" aria-hidden="true" />
               </span>
-              Saldo em aberto
+              Saldo em aberto hoje
             </dt>
             <dd
               class="mt-2 break-words text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl"
@@ -566,27 +580,34 @@ const revisaoGateway = new Set(['refunded', 'charged_back', 'partial_refund'])
       <Tabs v-model="aba" class="space-y-4">
         <TabsList
           aria-label="Seções do empréstimo"
-          class="grid h-auto w-full grid-cols-3 rounded-lg border bg-card p-1"
+          class="grid h-auto w-full grid-cols-4 rounded-lg border bg-card p-1"
         >
           <TabsTrigger
             value="parcelas"
             class="h-9 rounded-md px-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:text-blue-300"
           >
-            <ListChecks class="hidden size-4 shrink-0 min-[370px]:inline" aria-hidden="true" />
+            <ListChecks class="hidden size-4 shrink-0 sm:inline" aria-hidden="true" />
             Parcelas
           </TabsTrigger>
           <TabsTrigger
-            value="historico"
-            class="h-9 rounded-md px-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:text-blue-300"
+            value="simulacao"
+            class="h-9 rounded-md px-1 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:text-blue-300"
           >
-            <History class="hidden size-4 shrink-0 min-[370px]:inline" aria-hidden="true" />
-            Histórico
+            <Calculator class="hidden size-4 shrink-0 sm:inline" aria-hidden="true" />
+            Simulação
+          </TabsTrigger>
+          <TabsTrigger
+            value="historico"
+            class="h-9 rounded-md px-1 text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none sm:text-sm dark:data-[state=active]:text-blue-300"
+          >
+            <History class="hidden size-4 shrink-0 sm:inline" aria-hidden="true" />
+            Pagamentos
           </TabsTrigger>
           <TabsTrigger
             value="contrato"
             class="h-9 rounded-md px-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:text-blue-300"
           >
-            <FileText class="hidden size-4 shrink-0 min-[370px]:inline" aria-hidden="true" />
+            <FileText class="hidden size-4 shrink-0 sm:inline" aria-hidden="true" />
             Contrato
           </TabsTrigger>
         </TabsList>
@@ -742,6 +763,12 @@ const revisaoGateway = new Set(['refunded', 'charged_back', 'partial_refund'])
                   </td>
                   <td class="px-2 py-3 tabular-nums sm:px-3">
                     <span class="whitespace-nowrap font-medium">{{ moeda(valorParcela(p)) }}</span>
+                    <span
+                      v-if="valorParcela(p) !== valorNoVencimento(p)"
+                      class="block text-xs text-muted-foreground"
+                    >
+                      {{ moeda(valorNoVencimento(p)) }} no vencimento
+                    </span>
                     <span v-if="p.cotacao" class="block text-xs text-muted-foreground">{{
                       resumoAjustes([p.cotacao])
                     }}</span>
@@ -898,6 +925,9 @@ const revisaoGateway = new Set(['refunded', 'charged_back', 'partial_refund'])
             {{ erro }}
           </p>
         </TabsContent>
+        <TabsContent value="simulacao" class="min-w-0">
+          <PrevisaoParcelas v-model:dias="diasSimulacao" :emprestimo="item" />
+        </TabsContent>
         <TabsContent value="historico" class="space-y-4">
           <h3 class="text-base font-semibold tracking-tight">Histórico de pagamentos</h3>
           <div
@@ -979,10 +1009,10 @@ const revisaoGateway = new Set(['refunded', 'charged_back', 'partial_refund'])
                   <dt class="text-xs text-muted-foreground">Desconto fixo</dt>
                   <dd class="font-medium">{{ moeda(item.descontoFixoCentavos) }}</dd>
                 </div>
-                <div v-if="item.jurosBps && item.descontoJurosBps">
+                <div v-if="regraAntecipacao">
                   <dt class="text-xs text-muted-foreground">Desconto por antecipação</dt>
                   <dd class="font-medium">
-                    {{ percentual(item.descontoJurosBps) }} sobre os juros do contrato
+                    {{ regraAntecipacao }}
                   </dd>
                 </div>
               </dl>

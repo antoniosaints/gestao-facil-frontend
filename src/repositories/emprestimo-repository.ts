@@ -2,7 +2,13 @@ import axios, { isAxiosError } from 'axios'
 import http from '@/utils/axios'
 import type { MetodoPagamentoFinanceiro } from '@/types/schemas'
 
-export interface EmprestimoCriacao {
+export interface RegraAntecipacao<T = number> {
+  descontoJurosBps: T
+  antecipacaoParcelaBps?: number
+  antecipacaoParcelaCentavos?: number
+}
+
+export interface EmprestimoCriacao extends RegraAntecipacao<number | null> {
   chaveOperacao: string
   clienteId: number
   principalCentavos: number
@@ -12,7 +18,6 @@ export interface EmprestimoCriacao {
   jurosMoraBps: number
   multaBps: number
   descontoFixoCentavos: number
-  descontoJurosBps: number | null
   numeroParcelas: number
   formaSaida: MetodoPagamentoFinanceiro
   contaSaidaId: number | null
@@ -20,6 +25,21 @@ export interface EmprestimoCriacao {
   categoriaId: number | null
   lancamentoAutomatico: boolean
 }
+
+export type TermosSimulacao = Pick<
+  EmprestimoCriacao,
+  | 'principalCentavos'
+  | 'dataSaida'
+  | 'primeiroVencimento'
+  | 'jurosBps'
+  | 'jurosMoraBps'
+  | 'multaBps'
+  | 'descontoFixoCentavos'
+  | 'descontoJurosBps'
+  | 'antecipacaoParcelaBps'
+  | 'antecipacaoParcelaCentavos'
+  | 'numeroParcelas'
+>
 
 export interface EmprestimoConfig {
   pixManual: boolean
@@ -78,6 +98,21 @@ export interface CotacaoEmprestimo {
   totalCentavos: number
 }
 
+export interface SimulacaoEmprestimo extends RegraAntecipacao {
+  parcelas: {
+    numero: number
+    vencimento: string
+    principalCentavos: number
+    jurosCentavos: number
+    descontoFixoCentavos: number
+    valorNoVencimentoCentavos: number
+    recebidoEm: string | null
+    recebidoCentavos: number | null
+    dataSimulada: string | null
+    cotacao: ItemPagamento | null
+  }[]
+}
+
 export interface PagamentoEmprestimo {
   id: string
   metodo: 'PIX_MANUAL' | 'MERCADO_PAGO' | 'INTERNO'
@@ -92,7 +127,7 @@ export interface PagamentoEmprestimo {
   lancamentoId: number | null
 }
 
-export interface EmprestimoDetalhe {
+export interface EmprestimoDetalhe extends RegraAntecipacao {
   id: number
   cliente: { id: number; nome: string }
   dataSaida: string
@@ -101,7 +136,6 @@ export interface EmprestimoDetalhe {
   jurosMoraBps: number
   multaBps: number
   descontoFixoCentavos: number
-  descontoJurosBps: number
   formaSaida: MetodoPagamentoFinanceiro
   contaEntradaId: number | null
   contaSaidaId?: number | null
@@ -123,7 +157,7 @@ export interface Baixa {
 }
 
 type MetodoPublico = 'PIX_MANUAL' | 'MERCADO_PAGO'
-export interface EmprestimoPublico {
+export interface EmprestimoPublico extends RegraAntecipacao {
   estabelecimento: string
   logoEmpresa?: string | null
   cliente?: {
@@ -139,7 +173,6 @@ export interface EmprestimoPublico {
   jurosMoraBps: number
   multaBps: number
   descontoFixoCentavos: number
-  descontoJurosBps: number
   pixManual: boolean
   mercadoPago: boolean
   parcelas: (ParcelaRecebida & ItemPagamento)[]
@@ -173,6 +206,20 @@ const publicHttp = axios.create({ baseURL: import.meta.env.VITE_API_URL })
 type Result<T> = { data: T }
 
 export const emprestimos = {
+  async simularCriacao(input: TermosSimulacao & { dias: number }, signal?: AbortSignal) {
+    const { data } = await http.post<Result<SimulacaoEmprestimo>>(`${base}/simulacao`, input, {
+      signal,
+    })
+    return data.data
+  },
+  async simular(id: number, dias: number, signal?: AbortSignal) {
+    const { data } = await http.post<Result<SimulacaoEmprestimo>>(
+      `${base}/${id}/simulacao`,
+      { dias },
+      { signal },
+    )
+    return data.data
+  },
   async criar(input: EmprestimoCriacao) {
     const { data } = await http.post<Result<{ id: number }>>(base, input)
     return data.data

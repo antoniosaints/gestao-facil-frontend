@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
-import { UserPlus, WalletCards } from 'lucide-vue-next'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { ArrowLeft, ArrowRight, Check, UserPlus, WalletCards } from 'lucide-vue-next'
 import { vMaska } from 'maska/vue'
 import { parseISO } from 'date-fns'
 import Calendarpicker from '@/components/formulario/calendarpicker.vue'
@@ -13,13 +13,34 @@ import FormSelect from '@/modofacil/components/FormSelect.vue'
 import { Switch } from '@/components/ui/switch'
 import { cpfCnpjMaskOptions, moneyMaskOptions } from '@/lib/imaska'
 import { ClienteRepository } from '@/repositories/cliente-repository'
-import { emprestimos, mensagemEmprestimo } from '@/repositories/emprestimo-repository'
+import {
+  emprestimos,
+  mensagemEmprestimo,
+  type TermosSimulacao,
+} from '@/repositories/emprestimo-repository'
 import type { MetodoPagamentoFinanceiro } from '@/types/schemas'
 import { randomUUID } from '@/utils/uuid'
-import { dia, diaDoCalendario, formas, moeda } from './format'
+import { dia, diaDoCalendario, formas } from './format'
+import PrevisaoParcelas from './PrevisaoParcelas.vue'
 
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ salvo: [id: number] }>()
+const etapas = ['Dados', 'Juros e descontos', 'Financeiro']
+type ModoAntecipacao = 'padrao' | 'percentual' | 'valor' | 'juros' | 'sem'
+const modosAntecipacao: { value: ModoAntecipacao; label: string }[] = [
+  { value: 'padrao', label: 'Padrão da conta' },
+  { value: 'percentual', label: 'Percentual da parcela' },
+  { value: 'valor', label: 'Valor fixo por parcela' },
+  { value: 'juros', label: 'Percentual dos juros' },
+  { value: 'sem', label: 'Sem desconto por antecipação' },
+]
+const instrucoesAntecipacao: Record<ModoAntecipacao, string> = {
+  padrao: 'Aplica o percentual da conta sobre os juros do contrato.',
+  percentual: 'Aplica o percentual ao valor da parcela após o desconto fixo do contrato.',
+  valor: 'Abate um valor de cada parcela paga antes da data de vencimento.',
+  juros: 'Aplica o percentual apenas aos juros do contrato incluídos na parcela.',
+  sem: 'As parcelas antecipadas mantêm o valor previsto para o vencimento.',
+}
 const campos = () => ({
   clienteId: null as string | number | null,
   valor: '',
@@ -27,6 +48,7 @@ const campos = () => ({
   jurosMora: '',
   multa: '',
   descontoFixo: '',
+  modoAntecipacao: 'padrao' as ModoAntecipacao,
   descontoAntecipacao: '',
   numeroParcelas: 1,
   dataSaida: dia(),
@@ -45,6 +67,9 @@ const erroCliente = ref('')
 const erro = ref('')
 const salvando = ref(false)
 const salvandoCliente = ref(false)
+const etapa = ref(0)
+const inicioEtapas = ref<HTMLOListElement>()
+const diasSimulacao = ref<number | string>(0)
 let chave = ''
 const emCentavos = (valor: string) => Math.round(Number(valor.replace(',', '.')) * 100)
 const principal = computed(() => emCentavos(form.valor))
@@ -52,22 +77,82 @@ const jurosBps = computed(() => emCentavos(form.juros))
 const jurosMoraBps = computed(() => emCentavos(form.jurosMora))
 const multaBps = computed(() => emCentavos(form.multa))
 const descontoFixo = computed(() => emCentavos(form.descontoFixo))
-const descontoJurosBps = computed(() =>
-  jurosBps.value === 0 || form.descontoAntecipacao === ''
-    ? null
-    : emCentavos(form.descontoAntecipacao),
+const valorAntecipacao = computed(() => emCentavos(form.descontoAntecipacao))
+const usaValorAntecipacao = computed(() =>
+  ['percentual', 'valor', 'juros'].includes(form.modoAntecipacao),
 )
-const juros = computed(() => Math.round((principal.value * jurosBps.value) / 10_000))
-const total = computed(() => principal.value + juros.value - descontoFixo.value)
-const menorParcela = computed(() => Math.floor(total.value / form.numeroParcelas))
-const maiorParcela = computed(() => Math.ceil(total.value / form.numeroParcelas))
 const categoriasVisiveis = computed(() => form.origem === 'conta' || form.lancamentoAutomatico)
+const erroValores = computed(() => {
+  if (!(principal.value > 0) || !form.dataSaida || !form.primeiroVencimento) {
+    return 'Informe o valor emprestado e as datas do empréstimo.'
+  }
+  if (form.dataSaida > dia() || form.primeiroVencimento < form.dataSaida) {
+    return 'A data da saída deve ser até hoje, e o vencimento deve ser a partir da saída.'
+  }
+  if (
+    !Number.isInteger(form.numeroParcelas) ||
+    form.numeroParcelas < 1 ||
+    form.numeroParcelas > 120
+  ) {
+    return 'Informe de 1 a 120 parcelas.'
+  }
+  if (principal.value > 100_000_000 || principal.value < form.numeroParcelas) {
+    return 'Informe até R$ 1.000.000,00 e pelo menos um centavo de principal por parcela.'
+  }
+  return ''
+})
+const erroCondicoes = computed(() => {
+  if (!(jurosBps.value >= 0 && jurosBps.value <= 100_000)) {
+    return 'Informe juros sobre o valor emprestado entre 0% e 1.000%.'
+  }
+  if (![jurosMoraBps.value, multaBps.value].every((valor) => valor >= 0 && valor <= 10_000)) {
+    return 'Informe juros por atraso e multa entre 0% e 100%.'
+  }
+  if (!(descontoFixo.value >= 0 && principal.value - descontoFixo.value >= form.numeroParcelas)) {
+    return 'O desconto deve deixar pelo menos um centavo de principal por parcela.'
+  }
+  if (form.modoAntecipacao === 'juros' && jurosBps.value === 0) {
+    return 'Informe juros do contrato ou escolha outra forma de desconto por antecipação.'
+  }
+  if (usaValorAntecipacao.value) {
+    const limite = form.modoAntecipacao === 'valor' ? 100_000_000 : 10_000
+    if (!(valorAntecipacao.value > 0 && valorAntecipacao.value <= limite)) {
+      return form.modoAntecipacao === 'valor'
+        ? 'Informe de R$ 0,01 a R$ 1.000.000,00 para o desconto por parcela.'
+        : 'Informe de 0,01% a 100% para o desconto por antecipação.'
+    }
+  }
+  return ''
+})
+const termosSimulacao = computed<TermosSimulacao | undefined>(() => {
+  if (!open.value || erroValores.value || erroCondicoes.value) return
+  return {
+    principalCentavos: principal.value,
+    dataSaida: form.dataSaida,
+    primeiroVencimento: form.primeiroVencimento,
+    jurosBps: jurosBps.value,
+    jurosMoraBps: jurosMoraBps.value,
+    multaBps: multaBps.value,
+    descontoFixoCentavos: descontoFixo.value,
+    descontoJurosBps:
+      form.modoAntecipacao === 'padrao'
+        ? null
+        : form.modoAntecipacao === 'juros'
+          ? valorAntecipacao.value
+          : 0,
+    antecipacaoParcelaBps: form.modoAntecipacao === 'percentual' ? valorAntecipacao.value : 0,
+    antecipacaoParcelaCentavos: form.modoAntecipacao === 'valor' ? valorAntecipacao.value : 0,
+    numeroParcelas: form.numeroParcelas,
+  }
+})
 
 watch(
   open,
   (value) => {
     if (!value) return
     chave = ''
+    etapa.value = 0
+    diasSimulacao.value = 0
     Object.assign(form, campos())
     Object.assign(novo, { nome: '', email: '', documento: '' })
     clienteAberto.value = false
@@ -76,6 +161,23 @@ watch(
   },
   { immediate: true },
 )
+
+function mudarModoAntecipacao(modo: ModoAntecipacao) {
+  form.modoAntecipacao = modo
+  form.descontoAntecipacao = ''
+  diasSimulacao.value = modo === 'sem' ? 0 : -7
+  erro.value = ''
+}
+
+function irParaEtapa(indice: number) {
+  etapa.value = indice
+  erro.value = ''
+  void nextTick(() => {
+    const inicio = inicioEtapas.value
+    inicio?.scrollIntoView({ block: 'nearest' })
+    inicio?.querySelector<HTMLElement>('[aria-current="step"]')?.focus({ preventScroll: true })
+  })
+}
 
 async function cadastrarCliente() {
   if (!novo.nome.trim() || salvandoCliente.value) return
@@ -101,34 +203,26 @@ async function cadastrarCliente() {
 }
 
 async function salvar() {
-  if (salvando.value) return
+  if (salvando.value || clienteAberto.value) return
   erro.value = ''
-  if (!form.clienteId || !(principal.value > 0) || !form.dataSaida || !form.primeiroVencimento) {
-    erro.value = 'Informe o cliente, o valor emprestado e as datas do empréstimo.'
+  const erroDados = form.clienteId ? erroValores.value : 'Selecione o cliente do empréstimo.'
+  if (erroDados) {
+    if (etapa.value !== 0) irParaEtapa(0)
+    erro.value = erroDados
     return
   }
-  if (form.dataSaida > dia() || form.primeiroVencimento < form.dataSaida) {
-    erro.value = 'A data da saída deve ser até hoje, e o vencimento deve ser a partir da saída.'
+  if (etapa.value === 0) {
+    irParaEtapa(1)
     return
   }
-  if (principal.value > 100_000_000 || principal.value < form.numeroParcelas) {
-    erro.value = 'Informe até R$ 1.000.000,00 e pelo menos um centavo de principal por parcela.'
+  const termos = termosSimulacao.value
+  if (!termos) {
+    if (etapa.value !== 1) irParaEtapa(1)
+    erro.value = erroCondicoes.value
     return
   }
-  if (!(jurosBps.value >= 0 && jurosBps.value <= 100_000)) {
-    erro.value = 'Informe juros sobre o valor emprestado entre 0% e 1.000%.'
-    return
-  }
-  if (
-    ![jurosMoraBps.value, multaBps.value, descontoJurosBps.value ?? 0].every(
-      (valor) => valor >= 0 && valor <= 10_000,
-    )
-  ) {
-    erro.value = 'Informe juros por atraso, multa e desconto por antecipação entre 0% e 100%.'
-    return
-  }
-  if (!(descontoFixo.value >= 0 && principal.value - descontoFixo.value >= form.numeroParcelas)) {
-    erro.value = 'O desconto deve deixar pelo menos um centavo de principal por parcela.'
+  if (etapa.value === 1) {
+    irParaEtapa(2)
     return
   }
   if (
@@ -142,17 +236,9 @@ async function salvar() {
   salvando.value = true
   try {
     const { id } = await emprestimos.criar({
+      ...termos,
       chaveOperacao: (chave ||= randomUUID()),
       clienteId: Number(form.clienteId),
-      principalCentavos: principal.value,
-      dataSaida: form.dataSaida,
-      primeiroVencimento: form.primeiroVencimento,
-      jurosBps: jurosBps.value,
-      jurosMoraBps: jurosMoraBps.value,
-      multaBps: multaBps.value,
-      descontoFixoCentavos: descontoFixo.value,
-      descontoJurosBps: descontoJurosBps.value,
-      numeroParcelas: form.numeroParcelas,
       formaSaida: form.formaSaida,
       contaSaidaId: form.origem === 'conta' ? Number(form.contaSaidaId) : null,
       contaEntradaId: form.lancamentoAutomatico ? Number(form.contaEntradaId) : null,
@@ -173,15 +259,43 @@ async function salvar() {
   <ModalView
     v-model:open="open"
     title="Novo empréstimo"
-    description="Informe os dados da saída e monte o cronograma de recebimento."
+    description="Informe os dados, defina as condições e revise os pagamentos."
     :icon="WalletCards"
-    size="2xl"
-    content-class="max-h-[90dvh] gap-0 overflow-hidden"
-    header-class="shrink-0 border-b px-6 pb-3 pt-4 text-left md:pt-6"
-    body-class="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-py-4 px-6 py-4"
+    size="6xl"
+    content-class="max-h-[92dvh] gap-0 overflow-hidden md:w-[calc(100%-2rem)] md:rounded-2xl"
+    header-class="shrink-0 border-b px-4 pb-3 pt-4 text-left sm:px-6 md:pt-5"
+    body-class="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-py-4 px-4 py-4 sm:px-6"
   >
-    <div class="space-y-4">
-      <section class="space-y-3">
+    <ol
+      ref="inicioEtapas"
+      aria-label="Etapas do empréstimo"
+      class="mb-4 grid grid-cols-3 gap-1.5 sm:gap-2"
+    >
+      <li
+        v-for="(nome, indice) in etapas"
+        :key="nome"
+        :aria-current="indice === etapa ? 'step' : undefined"
+        :tabindex="indice === etapa ? -1 : undefined"
+        class="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border px-1.5 py-2 text-center text-xs font-medium sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+        :class="
+          indice === etapa
+            ? 'border-primary/40 bg-primary/10 text-foreground'
+            : 'bg-card text-muted-foreground'
+        "
+      >
+        <span
+          aria-hidden="true"
+          class="grid size-5 shrink-0 place-items-center rounded-full text-xs"
+          :class="indice === etapa ? 'bg-primary text-primary-foreground' : 'bg-muted'"
+        >
+          <Check v-if="indice < etapa" class="size-3" />
+          <template v-else>{{ indice + 1 }}</template>
+        </span>
+        {{ nome }}
+      </li>
+    </ol>
+    <div class="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+      <section v-if="etapa === 0" class="min-w-0 space-y-3 lg:col-start-1 lg:row-start-1">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <Label for="emprestimo-cliente">Cliente</Label>
           <Button
@@ -261,14 +375,20 @@ async function salvar() {
         </form>
       </section>
 
-      <form id="emprestimo-cadastro-form" class="space-y-4" @submit.prevent="salvar">
+      <form
+        id="emprestimo-cadastro-form"
+        class="min-w-0 space-y-4 lg:col-start-1"
+        :class="etapa === 0 ? 'lg:row-start-2' : 'lg:row-start-1'"
+        @submit.prevent="salvar"
+      >
         <fieldset
-          class="grid min-w-0 gap-4 rounded-xl border p-4 sm:grid-cols-6"
+          v-if="etapa === 0"
+          class="grid min-w-0 gap-4 rounded-xl border p-4 sm:grid-cols-2"
           :disabled="salvando"
         >
           <legend class="px-1 text-sm font-medium">Valor e parcelas</legend>
-          <div class="min-w-0 space-y-2 sm:col-span-3">
-            <Label for="emprestimo-valor">Valor emprestado (R$)</Label>
+          <div class="min-w-0 space-y-2">
+            <Label for="emprestimo-valor" class="block leading-5">Valor emprestado (R$)</Label>
             <Input
               id="emprestimo-valor"
               v-model="form.valor"
@@ -278,8 +398,8 @@ async function salvar() {
               required
             />
           </div>
-          <div class="min-w-0 space-y-2 sm:col-span-3">
-            <Label for="emprestimo-parcelas">Número de parcelas</Label>
+          <div class="min-w-0 space-y-2">
+            <Label for="emprestimo-parcelas" class="block leading-5">Número de parcelas</Label>
             <Input
               id="emprestimo-parcelas"
               v-model.number="form.numeroParcelas"
@@ -289,48 +409,43 @@ async function salvar() {
               required
             />
           </div>
-          <div class="min-w-0 space-y-2 sm:col-span-2">
-            <Label for="dp-input-emprestimo-saida">Data da saída</Label>
+          <div class="min-w-0 space-y-2">
+            <Label for="dp-input-emprestimo-saida" class="block leading-5">Data da saída</Label>
             <Calendarpicker
               uid="emprestimo-saida"
               :aria-labels="{ input: 'Data da saída' }"
               :model-value="form.dataSaida || null"
               :max-date="parseISO(dia())"
               :disabled="salvando"
+              placeholder="dd/mm/aaaa"
               teleport
               @update:model-value="form.dataSaida = diaDoCalendario($event)"
             />
           </div>
-          <div class="min-w-0 space-y-2 sm:col-span-2">
-            <Label for="dp-input-emprestimo-vencimento">Primeiro vencimento</Label>
+          <div class="min-w-0 space-y-2">
+            <Label for="dp-input-emprestimo-vencimento" class="block leading-5"
+              >Primeiro vencimento</Label
+            >
             <Calendarpicker
               uid="emprestimo-vencimento"
               :aria-labels="{ input: 'Primeiro vencimento' }"
               :model-value="form.primeiroVencimento || null"
               :min-date="form.dataSaida ? parseISO(form.dataSaida) : null"
               :disabled="salvando"
+              placeholder="dd/mm/aaaa"
               teleport
               @update:model-value="form.primeiroVencimento = diaDoCalendario($event)"
             />
           </div>
-          <div class="min-w-0 space-y-2 sm:col-span-2">
-            <Label for="emprestimo-forma-saida">Forma da saída</Label>
-            <FormSelect
-              id="emprestimo-forma-saida"
-              v-model="form.formaSaida"
-              :options="formas"
-              :disabled="salvando"
-              aria-label="Forma da saída"
-            />
-          </div>
         </fieldset>
         <fieldset
+          v-if="etapa === 1"
           class="grid min-w-0 gap-4 rounded-xl border p-4 sm:grid-cols-2"
           :disabled="salvando"
         >
-          <legend class="px-1 text-sm font-medium">Juros, multa e descontos</legend>
+          <legend class="px-1 text-sm font-medium">Juros e multa</legend>
           <div class="min-w-0 space-y-2">
-            <Label for="emprestimo-juros">Juros sobre o valor emprestado (%)</Label>
+            <Label for="emprestimo-juros" class="block leading-5">Juros do contrato (%)</Label>
             <Input
               id="emprestimo-juros"
               v-model="form.juros"
@@ -340,11 +455,14 @@ async function salvar() {
               aria-describedby="emprestimo-juros-ajuda"
             />
             <p id="emprestimo-juros-ajuda" class="text-xs text-muted-foreground">
-              Deixe em 0 para cobrar juros somente em caso de atraso.
+              Percentual sobre o valor emprestado. Deixe em 0 para cobrar juros somente em caso de
+              atraso.
             </p>
           </div>
           <div class="min-w-0 space-y-2">
-            <Label for="emprestimo-juros-mora">Juros por atraso (% ao mês)</Label>
+            <Label for="emprestimo-juros-mora" class="block leading-5"
+              >Juros por atraso (% ao mês)</Label
+            >
             <Input
               id="emprestimo-juros-mora"
               v-model="form.jurosMora"
@@ -358,7 +476,7 @@ async function salvar() {
             </p>
           </div>
           <div class="min-w-0 space-y-2">
-            <Label for="emprestimo-multa">Multa por atraso (%)</Label>
+            <Label for="emprestimo-multa" class="block leading-5">Multa por atraso (%)</Label>
             <Input
               id="emprestimo-multa"
               v-model="form.multa"
@@ -371,8 +489,17 @@ async function salvar() {
               Cobrada uma vez sobre o valor líquido de cada parcela vencida.
             </p>
           </div>
+        </fieldset>
+        <fieldset
+          v-if="etapa === 1"
+          class="grid min-w-0 gap-4 rounded-xl border p-4 sm:grid-cols-2"
+          :disabled="salvando"
+        >
+          <legend class="px-1 text-sm font-medium">Descontos</legend>
           <div class="min-w-0 space-y-2">
-            <Label for="emprestimo-desconto-fixo">Desconto fixo (R$)</Label>
+            <Label for="emprestimo-desconto-fixo" class="block leading-5"
+              >Desconto do contrato (R$)</Label
+            >
             <Input
               id="emprestimo-desconto-fixo"
               v-model="form.descontoFixo"
@@ -382,43 +509,63 @@ async function salvar() {
               aria-describedby="emprestimo-desconto-fixo-ajuda"
             />
             <p id="emprestimo-desconto-fixo-ajuda" class="text-xs text-muted-foreground">
-              Abatido do principal e distribuído entre as parcelas, mesmo em atraso.
+              Desconto fixo distribuído entre todas as parcelas, inclusive em atraso.
             </p>
           </div>
-          <div v-if="jurosBps > 0" class="min-w-0 space-y-2 sm:col-span-2">
-            <Label for="emprestimo-desconto-antecipacao">Desconto por antecipação (%)</Label>
+          <div class="min-w-0 space-y-2">
+            <Label for="emprestimo-modo-antecipacao" class="block leading-5"
+              >Desconto por antecipação</Label
+            >
+            <FormSelect
+              id="emprestimo-modo-antecipacao"
+              :model-value="form.modoAntecipacao"
+              :options="modosAntecipacao"
+              :disabled="salvando"
+              aria-label="Desconto por antecipação"
+              aria-describedby="emprestimo-modo-antecipacao-ajuda"
+              @update:model-value="mudarModoAntecipacao"
+            />
+            <p id="emprestimo-modo-antecipacao-ajuda" class="text-xs text-muted-foreground">
+              {{ instrucoesAntecipacao[form.modoAntecipacao] }}
+            </p>
+          </div>
+          <div v-if="usaValorAntecipacao" class="min-w-0 space-y-2 sm:col-start-2">
+            <Label for="emprestimo-desconto-antecipacao" class="block leading-5">
+              {{
+                form.modoAntecipacao === 'valor'
+                  ? 'Desconto por parcela (R$)'
+                  : 'Desconto por antecipação (%)'
+              }}
+            </Label>
             <Input
               id="emprestimo-desconto-antecipacao"
               v-model="form.descontoAntecipacao"
               v-maska="moneyMaskOptions"
               inputmode="decimal"
-              placeholder="Padrão da conta"
-              class="sm:max-w-48"
+              :placeholder="form.modoAntecipacao === 'valor' ? 'Ex.: 20,00' : 'Ex.: 10'"
               aria-describedby="emprestimo-desconto-antecipacao-ajuda"
             />
             <p id="emprestimo-desconto-antecipacao-ajuda" class="text-xs text-muted-foreground">
-              Reduz os juros do contrato em parcelas pagas antes do vencimento. Em branco, usa o
-              padrão da conta. Digite 0 para desativar neste empréstimo.
+              Vale para pagamentos antes do vencimento. A parcela mantém o mínimo de R$ 0,01.
             </p>
           </div>
-          <p
-            v-if="total > 0 && form.numeroParcelas > 0"
-            class="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground sm:col-span-2"
-          >
-            <strong class="text-foreground">{{ moeda(total) }} a receber sem atraso</strong>
-            <template v-if="juros > 0"> · {{ moeda(juros) }} em juros do contrato</template>
-            <template v-if="descontoFixo > 0">
-              · {{ moeda(descontoFixo) }} de desconto fixo</template
-            >
-            · {{ form.numeroParcelas }} × {{ moeda(menorParcela)
-            }}<template v-if="maiorParcela !== menorParcela"> a {{ moeda(maiorParcela) }}</template>
-          </p>
         </fieldset>
         <fieldset
+          v-if="etapa === 2"
           class="grid min-w-0 gap-4 rounded-xl border p-4 sm:grid-cols-2"
           :disabled="salvando"
         >
           <legend class="px-1 text-sm font-medium">Movimentação financeira</legend>
+          <div class="min-w-0 space-y-2">
+            <Label for="emprestimo-forma-saida" class="block leading-5">Forma da saída</Label>
+            <FormSelect
+              id="emprestimo-forma-saida"
+              v-model="form.formaSaida"
+              :options="formas"
+              :disabled="salvando"
+              aria-label="Forma da saída"
+            />
+          </div>
           <div class="min-w-0 space-y-2">
             <Label for="emprestimo-origem">Origem do dinheiro</Label>
             <FormSelect
@@ -443,16 +590,14 @@ async function salvar() {
               :disabled="salvando"
             />
           </div>
-          <p v-else class="self-end text-xs text-muted-foreground sm:pb-2">
+          <p v-else class="text-xs text-muted-foreground sm:col-span-2">
             A saída avulsa fica registrada no empréstimo.
           </p>
           <div class="flex items-center justify-between gap-4 border-t pt-4 sm:col-span-2">
             <div class="space-y-1">
-              <Label for="emprestimo-lancamento-automatico"
-                >Lançar recebimentos automaticamente no Financeiro</Label
-              >
+              <Label for="emprestimo-lancamento-automatico">Lançamento automático</Label>
               <p id="emprestimo-lancamento-automatico-ajuda" class="text-xs text-muted-foreground">
-                Cria uma receita efetivada na data do pagamento quando houver baixa.
+                Ao dar baixa, registra a receita no Financeiro na data do pagamento.
               </p>
             </div>
             <Switch
@@ -460,6 +605,7 @@ async function salvar() {
               v-model="form.lancamentoAutomatico"
               :disabled="salvando"
               aria-describedby="emprestimo-lancamento-automatico-ajuda"
+              class="shrink-0"
             />
           </div>
           <div v-if="form.lancamentoAutomatico" class="min-w-0 space-y-2">
@@ -487,6 +633,12 @@ async function salvar() {
         </fieldset>
         <p v-if="erro" role="alert" class="text-sm text-destructive">{{ erro }}</p>
       </form>
+      <PrevisaoParcelas
+        v-model:dias="diasSimulacao"
+        :termos="termosSimulacao"
+        class="lg:sticky lg:top-0 lg:col-start-2 lg:row-start-1 lg:max-h-[calc(92dvh-11rem)] lg:overflow-y-auto"
+        :class="etapa === 0 ? 'lg:row-span-2' : ''"
+      />
     </div>
 
     <template #footer>
@@ -496,9 +648,10 @@ async function salvar() {
           variant="outline"
           class="flex-1 sm:flex-none"
           :disabled="salvando || salvandoCliente"
-          @click="open = false"
+          @click="etapa === 0 ? (open = false) : irParaEtapa(etapa - 1)"
         >
-          Cancelar
+          <ArrowLeft v-if="etapa > 0" class="size-4" aria-hidden="true" />
+          {{ etapa === 0 ? 'Cancelar' : 'Voltar' }}
         </Button>
         <Button
           type="submit"
@@ -506,7 +659,14 @@ async function salvar() {
           class="flex-1 sm:flex-none"
           :disabled="salvando || clienteAberto"
         >
-          {{ salvando ? 'Registrando…' : 'Registrar empréstimo' }}
+          {{
+            salvando
+              ? 'Registrando…'
+              : etapa < etapas.length - 1
+                ? 'Continuar'
+                : 'Registrar empréstimo'
+          }}
+          <ArrowRight v-if="etapa < etapas.length - 1" class="size-4" aria-hidden="true" />
         </Button>
       </div>
     </template>

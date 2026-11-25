@@ -29,11 +29,14 @@ import {
   type EmprestimoPublico,
 } from '@/repositories/emprestimo-repository'
 import { resolveFileUrl } from '@/utils/fileUrl'
-import { dataCurta, dia, moeda, percentual, resumoAjustes } from './format'
+import { dataCurta, descreverAntecipacao, dia, moeda, percentual, resumoAjustes } from './format'
 
 const route = useRoute()
 const token = computed(() => new URLSearchParams(route.hash.slice(1)).get('token') ?? '')
 const dados = ref<EmprestimoPublico>()
+const regraAntecipacao = computed(() =>
+  dados.value ? descreverAntecipacao(dados.value, dados.value.jurosBps > 0) : '',
+)
 const logoComErro = ref('')
 const empresa = computed(() => dados.value?.estabelecimento?.trim() ?? '')
 const logoEmpresa = computed(() => resolveFileUrl(dados.value?.logoEmpresa, { fallback: '' }))
@@ -901,12 +904,8 @@ async function copiar() {
                     </p>
                     <p class="text-xl font-semibold tabular-nums">{{ moeda(total) }}</p>
                     <p v-if="ajustes" class="text-xs text-muted-foreground">{{ ajustes }}</p>
-                    <p
-                      v-else-if="dados.jurosBps && dados.descontoJurosBps"
-                      class="text-xs text-muted-foreground"
-                    >
-                      {{ percentual(dados.descontoJurosBps) }} de desconto sobre juros ao antecipar
-                      uma parcela.
+                    <p v-else-if="regraAntecipacao" class="text-xs text-muted-foreground">
+                      Desconto ao antecipar · {{ regraAntecipacao }}
                     </p>
                   </div>
                   <fieldset class="space-y-2">
@@ -1034,6 +1033,10 @@ async function copiar() {
                   <div v-if="dados.descontoFixoCentavos" class="contract-row">
                     <dt>Desconto fixo</dt>
                     <dd>{{ moeda(dados.descontoFixoCentavos) }}</dd>
+                  </div>
+                  <div v-if="regraAntecipacao" class="contract-row">
+                    <dt>Desconto por antecipação</dt>
+                    <dd>{{ regraAntecipacao }}</dd>
                   </div>
                 </dl>
               </section>

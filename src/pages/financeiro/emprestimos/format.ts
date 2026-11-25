@@ -1,6 +1,10 @@
 import { format } from 'date-fns'
 import type { MetodoPagamentoFinanceiro } from '@/types/schemas'
-import type { EmprestimoSituacao, ItemPagamento } from '@/repositories/emprestimo-repository'
+import type {
+  EmprestimoSituacao,
+  ItemPagamento,
+  RegraAntecipacao,
+} from '@/repositories/emprestimo-repository'
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const data = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' })
@@ -17,6 +21,16 @@ export const dia = (value = new Date()) => iso.format(value)
 export const diaDoCalendario = (value: Date | null) => (value ? format(value, 'yyyy-MM-dd') : '')
 export const percentual = (bps: number) =>
   (bps / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '%'
+
+export function descreverAntecipacao(regra: RegraAntecipacao, temJuros: boolean) {
+  if (regra.antecipacaoParcelaBps)
+    return `${percentual(regra.antecipacaoParcelaBps)} da parcela líquida`
+  if (regra.antecipacaoParcelaCentavos)
+    return `Até ${moeda(regra.antecipacaoParcelaCentavos)} por parcela`
+  return temJuros && regra.descontoJurosBps
+    ? `${percentual(regra.descontoJurosBps)} dos juros do contrato`
+    : ''
+}
 
 export const situacoesEmprestimo = {
   EM_ANDAMENTO: { label: 'Em andamento', color: 'gray' },
