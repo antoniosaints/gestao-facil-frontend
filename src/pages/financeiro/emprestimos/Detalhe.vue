@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import {
   ArrowDown,
   ArrowDownToLine,
+  BellRing,
   Calculator,
   CalendarClock,
   Check,
@@ -14,7 +15,6 @@ import {
   ExternalLink,
   FileText,
   History,
-  Link2,
   ListChecks,
   ReceiptText,
   RefreshCw,
@@ -43,6 +43,7 @@ import {
   type Baixa,
   type CotacaoEmprestimo,
   type EmprestimoDetalhe,
+  type EmprestimoLembreteResumo,
   type ParcelaEmprestimo,
 } from '@/repositories/emprestimo-repository'
 import type { MetodoPagamentoFinanceiro } from '@/types/schemas'
@@ -60,6 +61,7 @@ import {
   situacoesEmprestimo,
 } from './format'
 import PrevisaoParcelas from './PrevisaoParcelas.vue'
+import LembreteEmprestimoModal from './LembreteEmprestimoModal.vue'
 
 const props = defineProps<{ id?: number; podeExcluir?: boolean }>()
 const open = defineModel<boolean>('open', { required: true })
@@ -71,6 +73,16 @@ const regraAntecipacao = computed(() =>
   item.value ? descreverAntecipacao(item.value, item.value.jurosBps > 0) : '',
 )
 const aba = ref('parcelas')
+const lembreteAberto = ref(false)
+const mostrarLinkPublico = ref(false)
+const situacaoLembrete = computed(() => {
+  const lembrete = item.value?.lembrete
+  if (!lembrete) return 'Lembrete não configurado'
+  if (!lembrete.ativo) return 'Lembrete desativado'
+  if (!lembrete.instancia?.ativo || lembrete.instancia.status !== 'CONECTADA')
+    return 'Instância de envio indisponível'
+  return `Lembrete ativo · ${lembrete.instancia.nome}`
+})
 const diasSimulacao = ref<number | string>(0)
 const formularioBaixa = ref<HTMLFormElement>()
 const lista = ref<number[]>([])
@@ -246,6 +258,8 @@ watch(
     buscaDetalhe?.abort()
     item.value = undefined
     aba.value = 'parcelas'
+    lembreteAberto.value = false
+    mostrarLinkPublico.value = false
     diasSimulacao.value = 0
     lista.value = []
     confirmarExclusao.value = false
@@ -255,6 +269,12 @@ watch(
   { immediate: true },
 )
 onBeforeUnmount(() => buscaDetalhe?.abort())
+
+function atualizarLembrete(resumo: EmprestimoLembreteResumo) {
+  if (!item.value) return
+  item.value.lembrete = resumo
+  toast.success(resumo.ativo ? 'Agenda de lembretes salva.' : 'Lembrete desativado.')
+}
 
 async function compartilhar() {
   if (!item.value) return
@@ -271,6 +291,7 @@ async function compartilhar() {
     await navigator.clipboard.writeText(url)
     toast.success('Link público copiado.')
   } catch {
+    mostrarLinkPublico.value = true
     toast.info('Selecione e copie o endereço exibido.')
   }
 }
@@ -435,20 +456,7 @@ const revisaoGateway = new Set(['refunded', 'charged_back', 'partial_refund'])
       </span>
     </template>
     <template #description>
-      <span v-if="item" class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-        <span class="inline-flex min-w-0 items-center gap-1.5">
-          <UserRound class="size-4 shrink-0" aria-hidden="true" />
-          <span class="sr-only">Cliente</span>
-          <EntityLink
-            kind="cliente"
-            :record-id="item.cliente.id"
-            :label="item.cliente.nome"
-            new-tab
-            class="font-semibold dark:text-blue-300"
-          />
-        </span>
-        <BadgeCell v-bind="situacao" size="sm" :capitalize="false" />
-      </span>
+      <BadgeCell v-if="item" v-bind="situacao" size="sm" class="mt-1" :capitalize="false" />
       <template v-else>Parcelas e pagamentos do empréstimo</template>
     </template>
     <div v-if="carregando && !item" class="space-y-4" role="status">
@@ -469,6 +477,74 @@ const revisaoGateway = new Set(['refunded', 'charged_back', 'partial_refund'])
     </div>
 
     <div v-if="item" class="space-y-5" :aria-busy="carregando">
+      <section
+        aria-label="Cliente e acompanhamento"
+        class="space-y-3 rounded-xl border bg-card px-4 py-3 sm:px-5"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex min-w-0 items-center gap-3">
+            <span
+              class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary dark:text-blue-300"
+            >
+              <UserRound class="size-4" aria-hidden="true" />
+            </span>
+            <div class="min-w-0">
+              <p class="text-xs text-muted-foreground">Cliente</p>
+              <EntityLink
+                kind="cliente"
+                :record-id="item.cliente.id"
+                :label="item.cliente.nome"
+                new-tab
+                class="text-sm font-semibold dark:text-blue-300"
+              />
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <Button
+              v-if="previaPublica"
+              as="a"
+              :href="previaPublica"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="outline"
+              size="sm"
+            >
+              <ExternalLink class="size-4" aria-hidden="true" /> Abrir acompanhamento
+            </Button>
+            <Button
+              v-if="item.linkPublico"
+              type="button"
+              variant="outline"
+              size="sm"
+              @click="compartilhar"
+            >
+              <Copy class="size-4" aria-hidden="true" /> Compartilhar link
+            </Button>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+          <p class="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+            <BellRing class="size-4 shrink-0" aria-hidden="true" /> {{ situacaoLembrete }}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            :disabled="carregando"
+            @click="lembreteAberto = true"
+          >
+            Configurar lembrete
+          </Button>
+        </div>
+        <Input
+          v-if="mostrarLinkPublico"
+          aria-label="Link de acompanhamento"
+          :model-value="item.linkPublico"
+          readonly
+          class="text-xs"
+          @focus="($event.target as HTMLInputElement).select()"
+        />
+      </section>
       <section
         aria-label="Resumo do empréstimo"
         class="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
@@ -1078,38 +1154,15 @@ const revisaoGateway = new Set(['refunded', 'charged_back', 'partial_refund'])
               </dl>
             </section>
           </div>
-          <div class="rounded-xl border border-primary/20 bg-card p-4 sm:px-5">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <label for="emprestimo-link" class="flex items-center gap-2 text-sm font-semibold"
-                ><Link2 class="size-4 text-primary dark:text-blue-300" aria-hidden="true" /> Link de
-                acompanhamento</label
-              >
-              <div class="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" @click="compartilhar"
-                  ><Copy class="size-4" /> Compartilhar link</Button
-                >
-                <Button
-                  as="a"
-                  :href="previaPublica"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="outline"
-                  size="sm"
-                  ><ExternalLink class="size-4" /> Abrir prévia</Button
-                >
-              </div>
-            </div>
-            <Input
-              id="emprestimo-link"
-              :model-value="item.linkPublico"
-              readonly
-              class="mt-3 bg-muted/35 text-xs text-muted-foreground"
-              @focus="($event.target as HTMLInputElement).select()"
-            />
-          </div>
         </TabsContent>
       </Tabs>
     </div>
+    <LembreteEmprestimoModal
+      v-if="item"
+      v-model:open="lembreteAberto"
+      :emprestimo-id="item.id"
+      @salvo="atualizarLembrete"
+    />
     <ModalView
       v-model:open="confirmarExclusao"
       :title="`Excluir empréstimo #${item?.id ?? ''}?`"

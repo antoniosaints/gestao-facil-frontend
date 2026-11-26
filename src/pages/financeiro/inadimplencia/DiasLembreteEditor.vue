@@ -123,7 +123,7 @@ function addCustomDia(sinal: -1 | 1) {
       </div>
     </div>
 
-    <div class="flex items-end gap-2">
+    <div class="flex flex-wrap items-end gap-2">
       <div>
         <span class="text-xs text-muted-foreground">Dia personalizado</span>
         <Input v-model.number="(customDia as number)" type="number" min="1" max="60" placeholder="Ex.: 10" class="mt-1 w-28" />

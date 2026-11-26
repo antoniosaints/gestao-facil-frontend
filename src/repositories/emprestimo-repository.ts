@@ -127,6 +127,27 @@ export interface PagamentoEmprestimo {
   lancamentoId: number | null
 }
 
+export interface EmprestimoLembreteResumo {
+  ativo: boolean
+  instancia: { nome: string; ativo: boolean; status: string } | null
+}
+
+export interface EmprestimoLembreteAgenda {
+  ativo: boolean
+  dias: number[]
+  instanciaId: number | null
+  mensagemCustom: string | null
+}
+
+export interface EmprestimoLembreteContexto extends EmprestimoLembreteAgenda {
+  whatsappAtivo: boolean
+  clienteTemWhatsApp: boolean
+  enviosHabilitados: boolean
+  horaEnvio: number
+  mensagemPadrao: string
+  instancias: { id: number; nome: string; status: string; numeroConectado: string | null }[]
+}
+
 export interface EmprestimoDetalhe extends RegraAntecipacao {
   id: number
   cliente: { id: number; nome: string }
@@ -143,6 +164,7 @@ export interface EmprestimoDetalhe extends RegraAntecipacao {
   lancamentoAutomatico: boolean
   lancamentoSaidaId: number | null
   linkPublico: string
+  lembrete?: EmprestimoLembreteResumo | null
   dataCotacao?: string
   parcelas: ParcelaEmprestimo[]
   pagamentos: PagamentoEmprestimo[]
@@ -226,6 +248,19 @@ export const emprestimos = {
   },
   async detalhe(id: number, signal?: AbortSignal) {
     const { data } = await http.get<Result<EmprestimoDetalhe>>(`${base}/${id}`, { signal })
+    return data.data
+  },
+  async lembrete(id: number, signal?: AbortSignal) {
+    const { data } = await http.get<Result<EmprestimoLembreteContexto>>(`${base}/${id}/lembrete`, {
+      signal,
+    })
+    return data.data
+  },
+  async salvarLembrete(id: number, agenda: EmprestimoLembreteAgenda) {
+    const { data } = await http.put<Result<EmprestimoLembreteResumo>>(
+      `${base}/${id}/lembrete`,
+      agenda,
+    )
     return data.data
   },
   async excluir(id: number) {
